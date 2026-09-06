@@ -29,9 +29,11 @@ type StorageState = keyof typeof STORAGE_LABELS;
 /**
  * Which backend this browser actually got.
  *
- * The section above it describes the two possibilities; this says which one is in front of you. That
- * is worth stating because the difference is invisible from the outside — the app behaves
- * identically either way — and because a database that silently fails to open looks exactly like one
+ * The section above it describes what can happen; this says which of the three is in front of you.
+ * Two of them are worth stating because the difference is otherwise invisible — SQLite and the
+ * fallback behave identically, so nothing on screen would tell them apart — and the third because
+ * the app does *not* behave identically there: every write is refused. A database that silently
+ * fails to open looks exactly like one
  * that opened. It did, for a while, and nothing on screen said so.
  *
  * `getDatabase()` memoises its promise, so asking here does not start a second backend or a second

@@ -10,8 +10,9 @@ import { StorageStatus } from './StorageStatus.tsx';
  * that nothing is sent anywhere, and where the data is actually kept — are the first and fourth
  * sections rather than a footnote.
  *
- * The header pairs the general claim with the specific one: the sections below describe the two
- * storage backends, and `StorageStatus` says which of them this browser is on.
+ * The header pairs the general claim with the specific one: the sections below describe where a
+ * reader's work is kept and the one case in which this tab cannot reach it, and `StorageStatus`
+ * says which of the three backends is in front of them right now.
  */
 export function SpecTab() {
   return (

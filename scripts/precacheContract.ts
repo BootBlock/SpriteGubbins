@@ -556,20 +556,21 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * rejection now, the handshake carries which of the two it was, and `database.ts` answers the one
  * meaning "your database is next door" with `HeldElsewhereBackend`. Measured against `main` at
  * `e8d99e6`, rebuilt from the same `node_modules` — **2356.06 KiB across 60 entries** — this build
- * reports **2358.58 across 61**, a delta of 2.52 and one new request.
+ * reports **2358.83 across 61**, a delta of 2.77 and one new request.
  *
- * **2.22 of it is machinery and 0.30 is prose**, which inverts the usual split here. The machinery
- * is a third implementation of a nineteen-method interface, the refusal union, the classifier, and
- * `storageFailure` reaching nineteen call sites across five stores — the last of which is what
- * rolldown cut into the new chunk, as the note on `PRECACHE_SHAPES` records. The prose is the
- * Architecture tab's SQLite card: rebuilt with it left as `main` has it, the figure is **2358.28**.
+ * **2.47 of it is machinery and 0.30 is prose**, which inverts the usual split here. The machinery
+ * is a third implementation of an eighteen-method interface, the refusal union, the classifier that
+ * reads it, the handshake guard that now validates it, and `storageFailure` reaching twenty call
+ * sites across six stores — the last of which is what rolldown cut into the new chunk, as the note
+ * on `PRECACHE_SHAPES` records. The prose is the Architecture tab's SQLite card: rebuilt with it
+ * left as `main` has it, the figure is **2358.53**.
  *
- * 2360 leaves **1.42 KiB**, and that is wider than the 0.94 above rather than the same order —
- * stated plainly rather than dressed as a match. The ladder is whole KiB and this build lands 0.58
- * past 2358, so the alternative was 0.42, which would make this the fifth consecutive branch to
- * write down that the margin is the narrowest it has been. Four such notes are enough: the question
- * they defer — whether 2350 was ever the right figure for what a first visit downloads — wants
- * answering by whoever owns this contract, and one KiB of slack is a poor substitute for it.
+ * 2360 leaves **1.17 KiB**, which is wider than the 0.94 above rather than the same order — stated
+ * plainly rather than dressed as a match. The ladder is whole KiB and this build lands 0.83 past
+ * 2358, so the alternative was 0.17, which would make this the fifth consecutive branch to write
+ * down that the margin is the narrowest it has been. Four such notes are enough: the question they
+ * defer — whether 2350 was ever the right figure for what a first visit downloads — wants answering
+ * by whoever owns this contract, and one KiB of slack is a poor substitute for it.
  */
 export const PRECACHE_CEILING_KIB = 2360;
 

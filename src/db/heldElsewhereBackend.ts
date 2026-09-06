@@ -32,9 +32,11 @@ import { parseSettings } from './settingsParser.ts';
  * **`fetchProjects` is the one read that would have written**, and it is the reason the refusal is
  * on the writes rather than on the reads. It answers an empty `listProjects` by *creating* a Default
  * project, which is right on a first visit and is precisely how the second library got started here.
- * The rejection stops it before `set`, so nothing is stored and nothing is shown — the store needs
- * no knowledge of which backend it got, which is the rule `backend.ts` states and the reason this is
- * a third implementation of that interface rather than a flag on one of the others.
+ * The rejection stops it before the `set`, so nothing is stored and no project appears — the store
+ * needs no knowledge of which backend it got, which is the rule `backend.ts` states and the reason
+ * this is a third implementation of that interface rather than a flag on one of the others. Its
+ * `catch` does raise one notification, carrying {@link HELD_ELSEWHERE_REFUSAL}, and that is the
+ * whole of how a reader learns of this on boot rather than by finding an empty panel.
  *
  * The settings are the single exception, and are the app's own defaults rather than nothing: they
  * are what the interface is documented to answer where none are stored, they decide how the page

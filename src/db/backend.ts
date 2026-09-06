@@ -9,9 +9,12 @@ import type { AppSettings } from '../types/settings.ts';
 /**
  * What the rest of the app is allowed to ask of storage.
  *
- * Two implementations satisfy it — SQLite over OPFS, and a localStorage fallback for browsers
- * or hosts where OPFS is unavailable. Everything above this line is written against the
- * interface, so no store or component ever branches on which one it got.
+ * Three implementations satisfy it — SQLite over OPFS, a localStorage fallback for browsers or hosts
+ * where OPFS is unavailable, and one for a tab whose database another tab of the same origin holds
+ * open. Everything above this line is written against the interface, so no store or component ever
+ * branches on which one it got. **The third is what keeps that true**: the alternative to a backend
+ * was a flag the stores would have had to read, and the write that forked a reader's library came
+ * from a store deciding for itself what an empty collection meant. See {@link BackendKind}.
  *
  * Every method is async even where the fallback is synchronous: the SQLite path genuinely is
  * asynchronous, and a caller that only awaits *sometimes* would be a race waiting to happen.

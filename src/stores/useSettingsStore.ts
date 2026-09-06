@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import { getDatabase } from '../db/database.ts';
+import { HELD_ELSEWHERE_REFUSAL } from '../db/heldElsewhereBackend.ts';
+import { isHeldElsewhere } from '../db/storageFailure.ts';
 import type { AppSettings } from '../types/settings.ts';
 import { useUIStore } from './useUIStore.ts';
 
@@ -56,7 +58,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     try {
       await (await getDatabase()).saveSettings(settings);
-    } catch {
+    } catch (error) {
       // The change **stays applied**, which is the opposite of what the preset and history stores do
       // with a refused write — and the difference is what the two are for. A preset that was not
       // stored is a preset the user does not have, so showing it would be a lie. A preference that
@@ -64,7 +66,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // them and works perfectly for this session. Reverting it would undo a click they can see
       // took effect, to enforce a durability they were not promised — so the honest answer is to
       // keep it and say plainly which half failed.
-      useUIStore.getState().showToast('Applied, but that setting could not be saved');
+      //
+      // The reason is composed onto that rather than replacing it, which is why this is the one
+      // caller asking `isHeldElsewhere` instead of taking a sentence from `storageFailure`:
+      // "Applied, but" is the half a reader here most needs, so the refusal follows it.
+      const applied = 'Applied, but that setting could not be saved';
+      useUIStore
+        .getState()
+        .showToast(isHeldElsewhere(error) ? `${applied}. ${HELD_ELSEWHERE_REFUSAL}` : applied);
     }
   },
 }));

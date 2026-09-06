@@ -87,8 +87,13 @@ export const useLibraryTransferStore = create<LibraryTransferState>((set, get) =
       // on screen rather than in a tooltip — `ControlTooltip` cannot be reached by touch at all, so
       // on a phone a warning kept there is one nobody could open.
       set({ pendingImport: imported });
-    } catch (error) {
-      showToast(storageFailure('Could not import that library pack', error));
+    } catch {
+      // Not routed through `storageFailure`, unlike the failure in `confirmLibraryImport` below.
+      // Nothing in this `try` touches storage — it reads the file and parses it — so the only
+      // failures reaching here are a file that would not read and a document that would not parse,
+      // and neither has a cause the app can name. The one that does is the write, which happens
+      // when the reader confirms.
+      showToast('Could not import that library pack');
     } finally {
       set({ isTransferring: false });
     }

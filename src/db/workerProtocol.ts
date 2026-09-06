@@ -89,7 +89,24 @@ export function isWorkerReply(message: unknown): message is WorkerReply {
   return typeof message === 'object' && message !== null && 'id' in message && 'ok' in message;
 }
 
-/** Narrow a message from the worker to the opening handshake. */
+/**
+ * Narrow a message from the worker to the opening handshake.
+ *
+ * **It checks the whole shape, because the shape stopped being one field.** While a handshake was
+ * `{ ready: boolean }`, the presence of `ready` was the whole of it. It is a discriminated union
+ * now, and a guard that still asked only for the key would assert a `refusal` that need not be
+ * there — `openSqliteBackend` reads it straight afterwards, and `database.ts` decides which backend
+ * the reader gets by comparing it. So the refusal is validated against `DATABASE_REFUSALS`, the
+ * array that *defines* the union rather than a list of names copied beside it, which is the shape
+ * `db/configParsers.ts` holds every other stored value to.
+ */
 export function isWorkerHandshake(message: unknown): message is WorkerHandshake {
-  return typeof message === 'object' && message !== null && 'ready' in message;
+  if (typeof message !== 'object' || message === null || !('ready' in message)) return false;
+
+  const { ready } = message as { ready: unknown };
+  if (ready === true) return true;
+  if (ready !== false) return false;
+
+  const { refusal } = message as { refusal?: unknown };
+  return DATABASE_REFUSALS.some((named) => named === refusal);
 }

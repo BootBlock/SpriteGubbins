@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
+import { HELD_ELSEWHERE_REFUSAL, HeldElsewhereBackend } from '../db/heldElsewhereBackend.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
 import { createRefusingStorage } from '../test/storageDoubles.ts';
 import { useSettingsStore } from './useSettingsStore.ts';
@@ -117,5 +118,22 @@ describe('useSettingsStore — changing a preference', () => {
 
     expect(useSettingsStore.getState().settings.accentHue).toBe('azure');
     expect(useUIStore.getState().toastMessage).toMatch(/could not be saved/i);
+    // And nothing more: a refusal with no cause the app can name gets the sentence alone.
+    expect(useUIStore.getState().toastMessage).toBe('Applied, but that setting could not be saved');
+  });
+
+  it('adds the reason where the app is the thing refusing, and keeps the half that still holds', async () => {
+    // This store is the one caller that *composes* rather than substituting, and this is the case
+    // that decides both halves are said. "Applied, but…" is what a reader here most needs — their
+    // accent did change and does work — and the refusal is what tells them why it will not persist
+    // until they close the other tab. Either half alone is a worse answer than the pair.
+    backend = new HeldElsewhereBackend();
+
+    await useSettingsStore.getState().updateSettings({ accentHue: 'azure' });
+
+    expect(useSettingsStore.getState().settings.accentHue).toBe('azure');
+    expect(useUIStore.getState().toastMessage).toBe(
+      `Applied, but that setting could not be saved. ${HELD_ELSEWHERE_REFUSAL}`,
+    );
   });
 });

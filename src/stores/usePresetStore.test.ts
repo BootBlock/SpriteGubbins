@@ -5,6 +5,7 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
+import { HELD_ELSEWHERE_REFUSAL, HeldElsewhereBackend } from '../db/heldElsewhereBackend.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
 import { createRefusingStorage } from '../test/storageDoubles.ts';
 import { DEFAULT_PROJECT_ID } from '../constants/projects.ts';
@@ -198,6 +199,19 @@ describe('saveCustomPreset', () => {
 
     expect(usePresetStore.getState().customPresets).toHaveLength(0);
     expect(useUIStore.getState().toastMessage).toBe('Could not save that preset');
+  });
+
+  it('says why, where the app is the thing refusing rather than storage failing', async () => {
+    // The half of the second-tab fix a reader actually meets. `Could not save that preset` is right
+    // for a cause nobody can name — the case above — and wrong here, where every write will fail
+    // until they close the other tab, and a reader told only that tries again and concludes the app
+    // is broken. Asserted through the store rather than through `storageFailure` alone, because the
+    // helper being correct says nothing about whether its answer reaches a notification.
+    backend = new HeldElsewhereBackend();
+    await usePresetStore.getState().saveCustomPreset('Doomed', '', DEFAULT_PROJECT_ID);
+
+    expect(usePresetStore.getState().customPresets).toHaveLength(0);
+    expect(useUIStore.getState().toastMessage).toBe(HELD_ELSEWHERE_REFUSAL);
   });
 
   /*
