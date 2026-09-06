@@ -1,7 +1,5 @@
-import { relative, sep } from 'node:path';
-import * as ts from 'typescript';
 import { describe, expect, it } from 'vitest';
-import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
+import { callSitesPassing } from './jsxCallSites.ts';
 
 /**
  * The call-site counts `SelectField`’s docblock states, re-counted from the components themselves.
@@ -53,65 +51,26 @@ const DISABLED_REASON_CALL_SITES = ['src/components/studio/RiggingFields.tsx'];
 /**
  * The files that render a `<SelectField>` passing `attribute`, one entry per call site.
  *
- * Parsed with the compiler rather than matched, for the reason `interface-punctuation.test.ts`
- * parses rather than matching: a JSX opening tag cannot be delimited by hand. Its attribute values
- * are arbitrary expressions, so the `>` that closes the tag is indistinguishable from the `>` of a
- * nested element, a comparison or an arrow — and a scanner that balances brackets and skips string
- * literals still runs to the end of the file the moment an apostrophe appears in a line comment
- * between two attributes, which two of these thirty call sites have.
- *
- * That failure is silent and answers *almost* right, which is what makes it worth naming: the
- * over-long slice swallows whatever follows the tag, so it reports the true figure until the day a
- * second select downstream of the comment starts passing the same prop, and then counts that one
- * twice. Reading the attributes off the parsed node also settles the half no slice can —
- * `TargetModelSelector` passes an `action` holding an element of its own, and only the compiler
- * knows that child’s attributes belong to the child.
+ * The walk is `jsxCallSites.ts`'s, shared with the suite that re-counts `ControlTooltip`'s two
+ * figures, and its docblock says why a call site has to be parsed rather than matched. This suite
+ * asks only for the file, since that is what the two exception lists below are written as.
  */
-function callSitesPassing(attribute: string): string[] {
-  const found: string[] = [];
-
-  for (const path of scannableSources()) {
-    if (!path.endsWith('.tsx') || path.includes('.test.')) continue;
-
-    const source = sourceText(path);
-    if (!source.includes('<SelectField')) continue;
-
-    const file = relative(process.cwd(), path).split(sep).join('/');
-    const tree = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-
-    const visit = (node: ts.Node): void => {
-      if (
-        (ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) &&
-        node.tagName.getText(tree) === 'SelectField' &&
-        node.attributes.properties.some(
-          (property) =>
-            ts.isJsxAttribute(property) && ts.isIdentifier(property.name) && property.name.text === attribute,
-        )
-      ) {
-        found.push(file);
-      }
-
-      ts.forEachChild(node, visit);
-    };
-
-    visit(tree);
-  }
-
-  return found.sort();
+function filesPassing(attribute: string): string[] {
+  return callSitesPassing('SelectField', attribute).map((site) => site.file);
 }
 
 describe('the call-site counts SelectField’s docblock states', () => {
   it(`renders ${String(CALL_SITE_COUNT)} selects`, () => {
     // Counted through `label`, which the props type requires, so this is every call site rather
     // than every one that happens to pass an optional prop.
-    expect(callSitesPassing('label')).toHaveLength(CALL_SITE_COUNT);
+    expect(filesPassing('label')).toHaveLength(CALL_SITE_COUNT);
   });
 
   it(`passes a description at ${String(DESCRIPTION_CALL_SITES.length)} of them`, () => {
-    expect(callSitesPassing('description')).toEqual(DESCRIPTION_CALL_SITES);
+    expect(filesPassing('description')).toEqual(DESCRIPTION_CALL_SITES);
   });
 
   it(`passes a disabledReason at ${String(DISABLED_REASON_CALL_SITES.length)} of them`, () => {
-    expect(callSitesPassing('disabledReason')).toEqual(DISABLED_REASON_CALL_SITES);
+    expect(filesPassing('disabledReason')).toEqual(DISABLED_REASON_CALL_SITES);
   });
 });

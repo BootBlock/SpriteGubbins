@@ -34,8 +34,9 @@ import type { RenderStyle, RenderStyleSurface } from '../../types/rendering.ts';
  * record's job is to say something about *edges* that a style either does or does not assert.
  *
  * **The statement is the positive half, and it is what Flux actually reads.** Section 2's `Style:`
- * line lands around token 1,070 of a compiled prompt, past the ceiling the Flux wrapper is written
- * around, so the wrapper is where this sheet's style has to be stated for that target — which makes
+ * line lands past **twice** the 512-token ceiling the Flux wrapper is written around, in every
+ * category the app offers, so the wrapper is where this sheet's style has to be stated for that
+ * target — which makes
  * the statement a restatement of section 2's own words rather than a second description of the
  * style. Nothing else consumes it today; that is a fact about the other wrappers' channels, not a
  * reason to leave it out of one.

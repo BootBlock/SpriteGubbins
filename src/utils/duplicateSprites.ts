@@ -87,9 +87,10 @@ export function duplicateSprites(
 ): readonly SpriteDuplicateGroup[] {
   // Rooted at the lowest index, so a group's root is the earliest of its sprites in the list and
   // the canonical below needs no second pass to find. That is reading order in the only way this is
-  // ever called — `spriteSegments` returns its boxes topmost-first — and it is a property of the
-  // list rather than one re-derived from coordinates here, so the two cannot disagree about which
-  // sprite a group is named after. See `disjointSet`.
+  // ever called — `spriteSegments` returns its boxes in the order section 4 of the prompt fixes,
+  // screen-left to screen-right and then top to bottom — and it is a property of the list rather
+  // than one re-derived from coordinates here, so the two cannot disagree about which sprite a group
+  // is named after. See `disjointSet`.
   const { find, union } = disjointSet(boxes.length);
 
   // Which byte-identical class each sprite belongs to, as the index of that class's first member.

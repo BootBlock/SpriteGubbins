@@ -3,8 +3,29 @@ import type { CategoryAssembly } from '../../types/subject.ts';
 
 /**
  * Qwen-Image, which earns a negative block where Flux cannot take one: Alibaba document
- * `negative_prompt` as a parameter of the image API, describing "content you do not want to appear
- * in the image".
+ * `negative_prompt` as a parameter of the image API, as "The negative prompt that describes content
+ * you do not want to appear in the image."
+ *
+ * **That sentence is on the 3.0-series reference, and citing it is the correction this file needed.**
+ * It stood here quoted and uncited, and the page it reads as though it came from — the `qwen-image-api`
+ * reference — is not the one that covers this target. That page's own model overview says of
+ * `qwen-image-3.0-pro` and `qwen-image-3.0`: "For 3.0 series API calls, see Qwen Image Generation and
+ * Editing 3.0", and its wording for the parameter is different ("A negative prompt describing what
+ * you do not want in the image", with a 500-character cap). The 3.0 reference carries the quotation
+ * above verbatim and states no length for it at all, so the cap belongs to the older series and is
+ * not a figure this block can be measured against.
+ * https://help.aliyun.com/en/model-studio/qwen-image-generation-and-editing-api-reference
+ *
+ * **What Alibaba document is a request parameter, and this app has one text channel — so the block
+ * is labelled with the parameter's own name.** It used to be emitted under the prose heading
+ * `Negative prompt:`, which is an Automatic1111 front-end convention rather than anything Alibaba
+ * publish, and nothing in their documentation parses a line of that shape inside `text`. On a
+ * text-to-image model that is the worst place for it: the block would be read as part of the
+ * positive prompt, listing the very things the sheet must not contain. Emitting `negative_prompt:`
+ * names the documented field exactly, so a reader on the API knows which parameter the block belongs
+ * in and a reader on a chat surface can see it is not prose the model should draw. The wrapper cannot
+ * put it in a separate field, because the app composes prompt *text* and makes no API call — naming
+ * the field is the whole of what a text channel can do about that.
  *
  * **Unweighted, unlike Stable Diffusion's.** The `(term:1.3)` syntax is an Automatic1111/compel
  * convention those front-ends parse before the model ever sees it, not something Qwen's API defines
@@ -53,5 +74,5 @@ export function wrapForQwen(
   ];
   return `${prompt}
 
-Negative prompt: ${negatives.join(', ')}.`;
+negative_prompt: ${negatives.join(', ')}.`;
 }

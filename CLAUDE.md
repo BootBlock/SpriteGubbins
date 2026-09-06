@@ -930,11 +930,14 @@ questions a prompt tool raises are "does this end up in the text I paste?".
   take a `tooltip` prop and there is nothing to wire up.
 - **Anything that *does* something takes `ControlTooltip`**, which hangs the same glass card off the
   control itself and shows it on hover or keyboard focus. Actions, navigation, confirmations,
-  choosers — around fifty of them, and **an ⓘ beside each would be fifty more glyphs in rows that
-  are already full**, in a header that wraps on a phone and card footers three buttons wide.
+  choosers — seventy-nine of them, and **an ⓘ beside each would be seventy-nine more glyphs in rows
+  that are already full**, in a header that wraps on a phone and card footers three buttons wide.
   Hovering a control is what a tooltip has always meant; that is the trigger, and the card is the
   same card. `FilePickerField` is on this side of the line and not the one above: it is a button
-  that opens a file dialog, not a box holding a value.
+  that opens a file dialog, not a box holding a value. That figure is
+  [tests/control-tooltip-call-site-counts.test.ts](tests/control-tooltip-call-site-counts.test.ts)'s
+  to keep true: it said fifty here and in the component for as long as nothing recomputed it, which
+  is a live argument resting on a false premise rather than a stale number beside a live one.
 
 **That line is load-bearing, not tidiness.** `ControlTooltip` reveals on focus only when
 `:focus-visible` matches, because a press focuses what it lands on and an unconditional reveal would
