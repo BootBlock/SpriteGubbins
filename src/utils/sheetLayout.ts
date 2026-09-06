@@ -21,7 +21,14 @@ import { spriteRows } from './spriteRows.ts';
  *   The rows come from there rather than from a copy kept here, because the same banding is what
  *   puts the manifest's sprites in reading order and the two files must not name a sprite
  *   differently.
- * - **The canvas is the largest sprite**, since one canvas has to seat every frame.
+ * - **The canvas is one sprite wide and one row deep**, since it has to seat every frame. Those are
+ *   two different rules, and only the width is the largest sprite: a frame keeps its offset within
+ *   its own row, so the canvas has to be as deep as the deepest **band** a row occupies — the top of
+ *   its highest box to the bottom of its lowest — which exceeds the tallest single sprite whenever a
+ *   row holds sprites at differing vertical offsets. That is most real sheets, because `spriteRows`
+ *   groups by vertical overlap rather than by a shared top edge. The computation below states the
+ *   rule once and this bullet cites it, rather than the two saying it independently and drifting
+ *   apart again (issue #265, where this bullet claimed the largest sprite on both axes).
  *
  * **What the placement keeps, and what it cannot.** A sprite's vertical position within its strip is
  * *alignment*: a walk cycle that bobs is drawn bobbing, and preserving `top` relative to the strip's
@@ -87,8 +94,9 @@ export function sheetLayout(image: ImageData, boxes: readonly SpriteBox[]): Shee
     (widest, row) => row.boxes.reduce((seen, box) => Math.max(seen, box.width), widest),
     1,
   );
-  // The tallest band any row occupies: a frame keeps its offset within its own row, so the canvas
-  // has to be tall enough for the deepest of them rather than for the tallest single sprite.
+  // The tallest band any row occupies, which is the rule the third bullet above cites: a frame keeps
+  // its offset within its own row, so the canvas has to be tall enough for the deepest of them
+  // rather than for the tallest single sprite.
   const height = rows.reduce((tallest, row) => Math.max(tallest, row.bottom - row.top), 1);
 
   const frames: SheetFrame[] = [];

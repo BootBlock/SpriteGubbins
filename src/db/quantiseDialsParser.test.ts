@@ -136,7 +136,7 @@ describe('parseQuantiseDials', () => {
     const parsed = parseQuantiseDials({ ...STORED, inkThreshold: 'quite dark' });
 
     expect(parsed.inkThreshold).toBe(QUANTISE_DEFAULT_DIALS.inkThreshold);
-    // The other nineteen survive: a preset with one unreadable dial is still the preset the reader
+    // Every other dial survives: a preset with one unreadable dial is still the preset the reader
     // saved in every other respect.
     expect(parsed).toEqual({ ...STORED, inkThreshold: QUANTISE_DEFAULT_DIALS.inkThreshold });
   });
