@@ -4,6 +4,8 @@
 >
 > Both departures this banner used to record are closed, each in the direction that made the two agree. §6's tile list was two short of the "sixteen" its own prose claimed, so it now names the wall-face inner corners it was missing and the implementation follows at **16**. `CUSTOM` has been **removed** from §2's `DIRECTIONS` table rather than built, so the table matches the code. §10's follow-up list is closed too: four of its five items shipped, and §10.3 shipped by a route it did not name — its palette line *is* read from an accepted sheet, on-device, while the prose half was removed **as that item framed it**, because describing what a sheet depicts needs an outbound vision-model call this app does not make. The studio derives those lines from the subject definition instead, which needs no image at all. Each item records its outcome in place.
 >
+> §2's subject line is corrected for the reason those two tables were, and in the direction that stops it needing correcting again. It said "the sixteen `SUBJECT_FIELD_KEYS` across all five categories", which was true of the app this document was written against; `SUBJECT_CATEGORIES` has held **thirteen** since, and the sixteen keys are a figure the sentence never needed. It now states the relationship — every key, in every category — so a fourteenth category and a seventeenth key both leave it true. Restating the corrected figures here was the obvious alternative and is the same defect one banner down: this paragraph would then be a fourth place the category count is written by hand, and it would go stale on the same commit §2 did.
+>
 > The flag §1 and §4 call `EMIT_COMPONENT_MAP` was named `EMIT_MANIFEST` when this document was written, and §6 and §7 still argue for it under that name. It was renamed by [issue #118](https://github.com/BootBlock/SpriteGubbins/issues/118), which found that the document the prompt asked for and the manifest the Quantise tab downloads were two unrelated formats sharing one word. Only the two tables are corrected here, for the reason §2's `DIRECTIONS` table was — they describe the surface the compiler offers, so a reader consults them for a flag name. §6 and §7 are records of why the capability exists and are left as they were written.
 >
 > §3 is revised in place — it is a mirror of what the compiler emits, so it tracks the code rather than recording a moment, and it is now **pinned by [tests/prompt-template-mirror.test.ts](../../tests/prompt-template-mirror.test.ts)**, which compares the fence against `PROMPT_TEMPLATE` character for character. It needed to be, because a banner asserting §3 is current is worth nothing while nothing checks it — and checking showed the two had **never** agreed. They diverged the moment the template was transcribed into code: blank lines placed differently around the `[IF:…]` markers, and, in §5, a `---` sitting outside a `[/IF]` where the code puts it inside, which is a rule an unrigged sheet emits twice in the document's version and once in the app's. Then the document fell further behind twice — the category system (§0's guard paragraph, the precedence sentence rewritten so the category comparison settles *before* precedence applies, and `[DEFINE:CATEGORY_GUARD]`, `[DEFINE:CATEGORY_EXCLUSIONS]` and `[DEFINE:CATEGORY_AUDIT]` in §4, §8 and §9), and the `[IF:DELIBERATES]` gating of the self-audit, which §3 described in an italic aside citing a `GOOGLE_IMAGEN` target §7 has since removed. All of it is closed against the constant, and the aside is gone: an editorial annotation cannot survive inside a block that is checked verbatim, and §7 already carries what it said. Its earlier revisions, which the mirror did carry: the camera-versus-object-orientation rewrite recorded in **§8's "Found after shipping"**, which is where the reasoning for it lives, and a rewording of §2's `THREE_QUARTER_TOPDOWN` row, whose "the front of forms are visible" was false for any component turned away from the camera.
@@ -99,8 +101,7 @@ Everything the application exposes today is retained. **NEW** marks additions.
 
 ### Subject — unchanged
 
-The sixteen `SUBJECT_FIELD_KEYS` across all five categories, plus `CATEGORY`. All become
-`[OPTIONAL:…]`.
+Every `SUBJECT_FIELD_KEYS` entry, in every category, plus `CATEGORY`. All become `[OPTIONAL:…]`.
 
 `ADDITIONAL_ANATOMY` is the one that is more than a line of text. §1 of the template declares such
 anatomy to be *separate pieces*, while §0 demands exactly N components and §4 lists exactly N — so
@@ -1690,6 +1691,24 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > reading it as the hosted tier's is this app's own inference — a sound one, because the 512 rules
 > the weights out, but an inference rather than a quotation.
 
+> **Re-checked by [issue #232](https://github.com/BootBlock/SpriteGubbins/issues/232) — "advises no
+> open weight anywhere" is no longer true of Black Forest Labs' documentation.** The note above is
+> left as it was written, per the rule against rewriting a plan's history; this is where it is
+> reconciled. Fetched as Markdown source on 2026-09-06, they publish a second, family-scoped
+> [FLUX Prompting Guide](https://docs.bfl.ai/guides/prompting_summary) which states that it "covers
+> prompting for the entire FLUX model family — FLUX.1, FLUX.1 Kontext and FLUX.2". Its
+> [Technical Parameters](https://docs.bfl.ai/guides/prompting_unified_technical) page carries a
+> section headed *Working Without Negative Prompts* opening "Most FLUX models do not support
+> negative prompts", and addresses an open weight by name: "On FLUX.2 \[klein], what you write is
+> what you get — be descriptive."
+>
+> **The conclusion the note reaches still holds, and only its argument was wrong.** "Most FLUX
+> models" is a hedge rather than a statement about a named model, so it does not settle \[dev] and
+> \[klein] — the reference implementation is still what does, and the two tiers are still argued
+> apart. The 32K figure is also now stated in that guide's *Prompt length* tip ("FLUX.2 supports
+> prompts up to 32K tokens"), just as unscoped, so the inference above is unchanged and only its
+> better citation is new.
+
 > **Two targets added: `QWEN_IMAGE` and `SEEDREAM`.** Both were checked for currency *first*, which
 > is the habit the Flux and Midjourney findings above earned. That check immediately changed one of
 > them: the obvious Seedream entry was 4.5, and 4.5 is superseded — 5.0 Lite shipped February 2026
@@ -1716,6 +1735,31 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > specific rather than decorative: ByteDance document that overloaded briefs drop instructions, and
 > a model that drops by *choice* can be told what to drop, where a truncating encoder cuts by
 > position and cannot.
+
+> **Corrected after shipping — Qwen's negative block was emitted through a channel Alibaba do not
+> document, and the emitted text changed** ([issue #153](https://github.com/BootBlock/SpriteGubbins/issues/153)).
+> The note above is right that Alibaba document `negative_prompt` as a parameter, and that is exactly
+> the problem: a **parameter** is what they document, and this wrapper was writing the block into the
+> prompt body under the prose heading `Negative prompt:` — an Automatic1111 front-end convention
+> borrowed from the Stable Diffusion wrapper, which nothing Alibaba publish parses inside `text`. On a
+> text-to-image model that is the worst place for it, because the block is then read as part of the
+> positive prompt and lists the very things the sheet must not contain.
+>
+> The wrapper now emits **`negative_prompt:`**, the documented field's own name, so a reader on the
+> API knows which parameter it belongs in and a reader on the chat surface can see it is not prose to
+> be drawn. It cannot be put in a separate field, because this app composes prompt text and makes no
+> API call — naming the field is the whole of what a text channel can do about that. **This is the one
+> change in that round that altered emitted prompt text**; the Midjourney and citation corrections
+> beside it changed none.
+>
+> Two record claims went with it. The entry said Qwen Chat is "the only place a reader can use it at
+> all" because the release carried no API — Alibaba publish a
+> [3.0-series API reference](https://help.aliyun.com/en/model-studio/qwen-image-generation-and-editing-api-reference)
+> documenting `qwen-image-3.0-pro` and `qwen-image-3.0` as callable. And it said that reference
+> "states no length for either `text` or `negative_prompt`" — it gives `text` as "Recommended maximum:
+> 4,500 tokens", and states none for `negative_prompt`. The 500-character cap and the different
+> wording belong to the 2.0-series page, whose own model overview sends 3.0 callers away, which is
+> also why its "Other models accept up to 800 tokens" never bore on the 4.5K ceiling.
 
 > **Corrected by [issue #157](https://github.com/BootBlock/SpriteGubbins/issues/157) — three claims
 > above are cited to pages that do not carry them, or to nothing.** The record stands as it was
@@ -1911,6 +1955,53 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > `CLAY_RENDER` it says nothing. §0's uniform key field is stated in the prompt body, which
 > Midjourney reads in full, and the `--no` list was never what carried it. No compiled prompt
 > changed.
+
+> **Re-checked after shipping — the reopening condition above was met, and it settled the decision
+> rather than reversing it** (issue #152). The condition the note states is "that evidence arriving
+> as a page current for the pinned version". It has, and it points the other way from what the note
+> expected. The
+> [Version](https://docs.midjourney.com/hc/en-us/articles/32199405667853-Version) page's
+> feature-compatibility chart carries a **Multi-Prompting** row whose V8.1 & V8.2 column — the one
+> holding the pinned `--v 8.2` — is a no-symbol icon, against a check under V6; its **No Parameter**
+> row is a check under all three. So multi-prompting is documented as unavailable on the pinned
+> version, and the whole `-0.5` substitution that the read-whole inference runs through describes a
+> mechanism this version does not have. The note above records the weaker finding — that `::` as the
+> divider was "only on the multi-prompt page" — because it was written from the `--no` and
+> multi-prompt pages without the one page that says what the pinned version supports.
+>
+> Midjourney's current pages disagree with each other here: the `--no` page is current for V8.2 and
+> carries the `-0.5` equivalence in its own More Information section, the multi-prompt page scopes
+> itself to versions up to 6.1, and the chart marks the feature absent. Nothing current states how
+> V8.2's renderer reads a multi-word entry, so the wrapper records the contradiction rather than
+> resolving it. **The word-level ban is therefore no longer precautionary — it is the only reading
+> the vendor's current pages support** — and it becomes the standing rule for the whole list rather
+> than a hedge on one entry. The decision and the emitted list are unchanged, and no compiled prompt
+> changed; what changed is that the argument no longer rests on a hedge.
+
+> **Corrected after shipping — the `--style raw` history above was not on the page cited for it**
+> (issue #152). The note two sections up says Midjourney "renamed it with V8, so `--style raw` is
+> V7-and-earlier syntax". The
+> [Raw](https://docs.midjourney.com/hc/en-us/articles/32634113811853-Raw) page states no rename and
+> never spells that older form. Swept over all 105 help-centre articles, the only page spelling it is
+> [Legacy Features](https://docs.midjourney.com/hc/en-us/articles/33329788681101-Legacy-Features),
+> whose parameter-compatibility table gives a **Style** row reading `raw` against **V5 and V6** —
+> not V7. So the correction the note records was right about the *flag* and wrong about its history
+> and its source. Both statements are left where they are, per the rule against rewriting a plan's
+> history; this is where they are reconciled. The emitted `--raw` is unchanged and is now cited to
+> the Raw page and the
+> [Parameter List](https://docs.midjourney.com/hc/en-us/articles/32859204029709-Parameter-List),
+> which both give it, and to the Version chart, which marks Raw supported under V8.1 and V8.2.
+
+> **Cited after shipping — `--ar` and `--s` carried no source at all** (issue #156). Both flags are
+> emitted on every Midjourney prompt and neither the wrapper nor `constants/models.ts` linked the
+> page documenting it, while the two contentious flags beside them carried three citations between
+> them. They are vendor-supported and this was a citation gap rather than a behaviour defect:
+> [Aspect Ratio](https://docs.midjourney.com/hc/en-us/articles/31894244298125-Aspect-Ratio) gives
+> `--ar #:#` and "--ar cannot contain decimals", the Version chart puts the maximum at 14:1 (4:1 for
+> HD) on the pinned version, and
+> [Stylize](https://docs.midjourney.com/hc/en-us/articles/32196176868109-Stylize) states that "The
+> default value for stylize is 100, and you can adjust it anywhere between 0 and 1000 with the latest
+> Midjourney versions", which puts the emitted `--s 50` inside the range. No compiled prompt changed.
 
 > **Corrected after shipping — that separate change, and the last fixed string in the three
 > channels.** `(assembled character:1.3), (posed figure:1.3)` opened SD's block, `assembled

@@ -406,14 +406,49 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * to those. `ProjectsTab` and `useProjectStore` are the two that are genuinely new. The margin is
  * left at the same order as every raise above rather than widened.
  *
- * **Raised from 2350 by the two accessibility hooks and the names they gave the app's repeated
- * controls.** `useConfirmInPlace` holds the three edges at which a two-press confirmation used to
- * drop the keyboard to `<body>`, and `useScrollableRegion` holds the rule that a keyboard-scrollable
- * box is named and given a role — lifted out of `PanViewport`, which had the only correct copy of
- * it. Beside them, every row of the preset library, the split drawer and the history drawer now
- * names the thing it acts on, which is a template string per control rather than a shared literal.
- * Measured against the build immediately before it, from the same `node_modules` — **2348.81 KiB
- * across 60 entries** — this build reports **2352.05 across 63**, a delta of 3.24.
+ * **Raised from 2350 by 2 KiB, and no single change is what spent it — the *combination* is.** Four
+ * builds from the same `node_modules` say it, and the fourth is the only one that fails:
+ *
+ * | Build | Precache | Entries |
+ * | --- | --- | --- |
+ * | `2074844`, the tip both branches left | 2349.68 KiB | 60 |
+ * | `main` at `c0e426a` | 2349.98 | 60 |
+ * | the assembly-base guidance change alone | 2349.98 | 60 |
+ * | the two merged | **2351.14** | 60 |
+ *
+ * Each half adds 0.30 KiB and passes on its own; together they add 1.46, because the last 0.86 is
+ * rolldown re-partitioning the split around the modules both touched rather than any file either
+ * branch wrote. **That is the case CLAUDE.md names as the one a local gate cannot see** — several
+ * agents merge into `main`, and the combination that lands is one nobody ran anything against. It is
+ * also what a 0.02 KiB margin buys: `main` had been sitting that far under the ceiling, so the next
+ * branch to land anything at all was going to be the one that paid for it.
+ *
+ * **The guidance change's own 0.30 KiB is prose**, which is the cost this repository's guidance rule
+ * imposes: three cards told the reader the *Assembly Base* field decides how the sheet is broken
+ * into components, which nothing in the compiler does, so the true statement is written once in
+ * `constants/guidanceSentences.ts` and carried by all thirteen, five of those cards were rewritten,
+ * and TERRAIN's *Scatter Layer* card and its sheet plan each gained a sentence. No chunk was added
+ * and none renamed, on any of the four builds.
+ *
+ * 2352 leaves **0.86 KiB**, which is the order of the 0.82 the `isTextEntry` note above calls the
+ * narrowest this margin has been. It is deliberately not more: the question of whether 2350 was
+ * still the right figure for what a first visit downloads is one this change is not placed to
+ * answer, and widening the margin would only postpone it further.
+ *
+ * **Raised once more, from 2352, by the two accessibility hooks and the names they gave the app's
+ * repeated controls.** `useConfirmInPlace` holds the three edges at which a two-press confirmation
+ * used to drop the keyboard to `<body>`, and `useScrollableRegion` holds the rule that a
+ * keyboard-scrollable box is named and given a role — lifted out of `PanViewport`, which had the
+ * only correct copy of it. Beside them, every row of the preset library, the split drawer and the
+ * history drawer now names the thing it acts on, which is a template string per control rather than
+ * a shared literal.
+ *
+ * **The delta is the same on both bases, which is worth stating because the paragraph above is about
+ * a combination that was not.** Measured on the tip this branch left (`2074844`), from the same
+ * `node_modules`, the precache goes from **2348.81 KiB across 60 entries** to **2352.05 across 63**;
+ * merged with the raise above, whose own merged figure is 2351.14, the build reports **2354.38**.
+ * Both deltas are 3.24 to the hundredth, so rolldown re-partitioned nothing across the merge and
+ * this raise is buying exactly what this branch wrote.
  *
  * **All three `+` lines are genuinely new files, and one of them is not new code.**
  * `useConfirmInPlace` and `useScrollableRegion` are each reached from a lazily-loaded overlay *and*
@@ -421,7 +456,12 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * `assets/react-dom-*.js` is the third and is the one worth reading twice: `flushSync` puts
  * `react-dom` on that shared boundary, so the module the entry chunk already carried is now a chunk
  * of its own. A first visit downloads the same bytes; what changed is that they arrive in three more
- * requests. The margin is left at the same order as every raise above rather than widened.
+ * requests.
+ *
+ * 2356 leaves **1.62 KiB**, the order of the 0.86 the paragraph above leaves and the 0.82 the
+ * `isTextEntry` note calls the narrowest. It is deliberately not more, for that paragraph's reason:
+ * whether 2350 was still the right figure for what a first visit downloads is a question neither
+ * change is placed to answer, and widening the margin only postpones it.
  */
 export const PRECACHE_CEILING_KIB = 2356;
 

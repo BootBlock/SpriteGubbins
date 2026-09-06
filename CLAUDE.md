@@ -882,11 +882,14 @@ questions a prompt tool raises are "does this end up in the text I paste?".
   take a `tooltip` prop and there is nothing to wire up.
 - **Anything that *does* something takes `ControlTooltip`**, which hangs the same glass card off the
   control itself and shows it on hover or keyboard focus. Actions, navigation, confirmations,
-  choosers — around fifty of them, and **an ⓘ beside each would be fifty more glyphs in rows that
-  are already full**, in a header that wraps on a phone and card footers three buttons wide.
+  choosers — seventy-nine of them, and **an ⓘ beside each would be seventy-nine more glyphs in rows
+  that are already full**, in a header that wraps on a phone and card footers three buttons wide.
   Hovering a control is what a tooltip has always meant; that is the trigger, and the card is the
   same card. `FilePickerField` is on this side of the line and not the one above: it is a button
-  that opens a file dialog, not a box holding a value.
+  that opens a file dialog, not a box holding a value. That figure is
+  [tests/control-tooltip-call-site-counts.test.ts](tests/control-tooltip-call-site-counts.test.ts)'s
+  to keep true: it said fifty here and in the component for as long as nothing recomputed it, which
+  is a live argument resting on a false premise rather than a stale number beside a live one.
 
 **That line is load-bearing, not tidiness.** `ControlTooltip` reveals on focus only when
 `:focus-visible` matches, because a press focuses what it lands on and an unconditional reveal would
@@ -1094,28 +1097,68 @@ below was bought with one of those.
   name views section 3 does not list; anatomy appears only on the sheet that counts it. When adding
   a rule, grep for the sections that state its neighbours and check the pair under every category
   and every direction set — `sheetPlans.test.ts` and `componentSet.test.ts` walk all of them.
+  **An option pool can state the disagreement on its own**, which is the half `exclusionElements.ts`
+  cannot see: it pairs a ban against an *attribute* another field asks for, and never against a
+  component section 4 orders. CHARACTER offered `No hands, no torso below the collarbone, no dialogue
+  frame, no text` — a portrait's ban, left behind when PORTRAIT became its own category a fortnight
+  later — while five of its six plans order a torso and three order hands, which between them is
+  every sheet it can compile.
+  [tests/exclusion-component-bans.test.ts](tests/exclusion-component-bans.test.ts) reads each
+  comma-separated clause as a *bare* noun phrase, so `no hands` is caught and the five qualified bans
+  (`No weapon fire or tracer effects` bans the discharge, not the gun) are left alone with no
+  exemption list at all.
+- **An *Assembly Base* is a statement to the generator, never an instruction to the compiler.** All
+  thirteen categories have one — *Anatomy Base*, *Structure Base*, *Tile Assembly Base* — and
+  `subject.anatomy` reaches section 1 and the identity-lock digest and nothing else, because a plan
+  that reshaped around it would be the only one in `sheetPlans/` that was a function of the subject
+  (`sheetPlans/portrait.ts` argues it). Three cards said the opposite and stated figures to prove it:
+  CHARACTER's “the default 9 core and 34 limb components” is the `THREE_CLASSIC` number where the
+  studio's default set gives 15, CREATURE's promised the field decides how many legs get their own
+  slots while `Amorphous — No Fixed Limbs` still ordered four, and OBJECT's said `Single Rigid Object`
+  emits one piece where it compiles to 30, 14 and 7. The fact is now written once as
+  `ASSEMBLY_BASE_ADDS_NO_COMPONENTS` in `constants/guidanceSentences.ts` and carried by all thirteen,
+  and [tests/anatomy-base-inventory.test.ts](tests/anatomy-base-inventory.test.ts) compiles every
+  value at every address and fails on any two sections 4 that differ — the truth check
+  `tooltips.test.ts` cannot make, since it reads a card's shape and never its claims.
 - **A plan entry is unconditional, so an option pool that offers an absence has to be declared.** A
   sheet plan is addressed by category, mode, direction set and sheet index and never by the subject,
   which is right while a pool describes *which kind* of a thing the sheet always draws and wrong the
   moment it also offers *no thing at all*: section 1 stated `Armour & Cladding: Bare Unclad Frame`
   while section 4 ordered a cladding panel and closed by forbidding the generator to omit an entry.
   A pool offering such a value names it as its `absentOption`, and `planAsDrawn` in
-  `utils/sheetPlanClothing.ts` takes the entries marked `drawsClothing: 'entirely'` out of the plan
+  `utils/sheetPlanClothing.ts` takes the entries `entryNeedsClothing` recognises out of the plan
   before the count, the inventory prose, the manifest's slot names or section 1's exception sentence
   walk it. **The test of whether a pool may declare one is whether the reader who declines gets a
   *plainer* sheet or an *incomplete* one**, and three things follow from it.
-  **An entry that draws the attribute among other things is `'partly'` and cannot be dropped**, so a
-  category declaring an `absentOption` may carry none — split the line instead, as VEHICLE's rig
-  fittings were. **No other field of that category may name a component the value deletes**, or the
-  contradiction simply moves: INTERFACE's *Slice Assembly Base* offers
+  **An entry that draws the attribute among other things is `'DRAWS_IT_PARTLY'` and cannot be
+  dropped**, so a category declaring an `absentOption` may carry none — split the line instead, as
+  VEHICLE's rig fittings were. **No other field of that category may name a component the value
+  deletes**, or the contradiction simply moves: INTERFACE's *Slice Assembly Base* offers
   `Nine-Slice With Fixed Corner Ornament` while its `Plain Untrimmed Edge` deleted the ornament, on
   an untouched default. And **where the sheet draws the thing regardless, the pool is what gives** —
   ICON's plans draw a disabled veil, a highlight halo and four tier marks whatever the reader picks,
   so its `No Overlay` went rather than thirteen of twenty-eight components, and INTERFACE's
-  `Plain Untrimmed Edge` went for the same reason. That is why only two pools drop anything today,
+  `Plain Untrimmed Edge` went for the same reason. That is why only three pools drop anything today,
   and why BACKGROUND may do it on its own default: a clear scene without the atmosphere layer is the
   plainer sheet, and *Extra Layers* is the route back for a reader who wants the wisps as sprites.
   `sheetPlanClothing.test.ts` holds all three.
+
+  **An entry can be on the sheet *because of* the attribute without drawing it, and that is the third
+  role rather than a fourth mechanism.** TERRAIN's scatter layer is paint — pebbles and tufts on the
+  tiles, never a decal laid over them — so section 1 must go on saying so; but seven of the blend
+  set's tiles are its two primaries redrawn, differing in that scatter *and in nothing else*, and a
+  reader who picked `Bare Untouched Ground` was handed seven tiles ordered to differ in a property
+  section 1 had just denied. `ComponentEntry.clothingRole` is one value answering both questions
+  — does section 1 except the attribute, and does the entry survive a reader who declines it — so
+  `'VARIES_IN_IT'` drops without excepting, where a pair of flags would be free to disagree. The
+  variants are their own group, because `planAsDrawn` takes an emptied group out and that is what
+  carries away the intro explaining them. What is left is the two primaries and the fourteen
+  transitions, which is the sixteen an autotiler indexes — the plainer sheet, exactly as the test
+  above asks. **Nothing asserted that a declared `absentOption` reached the plan it was declared
+  against**, which is how the declaration sat inert on TERRAIN's two plans; `sheetPlanClothing.test.ts`
+  now compiles each declining subject and fails on any entry the drawn plan still orders that names
+  the field's own label, reading the entries alone so a group's prose may go on reasoning about the
+  absence as EFFECT's residue outro does.
 - **Respect the ceiling and the reader.** `PRACTICAL_COMPONENT_CEILING` (43) bounds one generation;
   a multi-view sheet carries at most five views, and the eight-compass core splits into cardinals
   and diagonals (`coreFacingChunks`) because eight adjacent yaws on one page is exactly what a

@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -179,7 +179,8 @@ export const TERRAIN: CategoryDefinition = {
       key: 'anatomy',
       label: 'Tile Assembly Base',
       tooltip:
-        'How an autotiler is meant to index the set. Choose by how the pieces will be *placed* — a corner-matched set blends two materials in any arrangement, a nine-patch frames one rectangular platform — because the discipline decides which boundaries have to be drawn at all. It names a discipline rather than a tile count; the sheet’s own inventory is what fixes how many pieces there are.',
+        'How an autotiler is meant to index the set. Choose by how the pieces will be *placed* — a corner-matched set blends two materials in any arrangement, a nine-patch frames one rectangular platform — because the discipline decides which boundaries have to be drawn at all. It names a discipline rather than a tile count. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Corner-Matched Blob Set',
         'Edge-Matched Wang Set',
@@ -195,7 +196,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'clothing',
       label: 'Scatter Layer',
       tooltip:
-        'The loose material lying on the ground — pebbles, tufts, twigs, drifts. It is what one base tile’s variants differ in, and therefore what keeps a field from reading as a single tile stamped in rows, so it is painted onto the tiles rather than drawn as pieces laid over them.',
+        'The loose material lying on the ground — pebbles, tufts, twigs, drifts. It is what one base tile’s variants differ in, and therefore what keeps a field from reading as a single tile stamped in rows, so it is painted onto the tiles rather than drawn as pieces laid over them. Bare Untouched Ground takes those seven variants off the blend set and leaves one tile per material beside the fourteen transitions, which is the sixteen an autotiler indexes.',
       options: [
         'Pebble & Stone Scatter',
         'Grass Tufts & Weeds',

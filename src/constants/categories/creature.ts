@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /** Monsters and beasts — non-humanoid limb layouts, biological rather than worn detail. */
@@ -192,7 +192,9 @@ export const CREATURE: CategoryDefinition = {
       key: 'anatomy',
       label: 'Anatomy Base',
       tooltip:
-        'The body plan the component breakdown follows. It decides how many legs, segments or tentacles get their own sprite slots, so match it to the creature class above — a mismatched plan fights the design and produces parts that cannot be assembled.',
+        'The body plan the animal is drawn on, and what the generator is told to keep separable. Match it to the creature class above, because a plan that fights the design produces parts nobody can assemble. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS +
+        ' Legs, segments or tentacles that need a sprite slot of their own go in Extra Appendages, which is the field that adds one.',
       options: [
         'Quadruped Beast',
         'Hexapod Insect',

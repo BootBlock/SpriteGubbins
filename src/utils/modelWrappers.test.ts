@@ -115,9 +115,16 @@ describe('wrapForModel', () => {
     expect(prompt).toContain('--s 50');
     // `--sw` is style-reference weight and does nothing without an accompanying `--sref`.
     expect(prompt).not.toContain('--sw');
-    // Raw mode beside the version that takes it: the flag is `--raw` on the V8 line this pins and
-    // `--style raw` on V7, and the two were out of step until it was checked. Asserted adjacent to
-    // `MIDJOURNEY_VERSION` because that is the pairing — either half moving alone is the defect.
+    // Raw mode beside the version that takes it. This wrapper emitted an older `--style raw` while
+    // pinning a V8 version, so the two were out of step until it was checked; Midjourney's Parameter
+    // List and Raw page both give `--raw`, and their Version chart marks Raw supported under V8.1
+    // and V8.2. Asserted adjacent to `MIDJOURNEY_VERSION` because that is the pairing — either half
+    // moving alone is the defect.
+    //
+    // The comment here used to add that the older form was "`--style raw` on V7", which no
+    // Midjourney page states: swept over all 105 help-centre articles, the only one spelling it is
+    // Legacy Features, whose compatibility table gives it against V5 and V6. `modelWrapperText/
+    // midjourney.ts` records that at length.
     expect(prompt).toContain(`${MIDJOURNEY_VERSION} --raw`);
     expect(prompt).not.toContain('--style');
   });
@@ -164,9 +171,11 @@ describe('wrapForModel', () => {
   });
 
   it('puts the Flux restatement where a 512-token encoder will actually reach it', () => {
-    // The defect this pins: appended, the restatement sat ~3,600 tokens into a prompt an open-weight
-    // Flux stops reading at 512, so the one sentence written to cover Flux's missing negative prompt
-    // was the one sentence guaranteed to be cut. Asserted for both tiers, which reach the same
+    // The defect this pins: appended, the restatement sat several thousand tokens into a prompt an
+    // open-weight Flux stops reading at 512 — six to thirteen times the ceiling, depending on the
+    // category — so the one sentence written to cover Flux's missing negative prompt was the one
+    // sentence guaranteed to be cut. `tests/flux-ceiling-margin.test.ts` holds that margin; a figure
+    // stood here instead and was 1.8× low (issue #266). Asserted for both tiers, which reach the same
     // placement from different directions: the 512-token ceiling decides it for the weights, and
     // Black Forest Labs' word-order guidance decides it for the hosted tier.
     for (const targetModel of ['FLUX', 'FLUX_API'] as const) {
@@ -175,9 +184,15 @@ describe('wrapForModel', () => {
     }
   });
 
-  it('gives Qwen an unweighted negative block, not Stable Diffusion’s', () => {
+  it('labels Qwen’s block with the parameter Alibaba document, and leaves it unweighted', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'QWEN_IMAGE' }));
-    expect(prompt).toContain('Negative prompt:');
+    // The label is the field's own name in Alibaba's 3.0-series API reference, not the prose
+    // `Negative prompt:` that Stable Diffusion's Automatic1111 front end uses. Nothing Alibaba
+    // publish parses a line of that shape inside `text`, so the block has to name the separate field
+    // it belongs in rather than read as more of the brief — which on a text-to-image model would
+    // list the very things the sheet must not contain.
+    expect(prompt).toContain('negative_prompt:');
+    expect(prompt).not.toContain('Negative prompt:');
     expect(prompt).toContain('assembled character');
     // `(term:1.3)` is an Automatic1111/compel convention those front-ends parse before the model
     // sees it. Qwen documents `negative_prompt` as taking a description, so weights would arrive as
@@ -510,13 +525,24 @@ describe('what a wrapper says about the surface', () => {
     ]);
   });
 
-  it('reads each Midjourney negative as one whole entry, as `--no` is documented to', () => {
-    // The resolved answer this pins, in place of the hedge it replaces: a `--no` entry is one
-    // multi-prompt segment at -0.5, and `::` rather than the space is what divides one concept from
-    // the next, so a two-word entry is read whole by the model that draws the sheet. That is what
-    // makes `cast shadow` a qualification rather than a wash — it has to survive as *one* entry,
-    // because the bare term it replaces is a substring of it and is exactly what a check on the
-    // whole flag line would miss.
+  it('keeps the background out of Midjourney’s negatives, whole or word by word', () => {
+    // **Named for the one thing it asserts**, which is narrower than the rule it enforces. A previous
+    // name here said the list was read "as one whole entry, as `--no` is documented to", which is the
+    // reading the vendor's current pages no longer support; the name that replaced it claimed every
+    // entry is safe read word by word, which the comment below denies in as many words and which
+    // nothing here checks. What is actually asserted is that `shadow`, `gradient` and any entry
+    // carrying `background` stay out — the unrecoverable case — plus that `cast shadow` survives as
+    // one entry.
+    //
+    // What this pins is the standing rule of the list rather than a reading of the flag. Midjourney's
+    // Version chart marks Multi-Prompting unavailable under V8.1 and V8.2, which is the column
+    // holding the pinned `--v 8.2`, so the read-whole inference — a `--no` entry is one multi-prompt
+    // segment at -0.5, divided by `::` rather than by the space — runs through a mechanism the
+    // vendor documents this version as not having. The only word-level reading current for V8.2 is
+    // the moderation system's, and it reads every word independently. So each multi-word entry has
+    // to be one the app is content to have decomposed, and `wrapForMidjourney` argues each of the
+    // four. `cast shadow` is asserted here as a whole entry because the bare term it replaces is a
+    // substring of it, which a check on the whole flag line would miss.
     //
     // Swept over every render style and every category, because the list is assembled from three
     // per-configuration sources — the style's surface terms and the frame gate either side of it —
@@ -535,16 +561,12 @@ describe('what a wrapper says about the surface', () => {
         // recovered from. Matched as a substring of each entry rather than as a whole word, because
         // `backgrounds` and `gradient-background` carry the term as surely as the bare noun does.
         //
-        // The width is precautionary and settled as such, not a reading of the flag: an entry is
-        // read whole, so `gradient background` would not negate the background — but what makes it
-        // atomic is `::` rather than the space dividing concepts, which no page current for the
-        // pinned version restates.
-        //
-        // What keeps it out is the cost of that being wrong, not a claim that the other entries are
-        // safe decomposed — none of the four multi-word entries is. `blurred edges` decomposes to a
-        // bare `edges` on the styles that assert a hard one, and that returns a sheet softer than it
-        // was asked for, which can simply be generated again. This one returns a sheet that cannot
-        // be keyed, which is the whole point of the sheet. Degraded is survivable; useless is not.
+        // What keeps it out is the cost of the word-level reading, not a claim that the other
+        // entries are safe decomposed — none of the four multi-word entries is. `blurred edges`
+        // decomposes to a bare `edges` on the styles that assert a hard one, and that returns a
+        // sheet softer than it was asked for, which can simply be generated again. This one returns
+        // a sheet that cannot be keyed, which is the whole point of the sheet. Degraded is
+        // survivable; useless is not.
         for (const entry of entries) {
           expect(entry, `${where} / ${entry}`).not.toMatch(/background/i);
         }
@@ -730,7 +752,7 @@ describe('what a wrapper says about text', () => {
         .split(/[,\n]/)
         .map((entry) =>
           entry
-            .replace(/^Negative prompt:/, '')
+            .replace(/^(?:Negative prompt|negative_prompt):/, '')
             .trim()
             .replace(/\.$/, ''),
         );

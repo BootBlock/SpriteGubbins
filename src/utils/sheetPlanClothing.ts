@@ -1,6 +1,6 @@
 import { absentOptionFor } from '../constants/categories/index.ts';
 import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
-import type { ComponentGroup, SheetPlan } from '../types/components.ts';
+import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import type { SubjectCategory } from '../types/subject.ts';
@@ -36,11 +36,11 @@ export function declaresNoClothing(category: SubjectCategory, clothing: string):
  * or merging it into another. The generator could not satisfy both, and whichever way it resolved
  * that, the sheet came back disagreeing with the contract its own prompt stated.
  *
- * **Only `'entirely'` entries go.** A `'partly'` entry draws the attribute among other things, so
- * dropping it would take an OBJECT's handle and latch with its mounting brackets — which is why a
- * category declaring an `absentOption` for `clothing` may carry none, and why VEHICLE's rig fittings
- * and INTERFACE's trim were split into one entry each rather than filtered inside their own text.
- * `sheetPlanClothing.test.ts` holds that.
+ * **Which entries go is {@link entryNeedsClothing}, and a `'DRAWS_IT_PARTLY'` entry is the one that
+ * stays.** It draws the attribute among other things, so dropping it would take an OBJECT's handle
+ * and latch with its mounting brackets — which is why a category declaring an `absentOption` for
+ * `clothing` may carry none, and why VEHICLE's rig fittings and INTERFACE's trim were split into one
+ * entry each rather than filtered inside their own text. `sheetPlanClothing.test.ts` holds that.
  *
  * **A group with nothing left in it goes too.** BACKGROUND's whole *Atmosphere* group is the applied
  * atmosphere, so a clear scene empties it, and `renderGroup` would otherwise write a heading and an
@@ -57,7 +57,7 @@ export function planAsDrawn(plan: SheetPlan, category: SubjectCategory, clothing
   const groups = plan.groups
     .map((group): ComponentGroup => ({
       ...group,
-      entries: group.entries.filter((entry) => entry.drawsClothing !== 'entirely'),
+      entries: group.entries.filter((entry) => !entryNeedsClothing(entry)),
     }))
     .filter((group) => group.entries.length > 0);
 
@@ -65,11 +65,26 @@ export function planAsDrawn(plan: SheetPlan, category: SubjectCategory, clothing
 }
 
 /**
+ * Whether this entry is on the sheet **only because the subject has the attribute** — the one
+ * question {@link planAsDrawn} asks of each line.
+ *
+ * Two of `ClothingRole`'s three answers say yes, for two different reasons, and reading them
+ * through one predicate is what keeps the filter and the section 1 sentence from being two opinions
+ * about the same plan. `'DRAWS_IT'` is the attribute and nothing else, so it goes with it.
+ * `'VARIES_IN_IT'` draws none of it and exists to differ in it, so a subject that has none is
+ * ordering tiles that must differ in a property it has just denied — and it goes for that reason
+ * instead. `'DRAWS_IT_PARTLY'` stays, and a category declaring an `absentOption` may carry none.
+ */
+export function entryNeedsClothing(entry: ComponentEntry): boolean {
+  return entry.clothingRole === 'DRAWS_IT' || entry.clothingRole === 'VARIES_IN_IT';
+}
+
+/**
  * Whether this sheet's inventory draws the subject's `clothing` value as components of its own.
  *
  * Section 1's paint rule and section 4's inventory have to agree inside one prompt, and which of
  * them is right about the `clothing` line is a fact about the sheet being compiled — see
- * `ComponentEntry.drawsClothing` in `types/components.ts`, which is where each plan states it and
+ * `ComponentEntry.clothingRole` in `types/components.ts`, which is where each plan states it and
  * why it is stated on the entry rather than on the plan or on the category.
  *
  * Derived rather than declared a second time: a plan that drops the entry drawing the attribute
@@ -77,9 +92,19 @@ export function planAsDrawn(plan: SheetPlan, category: SubjectCategory, clothing
  * section 4 no longer lists. **Asked of the plan {@link planAsDrawn} returned**, which is what
  * extends that property to a subject declaring none: the entries have gone, so the sentence goes
  * with them rather than excepting an attribute the inventory no longer carries.
+ *
+ * **`'VARIES_IN_IT'` answers no**, which is the half {@link entryNeedsClothing} deliberately does not
+ * share. TERRAIN's blend set loses seven tiles to a reader who declines the scatter and never drew
+ * the scatter as pieces of its own, so a plan that carries only those must go on telling the
+ * generator that the pebbles and tufts are painted onto the tiles. An exception naming them would
+ * order the scatter as loose sprites, which is what `sheetPlans/terrain.ts` argues against at length.
  */
 export function planDrawsClothing(plan: SheetPlan): boolean {
-  return plan.groups.some((group) => group.entries.some((entry) => entry.drawsClothing !== undefined));
+  return plan.groups.some((group) =>
+    group.entries.some(
+      (entry) => entry.clothingRole === 'DRAWS_IT' || entry.clothingRole === 'DRAWS_IT_PARTLY',
+    ),
+  );
 }
 
 /**

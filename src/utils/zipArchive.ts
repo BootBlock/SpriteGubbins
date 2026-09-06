@@ -13,9 +13,26 @@ import { crc32 } from './crc32.ts';
  * **Stored, never deflated, and that is a measurement rather than laziness.** Every entry in a pack
  * is either an already-deflated PNG or a short manifest, and running the whole archive through
  * `CompressionStream` a second time buys tens of bytes on the manifest and loses on every PNG —
- * deflate on incompressible input emits the data plus five bytes per 65,535-byte block. Storing also
- * keeps this function synchronous and pure, where the PNG writer had to be asynchronous for the
- * browser's compressor.
+ * deflate on incompressible input emits the data plus five bytes per stored block, and
+ * `CompressionStream` blocks at **16,384 bytes**, so a megabyte of noise comes back 310 bytes
+ * longer. Storing also keeps this function synchronous and pure, where the PNG writer had to be
+ * asynchronous for the browser's compressor.
+ *
+ * **The block size is the compressor's choice, not the format's**, which is the distinction this
+ * sentence got wrong for as long as it existed. 65,535 is the largest length a stored block's
+ * `LEN` field can express, and it is what the sentence used to name — the number the *format*
+ * states. What zlib emits is `lit_bufsize`, `1 << (memLevel + 6)`, which is 16,384 at its default
+ * `memLevel` of 8. So the cost was understated fourfold. The direction favoured the decision, so
+ * nothing downstream was wrong and nothing was ever going to notice.
+ *
+ * **That figure is a compile-time constant rather than a platform one**, which is what makes it
+ * worth writing down: the Streams API exposes no options, so `memLevel` is unreachable from
+ * `CompressionStream` and the compression level does not move it. Measured through Node, where
+ * `CompressionStream('deflate')` is byte-identical to `zlib.deflateSync` at defaults — the same
+ * library a browser puts behind the same interface. `tests/zip-deflate-overhead.test.ts`
+ * re-derives both the block size and the 310 bytes from `src/utils/deflate.ts` on every run, so a
+ * compressor that chooses differently fails there rather than leaving this paragraph quietly false
+ * again.
  *
  * **Written through `ByteWriter`**, which is the `.aseprite` writer's own buffer and is
  * little-endian throughout — which ZIP is too, so the one respect in which that class is not general
