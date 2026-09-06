@@ -1912,6 +1912,53 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > Midjourney reads in full, and the `--no` list was never what carried it. No compiled prompt
 > changed.
 
+> **Re-checked after shipping — the reopening condition above was met, and it settled the decision
+> rather than reversing it** (issue #152). The condition the note states is "that evidence arriving
+> as a page current for the pinned version". It has, and it points the other way from what the note
+> expected. The
+> [Version](https://docs.midjourney.com/hc/en-us/articles/32199405667853-Version) page's
+> feature-compatibility chart carries a **Multi-Prompting** row whose V8.1 & V8.2 column — the one
+> holding the pinned `--v 8.2` — is a no-symbol icon, against a check under V6; its **No Parameter**
+> row is a check under all three. So multi-prompting is documented as unavailable on the pinned
+> version, and the whole `-0.5` substitution that the read-whole inference runs through describes a
+> mechanism this version does not have. The note above records the weaker finding — that `::` as the
+> divider was "only on the multi-prompt page" — because it was written from the `--no` and
+> multi-prompt pages without the one page that says what the pinned version supports.
+>
+> Midjourney's current pages disagree with each other here: the `--no` page is current for V8.2 and
+> carries the `-0.5` equivalence in its own More Information section, the multi-prompt page scopes
+> itself to versions up to 6.1, and the chart marks the feature absent. Nothing current states how
+> V8.2's renderer reads a multi-word entry, so the wrapper records the contradiction rather than
+> resolving it. **The word-level ban is therefore no longer precautionary — it is the only reading
+> the vendor's current pages support** — and it becomes the standing rule for the whole list rather
+> than a hedge on one entry. The decision and the emitted list are unchanged, and no compiled prompt
+> changed; what changed is that the argument no longer rests on a hedge.
+
+> **Corrected after shipping — the `--style raw` history above was not on the page cited for it**
+> (issue #152). The note two sections up says Midjourney "renamed it with V8, so `--style raw` is
+> V7-and-earlier syntax". The
+> [Raw](https://docs.midjourney.com/hc/en-us/articles/32634113811853-Raw) page states no rename and
+> never spells that older form. Swept over all 105 help-centre articles, the only page spelling it is
+> [Legacy Features](https://docs.midjourney.com/hc/en-us/articles/33329788681101-Legacy-Features),
+> whose parameter-compatibility table gives a **Style** row reading `raw` against **V5 and V6** —
+> not V7. So the correction the note records was right about the *flag* and wrong about its history
+> and its source. Both statements are left where they are, per the rule against rewriting a plan's
+> history; this is where they are reconciled. The emitted `--raw` is unchanged and is now cited to
+> the Raw page and the
+> [Parameter List](https://docs.midjourney.com/hc/en-us/articles/32859204029709-Parameter-List),
+> which both give it, and to the Version chart, which marks Raw supported under V8.1 and V8.2.
+
+> **Cited after shipping — `--ar` and `--s` carried no source at all** (issue #156). Both flags are
+> emitted on every Midjourney prompt and neither the wrapper nor `constants/models.ts` linked the
+> page documenting it, while the two contentious flags beside them carried three citations between
+> them. They are vendor-supported and this was a citation gap rather than a behaviour defect:
+> [Aspect Ratio](https://docs.midjourney.com/hc/en-us/articles/31894244298125-Aspect-Ratio) gives
+> `--ar #:#` and "--ar cannot contain decimals", the Version chart puts the maximum at 14:1 (4:1 for
+> HD) on the pinned version, and
+> [Stylize](https://docs.midjourney.com/hc/en-us/articles/32196176868109-Stylize) states that "The
+> default value for stylize is 100, and you can adjust it anywhere between 0 and 1000 with the latest
+> Midjourney versions", which puts the emitted `--s 50` inside the range. No compiled prompt changed.
+
 > **Corrected after shipping — that separate change, and the last fixed string in the three
 > channels.** `(assembled character:1.3), (posed figure:1.3)` opened SD's block, `assembled
 > character, posed figure, complete figure` opened Qwen's, and `no assembled figure` closed Flux's

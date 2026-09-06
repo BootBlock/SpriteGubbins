@@ -510,13 +510,16 @@ describe('what a wrapper says about the surface', () => {
     ]);
   });
 
-  it('reads each Midjourney negative as one whole entry, as `--no` is documented to', () => {
-    // The resolved answer this pins, in place of the hedge it replaces: a `--no` entry is one
-    // multi-prompt segment at -0.5, and `::` rather than the space is what divides one concept from
-    // the next, so a two-word entry is read whole by the model that draws the sheet. That is what
-    // makes `cast shadow` a qualification rather than a wash — it has to survive as *one* entry,
-    // because the bare term it replaces is a substring of it and is exactly what a check on the
-    // whole flag line would miss.
+  it('keeps every Midjourney negative safe to read word by word', () => {
+    // What this pins is the standing rule of the list rather than a reading of the flag. Midjourney's
+    // Version chart marks Multi-Prompting unavailable under V8.1 and V8.2, which is the column
+    // holding the pinned `--v 8.2`, so the read-whole inference — a `--no` entry is one multi-prompt
+    // segment at -0.5, divided by `::` rather than by the space — runs through a mechanism the
+    // vendor documents this version as not having. The only word-level reading current for V8.2 is
+    // the moderation system's, and it reads every word independently. So each multi-word entry has
+    // to be one the app is content to have decomposed, and `wrapForMidjourney` argues each of the
+    // four. `cast shadow` is asserted here as a whole entry because the bare term it replaces is a
+    // substring of it, which a check on the whole flag line would miss.
     //
     // Swept over every render style and every category, because the list is assembled from three
     // per-configuration sources — the style's surface terms and the frame gate either side of it —
@@ -535,16 +538,12 @@ describe('what a wrapper says about the surface', () => {
         // recovered from. Matched as a substring of each entry rather than as a whole word, because
         // `backgrounds` and `gradient-background` carry the term as surely as the bare noun does.
         //
-        // The width is precautionary and settled as such, not a reading of the flag: an entry is
-        // read whole, so `gradient background` would not negate the background — but what makes it
-        // atomic is `::` rather than the space dividing concepts, which no page current for the
-        // pinned version restates.
-        //
-        // What keeps it out is the cost of that being wrong, not a claim that the other entries are
-        // safe decomposed — none of the four multi-word entries is. `blurred edges` decomposes to a
-        // bare `edges` on the styles that assert a hard one, and that returns a sheet softer than it
-        // was asked for, which can simply be generated again. This one returns a sheet that cannot
-        // be keyed, which is the whole point of the sheet. Degraded is survivable; useless is not.
+        // What keeps it out is the cost of the word-level reading, not a claim that the other
+        // entries are safe decomposed — none of the four multi-word entries is. `blurred edges`
+        // decomposes to a bare `edges` on the styles that assert a hard one, and that returns a
+        // sheet softer than it was asked for, which can simply be generated again. This one returns
+        // a sheet that cannot be keyed, which is the whole point of the sheet. Degraded is
+        // survivable; useless is not.
         for (const entry of entries) {
           expect(entry, `${where} / ${entry}`).not.toMatch(/background/i);
         }

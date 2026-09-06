@@ -9,10 +9,20 @@ import type { TargetModel } from '../types/output.ts';
  * Midjourney's default moved to V8.1 on 10 June 2026 and to V8.2 on 24 July 2026.
  *
  * **What went stale with it was the flag syntax beside it**, which is the part a version constant
- * does not protect: raw mode is `--raw` on the V8 line and `--style raw` on V7, so pinning V8.2
- * while emitting V7 syntax silently dropped the flag. See the Midjourney branch of
- * `utils/modelWrappers.ts` — moving this constant means re-checking that branch's flags too.
+ * does not protect: this wrapper emitted `--style raw` while pinning a V8 version, and the flag whose
+ * whole job is to stop Midjourney restyling a technical layout brief could not be relied on to apply.
+ * It emits `--raw` now, which is what the Parameter List and the Raw page both give, and which the
+ * Version page's chart marks supported under V8.1 and V8.2.
+ *
+ * **The version history that stood here was not on any Midjourney page, and it named the wrong
+ * versions.** It read that raw mode "is `--raw` on the V8 line and `--style raw` on V7". No page
+ * states a rename, and swept over all 105 help-centre articles the only one spelling the older form
+ * is Legacy Features, whose parameter-compatibility table gives a Style row reading `raw` against V5
+ * and V6 rather than V7. `utils/modelWrapperText/midjourney.ts` records that at length beside the
+ * flags themselves. What holds is the lesson rather than the history: moving this constant means
+ * re-checking that branch's flags against the vendor's current pages, not assuming they moved with it.
  * https://docs.midjourney.com/hc/en-us/articles/32199405667853-Version
+ * https://docs.midjourney.com/hc/en-us/articles/32859204029709-Parameter-List
  */
 export const MIDJOURNEY_VERSION = '--v 8.2';
 
