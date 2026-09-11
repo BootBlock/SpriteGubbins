@@ -4,7 +4,7 @@
  *
  * The defaults are what makes this a claim about the *app* rather than about the library. Compiled
  * for Qwen-Image, the smallest configuration is a sparse single-view item at roughly 3,300 estimated
- * tokens and the character default a five-view sheet at nearly 6,700, and a target whose ceiling
+ * tokens and the character default a five-view sheet at about 6,700, and a target whose ceiling
  * falls between them is exactly the case a per-preset measurement cannot see.
  *
  * It is not a sweep of the whole option space, and does not need to be: what a description claims is
@@ -34,7 +34,7 @@ import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { withCompanionOutputs } from '../utils/imageConfig.ts';
 
 /** Every output setting but the target, which the consumer measuring a ceiling supplies. */
-export type UntargetedOutput = Omit<OutputConfig, 'targetModel'>;
+type UntargetedOutput = Omit<OutputConfig, 'targetModel'>;
 
 /** One configuration, with the name a failure message should give it. */
 export interface LibraryConfiguration {

@@ -5,7 +5,7 @@
  * make a claim about *length* — that the whole specification fits, that only the opening is read.
  * Those are claims about this app's own output, so they are measurable, and one of them was wrong
  * for the life of the entry: Qwen-Image's said the full specification fits inside 4.5K tokens while
- * the studio's opening configuration compiled to nearly 6,900. `PromptBudgetNotice` then said the
+ * the studio's opening configuration, compiled for Qwen, ran past them. `PromptBudgetNotice` said the
  * opposite on the same screen.
  *
  * Nothing could catch it, because the only budget assertion in the suite measured each preset
@@ -71,12 +71,12 @@ export interface PromptFitReading {
  * **Each configuration is compiled for the target being measured**, because the prompt is a function
  * of the target and the reading is a claim about what a reader of that target will actually be
  * handed. The self-audit is gated on the target's capabilities — as the companion component map and
- * the adherence report are, where a reader asks for them — and every wrapper adds a different amount
- * of text, so the same library runs to 30,684 characters compiled for Sol and to 26,900 compiled for
- * GPT Image. The prompts used to be
- * compiled once, at module load, at whatever target each preset declared — so GPT Image's ceiling was
- * read against prompts written for other targets, and a comment in `models.test.ts` recorded the
- * 30,684 as a finding about GPT Image (#231). Every verdict happened to survive; the figures did not.
+ * the adherence report are, where a reader asks for them — and the wrappers add different amounts of
+ * text, so the same library runs to 30,684 characters compiled for Sol and to 26,900 compiled for GPT
+ * Image. The prompts used to be compiled once, at module load, at whatever target each preset
+ * declared — so GPT Image's ceiling was read against prompts written for other targets, and a comment
+ * in `models.test.ts` put its largest sheets within a few hundred characters of that ceiling on the
+ * strength of it (#231). Every verdict happened to survive; the figures did not.
  * `LibraryConfiguration` carries no target for the same reason: a consumer has to supply one.
  *
  * **A ceiling only, never a guidance figure**, which is the one place these two measure differently

@@ -40,7 +40,7 @@ import { PRESETS } from './index.ts';
  *
  * **`targetModel` is covered too, and for a while it was not** — which is how the Qwen entry came to
  * tell every reader that the full specification fits inside 4,500 tokens while the studio's opening
- * configuration compiled to nearly 6,900. The target is a property of whoever is generating the sheet
+ * configuration, compiled for Qwen, ran past them. The target is a property of whoever is generating the sheet
  * rather than of the art, so the argument for covering it is a different one: a target with no preset
  * behind it is a target whose stated ceiling nothing in the suite ever compiles against, and the
  * description under the selector is then an unchecked claim. Two of the eleven genuinely cannot be
