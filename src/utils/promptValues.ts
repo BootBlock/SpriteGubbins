@@ -138,17 +138,16 @@ export function promptValues(
     // case as it always did, by saying *where one is stated*.
     //
     // The category is the third argument for the reason section 0's scale example takes one: the
-    // three profiles that state a scale state it against something, and that something was a figure
-    // on the nine categories whose sheets hold none.
+    // profile that states a height states it of something, and that something was a figure on the
+    // nine categories whose sheets hold none.
     //
-    // The fourth is the *sheet's*, and the split matters: the noun is the category's, because a
-    // profile is chosen once for a whole series, while what that noun is measured against is a fact
-    // about the page in front of the generator. See `SheetPlan.scaleUnitFrame`.
+    // Nothing of the sheet's is passed. Both share rungs are a share of the largest component's own
+    // cell on every sheet, because a share of the sheet height was decided by the component count or
+    // by the layout on every plan that carried one — see `SHARE_RANGE`.
     RESOLUTION_PROFILE_DESCRIPTION: resolutionProfileDescription(
       output.resolutionProfile,
       statedTarget?.quantity === 'ASSEMBLED',
       category,
-      plan.scaleUnitFrame,
     ),
     // A function of the target size as well as the profile, because `CUSTOM` is the one profile
     // that carries no scale of its own — see `minFeatureSize`. It carries its own unit, from the

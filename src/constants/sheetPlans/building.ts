@@ -29,7 +29,6 @@ export const BUILDING_TILESET: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Every tile is a different tile: the floor variants differ in scatter, and the corners in which corner they turn.
   posing: 'UNSTATED',
-  scaleUnitFrame: 'SHEET',
   // Neither piece the module library pairs is on a tile set, so the pair is drawn from the two
   // materials this sheet does hold. Tiles are one cell each by construction; what can still go
   // wrong is the masonry on a face reading larger than the boards on the floor beside it.
@@ -96,7 +95,6 @@ export const BUILDING_MODULE_LIBRARY: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // The entrance module is drawn closed and open, which is one part at the two positions it takes.
   posing: 'PER_POSITION',
-  scaleUnitFrame: 'SHEET',
   scaleExample: 'an awning drawn beside the wall bay it hangs on is in proportion to it',
   groups: [
     {
@@ -167,7 +165,6 @@ function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTup
     targetQuantity: 'COMPONENT',
     // A yaw is the camera turning rather than the bay moving, so the repeated entries are views.
     posing: 'UNSTATED',
-    scaleUnitFrame: 'SHEET',
     // The façade fittings stay on the module library, so the awning that sheet pairs has no entry
     // here; the corner post is the smallest piece these views draw.
     scaleExample: 'a corner post drawn beside the wall bay it finishes is in proportion to it',

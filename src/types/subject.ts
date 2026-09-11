@@ -35,39 +35,6 @@ export const SUBJECT_CATEGORIES = [
 export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];
 
 /**
- * What section 2's share-bearing profiles measure their range against.
- *
- * `SCALE_UNIT_TEXT` gives every category the noun its own sheet is priced in, and the two profiles
- * that state a *share* stated it against the sheet height on all thirteen. That reading is only
- * safe where the sheet draws at most one of the unit: nothing then relates the share to the
- * component count. Where the sheet draws one per component, the same range argues with section 4 —
- * twenty-eight icons at the bottom of `25–35%` need 1.75 sheet heights squared against a 16:9
- * sheet's 1.78, which is the whole page with nothing left for the spacing the layout section asks
- * for in the same prompt.
- *
- * **`CELL` is the narrower claim and it has to be earned.** It says the unit is one of the things
- * the exploded grid holds, so it has a cell to be a share of — and a sheet earns it only when it
- * does **not** make the unit a whole its components assemble into. That is a rule about the sheet
- * rather than about the noun, which is why the answer is written down as `SheetPlan.scaleUnitFrame`
- * and argued there sheet by sheet: reading it off `SCALE_UNIT_TEXT`'s `a full X` phrasing gets the
- * six whole-subject categories right and both of the interesting ones wrong.
- *
- * **It is the sheet's answer and not the category's**, which is the correction issue #216 asked for.
- * A frame held per category has to be true of every plan that category has, and BACKGROUND's two
- * plans admit no such answer — so the record settled for the reading that was false in the fewer
- * places. A series is one (category, mode) pairing, so a per-sheet frame still cannot change under a
- * reader mid-batch, which is the property the per-category record was protecting.
- *
- * **Named for the box rather than for the sheet's nature**, because `REFERENCE` — the first name
- * this pair carried — asserted the sheet never draws the unit, and INTERFACE's state library draws
- * one panel frame. What is true of every `SHEET` sheet is the weaker claim above: it draws at most
- * one, so no count can argue with the share.
- */
-export const SCALE_UNIT_FRAMES = ['CELL', 'SHEET'] as const;
-
-export type ScaleUnitFrame = (typeof SCALE_UNIT_FRAMES)[number];
-
-/**
  * How *this* sheet's assembled-whole failure — exploded parts drawn as one finished thing — is named
  * in each of the five voices the app states it in.
  *

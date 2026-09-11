@@ -145,11 +145,6 @@ export const FONT_CAPITALS: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
-  // The cell, on this sheet and on the three after it, although only this one draws a capital. Every
-  // glyph in the series is set to the cap height a capital fixes and is given a cell of its own, so a
-  // share of that cell is the same instruction on all four — which is what a series needs, the frame
-  // being fixed for a whole batch the way the unit is.
-  scaleUnitFrame: 'CELL',
   // The agreement shape, for EFFECT's reason and one more of its own: these components are not
   // pieces of each other either, and what has to hold between them is stricter than agreement about
   // weight — a glyph a pixel off the shared baseline is visible in every word the engine ever sets.
@@ -179,7 +174,6 @@ export const FONT_LOWER_CASE: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
-  scaleUnitFrame: 'CELL',
   scaleExample:
     'one lower-case letter and the letter beside it are set on the same baseline to the same height above it, with any ascender or descender reaching the same distance throughout',
   groups: [
@@ -205,7 +199,6 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Digits and marks, each drawn once.
   posing: 'UNSTATED',
-  scaleUnitFrame: 'CELL',
   scaleExample:
     'one digit and the punctuation mark beside it are cut to the same stroke weight at the same scale, each sitting at the height against the baseline its own use asks for',
   groups: [
@@ -236,7 +229,6 @@ export const FONT_SYMBOLS: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Symbols and operators, each drawn once.
   posing: 'UNSTATED',
-  scaleUnitFrame: 'CELL',
   scaleExample:
     'one symbol and the symbol beside it are cut to the same construction and weight, so neither reads as borrowed from another font',
   groups: [

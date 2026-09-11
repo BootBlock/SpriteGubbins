@@ -53,7 +53,6 @@ export const CHARACTER_POSE_LIBRARY: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // Eight arm and nine leg variants a side: one limb segment per orientation it is drawn at.
   posing: 'PER_POSITION',
-  scaleUnitFrame: 'SHEET',
   scaleExample: 'a hand drawn beside a torso is in proportion to it',
   groups: [
     {
@@ -156,7 +155,6 @@ function characterDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTup
     targetQuantity: 'ASSEMBLED',
     // One head, one torso and one pelvis, repeated across yaws — the camera turning, not the trunk moving.
     posing: 'UNSTATED',
-    scaleUnitFrame: 'SHEET',
     scaleExample: 'a head drawn beside the torso it joins is in proportion to it',
     groups: [
       {
@@ -247,7 +245,6 @@ export const CHARACTER_ARTICULATION: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The same thirty-four orientations as the pose library's limbs, which is what this sheet is.
   posing: 'PER_POSITION',
-  scaleUnitFrame: 'SHEET',
   // The pair the trunk sheets cannot state and this one can: no torso is drawn here, and the
   // largest piece on the page is an upper leg.
   scaleExample: 'a hand drawn beside an upper leg is in proportion to it',
@@ -317,7 +314,6 @@ export const CHARACTER_CUTOUT_RIG: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
   posing: 'AT_REST',
-  scaleUnitFrame: 'SHEET',
   scaleExample: 'a hand drawn beside a torso is in proportion to it',
   groups: [
     {

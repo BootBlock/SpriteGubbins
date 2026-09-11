@@ -31,9 +31,9 @@ const COMPUTED_DESCRIPTIONS = new Set(['DIRECTIONS_DESCRIPTION', 'MIRROR_PAIRS_D
  *
  * The second source a token may be filled from, and it is a *level* rather than an exemption: a fact
  * that varies between the sheets of one category cannot live in a `Record<SubjectCategory, string>`
- * at all, so section 0's scale example is answered on the plan beside `assembly` and
- * `scaleUnitFrame`. Derived from the token rather than listed, so a second fact moved down to the
- * plan is covered the moment its field is named after its token.
+ * at all, so section 0's scale example is answered on the plan beside `assembly`. Derived from the
+ * token rather than listed, so a second fact moved down to the plan is covered the moment its field
+ * is named after its token.
  */
 function planFieldFor(token: string): string {
   return token
@@ -71,7 +71,7 @@ describe('the template itself', () => {
   it('takes the plan branch for exactly the token the plans answer', () => {
     // The `||` above is looser than the single lookup it replaced: `Object.hasOwn` matches *any*
     // field of the interface, so `ASSEMBLY_DESCRIPTION`, `POSING_DESCRIPTION` or
-    // `SCALE_UNIT_FRAME_DESCRIPTION` would satisfy the walk with nothing in `promptValues` filling
+    // `TARGET_QUANTITY_DESCRIPTION` would satisfy the walk with nothing in `promptValues` filling
     // them. Naming the set closes that: a second fact moved down to the plan changes this list, and
     // whoever changes it has to confirm the value is wired — which is the judgement the `||` cannot
     // make on its own.

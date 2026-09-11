@@ -187,18 +187,9 @@ describe('generatePrompt — the subject', () => {
     // The same defect one section further down, and the one section 0's example was fixed without:
     // all three scale-bearing profiles stated their range against "a full figure", so a FONT sheet of
     // twenty-six glyphs and a TERRAIN blend set of twenty-three tiles were each measured against a
-    // subject they cannot hold.
-    //
-    // The frame is the *sheet's* answer where the unit is the category's, so it is resolved here the
-    // way the compiler resolves it — through the pairing this configuration actually reaches. A
-    // frame written down instead would make this a second copy of the table in `sheetPlans.test.ts`.
+    // subject they cannot hold. `RETRO_16_BIT` is the rung that still names the category's unit; the
+    // two share rungs name the largest component, which every category has.
     for (const category of SUBJECT_CATEGORIES) {
-      const { scaleUnitFrame } = sheetPlanFor(
-        category,
-        resolveMode(category, OUTPUT.directionalMode),
-        OUTPUT.directions,
-        OUTPUT.sheetIndex,
-      );
       for (const resolutionProfile of ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const) {
         const prompt = generatePrompt(
           category,
@@ -206,18 +197,40 @@ describe('generatePrompt — the subject', () => {
           withOutput({ resolutionProfile }),
         );
         expect(prompt).toContain(
-          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, category, scaleUnitFrame)}`,
+          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, category)}`,
         );
       }
     }
 
-    const font = generatePrompt(
-      'FONT',
-      defaultSubjectFor('FONT'),
-      withOutput({ resolutionProfile: 'HIGH_RESOLUTION' }),
-    );
-    expect(font).toContain('- Resolution profile: High resolution — one capital glyph');
-    expect(font).not.toContain('a full figure');
+    const font = (resolutionProfile: 'HIGH_RESOLUTION' | 'RETRO_16_BIT') =>
+      generatePrompt('FONT', defaultSubjectFor('FONT'), withOutput({ resolutionProfile }));
+    expect(font('RETRO_16_BIT')).toContain('- Resolution profile: 16-bit retro scale — one capital glyph');
+    expect(font('HIGH_RESOLUTION')).not.toContain('a full figure');
+  });
+
+  it('states the share on a character’s directional core against a cell, never the sheet height', () => {
+    // The reported instance of issue #245, and the maintainer's own primary configuration. The line
+    // read “a full figure occupies 25–35% of the sheet height” beside an exploded grid of head, torso
+    // and pelvis rows, and all eighteen character sheets measured drew the head and the pelvis alone
+    // at 40–73% of the sheet height: the layout decided the figure before the line was read. Both
+    // halves of the eight-compass core and the articulation sheet after them, because the figure was
+    // stated on every sheet of the series.
+    for (const sheetIndex of [0, 1, 2]) {
+      const prompt = generatePrompt(
+        'CHARACTER',
+        defaultSubjectFor('CHARACTER'),
+        withOutput({
+          directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+          directions: 'EIGHT_COMPASS',
+          sheetIndex,
+          resolutionProfile: 'HIGH_RESOLUTION',
+        }),
+      );
+      expect(prompt, String(sheetIndex)).toContain(
+        '- Resolution profile: High resolution — the largest component occupies 50–65% of its cell height in the exploded grid, and every other component is drawn to that same scale',
+      );
+      expect(prompt, String(sheetIndex)).not.toContain('of the sheet height');
+    }
   });
 });
 

@@ -1,6 +1,6 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
 import type { SpriteCell } from '../types/spriteCell.ts';
-import type { ManifestSheet, ManifestSprite, SpriteManifest } from '../types/spriteManifest.ts';
+import type { ManifestCell, ManifestSheet, ManifestSprite, SpriteManifest } from '../types/spriteManifest.ts';
 import { scaleBoxes } from './sheetLayout.ts';
 import { cellOffsets, cellPivot } from './spriteCell.ts';
 import { spriteOrdinal } from './spriteOrdinal.ts';
@@ -144,16 +144,33 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
     scale: input.scale,
     sheet: input.sheet,
     named,
-    cell:
-      cell === null
-        ? null
-        : {
-            width: cell.width * input.scale,
-            height: cell.height * input.scale,
-            anchor: cell.anchor,
-          },
+    cell: cell === null ? null : manifestCell(cell, input.scale),
     sprites,
   };
+}
+
+/**
+ * The cell a cut used, moved out of the 1:1 result's pixels and into the written file's.
+ *
+ * **The one place the app's cell becomes the file's**, and so the one place the two declarations are
+ * reconciled — see {@link ManifestCell} for why there are two. The `satisfies` clause requires the
+ * literal to name every field of both, **optional ones included**: a field added to either side is a
+ * type error here until somebody decides what the manifest says about it, and a field written here
+ * that {@link ManifestCell} does not declare is an excess property. A mapped type over
+ * `keyof SpriteCell` alone looks equivalent and is not — it copies each field's `?`, and the return
+ * type requires no optional field either, so an optional field added to either side would compile
+ * and never reach the file.
+ *
+ * So an absent value is written as `null`, as the rest of the manifest writes one, rather than left
+ * out. A field the manifest deliberately does not publish is still decided here, by taking it out of
+ * the clause — a line in a diff rather than an omission nobody sees.
+ */
+function manifestCell(cell: SpriteCell, scale: number): ManifestCell {
+  return {
+    width: cell.width * scale,
+    height: cell.height * scale,
+    anchor: cell.anchor,
+  } satisfies Record<keyof SpriteCell | keyof ManifestCell, unknown>;
 }
 
 /**

@@ -180,8 +180,8 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
  * subject's own words are never another category's plan leaking into this one, which is the
  * contamination that sentence exists to catch.
  *
- * **The guard clause is as short as it is because one shipped preset used to pay for it, and no
- * preset pays for it now.** It lands in every prompt whose sheet lists the block, and
+ * **The guard clause is as short as it is because one shipped preset used to pay for it.** It lands
+ * in every prompt whose sheet lists the block, and
  * `Side-On Rail Gun Car` — then naming `Towed Trailer Section ×1` — was the only preset in the
  * library sitting near a ceiling: 3,582 estimated tokens against the 3,600 `MAX_BUDGET_SHARE`
  * leaves of Qwen's documented 4,500. A first draft read “apart from the additional elements the
@@ -198,11 +198,26 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
  * five tokens of headroom that sized this clause could not hold a one-sentence addition to section
  * 0, and giving the margin back was the answer rather than sizing a second template wording against
  * the same card. `guardExemption` returns `''` where the sheet lists no block, so with
- * `additional_anatomy` at `NONE` this clause is not in that prompt at all. **Nothing in the library
- * measures its wording against a token ceiling any more**, and the figures above are therefore a
- * record of what was measured rather than a check that still runs — issue #249 carries the gap.
- * `presetCoverage.test.ts` is still the mechanism; what it has lost is a card close enough to a
- * ceiling for this clause's length to reach it.
+ * `additional_anatomy` at `NONE` this clause is not in that prompt at all, and the figures above are
+ * a record of what was measured rather than a check that still runs.
+ *
+ * **`guardExemptionBudget.test.ts` measures this clause directly instead** (issue #249), because a
+ * preset was only ever an accidental proxy for a constraint about this wording against a ceiling. It
+ * compiles every configuration the app composes unprompted with each option its category's pool
+ * offers for the field, against every target whose ceiling holds some of the library, and holds the
+ * leanest prompt carrying the exemption to the same `MAX_BUDGET_SHARE` allowance. When it was
+ * written that was `Vector Flat Keycard Set` with `Spare String ×3`, at 3,274 of Qwen's 3,600.
+ * **What it does not do is price this wording to the token.** A clause that grew by the
+ * twenty-eight tokens the first draft's tail cost passes, deliberately: the slack is what stops the
+ * next wording change being sized against a card, and what fails is growth past it.
+ *
+ * **The audit clause below is not priced by that test in any sense that could fail**, and the reason
+ * is the targets rather than the test. It reaches section 9 only on a target that deliberates, and
+ * every such target the test measures today has a ceiling of 65,536 tokens or more — Gemini Pro's
+ * allowance is 52,428, far past anything the app composes — while every tight measured ceiling
+ * belongs to a target that does not deliberate. The test finds its targets by measurement, so a
+ * deliberating target with a tight ceiling would bring the audit clause under the same allowance the
+ * day it was added; until then no ceiling is close enough for this clause's length to reach it.
  */
 const guardExemption = (label: string | null): string =>
   label === null ? '' : `, apart from the pieces named under ${label}`;
