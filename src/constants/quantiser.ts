@@ -633,42 +633,69 @@ export const DEFAULT_COLOR_MERGE = 0;
  * rule and says what the alternative cost.
  *
  * **The two populations this dial separates overlap, and the range is set from where.** Measured on
- * the armour sheet (grid 6, a budget of 64, ink-weighted 1.5×): a palette locked from one reading of
- * it and applied to four others — the k-centroid and dominant readings, a budget of 32, and a grid of
- * 5 — puts the median colour 0.38 from its nearest locked entry, the ninetieth percentile between
- * 3.7 and 10.3, the ninety-ninth between 9.8 and 20.4, and the furthest single colour at 38. Six
- * colours that sheet does not contain — a saturated red, cyan, orange, violet, emerald and pink —
- * sit between 20.8 and 54.5 from it. So the drift a lock exists to remove and the colours it must
- * not remove are cleanly apart at the median and overlap from about 20 to about 38, which is why
- * this is a dial and not a fixed threshold.
+ * the armour sheet (grid 6, a budget of 64, no keying) with the lock taken from the ink-weighted
+ * reading at 1.5× — its 64 colours — and measured **where the lock runs**. A lock takes the budget's
+ * place in the pipeline, so what it is handed is not another reading's 64-colour result but the
+ * colours that reading gives the palette step: the source pixels ahead of the dominant vote, and the
+ * blended cell colours after the two averaging readings. Over four re-readings — the ink-weighted one
+ * the lock came from, the dominant and k-centroid readings, and the ink-weighted one at a grid of 5
+ * — half the pixels sit within 0.49 or 0.50 of a locked entry, ninety-nine per cent within 11.15 to
+ * 20.40, and the furthest single colour is 25.72 to 45.36 away. A budget is not among them: a lock
+ * supersedes it, so every budget reads the same while one is held.
  *
- * The ceiling is 64 rather than the 48 the two cleanup dials stop at, because the useful span here
- * runs past theirs: at 48 the reddest of those six is still snapped, and a ceiling that cannot admit
- * a genuinely new colour would fail at the one job the gate has. It is a quarter of the 255 that
- * black to white measures.
+ * **The colours it must not take are named by hex**, because a population described in words cannot
+ * be measured again. The first half is the twelve fully saturated sRGB hues 30° apart — `#FF0000`,
+ * `#FF8000`, `#FFFF00`, `#80FF00`, `#00FF00`, `#00FF80`, `#00FFFF`, `#0080FF`, `#0000FF`, `#8000FF`,
+ * `#FF00FF` and `#FF0080` — less `#FF00FF`, which is the sheet's own key field at 3.72. The other
+ * eleven sit from 26.56 (`#FF8000`) to 69.95 (`#0000FF`). The second half is what real generator
+ * output brings, and nobody picked it: colours from the other corpus sheets' own 16-colour palettes,
+ * in hues this sheet has none of, sit well inside the drift — a navy `#172136` from
+ * `character_space_marine_blue.png` at 17.79 and a second, `#1F2B47`, at 21.56, a teal `#036066` from
+ * `three-quarter-view_tiles1.png` at 25.04, and a red `#871C20` from `cyborg_black_red.png` at 28.68.
+ * So no distance separates the drift a lock exists to remove from every colour it must keep, which is
+ * why this is a dial and not a fixed threshold.
+ *
+ * The ceiling is 64 rather than the 48 the two cleanup dials stop at, because the drift on real sheets
+ * runs past theirs. Locking each corpus sheet from its own ink-weighted reading the same way, the
+ * furthest colour the dominant reading hands that lock runs from 35.03 (`ui_elements1.png`) to 55.92
+ * (`vehicles_and_props.png`), and two of the eight pass 48 — so only a ceiling past 55.92 lets the top
+ * of the range take every colour of every one of them. It is a quarter of the 255 that black to white
+ * measures.
+ *
+ * `tests/quantiser-docblock-figures.test.ts` re-derives every figure in this note and the next.
  */
 export const PALETTE_SNAP_RANGE = { min: 0, max: 64, step: 1 } as const;
 
 /**
- * The snap distance the tab opens with, and the one figure here chosen by where the two populations
- * the range's note measures actually sit.
+ * The snap distance the tab opens with — a judgement rather than a measurement, because the two
+ * populations the range's note measures overlap and no integer separates them.
  *
- * They are 0.4 apart at the point they meet: the highest ninety-ninth percentile of drift measured
- * was 20.4, and the nearest of the six colours the sheet does not contain was 20.8. No integer lies
- * between them, so the opening errs towards **keeping** rather than snapping. At 20, of the four
- * re-readings measured, the share of pixels the lock takes is 100% at a budget of 32, 99.96% at a
- * grid of 5, 99.80% under the k-centroid reading and 93.93% under the dominant one — 59, 60 and 63
- * of each of those sheets' 64 colours, and all 32 of the 32-colour one — while every one of the six
- * colours the sheet does not contain is left alone. What it fails to take is by definition what sits furthest from the locked palette, which is
- * what snapping would change most; keeping it costs a few extra colours and no artwork. The dominant
- * reading is the outlier of the four because it selects rather than blends, so its cells land on the
- * source's own colours instead of on tones near the locked ones.
+ * **It errs towards keeping.** A colour kept that should have been taken costs the result one extra
+ * colour; a colour taken that should have been kept costs artwork — a gem or a faction trim redrawn in
+ * the locked palette. So the opening takes the widest drift on the reference sheet and goes no
+ * further. That drift is one colour: the source's pure black outline, 20.40 from the lock, which the
+ * dominant reading hands the lock as it stands and the ink-weighted reading the lock was taken from
+ * had blended into a dark tone. 21 is the first integer past it.
  *
- * A lock therefore does **not** promise a colour count. Nothing but the top of the range comes close
- * to promising one, and a setting that snapped a genuinely new colour to keep a number tidy would
- * have the gate failing at the one job it has.
+ * At 20 a dominant re-reading keeps that black and comes back 99.09% in locked colours; at 21 it is
+ * 100%, in 61 of them. The three averaging re-readings move from between 99.90% and 99.96% to between
+ * 99.93% and 99.97%, which leaves at most 0.07% of any re-reading's pixels for every step past 21 to
+ * take — while those steps reach the navy at 21.56 and the teal at 25.04. Every saturated hue the
+ * sheet does not hold is still kept, the nearest by 5.56. The opening already takes the navy at 17.79,
+ * and no opening that took the drift could keep it.
+ *
+ * **The black it is placed past belongs to this sheet.** Each corpus sheet locked from its own
+ * ink-weighted reading holds black at a different distance: 0 on `cyborg_monk.png`, and from 33.16 to
+ * 44.74 on the other six. On those six a dominant re-reading keeps its outlines black at this
+ * opening, and raising the dial is how a reader takes them.
+ *
+ * A lock therefore does **not** promise a colour count, not even for the sheet it was taken from: read
+ * again under the lock at 21, the reference sheet comes back in 76 colours, and in its own 64 only
+ * from 26, where its furthest colour (25.72) is inside the reach. Nothing but the top of the range
+ * comes close to promising one, and a setting that snapped a genuinely new colour to keep a number
+ * tidy would have the gate failing at the one job it has.
  */
-export const DEFAULT_PALETTE_SNAP = 20;
+export const DEFAULT_PALETTE_SNAP = 21;
 
 /**
  * The outline-expansion slider's range, `0` meaning the pass does not run.
@@ -2012,7 +2039,7 @@ export const QUANTISE_TOOLTIPS = {
   cleanupPasses:
     'How many times the fill cleanup runs over its own output. One pass settles every pixel that already disagreed with a settled neighbourhood; a pixel two deep in a speckled patch only becomes the lone odd one out after its neighbour has settled, which the next pass picks up. Each pass stops early when nothing changed, so a high setting costs nothing on a sheet that settles quickly. It does nothing while the fill cleanup itself is off.',
   paletteSnap:
-    'How near a held colour a colour in this sheet has to sit to be taken to it. Anything further away keeps the colour it arrived with, which is what stops the lock flattening a gem, a flame or a faction trim the sheet you locked from never had. Measured the way every colour distance on this tab is. Off means the lock reaches nothing, and the studio’s own colour setting decides the sheet’s colours as it would with no palette held. The default sits between the two things this has to tell apart on the sheet the dials were tuned against — the drift between two readings of one subject, and a colour that is genuinely new — and those overlap, so raise it when a shade that should have matched comes through as its own, and lower it when a new colour is swallowed by the palette.',
+    'How near a held colour a colour in this sheet has to sit to be taken to it. Anything further away keeps the colour it arrived with, which is what stops the lock flattening a gem, a flame or a faction trim the sheet you locked from never had. Measured the way every colour distance on this tab is. Off means the lock reaches nothing, and the studio’s own colour setting decides the sheet’s colours as it would with no palette held. The two things this has to tell apart — the drift between two readings of one subject, and a colour that is genuinely new — overlap, so the default leans towards keeping: a colour kept by mistake costs one extra colour, where a colour taken by mistake changes the artwork. Raise it when a shade that should have matched comes through as its own, and lower it when a new colour is swallowed by the palette.',
   dither:
     'How the palette step spreads a colour the palette cannot hold across neighbouring pixels, instead of rounding every one of those pixels to the nearest entry on its own. Each pixel is written as one of two palette colours, and which of the two is decided by where the pixel sits in a small repeating tile — so one colour always lands on one pattern, in every frame of an animation and on both sides of a tile seam. That is why the pattern is positional rather than an error-diffusion dither, where each pixel’s choice depends on the pixels already drawn: a shape that moves by a pixel between two frames would come back wearing a different pattern, and the dither would crawl as the animation played. BAYER_4 and BAYER_8 are the classic ordered tiles, whose crosshatch is what reads as a retro dither — the smaller is coarser and more obvious, the larger carries four times as many mixing ratios. BLUE_NOISE spreads the same ratios with no repeating figure at all, which is the quieter choice where a crosshatch would read as texture the artwork does not have. It is offered only while a colour budget, a pinned palette or a locked palette is in force, since without a palette there is nothing for a mixture to express. Turning it on also moves the colour merge and the fill cleanup ahead of it, so those dials tidy what the reading made of the sheet rather than the pattern drawn from it — which is also why the merge stops standing aside for a pinned or locked palette while a pattern is in force. One thing it costs: the standard vote’s outline rescue needs a colour reduction to have run before the patches are read, and a dither is that reduction held back to the end, so choosing a pattern switches the rescue off. Raise the outline expansion above it, or take the ink-weighted reading, if contours start to break up.',
   spriteGap:
