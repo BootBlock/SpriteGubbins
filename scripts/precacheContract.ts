@@ -655,8 +655,31 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2366 leaves **0.34 KiB**. It is the smallest whole figure over the build, for the reason the note
  * above gives.
+ *
+ * **Raised from 2366 by the prompt keeping the background key off the components** (#277). Section 0
+ * fixed the field as the key colour and never said a component may not be it, and a pinned palette
+ * could list the key as an entry. Section 0 and the self-audit now reserve it, the palette block
+ * leaves out and names every entry the Quantise tab's field pass would take, and a pure black outline
+ * on a pure black field is asked for as a very dark grey. Measured against `main` at `b74f61c`, rebuilt
+ * from the same lockfile — **2365.66 KiB across 64 entries** on the build's summary line — this build
+ * reports **2368.09 across 64** on the same line, a delta of 2.43 that crossed a ceiling the base sat
+ * 0.34 under. No file was
+ * added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * **The bytes are the change's own, but they do not land where it was written.** The palette block,
+ * the outline line and the three tooltip sentences are in `quantiseDials`, and the template's two new
+ * items are in `useCopyPrompt`. The prompt text now imports `keyReaches`, whose constants
+ * `quantiseDials` already carried, and the chunk sizes move accordingly: `quantiseDials` grows by
+ * 8,116 bytes while `SheetStepButtons` shrinks by 3,300 and `useCopyPrompt` by 2,338, and every other
+ * chunk moves by 19 bytes or fewer. That is consistent with modules moving into the shared chunk
+ * rather than being copied, and it nets to the 2.43 exactly; which modules moved was not traced. No
+ * worker chunk changed size, so nothing is paid for twice. The docblocks explaining the change are
+ * stripped from the bundle.
+ *
+ * 2369 leaves **0.91 KiB**. It is the smallest whole figure over the build, for the reason the notes
+ * above give.
  */
-export const PRECACHE_CEILING_KIB = 2366;
+export const PRECACHE_CEILING_KIB = 2369;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
