@@ -26,7 +26,7 @@ export const SPRITE_GUIDANCE = {
 
   /** Keyed, and it came apart into things a reader can count. */
   found:
-    'Each separate piece of artwork on the sheet is counted as a sprite, and pieces no further apart than the gap below are counted as one — which is what puts a floating sword back with the hand holding it, and a shadow back under the feet it belongs to. Switch the preview to Sprites to see the bounds that were drawn. Nothing here changes the sheet: it is a reading of the result, and the download is the same file whatever it says.',
+    'Each separate piece of artwork on the sheet is counted as a sprite, and pieces no further apart than the gap below are counted as one — which is what puts a floating sword back with the hand holding it, and a shadow back under the feet it belongs to. Switch the preview to Sprites to see the bounds that were drawn. Counting changes no pixel of the sheet, but these bounds are more than a report: an Aseprite document, a sprite pack and a manifest are built from them, and any snap below that acts on sprites acts on the ones drawn here.',
 
   /** Keyed, and one component came back — either a single-subject sheet, or a key that missed. */
   single:

@@ -27,7 +27,7 @@ export const DUPLICATE_GUIDANCE = {
    * is a judgement the reader makes by looking.
    */
   found:
-    'Some of the sprites on this sheet are the same drawing more than once. Sprites marked identical match pixel for pixel — a frame the generator handed back twice — and the rest came back close enough to count as one at the tolerance in force. Nothing has been changed: this is a reading of the result, and the download is the same file as it was. Switch the preview to Sprites and compare the bounds listed here against the picture before deciding, then turn the snap on if you want the repeats written as one drawing.',
+    'Some of the sprites on this sheet are the same drawing more than once. Sprites marked identical match pixel for pixel — a frame the generator handed back twice — and the rest came back close enough to count as one at the tolerance in force. Nothing on the sheet has been changed: this is a reading of the result, and the only downloads it reaches are a manifest and the sprite pack that carries one, which name the sprite each repeat is a copy of. Switch the preview to Sprites and compare the bounds listed here against the picture before deciding, then turn the snap on if you want the repeats written as one drawing.',
 
   /**
    * Groups were found and the snap has rewritten them.

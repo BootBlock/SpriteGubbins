@@ -1051,11 +1051,20 @@ export const SPRITE_GAP_RANGE = { min: 0, max: 8, step: 1 } as const;
 /**
  * The gap the tab opens with — one drawn pixel.
  *
- * The one dial here that opens engaged rather than off, and it can because it changes no pixel of
- * the sheet: it decides what a *reading* of the result counts, so an opening that is wrong costs a
- * number a reader can correct while they watch, not artwork they have to notice was altered. One
- * pixel is the reach that recovers a piece the keying separated by removing the blend between it and
- * its neighbour, which is the commonest way a sprite arrives in pieces.
+ * It opens engaged rather than at its zero, and what makes that safe is where the passes downstream
+ * of it open. **On its own the gap changes no pixel of the sheet**: it decides what a *reading* of
+ * the result counts. It is not inert, though. The Aseprite document, the sprite pack and the manifest
+ * are built from the boxes it draws whatever else is set, and three passes act on those boxes and
+ * rewrite artwork — the symmetry settle, the duplicate fold and the frame alignment — so under any of
+ * their snaps a moved gap moves pixels of the download as well. `settleSprites.test.ts` holds one
+ * case for each. All three of those passes open off, so an opening that is wrong costs a count a
+ * reader can correct while they watch rather than artwork they would have to notice was altered, and
+ * a reader who turns a snap on does so over boxes the Sprites preview has already drawn.
+ *
+ * No position takes the gap out of that chain — zero is not an off position, see
+ * {@link SPRITE_GAP_RANGE} — so the opening is chosen for the reading it gives. One pixel is the
+ * reach that recovers a piece the keying separated by removing the blend between it and its
+ * neighbour, which is the commonest way a sprite arrives in pieces.
  */
 export const DEFAULT_SPRITE_GAP = 1;
 
@@ -1255,13 +1264,15 @@ export const DUPLICATE_TOLERANCE_RANGE = { min: 0, max: 24, step: 1 } as const;
  *
  * One of three dials on this tab whose zero is not the pass being switched off — the symmetry
  * tolerance is the other of its kind, and the sprite gap the odd one, having no off position at all.
- * It opens at zero for
- * the reason the sprite gap opens engaged: the reading changes no pixel of the sheet, so an opening
- * that is wrong costs a number a reader can correct while they watch. What it opens *at* is the
- * finding nobody has to be persuaded of — a frame that came back byte-identical to another is a
- * frame the generator repeated, whatever anyone's tolerance for near-misses is. Everything above
- * zero is a judgement about how alike two drawings have to be, which is the reader's to make against
- * their own sheet.
+ * It opens at zero for the reason the sprite gap can open engaged: the pass that acts on this reading
+ * opens off — see {@link DEFAULT_DUPLICATE_SNAP} — so until a reader turns it on the tolerance
+ * changes no pixel of the sheet, and an opening that is wrong costs a number a reader can correct
+ * while they watch. (A manifest, and the sprite pack that carries one, records each group as a link
+ * between sprites, so those two downloads follow the dial whether the snap is on or not.) What it
+ * opens *at* is the finding nobody has to be persuaded of — a frame that came back byte-identical to
+ * another is a frame the generator repeated, whatever anyone's tolerance for near-misses is.
+ * Everything above zero is a judgement about how alike two drawings have to be, which is the
+ * reader's to make against their own sheet.
  */
 export const DEFAULT_DUPLICATE_TOLERANCE = 0;
 
@@ -2051,7 +2062,7 @@ export const QUANTISE_TOOLTIPS = {
   dither:
     'How the palette step spreads a colour the palette cannot hold across neighbouring pixels, instead of rounding every one of those pixels to the nearest entry on its own. Each pixel is written as one of two palette colours, and which of the two is decided by where the pixel sits in a small repeating tile — so one colour always lands on one pattern, in every frame of an animation and on both sides of a tile seam. That is why the pattern is positional rather than an error-diffusion dither, where each pixel’s choice depends on the pixels already drawn: a shape that moves by a pixel between two frames would come back wearing a different pattern, and the dither would crawl as the animation played. BAYER_4 and BAYER_8 are the classic ordered tiles, whose crosshatch is what reads as a retro dither — the smaller is coarser and more obvious, the larger carries four times as many mixing ratios. BLUE_NOISE spreads the same ratios with no repeating figure at all, which is the quieter choice where a crosshatch would read as texture the artwork does not have. It is offered only while a colour budget, a pinned palette or a locked palette is in force, since without a palette there is nothing for a mixture to express. Turning it on also moves the colour merge and the fill cleanup ahead of it, so those dials tidy what the reading made of the sheet rather than the pattern drawn from it — which is also why the merge stops standing aside for a pinned or locked palette while a pattern is in force. One thing it costs: the standard vote’s outline rescue needs a colour reduction to have run before the patches are read, and a dither is that reduction held back to the end, so choosing a pattern switches the rescue off. Raise the outline expansion above it, or take the ink-weighted reading, if contours start to break up.',
   spriteGap:
-    'How far apart two pieces of artwork may sit and still be counted as one sprite, in drawn pixels. A subject rarely comes back as one connected shape — a sword is held clear of the hand, a shadow sits under the feet, and keying an anti-aliased join can cut a pauldron away from the shoulder it rests on — so pieces this close together are read as parts of one thing. Unlike most dials on this tab, 0 is not an off position here: the count is always taken, and at 0 pieces are still gathered where their boxes overlap, which is what keeps an outstretched arm from being counted apart from the body it reaches out of. Raise it when one subject is being counted as several, and lower it when two neighbouring subjects are being counted as one — past the width of the gutter between them, the whole sheet folds into a single box. It changes no pixel of the sheet, only the reading of it, so the download is the same file whatever it is set to. Switch the preview to Sprites to see where the boundaries were drawn.',
+    'How far apart two pieces of artwork may sit and still be counted as one sprite, in drawn pixels. A subject rarely comes back as one connected shape — a sword is held clear of the hand, a shadow sits under the feet, and keying an anti-aliased join can cut a pauldron away from the shoulder it rests on — so pieces this close together are read as parts of one thing. Unlike most dials on this tab, 0 is not an off position here: the count is always taken, and at 0 pieces are still gathered where their boxes overlap, which is what keeps an outstretched arm from being counted apart from the body it reaches out of. Raise it when one subject is being counted as several, and lower it when two neighbouring subjects are being counted as one — past the width of the gutter between them, the whole sheet folds into a single box. On its own it changes no pixel of the sheet, only the reading of it, so a PNG downloads the same whatever it is set to — but an Aseprite document, a sprite pack and a manifest are all built from the boundaries it draws. It also reaches the artwork as soon as anything acts on that reading: with Symmetry on SNAP, the duplicate snap switched on, or Frame alignment on SNAP, moving it can change which sprites are settled, folded or moved, and so change the sheet itself. Switch the preview to Sprites to see where the boundaries were drawn.',
   symmetry:
     'Whether each sprite on the sheet is scored for vertical symmetry, and whether anything is done about it. Every separate piece of artwork the sheet was found to hold is scored against a range of candidate mirror lines, half a pixel apart, and the one its two halves agree best about is reported along with how much of the sprite actually mirrors around it. ' +
     CHECK_CHANGES_NOTHING +
@@ -2061,7 +2072,7 @@ export const QUANTISE_TOOLTIPS = {
   symmetryConfidence:
     'How much of a sprite has to mirror already before SNAP will settle it. This is the control that keeps a snap off the subjects that are asymmetric on purpose — a figure holding a sword agrees with its own mirror across the body and disagrees across the whole arm, so it lands well below the floor and is reported without being touched. Lower it to snap sprites that have drifted further apart, and raise it to settle only the ones that were nearly there already. It appears only while SNAP is chosen, since under CHECK every sprite is reported and none is rewritten. Sprites that pass are named in the panel, so what a change to this admits or refuses can be watched rather than guessed.',
   duplicateTolerance:
-    'How alike two sprites have to be before this reads them as one drawing. Generators repeat themselves — eight facings come back holding two of the same pose, an animation strip repeats a frame it was meant to move — and nothing else on this tab says so, because a repeated sprite is counted like any other. Each pair is laid over the other by its top-left corner and scored on the average distance between them, cell by cell, measured the way every colour distance here is — so what moves the figure is how many cells differ and by how much. Where one sprite reaches further than the other, the cells only it covers count as the widest difference there is, which is what keeps two drawings of genuinely different sizes apart. At 0 only sprites whose visible pixels match outright are grouped, which is the frame a generator handed back twice; raise it to reach the pair that came back a shade apart, and lower it when two poses that are genuinely different are being called the same. On its own it changes no pixel of the sheet — it is a reading of the result, and the download is the same file whatever it says. Switch the preview to Sprites to see the bounds it is working from.',
+    'How alike two sprites have to be before this reads them as one drawing. Generators repeat themselves — eight facings come back holding two of the same pose, an animation strip repeats a frame it was meant to move — and nothing else on this tab says so, because a repeated sprite is counted like any other. Each pair is laid over the other by its top-left corner and scored on the average distance between them, cell by cell, measured the way every colour distance here is — so what moves the figure is how many cells differ and by how much. Where one sprite reaches further than the other, the cells only it covers count as the widest difference there is, which is what keeps two drawings of genuinely different sizes apart. At 0 only sprites whose visible pixels match outright are grouped, which is the frame a generator handed back twice; raise it to reach the pair that came back a shade apart, and lower it when two poses that are genuinely different are being called the same. On its own it changes no pixel of the sheet — it is a reading of the result, so a PNG and an Aseprite document download the same whatever it says, while a manifest, and the sprite pack that carries one, records each repeat it finds as a link to the sprite it repeats. Switch the preview to Sprites to see the bounds it is working from.',
   duplicateSnap:
     'Rewrites every sprite the reading above grouped with the first sprite of its group, so a pose that came back three times slightly differently is written three times identically. That is what makes the repeats free downstream: one set of colours instead of three near-identical sets, one atlas cell where three were paid for, and no flicker when an animation plays through frames that were never quite the same. It changes the sheet, and it is the only control on this tab that does so by deleting artwork rather than transforming it — whatever made each copy different is gone from the download and from everything measured off it. Look at the count above before switching it on, and raise the tolerance slowly with it on so you can see which sprites are being folded. It has nothing to act on while the tolerance finds no groups.',
   frameAlignment:

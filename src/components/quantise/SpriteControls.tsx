@@ -47,13 +47,15 @@ interface SpriteControlsProps {
  * What the sheet broke into: how many sprites, how big the largest is, and how far apart two pieces
  * may sit before they stop being one.
  *
- * **A dial in the tab's control stack that changes no pixel of the result**, which the grid, the
- * keying, the downscale readings and the palette lock all do. This one changes a *reading* of what
- * those produced — which is why it opens engaged rather than off, and why the guidance says outright
- * that the download is the same file whatever it says. The symmetry and duplicate panels below it
- * are readings of the same kind, and each has one position — `SNAP`, and the duplicate fold — that
- * crosses back over into rewriting artwork.
- * (The comparison panel's own controls change no pixels either, but they decide how a result is
+ * **A dial in the tab's control stack that is a reading before it is anything else**, where the grid,
+ * the keying, the downscale readings and the palette lock all transform the sheet. This one decides
+ * what a reading of their product counts, which is why it can open engaged rather than off. It is
+ * not inert, and the guidance says so rather than promising an unchanged download: the Aseprite
+ * document, the sprite pack and the manifest are built from the boxes it draws, and the symmetry,
+ * duplicate and frame-alignment panels below it take those boxes as their input. Each of those has
+ * one position — `SNAP` in two of them, the fold in the third — that crosses back over into
+ * rewriting artwork, and under any of them a moved gap moves pixels too.
+ * (The comparison panel's own controls change no pixels at all, but they decide how a result is
  * *shown* rather than sitting among the dials that make it.)
  *
  * It earns a panel rather than a line in the comparison caption because it answers a question the

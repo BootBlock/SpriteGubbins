@@ -146,10 +146,11 @@ describe('sameQuantiseSettings', () => {
     // that never clears.
     expect(sameQuantiseSettings(BASE, { ...BASE, dither: 'BAYER_8' })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, dither: 'BLUE_NOISE' })).toBe(false);
-    // The sprite gap is the one dial on this shape that changes no pixel of the result — it changes
-    // the *reading* of it that travels back with the pixels. So this arm is the only thing making a
-    // sheet re-read when it moves: without it the tab would keep the previous segmentation, and the
-    // count beside a gap the reader had just changed would be the count for the gap before it.
+    // The sprite gap changes the *reading* of the result that travels back with the pixels, and
+    // reaches the pixels themselves only through a snap that acts on that reading — every one of
+    // which `BASE` leaves off. So here this arm is the only thing making a sheet re-read when it
+    // moves: without it the tab would keep the previous segmentation, and the count beside a gap the
+    // reader had just changed would be the count for the gap before it.
     expect(sameQuantiseSettings(BASE, { ...BASE, spriteGap: 4 })).toBe(false);
     // The three symmetry dials, for the same reason and one step further: the mode decides whether
     // a reading is taken at all, the tolerance decides what that reading says, and the floor decides

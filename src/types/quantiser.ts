@@ -527,12 +527,14 @@ export interface QuantiseTuning {
   /**
    * How far apart two pieces of artwork may sit and still be counted as one sprite, in drawn pixels.
    *
-   * A dial that changes no pixel of the result, which several here now are: the symmetry mode at
-   * `CHECK` and the tolerance that shapes what it reports, and the duplicate tolerance, whose own
-   * reading is acted on only by the separate snap beside it. It shapes {@link QuantiseResult.sprites}
-   * — the reading of the sheet the tab reports and the preview's outline mode draws — and it is on
-   * this shape rather than beside it because the segmentation travels with the result, so the
-   * comparison that decides whether a result is stale has to walk it like every other dial.
+   * On its own it changes no pixel of the result: it shapes {@link QuantiseResult.sprites} — the
+   * reading of the sheet the tab reports, the preview's outline mode draws, and the Aseprite, sprite
+   * pack and manifest writers build their frames, files and rects from. **It is upstream of the
+   * artwork all the same**, because the three passes taken over that reading act on it: under
+   * {@link symmetry}'s `SNAP`, {@link duplicateSnap} or {@link frameAlignment}'s `SNAP`, a moved gap
+   * changes which sprites are settled, folded or moved, and so changes pixels. See `settleSprites`.
+   * It is on this shape rather than beside it because the segmentation travels with the result, so
+   * the comparison that decides whether a result is stale has to walk it like every other dial.
    *
    * `0` is not an off position: the pass always runs, and at zero it still folds pieces whose boxes
    * overlap. See `spriteSegments`.
