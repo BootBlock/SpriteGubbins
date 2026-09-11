@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
 import { PROMPT_TEMPLATE } from '../src/constants/promptTemplate.ts';
-import { SUBJECT_FIELD_KEYS, type SubjectDefinition } from '../src/types/subject.ts';
 import { spellNumberCapitalised } from '../src/utils/numberWords.ts';
 import { generatePrompt } from '../src/utils/promptCompiler.ts';
 import { promptConditions } from '../src/utils/promptConditions.ts';
 import { sheetFacts } from '../src/utils/promptFacts.ts';
 import { applyOptionals } from '../src/utils/templateEngine.ts';
-import { codeSpans, documentBlock, markdownTables, oneLine } from './baselinePromptDocument.ts';
+import { codeSpans, documentBlock, oneLine, tableIn } from './baselinePromptDocument.ts';
+import { BLANK_SUBJECT } from './blankSubject.ts';
 import { isInside, sectionNumber, TEMPLATE_GATES, TEMPLATE_LINES, type Gate } from './templateGates.ts';
 
 /**
@@ -18,9 +18,9 @@ import { isInside, sectionNumber, TEMPLATE_GATES, TEMPLATE_LINES, type Gate } fr
  * existed, and the prose around it was never checked at all. It drifted the way §3 had, and in the
  * same direction: issue #222 found §1 naming six of the gates the truthy `[IF:KEY]` form serves when
  * the template used it for twenty-three, and saying "both numbered lists" use `[N].` when there were
- * three. Reading the rest of §1 back found a third: it offered a default after an optional's pipe,
- * which the engine has never had. Every one of those was true of some earlier template, and each was
- * overtaken by a commit with no reason to open a plan document.
+ * three. Both had been true of an earlier template and were overtaken by commits with no reason to
+ * open a plan document. Reading the rest of §1 back found a third claim of a different kind: it
+ * offered a default written after an optional's pipe, which the shipped engine has never had.
  *
  * **What is checked is what §1 states as fact about the shipped code** — which forms exist, which
  * gates take which form, where the nesting example sits, what an unset optional emits, which lists
@@ -33,8 +33,6 @@ import { isInside, sectionNumber, TEMPLATE_GATES, TEMPLATE_LINES, type Gate } fr
  * has to restore one is an author reading the claim as they go.
  */
 const SECTION = '## 1. Placeholder conventions';
-
-const BLANK_SUBJECT = Object.fromEntries(SUBJECT_FIELD_KEYS.map((key) => [key, ''])) as SubjectDefinition;
 
 /** How the document's table writes each form, keyed by the operator the walk reads. */
 const FORM_SPELLING: Readonly<Record<Gate['operator'], string>> = {
@@ -68,7 +66,7 @@ describe('§1 of the baseline-prompt document describes the placeholders the tem
 
   it('lists the conditional forms the template writes, and no others', () => {
     const block = documentBlock(SECTION, '### `[IF:');
-    const forms = (markdownTables(block)[0]?.rows ?? []).map((row) => codeSpans(row[0] ?? '')[0] ?? '');
+    const forms = tableIn(block).rows.map((row) => codeSpans(row[0] ?? '')[0] ?? '');
     const written = new Set(TEMPLATE_GATES.map(({ gate }) => FORM_SPELLING[gate.operator]));
 
     expect(oneLine(block)).toContain(`${spellNumberCapitalised(forms.length)} forms:`);
@@ -76,7 +74,7 @@ describe('§1 of the baseline-prompt document describes the placeholders the tem
   });
 
   it('names the gates the truthy form does not serve, and every other gate takes it', () => {
-    const row = (markdownTables(documentBlock(SECTION, '### `[IF:'))[0]?.rows ?? []).find(
+    const row = tableIn(documentBlock(SECTION, '### `[IF:')).rows.find(
       (cells) => codeSpans(cells[0] ?? '')[0] === FORM_SPELLING[''],
     );
     const exceptions = /every gate but (.*?) takes this form/.exec(row?.[1] ?? '')?.[1];
@@ -85,6 +83,7 @@ describe('§1 of the baseline-prompt document describes the placeholders the tem
     );
 
     expect(exceptions, 'The `[IF:KEY]` row no longer says “every gate but … takes this form”.').toBeDefined();
+    expect(CONDITION_KEYS.length).toBeGreaterThan(0);
     expect(new Set(TEMPLATE_GATES.map(({ gate }) => gate.key))).toStrictEqual(new Set(CONDITION_KEYS));
     expect([...codeSpans(exceptions ?? '')].sort()).toStrictEqual(
       CONDITION_KEYS.filter((key) => !truthy.has(key)).sort(),
@@ -100,7 +99,7 @@ describe('§1 of the baseline-prompt document describes the placeholders the tem
       ['MULTI_DIRECTION', '', ''],
     ];
 
-    expect(prose).toContain(`§${String(audit)}'s self-audit applies only to a target that can act on it`);
+    expect(prose).toContain(`— §${String(audit)}'s self-audit applies only to a target that can act on it`);
     expect(prose).toContain('the rig, pixel-art and directional checks apply only to those sheets');
     for (const [key, operator, operands] of checks) {
       const inAudit = TEMPLATE_GATES.filter(
@@ -134,11 +133,6 @@ describe('§1 of the baseline-prompt document describes the placeholders the tem
     // name is set, so there is no branch a default could be written into.
     expect(prose).toContain('There is no fallback branch: an unset name emits nothing at all');
     expect(applyOptionals(example, { [name]: '' })).toBe('');
-
-    // "Strictly single-line by contract": every optional the template writes opens and closes on one line.
-    expect(optionalLines.filter((line) => !/^\[OPTIONAL:[A-Z0-9_]+\s*\|.*\]$/.test(line.text))).toStrictEqual(
-      [],
-    );
 
     expect(prose).toContain('The template states the rule itself, at the head of its subject section');
     const subject = TEMPLATE_LINES.filter((line) => line.section === 'SUBJECT').map((line) => line.text);

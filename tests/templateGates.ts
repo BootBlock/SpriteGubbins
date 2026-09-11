@@ -72,7 +72,7 @@ export const TEMPLATE_GATES = TEMPLATE_LINES.filter(
  * document writes: every section present, `CONTRACT` at 0. The rig and layout headings are each
  * declared twice from exclusive blocks, and count once.
  */
-export const SECTION_ORDER: readonly string[] = [
+const SECTION_ORDER: readonly string[] = [
   ...new Set(TEMPLATE_LINES.flatMap((line) => SECTION_DECLARATION.exec(line.text)?.[1] ?? [])),
 ];
 

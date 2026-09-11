@@ -24,7 +24,7 @@ export interface OutputState {
   /**
    * Change several settings at once, leaving the rest alone.
    *
-   * What choosing a hardware profile does: a machine writes seven settings and a palette in one
+   * What choosing a hardware profile does: a machine writes its own id and seven settings in one
    * act, and doing that as eight `setOutputField` calls would put eight entries in the store's
    * history where the user performed one. It merges from the *current* state rather than from a
    * value the caller read earlier, which `setOutputConfig` cannot do — that one replaces, and a

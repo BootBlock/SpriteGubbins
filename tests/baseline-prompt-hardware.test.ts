@@ -11,7 +11,7 @@ import { PALETTE_IDS, type Palette, type PaletteId } from '../src/types/palette.
 import { STYLE_REFERENCE_IDS } from '../src/types/styleReference.ts';
 import { channelSpaceSize } from '../src/utils/channelLevels.ts';
 import { spellNumber } from '../src/utils/numberWords.ts';
-import { codeSpans, documentBlock, markdownTables, oneLine } from './baselinePromptDocument.ts';
+import { codeSpans, documentBlock, oneLine, tableIn } from './baselinePromptDocument.ts';
 import { isInside, sectionNumber, TEMPLATE_GATES, TEMPLATE_LINES } from './templateGates.ts';
 
 /**
@@ -54,8 +54,9 @@ function prose(): string {
 }
 
 function rowFor(parameter: string): readonly string[] {
-  const rows = markdownTables(documentBlock(...SUBSECTION))[0]?.rows ?? [];
-  const row = rows.find((cells) => codeSpans(cells[0] ?? '')[0] === parameter);
+  const row = tableIn(documentBlock(...SUBSECTION)).rows.find(
+    (cells) => codeSpans(cells[0] ?? '')[0] === parameter,
+  );
   if (row === undefined) throw new Error(`§2 no longer has a row for \`${parameter}\`.`);
   return row;
 }
@@ -111,6 +112,7 @@ describe('§2 of the baseline-prompt document describes the hardware, palette an
         (line) => sectionNumber(line.section),
       );
 
+      expect(named.length, `§2's \`${parameter}\` row names no section`).toBeGreaterThan(0);
       expect(
         [...new Set(gated)].sort((a, b) => a - b),
         `§2's \`${parameter}\` row`,
@@ -179,7 +181,7 @@ describe('§2 of the baseline-prompt document describes the hardware, palette an
     expect(prose()).toContain(
       `the Game Boy's ${spellNumber(fixedEntries('GAME_BOY_DMG').length)} greens, ` +
         `the C64's ${spellNumber(fixedEntries('COMMODORE_64').length)}, ` +
-        `the 2600's ${String(fixedEntries('ATARI_2600_NTSC').length)}`,
+        `the 2600's ${String(fixedEntries('ATARI_2600_NTSC').length)} — and every entry is written into the prompt`,
     );
     expect(prose()).toContain(
       `the Master System (${String(bitsPerChannel('MASTER_SYSTEM'))} bits per channel), ` +
@@ -190,12 +192,14 @@ describe('§2 of the baseline-prompt document describes the hardware, palette an
       `since ${String(channelSpaceSize(bitsPerChannel('MEGA_DRIVE')))} entries are not a list`,
     );
 
-    expect(prose()).toContain('and every entry is written into the prompt');
-    for (const palette of LIBRARY_PALETTES) {
-      if (palette.space.kind !== 'FIXED') continue;
+    const fixed = LIBRARY_PALETTES.flatMap((palette) =>
+      palette.space.kind === 'FIXED' ? [{ palette, entries: palette.space.entries }] : [],
+    );
+    expect(fixed.length).toBeGreaterThan(0);
+    for (const { palette, entries } of fixed) {
       const block = describePalette(palette);
       expect(
-        palette.space.entries.filter((entry) => !block.includes(entry)),
+        entries.filter((entry) => !block.includes(entry)),
         palette.id,
       ).toStrictEqual([]);
     }
@@ -204,7 +208,9 @@ describe('§2 of the baseline-prompt document describes the hardware, palette an
   it('drops the budget line where a palette is pinned, and keeps the background the key colour', () => {
     const strategy = TEMPLATE_LINES.filter((line) => line.text.includes('[DEFINE:PALETTE_DESCRIPTION]'));
 
-    expect(prose()).toContain(`the strategy line is dropped from §${String(sectionNumber('STYLE'))}`);
+    expect(prose()).toContain(
+      `the strategy line is dropped from §${String(sectionNumber('STYLE'))} rather than emitted alongside it`,
+    );
     expect(strategy.length).toBeGreaterThan(0);
     expect(strategy.every((line) => line.section === 'STYLE' && isInside(line, 'PALETTE', '!=', 'yes'))).toBe(
       true,
@@ -213,6 +219,7 @@ describe('§2 of the baseline-prompt document describes the hardware, palette an
     expect(prose()).toContain(
       `the background field, which stays the key colour §${String(sectionNumber('CONTRACT'))} fixes rather than being drawn from the palette`,
     );
+    expect(LIBRARY_PALETTES.length).toBeGreaterThan(0);
     expect(
       LIBRARY_PALETTES.filter((palette) => !describePalette(palette).includes('stays the key colour')),
     ).toStrictEqual([]);

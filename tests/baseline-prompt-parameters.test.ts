@@ -12,11 +12,17 @@ import {
 } from '../src/types/output.ts';
 import { BACKGROUND_KEYS } from '../src/types/rendering.ts';
 import { JOINT_CAP_STYLES, OVERLAP_MARGINS, RIG_MODES } from '../src/types/rigging.ts';
-import { SUBJECT_FIELD_KEYS, type SubjectDefinition } from '../src/types/subject.ts';
 import { nativeGridScale } from '../src/utils/nativeGridScale.ts';
 import { generatePrompt } from '../src/utils/promptCompiler.ts';
 import { deliberates, returnsText } from '../src/utils/targetCapabilities.ts';
-import { asProse, codeSpans, documentBlock, markdownTables } from './baselinePromptDocument.ts';
+import { asProse } from './asProse.ts';
+import {
+  codeSpans,
+  documentBlock,
+  markdownTables,
+  RENDERING_TABLE_HEADINGS,
+} from './baselinePromptDocument.ts';
+import { BLANK_SUBJECT } from './blankSubject.ts';
 import { sectionNumber, sectionTitle, TEMPLATE_GATES } from './templateGates.ts';
 
 /**
@@ -29,19 +35,23 @@ import { sectionNumber, sectionTitle, TEMPLATE_GATES } from './templateGates.ts'
  * the code". Nothing enforced either correction, which is the argument issue #222 made one section
  * out from the fence `prompt-template-mirror.test.ts` pins.
  *
- * **Every parameter row has to be read by something.** A row names a field, and then either lists
- * its values, states what kind of value it holds, points at a library the hardware suite reads, or
- * defers to another section. A row making a claim none of those shapes recognises fails, so a new
- * table cannot join §2 as unchecked prose; the answer is to teach this suite what the new shape
- * means.
+ * **Every table in §2 is read by something.** A table headed by a parameter is read here; a table
+ * under one of the `RENDERING_TABLE_HEADINGS` is read by `baseline-prompt-rendering.test.ts`; a table
+ * anywhere else fails. Within a parameter table, each row's values cell has to take a shape this
+ * suite recognises — it lists the parameter's values, states the kind of value the field holds,
+ * names a library the hardware suite reads, or defers to another section — and a cell in none of
+ * those shapes fails, so the answer to a new shape is to teach this suite what it means.
  *
- * The render-style, projection and direction tables are `baseline-prompt-rendering.test.ts`'s, the
- * subject paragraphs are `baseline-prompt-subject.test.ts`'s, and the hardware, palette and
- * reference block is `baseline-prompt-hardware.test.ts`'s.
+ * **Two kinds of cell are pointers, and nothing follows them.** A values cell reading `see §7` is
+ * accepted as a deferral, and §7 is read by none of these suites. The section references in the
+ * `Why` column — `(§8.4)`, `(§5)` — point at the document's own reasoning. The `Why` and `Emits`
+ * cells that state a fact about the code are read by the check for that fact: `SPRITE_TARGET_SIZE`'s
+ * here, and the three libraries' in the hardware suite.
+ *
+ * The subject paragraphs are `baseline-prompt-subject.test.ts`'s, and the prose around the hardware,
+ * palette and reference table is `baseline-prompt-hardware.test.ts`'s.
  */
 const SECTION = '## 2. Parameters';
-
-const BLANK_SUBJECT = Object.fromEntries(SUBJECT_FIELD_KEYS.map((key) => [key, ''])) as SubjectDefinition;
 
 /** Each parameter whose row lists its values, and the `as const` array that defines them. */
 const ENUMERATED: Readonly<Record<string, readonly string[]>> = {
@@ -92,6 +102,33 @@ function rowFor(parameter: string): readonly string[] {
 }
 
 describe('§2 of the baseline-prompt document names the parameters the compiler offers', () => {
+  it('reads every table in §2, here or in the rendering suite', () => {
+    const block = documentBlock(SECTION);
+    const headings = block.split('\n').filter((line) => line.startsWith('### '));
+    const bySubsection = headings.map((heading) => ({
+      heading,
+      tables: markdownTables(documentBlock(SECTION, heading)),
+    }));
+    const unread = bySubsection.flatMap(({ heading, tables }) =>
+      tables
+        .filter(
+          (table) =>
+            table.header[0] !== 'Parameter' &&
+            !RENDERING_TABLE_HEADINGS.some((prefix) => heading.startsWith(prefix)),
+        )
+        .map((table) => `${heading}: | ${table.header.join(' | ')} |`),
+    );
+
+    // Every table sits under a subsection heading, so none is outside the walk above.
+    expect(bySubsection.reduce((total, { tables }) => total + tables.length, 0)).toBe(
+      markdownTables(block).length,
+    );
+    expect(
+      RENDERING_TABLE_HEADINGS.filter((prefix) => !headings.some((heading) => heading.startsWith(prefix))),
+    ).toStrictEqual([]);
+    expect(unread).toStrictEqual([]);
+  });
+
   it('names only parameters the output configuration has', () => {
     const block = documentBlock(SECTION);
     const inHeadings = block
@@ -105,7 +142,8 @@ describe('§2 of the baseline-prompt document names the parameters the compiler 
   });
 
   it('makes a claim some check reads in every parameter row', () => {
-    const unread = parameterRows().filter((row) => {
+    const rows = parameterRows();
+    const unread = rows.filter((row) => {
       const parameter = codeSpans(row[0] ?? '')[0] ?? '';
       const values = row[1] ?? '';
       return !(
@@ -116,6 +154,7 @@ describe('§2 of the baseline-prompt document names the parameters the compiler 
       );
     });
 
+    expect(rows.length).toBeGreaterThan(0);
     expect(unread).toStrictEqual([]);
   });
 
@@ -188,8 +227,9 @@ describe('§2 of the baseline-prompt document names the parameters the compiler 
     ].sort((a, b) => a - b);
     const target = { width: 16, height: 32 };
 
+    expect(sections.length).toBeGreaterThan(0);
     expect(why).toContain(
-      `${asProse(sections.map((number) => `§${String(number)}`))} state the whole-number scale`,
+      `the artwork is drawn on, and ${asProse(sections.map((number) => `§${String(number)}`))} state the whole-number scale`,
     );
     expect(why).toContain('On a pixel-art sheet under `CUSTOM`');
     expect(nativeGridScale('PIXEL_ART', 'CUSTOM', target, 'WIDE_16_9', 12)).not.toBeNull();

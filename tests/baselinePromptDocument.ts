@@ -10,12 +10,26 @@ import { resolve } from 'node:path';
  * character by `prompt-template-mirror.test.ts`; §1 and §2 are read back by the
  * `baseline-prompt-*.test.ts` suites, and this is the parsing all of them share.
  *
- * **The parsing is deliberately shallow.** It finds a heading, the tables under it and the code
- * spans in a cell — which is all the document's claims are written in — and it throws, naming the
- * heading, when a block it expects is gone. A restructured section therefore fails the suite that
- * reads it rather than leaving an assertion to pass over nothing.
+ * **The parsing is deliberately shallow**, because a heading, the tables under it and the code spans
+ * in a cell are all the document's claims are written in. Two of its readers throw rather than
+ * returning nothing: `documentBlock` when a heading it is asked for has gone, and `tableIn` when a
+ * block holds no table. Past those two points — a cell, a code span, a phrase — an empty answer is
+ * the assertion's to catch, which is why the suites guard each list they derive against coming back
+ * empty before they compare it.
  */
 export const BASELINE_PROMPT_DOC = 'docs/todo/baseline-prompt-new.md';
+
+/**
+ * The §2 subsections whose tables are headed by a value rather than a parameter, and whose second
+ * column quotes text the compiler emits. `baseline-prompt-rendering.test.ts` reads each of them, and
+ * `baseline-prompt-parameters.test.ts` reads every other §2 table — so a table under a heading in
+ * neither place fails there rather than joining the section unread.
+ */
+export const RENDERING_TABLE_HEADINGS = [
+  '### `RENDER_STYLE`',
+  '### `PROJECTION`',
+  '### `DIRECTIONS`',
+] as const;
 
 /**
  * The document's text, with line endings normalised on the way in so that a failure is always about
@@ -92,6 +106,17 @@ export function markdownTables(block: string): readonly MarkdownTable[] {
   return tables;
 }
 
+/** The first table in a block, or throws naming the block's heading when it holds none. */
+export function tableIn(block: string): MarkdownTable {
+  const table = markdownTables(block)[0];
+  if (table === undefined || table.rows.length === 0) {
+    throw new Error(
+      `${BASELINE_PROMPT_DOC} has no table under “${block.split('\n')[0] ?? ''}” where a check expects one.`,
+    );
+  }
+  return table;
+}
+
 /** The contents of every code span in `text`, in order. */
 export function codeSpans(text: string): readonly string[] {
   return [...text.matchAll(/`([^`]+)`/g)].map((match) => match[1] ?? '');
@@ -111,10 +136,4 @@ export function oneLine(text: string): string {
     .replace(/^(`{3,}).*\n[\s\S]*?^\1[ \t]*$/gm, '')
     .replace(/^>[ \t]?/gm, '')
     .replace(/\s+/g, ' ');
-}
-
-/** `a, b and c` — how the document joins a list, with no serial comma. */
-export function asProse(items: readonly string[]): string {
-  if (items.length < 2) return items.join('');
-  return `${items.slice(0, -1).join(', ')} and ${String(items.at(-1))}`;
 }

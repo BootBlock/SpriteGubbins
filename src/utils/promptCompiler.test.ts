@@ -2481,7 +2481,7 @@ describe('generatePrompt — the machine and its palette', () => {
 
   it('excepts the background field from the palette, in the contract and in the block', () => {
     // Without this the two halves of the prompt contradict each other outright: section 0 fixes the
-    // field at magenta, and no palette in the library contains it.
+    // field at magenta, and the Game Boy's four greens pinned here do not contain it.
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'GAME_BOY_DMG' }));
 
     expect(prompt).toContain('The background field is the exception and stays the key colour');

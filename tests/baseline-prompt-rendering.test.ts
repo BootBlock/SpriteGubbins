@@ -12,7 +12,14 @@ import { OBJECT_YAW } from '../src/constants/promptText/rotation.ts';
 import { coreFacingChunks } from '../src/constants/sheetPlans/directionalViews.ts';
 import { DIRECTION_SETS, PROJECTIONS, RENDER_STYLES, type Projection } from '../src/types/rendering.ts';
 import { spellNumber } from '../src/utils/numberWords.ts';
-import { asProse, codeSpans, documentBlock, markdownTables, oneLine } from './baselinePromptDocument.ts';
+import { asProse } from './asProse.ts';
+import {
+  codeSpans,
+  documentBlock,
+  oneLine,
+  RENDERING_TABLE_HEADINGS,
+  tableIn,
+} from './baselinePromptDocument.ts';
 
 /**
  * §2's render-style, projection and direction tables, read back against the text the compiler emits
@@ -30,10 +37,16 @@ import { asProse, codeSpans, documentBlock, markdownTables, oneLine } from './ba
  */
 const SECTION = '## 2. Parameters';
 
+const [RENDER_STYLE_TABLE, PROJECTION_TABLE, DIRECTIONS_TABLE] = RENDERING_TABLE_HEADINGS;
+
 /** A table's rows as `value → remaining cells`, keyed by the value's code span. */
 function rowsOf(heading: string): ReadonlyMap<string, readonly string[]> {
-  const rows = markdownTables(documentBlock(SECTION, heading))[0]?.rows ?? [];
-  return new Map(rows.map((row) => [codeSpans(row[0] ?? '')[0] ?? '', row.slice(1)]));
+  return new Map(
+    tableIn(documentBlock(SECTION, heading)).rows.map((row) => [
+      codeSpans(row[0] ?? '')[0] ?? '',
+      row.slice(1),
+    ]),
+  );
 }
 
 /** How the elevation column writes a projection's range. */
@@ -56,7 +69,7 @@ function facingsWithFlip(set: keyof typeof DIRECTION_LISTS): number {
 
 describe('§2 of the baseline-prompt document quotes the rendering text the compiler emits', () => {
   it('quotes each render style’s description as the prompt carries it', () => {
-    const rows = rowsOf('### `RENDER_STYLE`');
+    const rows = rowsOf(RENDER_STYLE_TABLE);
 
     expect([...rows.keys()].sort()).toStrictEqual([...RENDER_STYLES].sort());
     for (const style of RENDER_STYLES) {
@@ -65,7 +78,7 @@ describe('§2 of the baseline-prompt document quotes the rendering text the comp
   });
 
   it('quotes each projection’s description and elevation as the code has them', () => {
-    const rows = rowsOf('### `PROJECTION`');
+    const rows = rowsOf(PROJECTION_TABLE);
 
     expect([...rows.keys()].sort()).toStrictEqual([...PROJECTIONS].sort());
     for (const projection of PROJECTIONS) {
@@ -80,13 +93,11 @@ describe('§2 of the baseline-prompt document quotes the rendering text the comp
       return min !== max;
     });
     expect(open).toStrictEqual([...rows.keys()].slice(0, 1));
-    expect(oneLine(documentBlock(SECTION, '### `PROJECTION`'))).toContain(
-      'only the first row leaves it open',
-    );
+    expect(oneLine(documentBlock(SECTION, PROJECTION_TABLE))).toContain('only the first row leaves it open');
   });
 
   it('spells each direction set the way the prompt does', () => {
-    const rows = rowsOf('### `DIRECTIONS`');
+    const rows = rowsOf(DIRECTIONS_TABLE);
 
     expect([...rows.keys()].sort()).toStrictEqual([...DIRECTION_SETS].sort());
     for (const set of DIRECTION_SETS) {
@@ -97,19 +108,20 @@ describe('§2 of the baseline-prompt document quotes the rendering text the comp
   });
 
   it('states the default set, and the arithmetic that chose it, as the sets have them', () => {
-    const prose = oneLine(documentBlock(SECTION, '### `DIRECTIONS`'));
+    const prose = oneLine(documentBlock(SECTION, DIRECTIONS_TABLE));
     const classic = DIRECTION_LISTS.THREE_CLASSIC.map((direction) => OBJECT_YAW[direction]);
     const added = DIRECTION_LISTS.FIVE_CLASSIC.map((direction) => OBJECT_YAW[direction]).filter(
       (yaw) => !classic.includes(yaw),
     );
 
+    expect(added.length).toBeGreaterThan(0);
     expect(prose).toContain(`\`${DEFAULT_OUTPUT_CONFIG.directions}\` is the studio's default set`);
     expect(added.every((yaw) => mirrored(yaw) === yaw)).toBe(true);
-    expect(prose).toContain(`${asProse(added.map((yaw) => `${String(yaw)}°`))} are their own mirror`);
+    expect(prose).toContain(` ${asProse(added.map((yaw) => `${String(yaw)}°`))} are their own mirror`);
     expect(prose).toContain(`each of ${classic.join('/')} buys a distinct second facing`);
     expect(prose).toContain(`set at ${spellNumber(facingsWithFlip('THREE_CLASSIC'))} facings`);
     expect(prose).toContain(
-      `takes the classic vocabulary to all ${spellNumber(facingsWithFlip('FIVE_CLASSIC'))}`,
+      `takes the classic vocabulary to all ${spellNumber(facingsWithFlip('FIVE_CLASSIC'))}.`,
     );
   });
 
@@ -117,7 +129,7 @@ describe('§2 of the baseline-prompt document quotes the rendering text the comp
     const chunks = coreFacingChunks(DIRECTION_LISTS.EIGHT_COMPASS);
     const cardinal = (direction: keyof typeof OBJECT_YAW) => OBJECT_YAW[direction] % 90 === 0;
 
-    expect(oneLine(documentBlock(SECTION, '### `DIRECTIONS`'))).toContain(
+    expect(oneLine(documentBlock(SECTION, DIRECTIONS_TABLE))).toContain(
       'the `EIGHT_COMPASS` core splits into a cardinal and a diagonal sheet',
     );
     expect(chunks).toHaveLength(2);

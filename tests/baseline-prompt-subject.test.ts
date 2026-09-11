@@ -3,11 +3,12 @@ import { NO_ADDITIONAL_ANATOMY } from '../src/constants/anatomy.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
 import { DIRECTION_LISTS } from '../src/constants/promptText/camera.ts';
 import type { DirectionSet } from '../src/types/rendering.ts';
-import { SUBJECT_FIELD_KEYS, type SubjectDefinition } from '../src/types/subject.ts';
+import { SUBJECT_FIELD_KEYS } from '../src/types/subject.ts';
 import { countAnatomyComponents, parseAdditionalAnatomy } from '../src/utils/additionalAnatomy.ts';
 import { spellNumber } from '../src/utils/numberWords.ts';
 import { generatePrompt } from '../src/utils/promptCompiler.ts';
 import { codeSpans, documentBlock, oneLine } from './baselinePromptDocument.ts';
+import { BLANK_SUBJECT } from './blankSubject.ts';
 import { TEMPLATE_LINES } from './templateGates.ts';
 
 /**
@@ -25,8 +26,6 @@ import { TEMPLATE_LINES } from './templateGates.ts';
  * than restated.
  */
 const SUBSECTION = ['## 2. Parameters', '### Subject'] as const;
-
-const BLANK_SUBJECT = Object.fromEntries(SUBJECT_FIELD_KEYS.map((key) => [key, ''])) as SubjectDefinition;
 
 /** The component count section 0 states. */
 function componentCount(prompt: string): number {
@@ -80,7 +79,7 @@ describe('§2 of the baseline-prompt document describes the subject the template
     expect(five?.adds).toBe(countAnatomyComponents(pieces) * (five?.facings ?? 0));
     expect(prose).toContain(
       `so a ${spellNumber(one?.facings ?? 0)}-facing sheet gains ${spellNumber(one?.adds ?? 0)} components and a ` +
-        `${spellNumber(five?.facings ?? 0)}-facing one ${spellNumber(five?.adds ?? 0)}`,
+        `${spellNumber(five?.facings ?? 0)}-facing one ${spellNumber(five?.adds ?? 0)} —`,
     );
   });
 
