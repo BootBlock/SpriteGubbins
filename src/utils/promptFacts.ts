@@ -1,4 +1,6 @@
+import { BACKGROUND_KEY_COLORS } from '../constants/backgroundKeyColors.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
+import type { Rgba } from '../types/quantiser.ts';
 import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
 import type { HardwareProfile } from '../types/hardware.ts';
@@ -62,6 +64,15 @@ export interface SheetFacts {
   readonly anatomy: readonly AnatomyComponent[];
   readonly hardware: HardwareProfile | null;
   readonly palette: Palette | null;
+  /**
+   * The colour the background is keyed on, or `null` for a transparent field.
+   *
+   * A fact because three phases ask it: `promptConditions` gates section 0's reservation and the
+   * self-audit's check on it, and `promptValues` hands it to the palette block and the outline line,
+   * which each leave out what the key would take. Asked separately, one of them could reserve a key
+   * the other offers a component.
+   */
+  readonly keyColor: Rgba | null;
   readonly reference: StyleReference | null;
   readonly validationPass: ReturnType<typeof validationPassFor>;
   readonly componentCount: number;
@@ -312,6 +323,7 @@ export function sheetFacts(
     anatomy,
     hardware,
     palette,
+    keyColor: BACKGROUND_KEY_COLORS[output.backgroundKey],
     reference,
     validationPass,
     componentCount,

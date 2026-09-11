@@ -137,6 +137,21 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * measure the template's wording against the ceiling rather than choose it for the sheet. That
  * cannot be the answer twice: the preset gave the margin back instead, and says so in its own file.
  *
+ * **Section 0 reserves the key colour for the background, and until it did a pinned palette could
+ * offer it to a component (#277).** The item fixing the background said what the field is and never
+ * that a component may not be it, while the Quantise tab removes the field by distance wherever it
+ * sits — so a component drawn in the key, or near enough to it, is cut away with the background. A
+ * palette turned that from a risk into an instruction: the ZX Spectrum lists `#FF00FF`, and every
+ * channel-depth ladder reaches all three coloured keys. The reservation is stated once, for every
+ * sheet whose field is a colour, and it closes on *whatever colour anything below names* because
+ * section 1, the identity lock and section 2 can all name one. The parts of section 2 that name
+ * colours are then **derived** from the same answer rather than left to lose to it: `describePalette`
+ * leaves out every entry `keyReaches` takes, and `outlineDescription` asks for a very dark grey where
+ * the style says pure black and the field is pure black. The self-audit checks it beside the
+ * background item. Both are gated on `KEY_COLOUR`, since a transparent field has no colour to
+ * reserve, and together they still leave `Side-On Rail Gun Car` inside the Qwen share
+ * `presetCoverage.test.ts` allows it.
+ *
  * **Section 3 names this subject's one-sided features, and section 9 stopped asking the model to
  * choose one.** The old bullet read "pick one feature the subject carries on one side and not the
  * other — its **chirality witness** — and trace that one feature through every view", and measured
@@ -282,6 +297,10 @@ Satisfy this section before any aesthetic consideration.
 [N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
+[IF:KEY_COLOUR]
+   That colour belongs to the background alone: no part of any component is drawn in it, or in a
+   shade near enough to be taken for it, whatever colour anything below names.
+[/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
 [/IF]
@@ -942,6 +961,9 @@ Before delivering, verify:
 [N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
 [N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
+[IF:KEY_COLOUR]
+[N]. No part of any component is in the key colour, or in a shade near enough to be taken for it.
+[/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text or labels anywhere.
 [/IF]

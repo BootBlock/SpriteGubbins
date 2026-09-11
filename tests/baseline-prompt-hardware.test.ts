@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { BACKGROUND_KEY_COLORS } from '../src/constants/backgroundKeyColors.ts';
 import { HARDWARE_PROFILES } from '../src/constants/hardware/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
 import { PALETTES } from '../src/constants/palettes/index.ts';
@@ -10,6 +11,8 @@ import { HARDWARE_PROFILE_IDS } from '../src/types/hardware.ts';
 import { PALETTE_IDS, type Palette, type PaletteId } from '../src/types/palette.ts';
 import { STYLE_REFERENCE_IDS } from '../src/types/styleReference.ts';
 import { channelSpaceSize } from '../src/utils/channelLevels.ts';
+import { fromHex, toHex } from '../src/utils/imageData.ts';
+import { keyReaches } from '../src/utils/keyReach.ts';
 import { spellNumber } from '../src/utils/numberWords.ts';
 import { codeSpans, documentBlock, oneLine, tableIn } from './baselinePromptDocument.ts';
 import { isInside, sectionNumber, TEMPLATE_GATES, TEMPLATE_LINES } from './templateGates.ts';
@@ -91,6 +94,8 @@ function bitsPerChannel(id: PaletteId): number {
 const PROFILES = Object.values(HARDWARE_PROFILES).filter((profile) => profile !== null);
 const REFERENCES = Object.values(STYLE_REFERENCES).filter((reference) => reference !== null);
 const LIBRARY_PALETTES = Object.values(PALETTES).filter((palette) => palette !== null);
+/** Every background key's colour, `null` for the transparent field — the second argument a palette block takes. */
+const KEYS = Object.values(BACKGROUND_KEY_COLORS);
 
 describe('§2 of the baseline-prompt document describes the hardware, palette and reference libraries', () => {
   it('offers each library’s unset value first, and cites directories that exist', () => {
@@ -177,11 +182,11 @@ describe('§2 of the baseline-prompt document describes the hardware, palette an
     ).toStrictEqual([]);
   });
 
-  it('quotes the palette sizes the library holds, and writes every fixed entry into the prompt', () => {
+  it('quotes the palette sizes the library holds, and writes every fixed entry the key leaves into the prompt', () => {
     expect(prose()).toContain(
       `the Game Boy's ${spellNumber(fixedEntries('GAME_BOY_DMG').length)} greens, ` +
         `the C64's ${spellNumber(fixedEntries('COMMODORE_64').length)}, ` +
-        `the 2600's ${String(fixedEntries('ATARI_2600_NTSC').length)} — and every entry is written into the prompt`,
+        `the 2600's ${String(fixedEntries('ATARI_2600_NTSC').length)} — and every entry the background key leaves is written into the prompt`,
     );
     expect(prose()).toContain(
       `the Master System (${String(bitsPerChannel('MASTER_SYSTEM'))} bits per channel), ` +
@@ -196,13 +201,39 @@ describe('§2 of the baseline-prompt document describes the hardware, palette an
       palette.space.kind === 'FIXED' ? [{ palette, entries: palette.space.entries }] : [],
     );
     expect(fixed.length).toBeGreaterThan(0);
-    for (const { palette, entries } of fixed) {
-      const block = describePalette(palette);
-      expect(
-        entries.filter((entry) => !block.includes(entry)),
-        palette.id,
-      ).toStrictEqual([]);
+    for (const key of KEYS) {
+      for (const { palette, entries } of fixed) {
+        const block = describePalette(palette, key);
+        expect(
+          entries.filter((entry) => !block.includes(entry)),
+          palette.id,
+        ).toStrictEqual([]);
+      }
     }
+  });
+
+  it('keeps the key off the components, naming the Spectrum’s two entries magenta takes', () => {
+    const magenta = BACKGROUND_KEY_COLORS.MAGENTA_FF00FF;
+    if (magenta === null) throw new Error('MAGENTA_FF00FF names no colour');
+    const taken = fixedEntries('ZX_SPECTRUM').filter((entry) => {
+      const color = fromHex(entry);
+      return color !== null && keyReaches(magenta, color);
+    });
+    // The key itself first, then its neighbour — the order the palette block names them in.
+    const near = taken.filter((entry) => entry !== toHex(magenta));
+
+    expect(taken).toContain(toHex(magenta));
+    expect(near).toHaveLength(1);
+    expect(prose()).toContain(
+      `the ZX Spectrum loses \`${toHex(magenta)}\` and \`${near[0] ?? ''}\` under magenta`,
+    );
+    expect(prose()).toContain('every entry that tab would key out at the tolerance it opens at');
+    expect(prose()).toContain(
+      `§${String(sectionNumber('CONTRACT'))} reserves the key colour for the background`,
+    );
+    expect(TEMPLATE_LINES.some((line) => line.section === 'CONTRACT' && isInside(line, 'KEY_COLOUR'))).toBe(
+      true,
+    );
   });
 
   it('drops the budget line where a palette is pinned, and keeps the background the key colour', () => {
@@ -221,7 +252,9 @@ describe('§2 of the baseline-prompt document describes the hardware, palette an
     );
     expect(LIBRARY_PALETTES.length).toBeGreaterThan(0);
     expect(
-      LIBRARY_PALETTES.filter((palette) => !describePalette(palette).includes('stays the key colour')),
+      KEYS.flatMap((key) =>
+        LIBRARY_PALETTES.filter((palette) => !describePalette(palette, key).includes('stays the key colour')),
+      ),
     ).toStrictEqual([]);
   });
 });

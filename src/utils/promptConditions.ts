@@ -36,6 +36,7 @@ export function promptConditions(
     emitPromptFeedback,
     hardware,
     palette,
+    keyColor,
     reference,
     validationPass,
     nativeScale,
@@ -100,8 +101,13 @@ export function promptConditions(
     // does not always print: seven of the nineteen palettes state no per-component cap, and an audit
     // asking the reader to compare against an allowance that was never given cannot be worked.
     // Read through `perComponentLimit` rather than off `colorsPerComponent`, so the gate answers
-    // whether the line was *emitted* rather than whether the field was set.
-    PALETTE_PER_COMPONENT: palette !== null && perComponentLimit(palette) !== null ? 'yes' : '',
+    // whether the line was *emitted* rather than whether the field was set — and handed the key for
+    // the same reason, since the key decides how many entries the block lists and so whether a
+    // per-component figure is any tighter than that.
+    PALETTE_PER_COMPONENT: palette !== null && perComponentLimit(palette, keyColor) !== null ? 'yes' : '',
+    // Whether the background is a colour at all. Gates section 0's reservation of that colour and the
+    // self-audit's check on it; a transparent field has no colour for a component to be drawn in.
+    KEY_COLOUR: keyColor === null ? '' : 'yes',
     // Read from the resolved reference rather than the stored id, for the reason `HARDWARE_PROFILE`
     // is: a configuration naming a look this build no longer ships emits no heading rather than an
     // empty one.

@@ -1,4 +1,7 @@
 import type { LightingModel, OutlineStyle, PaletteLimit } from '../../types/output.ts';
+import type { Rgba } from '../../types/quantiser.ts';
+import { FULLY_OPAQUE } from '../../utils/imageData.ts';
+import { keyReaches } from '../../utils/keyReach.ts';
 
 /**
  * Colour, edges and light, in the prose the prompt carries.
@@ -42,6 +45,36 @@ export const OUTLINE_TEXT: Readonly<Record<OutlineStyle, string>> = {
   PURE_BLACK_OUTLINE: 'A crisp single-pixel pure black outer contour',
   OUTLINE_LESS_ALBEDO: 'No outline — forms separate by value and hue contrast alone',
 };
+
+/**
+ * `PURE_BLACK_OUTLINE` on a sheet whose background key takes pure black.
+ *
+ * Section 0 reserves the key colour for the background, so the plain wording asked every component
+ * for a contour section 0 had just forbidden — one prompt disagreeing with itself, and on the sheet
+ * that comes back a contour the Quantise tab keys out with the field, leaving every silhouette a
+ * pixel thinner than it was drawn. The reader still asked for a hard, dark retro edge, so that is
+ * what this keeps: the darkest line the key leaves drawable, rather than a different style.
+ */
+export const OUTLINE_BESIDE_BLACK_KEY_TEXT =
+  'A crisp single-pixel outer contour in a very dark grey, visibly lighter than the pure black the background is keyed on';
+
+/** The black a `PURE_BLACK_OUTLINE` contour names, as the colour `keyReaches` is asked about. */
+const PURE_BLACK: Rgba = { r: 0, g: 0, b: 0, a: FULLY_OPAQUE };
+
+/**
+ * The edge treatment as section 2 states it, given the colour the background is keyed on.
+ *
+ * Asked of the key's reach rather than of `backgroundKey === 'PURE_BLACK'`, so it is the same
+ * question section 2's palette block asks about its entries and cannot come to a different answer.
+ * Only `PURE_BLACK_OUTLINE` names a colour; the other two are relative to the component, and section
+ * 0's reservation covers a local shade that happens to reach the key.
+ */
+export function outlineDescription(style: OutlineStyle, key: Rgba | null): string {
+  if (style === 'PURE_BLACK_OUTLINE' && key !== null && keyReaches(key, PURE_BLACK)) {
+    return OUTLINE_BESIDE_BLACK_KEY_TEXT;
+  }
+  return OUTLINE_TEXT[style];
+}
 
 export const LIGHTING_TEXT: Readonly<Record<LightingModel, string>> = {
   FLAT_NEUTRAL_ALBEDO:

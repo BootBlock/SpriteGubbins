@@ -16,7 +16,7 @@ import {
   LANDMARK_TEXT,
   LIGHTING_TEXT,
   minFeatureSize,
-  OUTLINE_TEXT,
+  outlineDescription,
   OVERLAP_MARGIN_TEXT,
   PALETTE_TEXT,
   PROJECTION_TEXT,
@@ -71,6 +71,7 @@ export function promptValues(
     anatomy,
     hardware,
     palette,
+    keyColor,
     reference,
     componentCount,
     statedTarget,
@@ -165,7 +166,9 @@ export function promptValues(
     // the value is still supplied because `substitute` throws on a token it has no value for, and
     // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.
     PALETTE_DESCRIPTION: PALETTE_TEXT[output.paletteLimit],
-    OUTLINE_DESCRIPTION: OUTLINE_TEXT[output.outlineStyle],
+    // A function of the key as well as the style, because section 0 reserves the key colour and a
+    // pure black contour on a pure black field would be the one line in section 2 asking for it.
+    OUTLINE_DESCRIPTION: outlineDescription(output.outlineStyle, keyColor),
     LIGHTING_DESCRIPTION: LIGHTING_TEXT[output.lightingModel],
     // Supplied for every style, as `PALETTE_DESCRIPTION` is, and `''` for the eight that describe a
     // finished surface — the template's own `[IF:VALIDATION_PASS]` is what decides whether the token
@@ -179,7 +182,7 @@ export function promptValues(
     HARDWARE_NAME: hardware?.name ?? '',
     HARDWARE_CONSTRAINTS: hardware === null ? '' : describeHardware(hardware),
     PALETTE_NAME: palette?.name ?? '',
-    PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette),
+    PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette, keyColor),
 
     STYLE_REFERENCE_NAME: reference?.name ?? '',
     STYLE_REFERENCE_CHARACTERISTICS: reference === null ? '' : describeStyleReference(reference),

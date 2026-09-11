@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BACKGROUND_KEY_COLORS } from '../src/constants/backgroundKeyColors.ts';
 import { HARDWARE_PROFILES } from '../src/constants/hardware/index.ts';
 import { PALETTES } from '../src/constants/palettes/index.ts';
 import * as promptText from '../src/constants/promptText/index.ts';
@@ -120,8 +121,12 @@ function recordProse(): readonly string[] {
 function composedProse(): readonly string[] {
   const units = new Set(addressedPlans().map((plan) => plan.scaleUnit));
   return [
-    ...Object.values(PALETTES).flatMap((palette) =>
-      palette === null ? [] : [promptText.describePalette(palette)],
+    // Under every key, because the sentence naming what a key takes out of a list cites a section and
+    // is written only where a key takes something.
+    ...Object.values(BACKGROUND_KEY_COLORS).flatMap((key) =>
+      Object.values(PALETTES).flatMap((palette) =>
+        palette === null ? [] : [promptText.describePalette(palette, key)],
+      ),
     ),
     ...Object.values(HARDWARE_PROFILES).flatMap((profile) =>
       profile === null ? [] : [promptText.describeHardware(profile)],

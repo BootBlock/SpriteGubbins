@@ -267,7 +267,7 @@ commercial title, and the characteristics are what actually carry the look. It d
 the sheet is fully specified without it.
 
 A palette is one of two kinds. A **fixed** one is a list — the Game Boy's four greens, the C64's
-sixteen, the 2600's 127 — and every entry is written into the prompt. A **channel-depth** one is a
+sixteen, the 2600's 127 — and every entry the background key leaves is written into the prompt. A **channel-depth** one is a
 colour space, which is how the Master System (2 bits per channel), the Mega Drive (3), the Amiga (4)
 and the SNES (5) actually define colour; the prompt states the ladder instead, since 512 entries are
 not a list anybody reads.
@@ -277,6 +277,13 @@ not a list anybody reads.
 > same rule the Quantise tab applies when it maps a returned sheet onto the palette instead of
 > choosing colours out of the sheet itself. The one exception written into the palette block is the
 > background field, which stays the key colour §0 fixes rather than being drawn from the palette.
+>
+> **The key is kept off the components in the other direction too.** §0 reserves the key colour for
+> the background on every sheet whose field is a colour, because the Quantise tab keys the field out
+> by distance wherever it sits and a component drawn in or near the key goes with it. So a fixed list
+> leaves out, and names, every entry that tab would key out at the tolerance it opens at — the ZX
+> Spectrum loses `#FF00FF` and `#D800D8` under magenta — and counts only what is left, while a
+> channel-depth space says the same of the key and the colours near it.
 
 ---
 
@@ -316,6 +323,10 @@ Satisfy this section before any aesthetic consideration.
 [N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
+[IF:KEY_COLOUR]
+   That colour belongs to the background alone: no part of any component is drawn in it, or in a
+   shade near enough to be taken for it, whatever colour anything below names.
+[/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
 [/IF]
@@ -976,6 +987,9 @@ Before delivering, verify:
 [N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
 [N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
+[IF:KEY_COLOUR]
+[N]. No part of any component is in the key colour, or in a shade near enough to be taken for it.
+[/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text or labels anywhere.
 [/IF]

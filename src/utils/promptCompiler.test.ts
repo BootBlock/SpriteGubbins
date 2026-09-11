@@ -42,6 +42,26 @@ import { countWords, estimateTokens } from './promptMetrics.ts';
 import { sheetDirections } from './sheetDirections.ts';
 import { sheetRuns } from './sheetRuns.ts';
 import { styleReferencePatch } from './styleReferencePatch.ts';
+import { BACKGROUND_KEY_COLORS } from '../constants/backgroundKeyColors.ts';
+import { fromHex } from './imageData.ts';
+import { keyReaches } from './keyReach.ts';
+
+/** Section 2's palette block, from its heading to the next heading or rule. */
+function paletteBlock(prompt: string): string {
+  const start = prompt.indexOf('### Palette — ');
+  if (start === -1) return '';
+  const rest = prompt.slice(start + 1);
+  const end = rest.search(/\n(?:#{2,3} |---)/);
+  return end === -1 ? rest : rest.slice(0, end);
+}
+
+/** The entries a palette block lists, in order — the lines made of nothing but hex. */
+function listedEntries(block: string): readonly string[] {
+  return block
+    .split('\n')
+    .filter((line) => /^#[0-9A-F]{6}(?: {2}#[0-9A-F]{6})*$/.test(line))
+    .flatMap((line) => line.split('  '));
+}
 
 /**
  * The compiler is the app. Everything else is a way of choosing its arguments, so these tests assert
@@ -517,8 +537,10 @@ describe('generatePrompt — numbered lists', () => {
     // The contract's fixed items went from five to six when the text ban split off the annotation
     // ban beside it: only the first half is conditional on `LETTERING_IS_A_COMPONENT`, and one item
     // carrying both could not be made conditional at all. Each list then gained the canvas shape as
-    // its second entry, which is why both figures moved together.
-    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([8, 9, 3]);
+    // its second entry, which is why both figures moved together. The audit is ten now because the
+    // key colour's reservation is checked beside the background item; in the contract that
+    // reservation continues the background item rather than numbering one of its own.
+    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([8, 10, 3]);
   });
 });
 
@@ -2527,6 +2549,146 @@ describe('generatePrompt — the machine and its palette', () => {
 
     expect(prompt).toContain('The background field is the exception and stays the key colour');
     expect(prompt).toContain('it stays the key colour section 0 fixes, and is not drawn from this palette');
+  });
+
+  it('reserves the key colour in the contract and the audit, only where the field is a colour', () => {
+    // The other half of the exception above (#277): section 0 said what the field is and never that a
+    // component may not be it, while the Quantise tab keys the field out wherever it sits.
+    for (const backgroundKey of BACKGROUND_KEYS) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ backgroundKey }));
+      const coloured = BACKGROUND_KEY_COLORS[backgroundKey] !== null;
+
+      expect(
+        sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT').includes(
+          'That colour belongs to the background alone',
+        ),
+        backgroundKey,
+      ).toBe(coloured);
+      expect(prompt.includes('No part of any component is in the key colour'), backgroundKey).toBe(coloured);
+    }
+  });
+
+  it.each(BACKGROUND_KEYS)(
+    'lists no entry the %s key would take, and every entry it leaves',
+    (backgroundKey) => {
+      // Every fixed palette under every key, so the rule cannot hold for the Spectrum under magenta and
+      // fail for a white key on PICO-8. The listed entries are the whole-line runs of hex the block wraps.
+      const key = BACKGROUND_KEY_COLORS[backgroundKey];
+      for (const id of PALETTE_IDS) {
+        const palette = PALETTES[id];
+        if (palette === null || palette.space.kind !== 'FIXED') continue;
+        const block = paletteBlock(
+          generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: id, backgroundKey })),
+        );
+        const taken = palette.space.entries.filter((entry) => {
+          const color = fromHex(entry);
+          return key !== null && color !== null && keyReaches(key, color);
+        });
+        const kept = palette.space.entries.filter((entry) => !taken.includes(entry));
+
+        expect(listedEntries(block), id).toStrictEqual(kept);
+        expect(block, id).toContain(`exactly one of the ${String(kept.length)} colours`);
+        for (const entry of taken) expect(block, `${id} should name ${entry}`).toContain(`${entry}`);
+        expect(block.includes('left out of the list below'), id).toBe(taken.length > 0);
+      }
+    },
+  );
+
+  it('says why each entry went, and counts only what is left', () => {
+    const spectrum = paletteBlock(
+      generatePrompt(
+        'CHARACTER',
+        SUBJECT,
+        withOutput({ palette: 'ZX_SPECTRUM', backgroundKey: 'MAGENTA_FF00FF' }),
+      ),
+    );
+    expect(spectrum).toContain('exactly one of the 13 colours, listed below');
+    expect(spectrum).toContain(
+      '#FF00FF and #D800D8 are left out of the list below, because #FF00FF is the background key section 0 fixes and #D800D8 is near enough to it to be taken for it.',
+    );
+    // Fifteen on screen is no limit on thirteen offered, so it is not stated as though it were one.
+    expect(spectrum).not.toContain('distinct colours appear across the whole sheet');
+
+    const nes = paletteBlock(
+      generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'NES', backgroundKey: 'MAGENTA_FF00FF' })),
+    );
+    expect(nes).toContain(
+      '#F878F8 and #D800CC are left out of the list below, because each is near enough to the background key section 0 fixes to be taken for it.',
+    );
+
+    // PICO-8 owns its values, and "the 15 colours of PICO-8" would be untrue of a machine with sixteen.
+    const pico = paletteBlock(
+      generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'PICO_8', backgroundKey: 'PURE_WHITE' })),
+    );
+    expect(pico).toContain('exactly one of the 15 colours, listed below');
+    expect(pico).toContain(
+      '#FFF1E8 is left out of the list below, because it is near enough to the background key',
+    );
+
+    // Three greys offered and three allowed per object: the per-object figure restates the list, so
+    // neither it nor the audit check citing it appears.
+    const mono = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ palette: 'GAME_BOY_MONO', backgroundKey: 'PURE_BLACK' }),
+    );
+    expect(paletteBlock(mono)).toContain(
+      '#000000 is left out of the list below, because it is the background key section 0 fixes.',
+    );
+    expect(mono).not.toContain('No single component carries more than');
+    expect(mono).not.toContain('No component carries more colours at once');
+
+    // A transparent field takes nothing, so the list is whole again.
+    const clear = paletteBlock(
+      generatePrompt(
+        'CHARACTER',
+        SUBJECT,
+        withOutput({ palette: 'ZX_SPECTRUM', backgroundKey: 'TRANSPARENT' }),
+      ),
+    );
+    expect(clear).toContain('exactly one of the 15 colours, listed below');
+    expect(clear).not.toContain('left out of the list below');
+  });
+
+  it('reserves the key and its neighbours in a colour space, which has no list to take them from', () => {
+    const megaDrive = paletteBlock(
+      generatePrompt(
+        'CHARACTER',
+        SUBJECT,
+        withOutput({ palette: 'MEGA_DRIVE', backgroundKey: 'PURE_WHITE' }),
+      ),
+    );
+    const clear = paletteBlock(
+      generatePrompt(
+        'CHARACTER',
+        SUBJECT,
+        withOutput({ palette: 'MEGA_DRIVE', backgroundKey: 'TRANSPARENT' }),
+      ),
+    );
+
+    expect(megaDrive).toContain(
+      'No component takes the background key section 0 fixes, #FFFFFF, or any colour near enough to it to be taken for it.',
+    );
+    expect(clear).not.toContain('No component takes the background key');
+  });
+
+  it('asks for a black outline in a very dark grey where the field is keyed on black', () => {
+    // Section 0 reserves the key, so a pure black contour on a pure black field is the one line of
+    // section 2 that would ask for it — and a contour the tab keys out with the field.
+    const onBlack = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ outlineStyle: 'PURE_BLACK_OUTLINE', backgroundKey: 'PURE_BLACK' }),
+    );
+    const onMagenta = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ outlineStyle: 'PURE_BLACK_OUTLINE', backgroundKey: 'MAGENTA_FF00FF' }),
+    );
+
+    expect(onBlack).toContain(`- Edge / outline treatment: ${promptText.OUTLINE_BESIDE_BLACK_KEY_TEXT}`);
+    expect(onBlack).not.toContain(promptText.OUTLINE_TEXT.PURE_BLACK_OUTLINE);
+    expect(onMagenta).toContain(`- Edge / outline treatment: ${promptText.OUTLINE_TEXT.PURE_BLACK_OUTLINE}`);
   });
 
   it('adds the colour clause to the contract and the audit, only where a palette is pinned', () => {
