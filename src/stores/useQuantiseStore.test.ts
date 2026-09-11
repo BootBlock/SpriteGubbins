@@ -209,6 +209,23 @@ describe('the dial history the store keeps', () => {
     expect(useQuantiseStore.getState().colorMerge).toBe(24);
   });
 
+  it('records a dial moved straight after an undo beside the position the undo restored', () => {
+    // Every act here lands well inside `DIAL_COALESCE_MS` of the one before it, which is what an
+    // arrow key, a second arrow key and Ctrl+Z are at a reader's typing speed. The undo has to end
+    // the gesture on its own, or the third edit is folded into the position it stepped back to.
+    const store = useQuantiseStore.getState();
+    store.setColorMerge(10);
+    store.setCleanupPasses(3);
+    store.undo();
+    store.setColorMerge(20);
+
+    store.undo();
+    expect(useQuantiseStore.getState().colorMerge).toBe(10);
+
+    store.undo();
+    expect(useQuantiseStore.getState().colorMerge).toBe(DEFAULT_COLOR_MERGE);
+  });
+
   it('does nothing at either end of the stack', () => {
     const store = useQuantiseStore.getState();
     store.undo();
@@ -259,7 +276,7 @@ describe('the dial history the store keeps', () => {
     store.setColorMerge(24);
 
     const entry = useQuantiseStore.getState().history.entries.at(-1);
-    expect(Object.keys(entry?.dials ?? {}).sort()).toEqual([...QUANTISE_DIAL_KEYS].sort());
+    expect(Object.keys(entry ?? {}).sort()).toEqual([...QUANTISE_DIAL_KEYS].sort());
   });
 
   it('keeps every dial field equal to the position the stack is at', () => {

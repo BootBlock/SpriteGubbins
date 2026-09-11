@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DIAL_COALESCE_MS, DIAL_HISTORY_LIMIT } from '../constants/dialHistory.ts';
 import { QUANTISE_DEFAULT_DIALS, QUANTISE_DIAL_KEYS } from '../constants/quantiseDials.ts';
-import type { DialHistory, DialKey } from '../types/quantiseHistory.ts';
+import type { DialGesture, DialHistory } from '../types/quantiseHistory.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
 import {
   canRedoDials,
@@ -70,7 +70,7 @@ describe('recordDials', () => {
 
   it('measures the window between events rather than across the gesture', () => {
     // A slow drag is still one gesture: each event lands inside the window of the one before it,
-    // and the entry's own timestamp moves with it.
+    // and the gesture's timestamp moves with it.
     let history = recordDials(OPEN, moved({ fillCleanup: 1 }), 'fillCleanup', 0);
     for (let step = 2; step <= 10; step += 1) {
       history = recordDials(
@@ -98,6 +98,55 @@ describe('recordDials', () => {
     const second = recordDials(first, moved({ fillCleanup: 40, colorMerge: 8 }), 'colorMerge', 1);
 
     expect(undoDepth(second)).toBe(2);
+  });
+
+  it('starts a step when a dial moves straight after an undo', () => {
+    // An undo is a deliberate act between two edits rather than an event of a gesture, so the edit
+    // after it has to be recorded beside the position the undo landed on — however little time has
+    // passed since that position was written. Folding it in destroys the position stepped back to.
+    const first = recordDials(OPEN, moved({ colorMerge: 10 }), 'colorMerge', 0);
+    const second = recordDials(first, moved({ colorMerge: 10, cleanupPasses: 2 }), 'cleanupPasses', 200);
+    const edited = recordDials(undoDials(second), moved({ colorMerge: 20 }), 'colorMerge', 600);
+
+    expect(edited.entries.length).toBe(3);
+    expect(undoDepth(edited)).toBe(2);
+    expect(currentDials(undoDials(edited))).toEqual(moved({ colorMerge: 10 }));
+  });
+
+  it('starts a step when the dial just undone is moved again inside its window', () => {
+    // The same act with one dial throughout: two separate steps of it, an undo, and a quick third.
+    // The gesture that was open when the undo was pressed belongs to the position stepped back from,
+    // so extending it would write over the position stepped back to.
+    const first = recordDials(OPEN, moved({ colorMerge: 10 }), 'colorMerge', 0);
+    const second = recordDials(first, moved({ colorMerge: 15 }), 'colorMerge', DIAL_COALESCE_MS);
+    const edited = recordDials(
+      undoDials(second),
+      moved({ colorMerge: 20 }),
+      'colorMerge',
+      DIAL_COALESCE_MS + 1,
+    );
+
+    expect(undoDepth(edited)).toBe(2);
+    expect(currentDials(undoDials(edited))).toEqual(moved({ colorMerge: 10 }));
+  });
+
+  it('starts a step when a dial moves straight after a redo', () => {
+    const first = recordDials(OPEN, moved({ colorMerge: 10 }), 'colorMerge', 0);
+    const edited = recordDials(redoDials(undoDials(first)), moved({ colorMerge: 20 }), 'colorMerge', 100);
+
+    expect(undoDepth(edited)).toBe(2);
+    expect(currentDials(undoDials(edited))).toEqual(moved({ colorMerge: 10 }));
+  });
+
+  it('starts a step when a dial moves straight after a whole-set write', () => {
+    // A drag, a preset load, and the same dial again: the load is one deliberate act, and the
+    // position it produced is what a reader steps back to after trying a tweak on top of it.
+    const first = recordDials(OPEN, moved({ colorMerge: 8 }), 'colorMerge', 0);
+    const loaded = recordDials(first, moved({ fillCleanup: 30 }), null, 1);
+    const edited = recordDials(loaded, moved({ fillCleanup: 30, colorMerge: 9 }), 'colorMerge', 2);
+
+    expect(undoDepth(edited)).toBe(3);
+    expect(currentDials(undoDials(edited))).toEqual(moved({ fillCleanup: 30 }));
   });
 
   it('never coalesces a whole-set write', () => {
@@ -129,12 +178,15 @@ describe('recordDials', () => {
 
   it('will not fold an edit into the oldest position still kept', () => {
     // Once the cap has dropped the opening position off the front, entry zero is a real edit rather
-    // than the defaults — and a reader who has stepped all the way back to it and moved that same
-    // dial again would otherwise have nowhere left to step to at all.
-    const back = walkBack(longHistory(DIAL_HISTORY_LIMIT + 5));
-    const extended = recordDials(back, moved({ fillCleanup: 7 }), keyAt(back), 1);
+    // than the defaults — and a reader who has stepped all the way back to it and carried on with the
+    // gesture they were last making would otherwise have nowhere left to step to at all.
+    const capped = longHistory(DIAL_HISTORY_LIMIT + 5);
+    const { key, at } = openGesture(capped);
+    const back = walkBack(capped);
+    const extended = recordDials(back, moved({ fillCleanup: 7 }), key, at + 1);
 
     expect(canUndoDials(extended)).toBe(true);
+    expect(undoDepth(extended)).toBe(1);
   });
 });
 
@@ -194,9 +246,8 @@ function walkBack(history: DialHistory): DialHistory {
   return walked;
 }
 
-/** The dial that produced the current position, which an extending edit would have to match. */
-function keyAt(history: DialHistory): DialKey {
-  const entry = history.entries[history.index];
-  if (entry === undefined || entry.key === null) throw new Error('expected a keyed position');
-  return entry.key;
+/** The gesture still open on the current position, which an extending edit would have to match. */
+function openGesture(history: DialHistory): DialGesture {
+  if (history.gesture === null) throw new Error('expected an open gesture');
+  return history.gesture;
 }
