@@ -76,8 +76,15 @@ export function StudioTab() {
         first time a control joins the bar. See the two properties in `index.css`.
 
         Sticky and its cap are prefixed `studio:` for the same reason the grid is, and not merely to
-        match: below that width the columns stack, and a cap left on `lg` would spend those 16px
-        scrolling a full-width preview inside a viewport-height box for no reason.
+        match: below that width the columns stack, and a cap left on `lg` would spend the 96px between
+        the two scrolling a full-width preview inside a viewport-height box for no reason.
+
+        **The panels inside the column take the same prefix, for the same reason.** Whatever one of
+        them decides about this column is decided by whether the column exists, and a page breakpoint
+        does not know. `PromptPreview` lifted its own height cap on `lg` while this column engaged at
+        `studio:`, and across those 96px the prompt panel grew to the whole height of the prompt, ten
+        thousand pixels of it, with nothing capping it at all. `tests/studio-column-width.test.ts`
+        walks everything this file renders and fails on a page-width variant anywhere in it.
 
         `overflow-y-auto` is what makes the cap safe rather than merely tidy. A sticky element taller
         than its cap does not simply overflow harmlessly: its top stays pinned, so whatever hangs

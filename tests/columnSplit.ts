@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { codeOnly } from '../scripts/codeOnly.ts';
+import { importGraph } from './importGraph.ts';
 
 /**
  * A tab's two-column split, read out of the classes that actually produce it.
@@ -333,6 +335,81 @@ export function stickyVariantsOf(tabFile: string): { readonly sticky: string; re
     sticky: capture(tab, /([a-z][\w-]*):sticky\b/, `the sticky column in ${tabFile}`),
     scroll: capture(tab, /([a-z][\w-]*):overflow-y-auto\b/, `the sticky column's scroll cap in ${tabFile}`),
   };
+}
+
+/** What a split renders, and every class in it that decides a layout by the page's width. */
+interface PageWidthClasses {
+  /** Every file the walk reached, so a caller can show it reached the panels it is about. */
+  readonly files: readonly string[];
+  /** Each offending class, as `file: class`. */
+  readonly found: readonly string[];
+}
+
+/**
+ * Every class a split renders that is prefixed with a page breakpoint other than the split's own.
+ *
+ * **Two questions can be asked inside a column, and neither of them is the page's width.** How wide
+ * the box is belongs to a container query. Whether the box is a column at all belongs to the split's
+ * own variant — `PromptPreview` lifting its height cap once the sticky column exists is that
+ * question, and it was asked on `lg` while the column answered on `studio:`, so across the 96px
+ * between them the cap was gone with no column to replace it and the panel ran to 10,010px (#191). A
+ * stock breakpoint is right about neither, and neither is the *other* tab's token.
+ *
+ * The walk starts at the split file, whose root is the grid in both tabs, so everything it reaches is
+ * rendered inside a column. It reads code with comments blanked, because the reasoning for a class is
+ * written beside it and names the variant it replaced. A `@`-prefixed variant is a container query
+ * and is not matched.
+ *
+ * **One class string is passed, and it is one that is unconditionally `fixed`.** A fixed box is laid
+ * out against a viewport rather than against the column its component sits in, so the page's width is
+ * the right thing for it to measure — the toast inside the detached preview window is the case, and
+ * that viewport is the detached window's own. A `fixed` behind a variant earns nothing, because below
+ * that variant the box is back in the column.
+ */
+export function pageWidthClassesIn(splitFile: string, variant: string): PageWidthClasses {
+  const tokens = [...read('src/index.css').matchAll(/--breakpoint-([\w-]+):/g)].map(
+    (match) => match[1] ?? '',
+  );
+  const pattern = pageWidthVariantPattern(
+    [...Object.keys(STOCK_BREAKPOINTS_PX), ...tokens].filter((name) => name !== variant),
+  );
+  const files = [...importGraph(splitFile).keys()];
+  const found = files.flatMap((file) => {
+    const code = codeOnly(read(file));
+    return [...code.matchAll(pattern)]
+      .filter((match) => !isUnconditionallyFixed(enclosingString(code, match.index)))
+      .map((match) => `${file}: ${match[0]}`);
+  });
+  return { files, found };
+}
+
+/**
+ * A class prefixed with any of `breakpoints`, with or without `max-`, or with an arbitrary
+ * `min-[…]` / `max-[…]` viewport query — each one a question about the page.
+ *
+ * Exported so the shapes can be checked on their own: a pattern that matched nothing would pass the
+ * sweep above on any tree at all.
+ */
+export function pageWidthVariantPattern(breakpoints: readonly string[]): RegExp {
+  return new RegExp(
+    `(?<![\\w@-])(?:(?:max-)?(?:${breakpoints.join('|')})|(?:min|max)-\\[[^\\]\\s]*\\]):[^\\s"'\`]+`,
+    'g',
+  );
+}
+
+/** The quoted string on the line around `index`, or the empty string where there is none. */
+function enclosingString(code: string, index: number): string {
+  const lineStart = code.lastIndexOf('\n', index) + 1;
+  const before = code.slice(lineStart, index);
+  const open = Math.max(before.lastIndexOf('"'), before.lastIndexOf("'"), before.lastIndexOf('`'));
+  const quote = before[open];
+  if (quote === undefined) return '';
+  const close = code.indexOf(quote, index);
+  return code.slice(lineStart + open + 1, close === -1 ? undefined : close);
+}
+
+function isUnconditionallyFixed(classes: string): boolean {
+  return /(?<![\w:-])fixed(?![\w-])/.test(classes);
 }
 
 /**
