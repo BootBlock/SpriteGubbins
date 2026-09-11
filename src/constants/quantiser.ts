@@ -640,8 +640,8 @@ export const DEFAULT_COLOR_MERGE = 0;
  * blended cell colours after the two averaging readings. Over four re-readings — the ink-weighted one
  * the lock came from, the dominant and k-centroid readings, and the ink-weighted one at a grid of 5
  * — half the pixels sit within 0.49 or 0.50 of a locked entry, ninety-nine per cent within 11.15 to
- * 20.40, and the furthest single colour is 25.72 to 45.36 away. A budget is not among them: a lock
- * supersedes it, so every budget reads the same while one is held.
+ * 20.40, and the furthest single colour is 25.72 to 45.36 away. A budget is not among them: at any
+ * snap above 0 a lock supersedes it, so every budget reads the same while one is reaching.
  *
  * **The colours it must not take are named by hex**, because a population described in words cannot
  * be measured again. The first half is the twelve fully saturated sRGB hues 30° apart — `#FF0000`,
@@ -662,7 +662,8 @@ export const DEFAULT_COLOR_MERGE = 0;
  * of the range take every colour of every one of them. It is a quarter of the 255 that black to white
  * measures.
  *
- * `tests/quantiser-docblock-figures.test.ts` re-derives every figure in this note and the next.
+ * `tests/quantiser-docblock-figures.test.ts` re-derives every measured figure in this note and the
+ * next.
  */
 export const PALETTE_SNAP_RANGE = { min: 0, max: 64, step: 1 } as const;
 
@@ -672,22 +673,24 @@ export const PALETTE_SNAP_RANGE = { min: 0, max: 64, step: 1 } as const;
  *
  * **It errs towards keeping.** A colour kept that should have been taken costs the result one extra
  * colour; a colour taken that should have been kept costs artwork — a gem or a faction trim redrawn in
- * the locked palette. So the opening takes the widest drift on the reference sheet and goes no
- * further. That drift is one colour: the source's pure black outline, 20.40 from the lock, which the
- * dominant reading hands the lock as it stands and the ink-weighted reading the lock was taken from
- * had blended into a dark tone. 21 is the first integer past it.
+ * the locked palette. So the opening takes the drift up to the widest ninety-ninth percentile on the
+ * reference sheet and goes no further. That percentile is one colour: the source's pure black
+ * outline, 20.40 from the lock, which the dominant reading hands the lock as it stands and the
+ * ink-weighted reading the lock was taken from had blended into a dark tone. 21 is the first integer
+ * past it. It is not the widest drift, which reaches 45.36: 0.36% of the source's pixels still sit
+ * beyond 21, and the dominant vote outvotes every one of them.
  *
  * At 20 a dominant re-reading keeps that black and comes back 99.09% in locked colours; at 21 it is
  * 100%, in 61 of them. The three averaging re-readings move from between 99.90% and 99.96% to between
  * 99.93% and 99.97%, which leaves at most 0.07% of any re-reading's pixels for every step past 21 to
  * take — while those steps reach the navy at 21.56 and the teal at 25.04. Every saturated hue the
  * sheet does not hold is still kept, the nearest by 5.56. The opening already takes the navy at 17.79,
- * and no opening that took the drift could keep it.
+ * and no opening that took the black could keep it.
  *
  * **The black it is placed past belongs to this sheet.** Each corpus sheet locked from its own
  * ink-weighted reading holds black at a different distance: 0 on `cyborg_monk.png`, and from 33.16 to
- * 44.74 on the other six. On those six a dominant re-reading keeps its outlines black at this
- * opening, and raising the dial is how a reader takes them.
+ * 44.74 on the other six. On those six a dominant re-reading's black is out of the lock's reach at
+ * this opening, and raising the dial is how a reader brings it in.
  *
  * A lock therefore does **not** promise a colour count, not even for the sheet it was taken from: read
  * again under the lock at 21, the reference sheet comes back in 76 colours, and in its own 64 only

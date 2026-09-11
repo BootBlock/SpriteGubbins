@@ -88,12 +88,10 @@ import type {
  * answers with — both taken from the pass rather than restated here.
  *
  * **The palette lock is the third, and the one whose opening position is argued from the figures.**
- * `DEFAULT_PALETTE_SNAP` was once said to sit in a 0.4-wide gap no integer fitted, and re-measurement
- * put the two populations it separated six and a half apart (issue #238) — because the lock was being
- * measured against 64-colour results it is never applied to, and one of its two populations was named
- * in words that no hex could be recovered from. So the drift below is measured where the lock runs,
- * the colours it must keep are named by hex, and the half of that population drawn from real generator
- * output, like the ceiling, is taken from all eight sheets.
+ * Its two populations are only re-derivable if both are stated exactly (issue #238), so the drift is
+ * measured on the colours the lock is actually handed, never on a 64-colour result it is not applied
+ * to, and the colours it must keep are named by hex. Four of those come from three of the other
+ * sheets' own palettes, and the ceiling and each lock's distance from black are taken from all eight.
  */
 
 /** The conditions every figure below is stated at, bar the dial each one varies. */
@@ -764,10 +762,10 @@ describe('the figures the quantiser docblocks state', () => {
     /**
      * The re-readings the drift is measured over, and the four of them are the ones a lock can meet.
      *
-     * The docblock's first figures included a budget of 32, and that is not a re-reading a lock is
-     * ever applied to: a lock supersedes the budget outright (`colorPlanFor`), so every budget reads
-     * the same while one is held. The sheet the lock was taken from, read again, is the case that
-     * replaces it — and the commonest one, since every dial moved after locking re-reads it.
+     * No budget is among them, because a budget is not a re-reading a lock is ever applied to: at any
+     * snap above 0 a lock supersedes the budget (`colorPlanFor`), so every budget reads the same while
+     * one is reaching. The sheet the lock was taken from, read again, is among them instead — and it is
+     * the commonest case, since every dial moved after locking re-reads it.
      */
     const REREADINGS: readonly Partial<QuantiseSettings>[] = [
       { vote: 'INK_WEIGHTED' },
@@ -781,8 +779,8 @@ describe('the figures the quantiser docblocks state', () => {
      *
      * The lock takes the budget's place in the pipeline, so it runs where the budget would have: ahead
      * of the dominant vote, on the source pixels themselves, and after the two averaging readings, on
-     * the cell colours they blended. Measuring it against a 64-colour result instead measures a second
-     * quantisation no locked sheet goes through, which is what the figures this replaced did.
+     * the cell colours they blended. Measuring it against a 64-colour result instead would measure a
+     * second quantisation no locked sheet goes through.
      */
     const handedToTheLock = (over: Partial<QuantiseSettings>): ImageData =>
       over.vote === 'DOMINANT'
@@ -814,11 +812,19 @@ describe('the figures the quantiser docblocks state', () => {
 
       // The dominant reading's ninety-ninth percentile is one colour, and it is the source's own
       // outline black: the averaging reading the lock was taken from blends it into a dark tone, so
-      // pure black is where the widest drift on this sheet sits. The opening is the first integer
-      // past it, which is the relationship `DEFAULT_PALETTE_SNAP` argues from.
+      // pure black is the widest ninety-ninth percentile on this sheet. The opening is the first
+      // integer past it, which is the relationship `DEFAULT_PALETTE_SNAP` argues from.
       const black = reachOf(BLACK, lock);
       expect(round(black)).toBe(figures[1]?.[1]);
       expect(DEFAULT_PALETTE_SNAP).toBe(Math.floor(black) + 1);
+
+      // And it is not the widest drift: a sliver of the source still sits past the opening, which
+      // the dominant vote outvotes — the next test is where that shows as 100%.
+      const source = reachesOf(sheet, lock);
+      const pixelsOf = (reaches: typeof source): number =>
+        reaches.reduce((sum, { pixels }) => sum + pixels, 0);
+      const beyond = source.filter(({ reach }) => reach > DEFAULT_PALETTE_SNAP);
+      expect(round((100 * pixelsOf(beyond)) / pixelsOf(source))).toBe(0.36);
     }, 300_000);
 
     it('draws the dominant reading wholly in locked colours at 21, and the locked sheet in 64 only from 26', () => {
