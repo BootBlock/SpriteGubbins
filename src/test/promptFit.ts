@@ -18,15 +18,11 @@
  * it which targets the library owes a worked example.
  */
 
-import { defaultSubjectFor } from '../constants/categories/index.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
-import { PRESETS } from '../constants/presets/index.ts';
 import type { PromptBudgetFigure, TargetModelId } from '../types/output.ts';
-import { SUBJECT_CATEGORIES } from '../types/subject.ts';
-import { withCompanionOutputs } from '../utils/imageConfig.ts';
 import { readPromptBudget } from '../utils/promptBudget.ts';
 import { promptBudgetFigureFor } from '../utils/targetCapabilities.ts';
 import { generatePrompt } from '../utils/promptCompiler.ts';
+import { LIBRARY_CONFIGURATIONS } from './libraryConfigurations.ts';
 
 /**
  * How much of its target's documented ceiling a shipped preset is allowed to actually spend.
@@ -65,30 +61,10 @@ export interface PromptFitReading {
   readonly fit: PromptFit;
 }
 
-/**
- * Every prompt the app composes without the reader writing a word: each shipped preset, and each
- * category's opening studio configuration.
- *
- * The defaults are what makes this a claim about the *app* rather than about the library. The
- * smallest preset is a sparse single-view item at roughly 3,100 estimated tokens and the largest
- * default is a five-view creature at nearly 6,900, and a target whose ceiling falls between them is
- * exactly the case a per-preset measurement cannot see.
- *
- * It is not a sweep of the whole option space, and does not need to be: what a description claims is
- * what a reader will actually be handed, and a reader who has chosen nothing gets a default.
- */
-const LIBRARY_PROMPTS: readonly string[] = [
-  ...PRESETS.map((preset) =>
-    generatePrompt(
-      preset.category,
-      preset.subject,
-      withCompanionOutputs(preset.output, DEFAULT_OUTPUT_CONFIG),
-    ),
-  ),
-  ...SUBJECT_CATEGORIES.map((category) =>
-    generatePrompt(category, defaultSubjectFor(category), DEFAULT_OUTPUT_CONFIG),
-  ),
-];
+/** Every prompt the app composes without the reader writing a word — see {@link LIBRARY_CONFIGURATIONS}. */
+const LIBRARY_PROMPTS: readonly string[] = LIBRARY_CONFIGURATIONS.map(({ category, subject, output }) =>
+  generatePrompt(category, subject, output),
+);
 
 /**
  * Measure every prompt in {@link LIBRARY_PROMPTS} against one target's ceiling, or `null` where the
