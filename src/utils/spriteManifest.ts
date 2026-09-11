@@ -153,20 +153,24 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
  * The cell a cut used, moved out of the 1:1 result's pixels and into the written file's.
  *
  * **The one place the app's cell becomes the file's**, and so the one place the two declarations are
- * reconciled — see {@link ManifestCell} for why there are two. The `satisfies` clause names every
- * field of {@link SpriteCell}, so a field added there is a type error here until somebody decides
- * what the manifest says about it, rather than a property the file drops without anyone deciding;
- * the return type names every field of {@link ManifestCell}, so a field added to the file's side is
- * an error here too, and a field written here that the file's type does not declare is an excess
- * property. A field the manifest deliberately does not publish is still decided here, by narrowing
- * the clause — which is a line in a diff rather than an omission nobody sees.
+ * reconciled — see {@link ManifestCell} for why there are two. The `satisfies` clause requires the
+ * literal to name every field of both, **optional ones included**: a field added to either side is a
+ * type error here until somebody decides what the manifest says about it, and a field written here
+ * that {@link ManifestCell} does not declare is an excess property. A mapped type over
+ * `keyof SpriteCell` alone looks equivalent and is not — it copies each field's `?`, and the return
+ * type requires no optional field either, so an optional field added to either side would compile
+ * and never reach the file.
+ *
+ * So an absent value is written as `null`, as the rest of the manifest writes one, rather than left
+ * out. A field the manifest deliberately does not publish is still decided here, by taking it out of
+ * the clause — a line in a diff rather than an omission nobody sees.
  */
 function manifestCell(cell: SpriteCell, scale: number): ManifestCell {
   return {
     width: cell.width * scale,
     height: cell.height * scale,
     anchor: cell.anchor,
-  } satisfies { readonly [Field in keyof SpriteCell]: unknown };
+  } satisfies Record<keyof SpriteCell | keyof ManifestCell, unknown>;
 }
 
 /**

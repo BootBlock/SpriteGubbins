@@ -250,16 +250,21 @@ export interface SpriteManifest {
  * **Structurally identical to `SpriteCell` and deliberately a separate name**, for two reasons. The
  * numbers are in different pixels: a `SpriteCell` is stated in the sheet's own drawn pixels, which
  * is what the reader states and what `oversizedSprites` compares boxes against, while this is the
- * same cell multiplied by {@link SpriteManifest.scale} — so one name for both would let a 1:1 cell
- * reach the file, or a magnified one reach the fit check, and type-check either way. And this is a
- * contract with something outside the repository: {@link SpriteManifest.version} exists because the
- * file is read by code this app does not contain, so what it states should change by an edit to this
- * file and not as a side effect of an edit to the app's own vocabulary.
+ * same cell multiplied by {@link SpriteManifest.scale}. The name is what tells a reader which of the
+ * two a width is in; it does not stop one being passed as the other, because neither is branded and
+ * each is assignable to the other. And this is the contract for a file read by code this repository
+ * does not contain — the reason {@link SpriteManifest.version} exists — so which fields the file's
+ * cell carries is decided in one place rather than inherited from the app's type.
  *
  * **The two meet in `manifestCell`, and only there.** Declared apart and joined structurally they
  * could drift with no error anywhere — a field added to `SpriteCell` would simply never reach the
- * file — so that projection names every field of both, and a field added to either is a type error
- * at the one place the manifest decides what to say about it.
+ * file — so that projection names every field of both, optional ones included, and a field added to
+ * either is a type error at the one place the manifest decides what to say about it.
+ *
+ * **The fields are the file's own; the values of `anchor` are not.** It takes the app's
+ * `SpriteAnchor`, as {@link ManifestSheet} takes `Direction`, `RigMode` and `SubjectCategory`, so the
+ * point a cell is registered against is one vocabulary on both sides. A change to `SpriteAnchor` — a
+ * position added to `CELL_ANCHORS_X`, say — reaches the file without passing through `manifestCell`.
  */
 export interface ManifestCell {
   readonly width: number;
