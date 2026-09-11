@@ -244,7 +244,23 @@ export interface SpriteManifest {
   readonly sprites: readonly ManifestSprite[];
 }
 
-/** The cell a cut used, at the written file's own magnification. */
+/**
+ * The cell a cut used, at the written file's own magnification.
+ *
+ * **Structurally identical to `SpriteCell` and deliberately a separate name**, for two reasons. The
+ * numbers are in different pixels: a `SpriteCell` is stated in the sheet's own drawn pixels, which
+ * is what the reader states and what `oversizedSprites` compares boxes against, while this is the
+ * same cell multiplied by {@link SpriteManifest.scale} — so one name for both would let a 1:1 cell
+ * reach the file, or a magnified one reach the fit check, and type-check either way. And this is a
+ * contract with something outside the repository: {@link SpriteManifest.version} exists because the
+ * file is read by code this app does not contain, so what it states should change by an edit to this
+ * file and not as a side effect of an edit to the app's own vocabulary.
+ *
+ * **The two meet in `manifestCell`, and only there.** Declared apart and joined structurally they
+ * could drift with no error anywhere — a field added to `SpriteCell` would simply never reach the
+ * file — so that projection names every field of both, and a field added to either is a type error
+ * at the one place the manifest decides what to say about it.
+ */
 export interface ManifestCell {
   readonly width: number;
   readonly height: number;
