@@ -152,6 +152,10 @@ export const FONT_CAPITALS: SheetPlan = {
   // height their own characters are set to instead.
   scaleExample:
     'one capital and the capital beside it are set on the same baseline to the same cap height, so neither arrives taller or heavier than the other',
+  // The capital rather than a glyph in general, because cap height is the measurement a font's
+  // remaining metrics are set against and the one section 1 fixes. The three sheets after this one
+  // take it too although they draw no capital: they are this series, and are set beside it.
+  scaleUnit: 'one capital glyph',
   groups: [
     {
       heading: null,
@@ -176,6 +180,7 @@ export const FONT_LOWER_CASE: SheetPlan = {
   posing: 'UNSTATED',
   scaleExample:
     'one lower-case letter and the letter beside it are set on the same baseline to the same height above it, with any ascender or descender reaching the same distance throughout',
+  scaleUnit: 'one capital glyph',
   groups: [
     {
       heading: null,
@@ -201,6 +206,7 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
   posing: 'UNSTATED',
   scaleExample:
     'one digit and the punctuation mark beside it are cut to the same stroke weight at the same scale, each sitting at the height against the baseline its own use asks for',
+  scaleUnit: 'one capital glyph',
   groups: [
     {
       heading: 'Digits',
@@ -231,6 +237,7 @@ export const FONT_SYMBOLS: SheetPlan = {
   posing: 'UNSTATED',
   scaleExample:
     'one symbol and the symbol beside it are cut to the same construction and weight, so neither reads as borrowed from another font',
+  scaleUnit: 'one capital glyph',
   groups: [
     {
       heading: null,

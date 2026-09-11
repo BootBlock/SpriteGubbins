@@ -1,7 +1,5 @@
 import type { RenderStyle } from '../../types/rendering.ts';
 import type { ResolutionProfile, StatedTargetSize, SurfaceDetail } from '../../types/output.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
-import { SCALE_UNIT_TEXT } from './subject.ts';
 
 /**
  * How the sheet is drawn, in the prose the prompt carries.
@@ -134,8 +132,7 @@ function shareText(profile: ShareProfile): string {
 }
 
 /**
- * The scale the components are drawn at, as a function of the unit this category's sheet is priced
- * in.
+ * The scale the components are drawn at, as a function of the unit this sheet is priced in.
  *
  * Stated in prose because v1 interpolated the identifier raw, so the prompt read
  * "Selected profile: `HIGH_RESOLUTION_PIXEL_ART`" — a token the model had to guess the meaning of.
@@ -143,8 +140,8 @@ function shareText(profile: ShareProfile): string {
  * **A map of functions rather than of strings, because `RETRO_16_BIT` states a height *of
  * something*** — and that something was `a full figure` on all thirteen categories, so a glyph
  * sheet, a tile field and a widget kit were each measured against a subject they cannot contain.
- * {@link SCALE_UNIT_TEXT} is the noun each supplies. It survives on that rung alone because "roughly
- * 64–96 pixels tall" is an absolute height, which no count and no layout can argue with.
+ * `SheetPlan.scaleUnit` is the noun each sheet supplies. It survives on that rung alone because
+ * "roughly 64–96 pixels tall" is an absolute height, which no count and no layout can argue with.
  *
  * **The two share rungs take no unit**, for the reason `shareText` records: a share of a cell is
  * stated of the largest component, which is a piece every sheet has without being told which one.
@@ -173,45 +170,50 @@ export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, (unit: 
  * already tells the generator. Falling back to *the sheet aspect* would throw away the only
  * measurement the prompt has.
  *
- * **It names the assembled whole in the category's own word**, for the reason `RETRO_16_BIT` does.
- * It read "the share of that figure it occupies" on every category, and the five that
- * reach it are CHARACTER, CREATURE, OBJECT, ITEM and VEHICLE — so an OBJECT part library and a
- * VEHICLE rig were both told to work to the share of a figure they have none of. That is the same
- * defect {@link SCALE_UNIT_TEXT} removes one line above, and leaving it here would have left section
- * 2 saying *figure* on the one path the profiles no longer do.
+ * **It names the assembled whole, and no category's or sheet's noun for it.** It first read "the share
+ * of that figure it occupies" on every category, which told an OBJECT part library and a VEHICLE rig
+ * to work to the share of a figure they have none of. The repair put the category's scale unit in
+ * that place, and that was true only while the unit and the assembly were the same thing. They are
+ * not on BACKGROUND's layer library, the sixth sheet kind to reach this wording and the one no test
+ * drove: the stated size there is a whole backdrop, and the line read "the share of one parallax band
+ * it occupies" one line above a size with no band in it (issue #275).
+ *
+ * The assembly is what the target-size line below names on every sheet that reaches this branch —
+ * "for the complete subject once its pieces are put together … whatever share of the whole it
+ * occupies" — so this line uses that line's own term rather than a second answer to the question it
+ * has already answered. A noun cannot drift from a sentence that does not take one.
  */
-function customAssembledText(unit: string): string {
-  return `Custom — work to the target assembled size stated below, drawing every component at the share of ${unit} it occupies`;
-}
+const CUSTOM_ASSEMBLED_TEXT =
+  'Custom — work to the target assembled size stated below, drawing every component at the share of the assembled whole it occupies';
 
 /**
  * The resolution profile in the prose the prompt carries.
  *
- * `RETRO_16_BIT` states its height of the unit this category's sheet is priced in — the category
- * being what decides that noun, never the sheet, for the reason {@link SCALE_UNIT_TEXT} records.
+ * `RETRO_16_BIT` states its height of the unit the sheet is priced in, which the caller hands in as
+ * `SheetPlan.scaleUnit`. It is the sheet's rather than the category's because BACKGROUND's two sheets
+ * have no noun in common, and one answer per series is what that field's own docblock argues.
  * `CUSTOM` is the one that defers to the target-size field, so it is the one that has to agree with
  * what that field turns out to be naming.
  *
- * **Nothing here is the sheet's**, and that is the correction issue #245 made. The two share rungs
- * were once stated against the sheet height on some plans and against a cell on others, with each
- * plan choosing — and every plan left on the sheet height was one whose share the layout decided
+ * **The two share rungs take nothing of the sheet's**, and that is the correction issue #245 made.
+ * They were once stated against the sheet height on some plans and against a cell on others, with
+ * each plan choosing — and every plan left on the sheet height was one whose share the layout decided
  * before the line was read. A share of a cell is true on every sheet, so there is no longer a
- * per-sheet answer to hand in.
+ * per-sheet frame to hand in.
  */
 export function resolutionProfileDescription(
   profile: ResolutionProfile,
   statesAssembled: boolean,
-  category: SubjectCategory,
+  scaleUnit: string,
 ): string {
   // `RESOLUTION_PROFILE_TEXT` stays exported even though nothing else imports it: it is still the map
   // `[DEFINE:RESOLUTION_PROFILE_DESCRIPTION]` is filled from for three of the four profiles, and
   // `promptTemplate.test.ts` walks that naming convention over `constants/promptText/`'s exports.
   // Listing the token as *computed* there instead would say the map does not exist, and drop the
   // check that it still does.
-  const unit = SCALE_UNIT_TEXT[category];
   return profile === 'CUSTOM' && statesAssembled
-    ? customAssembledText(unit)
-    : RESOLUTION_PROFILE_TEXT[profile](unit);
+    ? CUSTOM_ASSEMBLED_TEXT
+    : RESOLUTION_PROFILE_TEXT[profile](scaleUnit);
 }
 
 /**

@@ -121,6 +121,9 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   // pieces of each other: an effect's frames are one phenomenon at successive moments, so what has
   // to hold across them is that the *same* effect is drawn at the same scale in every cell.
   scaleExample: 'the first frame and the peak frame are the same effect drawn at the same scale',
+  // "one frame" alone would be read as a cell of the sheet grid rather than as a moment of the effect,
+  // which is the reading `FRAME_IS_A_COMPONENT` exists to correct elsewhere.
+  scaleUnit: 'one frame of the effect',
   groups: [
     {
       heading: 'Core sequence',

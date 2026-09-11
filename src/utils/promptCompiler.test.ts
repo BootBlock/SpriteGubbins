@@ -183,13 +183,22 @@ describe('generatePrompt — the subject', () => {
     expect(eightCompass(2)).not.toContain('beside a torso');
   });
 
-  it('prices section 2’s resolution profile in the unit this category’s sheet is drawn in', () => {
+  it('prices section 2’s resolution profile in the unit this sheet is drawn in', () => {
     // The same defect one section further down, and the one section 0's example was fixed without:
     // all three scale-bearing profiles stated their range against "a full figure", so a FONT sheet of
     // twenty-six glyphs and a TERRAIN blend set of twenty-three tiles were each measured against a
-    // subject they cannot hold. `RETRO_16_BIT` is the rung that still names the category's unit; the
-    // two share rungs name the largest component, which every category has.
+    // subject they cannot hold. `RETRO_16_BIT` is the rung that still names the sheet's unit; the two
+    // share rungs name the largest component, which every sheet has.
+    //
+    // Resolved through the pairing this configuration actually reaches, as section 0's example above
+    // is — the unit is the sheet's, so a category key cannot say what it should be.
     for (const category of SUBJECT_CATEGORIES) {
+      const plan = sheetPlanFor(
+        category,
+        resolveMode(category, OUTPUT.directionalMode),
+        OUTPUT.directions,
+        OUTPUT.sheetIndex,
+      );
       for (const resolutionProfile of ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const) {
         const prompt = generatePrompt(
           category,
@@ -197,7 +206,7 @@ describe('generatePrompt — the subject', () => {
           withOutput({ resolutionProfile }),
         );
         expect(prompt).toContain(
-          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, category)}`,
+          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, plan.scaleUnit)}`,
         );
       }
     }
@@ -231,6 +240,38 @@ describe('generatePrompt — the subject', () => {
       );
       expect(prompt, String(sheetIndex)).not.toContain('of the sheet height');
     }
+  });
+
+  it('measures BACKGROUND’s layer library in a piece that sheet draws, never in a parallax band', () => {
+    // The reported instance of issue #275. The unit was the category's, and BACKGROUND's was “one
+    // parallax band” — true of the parallax set and of nothing on the layer library, which draws a
+    // finished panel rather than a looping strip. Both lines that took a unit reached that sheet
+    // carrying it, and the `CUSTOM` one sat directly above a target-size line stating a 640 × 360
+    // backdrop with no band in it.
+    const background = (overrides: Partial<OutputConfig>) =>
+      generatePrompt('BACKGROUND', defaultSubjectFor('BACKGROUND'), withOutput(overrides));
+    const profileLine = (prompt: string) => /^- Resolution profile: .*$/m.exec(prompt)?.[0] ?? '';
+    const layers = { directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' } as const;
+
+    const retro = background({ ...layers, resolutionProfile: 'RETRO_16_BIT' });
+    expect(profileLine(retro)).toBe(
+      '- Resolution profile: 16-bit retro scale — one mid mass is roughly 64–96 pixels tall',
+    );
+
+    const custom = background({ ...layers, resolutionProfile: 'CUSTOM', spriteTargetSize: '640 × 360 px' });
+    expect(profileLine(custom)).toBe(
+      '- Resolution profile: Custom — work to the target assembled size stated below, drawing every component at the share of the assembled whole it occupies',
+    );
+    expect(custom).toContain(
+      '- Target assembled size, for the complete subject once its pieces are put together: 640 × 360 px.',
+    );
+
+    // The parallax set keeps the band, which is on it nine times — the unit moved to the sheet so the
+    // two could differ, not so either would change.
+    const parallax = background({ directionalMode: 'TILESET_MODULAR', resolutionProfile: 'RETRO_16_BIT' });
+    expect(profileLine(parallax)).toBe(
+      '- Resolution profile: 16-bit retro scale — one parallax band is roughly 64–96 pixels tall',
+    );
   });
 });
 

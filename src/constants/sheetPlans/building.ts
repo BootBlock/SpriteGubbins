@@ -33,6 +33,11 @@ export const BUILDING_TILESET: SheetPlan = {
   // materials this sheet does hold. Tiles are one cell each by construction; what can still go
   // wrong is the masonry on a face reading larger than the boards on the floor beside it.
   scaleExample: 'a wall face drawn beside the floor tile it rises from is in proportion to it',
+  // Every BUILDING sheet takes the building, though each states a component size — a tile here, a bay
+  // on the module library. Neither of those can be the unit: this category's series is one building,
+  // and the building both are cut from is the reference they share, which is what section 0's
+  // example on the module library already hangs a wall bay on.
+  scaleUnit: 'a full building',
   groups: [
     {
       heading: null,
@@ -96,6 +101,7 @@ export const BUILDING_MODULE_LIBRARY: SheetPlan = {
   // The entrance module is drawn closed and open, which is one part at the two positions it takes.
   posing: 'PER_POSITION',
   scaleExample: 'an awning drawn beside the wall bay it hangs on is in proportion to it',
+  scaleUnit: 'a full building',
   groups: [
     {
       heading: null,
@@ -168,6 +174,7 @@ function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTup
     // The façade fittings stay on the module library, so the awning that sheet pairs has no entry
     // here; the corner post is the smallest piece these views draw.
     scaleExample: 'a corner post drawn beside the wall bay it finishes is in proportion to it',
+    scaleUnit: 'a full building',
     groups: [
       {
         heading: 'Directional core',

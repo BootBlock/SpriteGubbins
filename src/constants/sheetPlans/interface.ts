@@ -45,6 +45,10 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
   // A button body in four states, a toggle in three, a slider handle at rest and held.
   posing: 'PER_POSITION',
   scaleExample: 'a cursor drawn beside the panel frame it moves over is in proportion to it',
+  // Section 0's pairing above is a cursor against the panel frame it moves over, so the frame is the
+  // piece the rest are in proportion to. "One widget" would price a cursor and a window frame at one
+  // size. The nine-slice takes the same frame, which is the panel its corners and edges assemble into.
+  scaleUnit: 'a panel frame',
   groups: [
     {
       heading: null,
@@ -144,6 +148,7 @@ export const INTERFACE_NINE_SLICE: SheetPlan = {
   // No cursor on this sheet — it stays on the state library — so the pair is the ornament against
   // the corner it is laid on, which are the smallest and the largest pieces the nine-slice draws.
   scaleExample: 'a corner ornament drawn beside the frame corner it sits on is in proportion to it',
+  scaleUnit: 'a panel frame',
   groups: [
     {
       heading: 'Panel nine-slice',

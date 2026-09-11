@@ -76,6 +76,10 @@ export const PORTRAIT_EXPRESSION_LIBRARY: SheetPlan = {
   // are one subject drawn repeatedly rather than the parts of one, so there is no pair of pieces to
   // be in proportion to each other. What has to hold instead is that the repeats agree.
   scaleExample: 'the resting portrait and the expression beside it are the same head drawn at the same scale',
+  // Deliberately not "a bust": the crop is the reader's, from `Framing & Crop` — head and shoulders,
+  // bust to upper chest, or half body — so a unit naming one of those values prices the sheet against
+  // a crop the subject may not have asked for.
+  scaleUnit: 'one portrait',
   groups: [
     {
       heading: null,

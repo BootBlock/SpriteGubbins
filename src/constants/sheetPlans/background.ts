@@ -38,6 +38,10 @@ export const BACKGROUND_PARALLAX_SET: SheetPlan = {
   // narrow one — rather than one piece drawn at the positions it takes.
   posing: 'UNSTATED',
   scaleExample: 'a silhouette detail drawn beside the band it breaks the outline of is in proportion to it',
+  // The band rather than the scene the bands stack into: `the finished scene` is this category's own
+  // name for the thing sections 4, 8 and 9 each forbid drawing, word for word. Section 0's example
+  // above hangs its proportions on a band too, which is the agreement INTERFACE and TERRAIN also have.
+  scaleUnit: 'one parallax band',
   groups: [
     {
       heading: 'Depth bands',
@@ -174,6 +178,12 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // example naming a light shaft would be naming a component the reader who touched nothing does
   // not receive.
   scaleExample: 'a standing feature drawn beside the mid mass it stands against is in proportion to it',
+  // Not the parallax set's band, which is not on this sheet (issue #275), and not the backdrop the
+  // pieces assemble into: that is a whole screen, and a 16-bit screen is far taller than 64–96
+  // pixels. The mid mass is the piece doing a band's job here — the middle distance, drawn once — and
+  // it is the larger half of section 0's pair above. The focal landmark would be the obvious single
+  // piece and cannot be the unit, because *Focal Landmark* offers `No Landmark — Fully Repeatable`.
+  scaleUnit: 'one mid mass',
   groups: [
     {
       heading: 'Scene panel',

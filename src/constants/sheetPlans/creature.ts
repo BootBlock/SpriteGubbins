@@ -50,6 +50,10 @@ export const CREATURE_POSE_LIBRARY: SheetPlan = {
   // Eight fore and nine hind variants a side: one limb segment per orientation it is drawn at.
   posing: 'PER_POSITION',
   scaleExample: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
+  // Not the "figure" CHARACTER keeps and `CATEGORY_ASSEMBLY` shares with it: that record is naming a
+  // *failure* the two categories have in common, where this is naming the subject itself, and the
+  // word appears nowhere in this category's plans.
+  scaleUnit: 'a full creature',
   groups: [
     {
       heading: null,
@@ -146,6 +150,7 @@ function creatureDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTupl
     // One head, one body and one hindquarters, repeated across yaws — the camera turning, not the trunk.
     posing: 'UNSTATED',
     scaleExample: 'a head drawn beside the body it joins is in proportion to it',
+    scaleUnit: 'a full creature',
     groups: [
       {
         heading: null,
@@ -241,6 +246,7 @@ export const CREATURE_ARTICULATION: SheetPlan = {
   // A claw rather than the pose library's `foot or claw`, because this sheet writes `Feet or
   // claws` and the singular `foot` appears nowhere on it.
   scaleExample: 'a claw drawn beside an upper limb is in proportion to it',
+  scaleUnit: 'a full creature',
   groups: [
     { heading: 'Left forelimb', entries: LEFT_FORELIMB_ENTRIES },
     {
@@ -308,6 +314,7 @@ export const CREATURE_CUTOUT_RIG: SheetPlan = {
   // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
   posing: 'AT_REST',
   scaleExample: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
+  scaleUnit: 'a full creature',
   groups: [
     {
       heading: null,
