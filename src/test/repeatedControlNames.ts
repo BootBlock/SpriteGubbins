@@ -23,24 +23,33 @@ const CONTROL_ROLES = [
 ] as const;
 
 /**
- * Every accessible name that more than one control on screen carries, once for each extra copy — so
+ * Every accessible name that more than one reachable control carries, once for each extra copy — so
  * a list that names its controls properly returns an empty array.
  *
  * **The name is the one the role query computes**, which Testing Library hands to a function
  * matcher, rather than `aria-label ?? textContent`. That shortcut reads a control named by its
  * `<label for>` as having no name at all, and a `<select>` is named exactly that way — so it could
  * not see the defect #269 reports, where every saved row's project dropdown was called “Project”.
- * The matcher accepts every element, so this reads names and filters nothing.
+ *
+ * **A name is kept only for an element the query returns.** The query computes the name before it
+ * drops the controls no reader can reach — `aria-hidden`, `hidden`, `display: none` — so the matcher
+ * is called for those too. Recording every call would fail a list on a hidden control that happens to
+ * share a visible one's name, which is not a name anybody meets.
  */
 export function repeatedControlNames(): string[] {
   const names: string[] = [];
   for (const role of CONTROL_ROLES) {
-    screen.queryAllByRole(role, {
-      name: (name) => {
-        names.push(name);
+    const computed = new Map<Element, string>();
+    const reachable = screen.queryAllByRole(role, {
+      name: (name, element) => {
+        if (element !== null) computed.set(element, name);
         return true;
       },
     });
+    for (const element of reachable) {
+      const name = computed.get(element);
+      if (name !== undefined) names.push(name);
+    }
   }
   return names.filter((name, index) => names.indexOf(name) !== index);
 }

@@ -6,7 +6,7 @@ import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
  * Finding where the app renders a given component, parsed rather than matched.
  *
  * Two suites re-count a primitive's call sites because its docblock argues a design decision by
- * counting them — `SelectField`'s two optional props, and `ControlTooltip`'s two paragraphs about
+ * counting them — three of `SelectField`'s optional props, and `ControlTooltip`'s two paragraphs about
  * how many glyphs an ⓘ apiece would add and how many of its wrapped controls can be disabled. Both
  * ask the same question of the same tree, so they ask it through one walk: a second copy would be a
  * second answer to "is this a call site", and the one that went stale would answer *almost* right,

@@ -19,9 +19,9 @@ import { callSitesPassing } from './jsxCallSites.ts';
  * thirty. Nothing failed on any of the four: a reader adding two selects for something else
  * noticed the arithmetic. This suite is what fails instead.
  *
- * **It pins the counts, not the prose.** Whoever makes it fail has to go and restate the two
- * paragraphs, which is the step that was being skipped; whether the restated argument still holds at
- * the new figure is a judgement no assertion can make. The exception lists are pinned by name as
+ * **It pins the counts, not the prose.** Whoever makes it fail has to go and restate the paragraph
+ * that figure argues, which is the step that was being skipped; whether the restated argument still
+ * holds at the new figure is a judgement no assertion can make. The exception lists are pinned by name as
  * well as by length, so a select that swaps one exception for another — leaving the totals alone —
  * fails here too, and the docblock’s account of *which* seven they are stays true with them.
  */
@@ -54,7 +54,7 @@ const DISABLED_REASON_CALL_SITES = ['src/components/studio/RiggingFields.tsx'];
  *
  * One file, and two rows behind it. The qualifier reaches `SelectField` only through
  * `ProjectSelectField`, so a row that renders a select of its own and names it the same way would
- * add an entry here — which is the point at which the docblock's “one of the thirty-one” is false.
+ * add an entry here — which is the point at which the docblock’s “one of the thirty-one” is false.
  */
 const NAME_QUALIFIER_CALL_SITES = ['src/components/projects/ProjectSelectField.tsx'];
 
@@ -63,7 +63,7 @@ const NAME_QUALIFIER_CALL_SITES = ['src/components/projects/ProjectSelectField.t
  *
  * The walk is `jsxCallSites.ts`'s, shared with the suite that re-counts `ControlTooltip`'s two
  * figures, and its docblock says why a call site has to be parsed rather than matched. This suite
- * asks only for the file, since that is what the two exception lists below are written as.
+ * asks only for the file, since that is what the exception lists below are written as.
  */
 function filesPassing(attribute: string): string[] {
   return callSitesPassing('SelectField', attribute).map((site) => site.file);

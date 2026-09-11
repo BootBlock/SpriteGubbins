@@ -36,7 +36,8 @@ interface QuantisePresetRowProps {
  * identical accessible names, and a screen-reader user moving through them has nothing to tell one
  * from the next — so the visible label stays short and `aria-label` carries the name. The project
  * dropdown is held to the same rule through `nameQualifier`, which names the dropdown and its ⓘ
- * together, and which keeps the visible `Project` at the front of both.
+ * together. The dropdown's name opens with the visible `Project`, and the ⓘ's carries it straight
+ * after `Guidance:`.
  */
 export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
   const loadQuantisePreset = useQuantisePresetStore((state) => state.loadQuantisePreset);
