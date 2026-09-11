@@ -98,7 +98,8 @@ export function promptConditions(
     // supersedes. One flag, because a pinned palette either governs the sheet's colour or does not.
     PALETTE: palette === null ? '' : 'yes',
     // A second, narrower flag, because the self-audit's per-component check cites a number section 2
-    // does not always print: seven of the nineteen palettes state no per-component cap, and an audit
+    // does not always print: seven of the nineteen palettes state no per-component cap on a magenta
+    // field, and eight on a black or white one, where the grey Game Boy's cap restates its list; an audit
     // asking the reader to compare against an allowance that was never given cannot be worked.
     // Read through `perComponentLimit` rather than off `colorsPerComponent`, so the gate answers
     // whether the line was *emitted* rather than whether the field was set — and handed the key for

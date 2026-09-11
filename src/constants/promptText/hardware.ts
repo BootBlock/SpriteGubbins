@@ -4,6 +4,7 @@ import type { Rgba } from '../../types/quantiser.ts';
 import { channelLevels, channelSpaceSize } from '../../utils/channelLevels.ts';
 import { fromHex, toHex } from '../../utils/imageData.ts';
 import { keyReaches } from '../../utils/keyReach.ts';
+import { spellNumber } from '../../utils/numberWords.ts';
 
 /**
  * The two blocks a targeted machine adds to section 2 of the prompt.
@@ -84,6 +85,12 @@ function rule(palette: Palette, key: Rgba | null): string {
     const { offered, withheld } = partitionEntries(palette.space.entries, key);
     const count = String(offered.length);
     const whose = approximates === null && withheld.length === 0 ? ` of ${palette.name}` : '';
+    // The caveat describes the machine's whole palette, so it counts what the key left out as well:
+    // “the 3 values above are an sRGB approximation of the four shade levels” argues with itself.
+    const rendered =
+      withheld.length === 0
+        ? `The ${count} values above`
+        : `The ${count} values above, with the ${spellNumber(withheld.length)} left out,`;
 
     return [
       `Every pixel of every component is exactly one of the ${count} colours${whose}, listed below. No other colour appears on any component — not as a gradient, a blend, or an anti-aliased edge.`,
@@ -93,7 +100,7 @@ function rule(palette: Palette, key: Rgba | null): string {
       ...(approximates === null
         ? []
         : [
-            `The ${count} values above are an sRGB approximation of ${approximates}. They are a rendering for a modern display, not colour values ${palette.name} holds. Draw in them exactly as listed — on this sheet they are the colours.`,
+            `${rendered} are an sRGB approximation of ${approximates}. They are a rendering for a modern display, not colour values ${palette.name} holds. Draw in them exactly as listed — on this sheet they are the colours.`,
           ]),
     ].join('\n\n');
   }
@@ -216,7 +223,7 @@ function sheetLimit(palette: Palette, key: Rgba | null): number | null {
  *
  * Exported because the self-audit cites it: *"no component carries more colours than that section
  * allows it"* is a check the reader cannot perform when no allowance was given, and seven of the
- * nineteen palettes give none. The compiler gates that clause on this, so the two cannot disagree
+ * nineteen palettes give none on a magenta or transparent field. The compiler gates that clause on this, so the two cannot disagree
  * about whether the number the audit refers to was ever printed. It takes the key for the same
  * reason — the Game Boy's grey list under a black key offers three colours, so its three per object
  * restates the list and is not printed.

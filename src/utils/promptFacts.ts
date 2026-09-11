@@ -67,7 +67,7 @@ export interface SheetFacts {
   /**
    * The colour the background is keyed on, or `null` for a transparent field.
    *
-   * A fact because three phases ask it: `promptConditions` gates section 0's reservation and the
+   * A fact because two phases ask it: `promptConditions` gates section 0's reservation and the
    * self-audit's check on it, and `promptValues` hands it to the palette block and the outline line,
    * which each leave out what the key would take. Asked separately, one of them could reserve a key
    * the other offers a component.

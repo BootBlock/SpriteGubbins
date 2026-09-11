@@ -21,8 +21,9 @@ import { SelectField } from '../common/SelectField.tsx';
  * ladder is the definition anyway — so the description carries the rule and the strip is absent.
  *
  * The strip is `aria-hidden` and is a visual convenience rather than the only statement of the
- * colours: the description gives the count and the rule, and the compiled prompt beside it lists
- * every entry in full, which is where a reader who cannot use the swatches gets them.
+ * colours: the description gives the count and the rule, and the compiled prompt beside it names
+ * every entry — in its list, or as one the background key leaves out of it — which is where a reader
+ * who cannot use the swatches gets them.
  *
  * **The download row is offered on the same condition as the strip**, and for the same reason: a
  * channel-depth palette is a ladder rather than a list, so there is nothing to write out. It is the

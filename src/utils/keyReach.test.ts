@@ -54,7 +54,7 @@ describe('keyReaches', () => {
     expect(keyReaches(key, key)).toBe(true);
   });
 
-  it('takes the colours the prompt names as its examples, and not their neighbours', () => {
+  it('takes the colours the prompt names as its examples, and not the nearest hue that is not the key', () => {
     const magenta = BACKGROUND_KEY_COLORS.MAGENTA_FF00FF;
     const white = BACKGROUND_KEY_COLORS.PURE_WHITE;
     if (magenta === null || white === null) throw new Error('both keys should be colours');
@@ -63,7 +63,8 @@ describe('keyReaches', () => {
     expect(keyReaches(magenta, { r: 0xd8, g: 0x00, b: 0xd8, a: 255 })).toBe(true);
     expect(keyReaches(white, { r: 0xff, g: 0xf1, b: 0xe8, a: 255 })).toBe(true);
     // Rose sits at 40 from the recommended magenta, past every rung short of the top — see
-    // `KEY_TOLERANCES` — so it stays a colour a component may wear.
-    expect(keyReaches(magenta, { r: 0xff, g: 0x00, b: 0x00, a: 255 })).toBe(false);
+    // `KEY_TOLERANCES` — so it stays a colour a component may wear, and a tolerance loosened past it
+    // fails here.
+    expect(keyReaches(magenta, { r: 0xff, g: 0x00, b: 0x80, a: 255 })).toBe(false);
   });
 });

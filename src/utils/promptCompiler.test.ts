@@ -2606,6 +2606,8 @@ describe('generatePrompt — the machine and its palette', () => {
     expect(spectrum).toContain(
       '#FF00FF and #D800D8 are left out of the list below, because #FF00FF is the background key section 0 fixes and #D800D8 is near enough to it to be taken for it.',
     );
+    // The caveat is about the machine's whole palette, so it counts the two the key took as well.
+    expect(spectrum).toContain('The 13 values above, with the two left out, are an sRGB approximation of');
     // Fifteen on screen is no limit on thirteen offered, so it is not stated as though it were one.
     expect(spectrum).not.toContain('distinct colours appear across the whole sheet');
 
@@ -2634,6 +2636,9 @@ describe('generatePrompt — the machine and its palette', () => {
     );
     expect(paletteBlock(mono)).toContain(
       '#000000 is left out of the list below, because it is the background key section 0 fixes.',
+    );
+    expect(paletteBlock(mono)).toContain(
+      'The 3 values above, with the one left out, are an sRGB approximation of the four shade levels',
     );
     expect(mono).not.toContain('No single component carries more than');
     expect(mono).not.toContain('No component carries more colours at once');
