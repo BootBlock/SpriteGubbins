@@ -23,10 +23,11 @@ import type { QuantiseTuning } from './quantiser.ts';
  *   looked at anything. Sweeping it would dress a foregone conclusion as a measurement.
  * - **The palette snap**, which reaches nothing unless a palette is locked, and whose whole point is
  *   that the reader has decided the previous sheet's colours are the ones they want.
- * - **The sprite gap, the three symmetry dials and the two duplicate dials.** Four of those six
- *   change no pixel of the result at all — they shape what the tab *reports* — and the two that do
- *   act, the symmetry snap and the duplicate snap, are acting on a reading a score cannot check.
- *   There is nothing here for fidelity to rank.
+ * - **The sprite gap, the three symmetry dials and the two duplicate dials.** Two of those six — the
+ *   symmetry mode and the duplicate snap — are what act, and the other four change no pixel of the
+ *   result until one of those, or for the gap the frame alignment's snap, acts on the reading they
+ *   shape. So every pixel any of them reaches is an edit made on the strength of a reading a score
+ *   cannot check, and there is nothing here for fidelity to rank.
  *
  * - **The two frame-alignment dials.** A strip reading is the third of the readings taken over the
  *   segmentation, and it *moves* frames rather than editing them — so what it changes is where the

@@ -145,8 +145,8 @@ describe('AutoTuneControls', () => {
     expect(dials.lineStrength).toBe(2.5);
     expect(dials.colorMerge).toBe(12);
     // The eleven it must not reach — the three that decide what counts as background delete pixels,
-    // a dither trades likeness away on purpose, and the rest change what the tab reports rather than
-    // what it draws.
+    // a dither trades likeness away on purpose, the palette snap keeps to colours the reader chose,
+    // and the rest decide how the sheet is read as sprites and what is done to them.
     expect(dials.keyingEnabled).toBe(QUANTISE_DEFAULT_DIALS.keyingEnabled);
     expect(dials.keyTolerance).toBe(QUANTISE_DEFAULT_DIALS.keyTolerance);
     expect(dials.silhouetteThreshold).toBe(QUANTISE_DEFAULT_DIALS.silhouetteThreshold);

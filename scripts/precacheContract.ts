@@ -637,8 +637,26 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * 2365 leaves **0.20 KiB**, narrower than any note above leaves. It is the smallest whole figure over
  * the build, and deliberately so, for the reason each of those notes gives: whether 2350 was ever the
  * right figure for what a first visit downloads is for whoever owns this contract to answer.
+ *
+ * **Raised from 2365 by the sprite gap's guidance telling the truth about the download** (#236). Its
+ * card said the download is the same file whatever the gap is set to, and neither half held: the
+ * Aseprite document, the sprite pack and the manifest are built from the boxes the gap draws, and
+ * the symmetry settle, the duplicate fold and the frame alignment all act on those boxes. The
+ * duplicate tolerance's card and panel paragraph made the same claim about a reading the manifest
+ * records, and the Auto button's card said the dials it leaves alone change only what the tab
+ * reports. Each now says what the control does on its own and what it reaches. Measured against
+ * `main` at `d78626e`, rebuilt from the same lockfile — **2364.78 KiB across 64 entries** on the
+ * build's summary line — this build reports **2365.66 across 64** on the same line, a delta of
+ * 0.88 that crossed a ceiling the base sat 0.22 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed. It is guidance prose, and all of it lands in three of
+ * the constants-pulling chunks rather than the entry chunk: `quantiseDials` grows by 497 bytes,
+ * `QuantiseTab` by 210 and `useUIStore` by 193, which is the 0.88 exactly. The docblocks rewritten
+ * beside it are stripped from the bundle.
+ *
+ * 2366 leaves **0.34 KiB**. It is the smallest whole figure over the build, for the reason the note
+ * above gives.
  */
-export const PRECACHE_CEILING_KIB = 2365;
+export const PRECACHE_CEILING_KIB = 2366;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
