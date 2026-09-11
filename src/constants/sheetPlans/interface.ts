@@ -44,12 +44,6 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // A button body in four states, a toggle in three, a slider handle at rest and held.
   posing: 'PER_POSITION',
-  // The sheet, although this is the one plan in the app that draws its own scale unit *and* takes
-  // this frame. One panel frame is on the page among twenty-odd widgets, and one of anything cannot
-  // argue with a count — so the shipped reading stays true here, and every other widget is drawn at
-  // its share of that frame, which is the proportion section 0's example for this category names.
-  // BACKGROUND's parallax set is the case this is not: nine bands, where the count does argue.
-  scaleUnitFrame: 'SHEET',
   scaleExample: 'a cursor drawn beside the panel frame it moves over is in proportion to it',
   groups: [
     {
@@ -147,11 +141,6 @@ export const INTERFACE_NINE_SLICE: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // The end caps and the stretching middle are each drawn again in the pressed state.
   posing: 'PER_POSITION',
-  // The sheet, and here for the plainer of the two reasons: the panel frame is what these twenty
-  // pieces *assemble into*, named as such by the assembly sentence above, so no cell in this grid
-  // holds one. Pricing a corner's cell as a share of a panel frame would ask for a corner several
-  // times its own size.
-  scaleUnitFrame: 'SHEET',
   // No cursor on this sheet — it stays on the state library — so the pair is the ornament against
   // the corner it is laid on, which are the smallest and the largest pieces the nine-slice draws.
   scaleExample: 'a corner ornament drawn beside the frame corner it sits on is in proportion to it',

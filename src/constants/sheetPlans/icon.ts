@@ -69,7 +69,6 @@ export const ICON_SYMBOL_SET: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // The cooldown sweep is drawn at two stages, and the changed-state pair active and inactive.
   posing: 'PER_POSITION',
-  scaleUnitFrame: 'CELL',
   // The agreement shape, for EFFECT's reason: this sheet's components are not pieces of each
   // other, so there is no small piece to hold against a large one. What has to hold instead is that
   // no member of the family arrives at half the weight of the one beside it.

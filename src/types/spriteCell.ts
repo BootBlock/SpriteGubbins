@@ -13,9 +13,10 @@
  * the artwork sits. Neither is derivable from the artwork, which is why the reader states both.
  *
  * **Stated in the sheet's own drawn pixels**, as every other measurement the reader gives this tab
- * is — the download's magnification multiplies the cell along with the boxes, in the one place
- * `scaleBoxes` already multiplies them, so the file and the manifest cannot end up describing one
- * cut at two coordinates.
+ * is — the download's magnification multiplies the cell in `manifestCell`, beside the `scaleBoxes`
+ * call in `buildManifest` that multiplies the boxes, and the pack cuts every sprite's file at the
+ * cell that manifest states, so the file and the manifest cannot end up describing one cut at two
+ * coordinates.
  *
  * **Nothing here resamples.** A sprite larger than the cell is a sheet that came back at a coarser
  * scale than the prompt asked for, and the honest answer is to refuse and say so — see

@@ -117,7 +117,6 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // One phenomenon, one component per phase of its life: the artwork is the motion here.
   posing: 'PER_POSITION',
-  scaleUnitFrame: 'CELL',
   // The agreement shape rather than a pair of pieces, because this sheet's components are not
   // pieces of each other: an effect's frames are one phenomenon at successive moments, so what has
   // to hold across them is that the *same* effect is drawn at the same scale in every cell.

@@ -13,7 +13,8 @@ import type { PresetArchetype } from '../../types/preset.ts';
  *
  * Every one states its tile size outright, because a tile that does not match the engine's grid is not
  * a stylistic miss, it is unusable — and no resolution profile can say it, since a profile states a
- * share of the sheet height rather than an absolute size, and the engine's grid is absolute. The two
+ * share of a cell in the sheet's own grid rather than an absolute size, and the engine's grid is
+ * absolute. The two
  * whose look is not itself a scale take `CUSTOM` as
  * well, so for those the stated number is the only thing describing how big the art is.
  */

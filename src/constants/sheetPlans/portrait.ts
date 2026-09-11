@@ -72,7 +72,6 @@ export const PORTRAIT_EXPRESSION_LIBRARY: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // One face, drawn once for each expression it wears.
   posing: 'PER_POSITION',
-  scaleUnitFrame: 'CELL',
   // EFFECT's shape rather than a pair of pieces, and for EFFECT's reason: this sheet's components
   // are one subject drawn repeatedly rather than the parts of one, so there is no pair of pieces to
   // be in proportion to each other. What has to hold instead is that the repeats agree.

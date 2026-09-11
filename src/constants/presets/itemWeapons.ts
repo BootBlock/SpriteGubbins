@@ -9,7 +9,7 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * An item is the smallest thing this app draws, and that is what makes the settings matter: an icon
  * seen at 32 px is its silhouette and nothing else. So all four state a per-cell pixel size outright —
  * an inventory grid has a cell size and no resolution profile can express one, because a profile states
- * a share of the sheet height rather than an absolute size — and all four exclude the hand, the stand
+ * a share of a cell in the sheet's own grid rather than an absolute size — and all four exclude the hand, the stand
  * and the glow trail,
  * each of which extends past the item's own bounds and breaks the alignment the cell exists to keep.
  */
