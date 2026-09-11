@@ -7,6 +7,7 @@ import { DEFAULT_PROJECT_ID, createDefaultProject } from '../../constants/projec
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
+import { repeatedControlNames } from '../../test/repeatedControlNames.ts';
 import type { QuantisePreset } from '../../types/quantisePreset.ts';
 import { QuantisePresetControls } from './QuantisePresetControls.tsx';
 
@@ -117,7 +118,10 @@ describe('QuantisePresetControls', () => {
     useQuantisePresetStore.setState({ presets: [saved], moveQuantisePreset });
     render(<QuantisePresetControls />);
 
-    await userEvent.selectOptions(screen.getByLabelText('Project'), 'harbour');
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Project for the saved settings “Flat sheets”' }),
+      'harbour',
+    );
 
     expect(moveQuantisePreset).toHaveBeenCalledWith('quantise-1', 'harbour');
   });
@@ -159,17 +163,28 @@ describe('QuantisePresetControls', () => {
     expect(loadQuantisePreset).toHaveBeenCalledWith(saved);
   });
 
-  it('names the preset in every button, so a list of them is not a list of “Delete”', () => {
+  it('names the preset in every control, so a list of them is not a list of “Delete”', () => {
     const second: QuantisePreset = { ...saved, id: 'quantise-2', name: 'Painterly sheets' };
     useQuantisePresetStore.setState({ presets: [saved, second] });
 
     render(<QuantisePresetControls />);
 
-    // Four buttons, four distinct accessible names — the thing a screen-reader user moves through.
+    // Every control in the panel, and no two of them alike — the thing a screen-reader user moves
+    // through. The project dropdown is the one #269 added: each row's was called `Project`, beside
+    // an ⓘ called `Guidance: Project`, while the buttons either side of it named the set.
+    expect(repeatedControlNames()).toStrictEqual([]);
     for (const name of ['Flat sheets', 'Painterly sheets']) {
       expect(screen.getByRole('button', { name: `Load the saved settings “${name}”` })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: `Delete the saved settings “${name}”` })).toBeInTheDocument();
+      expect(
+        screen.getByRole('combobox', { name: `Project for the saved settings “${name}”` }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: `Guidance: Project for the saved settings “${name}”` }),
+      ).toBeInTheDocument();
     }
+    // The save panel's own dropdown is rendered once, so its label alone already tells it apart.
+    expect(screen.getByRole('combobox', { name: 'Save into' })).toBeInTheDocument();
   });
 
   it('asks before deleting, and deletes nothing on the first press', async () => {

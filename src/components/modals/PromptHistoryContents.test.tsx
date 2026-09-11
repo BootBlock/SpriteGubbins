@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../../constants/presets/index.ts';
 import { useHistoryStore } from '../../stores/useHistoryStore.ts';
+import { repeatedControlNames } from '../../test/repeatedControlNames.ts';
 import type { PromptHistoryLog } from '../../types/history.ts';
 import { PromptHistoryContents } from './PromptHistoryContents.tsx';
 
@@ -68,11 +69,7 @@ describe('PromptHistoryContents', () => {
     // over, with nothing naming the prompt. A prompt has no name, so the row's own vocabulary — its
     // category and its timestamp — is what tells one from the next. Measured at the 4,000,000
     // character budget this drawer holds 136 entries, which is 408 identically named buttons.
-    const names = screen
-      .getAllByRole('button')
-      .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '');
-    const repeated = names.filter((name, index) => names.indexOf(name) !== index);
-    expect(repeated).toStrictEqual([]);
+    expect(repeatedControlNames()).toStrictEqual([]);
     expect(rowAction('Delete')).toHaveAccessibleName(/^Delete the CHARACTER prompt from /);
     expect(rowAction('Copy prompt')).toHaveAccessibleName(/^Copy prompt — the CHARACTER prompt from /);
     expect(rowAction('Restore')).toHaveAccessibleName(/ into the studio$/);

@@ -29,6 +29,11 @@ interface PresetDetailsFormProps {
  * **Re-filing is not here**, and the row's project dropdown is why: choosing a project is one press
  * rather than something typed, so putting it in a form that has to be opened and submitted would be
  * three steps for one decision.
+ *
+ * **Every control names the preset it edits**, because each row keeps its own editor and opening one
+ * closes no other. Two open editors were two `Save`s, two `Cancel`s and two pairs of ⓘs, and the ⓘs
+ * matched the project editor's own as well — nothing a reader meeting them one at a time could tell
+ * apart. Each name opens with the words on screen, as the row's own buttons do.
  */
 export function PresetDetailsForm({ preset, onClose }: PresetDetailsFormProps) {
   const updateCustomPresetDetails = usePresetStore((state) => state.updateCustomPresetDetails);
@@ -70,7 +75,11 @@ export function PresetDetailsForm({ preset, onClose }: PresetDetailsFormProps) {
         label beside it: it names itself.
       */}
       <div className="flex items-center gap-2">
-        <Tooltip text={PRESET_ACTION_TOOLTIPS.detailsNameBox} hint="New name" />
+        <Tooltip
+          text={PRESET_ACTION_TOOLTIPS.detailsNameBox}
+          hint="New name"
+          nameQualifier={`for ${preset.name}`}
+        />
         <input
           ref={focusOnMount}
           type="text"
@@ -87,7 +96,11 @@ export function PresetDetailsForm({ preset, onClose }: PresetDetailsFormProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Tooltip text={PRESET_ACTION_TOOLTIPS.detailsDescriptionBox} hint="Description" />
+        <Tooltip
+          text={PRESET_ACTION_TOOLTIPS.detailsDescriptionBox}
+          hint="Description"
+          nameQualifier={`for ${preset.name}`}
+        />
         <input
           type="text"
           value={draftDescription}
@@ -108,6 +121,7 @@ export function PresetDetailsForm({ preset, onClose }: PresetDetailsFormProps) {
           <button
             type="submit"
             disabled={isSaving || draftName.trim() === ''}
+            aria-label={`${isSaving ? 'Saving…' : 'Save'} — the details for ${preset.name}`}
             className="action-tab rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
           >
             {isSaving ? 'Saving…' : 'Save'}
@@ -116,6 +130,7 @@ export function PresetDetailsForm({ preset, onClose }: PresetDetailsFormProps) {
         <ControlTooltip hint="Cancel" text={PRESET_ACTION_TOOLTIPS.cancelDetails}>
           <button
             type="button"
+            aria-label={`Cancel — leave the details for ${preset.name} unchanged`}
             onClick={onClose}
             className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
           >

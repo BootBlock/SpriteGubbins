@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DEFAULT_PRESET } from '../../constants/presets/index.ts';
 import { DEFAULT_PROJECT_ID, createDefaultProject } from '../../constants/projects.ts';
@@ -7,6 +7,7 @@ import { QUANTISE_DEFAULT_DIALS } from '../../constants/quantiseDials.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
+import { repeatedControlNames } from '../../test/repeatedControlNames.ts';
 import type { CustomArchetype } from '../../types/preset.ts';
 import type { Project } from '../../types/project.ts';
 import type { QuantisePreset } from '../../types/quantisePreset.ts';
@@ -196,11 +197,62 @@ describe('ProjectsTab', () => {
     usePresetStore.setState({ customPresets: [preset(DEFAULT_PROJECT_ID)], moveCustomPreset });
 
     render(<ProjectsTab />);
-    const row = screen.getByRole('heading', { name: 'My Knight' }).closest('li');
-    if (row === null) throw new Error('the preset should be a list item.');
-    await user.selectOptions(within(row).getByLabelText('Project'), HARBOUR.id);
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Project for preset My Knight' }),
+      HARBOUR.id,
+    );
 
     expect(moveCustomPreset).toHaveBeenCalledWith('custom-1', HARBOUR.id);
+  });
+
+  it('names every control in a project after the save it acts on, so no two read alike', async () => {
+    const user = userEvent.setup();
+    usePresetStore.setState({
+      customPresets: [preset(HARBOUR.id), preset(HARBOUR.id, { id: 'custom-2', name: 'Harbour Guard' })],
+    });
+    useQuantisePresetStore.setState({
+      presets: [dials(HARBOUR.id), dials(HARBOUR.id, { id: 'quantise-2', name: 'Painterly sheets' })],
+    });
+
+    render(<ProjectsTab />);
+    await user.click(projectButton('Harbour'));
+
+    // #269. Every saved row carries a dropdown that re-files it, and each one was called `Project`
+    // with an ⓘ called `Guidance: Project` — so a reader moving control to control met four of each
+    // here, and one per saved item in a real library, with nothing saying which save it would move.
+    // The visible label stays `Project`, and the name opens with it, as WCAG 2.5.3 asks.
+    expect(repeatedControlNames()).toStrictEqual([]);
+    expect(screen.getByRole('combobox', { name: 'Project for preset My Knight' })).toHaveValue(HARBOUR.id);
+    expect(
+      screen.getByRole('button', { name: 'Guidance: Project for preset Harbour Guard' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'Project for the saved settings “Painterly sheets”' }),
+    ).toHaveValue(HARBOUR.id);
+  });
+
+  it('keeps every name distinct with an editor open on more than one saved preset', async () => {
+    const user = userEvent.setup();
+    usePresetStore.setState({
+      customPresets: [preset(HARBOUR.id), preset(HARBOUR.id, { id: 'custom-2', name: 'Harbour Guard' })],
+    });
+
+    render(<ProjectsTab />);
+    await user.click(projectButton('Harbour'));
+    // Each row keeps its own editor, so nothing closes the first when the second opens — and the
+    // project's own editor can be open above both of them at the same time.
+    await user.click(screen.getByRole('button', { name: 'Edit details for preset My Knight' }));
+    await user.click(screen.getByRole('button', { name: 'Edit details for preset Harbour Guard' }));
+    await user.click(screen.getByRole('button', { name: /^Edit the name and description/ }));
+
+    // The editor's two ⓘs, its Save and its Cancel were four more names repeated once per open row,
+    // and the two ⓘs matched the project editor's own as well.
+    expect(repeatedControlNames()).toStrictEqual([]);
+    expect(screen.getByRole('button', { name: 'Guidance: New name for My Knight' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save — the details for Harbour Guard' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Cancel — leave the details for My Knight unchanged' }),
+    ).toBeInTheDocument();
   });
 
   it('loads a saved preset into the studio from its row', async () => {

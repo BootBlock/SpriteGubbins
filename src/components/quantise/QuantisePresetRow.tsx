@@ -32,9 +32,11 @@ interface QuantisePresetRowProps {
  * Projects view's panel for one project — which is why the dropdown is here rather than in either
  * of them. A set is re-filed the same way wherever it is seen.
  *
- * Every button names the preset it acts on. Three rows of "Load" and "Delete" are three pairs of
+ * Every control names the preset it acts on. Three rows of "Load" and "Delete" are three pairs of
  * identical accessible names, and a screen-reader user moving through them has nothing to tell one
- * from the next — so the visible label stays short and `aria-label` carries the name.
+ * from the next — so the visible label stays short and `aria-label` carries the name. The project
+ * dropdown is held to the same rule through `nameQualifier`, which names the dropdown and its ⓘ
+ * together, and which keeps the visible `Project` at the front of both.
  */
 export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
   const loadQuantisePreset = useQuantisePresetStore((state) => state.loadQuantisePreset);
@@ -121,6 +123,7 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
         label="Project"
         tooltip={PROJECT_ACTION_TOOLTIPS.moveQuantiseProject}
         value={preset.projectId}
+        nameQualifier={`for the saved settings “${preset.name}”`}
         onChange={(projectId) => {
           void moveQuantisePreset(preset.id, projectId);
         }}

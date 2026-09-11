@@ -15,6 +15,25 @@ function renderTooltip() {
 }
 
 describe('Tooltip', () => {
+  it('names the item it belongs to where one is given, and keeps the card’s heading short', async () => {
+    const user = userEvent.setup();
+    render(
+      <Tooltip
+        text="Files this preset under a different project."
+        hint="Project"
+        nameQualifier="for preset My Knight"
+      />,
+    );
+    const trigger = screen.getByRole('button', { name: 'Guidance: Project for preset My Knight' });
+
+    await user.hover(trigger);
+
+    // An ⓘ repeated once per saved row was one name repeated as often (#269), so the qualifier goes
+    // into the name. The heading is read beside the row that already says which preset it is, so it
+    // stays the label a sighted reader sees on the control.
+    expect(trigger).toHaveAccessibleDescription('Project Files this preset under a different project.');
+  });
+
   it('is hidden until asked for', () => {
     renderTooltip();
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();

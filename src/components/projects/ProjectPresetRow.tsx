@@ -81,6 +81,8 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
         label="Project"
         tooltip={PROJECT_ACTION_TOOLTIPS.movePresetProject}
         value={preset.projectId}
+        // Worded as the row's buttons are, so the dropdown reads as one of them in a list of controls.
+        nameQualifier={`for preset ${preset.name}`}
         onChange={(projectId) => {
           void moveCustomPreset(preset.id, projectId);
         }}

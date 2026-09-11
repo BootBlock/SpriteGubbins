@@ -7,6 +7,18 @@ interface TooltipProps {
   readonly text: string;
   /** A short heading naming the thing being explained. */
   readonly hint: string;
+  /**
+   * Words that follow `hint` in the ⓘ's accessible name, and not on the card — for an ⓘ rendered once
+   * for each item in a list, where `Guidance:` and the hint alone would give every copy one name.
+   *
+   * The card's heading stays `hint`. It is read beside the control it explains, where the item is
+   * already on screen, so a saved preset's name set in the eyebrow would tell a sighted reader
+   * nothing the row does not.
+   *
+   * It admits `undefined` outright so `SelectField` can hand its own optional prop straight through,
+   * which `exactOptionalPropertyTypes` otherwise refuses.
+   */
+  readonly nameQualifier?: string | undefined;
 }
 
 /**
@@ -36,7 +48,7 @@ interface TooltipProps {
  * but clicking the control underneath has to stay possible, and that costs the guidance rather than
  * the click. **Persistent**: nothing here is on a timer.
  */
-export function Tooltip({ text, hint }: TooltipProps) {
+export function Tooltip({ text, hint, nameQualifier }: TooltipProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   // Anchored to the ⓘ itself rather than to the wrapper around it. The two boxes are all but
   // identical, and the button is the thing the caret has to point at.
@@ -62,7 +74,7 @@ export function Tooltip({ text, hint }: TooltipProps) {
       <button
         ref={triggerRef}
         type="button"
-        aria-label={`Guidance: ${hint}`}
+        aria-label={nameQualifier === undefined ? `Guidance: ${hint}` : `Guidance: ${hint} ${nameQualifier}`}
         // Described-by, never `aria-expanded`: this is the tooltip pattern, and a disclosure
         // attribute on top of `role="tooltip"` would announce a widget the card is not.
         aria-describedby={guidance.isVisible ? guidance.cardId : undefined}

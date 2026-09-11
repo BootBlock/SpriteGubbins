@@ -8,6 +8,12 @@ interface ProjectSelectFieldProps {
   readonly tooltip: string;
   /** The project currently chosen. A value no project holds falls back to the first in the list. */
   readonly value: string;
+  /**
+   * The saved item this control re-files, as the words that follow `label` in its accessible name —
+   * see `SelectField`. The two rows pass one, because each is rendered once per save; the two save
+   * panels do not, because each is rendered once and `Save into` already tells it apart.
+   */
+  readonly nameQualifier?: string;
   readonly onChange: (projectId: string) => void;
 }
 
@@ -31,7 +37,13 @@ interface ProjectSelectFieldProps {
  * derivation reads: this select lands in that tab's control column, and 448px against the 442px a
  * budgeted option needs is the tightest constraint in the tab.
  */
-export function ProjectSelectField({ label, tooltip, value, onChange }: ProjectSelectFieldProps) {
+export function ProjectSelectField({
+  label,
+  tooltip,
+  value,
+  nameQualifier,
+  onChange,
+}: ProjectSelectFieldProps) {
   const projects = useProjectStore((state) => state.projects);
 
   const projectChoices = useMemo(
@@ -48,6 +60,7 @@ export function ProjectSelectField({ label, tooltip, value, onChange }: ProjectS
         tooltip={tooltip}
         value={chosen}
         choices={projectChoices}
+        nameQualifier={nameQualifier}
         onChange={onChange}
       />
     </div>

@@ -67,6 +67,26 @@ interface SelectFieldProps<T extends string | number> {
    * `tests/studio-column-width.test.ts` holds the studio's split to the wider column it now needs.
    */
   readonly action?: ReactNode;
+  /**
+   * Words that follow `label` in the control's accessible name, and appear nowhere on screen — for a
+   * select rendered once for each item in a list, where `label` alone gives every copy one name.
+   *
+   * One of the thirty-one passes it: `ProjectSelectField`, which each saved-preset row renders to
+   * re-file its preset. Those were a select called “Project” per saved item, beside an ⓘ called
+   * “Guidance: Project”, so a reader moving control to control met a run of identical names with
+   * nothing saying which save each would move — while the buttons in the same rows already named
+   * their preset.
+   *
+   * **A qualifier rather than a whole name**, so the name cannot lose the visible label. WCAG 2.5.3
+   * asks that an accessible name contain the words on screen, because someone driving the app by
+   * speech says what they can see; a caller handing over a complete name is free to leave `label`
+   * out, which is how seven of the names the #252 fix wrote first shipped. The ⓘ takes the same words,
+   * since it is repeated exactly as often as the select it explains.
+   *
+   * It admits `undefined` outright so `ProjectSelectField` can hand its own optional prop straight
+   * through, which `exactOptionalPropertyTypes` otherwise refuses.
+   */
+  readonly nameQualifier?: string | undefined;
   readonly onChange: (value: T) => void;
 }
 
@@ -93,6 +113,7 @@ export function SelectField<T extends string | number>({
   description,
   disabledReason,
   action,
+  nameQualifier,
   onChange,
 }: SelectFieldProps<T>) {
   const selectId = useId();
@@ -116,7 +137,7 @@ export function SelectField<T extends string | number>({
         >
           {label}
         </label>
-        <Tooltip text={tooltip} hint={label} />
+        <Tooltip text={tooltip} hint={label} nameQualifier={nameQualifier} />
       </div>
 
       {/*
@@ -128,6 +149,10 @@ export function SelectField<T extends string | number>({
         <select
           id={selectId}
           value={value}
+          // Only where a qualifier was passed. `aria-label` outranks the `<label>` when the name is
+          // computed, so the label still focuses the control on a click while the name carries the
+          // item — and a select with no qualifier is named by its label alone, as it always was.
+          aria-label={nameQualifier === undefined ? undefined : `${label} ${nameQualifier}`}
           // Described-by rather than a paragraph merely sitting next to the control: the text changes
           // with the value, so a reader who cannot see the two together has no way to tell it is about
           // the option currently chosen. `CheckboxField` associates its own reason the same way, and
