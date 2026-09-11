@@ -59,14 +59,15 @@ type ShareProfile = 'HIGH_RESOLUTION' | 'MID_RESOLUTION';
  *   character sheets measured for issue #245 drew the head and the pelvis alone at 40–73% of the sheet
  *   height, against a whole figure priced at 25–35%, and it was never once honoured.
  *
- * A cell is the frame neither can reach. Cells tile the sheet by construction, so the largest
- * component filling `f` of its cell spends at most `f²` of the page whatever the count, the aspect or
- * the number of rows — which is the property that makes both contradictions impossible rather than
+ * A cell is the frame neither can reach. Cells tile the sheet by construction, and on the model
+ * `SHEET_CELL_PITCH` states — a cell 1.5× its component on each axis, so it carries that component's
+ * aspect — the largest component filling `f` of its cell height fills about `f` of its width too, and
+ * spends at most about `f²` of the page whatever the count, the aspect or the number of rows — which is the property that makes both contradictions impossible rather than
  * merely smaller. **What a cell cannot hold is one scale across the sheets of a series**: a sheet of
  * twelve parts and a sheet of thirty-four each fill their own grid, so their pieces come out at
  * different sizes. That is a stated size's to hold — `CUSTOM` with a target size, which the field's
- * guidance tells the reader — and the share of the sheet height never held it either, because no
- * generator honoured it.
+ * guidance tells the reader — and the share of the sheet height never held it either, because none
+ * of the eighteen sheets measured for issue #245 honoured it.
  *
  * Every figure in the pair is derived rather than chosen:
  *
@@ -111,14 +112,15 @@ export function shareRange(profile: ShareProfile): string {
  * section 0's one consistent scale that a profile must never ask for. So the largest piece fills its
  * cell and every other is drawn to the scale that sets. On a sheet of equal pieces — an icon family,
  * a blend set — that is every piece filling its cell, and on a frame sequence it is the frame at the
- * height of the effect filling its cell with the rest growing towards it, which "one frame of the
- * effect" could not say.
+ * height of the effect filling its cell, with every frame before and after it drawn smaller at that
+ * scale, which "one frame of the effect" could not say.
  *
  * **No category noun, and that is what the largest component buys.** The noun a category's sheet is
  * priced in cannot name a piece with a cell on six of the thirteen: `a full figure` is the whole the
  * parts assemble into, and a CHARACTER series draws heads on one sheet and upper legs on the next. A
- * per-sheet noun would be a second copy of the largest piece `SheetPlan.scaleExample` already names,
- * free to drift from it. A *component* is the prompt's own defined term, and "the largest" picks out one
+ * per-sheet noun would be a new answer on every plan, and on the plans whose `SheetPlan.scaleExample`
+ * pairs a smallest piece with a largest one it would be a second copy of that largest piece, free to
+ * drift from it. A *component* is the prompt's own defined term, and "the largest" picks out one
  * on every sheet without being told which piece that is.
  *
  * It names the grid rather than citing the layout section by number: `[SEC:LAYOUT]` cannot be used

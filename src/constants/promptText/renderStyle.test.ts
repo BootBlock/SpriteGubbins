@@ -266,10 +266,11 @@ describe('resolutionProfileDescription — the frame a share is stated in', () =
     // The guidance used to carry the four figures of two frames in hand-written prose, which is the
     // copy that goes stale the moment a rung moves. It reads them from `shareRange` now, and this is
     // what notices if it stops.
-    for (const profile of SHARE_BEARING) {
-      expect(shareRange(profile)).toBe(STATED[profile]);
-      expect(OUTPUT_TOOLTIPS.resolutionProfile, profile).toContain(STATED[profile]);
-    }
+    for (const profile of SHARE_BEARING) expect(shareRange(profile)).toBe(STATED[profile]);
+    // Written as the sentence pairs them, so a swap of the two rungs fails as well as a stale figure.
+    expect(OUTPUT_TOOLTIPS.resolutionProfile).toContain(
+      `fills ${STATED.HIGH_RESOLUTION} of its cell height at high resolution and ${STATED.MID_RESOLUTION} at mid`,
+    );
     expect(OUTPUT_TOOLTIPS.resolutionProfile).not.toContain('sheet height');
   });
 });

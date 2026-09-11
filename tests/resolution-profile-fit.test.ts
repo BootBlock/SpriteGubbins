@@ -30,9 +30,11 @@ import { generatePrompt } from '../src/utils/promptCompiler.ts';
  *
  * **So a share of the sheet height is not priced here at all**: a sentence stating one fails, whatever
  * its numbers. A share of the largest component's own cell is the frame neither can argue with. Cells
- * tile the page by construction, so the largest piece filling `f` of its cell spends at most `f²` of it
- * whatever the count, the aspect or the number of rows — and every other piece, drawn to that scale,
- * spends less. It has to be the *largest*: a share of any other piece leaves the bigger ones free to
+ * tile the page by construction, and on the model `SHEET_CELL_PITCH` states a cell carries its
+ * component's aspect, so the largest piece filling `f` of its cell height fills about `f` of its width
+ * and spends at most about `f²` of the page whatever the count, the aspect or the number of rows — and
+ * every other piece, drawn to that scale, spends less. The sentence itself states only the height, so
+ * that model is the premise the ceiling below rests on, not something this suite measures. It has to be the *largest*: a share of any other piece leaves the bigger ones free to
  * overrun their cells, which is the bound failing by another route.
  *
  * **It reads the compiled prompt, not the constants behind it.** `SHARE_RANGE` is what produces the
