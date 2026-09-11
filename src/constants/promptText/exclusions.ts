@@ -206,7 +206,7 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
  * compiles every configuration the app composes unprompted with each option its category's pool
  * offers for the field, against every target whose ceiling holds some of the library, and holds the
  * leanest prompt carrying the exemption to the same `MAX_BUDGET_SHARE` allowance. When it was
- * written that was `Side-On Attack Gunship` with `Winch Drum ×1`, at 3,265 of Qwen's 3,600.
+ * written that was `Vector Flat Keycard Set` with `Spare String ×3`, at 3,274 of Qwen's 3,600.
  * **What it does not do is price this wording to the token.** A clause that grew by the
  * twenty-eight tokens the first draft's tail cost passes, deliberately: the slack is what stops the
  * next wording change being sized against a card, and what fails is growth past it.
