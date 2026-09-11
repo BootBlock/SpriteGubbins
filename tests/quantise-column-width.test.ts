@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
-import { dirname, relative, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MD_BREAKPOINT_PX, readColumnSplit, stickyVariantsOf } from './columnSplit.ts';
+import { importGraph } from './importGraph.ts';
 import { SELECT_MIN_PX } from './selectLabelBudget.ts';
 
 /**
@@ -59,30 +60,6 @@ function read(file: string): string {
 }
 
 /**
- * Every file the tab can render, mapped to the file that renders it, through relative imports.
- *
- * The importer is recorded breadth-first, so a file's parent is the shallowest route to it — which
- * is what lets a select nested inside another component be charged to the panel around it.
- */
-function importGraph(entry: string): ReadonlyMap<string, string | undefined> {
-  const parents = new Map<string, string | undefined>([[entry, undefined]]);
-  const queue = [entry];
-  for (let index = 0; index < queue.length; index += 1) {
-    const file = queue[index];
-    if (file === undefined) continue;
-    for (const match of read(file).matchAll(/from '(\.[^']*\.tsx?)'/g)) {
-      const specifier = match[1];
-      if (specifier === undefined) continue;
-      const imported = relative(process.cwd(), resolve(dirname(file), specifier)).replaceAll('\\', '/');
-      if (parents.has(imported)) continue;
-      parents.set(imported, file);
-      queue.push(imported);
-    }
-  }
-  return parents;
-}
-
-/**
  * Every file the preview column can render, followed through relative imports from its root.
  *
  * A named list of panels would answer the wrong question: what matters is not which components are
@@ -106,8 +83,7 @@ const TAB_GRAPH = importGraph(TAB_FILE);
  * The walk starts at the tab rather than at the control column, which is conservative in the only
  * direction that matters: nothing either column renders is outside it, so a select that turned up
  * in the preview column is caught here too rather than only by the assertion written for it below.
- * What it follows is a static, relative `from '…'` specifier — an aliased or dynamically imported
- * panel would be invisible to it, and neither exists anywhere the tab reaches.
+ * What it follows, and what it cannot see, is recorded on `importGraph` itself.
  */
 const SELECT_FILES = [...TAB_GRAPH.keys()].filter((file) => /<SelectField\b/.test(read(file))).sort();
 

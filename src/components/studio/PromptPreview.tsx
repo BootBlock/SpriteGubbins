@@ -56,16 +56,24 @@ export function PromptPreview() {
   return (
     /*
       `max-h-[36rem]` while the layout is stacked — a prompt box as tall as a phone screen is not an
-      improvement — and above `lg` the cap comes off so the panel fills whatever the sticky column
-      has left.
+      improvement — and once the studio splits the cap comes off so the panel fills whatever the
+      sticky column has left.
 
-      `lg:min-h-[24rem]` is a floor, and it is not decoration. This panel is `overflow-hidden`, so
+      **The three classes that change here take `studio:`, the split's own variant, and not a page
+      breakpoint.** Each describes this panel inside the capped sticky column, and that column only
+      exists from `--breakpoint-studio` up. They sat on `lg` for a while, 96px narrower, and across
+      1024–1119px the studio was still stacked with nothing capping anything: measured, the panel was
+      576px tall at 1023px wide and 10,010px at 1024px, on a page that went from 3,988px to 13,421px.
+      `tests/split-page-width.test.ts` walks everything the split renders and fails on a page-width
+      variant anywhere in it.
+
+      `studio:min-h-[24rem]` is a floor, and it is not decoration. This panel is `overflow-hidden`, so
       anything flex squeezes out of it is *clipped*, not scrolled — and with a zero block-size
       minimum the squeeze had no limit: measured, a 400px-tall window left the `<pre>` at zero and
       pushed the Copy Prompt button past the panel's own edge. It is also the only child of the
       sticky column carrying that minimum, so it absorbed the whole deficit under browser zoom —
-      nine lines of prompt left at 1024×600, from
-      a pre-change 576px. The floor keeps the toolbar and a readable run of prompt intact, and
+      nine lines of prompt left at 1024×600, from a pre-change 576px, measured while the split still
+      engaged at `lg`. The floor keeps the toolbar and a readable run of prompt intact, and
       `StudioTab`'s column scrolls once the floor is what no longer fits. The `<pre>`'s
       `overflow-y-auto` gives it an automatic minimum size of zero, so it still absorbs the shrinking
       down to that point.
@@ -74,7 +82,7 @@ export function PromptPreview() {
       would be charged either side of the always-present, usually-empty live region above — see
       `StudioTab` and `ComponentBudgetNotice`.
     */
-    <section className="animate-view-fade-in glass-panel relative mt-4 flex max-h-[36rem] flex-col overflow-hidden rounded-2xl border border-foundry-700 p-5 shadow-2xl lg:max-h-none lg:min-h-[24rem] lg:flex-1">
+    <section className="animate-view-fade-in glass-panel relative mt-4 flex max-h-[36rem] flex-col overflow-hidden rounded-2xl border border-foundry-700 p-5 shadow-2xl studio:max-h-none studio:min-h-[24rem] studio:flex-1">
       {/*
         The live rail: a cyan highlight travelling the panel's top edge for as long as the compiler
         is watching the studio. Cyan rather than indigo because that is precisely the claim it makes,

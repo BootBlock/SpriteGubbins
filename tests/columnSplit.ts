@@ -39,8 +39,11 @@ const MAX_WIDTHS_PX: Readonly<Record<string, number>> = {
   '7xl': 1280,
 };
 
-/** Tailwind's stock responsive variants, for when a split is prefixed with one of them. */
-const STOCK_BREAKPOINTS_PX: Readonly<Record<string, number>> = {
+/**
+ * Tailwind's stock responsive variants, for when a split is prefixed with one of them — and, in
+ * `pageWidthClasses.ts`, the page breakpoints nothing inside a split may be prefixed with.
+ */
+export const STOCK_BREAKPOINTS_PX: Readonly<Record<string, number>> = {
   sm: 640,
   md: MD_BREAKPOINT_PX,
   lg: 1024,
@@ -280,7 +283,16 @@ export function readColumnSplit({
   const panels: readonly SplitPanel[] = panelFiles.map((file) => {
     const source = read(file);
     const classes = capture(source, /<section className="([^"]*)"/, `${file}'s panel`);
-    const padding = spacing(capture(classes, /\bp-(\d+)\b/, `${file}'s panel padding`));
+    /*
+      A panel with no padding utility at all spends none — the preset library's collection panel is
+      one, a bare `space-y-4` section inside its column. Padding written any other way than `p-N` is
+      refused rather than read as zero, because the column would then be over-measured by it.
+    */
+    const paddingStep = /\bp-(\d+)\b/.exec(classes)?.[1];
+    if (paddingStep === undefined && /\bp[xytrblse]?-/.test(classes)) {
+      throw new Error(`could not read ${file}'s panel padding — it is not written as \`p-N\``);
+    }
+    const padding = paddingStep === undefined ? 0 : spacing(paddingStep);
     return {
       file,
       chromePx: 2 * (padding + (/\bborder\b/.test(classes) ? 1 : 0)),
