@@ -114,18 +114,21 @@ describe('the resolution profile against the page it is drawn on', () => {
       }
     }
 
-    // Non-vacuous, and on the pairing the defect was reported against: a run that scored nothing
-    // would mean the line had stopped being reached rather than that every sheet fits. Run against
-    // the plans as they stood before issue #245 — the six whole-subject categories, INTERFACE and
-    // BACKGROUND's layer library each stating a share of the sheet height — it reports every sheet of
-    // all eighteen of those pairings as unpriceable.
-    expect(scored.has('CHARACTER / CORE_DIRECTIONAL_VARIANTS'), 'the reported pairing was never scored').toBe(
-      true,
-    );
+    // The frame first, so a failure names every sheet stating a share of something else rather than
+    // stopping at the pairing below. Run against the plans as they stood before issue #245, it
+    // reports 704 lines across twenty pairings stating a share of the sheet height — every plan of
+    // the six whole-subject categories, both INTERFACE plans and BACKGROUND's layer library — and
+    // every sheet of the seven cell-framed pairings as well, because each priced its cell by the
+    // category's noun rather than by the largest component.
     expect(
       unpriceable,
       `a share is stated in a frame the layout decides:\n${unpriceable.join('\n')}`,
     ).toEqual([]);
+    // Non-vacuous, and on the pairing the defect was reported against: a run that scored nothing
+    // would mean the line had stopped being reached rather than that every sheet fits.
+    expect(scored.has('CHARACTER / CORE_DIRECTIONAL_VARIANTS'), 'the reported pairing was never scored').toBe(
+      true,
+    );
     expect(breaches, `the stated scale does not fit:\n${breaches.join('\n')}`).toEqual([]);
   });
 });
