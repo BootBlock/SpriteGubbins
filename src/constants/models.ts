@@ -394,7 +394,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // no prompt length in any of its 105 articles, and the only lengths it publishes anywhere are a
     // 21-second video and a 1,000-character profile bio. The widely-repeated “6,000 characters”
     // traces to third parties and to a Discord forum post, never to Midjourney, so it is not
-    // recorded: the studio's opening configuration compiles to roughly 24,000 characters here, and a
+    // recorded: the studio's opening configuration compiles to roughly 26,000 characters here, and a
     // wrong ceiling would be worse than none.
     //
     // What Midjourney do publish is qualitative, and it is the opposite of a limit: “Short and
