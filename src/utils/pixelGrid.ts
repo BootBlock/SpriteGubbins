@@ -89,6 +89,8 @@ interface EdgeLattice {
   readonly columnEdges: Uint32Array;
   /** `rowEdges[y]` — columns in which row `y` differs from row `y - 1`. Index 0 is unused. */
   readonly rowEdges: Uint32Array;
+  /** Every transition in the image, both directions together. */
+  readonly total: number;
 }
 
 /**
@@ -112,26 +114,37 @@ interface EdgeLattice {
  * phase found here: `boundaryMesh` measures where the cells sit for whatever grid ends up in
  * force, which is the one mechanism serving measured, clicked and typed grids alike.
  *
- * **A line no mesh of a scale can cut on is not evidence for that scale, either way.** The phase
+ * **A line no mesh of a scale can cut on counts against that scale and never for it.** The phase
  * class says where cells *could* begin and the mesh decides where they do, and `boundEndCells` merges
- * an end band narrower than three source pixels into the cell beside it — so a line inside such a
- * band is one no reduction at that scale keeps, whichever phase holds it. Counted, it let a sheet
- * whose only change sits in a band like that read as exact at a scale that deleted it: a one-pixel
- * frame round a flat 256-pixel sheet changes on lines 1 and 255, one phase class of 127 holds both,
- * and the mesh of 127 folded the frame into the interior and reduced the sheet to one colour — which
- * the tab adopted without offering it, because the reading was exact. So a candidate is scored only
- * on the lines `meshCanCutAt` admits, in the share and in the total alike, and one left with nothing
- * to score is passed over. That frame reads as 2, the coarsest grid whose mesh keeps a band of one.
+ * an end band narrower than three source pixels into the cell beside it — so a transition on a line
+ * inside such a band is change no reduction at that scale keeps, whichever phase holds it. Counted in
+ * a scale's favour, it let a sheet whose only change sits in a band like that read as exact at a
+ * scale that deleted it: a one-pixel frame round a flat 256-pixel sheet changes on lines 1 and 255,
+ * one phase class of 127 holds both, and the mesh of 127 folded the frame into the interior and
+ * reduced the sheet to one colour — which the tab adopted without offering it, because the reading
+ * was exact. So the phase count skips every line `meshCanCutAt` refuses, while the total the share is
+ * read against still holds every transition in the image. That frame reads as 2, the coarsest grid
+ * whose mesh keeps a band of one pixel.
  *
- * **That makes the reading agree with the mesh about the ends, and claims nothing more.** A margin
- * narrower than the band is still folded, as `boundEndCells` argues it should be, so a reduction at
- * an exact scale is not lossless; what changed is that a reading can no longer rest on the lines the
- * fold removes. Where the mesh puts its *interior* cuts is its own measurement, and nothing here
- * re-checks it — a gap rather than a guarantee, which issue #276 carries: on crisp art whose stray
- * pixels outweigh its cell boundaries the line reader takes the strays for boundaries, and the walk
- * can cut beside the lattice this scored. A cut one pixel off still leaves a four-pixel cell its
- * majority and one two pixels off does not, so counting the transitions that sit exactly on the
- * cuts is not the answer to it either.
+ * **Dropping those lines from the total as well would be the worse half of the same mistake.** A
+ * one-pixel line two columns in changes on lines 2 and 3, and the stray-feature guard below rests on
+ * no phase class holding both: with line 2 gone from the total, line 3 alone is a perfect share at
+ * every coarse scale, and the reduction deletes the line. A frame round interior art would likewise
+ * stop outvoting the few lines a coarse lattice holds. Counted only against a scale, a folded line
+ * leaves every share at most what it would be without this rule, so the rule can move a reading to a
+ * finer scale or to `null` and never to a coarser one. The cost falls on small art inset by a sliver
+ * at *both* ends of an axis: sixteen cells at 8 with a margin of one pixel in front and two behind
+ * fold two lines in seventeen, more than the threshold lets a scale discard, and read as 2 — too
+ * fine, which a reader can see and finish, where a coarse reading drops change nobody is shown.
+ *
+ * **What this settles is the ends, and nothing more.** A reduction at an exact scale is not lossless:
+ * a margin too thin to be a cell is still folded, as `boundEndCells` argues it should be, wherever a
+ * scale can afford to discard it. Where the mesh puts its *interior* cuts is its own measurement, and
+ * nothing here re-checks it — a gap rather than a guarantee, which issue #276 carries: on crisp art
+ * whose stray pixels outweigh its cell boundaries the line reader takes the strays for boundaries,
+ * and the walk can cut beside the lattice this scored. A cut one pixel off still leaves a four-pixel
+ * cell its majority and one two pixels off does not, so counting the transitions that sit exactly on
+ * the cuts is not the answer to it either.
  *
  * Largest candidate first, because a true grid of 8 also scores perfectly at 4, 2 and 1 — the
  * coarsest grid that holds is the real one. Where the count starts is a property of the image
@@ -145,16 +158,15 @@ interface EdgeLattice {
  * total; that is where {@link measureSheetScale} hands the sheet to the estimator, whose question —
  * period rather than membership — is the one resampling leaves answerable. An image with **no**
  * transitions at all answers `null` too: there is no scale in it to measure, and every candidate
- * would fit equally — the reason a single candidate with nothing to score is passed over.
+ * would fit equally.
  */
 export function detectPixelGrid(image: ImageData): PixelGrid | null {
   const lattice = edgeLattice(image);
+  if (lattice.total === 0) return null;
 
   for (let grid = measurableGridCeiling(image.width, image.height); grid >= 2; grid -= 1) {
-    const scored = cuttableCount(lattice.columnEdges, grid) + cuttableCount(lattice.rowEdges, grid);
-    if (scored === 0) continue;
     const aligned = bestPhaseCount(lattice.columnEdges, grid) + bestPhaseCount(lattice.rowEdges, grid);
-    if (aligned / scored >= GRID_DETECTION_THRESHOLD) return grid;
+    if (aligned / lattice.total >= GRID_DETECTION_THRESHOLD) return grid;
   }
   return null;
 }
@@ -175,46 +187,42 @@ function edgeLattice(image: ImageData): EdgeLattice {
   const columnEdges = new Uint32Array(width);
   const rowEdges = new Uint32Array(height);
   const above = new Uint32Array(width);
+  let total = 0;
 
   for (let y = 0; y < height; y += 1) {
     let left = 0;
     for (let x = 0; x < width; x += 1) {
       const packed = packedColorAt(data, (y * width + x) * CHANNELS_PER_PIXEL);
 
-      if (x > 0 && packed !== left) columnEdges[x] = (columnEdges[x] ?? 0) + 1;
-      if (y > 0 && packed !== above[x]) rowEdges[y] = (rowEdges[y] ?? 0) + 1;
+      if (x > 0 && packed !== left) {
+        columnEdges[x] = (columnEdges[x] ?? 0) + 1;
+        total += 1;
+      }
+      if (y > 0 && packed !== above[x]) {
+        rowEdges[y] = (rowEdges[y] ?? 0) + 1;
+        total += 1;
+      }
 
       left = packed;
       above[x] = packed;
     }
   }
 
-  return { columnEdges, rowEdges };
-}
-
-/**
- * The transitions on one axis that a mesh of this scale could keep — the total a candidate's share
- * is read against. See {@link detectPixelGrid} for why a line inside an end band is left out.
- */
-function cuttableCount(edges: Uint32Array, grid: PixelGrid): number {
-  let count = 0;
-  for (let position = 1; position < edges.length; position += 1) {
-    if (meshCanCutAt(position, edges.length, grid)) count += edges[position] ?? 0;
-  }
-  return count;
+  return { columnEdges, rowEdges, total };
 }
 
 /**
  * The most transitions any one phase class of this scale accounts for on one axis.
  *
- * Read against {@link cuttableCount}, the summed best of the two axes degrades in proportion to how
+ * Read against the image's total, the summed best of the two axes degrades in proportion to how
  * much of the detail the scale would destroy: a grid twice as coarse as the truth misses every
  * other line of the art's own lattice whatever phase it takes, and scores about a half — which is
  * why the threshold has room to allow a stray pixel without ever allowing a doubled scale.
  *
  * Position 0 is skipped in every class: the first pixel has nothing before it to differ from, so
  * index 0 is unused and a lattice line at the image's own edge is not evidence. A line inside an end
- * band the mesh folds is skipped too, for the same reason it is left out of the total.
+ * band the mesh folds is skipped too — it is change no reduction at this scale keeps — but it stays in
+ * the image's total, so it counts against the scale rather than for it; see {@link detectPixelGrid}.
  */
 function bestPhaseCount(edges: Uint32Array, grid: PixelGrid): number {
   let best = 0;

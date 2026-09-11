@@ -128,9 +128,9 @@ export const BLEND_VOTE_WEIGHT = 1 / 64;
 
 /**
  * The fraction of an image's colour transitions that must fall on a scale's lattice for that scale to
- * be believed — counting, in the share and the total alike, only the transitions on lines a mesh of
- * that scale can cut on. A line inside an end band the mesh folds is no evidence either way; see
- * `detectPixelGrid`.
+ * be believed. A transition on a line no mesh of that scale can cut on — inside an end band the mesh
+ * folds — stays in the total and never counts as falling on the lattice, because it is change the
+ * reduction discards; see `detectPixelGrid`.
  *
  * Not 1.0: a returned sheet is rarely flawless, and a single stray pixel from a compression artefact
  * should not deny an otherwise obvious grid. It can afford to be no higher than this and no lower,
@@ -971,11 +971,12 @@ export const DITHER_LATTICE_CORNERS = 8;
  * guards it.** A band one or two pixels wide at the edge changes on lines that one phase class of a
  * scale near half the sheet holds, so a one-pixel frame round a flat 256-pixel sheet scored a perfect
  * share at 127 — and the mesh of 127 merged both bands into the interior and reduced the sheet to one
- * colour. What guards it is that the exact detector scores no line inside an end band its mesh would
- * fold, which is a property of each candidate rather than a bound on the count: see
- * `detectPixelGrid`, and `meshCanCutAt` in `gridMesh.ts`. **Nor is a reduction at the answered
- * scale lossless**, and nothing here claims it is: a margin narrower than that band — one pixel at a
- * grid of 3, one or two from 4 up — is folded into the cell beside it, whatever read the scale.
+ * colour. What guards it is that the exact detector never counts a line inside an end band its mesh
+ * would fold in a scale's favour, which is a property of each candidate rather than a bound on the
+ * count: see `detectPixelGrid`, and `meshCanCutAt` in `gridMesh.ts`. **Nor is a reduction at the
+ * answered scale lossless**, and nothing here claims it is: a margin narrower than that band — one
+ * pixel at a grid of 3, one or two from 4 up — is folded into the cell beside it, whatever read the
+ * scale.
  *
  * Two bounds remain, and each is a statement rather than a tuning:
  *

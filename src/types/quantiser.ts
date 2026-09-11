@@ -107,14 +107,16 @@ export interface ImportedImage {
  *
  * `EXACT` is `detectPixelGrid`: every colour transition in the image falls on the lattice, give or
  * take the stray pixel a compression artefact leaves, and there is nothing to check. A transition
- * inside an end band too narrow to be a cell is left out of that count, because the mesh at that
- * scale folds the band whichever lattice holds it — so a reading never rests on change it cannot
- * keep. The other three are the estimates {@link measureSheetScale} falls through to, each carrying a
- * tolerance, each offered as a candidate and never adopted on its own — `EDGE_PERIOD` is
- * `estimatePixelGrid`, reading the *period* of edges that resampling has softened into ramps;
- * `REPEAT_DISTANCE` is `estimateProfilePeriod`, reading the distance the sheet's detail repeats over
- * and never asking where the repeats sit; and `BOUNDARY_SPACING` is `estimateMeshPeriod`, reading the
- * typical gap between the boundary lines a drifting sheet still shows.
+ * inside an end band too narrow to be a cell never counts as falling on it, because the mesh at that
+ * scale folds the band whichever lattice holds it — so a reading never rests on a band the reduction
+ * folds away. Whether the mesh's *interior* cuts land on that lattice is not checked, and issue #276
+ * carries the case where they do not. The other three are the estimates {@link measureSheetScale}
+ * falls through to, each carrying a tolerance, each offered as a candidate and never adopted on its
+ * own — `EDGE_PERIOD` is `estimatePixelGrid`, reading the *period* of edges that resampling has
+ * softened into ramps; `REPEAT_DISTANCE` is `estimateProfilePeriod`, reading the distance the
+ * sheet's detail repeats over and never asking where the repeats sit; and `BOUNDARY_SPACING` is
+ * `estimateMeshPeriod`, reading the typical gap between the boundary lines a drifting sheet still
+ * shows.
  *
  * **The three estimates are named apart rather than pooled under one `ESTIMATED`**, because the copy
  * beside the number says how it was arrived at, and while they were pooled it said "from the spacing

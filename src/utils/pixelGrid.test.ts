@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { detailedMarks, detailedSheet } from '../test/detailedSheet.ts';
-import { imageFrom, soften } from '../test/images.ts';
+import { framedSheet, imageFrom, soften } from '../test/images.ts';
 import { alignToGrid } from './gridAlignment.ts';
 import { boundaryMesh } from './gridMesh.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
@@ -36,40 +36,40 @@ vi.mock('./stepProfile.ts', async (importOriginal) => {
 const PIXEL_SOURCE = imageFrom(16, 16, (x, y) => ({ r: x * 16 + 1, g: y * 16 + 1, b: 64, a: 255 }));
 
 /**
- * A 40 × 40 image drawn at a grid of 4, with `spoiled` of its cells carrying one stray pixel.
+ * A 40 × 40 image drawn at a grid of 4, with `spoiled` of its hundred cells carrying one stray pixel.
  *
  * The lattice contributes 720 transitions — nine interior boundaries each way, forty pixels long —
  * and each stray adds exactly four that miss it: two columns and two rows, at the pixel and again
  * where it ends. So the score is `720 / (720 + 4 × spoiled)`, which is what makes the threshold
  * testable to the pixel.
- *
- * **The strays go in the sixty-four cells clear of the sheet's edge.** A stray in an edge cell
- * changes on a line inside the end band a mesh of 4 folds — the first or last two pixels of an axis
- * — and detection scores no line there, so spoiling those cells would move the score by less than
- * four a stray and put the threshold somewhere this arithmetic does not say.
- *
- * Nothing here reduces the sheet, and that is deliberate: its strays outweigh its cell boundaries in
- * magnitude, so the mesh of 4 cuts on the strays rather than the lattice. That is the defect issue
- * #276 reports, and this is its sheet.
  */
 function spottedGrid(spoiled: number): ImageData {
   return imageFrom(40, 40, (x, y) => {
-    const cellX = Math.floor(x / 4);
-    const cellY = Math.floor(y / 4);
-    const inner = cellX >= 1 && cellX <= 8 && cellY >= 1 && cellY <= 8;
-    const stray = inner && (cellY - 1) * 8 + (cellX - 1) < spoiled && x % 4 === 1 && y % 4 === 1;
-    return { r: ((cellY * 10 + cellX) * 2 + 1) % 256, g: stray ? 250 : 40, b: 100, a: 255 };
+    const cell = Math.floor(y / 4) * 10 + Math.floor(x / 4);
+    const stray = cell < spoiled && x % 4 === 1 && y % 4 === 1;
+    return { r: (cell * 2 + 1) % 256, g: stray ? 250 : 40, b: 100, a: 255 };
   });
 }
 
 const FRAME = { r: 255, g: 255, b: 255, a: 255 };
 const INTERIOR = { r: 10, g: 160, b: 170, a: 255 };
 
-/** A square sheet, flat inside, with a band `border` pixels wide of a second colour round every edge. */
-function framedSheet(size: number, border: number): ImageData {
-  return imageFrom(size, size, (x, y) =>
-    x < border || y < border || x >= size - border || y >= size - border ? FRAME : INTERIOR,
-  );
+/** `PIXEL_SOURCE` drawn at 8, inset into a flat magenta field by `lead` pixels and trailed by `trail`. */
+function insetArt(lead: number, trail: number): ImageData {
+  const margin = { r: 250, g: 0, b: 250, a: 255 };
+  const art = upscaleNearest(PIXEL_SOURCE, 8);
+  return imageFrom(art.width + lead + trail, art.height + lead + trail, (x, y) => {
+    const artX = x - lead;
+    const artY = y - lead;
+    if (artX < 0 || artY < 0 || artX >= art.width || artY >= art.height) return margin;
+    const offset = (artY * art.width + artX) * 4;
+    return { r: art.data[offset] ?? 0, g: art.data[offset + 1] ?? 0, b: art.data[offset + 2] ?? 0, a: 255 };
+  });
+}
+
+/** A flat 256² sheet with the columns `from` to `to` inclusive drawn in the frame colour. */
+function columnLine(from: number, to: number): ImageData {
+  return imageFrom(256, 256, (x) => (x >= from && x <= to ? FRAME : INTERIOR));
 }
 
 /** Whether aligning to the mesh `grid` measures on this sheet leaves every pixel where it was. */
@@ -115,8 +115,8 @@ describe('detectPixelGrid', () => {
     // drawn at 8 and delivered three pixels in changes on the lines 3, 11, 19, … — the same grid,
     // sitting somewhere else. The corner-anchored reading answered `null` here and the panel told
     // the user to crop the margin off; the margin's own boundary lands on the phased lattice too —
-    // or, one pixel in, inside the end band the mesh folds, where it is not scored at all — so
-    // nothing about the sheet needs preparing any more.
+    // and one pixel in, where the mesh folds it, it is one line in sixteen, under the tenth a scale
+    // may discard — so nothing about the sheet needs preparing any more.
     const margin = { r: 250, g: 250, b: 250, a: 255 };
     for (const inset of [1, 3, 7]) {
       const sheet = imageFrom(128 + inset, 128 + inset, (x, y) => {
@@ -181,7 +181,7 @@ describe('detectPixelGrid', () => {
     // A one-pixel frame changes on lines 1 and 255 and nowhere else, and one phase class of 127
     // holds both — but `boundEndCells` merges any end band under three pixels into its neighbour, so
     // the mesh of 127 folded the frame into the interior and the reading, adopted as exact, reduced
-    // the sheet to one colour. A line no mesh of a scale can cut on is not evidence for that scale,
+    // the sheet to one colour. A line no mesh of a scale can cut on never counts for that scale,
     // so detection counts down to the coarsest one whose mesh keeps the frame: 2 for a band of one
     // pixel and 3 for a band of two, the grids at which the bound admits them. At three pixels the
     // band is a cell at any grid, and the coarse reading was always right.
@@ -190,7 +190,7 @@ describe('detectPixelGrid', () => {
       [2, 3],
       [3, 125],
     ] as const) {
-      const sheet = framedSheet(256, border);
+      const sheet = framedSheet(256, border, FRAME, INTERIOR);
       expect({ border, measured: detectPixelGrid(sheet) }).toEqual({ border, measured: expected });
       expect(
         survivesAlignment(sheet, expected),
@@ -205,21 +205,33 @@ describe('detectPixelGrid', () => {
     expect(survivesAlignment(stripe, 2)).toBe(true);
   });
 
-  it('still reads art inset by a sliver at both ends at its own scale', () => {
-    // The other side of the same line. A margin one pixel wide at the top and left and two at the
-    // bottom and right is folded into the art's edge cells by the mesh of 8 — a margin that narrow
-    // is not a cell, as `boundEndCells` argues — and so its lines are simply not scored: the art's
-    // own lattice is every line left, and the reading is the scale the art was drawn at.
-    const margin = { r: 250, g: 0, b: 250, a: 255 };
-    const art = upscaleNearest(PIXEL_SOURCE, 8);
-    const sheet = imageFrom(art.width + 3, art.height + 3, (x, y) => {
-      const artX = x - 1;
-      const artY = y - 1;
-      if (artX < 0 || artY < 0 || artX >= art.width || artY >= art.height) return margin;
-      const offset = (artY * art.width + artX) * 4;
-      return { r: art.data[offset] ?? 0, g: art.data[offset + 1] ?? 0, b: art.data[offset + 2] ?? 0, a: 255 };
-    });
-    expect(detectPixelGrid(sheet)).toBe(8);
+  it('still refuses a one-pixel line beside an end band', () => {
+    // The reason a folded line still counts *against* a scale. A line at column 2 changes on lines 2
+    // and 3, and the stray-feature guard rests on no phase class holding both — but line 2 is inside
+    // the band every mesh from 4 up folds. Were it dropped from the total as well as the phase count,
+    // line 3 alone would be a perfect share at 128, and the reduction would delete the line.
+    for (const column of [1, 2, 253, 254]) {
+      expect({ column, measured: detectPixelGrid(columnLine(column, column)) }).toEqual({
+        column,
+        measured: null,
+      });
+    }
+    // Two pixels wide, one in from the edge, it changes on lines 1 and 3: one phase class of 2 holds
+    // both and the mesh of 2 keeps both, so that reading stands.
+    expect(detectPixelGrid(columnLine(1, 2))).toBe(2);
+    expect(survivesAlignment(columnLine(1, 2), 2)).toBe(true);
+  });
+
+  it('reads art inset by a sliver at its own scale while the sliver is under a tenth of its change', () => {
+    // The cost of counting a folded line against a scale, stated where it is paid. Sixteen cells of
+    // art at 8, trailed by a two-pixel margin, change on sixteen lines an axis, and the margin's is
+    // the one the mesh of 8 folds: fifteen in sixteen is over nine tenths, and the reading is 8.
+    expect(detectPixelGrid(insetArt(0, 2))).toBe(8);
+    // Give the same art a one-pixel margin in front as well and the mesh of 8 folds two lines in
+    // seventeen — more of the sheet's change than the threshold lets a scale discard. The reading
+    // falls to 2, whose mesh keeps both margins: too fine, which a reader can see and finish, rather
+    // than a coarse reading that quietly drops change.
+    expect(detectPixelGrid(insetArt(1, 2))).toBe(2);
   });
 
   it('believes a grid that scores exactly the threshold', () => {

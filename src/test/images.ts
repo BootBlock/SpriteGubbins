@@ -25,6 +25,18 @@ export function imageFrom(width: number, height: number, pixel: (x: number, y: n
 }
 
 /**
+ * A square image of one flat colour, with a band `border` pixels wide of another round every edge.
+ *
+ * The sheet whose only change sits at its edges, which is what an exact scale reading has to refuse to
+ * build on when the band is narrower than the mesh's end-cell bound — see `detectPixelGrid`.
+ */
+export function framedSheet(size: number, border: number, frame: Rgba, interior: Rgba): ImageData {
+  return imageFrom(size, size, (x, y) =>
+    x < border || y < border || x >= size - border || y >= size - border ? frame : interior,
+  );
+}
+
+/**
  * The image with every pixel averaged with the two beside it, horizontally and then vertically —
  * what a model hands back when it draws at a scale and then resamples.
  *

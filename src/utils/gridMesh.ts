@@ -119,8 +119,8 @@ const SHORTEST_END_BAND = 3;
  * {@link shortestEndCell} to either end of the axis would open a band too narrow to be a cell, and it
  * is merged out of every mesh of that grid however the walk runs — measured and fallback alike. So
  * this is a statement about the grid and the extent alone, which is what lets the exact detector ask
- * it before any mesh exists: `detectPixelGrid` scores a scale only on the lines a mesh of that scale
- * could keep, so a reading cannot rest on change the reduction folds away.
+ * it before any mesh exists: `detectPixelGrid` counts a transition in a scale's favour only on the
+ * lines a mesh of that scale could keep, so a reading cannot rest on change the reduction folds away.
  */
 export function meshCanCutAt(position: number, extent: number, grid: PixelGrid): boolean {
   const shortest = shortestEndCell(grid);
@@ -162,10 +162,10 @@ export function meshCanCutAt(position: number, extent: number, grid: PixelGrid):
  * the measurement working; a one-pixel band was not.
  *
  * **The exact detector reads the same bound.** {@link meshCanCutAt} states which lines survive this
- * merge, and `detectPixelGrid` scores a scale on those alone — so a band this folds can no longer be
- * the evidence a scale was measured from. Until the detector read this bound, a one-pixel frame
- * round a flat 256-pixel sheet read as exactly 127, and the mesh of 127 merged both bands into the
- * interior and reduced the sheet to one colour.
+ * merge, and `detectPixelGrid` counts a transition on any other line against a scale and never for
+ * it — so a band this folds can no longer be the evidence a scale was measured from. Until the
+ * detector read this bound, a one-pixel frame round a flat 256-pixel sheet read as exactly 127, and
+ * the mesh of 127 merged both bands into the interior and reduced the sheet to one colour.
  */
 function boundEndCells(starts: readonly number[], extent: number, grid: PixelGrid): number[] {
   const first = starts[0];
