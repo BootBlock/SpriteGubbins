@@ -81,7 +81,8 @@ export default tseslint.config(
   // passed the gate that rejects it in `src/`. `tests/` is where the app's correctness is
   // established, which is the same argument `tsconfig.node.json` makes for its strictness block.
   // `tests/type-aware-lint-scope.test.ts` asks ESLint which rules each file resolves to, and fails
-  // on any rule that needs type information and is missing from, or set differently on, one of them.
+  // on any rule declaring that it needs type information which is missing from, or set differently
+  // on, one of them.
   {
     files: ['**/*.{ts,tsx,mts,cts}'],
     languageOptions: {

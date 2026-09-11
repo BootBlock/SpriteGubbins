@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 
@@ -26,8 +27,14 @@ import { describe, expect, it } from 'vitest';
  * **Which rules are type-aware is read off each rule's own definition**, not kept in a list here.
  * The three above are named only as a floor, so a comparison that stayed green while all three were
  * dropped is still a failure. A type-aware rule added to one directory's block by habit — the way
- * these three were — fails below the day it is added, whoever wrote it and whichever plugin it
- * comes from.
+ * these three were — fails below the day it is added, whoever wrote it.
+ *
+ * **That reading reaches only a rule that declares itself.** `meta.docs.requiresTypeChecking` is
+ * typescript-eslint's convention: every one of its type-aware rules sets it, and ESLint itself
+ * defines no such field. A rule from another plugin that reads the TypeScript program without
+ * setting it is invisible here, and could sit in one directory's block with this suite green. No
+ * plugin this config loads has one today. Adding a plugin with one means teaching this suite to
+ * recognise its rules, in the same change.
  *
  * What it cannot judge is whether a rule should be enabled at all. Adding one everywhere satisfies
  * this suite whatever it does; that stays a decision.
@@ -59,18 +66,24 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 }
 
 /**
- * Every file the repository holds, tracked or not yet added, relative to the root.
+ * Every file the repository holds on disk, tracked or not yet added, relative to the root.
  *
  * Git's list rather than a walk of the disk, because a walk descends into `node_modules` and every
  * other worktree's checkout before ESLint's ignores could prune them. The two differ only on a file
  * git ignores that ESLint does not, and nothing git ignores is repository content.
+ *
+ * **The index still lists a tracked file deleted from the working tree**, until the deletion is
+ * staged, and `calculateConfigForFile` matches a path without asking whether a file is there. So a
+ * deleted `prettier.config.js` would go on satisfying the exemption list below while `eslint .`,
+ * which walks the disk, no longer visits it. The existence check is what keeps the two lists the
+ * same list in a tree that is mid-edit.
  */
 function repositoryFiles(): string[] {
   const listing = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {
     encoding: 'utf8',
     maxBuffer: 16 * 1024 * 1024,
   });
-  return listing.split('\0').filter((file) => file !== '');
+  return listing.split('\0').filter((file) => file !== '' && existsSync(file));
 }
 
 /** One enabled rule as ESLint resolved it for one file. */
