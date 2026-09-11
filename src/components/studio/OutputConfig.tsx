@@ -104,12 +104,12 @@ export function OutputConfig() {
       {/*
         Above the groups, because both of these write into them: choosing a machine sets the render
         style, surface detail, resolution, component size, outline, lighting and palette at once, and
-        choosing an art style reference sets those plus the projection and the camera elevation.
-        Folded away inside one group either would be a control that silently changed another group's
-        header while that group was shut.
+        choosing an art style reference sets those plus the projection, the camera elevation, the
+        machine and, where it pins no palette, the colour budget. Folded away inside one group either
+        would be a control that silently changed another group's header while that group was shut.
 
         The reference goes second of the two, and not for want of a better place. It is the wider
-        template — it can write the machine and the palette themselves — so a reader who sets a
+        template — it chooses the machine as well as the settings a machine writes — so a reader who sets a
         profile and then a reference gets the reference's answer, which is the one that knows about
         both. The reverse order would have the narrower control quietly overrule the broader one.
       */}

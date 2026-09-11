@@ -9,6 +9,8 @@
 > The flag §1 and §4 call `EMIT_COMPONENT_MAP` was named `EMIT_MANIFEST` when this document was written, and §6 and §7 still argue for it under that name. It was renamed by [issue #118](https://github.com/BootBlock/SpriteGubbins/issues/118), which found that the document the prompt asked for and the manifest the Quantise tab downloads were two unrelated formats sharing one word. Only the two tables are corrected here, for the reason §2's `DIRECTIONS` table was — they describe the surface the compiler offers, so a reader consults them for a flag name. §6 and §7 are records of why the capability exists and are left as they were written.
 >
 > §3 is revised in place — it is a mirror of what the compiler emits, so it tracks the code rather than recording a moment, and it is now **pinned by [tests/prompt-template-mirror.test.ts](../../tests/prompt-template-mirror.test.ts)**, which compares the fence against `PROMPT_TEMPLATE` character for character. It needed to be, because a banner asserting §3 is current is worth nothing while nothing checks it — and checking showed the two had **never** agreed. They diverged the moment the template was transcribed into code: blank lines placed differently around the `[IF:…]` markers, and, in §5, a `---` sitting outside a `[/IF]` where the code puts it inside, which is a rule an unrigged sheet emits twice in the document's version and once in the app's. Then the document fell further behind twice — the category system (§0's guard paragraph, the precedence sentence rewritten so the category comparison settles *before* precedence applies, and `[DEFINE:CATEGORY_GUARD]`, `[DEFINE:CATEGORY_EXCLUSIONS]` and `[DEFINE:CATEGORY_AUDIT]` in §4, §8 and §9), and the `[IF:DELIBERATES]` gating of the self-audit, which §3 described in an italic aside citing a `GOOGLE_IMAGEN` target §7 has since removed. All of it is closed against the constant, and the aside is gone: an editorial annotation cannot survive inside a block that is checked verbatim, and §7 already carries what it said. Its earlier revisions, which the mirror did carry: the camera-versus-object-orientation rewrite recorded in **§8's "Found after shipping"**, which is where the reasoning for it lives, and a rewording of §2's `THREE_QUARTER_TOPDOWN` row, whose "the front of forms are visible" was false for any component turned away from the camera.
+>
+> §1 and §2 are now **checked against the code** as well, by the `tests/baseline-prompt-*.test.ts` suites beside the mirror ([issue #222](https://github.com/BootBlock/SpriteGubbins/issues/222)), for the reason the two tables above were corrected: both sections describe the surface the compiler offers, and nothing held them to it. Reading them back found eight claims the code had overtaken, and each is corrected in place. §1 named six of the gates the truthy `[IF:KEY]` form serves, where every gate but two takes it; said both numbered lists in §3 use `[N].`, where the template has three; and offered a default written after an optional's pipe, which the engine has never had. §2 said `CATEGORY` becomes an optional line, where the template always states it; counted three components for `Demon Horn ×2, Tail ×1`, which holds only on a one-facing sheet now that the anatomy is drawn at every facing; had an art direction reference writing "the machine and palette themselves" beyond a profile's seven, where the palette is one of the seven and the colour budget is what a reference adds; called the block naming a reference's game one sentence, where it is two; and grounded the palette block's background exception on "no palette in the library contains magenta", which the ZX Spectrum's fixed list and every channel-depth space contradict. Two further edits make §2 checkable rather than correct it: the machine and palette totals are gone rather than guarded, for the reason §2's subject line lost its counts, and the `DIRECTIONS` table spells each set the way the prompt does instead of abbreviating it.
 
 A replacement for the template compiled by `src/utils/promptCompiler.ts`. Same job, same
 customisation surface, with the defects in §8 fixed and three capabilities added: **multi-style
@@ -50,10 +52,12 @@ section of the prompt**. A generator reading `Species: DEFINED` does not infer "
 either ignores the line or treats "DEFINED" as a descriptor to satisfy. Neither is the intent.
 
 **Omitting the line entirely says "you decide" precisely**, costs no tokens, and cannot be
-misread. Where a real default is wanted, state it after the pipe — `[OPTIONAL:ANATOMY | - Anatomy
-base: Standard humanoid]` — emitting the fallback *text*, never a placeholder-shaped token.
+misread. The text after the pipe is the line emitted when `NAME` is set, and it carries the value
+itself — `[OPTIONAL:SPECIES | - [DEFINE:SPECIES_LABEL]: [DEFINE:SPECIES]]`. There is no fallback
+branch: an unset name emits nothing at all, so a line that has to appear on every prompt is written
+as a plain line whose `[DEFINE:…]` the compiler always fills, never as an optional with a default.
 
-§3 of the template also states the rule explicitly for the generator, so absence is unambiguous
+The template states the rule itself, at the head of its subject section, so absence is unambiguous
 rather than merely silent.
 
 ### `[IF:…] … [/IF]` — conditional block
@@ -64,7 +68,7 @@ Three forms:
 | --- | --- |
 | `[IF:KEY=A,B]` | `KEY` is `A` or `B` |
 | `[IF:KEY!=A,B]` | `KEY` is neither |
-| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness; used by `IDENTITY_LOCK`, `SOCKETS`, `EMIT_COMPONENT_MAP`, `EMIT_PROMPT_FEEDBACK`, `DELIBERATES`, `RETURNS_TEXT`)* |
+| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness — every gate but `RENDER_STYLE` and `RIG_MODE` takes this form, since those two are only ever compared against named values)* |
 
 **Blocks nest.** A block inside a dropped block is dropped with it, whatever its own condition says.
 That is what lets a section state its precondition once and its parts state theirs beneath it — §9's
@@ -91,7 +95,7 @@ its tail behind when the value is unset — which is a worse failure than the on
 > `[N].` opens a list item and is numbered at render time by `applyNumbering`, counting from one and
 > restarting at each blank line. The pass runs **after** the conditional and optional passes, so a
 > dropped item takes its number with it, and **before** substitution, so a subject field containing
-> `[N].` is an odd name rather than a list item. Both numbered lists in §3 now use it.
+> `[N].` is an odd name rather than a list item. Every numbered list in §3 uses it.
 
 ---
 
@@ -101,16 +105,18 @@ Everything the application exposes today is retained. **NEW** marks additions.
 
 ### Subject — unchanged
 
-Every `SUBJECT_FIELD_KEYS` entry, in every category, plus `CATEGORY`. All become `[OPTIONAL:…]`.
+Every `SUBJECT_FIELD_KEYS` entry, in every category, becomes `[OPTIONAL:…]`. `CATEGORY` does not: it
+names the sheet, so the template always states it.
 
 `ADDITIONAL_ANATOMY` is the one that is more than a line of text. §1 of the template declares such
 anatomy to be *separate pieces*, while §0 demands exactly N components and §4 lists exactly N — so
 a subject naming a tail asked for more pieces than it counted. **The field is therefore counted:**
-each named piece becomes its own entry at the end of §4's inventory, and the total §0 states rises
-to match. That only works if the field is countable, so it carries an explicit multiplier —
-`Demon Horn ×2, Tail ×1` is two entries, three components — and `NONE` states that there are none,
-emitting no line at all rather than putting a content-shaped token in the highest-weighted section
-(§8.1). Guessing plurality from the wording was the alternative, and a mis-read "wing pair" is
+on a sheet that draws the anatomy, each named piece becomes its own entry at the end of §4's
+inventory, and the total §0 states rises to match. That only works if the field is countable, so it
+carries an explicit multiplier — `Demon Horn ×2, Tail ×1` is two entries and three pieces, each drawn
+at every facing the sheet covers, so a one-facing sheet gains three components and a five-facing one
+fifteen — and `NONE` states that there are none, emitting no line at all rather than putting a
+content-shaped token in the highest-weighted section (§8.1). Guessing plurality from the wording was the alternative, and a mis-read "wing pair" is
 exactly the silently-wrong sheet the count exists to catch.
 
 ### Output — existing
@@ -175,11 +181,11 @@ a cut-out rig for a top-down game needs — could not be requested at all.
 
 | Value | Set |
 | --- | --- |
-| `SINGLE_FRONT` | Front only |
+| `SINGLE_FRONT` | Front |
 | `THREE_CLASSIC` | Front-three-quarter, right side, back-three-quarter *(the set this template hardcoded)* |
 | `FIVE_CLASSIC` | Front, front-three-quarter, right side, back-three-quarter, back |
 | `FOUR_CARDINAL` | South, west, north, east |
-| `EIGHT_COMPASS` | S, SW, W, NW, N, NE, E, SE |
+| `EIGHT_COMPASS` | South, south-west, west, north-west, north, north-east, east, south-east |
 
 > `FIVE_CLASSIC` was **added after this template shipped**, because three views cannot reach the two
 > facings a player looks at most and nothing in the app said so. 0° and 180° are their own mirror, so
@@ -232,10 +238,10 @@ prompt that contradicts itself.
 
 | Parameter | Values | Emits |
 | --- | --- | --- |
-| `HARDWARE_PROFILE` | `NONE` · eighteen machines, from the Atari 2600 to the Neo Geo — see `src/constants/hardware/` | `### Target hardware` in §2, with the machine's constraint list |
-| `PALETTE` | `FREE` · nineteen palettes — see `src/constants/palettes/` | `### Palette` in §2, plus a clause in §0's contract and one in §9's audit |
+| `HARDWARE_PROFILE` | `NONE` · every machine defined in `src/constants/hardware/` | `### Target hardware` in §2, with the machine's constraint list |
+| `PALETTE` | `FREE` · every palette defined in `src/constants/palettes/` | `### Palette` in §2, plus a clause in §0's contract and one in §9's audit |
 | `STYLE_REFERENCE` | `NONE` · the published games in `src/constants/styleReferences/` | `### Art direction reference` in §2, with the look's characteristic list |
-| `NAME_STYLE_REFERENCE` | `false` · `true` | One sentence inside that block naming the game; the characteristics are emitted either way |
+| `NAME_STYLE_REFERENCE` | `false` · `true` | A short passage inside that block naming the game; the characteristics are emitted either way |
 
 Choosing a profile in the studio is a **template**: it writes the render style, surface detail,
 resolution, component size, outline, lighting and palette in one act, and every one of them stays the
@@ -244,9 +250,10 @@ generator further than any single figure in the list does.
 
 An **art direction reference** is the third of that family and works the same way, one level up: a
 machine is what the silicon allowed, a reference is what one team did within it. It writes a wider
-settings package — the profile's seven plus the projection, the camera elevation and the machine and
-palette themselves — and then emits the facts none of those fields can hold: the tile grid, the
-resolution the art was authored at, how many facings were drawn against how many the engine mirrored.
+settings package — the profile's seven plus the projection, the camera elevation, the machine and,
+where it pins no palette, the colour budget — and then emits the facts none of those fields can
+hold: the tile grid, the resolution the art was authored at, how many facings were drawn against how
+many the engine mirrored.
 
 **Its characteristics may never restate a setting**, which is the rule that keeps the block safe to
 edit against. A reference is a template, so the settings it wrote are the user's the moment it is
@@ -269,7 +276,7 @@ not a list anybody reads.
 > where a palette is set the strategy line is dropped from §2 rather than emitted alongside it — the
 > same rule the Quantise tab applies when it maps a returned sheet onto the palette instead of
 > choosing colours out of the sheet itself. The one exception written into the palette block is the
-> background field, which stays the key colour §0 fixes: no palette in the library contains magenta.
+> background field, which stays the key colour §0 fixes rather than being drawn from the palette.
 
 ---
 

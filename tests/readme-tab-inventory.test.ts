@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { APP_TAB_CHOICES } from '../src/constants/ui.ts';
+import { asProse } from './asProse.ts';
 
 /**
  * The tab set the README states, read back off the table the switcher is built from.
@@ -34,15 +35,6 @@ import { APP_TAB_CHOICES } from '../src/constants/ui.ts';
 /** The Status paragraph's inventory, by the words it opens and closes the tab list with. */
 const INVENTORY_OPENS = 'The app carries the ';
 const INVENTORY_CLOSES = ' tabs,';
-
-/** `a, b, c and d` — how the document's own prose joins a list, with no serial comma. */
-function asProse(names: readonly string[]): string {
-  if (names.length < 2) {
-    return names.join('');
-  }
-
-  return `${names.slice(0, -1).join(', ')} and ${String(names.at(-1))}`;
-}
 
 /**
  * The document as one line, because both of its sentences are hard-wrapped and Prettier rewraps
