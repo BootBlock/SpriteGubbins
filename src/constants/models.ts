@@ -316,7 +316,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
   },
   {
     // Alibaba's Qwen-Image 3.0, and the tightest published ceiling this app has anything to say to:
-    // 4.5K tokens, against a library running ~3,100 to ~7,900 estimated tokens.
+    // 4.5K tokens, against a library running ~3,300 to ~6,800 estimated tokens compiled for it.
     //
     // **The date is the one Alibaba's own lifecycle table gives, and it is per model id.** That
     // table dates `qwen-image-3.0-pro` — the id whose page carries the ceiling below — to
@@ -326,8 +326,8 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // same day. https://help.aliyun.com/en/model-studio/newly-released-models
     //
     // **The description below said the whole specification fits inside it, and it does not.** The
-    // studio's opening configuration compiles to ~6,800 — half as long again as the budget — so the
-    // first thing that entry did for a reader who took it at its word was to contradict itself: the
+    // studio's opening configuration compiles to ~6,550 here — half as long again as the budget — so
+    // the first thing that entry did for a reader who took it at its word was to contradict itself: the
     // sentence promised a fit and `PromptBudgetNotice` fired on the same screen. What is true is a
     // trade-off rather than a fit, and this is the one target where the trade-off is live, which is
     // where the budget notice earns its place. `constants/models.test.ts` measures the range and

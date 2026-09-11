@@ -10,8 +10,9 @@
  *
  * Nothing could catch it, because the only budget assertion in the suite measured each preset
  * against *its own* declared target — and the presets naming Qwen are the small ones. This is where
- * that gap is closed: it measures the whole library against every ceiling, so a claim about a target
- * nobody wrote a preset for is checked anyway.
+ * that gap is closed: it measures the whole library against every ceiling, each prompt compiled for
+ * the target whose ceiling it is read against, so a claim about a target nobody wrote a preset for
+ * is checked anyway.
  *
  * In `src/test/` because it is test support with three consumers — `constants/models.test.ts`, which
  * holds the descriptions to it, `constants/presets/presetCoverage.test.ts`, which decides from it
@@ -63,14 +64,20 @@ export interface PromptFitReading {
   readonly fit: PromptFit;
 }
 
-/** Every prompt the app composes without the reader writing a word — see {@link LIBRARY_CONFIGURATIONS}. */
-const LIBRARY_PROMPTS: readonly string[] = LIBRARY_CONFIGURATIONS.map(({ category, subject, output }) =>
-  generatePrompt(category, subject, output),
-);
-
 /**
- * Measure every prompt in {@link LIBRARY_PROMPTS} against one target's ceiling, or `null` where the
- * target has none to measure against.
+ * Measure every configuration in {@link LIBRARY_CONFIGURATIONS}, compiled for one target, against
+ * that target's ceiling — or `null` where the target has none to measure against.
+ *
+ * **Each configuration is compiled for the target being measured**, because the prompt is a function
+ * of the target and the reading is a claim about what a reader of that target will actually be
+ * handed. The self-audit is gated on the target's capabilities — as the companion component map and
+ * the adherence report are, where a reader asks for them — and every wrapper adds a different amount
+ * of text, so the same library runs to 30,684 characters compiled for Sol and to 26,900 compiled for
+ * GPT Image. The prompts used to be
+ * compiled once, at module load, at whatever target each preset declared — so GPT Image's ceiling was
+ * read against prompts written for other targets, and a comment in `models.test.ts` recorded the
+ * 30,684 as a finding about GPT Image (#231). Every verdict happened to survive; the figures did not.
+ * `LibraryConfiguration` carries no target for the same reason: a consumer has to supply one.
  *
  * **A ceiling only, never a guidance figure**, which is the one place these two measure differently
  * from the studio's notice. What this reading decides is what a description may claim about fitting,
@@ -89,7 +96,9 @@ const LIBRARY_PROMPTS: readonly string[] = LIBRARY_CONFIGURATIONS.map(({ categor
 export function measurePromptFit(target: TargetModelId): PromptFitReading | null {
   if (promptBudgetFigureFor(target)?.kind !== 'CEILING') return null;
 
-  const readings = LIBRARY_PROMPTS.map((prompt) => readPromptBudget(prompt, target));
+  const readings = LIBRARY_CONFIGURATIONS.map(({ category, subject, output }) =>
+    readPromptBudget(generatePrompt(category, subject, { ...output, targetModel: target }), target),
+  );
   const [first] = readings;
   // `readPromptBudget` answers `null` for a target with no published figure, and it answers it for
   // every prompt or none — the budget is a property of the target alone.

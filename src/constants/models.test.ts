@@ -43,12 +43,15 @@ const DECLARED_FIT: Record<TargetModelId, PromptFit | null> = {
   // Midjourney publish no figure anywhere in their documentation. See `models.ts` for how far that
   // search went, which is the half a bare absence cannot state.
   MIDJOURNEY: null,
-  // CLIP's 77-token window, against a shortest prompt of roughly 3,100 estimated tokens.
+  // CLIP's 77-token window, against a shortest prompt of roughly 3,300 estimated tokens here.
   STABLE_DIFFUSION: 'NONE',
   FLUX: 'NONE',
   FLUX_API: 'ALL',
-  // 32,000 *characters*, which the largest sheets come within a few hundred of — so this is `SOME`
-  // on the same slack argument every other row uses, not because anything is truncated today.
+  // 32,000 *characters*, and the largest sheet compiled for this target is about 26,900 of them —
+  // so nothing is truncated today. It is `SOME` on the same slack argument every other row uses:
+  // six directional-core sheets pass the 25,600 allowance, and a sparse sheet sits at half of it.
+  // This comment once put the largest sheets within a few hundred of the ceiling, a figure read off
+  // prompts compiled for Sol (#231).
   GPT_IMAGE: 'SOME',
 };
 

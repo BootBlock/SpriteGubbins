@@ -45,8 +45,8 @@ import { PRESETS } from './index.ts';
  * behind it is a target whose stated ceiling nothing in the suite ever compiles against, and the
  * description under the selector is then an unchecked claim. Two of the eleven genuinely cannot be
  * demonstrated — Stable Diffusion reads CLIP's 77 tokens and open-weight Flux 512, against a shortest
- * shipped prompt of roughly 3,100 — and those are exempted by *measurement*, through
- * {@link measurePromptFit}, not by a list someone keeps. A ceiling that stops being reachable takes
+ * shipped prompt of roughly 3,300 compiled for either — and those are exempted by *measurement*,
+ * through {@link measurePromptFit}, not by a list someone keeps. A ceiling that stops being reachable takes
  * itself out; one that becomes reachable starts owing a worked example.
  *
  * The other half of that is checked as it always was: whatever target a preset *does* name has to be
@@ -129,7 +129,7 @@ describe('the built-in library spans the vocabulary', () => {
       expect(
         demonstrated,
         `${target} reads ${String(reading.budget.limit)} ${reading.budget.unit} and the shortest ` +
-          `prompt this app composes is ${String(reading.smallest)} — a preset naming it would warn ` +
+          `prompt this app composes for it is ${String(reading.smallest)} — a preset naming it would warn ` +
           `on load by design`,
       ).toBe(false);
       return;
