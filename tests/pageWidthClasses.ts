@@ -75,14 +75,16 @@ function themeBreakpoints(): string[] {
 }
 
 /**
- * Whether one variant asks the page's width: a breakpoint, its `min-`, `max-` or `not-` spelling, or an
- * arbitrary `min-[…]` / `max-[…]` query. A container query starts with `@` and never matches.
+ * Whether one variant asks the page's width: a breakpoint, its `min-`, `max-` or `not-` spelling, an
+ * arbitrary `min-[…]` / `max-[…]` query, or an arbitrary `[@media(…)]` variant that names a width. A
+ * container query starts with `@` and never matches.
  */
 export function isPageWidthVariant(variant: string, breakpoints: readonly string[]): boolean {
-  const query = variant.replace(/^!/, '').replace(/^not-/, '');
+  const query = variant.replace(/^not-/, '');
   return (
     breakpoints.some((name) => query === name || query === `min-${name}` || query === `max-${name}`) ||
-    /^(?:min|max)-\[[^\]]*\]$/.test(query)
+    /^(?:min|max)-\[[^\]]*\]$/.test(query) ||
+    /^\[@media[^\]]*width[^\]]*\]$/.test(query)
   );
 }
 

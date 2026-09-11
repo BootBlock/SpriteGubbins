@@ -22,7 +22,9 @@ import { stickyColumns } from './stickyColumns.ts';
  *
  * **The splits are found rather than listed**, by their sticky columns: every split in the app has
  * one, its variant prefix is the variant the split engages at, and the file it is written in is the
- * file holding the grid. A split added with a sticky column is covered the moment it is written.
+ * file holding the grid. A split added with a sticky column is covered the moment it is written, in
+ * whichever string literal its classes sit — and one whose classes are filed away from its grid fails
+ * the grid assertion below rather than being walked from the wrong place.
  */
 
 /** How many splits the app has: the studio, the quantiser and the preset library. A floor, not a census. */
@@ -100,13 +102,25 @@ describe('split page width', () => {
       'not-max-lg',
       'quantise',
       'min-[70rem]',
+      'max-[70rem]',
       'not-min-[70rem]',
-      '!lg',
+      '[@media(min-width:70rem)]',
     ];
     for (const variant of pageWidth) {
       expect(isPageWidthVariant(variant, breakpoints), variant).toBe(true);
     }
-    for (const variant of ['studio', '@lg', '@max-lg', '@[34rem]', 'hover', 'xlg', 'flag', 'not-[.open]']) {
+    const notPageWidth = [
+      'studio',
+      '@lg',
+      '@max-lg',
+      '@[34rem]',
+      'hover',
+      'xlg',
+      'flag',
+      'not-[.open]',
+      '[@media(hover:hover)]',
+    ];
+    for (const variant of notPageWidth) {
       expect(isPageWidthVariant(variant, breakpoints), variant).toBe(false);
     }
   });
