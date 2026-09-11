@@ -26,8 +26,14 @@ import { quantiseImage } from '../src/utils/quantiseImage.ts';
  * way a later change arranges to keep it.
  *
  * **A typed grid runs the same mesh**, and was cut on the strays the same way. So each sheet is also
- * reduced at every grid a reader could type that divides the art's own — every one of which the sheet is
- * exactly drawn on too, since each line of the art's lattice is a line of theirs.
+ * reduced at every grid a reader could type that divides the art's own. Wherever the sheet is exactly
+ * drawn on the art's lattice it is exactly drawn on each of those too, since every line of the art's
+ * lattice is a line of theirs.
+ *
+ * **The stray counts stop at the threshold, and that is the edge of what this establishes.** Past a
+ * tenth of the transitions the sheet is not exactly drawn on the art's lattice, the mesh walks, and the
+ * walk still cuts on strays that outweigh the boundaries — issue #279 carries that case. The two sheets
+ * below that are not read exactly are compared all the same, and both reduce to their stray-free twins.
  *
  * **The counts are pinned** so the sweep cannot pass by reading nothing exactly. A change to how many of
  * these sheets are adopted is a change to detection, and it has to say so here.
@@ -130,5 +136,6 @@ describe('an adopted exact scale', () => {
     // do not lift the inset sheet to nine tenths either, so neither is read exactly. Their typed grids
     // are still reduced and still compared above.
     expect({ adopted, typed }).toEqual({ adopted: 922, typed: 2220 });
-  });
+    // About two seconds alone, and past the five-second default beside the rest of the suite.
+  }, 60_000);
 });

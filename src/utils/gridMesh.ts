@@ -25,12 +25,17 @@ import { stepProfile } from './stepProfile.ts';
  * reads its lines by the *magnitude* of each column's change where the detector counts transitions,
  * so a crisp 40 × 40 sheet drawn at 4 — faint cell boundaries, and a strong stray pixel in twenty of
  * its interior cells — was read as exactly 4 and then cut on the strays, two pixels beside every
- * boundary, reducing to 9 × 10 where the art is 10 × 10. Over 461 such sheets read as exact at grids
- * of 2, 3, 4, 5, 6 and 8, 285 were walked off the lattice they had been read on, and 46 reduced to a different
- * image from the same art without its strays: a column short at 4, a column over at 6 and 8, and the
- * right size with the wrong pixels at 2. **The question is asked of the grid, not of how the grid arrived**, so a
- * typed or clicked grid takes the lattice exactly as an adopted reading does, and this stays the one
- * mechanism serving all three.
+ * boundary, reducing to 9 × 10 where the art is 10 × 10. Over 461 such sheets, anchored at the
+ * corner and read as exact at grids of 2, 3, 4, 5, 6 and 8, 285 were walked off the lattice they had
+ * been read on, and 46 reduced to a different image from the same art without its strays: a column
+ * short at 4, a column over at 6 and 8, and the right size with the wrong pixels at 2.
+ *
+ * **The question is asked of the grid, not of how the grid arrived**, so a typed or clicked grid the
+ * sheet is exactly drawn on takes the lattice exactly as an adopted reading does, and this stays the
+ * one mechanism serving all three. **What it does not reach is a grid the sheet is not exactly drawn
+ * on**, and that is where the walk's own weakness is left: twenty-one strays in the same sheet put
+ * the lattice of 4 under nine tenths, so a typed 4 is walked, and the walk cuts on the strays as it
+ * did before. Issue #279 carries that case.
  *
  * **The pitch in force is the prior, not the answer.** Where the sheet is not exact, detected lines
  * are accepted only where they sit close to the position the previous accepted line expects — at most
@@ -129,8 +134,9 @@ function axisTolerance(grid: PixelGrid): number {
  * exact branch of {@link boundaryMesh} takes away from this walk. Stray pixels at one offset within
  * their cells repeat at the pitch exactly as the boundaries do, and where they outweigh faint
  * boundaries the line list holds the strays and not the boundaries at all — so every walk is a walk
- * over the strays, and the best of them lands squarely on the wrong lattice. A sheet regular enough to
- * repeat its detail that precisely is regular enough to be read exactly, so it never reaches here.
+ * over the strays, and the best of them lands squarely on the wrong lattice. While the strays are
+ * under a tenth of the sheet's transitions the sheet is exactly drawn on the grid and never reaches
+ * this walk. Past a tenth it does, and the walk still cuts on them — issue #279.
  *
  * **The result is strictly ascending by construction, and nothing needs to re-check it.** Every
  * forward step accepts a position within `tolerance` of the previous one plus `grid`, and

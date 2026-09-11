@@ -4,7 +4,8 @@ import type { PixelGrid } from '../types/quantiser.ts';
  * The phase class holding the most change on one axis — where a regular lattice of `grid` best
  * sits, when all there is to go on is the profile.
  *
- * The fallback half of placing a grid on an image. `boundaryMesh` places cells on the boundaries it
+ * The fallback half of placing a grid on an image. `boundaryMesh` cuts a sheet exactly drawn on a
+ * lattice of the grid on that lattice, and places the cells of any other sheet on the boundaries it
  * detects, which is the answer wherever the image holds enough of them to anchor a mesh; an axis
  * with fewer than two detectable boundaries — a flat field, a gradient, heavy noise — offers no
  * spacing to walk, and the best single answer left is the phase whose lattice collects the most of

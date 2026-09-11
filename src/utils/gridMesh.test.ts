@@ -4,6 +4,7 @@ import { imageFrom, soften } from '../test/images.ts';
 import { interiorCells, spottedGrid } from '../test/spottedGrid.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { boundaryClusters } from './boundaryClusters.ts';
+import { edgeLattice, exactGridOffset } from './edgeLattice.ts';
 import { boundaryMesh, regularMesh } from './gridMesh.ts';
 import { stepProfile } from './stepProfile.ts';
 
@@ -25,9 +26,10 @@ function sheetWithBoundaries(
 }
 
 describe('boundaryMesh', () => {
-  it('measures a regular sheet out to the regular lattice, losing nothing to the measurement', () => {
+  it('cuts a sheet exactly drawn on a lattice on that lattice, with nothing walked', () => {
     const starts = [0, 8, 16, 24, 32, 40, 48, 56];
     const sheet = sheetWithBoundaries(64, starts, starts);
+    expect(exactGridOffset(edgeLattice(sheet), 8)).toEqual({ x: 0, y: 0 });
     expect(boundaryMesh(sheet, 8)).toEqual(regularMesh(64, 64, 8, { x: 0, y: 0 }));
   });
 
@@ -65,16 +67,21 @@ describe('boundaryMesh', () => {
     // Two adjacent cells sharing a colour erase the boundary between them — there is no step to
     // detect. A missing cut would merge the art's cells for good, so the mesh inserts one at the
     // expected position and the region simply votes the same colour on both sides of it.
-    const starts = [0, 8, 16, 24, 32, 40, 48, 56];
+    //
+    // The cells drift a pixel after the fifth boundary, so the sheet is exactly drawn on no lattice
+    // and the walk is what places the cuts — a regular sheet is cut on its lattice before any line
+    // is read, and would pass this with the completion broken.
+    const starts = [0, 8, 16, 24, 32, 41, 49, 57];
     const shared: Rgba = { r: 90, g: 140, b: 60, a: 255 };
+    const cellOf = (position: number) => starts.filter((start) => position >= start).length - 1;
     const sheet = imageFrom(64, 64, (x, y) => {
-      const cellX = Math.floor(x / 8);
-      const cellY = Math.floor(y / 8);
+      const cellX = cellOf(x);
       // Cells (2, ·) and (3, ·) share one colour, erasing the boundary at x = 24 entirely.
       if (cellX === 2 || cellX === 3) return shared;
-      const index = cellY * 8 + cellX;
+      const index = cellOf(y) * 8 + cellX;
       return { r: (index * 71 + 40) % 256, g: (index * 149 + 80) % 256, b: (index * 37 + 120) % 256, a: 255 };
     });
+    expect(exactGridOffset(edgeLattice(sheet), 8)).toBeNull();
 
     const mesh = boundaryMesh(sheet, 8);
 
@@ -84,14 +91,14 @@ describe('boundaryMesh', () => {
   it('ignores a strong interior edge that sits nowhere near the expected spacing', () => {
     // Art detail inside a cell — a high-contrast marking mid-block — is a boundary candidate by
     // mass, and accepting it would cut a cell of the art in half. Only lines within a third of a
-    // cell of the expected position are taken.
-    const starts = [0, 8, 16, 24, 32, 40, 48, 56];
-    const sheet = imageFrom(64, 64, (x, y) => {
-      // A hard vertical edge at x = 20 — mid-cell — on top of a regular grid of 8.
-      if (x >= 20 && x < 22 && y >= 8 && y < 56) return { r: 250, g: 250, b: 250, a: 255 };
-      const index = Math.floor(y / 8) * 8 + Math.floor(x / 8);
-      return { r: (index * 71 + 40) % 256, g: (index * 149 + 80) % 256, b: (index * 37 + 120) % 256, a: 255 };
-    });
+    // cell of the expected position are taken. The same pixel of drift as above keeps the sheet off
+    // every exact lattice, so the walk is what is tested.
+    const starts = [0, 8, 16, 24, 32, 41, 49, 57];
+    const sheet = sheetWithBoundaries(64, starts, starts);
+    for (let y = 8; y < 56; y += 1) {
+      for (let x = 20; x < 22; x += 1) sheet.data.set([250, 250, 250, 255], (y * 64 + x) * 4);
+    }
+    expect(exactGridOffset(edgeLattice(sheet), 8)).toBeNull();
 
     const mesh = boundaryMesh(sheet, 8);
 
@@ -158,8 +165,8 @@ describe('boundaryMesh', () => {
   });
 
   it('cuts the same art on its lattice wherever an inset puts that lattice', () => {
-    // Three pixels in, the art's lines are 3, 7, … 43 and the strays' columns are 4 and 5 of every
-    // cell. The phase the exact question found is the one the mesh takes.
+    // Three pixels in, the art's lines are 3, 7, … 43, and each stray changes on the columns one and
+    // two pixels into its cell. The phase the exact question found is the one the mesh takes.
     const sheet = spottedGrid({ inset: 3, spoils: interiorCells(20) });
 
     expect(boundaryMesh(sheet, 4)).toEqual(regularMesh(46, 46, 4, { x: 3, y: 3 }));
