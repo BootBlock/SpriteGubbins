@@ -1,107 +1,58 @@
 import { describe, expect, it } from 'vitest';
-import { resolutionProfileDescription } from '../src/constants/promptText/renderStyle.ts';
+import { defaultSubjectFor } from '../src/constants/categories/index.ts';
+import { CATEGORY_DIRECTION_SETS } from '../src/constants/categoryDirectionSets.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
 import { SHEET_CELL_PITCH } from '../src/constants/sheetCanvas.ts';
-import { modesFor, SHEET_INDEX_RANGE, sheetPlanFor } from '../src/constants/sheetPlans/index.ts';
-import type { SheetPlan } from '../src/types/components.ts';
-import { ASPECT_RATIOS, DIRECTION_SETS } from '../src/types/output.ts';
+import { modesFor, SHEET_INDEX_RANGE } from '../src/constants/sheetPlans/index.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
-import type { SubjectCategory } from '../src/types/subject.ts';
-import { widthBiasFor } from '../src/utils/atlasCalculator.ts';
-import { componentCountFor } from '../src/utils/componentSet.ts';
+import { generatePrompt } from '../src/utils/promptCompiler.ts';
 
 /**
- * Whether section 2's resolution profile asks for artwork the sheet can actually hold.
+ * Whether section 2's resolution profile asks for artwork the sheet can actually hold, on every sheet
+ * the app compiles.
  *
- * **The defect this suite exists for:** the two share-bearing profiles stated their range against
- * the sheet height on all thirteen categories, and that reading was written for a whole figure the
- * sheet is forbidden to draw. On a category whose sheet draws one of its scale unit per entry, the
- * same range argues with the component count two sections later — a default ICON sheet compiles
- * “Exactly 28 components” and “one icon occupies 25–35% of the sheet height”, and twenty-eight
- * squares at the *bottom* of that range need 1.75 sheet heights squared against a 16:9 page
- * measuring 1.78. That is more than the whole surface, with nothing left for the spacing the layout
- * section asks for in the same prompt. Nothing in the app noticed, because the two facts were stated
- * in different sections by different records and neither had ever been multiplied out.
+ * **Two defects, one frame.** The two share-bearing profiles once stated their range as a share of the
+ * sheet height, and on every kind of sheet something else in the same prompt decided that figure
+ * before the line was read:
  *
- * **It reads the compiled line, not the constants behind it.** `SHARE_RANGE` and the sheet's own
- * `scaleUnitFrame` are what produce that line, and a check that read them back would agree with
- * itself whatever the sentence said — the frame would decide both the wording and the formula.
- * Parsing the sentence is what makes the two independent: the arithmetic follows the words a
- * generator is actually given, so a range moved into the wrong frame fails here rather than passing
- * quietly.
+ * - **The component count, where a sheet draws its unit once per component.** A default ICON sheet
+ *   compiled “Exactly 28 components” and “one icon occupies 25–35% of the sheet height”, and
+ *   twenty-eight squares at the *bottom* of that range need 1.75 sheet heights squared against a 16:9
+ *   page measuring 1.78 — more than the whole surface, with nothing left for the spacing the layout
+ *   section asks for (issue #178).
+ * - **The layout, where a sheet draws the parts of one whole.** A CHARACTER directional core compiled
+ *   “a full figure occupies 25–35% of the sheet height” beside an exploded grid of head, torso and
+ *   pelvis rows. Those rows are disjoint pieces of one figure at one scale, so the figure is at least
+ *   as tall as the rows stacked, and a grid laid across the page makes that most of the sheet. All
+ *   eighteen character sheets measured for issue #245 drew the head and the pelvis alone at 40–73% of
+ *   the sheet height. The count never entered it — which is why the version of this suite that
+ *   multiplied the count out scored those sheets zero and passed every one of them.
  *
- * **What it deliberately does not claim.** A `SHEET` sheet draws at most one of its unit, so
- * `unitsDrawn` scores it zero and no assertion here reaches it — the claim that *this* sheet may use
- * that frame is `SheetPlan.scaleUnitFrame`'s to make, argued sheet by sheet, and
- * `utils/sheetPlans.test.ts` pins the answer each one gave.
+ * **So a share of the sheet height is not priced here at all**: a sentence stating one fails, whatever
+ * its numbers. A share of the largest component's own cell is the frame neither can argue with. Cells
+ * tile the page by construction, so the largest piece filling `f` of its cell spends at most `f²` of it
+ * whatever the count, the aspect or the number of rows — and every other piece, drawn to that scale,
+ * spends less. It has to be the *largest*: a share of any other piece leaves the bigger ones free to
+ * overrun their cells, which is the bound failing by another route.
  *
- * **BACKGROUND's parallax set is where that silence used to do real work, and it no longer has to.**
- * Nine band-shaped components were priced against the sheet height, and a band is full-bleed wide and
- * short, so the square-unit approximation below would have read nine squares onto the page — a
- * shape this model cannot size, which is what issue #216 was opened to record. The answer was the
- * frame rather than a recorded aspect: a cell is `SHEET_CELL_PITCH` times its own component on each
- * axis, so a share of one carries no claim about shape at all, and the `CELL` arm below is the arm
- * with no aspect in it.
+ * **It reads the compiled prompt, not the constants behind it.** `SHARE_RANGE` is what produces the
+ * line, and a check that read it back would agree with itself whatever the sentence said. Compiling
+ * every sheet is also what would catch a per-sheet answer creeping back: the sheet-height wording
+ * reached the six whole-subject categories through a field on each plan, which a check calling the
+ * composer directly could never have seen.
  */
 
-/** The share the sentence states, as a fraction, at each end of its range. */
-interface Share {
-  readonly low: number;
-  readonly high: number;
-  readonly framedBy: 'CELL' | 'SHEET';
-}
+/** The line itself, wherever section 2 puts it. */
+const RESOLUTION_LINE = /^- Resolution profile: (.*)$/gm;
 
 /**
- * The two frames the app writes, and the only two this file knows how to price.
+ * The only share this suite knows how to price.
  *
- * A third — or a reworded one — fails to parse rather than being scored under whichever arm happens
- * to match, because the frame is what decides the formula and guessing it wrong is the failure this
- * suite is named after.
+ * A reworded share — or one stated against anything but the largest component's cell — fails to
+ * match rather than being scored some other way, because the frame is what decides the arithmetic and
+ * guessing it wrong is the failure this suite is named after.
  */
-const FRAME_PATTERN = {
-  SHEET: /(\d+)–(\d+)% of the sheet height/,
-  CELL: /(\d+)–(\d+)% of its cell height in the exploded grid/,
-} as const;
-
-function shareOf(sentence: string): Share {
-  for (const framedBy of ['SHEET', 'CELL'] as const) {
-    const found = FRAME_PATTERN[framedBy].exec(sentence);
-    if (found === null) continue;
-    return { low: Number(found[1]) / 100, high: Number(found[2]) / 100, framedBy };
-  }
-  throw new Error(`no frame recognised in: ${sentence}`);
-}
-
-/**
- * How many of the scale unit the sheet actually draws.
- *
- * `SHEET` is zero and that is the whole point of the frame: the sheet draws at most one of that
- * unit, so no number of components makes a share of the sheet height too large. The pieces on the
- * page are fractions of it, not copies of it.
- */
-function unitsDrawn(plan: SheetPlan, components: number): number {
-  return plan.scaleUnitFrame === 'CELL' ? components : 0;
-}
-
-/**
- * The share of the page the stated scale spends, at one end of one range.
- *
- * Both arms assume the unit is drawn roughly as square as the box it is measured in, which is what
- * lets a height be turned into an area at all. That is an approximation and it is the honest one to
- * make: a taller-than-wide unit spends less than this and a wider one more, and neither the prompt
- * nor the app knows which a given component will be.
- *
- * - **`SHEET`** — the unit is `share` of the page's height, so each copy is `share²` of a square
- *   page and `share² / aspect` of this one. `N` copies is that again `N` times, and nothing bounds
- *   it: the count and the share are set by two records that never meet.
- * - **`CELL`** — the unit is `share` of its own cell's height, and the cells tile the page by
- *   construction. `N` of them therefore spend `share²` of it **whatever `N` is and whatever aspect
- *   the reader chose**, which is the property that makes the contradiction impossible rather than
- *   merely smaller.
- */
-function coverage(share: number, framedBy: Share['framedBy'], units: number, aspect: number): number {
-  if (units === 0) return 0;
-  return framedBy === 'CELL' ? share * share : (units * share * share) / aspect;
-}
+const CELL_SHARE = /the largest component occupies (\d+)–(\d+)% of its cell height in the exploded grid/;
 
 /**
  * What the layout section's “generously and uniformly spaced” costs, as a share of the page.
@@ -112,78 +63,69 @@ function coverage(share: number, framedBy: Share['framedBy'], units: number, asp
  * spacing budget in `src`, free to drift from the one `nativeGridScale` derives its own figure from.
  *
  * The top of the top rung is what it really holds: `HIGH_RESOLUTION` runs to 65% of a cell, which is
- * 0.42 of the page, so a rung nudged past 67% would breach it. Every other reading has room to
- * spare — the bottom of `HIGH_RESOLUTION` is 0.25 and `MID_RESOLUTION` runs 0.12 to 0.25.
+ * 0.42 of the page, so a rung nudged past 67% would breach it.
  */
 const COVERAGE_CEILING = 1 / SHEET_CELL_PITCH ** 2;
 
-/** One sheet, with the count it asks for and the frame it prices that count in. */
-interface Sheet {
-  readonly plan: SheetPlan;
-  readonly components: number;
-}
-
-/**
- * Every sheet a category can be asked for, which is where both halves of the arithmetic come from.
- *
- * The plan travels with its count rather than being looked up beside it, because the frame is the
- * *sheet's* answer and not the category's — see `SheetPlan.scaleUnitFrame`. Pairing a count from one
- * pairing with a frame from another is exactly the mistake that would hide the case this suite
- * exists for.
- */
-function sheetsOf(category: SubjectCategory): readonly Sheet[] {
-  const sheets: Sheet[] = [];
-  for (const mode of modesFor(category)) {
-    for (const directions of DIRECTION_SETS) {
-      for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
-        sheets.push({
-          // An index past the end of a short series resolves to the first sheet, in both of these —
-          // so the plan and the count stay the same sheet's whatever the loop asks for.
-          plan: sheetPlanFor(category, mode, directions, sheetIndex),
-          components: componentCountFor(category, mode, directions, sheetIndex, '', []),
-        });
-      }
-    }
-  }
-  return sheets;
-}
-
-describe('the resolution profile against the component count', () => {
+describe('the resolution profile against the page it is drawn on', () => {
   const SHARE_BEARING = ['HIGH_RESOLUTION', 'MID_RESOLUTION'] as const;
 
-  it('leaves the page room for the spacing the same prompt asks for', () => {
+  it('states every share against the largest component’s cell, and leaves room for the spacing', () => {
+    const unpriceable: string[] = [];
     const breaches: string[] = [];
-    let scored = 0;
+    const scored = new Set<string>();
 
     for (const category of SUBJECT_CATEGORIES) {
-      for (const { plan, components } of sheetsOf(category)) {
-        const units = unitsDrawn(plan, components);
-        for (const profile of SHARE_BEARING) {
-          const { low, high, framedBy } = shareOf(
-            resolutionProfileDescription(profile, false, category, plan.scaleUnitFrame),
-          );
-          for (const ratio of ASPECT_RATIOS) {
-            for (const share of [low, high]) {
-              const spent = coverage(share, framedBy, units, widthBiasFor(ratio));
-              if (units > 0) scored += 1;
-              if (spent <= COVERAGE_CEILING) continue;
-              breaches.push(
-                `${category} / ${plan.name} / ${profile} / ${ratio}: ${String(components)} components at ` +
-                  `${String(Math.round(share * 100))}% of the ${framedBy === 'CELL' ? 'cell' : 'sheet'} ` +
-                  `cover ${spent.toFixed(2)} of the page`,
-              );
+      const subject = defaultSubjectFor(category);
+      for (const directionalMode of modesFor(category)) {
+        // Every direction set the category offers and every sheet index, because the set and the
+        // index decide which plan compiles — an eight-compass core is two sheets and an articulation
+        // run after them, and the defect this suite exists for was on every one of the three.
+        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+          for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            for (const resolutionProfile of SHARE_BEARING) {
+              const where = `${category} / ${directionalMode} / ${directions} / ${String(sheetIndex)} / ${resolutionProfile}`;
+              const prompt = generatePrompt(category, subject, {
+                ...DEFAULT_OUTPUT_CONFIG,
+                directionalMode,
+                directions,
+                sheetIndex,
+                resolutionProfile,
+              });
+              const lines = [...prompt.matchAll(RESOLUTION_LINE)].map((match) => match[1] ?? '');
+              expect(lines, where).toHaveLength(1);
+              const line = lines[0] ?? '';
+
+              const found = CELL_SHARE.exec(line);
+              if (found === null) {
+                unpriceable.push(`${where}: ${line}`);
+                continue;
+              }
+              scored.add(`${category} / ${directionalMode}`);
+              const top = Number(found[2]) / 100;
+              if (top * top > COVERAGE_CEILING) {
+                breaches.push(
+                  `${where}: ${String(found[2])}% of a cell covers ${(top * top).toFixed(2)} of the page`,
+                );
+              }
             }
           }
         }
       }
     }
 
-    // Non-vacuous: the sheet-framed sheets score zero by construction, so a run that scored nothing
-    // at all would mean the cell-framed ones had stopped being reached rather than that they all
-    // fit. Run against the wording this suite was written for — every category framed by the sheet,
-    // on the ranges that shipped — it reports all seven then framed that way, on all four aspect
-    // ratios each.
-    expect(scored, 'no sheet was scored as drawing its own scale unit').toBeGreaterThan(0);
+    // Non-vacuous, and on the pairing the defect was reported against: a run that scored nothing
+    // would mean the line had stopped being reached rather than that every sheet fits. Run against
+    // the plans as they stood before issue #245 — the six whole-subject categories, INTERFACE and
+    // BACKGROUND's layer library each stating a share of the sheet height — it reports every sheet of
+    // all eighteen of those pairings as unpriceable.
+    expect(scored.has('CHARACTER / CORE_DIRECTIONAL_VARIANTS'), 'the reported pairing was never scored').toBe(
+      true,
+    );
+    expect(
+      unpriceable,
+      `a share is stated in a frame the layout decides:\n${unpriceable.join('\n')}`,
+    ).toEqual([]);
     expect(breaches, `the stated scale does not fit:\n${breaches.join('\n')}`).toEqual([]);
   });
 });

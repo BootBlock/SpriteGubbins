@@ -116,9 +116,7 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
     'one continuous animation played in the order the inventory lists — every frame a complete state of the effect, sharing one registration point, one cell scale and one camera, and none of them a layer to be stacked on another. Where the subject asks for a loop, that same run is a cycle whose final frame reads back into its first with no visible seam.',
   targetQuantity: 'COMPONENT',
   // One phenomenon, one component per phase of its life: the artwork is the motion here.
-  posing: 'PER_POSITION',
-  scaleUnitFrame: 'CELL',
-  // The agreement shape rather than a pair of pieces, because this sheet's components are not
+  posing: 'PER_POSITION', // The agreement shape rather than a pair of pieces, because this sheet's components are not
   // pieces of each other: an effect's frames are one phenomenon at successive moments, so what has
   // to hold across them is that the *same* effect is drawn at the same scale in every cell.
   scaleExample: 'the first frame and the peak frame are the same effect drawn at the same scale',

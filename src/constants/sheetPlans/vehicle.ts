@@ -28,7 +28,6 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The mount is drawn stowed, traversed and elevated, the hatch closed and open, each drive at rest and mid-travel.
   posing: 'PER_POSITION',
-  scaleUnitFrame: 'SHEET',
   scaleExample: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
   groups: [
     {
@@ -102,7 +101,6 @@ function vehicleDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTupl
     targetQuantity: 'ASSEMBLED',
     // The drive and the mount are drawn once per facing in matching positions, which is the camera turning.
     posing: 'UNSTATED',
-    scaleUnitFrame: 'SHEET',
     scaleExample: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
     groups: [
       {
@@ -154,7 +152,6 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
   posing: 'AT_REST',
-  scaleUnitFrame: 'SHEET',
   scaleExample: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
   groups: [
     {

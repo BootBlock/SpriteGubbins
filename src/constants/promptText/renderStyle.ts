@@ -1,6 +1,6 @@
 import type { RenderStyle } from '../../types/rendering.ts';
 import type { ResolutionProfile, StatedTargetSize, SurfaceDetail } from '../../types/output.ts';
-import type { ScaleUnitFrame, SubjectCategory } from '../../types/subject.ts';
+import type { SubjectCategory } from '../../types/subject.ts';
 import { SCALE_UNIT_TEXT } from './subject.ts';
 
 /**
@@ -33,25 +33,43 @@ export const SURFACE_DETAIL_TEXT: Readonly<Record<SurfaceDetail, string>> = {
   TEXTURED: 'Textured — controlled surface texturing, still inside the palette limit',
 };
 
-/** The two profiles that state their scale as a *share*, and so have a frame to state it against. */
+/** The two profiles that state their scale as a *share* of a cell in the grid rather than in pixels. */
 type ShareProfile = 'HIGH_RESOLUTION' | 'MID_RESOLUTION';
 
 /**
- * The share each of those two permits, per frame, as the two percentages the prose reads out.
+ * The share of its own cell height the largest component fills, per rung, as the two percentages the
+ * prose reads out.
  *
- * **Numbers rather than four written sentences**, so that changing a rung is one edit and the two
- * frames stay comparable. What checks them is `tests/resolution-profile-fit.test.ts`, and it reads
+ * **Numbers rather than two written sentences**, so that changing a rung is one edit and the two
+ * rungs stay comparable. What checks them is `tests/resolution-profile-fit.test.ts`, and it reads
  * the *compiled line* rather than this record, because what a generator acts on is the sentence and
  * not the constant behind it.
  *
- * **`SHEET` keeps the pair that shipped**, because on a sheet that draws at most one of its unit the
- * sheet height is a frame no component count can argue with. `CELL` is the new pair, and every
- * figure in it is derived rather than chosen:
+ * **A cell in the grid, and never the sheet height, on every sheet the app compiles.** Both rungs
+ * were once a share of the sheet height, and that frame is decided by something else in the prompt on
+ * every kind of sheet there is:
  *
- * - The frame is the unit's **own cell** in the exploded grid. Cells tile the sheet by construction,
- *   so `N` units each filling `f` of their cell cover `f²` of the page whatever `N` is and whatever
- *   aspect the reader picked — which is the property that makes the contradiction impossible rather
- *   than merely smaller.
+ * - **Where a sheet draws its unit once per component, the count decides it.** Twenty-eight icons at
+ *   the bottom of `25–35%` need 1.75 sheet heights squared against a 16:9 page measuring 1.78, which is
+ *   the whole surface with nothing left for the spacing the layout section asks for (issue #178).
+ * - **Where a sheet draws the parts of one whole, the layout decides it.** A CHARACTER directional core
+ *   draws a row of heads, a row of torsos and a row of pelvises. The three are disjoint pieces of one
+ *   figure at one consistent scale, so the figure is at least as tall as the rows added together — and
+ *   three rows in a grid laid across the page put that near the whole sheet height. All eighteen
+ *   character sheets measured for issue #245 drew the head and the pelvis alone at 40–73% of the sheet
+ *   height, against a whole figure priced at 25–35%, and it was never once honoured.
+ *
+ * A cell is the frame neither can reach. Cells tile the sheet by construction, so the largest
+ * component filling `f` of its cell spends at most `f²` of the page whatever the count, the aspect or
+ * the number of rows — which is the property that makes both contradictions impossible rather than
+ * merely smaller. **What a cell cannot hold is one scale across the sheets of a series**: a sheet of
+ * twelve parts and a sheet of thirty-four each fill their own grid, so their pieces come out at
+ * different sizes. That is a stated size's to hold — `CUSTOM` with a target size, which the field's
+ * guidance tells the reader — and the share of the sheet height never held it either, because no
+ * generator honoured it.
+ *
+ * Every figure in the pair is derived rather than chosen:
+ *
  * - **The top comes from `SHEET_CELL_PITCH` in `constants/sheetCanvas.ts`, which is where this app
  *   already answers the question.** That constant gives each component a cell 1.5× its own size, and
  *   says in as many words that the half-a-component gutter it buys "is what generously spaced looks
@@ -63,63 +81,77 @@ type ShareProfile = 'HIGH_RESOLUTION' | 'MID_RESOLUTION';
  *   the fit test**, whose ceiling is `1 / SHEET_CELL_PITCH ** 2`: a rung raised past 67% fails there.
  *   An expression here would compute a round number from a constant that is not itself round, which
  *   is a worse thing for a reader to meet in the prose the prompt carries.
- * - The two rungs stay **contiguous**, as `25–35` and `18–25` are, so the ladder has no gap for a
- *   configuration to fall into.
- * - `MID`'s midpoint is then 0.74 of `HIGH`'s, against the 0.72 the sheet-height pair carries. The
- *   profile is a choice about relative size, and that ratio is what the choice has always been.
+ * - The two rungs stay **contiguous**, so the ladder has no gap for a configuration to fall into.
+ * - `MID`'s midpoint is then 0.74 of `HIGH`'s, against the 0.72 the retired sheet-height pair
+ *   carried. The profile is a choice about relative size, and that ratio is what the choice has
+ *   always been.
  */
-const SHARE_RANGE: Readonly<
-  Record<ShareProfile, Readonly<Record<ScaleUnitFrame, readonly [number, number]>>>
-> = {
-  HIGH_RESOLUTION: { CELL: [50, 65], SHEET: [25, 35] },
-  MID_RESOLUTION: { CELL: [35, 50], SHEET: [18, 25] },
+const SHARE_RANGE: Readonly<Record<ShareProfile, readonly [number, number]>> = {
+  HIGH_RESOLUTION: [50, 65],
+  MID_RESOLUTION: [35, 50],
 };
 
 /**
- * What each frame measures that share against.
+ * One rung's range as the reader sees it, with the en dash every other range in the prompt is written
+ * with.
  *
- * The reference frame is the sheet, which is the wording that shipped. The drawn frame is the unit's
- * own cell, and it names the grid rather than citing the layout section by number: `[SEC:LAYOUT]`
- * cannot be used here, because both of that heading's declarations sit inside an `[IF:…]` and
+ * Exported because the resolution-profile guidance states the same two ranges to the reader, and
+ * reads them from here rather than keeping a copy of this record in prose.
+ */
+export function shareRange(profile: ShareProfile): string {
+  const [low, high] = SHARE_RANGE[profile];
+  return `${String(low)}–${String(high)}%`;
+}
+
+/**
+ * The share as the prompt states it.
+ *
+ * **It measures the largest component, because the pieces of one sheet are not one size.** A torso
+ * and a hand each filling the same share of a cell is a hand drawn as large as a torso — the break in
+ * section 0's one consistent scale that a profile must never ask for. So the largest piece fills its
+ * cell and every other is drawn to the scale that sets. On a sheet of equal pieces — an icon family,
+ * a blend set — that is every piece filling its cell, and on a frame sequence it is the frame at the
+ * height of the effect filling its cell with the rest growing towards it, which "one frame of the
+ * effect" could not say.
+ *
+ * **No category noun, and that is what the largest component buys.** The noun a category's sheet is
+ * priced in cannot name a piece with a cell on six of the thirteen: `a full figure` is the whole the
+ * parts assemble into, and a CHARACTER series draws heads on one sheet and upper legs on the next. A
+ * per-sheet noun would be a second copy of the largest piece `SheetPlan.scaleExample` already names,
+ * free to drift from it. "The largest component" is the prompt's own defined term, true on every sheet
+ * without being told which piece that is.
+ *
+ * It names the grid rather than citing the layout section by number: `[SEC:LAYOUT]` cannot be used
+ * here, because both of that heading's declarations sit inside an `[IF:…]` and
  * `tests/prompt-citations.test.ts` admits only a heading no configuration can drop. "The exploded
  * grid" is that section's own phrase for it, so the reference survives whatever number the heading
  * takes.
  */
-const SHARE_FRAME: Readonly<Record<ScaleUnitFrame, (range: string) => string>> = {
-  CELL: (range) => `occupies ${range} of its cell height in the exploded grid`,
-  SHEET: (range) => `occupies ${range} of the sheet height`,
-};
-
-/** The pair as the reader sees it, with the en dash every other range in the prompt is written with. */
-function shareText(profile: ShareProfile, frame: ScaleUnitFrame): string {
-  const [low, high] = SHARE_RANGE[profile][frame];
-  return SHARE_FRAME[frame](`${String(low)}–${String(high)}%`);
+function shareText(profile: ShareProfile): string {
+  return `the largest component occupies ${shareRange(profile)} of its cell height in the exploded grid, and every other component is drawn to that same scale`;
 }
 
 /**
  * The scale the components are drawn at, as a function of the unit this category's sheet is priced
- * in and of the frame that unit can honestly be measured in.
+ * in.
  *
  * Stated in prose because v1 interpolated the identifier raw, so the prompt read
  * "Selected profile: `HIGH_RESOLUTION_PIXEL_ART`" — a token the model had to guess the meaning of.
  *
- * **A map of functions rather than of strings, because three of the four entries state a scale
- * *against something*** — and that something was `a full figure` on all thirteen categories, so a
- * glyph sheet, a tile field and a widget kit were each measured against a subject they cannot
- * contain. {@link SCALE_UNIT_TEXT} is the noun each supplies and `SheetPlan.scaleUnitFrame` the
- * frame.
- * `CUSTOM` carries no range and therefore takes neither — it defers to the target-size line, which
- * names its quantity itself.
+ * **A map of functions rather than of strings, because `RETRO_16_BIT` states a height *of
+ * something*** — and that something was `a full figure` on all thirteen categories, so a glyph
+ * sheet, a tile field and a widget kit were each measured against a subject they cannot contain.
+ * {@link SCALE_UNIT_TEXT} is the noun each supplies. It survives on that rung alone because "roughly
+ * 64–96 pixels tall" is an absolute height, which no count and no layout can argue with.
  *
- * **`RETRO_16_BIT` takes the unit and not the frame**, and it is the one rung that never needed one:
- * "roughly 64–96 pixels tall" is an absolute height, so it survived being re-pointed at a component
- * exactly as it stood.
+ * **The two share rungs take no unit**, for the reason `shareText` records: a share of a cell is
+ * stated of the largest component, which is a piece every sheet has without being told which one.
+ * `CUSTOM` carries no range and takes none either — it defers to the target-size line, which names
+ * its quantity itself.
  */
-export const RESOLUTION_PROFILE_TEXT: Readonly<
-  Record<ResolutionProfile, (unit: string, frame: ScaleUnitFrame) => string>
-> = {
-  HIGH_RESOLUTION: (unit, frame) => `High resolution — ${unit} ${shareText('HIGH_RESOLUTION', frame)}`,
-  MID_RESOLUTION: (unit, frame) => `Mid resolution — ${unit} ${shareText('MID_RESOLUTION', frame)}`,
+export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, (unit: string) => string>> = {
+  HIGH_RESOLUTION: () => `High resolution — ${shareText('HIGH_RESOLUTION')}`,
+  MID_RESOLUTION: () => `Mid resolution — ${shareText('MID_RESOLUTION')}`,
   RETRO_16_BIT: (unit) => `16-bit retro scale — ${unit} is roughly 64–96 pixels tall`,
   CUSTOM: () =>
     'Custom — work to the target component size where one is stated, and to the sheet aspect otherwise',
@@ -139,8 +171,8 @@ export const RESOLUTION_PROFILE_TEXT: Readonly<
  * already tells the generator. Falling back to *the sheet aspect* would throw away the only
  * measurement the prompt has.
  *
- * **It names the assembled whole in the category's own word**, for the reason the three scale-bearing
- * profiles do. It read "the share of that figure it occupies" on every category, and the five that
+ * **It names the assembled whole in the category's own word**, for the reason `RETRO_16_BIT` does.
+ * It read "the share of that figure it occupies" on every category, and the five that
  * reach it are CHARACTER, CREATURE, OBJECT, ITEM and VEHICLE — so an OBJECT part library and a
  * VEHICLE rig were both told to work to the share of a figure they have none of. That is the same
  * defect {@link SCALE_UNIT_TEXT} removes one line above, and leaving it here would have left section
@@ -151,23 +183,23 @@ function customAssembledText(unit: string): string {
 }
 
 /**
- * The resolution profile in the prose the prompt carries, for this sheet.
+ * The resolution profile in the prose the prompt carries.
  *
- * Three of the four profiles *are* a scale, and each states it against the unit this category's
- * sheet is priced in — the category being what decides that noun, never the sheet, for the reason
- * {@link SCALE_UNIT_TEXT} records. `CUSTOM` is the one that defers to the target-size field, so it
- * is the one that has to agree with what that field turns out to be naming.
+ * `RETRO_16_BIT` states its height of the unit this category's sheet is priced in — the category
+ * being what decides that noun, never the sheet, for the reason {@link SCALE_UNIT_TEXT} records.
+ * `CUSTOM` is the one that defers to the target-size field, so it is the one that has to agree with
+ * what that field turns out to be naming.
  *
- * **The frame is handed in rather than looked up, and it is the sheet's answer where the noun is the
- * category's** — see `SheetPlan.scaleUnitFrame`, which argues it sheet by sheet. A lookup here would
- * have to be keyed on the category alone, which is the reading issue #216 was opened against: it has
- * no answer that is true of both of BACKGROUND's plans.
+ * **Nothing here is the sheet's**, and that is the correction issue #245 made. The two share rungs
+ * were once stated against the sheet height on some plans and against a cell on others, with each
+ * plan choosing — and every plan left on the sheet height was one whose share the layout decided
+ * before the line was read. A share of a cell is true on every sheet, so there is no longer a
+ * per-sheet answer to hand in.
  */
 export function resolutionProfileDescription(
   profile: ResolutionProfile,
   statesAssembled: boolean,
   category: SubjectCategory,
-  frame: ScaleUnitFrame,
 ): string {
   // `RESOLUTION_PROFILE_TEXT` stays exported even though nothing else imports it: it is still the map
   // `[DEFINE:RESOLUTION_PROFILE_DESCRIPTION]` is filled from for three of the four profiles, and
@@ -177,7 +209,7 @@ export function resolutionProfileDescription(
   const unit = SCALE_UNIT_TEXT[category];
   return profile === 'CUSTOM' && statesAssembled
     ? customAssembledText(unit)
-    : RESOLUTION_PROFILE_TEXT[profile](unit, frame);
+    : RESOLUTION_PROFILE_TEXT[profile](unit);
 }
 
 /**
@@ -201,18 +233,19 @@ const PROFILE_MIN_FEATURE: Readonly<Record<Exclude<ResolutionProfile, 'CUSTOM'>,
  * hundred and twenty-eight rows and sixteen columns, and it is the sixteen that decide whether a
  * two-pixel feature is affordable. Keying on height would call that component mid-resolution.
  *
- * Both boundaries are read off the profiles above rather than chosen. `RETRO_16_BIT` runs to 96 px
- * per unit drawn and `MID_RESOLUTION` starts at roughly 184 on a 1024-pixel sheet, so the `1 × 1` rung
- * ends somewhere in that gap — 128 is the round number inside it, and is itself a size people draw
- * sprites at. `MID_RESOLUTION` tops out near 256 on the same sheet and `HIGH_RESOLUTION` begins at
- * that figure, so the second boundary is that number exactly.
+ * Both boundaries were read off the profiles as they stood when this ladder was cut, when both share
+ * rungs were a share of the sheet height. `RETRO_16_BIT` ran to 96 px per unit drawn and
+ * `MID_RESOLUTION` started at roughly 184 on a 1024-pixel sheet, so the `1 × 1` rung ends somewhere
+ * in that gap — 128 is the round number inside it, and is itself a size people draw sprites at.
+ * `MID_RESOLUTION` topped out near 256 on the same sheet and `HIGH_RESOLUTION` began at that figure,
+ * so the second boundary is that number exactly.
  *
- * **Those two landmarks are the `SHEET` frame's reading, and the `CELL` frame's is lower.** A default
- * ICON sheet is twenty-eight components on a 16:9 page, so its grid is about seven cells by four and
- * a cell on the same 1024-pixel sheet is 256 px tall: `MID_RESOLUTION` is then 90–128 px and
- * `HIGH_RESOLUTION` 128–166. Both landmarks move — the gap the first boundary sat in closes, since
- * 128 now lands exactly where `MID_RESOLUTION` gives way to `HIGH_RESOLUTION`, and `RETRO_16_BIT`'s
- * 64–96 overlaps the bottom of `MID_RESOLUTION` rather than sitting clear below it. **The rungs are
+ * **Those two landmarks have since moved, because both share rungs are a share of a cell now, which is
+ * lower.** A default ICON sheet is twenty-eight components on a 16:9 page, so its grid is about seven
+ * cells by four and a cell on the same 1024-pixel sheet is 256 px tall: `MID_RESOLUTION` is then
+ * 90–128 px and `HIGH_RESOLUTION` 128–166. The gap the first boundary sat in closes, since 128 now
+ * lands exactly where `MID_RESOLUTION` gives way to `HIGH_RESOLUTION`, and `RETRO_16_BIT`'s 64–96
+ * overlaps the bottom of `MID_RESOLUTION` rather than sitting clear below it. **The rungs are
  * unchanged anyway**, and deliberately: these two boundaries key on a size the *reader* typed into
  * the target-size field, which no category and no profile moves — the profiles are landmarks that
  * were used to pick a round number, not inputs. Re-cutting the ladder because a landmark moved would

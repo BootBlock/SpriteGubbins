@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categoryProseFor, everySheetOf } from '../../test/categoryProse.ts';
+import { categoryProseFor } from '../../test/categoryProse.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { SCALE_UNIT_TEXT } from './subject.ts';
 
@@ -52,10 +52,10 @@ describe('SCALE_UNIT_TEXT', () => {
     }
   });
 
-  it('gives each unit a leading article, so it reads in all three of the frames that carry it', () => {
-    // The phrase completes "… occupies 25–35% of the sheet height", "… occupies 50–65% of its cell
-    // height in the exploded grid" and "… is roughly 64–96 pixels tall", so it is a singular noun
-    // phrase carrying its own article and nothing else — no leading capital, no trailing stop.
+  it('gives each unit a leading article, so it reads in both sentences that carry it', () => {
+    // The phrase completes "… is roughly 64–96 pixels tall" and "… at the share of a full figure it
+    // occupies", so it is a singular noun phrase carrying its own article and nothing else — no
+    // leading capital, no trailing stop.
     for (const category of SUBJECT_CATEGORIES) {
       const unit = SCALE_UNIT_TEXT[category];
       expect(unit, category).toMatch(/^(a|an|one|the) [a-z]/);
@@ -66,35 +66,5 @@ describe('SCALE_UNIT_TEXT', () => {
   it('gives no two categories the same unit, which would be one of them priced in the other’s words', () => {
     const units = SUBJECT_CATEGORIES.map((category) => SCALE_UNIT_TEXT[category]);
     expect(new Set(units).size).toBe(units.length);
-  });
-});
-
-/**
- * Which frame the share-bearing profiles state their range in, against the unit that range names.
- *
- * The frame is `SheetPlan.scaleUnitFrame` and is answered sheet by sheet, so which side a given
- * sheet belongs on is pinned in `utils/sheetPlans.test.ts` — a written-out table, because an
- * expectation derived from the plans could not pin it. What belongs *here* is the one thing the two
- * records say about each other: a unit worded as a whole the sheet never draws cannot be given a
- * cell in that sheet's grid.
- */
-describe('the scale unit against the frame it is measured in', () => {
-  it('never charges a cell to a unit whose own name says the sheet does not draw it', () => {
-    // One direction only, and deliberately. `a full X` is how the six whole-subject categories are
-    // worded today, and a unit spelled that way names the thing sections 4, 8 and 9 each ban from
-    // the page — so no sheet of that category can give it a cell. The converse is not a rule and is
-    // where the interesting cases are: INTERFACE and BACKGROUND each take the sheet frame on one
-    // plan with no `a full` in sight, because that plan makes the unit a whole its components
-    // assemble into. That is a question about the plans, not about the phrasing, which is why the
-    // field decides it rather than a word test.
-    for (const category of SUBJECT_CATEGORIES) {
-      const unit = SCALE_UNIT_TEXT[category];
-      if (!unit.startsWith('a full ')) continue;
-      for (const plan of everySheetOf(category)) {
-        expect(plan.scaleUnitFrame, `${category} / ${plan.name}: “${unit}” is never on the page`).toBe(
-          'SHEET',
-        );
-      }
-    }
   });
 });

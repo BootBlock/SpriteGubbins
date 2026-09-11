@@ -49,7 +49,6 @@ export const CREATURE_POSE_LIBRARY: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // Eight fore and nine hind variants a side: one limb segment per orientation it is drawn at.
   posing: 'PER_POSITION',
-  scaleUnitFrame: 'SHEET',
   scaleExample: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
   groups: [
     {
@@ -146,7 +145,6 @@ function creatureDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTupl
     targetQuantity: 'ASSEMBLED',
     // One head, one body and one hindquarters, repeated across yaws — the camera turning, not the trunk.
     posing: 'UNSTATED',
-    scaleUnitFrame: 'SHEET',
     scaleExample: 'a head drawn beside the body it joins is in proportion to it',
     groups: [
       {
@@ -239,9 +237,7 @@ export const CREATURE_ARTICULATION: SheetPlan = {
   assembly: `the limbs of ${CREATURE_GAITS} — each fitted to the trunk drawn on the directional core sheets, one facing per sheet.`,
   targetQuantity: 'ASSEMBLED',
   // The creature spelling of the character articulation run, and posed for the same reason.
-  posing: 'PER_POSITION',
-  scaleUnitFrame: 'SHEET',
-  // A claw rather than the pose library's `foot or claw`, because this sheet writes `Feet or
+  posing: 'PER_POSITION', // A claw rather than the pose library's `foot or claw`, because this sheet writes `Feet or
   // claws` and the singular `foot` appears nowhere on it.
   scaleExample: 'a claw drawn beside an upper limb is in proportion to it',
   groups: [
@@ -310,7 +306,6 @@ export const CREATURE_CUTOUT_RIG: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
   posing: 'AT_REST',
-  scaleUnitFrame: 'SHEET',
   scaleExample: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
   groups: [
     {

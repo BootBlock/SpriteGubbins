@@ -1,44 +1,42 @@
 import type { SubjectCategory } from '../../types/subject.ts';
 
 /**
- * The unit section 2's resolution profile prices the sheet in, per category.
+ * The unit section 2's `RETRO_16_BIT` profile states its height of, per category — and the whole
+ * `CUSTOM` draws every component at its share of, on a sheet whose stated size is the assembly.
  *
- * The three profiles that *are* a scale each state it against a reference — "25–35% of the sheet
- * height", "roughly 64–96 pixels tall" — and the thing being measured was written once, for a
- * character, and read by all thirteen. A FONT sheet of twenty-six glyphs, a TERRAIN blend set of
- * twenty-three tiles and an INTERFACE state library of twenty-three widgets were each told that
- * "a full figure occupies 25–35% of the sheet height", which is an instruction with no referent on
- * any of them. This is the same defect `SheetPlan.scaleExample` removed from section 0's worked
- * example and `[DEFINE:*_LABEL]` removed from section 1's field names, each label being filled from
- * the category's own field definitions for the same reason.
+ * The profiles that *are* a scale each stated it of a reference — "25–35% of the sheet height",
+ * "roughly 64–96 pixels tall" — and the thing being measured was written once, for a character, and
+ * read by all thirteen. A FONT sheet of twenty-six glyphs, a TERRAIN blend set of twenty-three tiles
+ * and an INTERFACE state library of twenty-three widgets were each told that "a full figure occupies
+ * 25–35% of the sheet height", which is an instruction with no referent on any of them. This is the
+ * same defect `SheetPlan.scaleExample` removed from section 0's worked example and `[DEFINE:*_LABEL]`
+ * removed from section 1's field names, each label being filled from the category's own field
+ * definitions for the same reason.
  *
- * **The noun is the category's and the range is the profile's, but the *frame* that range is stated
- * against belongs to neither** — it is `SheetPlan.scaleUnitFrame`'s answer, and stating it against
- * the sheet height on all thirteen is the defect that field removes. `RESOLUTION_PROFILE_CHOICES` used
- * to put the range in the option's own label, which is why the first pass at this map left both
- * ranges where they were; the label states the rung rather than a number now, precisely because
- * there are two of each and a label cannot state one of them without lying about the other.
+ * **The two share rungs no longer take a unit.** They state a share of the largest component's own
+ * cell in the exploded grid, which is a piece every sheet has without a noun for it — and on the six
+ * categories below that take `a full X`, this noun is a whole the sheet draws only in pieces, with no
+ * cell of its own to be a share of. `shareText` in `renderStyle.ts` records why a share of the sheet
+ * height of that whole failed as well: the layout decided it, on every character sheet issue #245
+ * measured.
  *
  * **One unit per category rather than one per sheet plan, and the batch is why.** A profile is
  * chosen once and every sheet of a deliverable is generated under it, so a unit that changed between
- * a category's plans would price sheet one against a wall bay and sheet two against a floor tile —
+ * a category's plans would state sheet one's height of a wall bay and sheet two's of a floor tile —
  * two scales for one building, which is exactly the disagreement section 0's rule exists to stop.
  * `SheetPlan.targetQuantity` is per plan and is a different question: it asks whether the whole the
  * components assemble into has one definite size, which is what a reader's *stated* size names.
- * `SheetPlan.scaleUnitFrame` is per plan too, and the batch argument above does not reach it: a
- * series is one (category, mode) pairing, so two plans of one category can only be framed
- * differently where a reader would have to choose a different mode to meet the second.
  *
  * **The six categories whose components are parts of one subject take `a full X`**, which is
  * CHARACTER's own shipped wording and not a form chosen fresh. The alternative, `the whole X`, echoes
  * the exclusion those categories already carry — "The vehicle itself, whole or partly built" — and a
  * scale reference that reads back as the prohibition beside it is the collision BACKGROUND's entry
- * below records at its worst. What every one of them names is a whole the sheet is forbidden to draw,
- * which is the point: a reference nothing on the page *is* cannot argue with the component count.
+ * below records at its worst. What every one of them names is a whole the sheet is forbidden to draw.
+ * A height in pixels of that whole fixes how large its pieces are without fixing how the page is laid
+ * out, which a share of the sheet height could not do.
  *
- * Each entry is a singular noun phrase carrying its own article, so it reads in all three frames —
- * "… occupies 25–35% of the sheet height", "… occupies 50–65% of its cell height in the exploded
- * grid" and "… is roughly 64–96 pixels tall".
+ * Each entry is a singular noun phrase carrying its own article, so it reads in both sentences that
+ * carry it — "… is roughly 64–96 pixels tall" and "… at the share of a full figure it occupies".
  */
 export const SCALE_UNIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   CHARACTER: 'a full figure',
@@ -68,8 +66,7 @@ export const SCALE_UNIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // against a crop the subject may not have asked for.
   PORTRAIT: 'one portrait',
   ICON: 'one icon',
-  // The band rather than the scene those bands stack into, though the two plans price differently —
-  // the parallax set states a band and the layer library the assembled backdrop.
+  // The band rather than the scene those bands stack into.
   // `the finished scene` is this category's own name for the thing sections 4, 8 and 9 each forbid
   // drawing, word for word, so section 2 measuring the sheet against it by name is the one place in
   // the thirteen where the unit and the prohibition are the same string. Section 0's example for
