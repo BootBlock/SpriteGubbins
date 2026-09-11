@@ -609,13 +609,13 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * not to expect it, and the budget's card states what the Quantise tab reduces a sheet to under each
  * budget, reading the figures from `PALETTE_COLOR_COUNTS` rather than typing them out. Measured
  * against `main` at `87e1170`, rebuilt from the same `node_modules` — **2362.10 KiB across 64
- * entries** — this build reports **2363.00 across 64**, a delta of 0.90 that crossed a ceiling the
+ * entries** — this build reports **2363.06 across 64**, a delta of 0.96 that crossed a ceiling the
  * base sat 0.90 under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was
  * renamed. It is guidance prose, constant data the entry chunk reaches, on the footing every raise
  * above stands on; the docblock beside `PALETTE_TEXT` that argues for leaving the prompt alone is
  * stripped from the bundle.
  *
- * 2364 leaves **1.00 KiB**, the order of the 0.74 and 0.94 the notes above leave, and deliberately
+ * 2364 leaves **0.94 KiB**, the order of the 0.74 and 0.94 the notes above leave, and deliberately
  * no wider for the reason each of them gives.
  */
 export const PRECACHE_CEILING_KIB = 2364;
