@@ -46,8 +46,13 @@ import { CATEGORY_GUARD_TEXT } from './exclusions.ts';
  * **The clause is found by the category's own sentence rather than by a copy of its words**, which is
  * what `landmarks.test.ts` does with the same record. This suite prices length, and a rewording that
  * moved the detection out from under it would pass on having measured nothing; the wording itself is
- * pinned in `utils/sheetPlans.test.ts`. The audit's half is gated on the same value as the guard's,
- * so on a target that reaches section 9 it is in every prompt measured here as well.
+ * pinned in `utils/sheetPlans.test.ts`.
+ *
+ * **Only the guard's half is priced against a ceiling that binds.** The audit's half is gated on the
+ * same value, but it reaches only a target that deliberates, and every such target measured today has
+ * a ceiling far past anything the app composes — so an audit-only regression cannot fail here yet.
+ * Nothing in this file exempts it: a deliberating target with a tight ceiling would be measured, audit
+ * clause included, the moment its ceiling held some of the library.
  */
 
 /** The field whose pieces the exemption names. */

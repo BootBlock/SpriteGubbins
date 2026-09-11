@@ -201,16 +201,23 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
  * `additional_anatomy` at `NONE` this clause is not in that prompt at all, and the figures above are
  * a record of what was measured rather than a check that still runs.
  *
- * **`guardExemptionBudget.test.ts` measures both clauses directly instead** (issue #249), because a
+ * **`guardExemptionBudget.test.ts` measures this clause directly instead** (issue #249), because a
  * preset was only ever an accidental proxy for a constraint about this wording against a ceiling. It
  * compiles every configuration the app composes unprompted with each option its category's pool
  * offers for the field, against every target whose ceiling holds some of the library, and holds the
  * leanest prompt carrying the exemption to the same `MAX_BUDGET_SHARE` allowance. When it was
- * written that was `Side-On Attack Gunship` with `Winch Drum ×1`, at 3,265 of Qwen's 3,600 — and on
- * a target that reaches section 9, the audit clause is in every prompt it measures, which that card
- * never priced. **What it does not do is price this wording to the token.** A clause that grew by
- * the twenty-eight tokens the first draft's tail cost passes, deliberately: the slack is what stops
- * the next wording change being sized against a card, and what fails is growth past it.
+ * written that was `Side-On Attack Gunship` with `Winch Drum ×1`, at 3,265 of Qwen's 3,600.
+ * **What it does not do is price this wording to the token.** A clause that grew by the
+ * twenty-eight tokens the first draft's tail cost passes, deliberately: the slack is what stops the
+ * next wording change being sized against a card, and what fails is growth past it.
+ *
+ * **The audit clause below is not priced by that test in any sense that could fail**, and the reason
+ * is the targets rather than the test. It reaches section 9 only on a target that deliberates, and
+ * every such target the test measures today has a ceiling of 65,536 tokens or more — Gemini Pro's
+ * allowance is 52,428, far past anything the app composes — while every tight measured ceiling
+ * belongs to a target that does not deliberate. The test finds its targets by measurement, so a
+ * deliberating target with a tight ceiling would bring the audit clause under the same allowance the
+ * day it was added; until then no ceiling is close enough for this clause's length to reach it.
  */
 const guardExemption = (label: string | null): string =>
   label === null ? '' : `, apart from the pieces named under ${label}`;

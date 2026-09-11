@@ -13,9 +13,11 @@
  * that gap is closed: it measures the whole library against every ceiling, so a claim about a target
  * nobody wrote a preset for is checked anyway.
  *
- * In `src/test/` because it is test support with two consumers — `constants/models.test.ts`, which
- * holds the descriptions to it, and `constants/presets/presetCoverage.test.ts`, which decides from
- * it which targets the library owes a worked example.
+ * In `src/test/` because it is test support with three consumers — `constants/models.test.ts`, which
+ * holds the descriptions to it, `constants/presets/presetCoverage.test.ts`, which decides from it
+ * which targets the library owes a worked example, and
+ * `constants/promptText/guardExemptionBudget.test.ts`, which decides from it which ceilings the
+ * exemption for a subject's own pieces is priced against.
  */
 
 import type { PromptBudgetFigure, TargetModelId } from '../types/output.ts';
@@ -71,9 +73,10 @@ const LIBRARY_PROMPTS: readonly string[] = LIBRARY_CONFIGURATIONS.map(({ categor
  * target has none to measure against.
  *
  * **A ceiling only, never a guidance figure**, which is the one place these two measure differently
- * from the studio's notice. What this reading decides is what a description may claim about fitting
- * and which targets the preset library owes a worked example — both of them claims about the prompt
- * *arriving*, which is what a ceiling is about and what advice is not. Seedream's 600 words would
+ * from the studio's notice. What this reading decides is what a description may claim about fitting,
+ * which targets the preset library owes a worked example, and which ceilings the exemption for a
+ * subject's own pieces has to fit inside — all three of them claims about the prompt *arriving*,
+ * which is what a ceiling is about and what advice is not. Seedream's 600 words would
  * otherwise put every prompt this app composes at `NONE` and take the five presets naming it out of
  * the library, on the strength of a figure past which ByteDance still read the whole brief.
  *
