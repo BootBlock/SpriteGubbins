@@ -12,7 +12,7 @@ import type { ResolutionProfile, TargetSize } from '../../types/output.ts';
  * because the other three profiles *are* a scale and state their own figure — and the coarsest of
  * those, `RETRO_16_BIT` at roughly 64–96 pixels per unit drawn, is well past sprite scale, so none
  * of them can ever need these bullets. (*Per unit drawn* rather than *per figure*: which noun that
- * range is stated against is the category's, from `SCALE_UNIT_TEXT`, and the range itself is what
+ * range is stated against is the sheet's, from `SheetPlan.scaleUnit`, and the range itself is what
  * this gate reasons from.)
  *
  * **The size arrives resolved, from `componentTargetSize`.** These bullets are about how one

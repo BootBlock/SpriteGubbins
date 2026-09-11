@@ -32,8 +32,9 @@ export function describeHardware(profile: HardwareProfile): string {
  * than null colours" would be worse than saying nothing.
  *
  * **The background field is excluded throughout**, because it has to be: section 0 fixes it as the
- * key colour, and the recommended magenta is in none of these palettes. Every sentence here is about
- * the components.
+ * key colour, whether or not the palette happens to hold that colour. Several do — the ZX Spectrum's
+ * bright magenta is the recommended key exactly, and every channel-depth ladder runs from 0 to 255 in
+ * each channel, so each of those spaces reaches it too. Every sentence here is about the components.
  */
 export function describePalette(palette: Palette): string {
   const parts = [rule(palette), ...limits(palette), palette.note];

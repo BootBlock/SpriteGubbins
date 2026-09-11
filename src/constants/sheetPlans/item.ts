@@ -43,6 +43,7 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
   // The working end is drawn in two states, and the consumable part full and depleted.
   posing: 'PER_POSITION',
   scaleExample: 'a pommel drawn beside the body or shaft it caps is in proportion to it',
+  scaleUnit: 'a full item',
   groups: [
     {
       heading: null,
@@ -94,6 +95,7 @@ function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
     // No pommel on this sheet — the fittings stay on the part library — so the guard is the
     // smallest piece the directional views actually draw.
     scaleExample: 'a guard drawn beside the shaft it sits on is in proportion to it',
+    scaleUnit: 'a full item',
     groups: [
       {
         heading: 'Directional core',

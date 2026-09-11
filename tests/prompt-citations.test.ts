@@ -4,6 +4,7 @@ import { PALETTES } from '../src/constants/palettes/index.ts';
 import * as promptText from '../src/constants/promptText/index.ts';
 import { PROMPT_TEMPLATE } from '../src/constants/promptTemplate.ts';
 import { SHEET_INDEX_RANGE, sheetPlanFor } from '../src/constants/sheetPlans/index.ts';
+import type { SheetPlan } from '../src/types/components.ts';
 import { DIRECTIONAL_MODES, DIRECTION_SETS, RESOLUTION_PROFILES } from '../src/types/output.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 
@@ -45,29 +46,39 @@ const HAND_WRITTEN = /\bsections? \d/i;
  */
 const FEWEST_STRINGS = { plans: 1000, records: 100, composed: 10 } as const;
 
-/** Every piece of prose the sheet plans contribute, over every address a configuration can name. */
-function planProse(): readonly string[] {
-  const prose: string[] = [];
+/** The sheet at every address a configuration can name, once per address. */
+function addressedPlans(): readonly SheetPlan[] {
+  const plans: SheetPlan[] = [];
 
   for (const category of SUBJECT_CATEGORIES) {
     for (const directionalMode of DIRECTIONAL_MODES) {
       for (const directions of DIRECTION_SETS) {
         for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
-          const plan = sheetPlanFor(category, directionalMode, directions, sheetIndex);
-          // `scaleExample` is walked here for the reason the whole file exists: section 0
-          // interpolates it verbatim, so a section number written into one would reach the model.
-          // It arrived on the plan from `promptText/subject.ts`, where the barrel walk below already
-          // covered it — moving a string from one of these two sources to the other has to move it
-          // between the walks in the same edit, or thirty-two strings leave the check silently.
-          prose.push(plan.name, plan.assembly, plan.scaleExample);
-          for (const group of plan.groups) {
-            if (group.heading !== null) prose.push(group.heading);
-            if (group.intro !== undefined) prose.push(group.intro);
-            if (group.outro !== undefined) prose.push(group.outro);
-            prose.push(...group.entries.map((entry) => entry.text));
-          }
+          plans.push(sheetPlanFor(category, directionalMode, directions, sheetIndex));
         }
       }
+    }
+  }
+
+  return plans;
+}
+
+/** Every piece of prose the sheet plans contribute, over every address a configuration can name. */
+function planProse(): readonly string[] {
+  const prose: string[] = [];
+
+  for (const plan of addressedPlans()) {
+    // `scaleExample` and `scaleUnit` are walked here for the reason the whole file exists: sections
+    // 0 and 2 interpolate them verbatim, so a section number written into one would reach the model.
+    // Each arrived on the plan from `constants/promptText/`, where the barrel walk below already
+    // covered it — moving a string from one of these two sources to the other has to move it between
+    // the walks in the same edit, or the strings leave the check silently.
+    prose.push(plan.name, plan.assembly, plan.scaleExample, plan.scaleUnit);
+    for (const group of plan.groups) {
+      if (group.heading !== null) prose.push(group.heading);
+      if (group.intro !== undefined) prose.push(group.intro);
+      if (group.outro !== undefined) prose.push(group.outro);
+      prose.push(...group.entries.map((entry) => entry.text));
     }
   }
 
@@ -100,13 +111,14 @@ function recordProse(): readonly string[] {
  * machine adds, and the resolution profile.
  *
  * The profile joined this list when its map stopped being strings. `RESOLUTION_PROFILE_TEXT` is now
- * keyed by profile onto a *function* of the category's own scale unit, and `recordProse` above skips
- * a function by design — so all four of its sentences, and `CUSTOM`'s assembled wording, left this
+ * keyed by profile onto a *function* of the sheet's own scale unit, and `recordProse` above skips a
+ * function by design — so all four of its sentences, and `CUSTOM`'s assembled wording, left this
  * walk without anything failing. `resolutionProfileDescription` is the composer that puts them back,
- * driven over every category and both answers to *does the stated size name the assembly*, which is
- * the whole space the two branches of that function cover.
+ * driven over every unit a plan states and both answers to *does the stated size name the assembly*,
+ * which is the whole space the two branches of that function cover.
  */
 function composedProse(): readonly string[] {
+  const units = new Set(addressedPlans().map((plan) => plan.scaleUnit));
   return [
     ...Object.values(PALETTES).flatMap((palette) =>
       palette === null ? [] : [promptText.describePalette(palette)],
@@ -114,10 +126,10 @@ function composedProse(): readonly string[] {
     ...Object.values(HARDWARE_PROFILES).flatMap((profile) =>
       profile === null ? [] : [promptText.describeHardware(profile)],
     ),
-    ...SUBJECT_CATEGORIES.flatMap((category) =>
+    ...[...units].flatMap((unit) =>
       RESOLUTION_PROFILES.flatMap((profile) =>
         [true, false].map((statesAssembled) =>
-          promptText.resolutionProfileDescription(profile, statesAssembled, category),
+          promptText.resolutionProfileDescription(profile, statesAssembled, unit),
         ),
       ),
     ),

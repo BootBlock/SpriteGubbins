@@ -403,6 +403,50 @@ export interface SheetPlan {
    * with no trailing stop.
    */
   readonly scaleExample: string;
+  /**
+   * What section 2's `RETRO_16_BIT` profile states the height of on this sheet — "… is roughly 64–96
+   * pixels tall".
+   *
+   * The profile was written once, for a character, and read by all thirteen categories: a FONT sheet
+   * of twenty-six glyphs and a TERRAIN blend set of twenty-three tiles were each told the height of a
+   * full figure, which is an instruction with no referent on either. That is the defect
+   * {@link SheetPlan.scaleExample} removed from section 0.
+   *
+   * **The sheet's rather than the category's, and BACKGROUND is why** (issue #275). The unit was held
+   * per category, and BACKGROUND has no noun true of both of its sheets: its parallax set draws nine
+   * bands and its layer library draws none, so `one parallax band` measured a panel with no band on
+   * it. No piece is safe on both either — the focal landmark is on each inventory, and the *Focal
+   * Landmark* field offers `No Landmark — Fully Repeatable`.
+   *
+   * **One answer per series, which is the half of the old argument that still holds.** A profile is
+   * chosen once and every sheet of a series is generated under it, so a unit that changed between the
+   * sheets of one deliverable would state sheet one's height of a wall bay and sheet two's of a floor
+   * tile — two scales for one building, which is exactly the disagreement section 0's rule exists to
+   * stop. A series is one (category, mode) pairing and a batch never spans two modes, so two sheets
+   * that can never share a batch are free to name different units. `sheetPlans.test.ts` holds both
+   * halves: every sheet of a series names the same unit, and every word of that unit is written
+   * somewhere in the series' own sheets or in the category's selector label — the label being the only
+   * place `creature` and `building` are written, as `sheetsProseFor` in `src/test/categoryProse.ts`
+   * records. That is also why a unit need not be drawn on *this* sheet — FONT's lower-case sheet is
+   * set against the cap height its capitals sheet draws.
+   *
+   * **The six categories whose components are parts of one subject take `a full X`**, which is
+   * CHARACTER's own shipped wording and not a form chosen fresh. The alternative, `the whole X`, echoes
+   * the exclusion those categories already carry — "The vehicle itself, whole or partly built" — and a
+   * scale reference that reads back as the prohibition beside it is the collision
+   * `the finished scene` would have been for BACKGROUND, whose sections 4, 8 and 9 each forbid drawing
+   * it by that name. A height in pixels of the whole fixes how large its pieces are without fixing how
+   * the page is laid out.
+   *
+   * **Neither share rung takes it**, for the reason `shareText` in `promptText/renderStyle.ts` records,
+   * and **nor does `CUSTOM`**: its assembled wording points at the stated size, which names the
+   * assembly on every sheet that reaches it, and the layer library is the sheet where that assembly
+   * (a screen) and this unit (a piece of one) part company.
+   *
+   * It completes "… is roughly 64–96 pixels tall", so it is a singular noun phrase carrying its own
+   * article, with no leading capital and no trailing stop.
+   */
+  readonly scaleUnit: string;
 }
 
 /**

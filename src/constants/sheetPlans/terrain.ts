@@ -155,6 +155,7 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
   // transition, which reads as two materials drawn at two scales.
   scaleExample:
     'one base material tile and the transition tile beside it are drawn at the same size, their surface scatter at one grain throughout',
+  scaleUnit: 'one ground tile',
   groups: [
     {
       heading: null,
@@ -204,6 +205,9 @@ export const TERRAIN_FEATURE_LIBRARY: SheetPlan = {
   // The one TERRAIN sheet that does hold a pair: the loose features stand on the elevation edge,
   // and a boulder larger than the lip it sits on is the failure this example names.
   scaleExample: 'a boulder drawn beside the lip it stands on is in proportion to it',
+  // The blend set's unit, although this sheet draws a lip, a face and a foot rather than a flat tile:
+  // each of those is a tile of the same ground, and the boulder above is placed on one.
+  scaleUnit: 'one ground tile',
   groups: [
     {
       heading: 'Elevation edge',

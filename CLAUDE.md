@@ -1122,7 +1122,10 @@ below was bought with one of those.
 
 - **Where the words live.** The template skeleton is `src/constants/promptTemplate.ts` (mirrored
   verbatim into `docs/todo/baseline-prompt-new.md` §3 — a test compares them character for
-  character, so change both in one commit). Per-option prose lives in `src/constants/promptText/`
+  character, so change both in one commit — and its §1 and §2, which describe the placeholder forms
+  and the parameters, are read back against the code by the `tests/baseline-prompt-*.test.ts`
+  suites, so a new gate, option value or library field can fail there too). Per-option prose lives
+  in `src/constants/promptText/`
   (`[DEFINE:FOO_DESCRIPTION]` is filled from `FOO_TEXT`; a test walks the pairing). What a sheet
   *contains* lives in `src/constants/sheetPlans/`, keyed by category **and** mode. Per-target
   wrappers live in `utils/modelWrapperText/`, one file per target, and every wrapper line must trace

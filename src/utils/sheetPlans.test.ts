@@ -24,7 +24,7 @@ import {
   DIRECTION_LISTS,
   OBJECT_YAW,
 } from '../constants/promptText/index.ts';
-import { everySheetOf, planProseFor } from '../test/categoryProse.ts';
+import { everySeriesOf, everySheetOf, planProseFor, sheetsProseFor } from '../test/categoryProse.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
@@ -415,6 +415,22 @@ function scaleExamplePieces(example: string): readonly string[] {
   return [];
 }
 
+/**
+ * The sheet as the reader who declines gets it — every entry an `absentOption` can take away
+ * already removed.
+ *
+ * A plan's entries are unconditional except for the ones drawing what its `clothing` pool offers
+ * an absence of, and BACKGROUND's absence is its own *default*: a reader who touches nothing gets
+ * a layer library with no atmosphere veil, no light shaft and no drifting particle. So the plan as
+ * declared is the wrong corpus — a word naming a light shaft grounds against the plan and is absent
+ * from the section 4 the default subject actually compiles, which is the same
+ * prompt-disagrees-with-itself defect one field over. The leanest sheet is the only one every
+ * reader receives, so it is what section 0's example and section 2's unit have to be true of.
+ */
+function leanestSheet(category: SubjectCategory, plan: SheetPlan): SheetPlan {
+  return planAsDrawn(plan, category, absentOptionFor(category, 'clothing') ?? '');
+}
+
 describe('section 0’s scale example names pieces the sheet in front of the reader draws', () => {
   /**
    * Every distinct sheet the app can compile, once each.
@@ -435,22 +451,6 @@ describe('section 0’s scale example names pieces the sheet in front of the rea
       }
     }
     return sheets;
-  }
-
-  /**
-   * The sheet as the reader who declines gets it — every entry an `absentOption` can take away
-   * already removed.
-   *
-   * A plan's entries are unconditional except for the ones drawing what its `clothing` pool offers
-   * an absence of, and BACKGROUND's absence is its own *default*: a reader who touches nothing gets
-   * a layer library with no atmosphere veil, no light shaft and no drifting particle. So the plan as
-   * declared is the wrong corpus — an example naming a light shaft grounds against the plan and is
-   * absent from the section 4 the default subject actually compiles, which is the same
-   * prompt-disagrees-with-itself defect one field over. The leanest sheet is the only one every
-   * reader receives, so it is what the example has to be true of.
-   */
-  function leanestSheet(category: SubjectCategory, plan: SheetPlan): SheetPlan {
-    return planAsDrawn(plan, category, absentOptionFor(category, 'clothing') ?? '');
   }
 
   it('grounds every piece it names in that sheet’s own inventory', () => {
@@ -514,6 +514,109 @@ describe('section 0’s scale example names pieces the sheet in front of the rea
         category,
       );
       owners.set(plan.scaleExample, category);
+    }
+  });
+});
+
+/**
+ * Section 2's scale unit — what `RETRO_16_BIT` states a height of — and the granularity it is allowed.
+ *
+ * It was one noun per category, and BACKGROUND's was `one parallax band` on the layer library, a
+ * sheet that draws a finished panel and no band (issue #275). The category corpus could not see that,
+ * because the parallax set writes “band” nine times and the two plans were read as one. A *series* is
+ * the finest granularity the unit can be grounded at: FONT's lower-case sheet draws no capital and is
+ * set against the cap height its own series' capitals sheet draws.
+ */
+describe('section 2’s scale unit is a noun the series in front of the reader writes', () => {
+  /**
+   * The words of the unit phrase that have to be grounded — everything but the articles and the
+   * quantifiers, which are the sentence's own scaffolding rather than the sheet's vocabulary.
+   */
+  const UNIT_SCAFFOLDING = new Set(['a', 'an', 'one', 'the', 'of', 'full', 'whole']);
+
+  /**
+   * What the sheet *is*, as opposed to what is on it.
+   *
+   * A unit is a thing the sheet draws or the subject it draws parts of, never the surface itself — and
+   * every one of these words is written all over the plans, so the grounding check would pass a unit
+   * reading `the whole sheet` without noticing. It is a rule rather than a list of rejected values:
+   * the three nouns are the app's own names for the delivered image, from the template's `sheet`, the
+   * aspect wording's `canvas` and `page`.
+   */
+  const THE_SURFACE = new Set(['sheet', 'canvas', 'page']);
+
+  it('names one unit on every sheet of a series, because one profile is chosen for all of them', () => {
+    // Every direction set, because the set decides how many sheets a series holds — an eight-compass
+    // core is two sheets and an articulation sheet, and a unit written into one half of a generated
+    // pair would be invisible to a check that only read the first.
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const series of everySeriesOf(category)) {
+        const units = new Set(series.map((plan) => plan.scaleUnit));
+        expect([...units], `${category} / ${series.map((plan) => plan.name).join(', ')}`).toHaveLength(1);
+      }
+    }
+  });
+
+  it('grounds every series’ unit in that series’ own sheets and the category’s label', () => {
+    // The label is in the corpus because `creature` and `building` are written nowhere else — see
+    // `sheetsProseFor`. It cannot hide the defect this test is for: BACKGROUND's label is
+    // `Background / Parallax Layer`, which grounds “parallax” and not “band”.
+    //
+    // Matched with a leading boundary only, so a plan writing the plural — `tiles`, `widgets` — still
+    // grounds the singular the phrase is stated in.
+    //
+    // **FONT is the one category this cannot hold on its own, and the reason is worth knowing**: its
+    // digit sheet writes "a column of figures", so `figure` grounds there in the *numeric* sense and
+    // the old flat wording would survive this check on the very category it was reported against. No
+    // word test can tell those two senses apart; what holds FONT is the literal assertion on the
+    // compiled line in `promptCompiler.test.ts`, which names the sentence rather than the plan.
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const series of everySeriesOf(category)) {
+        const [unit] = new Set(series.map((plan) => plan.scaleUnit));
+        const where = `${category} / ${series.map((plan) => plan.name).join(', ')}`;
+        const prose = sheetsProseFor(
+          category,
+          series.map((plan) => leanestSheet(category, plan)),
+        );
+        const nouns = (unit ?? '').split(' ').filter((word) => !UNIT_SCAFFOLDING.has(word));
+        // Without this the loop below asserts nothing on a unit built only of scaffolding — `the
+        // whole` is two words and no noun, and would pass silently.
+        expect(nouns.length, `${where}: the unit is all scaffolding and names nothing`).toBeGreaterThan(0);
+
+        for (const noun of nouns) {
+          expect(THE_SURFACE.has(noun), `${where}: “${noun}” is the sheet, not a thing on it`).toBe(false);
+          // `String.raw`, because a plain template literal reads \b as a backspace: the regex then
+          // matches nothing and every series fails at once, which is loud but for the wrong reason.
+          const grounded = new RegExp(String.raw`\b${noun}`, 'i').test(prose);
+          expect(grounded, `${where}: “${noun}” is a word this series never writes`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('gives each unit a leading article, so it completes the sentence that carries it', () => {
+    // The phrase completes "… is roughly 64–96 pixels tall", so it is a singular noun phrase carrying
+    // its own article and nothing else — no leading capital, no trailing stop.
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const plan of everySheetOf(category)) {
+        expect(plan.scaleUnit, `${category} / ${plan.name}`).toMatch(/^(a|an|one|the) [a-z]/);
+        expect(plan.scaleUnit.endsWith('.'), `${category} / ${plan.name}`).toBe(false);
+      }
+    }
+  });
+
+  it('gives no two categories the same unit, which would be one of them priced in the other’s words', () => {
+    // Deliberately not per *sheet*: a category's own modes may honestly share a unit, and all but
+    // BACKGROUND's do.
+    const owners = new Map<string, SubjectCategory>();
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const plan of everySheetOf(category)) {
+        const owner = owners.get(plan.scaleUnit);
+        expect(owner ?? category, `“${plan.scaleUnit}” is shared by ${String(owner)} and ${category}`).toBe(
+          category,
+        );
+        owners.set(plan.scaleUnit, category);
+      }
     }
   });
 });
