@@ -237,7 +237,8 @@ export const CREATURE_ARTICULATION: SheetPlan = {
   assembly: `the limbs of ${CREATURE_GAITS} — each fitted to the trunk drawn on the directional core sheets, one facing per sheet.`,
   targetQuantity: 'ASSEMBLED',
   // The creature spelling of the character articulation run, and posed for the same reason.
-  posing: 'PER_POSITION', // A claw rather than the pose library's `foot or claw`, because this sheet writes `Feet or
+  posing: 'PER_POSITION',
+  // A claw rather than the pose library's `foot or claw`, because this sheet writes `Feet or
   // claws` and the singular `foot` appears nowhere on it.
   scaleExample: 'a claw drawn beside an upper limb is in proportion to it',
   groups: [

@@ -28,7 +28,8 @@ export const BUILDING_TILESET: SheetPlan = {
     'a continuous floor field, a straight wall run, and both outer and inner corners, with no visible join where tiles meet.',
   targetQuantity: 'COMPONENT',
   // Every tile is a different tile: the floor variants differ in scatter, and the corners in which corner they turn.
-  posing: 'UNSTATED', // Neither piece the module library pairs is on a tile set, so the pair is drawn from the two
+  posing: 'UNSTATED',
+  // Neither piece the module library pairs is on a tile set, so the pair is drawn from the two
   // materials this sheet does hold. Tiles are one cell each by construction; what can still go
   // wrong is the masonry on a face reading larger than the boards on the floor beside it.
   scaleExample: 'a wall face drawn beside the floor tile it rises from is in proportion to it',
@@ -163,7 +164,8 @@ function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTup
       'the complete structure seen from each facing, with its module courses aligning across those views.',
     targetQuantity: 'COMPONENT',
     // A yaw is the camera turning rather than the bay moving, so the repeated entries are views.
-    posing: 'UNSTATED', // The façade fittings stay on the module library, so the awning that sheet pairs has no entry
+    posing: 'UNSTATED',
+    // The façade fittings stay on the module library, so the awning that sheet pairs has no entry
     // here; the corner post is the smallest piece these views draw.
     scaleExample: 'a corner post drawn beside the wall bay it finishes is in proportion to it',
     groups: [

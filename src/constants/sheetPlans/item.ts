@@ -90,7 +90,8 @@ function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
       'the complete item seen from each facing, reading as one object turned rather than several drawings of it.',
     targetQuantity: 'ASSEMBLED',
     // A yaw is the camera turning rather than the item moving, so the repeated entries are views.
-    posing: 'UNSTATED', // No pommel on this sheet — the fittings stay on the part library — so the guard is the
+    posing: 'UNSTATED',
+    // No pommel on this sheet — the fittings stay on the part library — so the guard is the
     // smallest piece the directional views actually draw.
     scaleExample: 'a guard drawn beside the shaft it sits on is in proportion to it',
     groups: [

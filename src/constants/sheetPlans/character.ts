@@ -244,7 +244,8 @@ export const CHARACTER_ARTICULATION: SheetPlan = {
   assembly: `the limbs of ${CHARACTER_POSES} — each fitted to the trunk drawn on the directional core sheets, one facing per sheet.`,
   targetQuantity: 'ASSEMBLED',
   // The same thirty-four orientations as the pose library's limbs, which is what this sheet is.
-  posing: 'PER_POSITION', // The pair the trunk sheets cannot state and this one can: no torso is drawn here, and the
+  posing: 'PER_POSITION',
+  // The pair the trunk sheets cannot state and this one can: no torso is drawn here, and the
   // largest piece on the page is an upper leg.
   scaleExample: 'a hand drawn beside an upper leg is in proportion to it',
   groups: [
