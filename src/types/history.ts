@@ -26,8 +26,8 @@ export interface PromptHistoryLog {
    * rendering of these two, and no amount of parsing recovers "Cybernetic Cyborg" as the *value of
    * the species field* from a line of Markdown that happens to contain it.
    *
-   * An entry written before these columns existed restores to its category's defaults — see
-   * `db/rows.ts`, which repairs rather than rejects.
+   * An entry whose stored payloads are missing or unreadable restores to its category's defaults —
+   * see `db/rows.ts`, which repairs rather than rejects.
    */
   readonly subject: SubjectDefinition;
   readonly output: OutputConfig;

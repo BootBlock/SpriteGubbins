@@ -1101,13 +1101,14 @@ an HTML entity read as the mark it stands for. **A string is checked because it 
 **Every exclusion says the mark is *syntax*, and none says a string reaches nobody.** That second
 ground was tried first, on `Error` messages, and it is false here: `hooks/useImageDownload.ts` puts
 `error.message` into a toast and `workers/autoTuneSession.ts` puts it into the paragraph under the
-Auto button, so an `Error` message is held to the rule like anything else. What is left is a
-statement bound to a `*_SQL` name, a class string, and a line that parses as a whole JSON document —
-the manifest a model is asked to return, where a curly quote in a key produces a document that does
-not parse. **A class string is excused by where it is bound**, a `className` attribute or a
-`*_CLASS`/`*_CLASSES` constant, rather than by the bracket syntax of an arbitrary value: a run of
-`[…]` is also how an array prints, and a rule loose enough to blank one excuses a straight-quoted
-array in a sentence. Each exclusion is counted and a count of zero fails, because one that stops
+Auto button, so an `Error` message is held to the rule like anything else. What is left is a class
+string and a line that parses as a whole JSON document — the manifest a model is asked to return,
+where a curly quote in a key produces a document that does not parse. A `*_SQL` statement had an
+exclusion too, and it went with the schema's last string literal; one that needs a literal again
+brings it back rather than rewording the SQL. **A class string is excused by where it is bound**, a
+`className` attribute or a `*_CLASS`/`*_CLASSES` constant, rather than by the bracket syntax of an
+arbitrary value: a run of `[…]` is also how an array prints, and a rule loose enough to blank one
+excuses a straight-quoted array in a sentence. Each exclusion is counted and a count of zero fails, because one that stops
 suppressing anything has become a hole. **The floors are counted per extension** for the same
 reason — one total sat green through the loss of every `.tsx` in the app, which is the half carrying
 the JSX text.

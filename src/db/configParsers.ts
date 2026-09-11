@@ -53,8 +53,9 @@ export function isTargetModelId(value: unknown): value is TargetModelId {
 /**
  * Parse a stored subject, filling any absent field from the category's defaults.
  *
- * Tolerant by design: a preset saved before a field existed is still a useful preset, and defaulting
- * the gap is better than discarding the user's work. What it will not do is invent a *category* —
+ * Tolerant by design, on the ground stated above: a payload missing a field, or holding something
+ * other than text in one, has been damaged or edited by hand, and defaulting that one field is better
+ * than discarding the rest of the user's work with it. What it will not do is invent a *category* —
  * that comes from the row and is validated strictly.
  */
 export function parseSubject(value: unknown, category: SubjectCategory): SubjectDefinition {

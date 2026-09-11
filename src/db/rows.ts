@@ -20,8 +20,13 @@ import { parseSettings } from './settingsParser.ts';
  * Turning untrusted storage rows into domain objects.
  *
  * Every parser here returns `null` for anything it cannot vouch for, and callers drop those rows. A
- * row written by an older build, hand-edited storage, or a malformed import must be *rejected* —
- * never cast into a shape it doesn't have and left to explode somewhere unrelated.
+ * row from hand-edited storage, a damaged write or a malformed import must be *rejected* — never
+ * cast into a shape it doesn't have and left to explode somewhere unrelated.
+ *
+ * **Like `configParsers.ts`, this is not a compatibility layer.** Nothing here reads a shape because
+ * some earlier build of the app wrote it: the SQLite worker drops a table whose columns are not
+ * exactly the schema's before a row is ever read (see `TABLE_COLUMNS` in `schema.ts`), and whatever
+ * does arrive, from either backend, is held to the current shape and nothing else.
  *
  * The narrowing primitives are in `readers.ts` and the two payload parsers in `configParsers.ts`;
  * this file is only the row shapes. The entries of an imported **pack** are `importedRows.ts`,
@@ -31,10 +36,18 @@ import { parseSettings } from './settingsParser.ts';
 /**
  * Parse a `prompt_history` row. Returns `null` if any required column is missing or wrong.
  *
- * The two payload columns are the exception, and are *repaired* rather than required: they were
- * added after the first schema shipped, so a row written before then has neither. Defaulting them
- * costs that entry its one-click restore — it comes back as the category's defaults — while
- * rejecting the row would lose the prompt as well, which is the part worth keeping.
+ * The two payload columns are the exception, and are *repaired* rather than required, on the ground
+ * every check in this file stands on: storage is untrusted. On SQLite both columns are always there
+ * — they are `NOT NULL`, and the worker drops a table whose columns are not exactly the DDL's — so
+ * what reaches this parser is a payload that does not read: a value that is not text, or text that
+ * is not JSON. The localStorage fallback's rows are hand-editable JSON, where either key can also be
+ * missing outright. Defaulting them costs that entry its one-click restore — it comes back as the
+ * category's defaults — while rejecting the row would lose the prompt as well, which is the part
+ * worth keeping.
+ *
+ * `parsePresetRow` requires the same two columns, and the difference is what is left without them:
+ * a preset *is* its two payloads, where a history entry is a prompt that also records its studio
+ * state.
  */
 export function parseHistoryRow(row: unknown): PromptHistoryLog | null {
   if (!isRecord(row)) return null;

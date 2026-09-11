@@ -67,8 +67,8 @@ CREATE TABLE IF NOT EXISTS ${PROMPT_HISTORY_TABLE} (
   created_at INTEGER NOT NULL,
   word_count INTEGER NOT NULL,
   model_used TEXT NOT NULL,
-  subject_json TEXT NOT NULL DEFAULT '{}',
-  output_json TEXT NOT NULL DEFAULT '{}'
+  subject_json TEXT NOT NULL,
+  output_json TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ${CUSTOM_PRESETS_TABLE} (
