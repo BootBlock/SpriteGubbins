@@ -70,8 +70,9 @@ export interface GridOffset {
  * A mesh rather than a pitch, because generated art **drifts**: its apparent blocks are almost a
  * period but not quite, so a single `grid × grid` lattice — at any offset — straddles more of the
  * art's own cells the further across the sheet it walks. `boundaryMesh` measures where the
- * boundaries actually are and completes the gaps at the expected spacing, which degenerates to the
- * regular lattice exactly when the art is regular. The transforms in `gridAlignment.ts` walk
+ * boundaries actually are and completes the gaps at the expected spacing — except where the sheet is
+ * exactly a grid of the scale in force, which has no drift to follow, and there it takes that grid's
+ * lattice outright. The transforms in `gridAlignment.ts` walk
  * whatever this holds, so the two of them cannot disagree about where a cell begins.
  */
 export interface GridMesh {
@@ -109,8 +110,9 @@ export interface ImportedImage {
  * take the stray pixel a compression artefact leaves, and there is nothing to check. A transition
  * inside an end band too narrow to be a cell never counts as falling on it, because the mesh at that
  * scale folds the band whichever lattice holds it — so a reading never rests on a band the reduction
- * folds away. Whether the mesh's *interior* cuts land on that lattice is not checked, and issue #276
- * carries the case where they do not. The other three are the estimates {@link measureSheetScale}
+ * folds away. The mesh at that scale *is* that lattice, interior cuts and all, because `boundaryMesh`
+ * asks the same question of the grid before it walks anything — so the reduction is taken on the
+ * placement the reading was measured on. The other three are the estimates {@link measureSheetScale}
  * falls through to, each carrying a tolerance, each offered as a candidate and never adopted on its
  * own — `EDGE_PERIOD` is `estimatePixelGrid`, reading the *period* of edges that resampling has
  * softened into ramps; `REPEAT_DISTANCE` is `estimateProfilePeriod`, reading the distance the

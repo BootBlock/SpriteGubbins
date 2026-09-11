@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { detailedMarks, detailedSheet } from '../test/detailedSheet.ts';
 import { framedSheet, imageFrom, soften } from '../test/images.ts';
+import { leadingCells, spottedGrid } from '../test/spottedGrid.ts';
 import { alignToGrid } from './gridAlignment.ts';
 import { boundaryMesh } from './gridMesh.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
@@ -34,22 +35,6 @@ vi.mock('./stepProfile.ts', async (importOriginal) => {
 
 /** A 16 × 16 source in which every pixel is a different colour, so no block of two is ever uniform. */
 const PIXEL_SOURCE = imageFrom(16, 16, (x, y) => ({ r: x * 16 + 1, g: y * 16 + 1, b: 64, a: 255 }));
-
-/**
- * A 40 × 40 image drawn at a grid of 4, with `spoiled` of its hundred cells carrying one stray pixel.
- *
- * The lattice contributes 720 transitions — nine interior boundaries each way, forty pixels long —
- * and each stray adds exactly four that miss it: two columns and two rows, at the pixel and again
- * where it ends. So the score is `720 / (720 + 4 × spoiled)`, which is what makes the threshold
- * testable to the pixel.
- */
-function spottedGrid(spoiled: number): ImageData {
-  return imageFrom(40, 40, (x, y) => {
-    const cell = Math.floor(y / 4) * 10 + Math.floor(x / 4);
-    const stray = cell < spoiled && x % 4 === 1 && y % 4 === 1;
-    return { r: (cell * 2 + 1) % 256, g: stray ? 250 : 40, b: 100, a: 255 };
-  });
-}
 
 const FRAME = { r: 255, g: 255, b: 255, a: 255 };
 const INTERIOR = { r: 10, g: 160, b: 170, a: 255 };
@@ -238,13 +223,13 @@ describe('detectPixelGrid', () => {
     // The boundary itself. `GRID_DETECTION_THRESHOLD` says "at or above", and 720 of 800 is exactly
     // nine tenths — a returned sheet is rarely flawless, and this is the near-miss the tolerance
     // exists for.
-    expect(detectPixelGrid(spottedGrid(20))).toBe(4);
+    expect(detectPixelGrid(spottedGrid({ spoils: leadingCells(20) }))).toBe(4);
   });
 
   it('rejects a grid that falls just short of it', () => {
     // One more stray and the scale is not believed, so detection keeps counting down rather than
     // settling on a scale the art was not drawn at.
-    expect(detectPixelGrid(spottedGrid(21))).not.toBe(4);
+    expect(detectPixelGrid(spottedGrid({ spoils: leadingCells(21) }))).not.toBe(4);
   });
 
   it('answers null for smooth artwork rather than inventing a grid', () => {
@@ -287,7 +272,10 @@ describe('measureSheetScale', () => {
   it('never estimates over an exact reading', () => {
     // The two are tried in order and never both. An exact reading has no tolerance in it, so a
     // second opinion could only disagree with it — and the sheet gets one pass rather than two.
-    expect(measureSheetScale(spottedGrid(20))).toEqual({ grid: 4, measurement: 'EXACT' });
+    expect(measureSheetScale(spottedGrid({ spoils: leadingCells(20) }))).toEqual({
+      grid: 4,
+      measurement: 'EXACT',
+    });
   });
 
   it('answers null where no reading finds a scale', () => {

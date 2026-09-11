@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { DETAILED_SIZE, DETAILED_STARTS, detailedMarks, detailedSheet } from '../test/detailedSheet.ts';
 import { imageFrom, soften } from '../test/images.ts';
+import { interiorCells, spottedGrid } from '../test/spottedGrid.ts';
 import type { Rgba } from '../types/quantiser.ts';
+import { boundaryClusters } from './boundaryClusters.ts';
 import { boundaryMesh, regularMesh } from './gridMesh.ts';
+import { stepProfile } from './stepProfile.ts';
 
 /** Cells of distinct colours at boundary positions this file writes down explicitly. */
 function sheetWithBoundaries(
@@ -135,6 +138,31 @@ describe('boundaryMesh', () => {
     expect(mesh.x).toEqual([...DETAILED_STARTS]);
     expect(mesh.y).toEqual([...DETAILED_STARTS]);
     expect(DETAILED_SIZE).toBe(127);
+  });
+
+  it('cuts crisp art on the lattice it is exactly drawn on, even where its strays outweigh its boundaries', () => {
+    // Neighbouring cells differ by 2 in red across the sheet and each stray is 210 away in green. By
+    // magnitude, which is how the walk reads its lines, the strays are lines and the boundaries are
+    // not lines at all; by count the lattice holds nine tenths of the transitions, and the sheet reads
+    // as exactly 4. Walked, every cut landed two pixels right of a boundary and the axis came out a
+    // cell short, `[0, 6, 10, …, 34]`. A sheet exactly drawn on a lattice has no drift for a walk to
+    // follow, so it is cut on that lattice.
+    const sheet = spottedGrid({ spoils: interiorCells(20) });
+
+    // The premise, asserted so the fixture cannot drift into one a walk would have cut correctly.
+    expect(boundaryClusters(stepProfile(sheet).columns).map((line) => line.position)).toEqual([
+      6, 10, 14, 18, 22, 26, 30, 34,
+    ]);
+
+    expect(boundaryMesh(sheet, 4)).toEqual(regularMesh(40, 40, 4, { x: 0, y: 0 }));
+  });
+
+  it('cuts the same art on its lattice wherever an inset puts that lattice', () => {
+    // Three pixels in, the art's lines are 3, 7, … 43 and the strays' columns are 4 and 5 of every
+    // cell. The phase the exact question found is the one the mesh takes.
+    const sheet = spottedGrid({ inset: 3, spoils: interiorCells(20) });
+
+    expect(boundaryMesh(sheet, 4)).toEqual(regularMesh(46, 46, 4, { x: 3, y: 3 }));
   });
 
   it('falls back to the regular lattice where an image holds too few boundaries to anchor one', () => {
