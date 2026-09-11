@@ -34,8 +34,8 @@ interface HistoryEntryProps {
  *
  * **Copy** takes the compiled text; **restore** puts the studio state that produced it back into the
  * studio, which is possible because the row stores that state alongside the text rather than only
- * the text. An entry recorded before those columns existed still restores — to its category's
- * defaults — because `db/rows.ts` repairs a missing payload instead of rejecting the row.
+ * the text. An entry whose stored state is missing or unreadable still restores — to its category's
+ * defaults — because `db/rows.ts` repairs a damaged payload instead of rejecting the row.
  *
  * **Delete** asks first, for the reason the drawer's own "Clear history" does: an entry is not
  * rebuildable from what is on screen. It asks on the button itself rather than by swapping in a

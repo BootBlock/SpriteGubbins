@@ -23,7 +23,7 @@
 >   column 4 of a sheet whose rows were never that wide. The drawing stays, because the shape of the
 >   waste is the one thing the metric tiles cannot state; the hover readout is replaced by a
 >   filled/empty count in the heading, which is text rather than a pointer-only affordance.
-> - **§2.4 — `prompt_history` carries two more columns than the DDL here lists** (`subject_json`, `output_json`). Without them the drawer's "one-click restore" in §4.4 cannot exist: the compiled prompt is a one-way rendering of the studio state, so the state has to be stored alongside it. Rows written before those columns restore to their category's defaults.
+> - **§2.4 — `prompt_history` carries two more columns than the DDL here lists** (`subject_json`, `output_json`). Without them the drawer's "one-click restore" in §4.4 cannot exist: the compiled prompt is a one-way rendering of the studio state, so the state has to be stored alongside it. A row whose stored payloads are missing or unreadable restores to its category's defaults rather than being dropped, because the prompt text is still worth keeping.
 >
 > The app has since grown past this blueprint, and the places it has are recorded here so a reader is not left comparing the tree against a document that predates them. The first four came off [baseline-prompt-new.md](baseline-prompt-new.md) §10's follow-up list rather than the phases above, and that list is now closed; what comes after it is growth §10 never anticipated either:
 >
