@@ -47,10 +47,10 @@ function session(overrides: Partial<StudioSession> = {}): StudioSession {
   };
 }
 
-/** A history row as it was stored before the two payload columns existed. */
-function legacyRow(): Record<string, unknown> {
+/** A history row with every required column and neither of the two payload columns. */
+function historyRowWithoutPayloads(): Record<string, unknown> {
   return {
-    id: 'legacy-1',
+    id: 'bare-1',
     category: 'CREATURE',
     prompt_text: '# MODULAR SPRITE-SHEET PROMPT ARCHITECTURE (CREATURE)',
     created_at: 500,
@@ -106,14 +106,21 @@ describe('LocalStorageBackend — history', () => {
     expect(await backend.listHistoryLogs()).toEqual([log()]);
   });
 
-  it('keeps a row written before the studio-state columns existed', async () => {
-    // Seeded as raw storage, which is exactly what an older build left behind. The prompt is the
-    // part worth keeping, so the row is repaired to its category's defaults rather than discarded —
-    // it simply restores to a default creature instead of the one it described.
-    storage.setItem(STORAGE_KEYS.promptHistory, JSON.stringify([legacyRow()]));
+  it.each([
+    { state: 'missing', payloads: {} },
+    { state: 'not JSON', payloads: { subject_json: 'not json', output_json: '{' } },
+    { state: 'not text', payloads: { subject_json: 7, output_json: null } },
+  ])('keeps a row whose studio-state payloads are $state', async ({ payloads }) => {
+    // Seeded as raw storage, which is what a hand edit or a damaged write leaves behind. The prompt
+    // is the part worth keeping, so the row is repaired to its category's defaults rather than
+    // discarded — it simply restores to a default creature instead of the one it described.
+    storage.setItem(
+      STORAGE_KEYS.promptHistory,
+      JSON.stringify([{ ...historyRowWithoutPayloads(), ...payloads }]),
+    );
 
     const [restored] = await backend.listHistoryLogs();
-    expect(restored?.id).toBe('legacy-1');
+    expect(restored?.id).toBe('bare-1');
     expect(restored?.promptText).toContain('CREATURE');
     expect(restored?.subject).toEqual(defaultSubjectFor('CREATURE'));
     expect(restored?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
