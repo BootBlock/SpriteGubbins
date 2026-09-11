@@ -10,9 +10,9 @@ import type { SubjectCategory, SubjectDefinition } from './subject.ts';
  * that put the sixteen answers back and left those where the switch moved them would leave the tab
  * in a state it had never been in, which is a worse answer than no undo at all.
  *
- * Held whole rather than as a patch against the position before it, for the reason
- * `DialHistoryEntry` gives in ./quantiseHistory.ts: every step has to produce a complete studio, and a set of
- * seventeen strings beside a configuration of twenty-eight is nothing to copy.
+ * Held whole rather than as a patch against the position before it, for the reason `DialHistory.entries`
+ * gives in ./quantiseHistory.ts: every step has to produce a complete studio, and a set of seventeen
+ * strings beside a configuration of twenty-eight is nothing to copy.
  */
 export interface StudioPosition {
   readonly category: SubjectCategory;

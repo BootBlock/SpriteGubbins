@@ -9,9 +9,10 @@
 /**
  * How long after an edit a further edit of the same dial extends it rather than starting a step.
  *
- * The window is only ever the gap *between two events of one gesture*. Anything else that happens
- * to the stack in that gap — an undo, a redo, a preset load — ends the gesture whatever the clock
- * says, which is `DialHistory.gesture`'s to hold rather than this figure's.
+ * The window is only ever the gap *between two events of one gesture*. Anything else that moves the
+ * stack in that gap — a step of undo or redo, a preset load that changes the dials — ends the
+ * gesture whatever the clock says, which is `DialHistory.gesture`'s to hold rather than this
+ * figure's.
  *
  * A slider emits a change per pixel of travel and a held arrow key repeats many times a second, so
  * without coalescing one drag across `FILL_CLEANUP_RANGE` is fifty undo steps and the control is

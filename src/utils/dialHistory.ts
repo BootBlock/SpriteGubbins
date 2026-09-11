@@ -92,8 +92,8 @@ export function recordDials(
 /**
  * Step back one position, or stay where we are if this is the oldest one kept.
  *
- * Either move closes the gesture: an undo is a deliberate act between two edits, so the edit after
- * it starts a step of its own however quickly it follows.
+ * A step in either direction closes the gesture: an undo is a deliberate act between two edits, so
+ * the edit after it starts a step of its own however quickly it follows.
  */
 export function undoDials(history: DialHistory): DialHistory {
   return canUndoDials(history) ? { ...history, index: history.index - 1, gesture: null } : history;

@@ -32,7 +32,8 @@ export interface DialGesture {
  */
 export interface DialHistory {
   /**
-   * Oldest first, and never empty: entry zero is the position the tab opened in.
+   * Oldest first, and never empty: entry zero is the position the tab opened in, until the cap in
+   * `DIAL_HISTORY_LIMIT` drops it off the front.
    *
    * Each is a whole set of positions rather than a patch against the one before it. A patch is
    * smaller and is the wrong shape for what this stack is walked for: every step of an undo has to
@@ -48,11 +49,16 @@ export interface DialHistory {
    *
    * **It is a fact about the stack, not about an entry**, and that is the whole reason it is held
    * here. Only the position the last edit wrote can be extended, and only until something else
-   * happens to the stack — so the opening position, a whole-set write (a preset load, the sweep's
-   * answer) and every undo and redo leave it `null`. Kept on each entry instead, a dial and a time
-   * outlive the gesture they describe: an undo lands the cursor on an older position whose record
-   * still says which dial made it and when, and a quick edit of that dial is folded into the very
-   * position the reader stepped back to, taking the one after it with it.
+   * moves the stack — so the opening position, a whole-set write that changes the dials (a preset
+   * load, the sweep's answer) and every step of an undo or redo leave it `null`. Kept on each entry
+   * instead, a dial and a time outlive the gesture they describe: an undo lands the cursor on an
+   * older position whose record still says which dial made it and when, and a quick edit of that
+   * dial is folded into the very position the reader stepped back to, which can then never be
+   * reached again.
+   *
+   * **A call that changes nothing leaves it as it was**, and loses nothing by doing so. A write of
+   * the positions already in force, and a redo with nothing ahead of the cursor, both return the
+   * stack untouched — so the gesture still describes the position on top, which is the one it made.
    */
   readonly gesture: DialGesture | null;
 }
