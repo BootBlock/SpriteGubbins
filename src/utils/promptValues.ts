@@ -143,7 +143,7 @@ export function promptValues(
     //
     // Nothing of the sheet's is passed. Both share rungs are a share of the largest component's own
     // cell on every sheet, because a share of the sheet height was decided by the component count or
-    // by the layout on every plan that carried one — see `shareText`.
+    // by the layout on every plan that carried one — see `SHARE_RANGE`.
     RESOLUTION_PROFILE_DESCRIPTION: resolutionProfileDescription(
       output.resolutionProfile,
       statedTarget?.quantity === 'ASSEMBLED',

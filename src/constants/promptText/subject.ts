@@ -16,7 +16,7 @@ import type { SubjectCategory } from '../../types/subject.ts';
  * **The two share rungs no longer take a unit.** They state a share of the largest component's own
  * cell in the exploded grid, which is a piece every sheet has without a noun for it — and on the six
  * categories below that take `a full X`, this noun is a whole the sheet draws only in pieces, with no
- * cell of its own to be a share of. `shareText` in `renderStyle.ts` records why a share of the sheet
+ * cell of its own to be a share of. `SHARE_RANGE` in `renderStyle.ts` records why a share of the sheet
  * height of that whole failed as well: the layout decided it, on every character sheet issue #245
  * measured.
  *
