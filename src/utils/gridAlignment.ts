@@ -15,7 +15,7 @@ import { lineAwareWinner } from './lineVote.ts';
  * generator inset from the corner is no more disposable than the art it cut short at the far edge.
  *
  * **How partial an end cell may be is the mesh's business, not these transforms'.** `boundEndCells`
- * in `gridMesh.ts` merges an end band of fewer than three source pixels into the cell beside it, so
+ * in `boundEndCells.ts` merges an end band of fewer than three source pixels into the cell beside it, so
  * nothing here has to ask whether the cell it is reducing to one pixel stands for a real band or a
  * one-pixel sliver. Neither transform may start deciding that for itself: they walk the mesh they
  * are given, which is the whole of what keeps them agreeing about where a cell begins.

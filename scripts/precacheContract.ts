@@ -617,8 +617,28 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2364 leaves **0.94 KiB**, the order of the 0.74 and 0.94 the notes above leave, and deliberately
  * no wider for the reason each of them gives.
+ *
+ * **Raised from 2364 by the mesh asking the exact question before it walks** (#276). An exact scale
+ * reading was a claim about a lattice the reduction then did not use: `boundaryMesh` walked every
+ * sheet, reading its lines by the magnitude of their change, so crisp art whose stray pixels
+ * outweighed its faint cell boundaries was read as exactly its own grid and then cut beside every
+ * boundary. The question now lives in `edgeLattice.ts`, and the detector and the mesh both ask it.
+ * Measured against `main` at `781b393`, rebuilt from the same `node_modules` — **2363.76 KiB** —
+ * this build reports **2364.80**, a delta of 1.04 that crossed a ceiling the base sat 0.24 under. Both
+ * figures were read inside `assertPrecacheContract`, which saw 61 entries on each side; the build's
+ * own summary line reports the branch's 2364.80 across 64. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * **It is machinery rather than prose, and it lands in two workers.** `autoTuneWorker` grows by 816
+ * bytes, because it measures a mesh and never ran the detector, so the transition count is new to it;
+ * `quantiseWorker` grows by 244, because it already carried that count for the detector and gains
+ * only the branch that asks it. The docblocks explaining the change are stripped from the bundle.
+ *
+ * 2365 leaves **0.20 KiB**, narrower than any note above leaves. It is the smallest whole figure over
+ * the build, and deliberately so, for the reason each of those notes gives: whether 2350 was ever the
+ * right figure for what a first visit downloads is for whoever owns this contract to answer.
  */
-export const PRECACHE_CEILING_KIB = 2364;
+export const PRECACHE_CEILING_KIB = 2365;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

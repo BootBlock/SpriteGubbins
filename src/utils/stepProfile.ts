@@ -11,7 +11,7 @@ import { CHANNELS_PER_PIXEL } from './imageData.ts';
  * when no boundaries anchor a mesh. All of them walk the same totals, and a second implementation
  * of the walk would eventually disagree with the first about the same sheet.
  *
- * It differs from `edgeLattice` next to the exact detector in the one way that matters: that asks
+ * It differs from `edgeLattice`, which the exact question is asked of, in the one way that matters: that asks
  * *whether* two neighbouring pixels differ, which a softened ramp answers "yes" to three times
  * over, while this asks *by how much*, which the same ramp divides between three positions without
  * inventing any. So the whole of a softened boundary still totals the step it was before it was

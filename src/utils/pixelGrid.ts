@@ -1,7 +1,6 @@
-import { GRID_DETECTION_THRESHOLD, measurableGridCeiling } from '../constants/quantiser.ts';
+import { measurableGridCeiling } from '../constants/quantiser.ts';
 import type { PixelGrid, SheetScale } from '../types/quantiser.ts';
-import { meshCanCutAt } from './gridMesh.ts';
-import { CHANNELS_PER_PIXEL, packedColorAt } from './imageData.ts';
+import { edgeLattice, exactGridOffset } from './edgeLattice.ts';
 import { estimateMeshPeriod } from './meshPeriod.ts';
 import { estimatePixelGrid } from './pixelPeriod.ts';
 import { estimateProfilePeriod } from './profilePeriod.ts';
@@ -56,8 +55,8 @@ import { stepProfile } from './stepProfile.ts';
  * largest sheet the app accepts is of the order of seconds.
  *
  * **The profile is still computed lazily**, after the exact detector has refused, because that one
- * counts transitions through its own `edgeLattice` and shares nothing with it — so a crisp sheet
- * pays for one walk exactly as it did before, and never for this one.
+ * counts transitions through `edgeLattice` and shares nothing with it — so a crisp sheet pays for
+ * one walk exactly as it did before, and never for this one.
  */
 export function measureSheetScale(image: ImageData): SheetScale | null {
   const detected = detectPixelGrid(image);
@@ -76,24 +75,6 @@ export function measureSheetScale(image: ImageData): SheetScale | null {
 }
 
 /**
- * Where one pixel differs from the neighbour above it or to its left, totalled by position.
- *
- * The whole of what detection needs to know about an image, and the reason it needs only one pass to
- * learn it: a grid of `g` is exactly the claim that **no colour changes anywhere except on one of
- * `g`'s phase classes** — the lines `p, p + g, p + 2g, …` for some offset `p` — so once the
- * transitions are counted by the row and column they fall on, every candidate scale is scored by
- * summing the entries on each of its classes rather than by walking the image again.
- */
-interface EdgeLattice {
-  /** `columnEdges[x]` — rows in which pixel `x` differs from pixel `x - 1`. Index 0 is unused. */
-  readonly columnEdges: Uint32Array;
-  /** `rowEdges[y]` — columns in which row `y` differs from row `y - 1`. Index 0 is unused. */
-  readonly rowEdges: Uint32Array;
-  /** Every transition in the image, both directions together. */
-  readonly total: number;
-}
-
-/**
  * The pixel scale the image was drawn at, or `null` when it has none.
  *
  * **Scored on where the image changes, not on how much of it is flat.** The two sound equivalent and
@@ -103,16 +84,18 @@ interface EdgeLattice {
  * what this did first — lets empty space vote. A 2048 × 2048 sheet holding a few small sprites drawn
  * at 4 on a flat key field is over 99% background, so at a candidate of 32 more than 90% of its
  * blocks are uniform and detection confidently answered 32: a scale that would reduce the art to a
- * smear. Measured on exactly that image, the block count returns 32 and this returns 4.
+ * smear. Measured on exactly that image, the block count returns 32 and this returns 4. The question
+ * itself is `exactGridOffset` in `edgeLattice.ts`, asked of each candidate in turn.
  *
  * **Each axis takes the best of its phase classes**, because a generator puts its art wherever
  * composition does and the canvas corner is nowhere special: art drawn at 8 and delivered three
  * pixels in from the edge changes on the lines `3, 11, 19, …`, which is the same grid at a
  * different phase and not a different grid. The original, corner-anchored reading answered `null`
  * for every such sheet, and the guidance told the user to crop the margin off and bring the image
- * back — an instruction this measurement now makes unnecessary. The alignment does not need the
- * phase found here: `boundaryMesh` measures where the cells sit for whatever grid ends up in
- * force, which is the one mechanism serving measured, clicked and typed grids alike.
+ * back — an instruction this measurement now makes unnecessary. **The mesh cuts on the phase found
+ * here**, because `boundaryMesh` asks `exactGridOffset` the same question of whatever grid is in
+ * force — measured, clicked or typed — and where the sheet is exact at that grid it takes that
+ * lattice rather than walking one of its own.
  *
  * **A line no mesh of a scale can cut on counts against that scale and never for it.** The phase
  * class says where cells *could* begin and the mesh decides where they do, and `boundEndCells` merges
@@ -137,14 +120,14 @@ interface EdgeLattice {
  * fold two lines in seventeen, more than the threshold lets a scale discard, and read as 2 — too
  * fine, which a reader can see and finish, where a coarse reading drops change nobody is shown.
  *
- * **What this settles is the ends, and nothing more.** A reduction at an exact scale is not lossless:
- * a margin too thin to be a cell is still folded, as `boundEndCells` argues it should be, wherever a
- * scale can afford to discard it. Where the mesh puts its *interior* cuts is its own measurement, and
- * nothing here re-checks it — a gap rather than a guarantee, which issue #276 carries: on crisp art
- * whose stray pixels outweigh its cell boundaries the line reader takes the strays for boundaries,
- * and the walk can cut beside the lattice this scored. A cut one pixel off still leaves a four-pixel
- * cell its majority and one two pixels off does not, so counting the transitions that sit exactly on
- * the cuts is not the answer to it either.
+ * **What the reduction at an exact scale keeps is the lattice, not every pixel.** It is not
+ * lossless: a margin too thin to be a cell is still folded, as `boundEndCells` argues it should be,
+ * wherever a scale can afford to discard it, and a stray pixel inside a cell is outvoted by the
+ * cell's own colour. But every interior cut is a line of the lattice this read, because the mesh
+ * asks the same question before it walks anything. For a while it did not ask: the walk reads lines
+ * by the *magnitude* of their change where this counts them, so crisp art whose stray pixels
+ * outweighed its faint cell boundaries was read as exactly 4 here and then cut two pixels beside
+ * every boundary, losing a column of cells.
  *
  * Largest candidate first, because a true grid of 8 also scores perfectly at 4, 2 and 1 — the
  * coarsest grid that holds is the real one. Where the count starts is a property of the image
@@ -162,76 +145,8 @@ interface EdgeLattice {
  */
 export function detectPixelGrid(image: ImageData): PixelGrid | null {
   const lattice = edgeLattice(image);
-  if (lattice.total === 0) return null;
-
   for (let grid = measurableGridCeiling(image.width, image.height); grid >= 2; grid -= 1) {
-    const aligned = bestPhaseCount(lattice.columnEdges, grid) + bestPhaseCount(lattice.rowEdges, grid);
-    if (aligned / lattice.total >= GRID_DETECTION_THRESHOLD) return grid;
+    if (exactGridOffset(lattice, grid) !== null) return grid;
   }
   return null;
-}
-
-/**
- * One pass over the image, counting every colour transition by the row or column it falls on.
- *
- * Each pixel is packed once and compared with the two neighbours that have already been packed — the
- * one to its left, carried in a variable, and the one above it, carried in a row of the previous
- * scanline's values. So the cost is one pack and two integer comparisons per pixel, whatever the
- * image, rather than the up-to-31 full passes counting uniform blocks took.
- *
- * Alpha is part of the comparison, because a silhouette edge against transparency is a transition
- * like any other and is often the only one a keyed sheet has left.
- */
-function edgeLattice(image: ImageData): EdgeLattice {
-  const { width, height, data } = image;
-  const columnEdges = new Uint32Array(width);
-  const rowEdges = new Uint32Array(height);
-  const above = new Uint32Array(width);
-  let total = 0;
-
-  for (let y = 0; y < height; y += 1) {
-    let left = 0;
-    for (let x = 0; x < width; x += 1) {
-      const packed = packedColorAt(data, (y * width + x) * CHANNELS_PER_PIXEL);
-
-      if (x > 0 && packed !== left) {
-        columnEdges[x] = (columnEdges[x] ?? 0) + 1;
-        total += 1;
-      }
-      if (y > 0 && packed !== above[x]) {
-        rowEdges[y] = (rowEdges[y] ?? 0) + 1;
-        total += 1;
-      }
-
-      left = packed;
-      above[x] = packed;
-    }
-  }
-
-  return { columnEdges, rowEdges, total };
-}
-
-/**
- * The most transitions any one phase class of this scale accounts for on one axis.
- *
- * Read against the image's total, the summed best of the two axes degrades in proportion to how
- * much of the detail the scale would destroy: a grid twice as coarse as the truth misses every
- * other line of the art's own lattice whatever phase it takes, and scores about a half — which is
- * why the threshold has room to allow a stray pixel without ever allowing a doubled scale.
- *
- * Position 0 is skipped in every class: the first pixel has nothing before it to differ from, so
- * index 0 is unused and a lattice line at the image's own edge is not evidence. A line inside an end
- * band the mesh folds is skipped too — it is change no reduction at this scale keeps — but it stays in
- * the image's total, so it counts against the scale rather than for it; see {@link detectPixelGrid}.
- */
-function bestPhaseCount(edges: Uint32Array, grid: PixelGrid): number {
-  let best = 0;
-  for (let phase = 0; phase < grid; phase += 1) {
-    let aligned = 0;
-    for (let position = phase === 0 ? grid : phase; position < edges.length; position += grid) {
-      if (meshCanCutAt(position, edges.length, grid)) aligned += edges[position] ?? 0;
-    }
-    if (aligned > best) best = aligned;
-  }
-  return best;
 }

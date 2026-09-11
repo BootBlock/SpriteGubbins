@@ -1,6 +1,8 @@
 import type { GridMesh, PixelGrid } from '../types/quantiser.ts';
 import { bestPhase } from './bestPhase.ts';
 import { boundaryClusters } from './boundaryClusters.ts';
+import { boundEndCells } from './boundEndCells.ts';
+import { edgeLattice, exactGridOffset } from './edgeLattice.ts';
 import { stepProfile } from './stepProfile.ts';
 
 /**
@@ -14,22 +16,46 @@ import { stepProfile } from './stepProfile.ts';
  * follows do: measure the boundaries, snap the cuts to them, and fill the gaps at the expected
  * spacing.
  *
- * **The pitch in force is the prior, not the answer.** Detected lines are accepted only where they
- * sit close to the position the previous accepted line expects — at most a third of a cell away,
- * never less than one pixel — so a strong edge in the middle of a cell cannot pull a cut off the
- * grid mid-walk, and each accepted line re-anchors the expectation, which is what lets the mesh
- * follow drift instead of accumulating against it. Where no line is found near the expected
- * position the mesh completes one there: a boundary too faint to detect is almost certainly at the
- * spacing, and a *missing* cut would merge two of the art's cells for good. How the walk's own
- * starting point is chosen — the other way interior detail could take the axis — is `meshAxis`'s
- * own story below.
+ * **Where the sheet is exactly a grid of this scale, the mesh is that grid's lattice and nothing is
+ * walked.** {@link exactGridOffset} asks the exact detector's own question of the grid in force —
+ * whether nine tenths of the sheet's colour transitions fall on one phase class of it — and where
+ * they do, the cuts are that phase class. The walk exists for drift, and an exact sheet has none: art
+ * whose blocks wandered would spread its transitions over several phase classes and fall under the
+ * threshold. Walking one anyway was a second opinion that could only disagree, and it did. The walk
+ * reads its lines by the *magnitude* of each column's change where the detector counts transitions,
+ * so a crisp 40 × 40 sheet drawn at 4 — faint cell boundaries, and a strong stray pixel in twenty of
+ * its interior cells — was read as exactly 4 and then cut on the strays, two pixels beside every
+ * boundary, reducing to 9 × 10 where the art is 10 × 10. Over 461 such sheets, anchored at the
+ * corner and read as exact at grids of 2, 3, 4, 5, 6 and 8, 285 were walked off the lattice they had
+ * been read on, and 46 reduced to a different image from the same art without its strays: a column
+ * short at 4, a column over at 6 and 8, and the right size with the wrong pixels at 2.
  *
- * On art that is genuinely regular every detected line sits exactly where expected, and the mesh
- * *is* the regular lattice — so the crisp case loses nothing to this measurement. On an axis with
- * too few detectable boundaries to anchor a mesh at all — a flat field, a gradient, heavy noise —
- * it falls back to the regular lattice at `bestPhase`'s answer, which is the best single placement
- * the profile supports; the phase is computed from the one profile this function already walked,
- * and only for an axis that actually needs it.
+ * **The question is asked of the grid, not of how the grid arrived**, so a typed or clicked grid the
+ * sheet is exactly drawn on takes the lattice exactly as an adopted reading does, and this stays the
+ * one mechanism serving all three. **What it does not reach is a grid the sheet is not exactly drawn
+ * on**, and that is where the walk's own weakness is left: twenty-one strays in the same sheet put
+ * the lattice of 4 under nine tenths, so a typed 4 is walked, and the walk cuts on the strays as it
+ * did before. Issue #279 carries that case.
+ *
+ * **The pitch in force is the prior, not the answer.** Where the sheet is not exact, detected lines
+ * are accepted only where they sit close to the position the previous accepted line expects — at most
+ * a third of a cell away, never less than one pixel — so a strong edge in the middle of a cell cannot
+ * pull a cut off the grid mid-walk, and each accepted line re-anchors the expectation, which is what
+ * lets the mesh follow drift instead of accumulating against it. Where no line is found near the
+ * expected position the mesh completes one there: a boundary too faint to detect is almost certainly
+ * at the spacing, and a *missing* cut would merge two of the art's cells for good. How the walk's own
+ * starting point is chosen — the other way interior detail could take the axis — is `meshAxis`'s own
+ * story below.
+ *
+ * On an axis with too few detectable boundaries to anchor a walk at all — a flat field, a gradient,
+ * heavy noise — it falls back to the regular lattice at `bestPhase`'s answer, which is the best single
+ * placement the profile supports; the phase is computed from the one profile this function already
+ * walked, and only for an axis that actually needs it.
+ *
+ * **The transition count is taken first because it can answer before the profile is needed.** An
+ * exact sheet pays for that one cheap pass and never for the step profile; any other sheet pays for
+ * both, and the count is one pack and two comparisons a pixel against the profile's eight channel
+ * subtractions.
  */
 export function boundaryMesh(image: ImageData, grid: PixelGrid): GridMesh {
   if (grid <= 1) {
@@ -38,6 +64,9 @@ export function boundaryMesh(image: ImageData, grid: PixelGrid): GridMesh {
       y: Array.from({ length: image.height }, (_, index) => index),
     };
   }
+  const exact = exactGridOffset(edgeLattice(image), grid);
+  if (exact !== null) return regularMesh(image.width, image.height, grid, exact);
+
   const profile = stepProfile(image);
   return {
     x: meshAxis(profile.columns, image.width, grid),
@@ -48,15 +77,14 @@ export function boundaryMesh(image: ImageData, grid: PixelGrid): GridMesh {
 /**
  * The mesh of a regular lattice: pitch `grid`, first interior line at `offset` on each axis.
  *
- * The fallback {@link boundaryMesh} reaches for when an image holds too few boundaries to anchor a
- * measured mesh, and the mesh the crisp case measures out to — which is also what makes it the
- * right fixture for tests that are about the transforms rather than the measurement.
+ * What {@link boundaryMesh} returns for a sheet exactly drawn on that lattice, the fallback it reaches
+ * for when an axis holds too few boundaries to anchor a walk — and, for the first of those reasons,
+ * the right fixture for tests that are about the transforms rather than the measurement.
  *
  * It is held to the same end-cell bound the measured mesh is, deliberately: a fixture that can
  * express a mesh the app is unable to produce is a fixture testing a fiction. So an `offset` of one
  * or two pixels, or an `extent` leaving a band that short at the far end, comes back with that band
- * merged into the cell beside it rather than standing as a cell of its own — see
- * {@link boundEndCells}.
+ * merged into the cell beside it rather than standing as a cell of its own — see `boundEndCells`.
  */
 export function regularMesh(
   width: number,
@@ -67,7 +95,7 @@ export function regularMesh(
   return { x: regularStarts(width, grid, offset.x), y: regularStarts(height, grid, offset.y) };
 }
 
-/** Cell starts for one axis at a regular pitch and phase — the fallback, and the crisp case. */
+/** Cell starts for one axis at a regular pitch and phase — the exact case, and the fallback. */
 function regularStarts(extent: number, grid: PixelGrid, offset: number): number[] {
   const starts: number[] = [];
   for (let start = offset; start < extent; start += grid) starts.push(start);
@@ -88,98 +116,6 @@ function axisTolerance(grid: PixelGrid): number {
 }
 
 /**
- * The narrowest an end cell may be: three source pixels, or the whole cell at a grid below that.
- *
- * **An absolute floor rather than a fraction of the grid**, because what is wrong with a one-pixel
- * end band is absolute. `downscaleNearest` gives every cell one output pixel, so a band of one or
- * two source pixels stands in the result exactly as wide as a full cell — and one or two pixels is
- * not a band of anything: it is the backward walk stopping short of the edge, or the extent failing
- * to divide by the pitch.
- *
- * **A proportional floor would take content with it, and that is the mistake this number avoids.** A
- * margin the generator inset deliberately is content the reader paid for, at any width — art three
- * pixels in from the corner at a grid of 8 is a case `quantiseImage.test.ts` states outright — and
- * `grid − tolerance` would be 6 there, folding that margin into the art's own first cell and losing
- * a cell of the sprite. Three is the smallest run that can hold a boundary and an interior, so it is
- * the line below which a band cannot be a cell of artwork at any grid.
- *
- * `grid − 1` caps it, because at a grid of 2 or 3 the floor would otherwise reach a whole cell.
- */
-function shortestEndCell(grid: PixelGrid): number {
-  return Math.min(SHORTEST_END_BAND, grid - 1);
-}
-
-/** See {@link shortestEndCell} — an end band of fewer source pixels than this is not a cell. */
-const SHORTEST_END_BAND = 3;
-
-/**
- * Whether a mesh of `grid` can put a cut on this line of an axis `extent` pixels long.
- *
- * Every line but the ones {@link boundEndCells} takes away: a cut nearer than
- * {@link shortestEndCell} to either end of the axis would open a band too narrow to be a cell, and it
- * is merged out of every mesh of that grid however the walk runs — measured and fallback alike. So
- * this is a statement about the grid and the extent alone, which is what lets the exact detector ask
- * it before any mesh exists: `detectPixelGrid` counts a transition in a scale's favour only on the
- * lines a mesh of that scale could keep, so a reading cannot rest on change the reduction folds away.
- */
-export function meshCanCutAt(position: number, extent: number, grid: PixelGrid): boolean {
-  const shortest = shortestEndCell(grid);
-  return position >= shortest && extent - position >= shortest;
-}
-
-/**
- * The axis closed off at both ends, with an end cell too narrow to be a cell merged into its
- * neighbour.
- *
- * **A partial cell at either end is content and is never cropped** — the art a generator inset from
- * the corner is no more disposable than the art it cut short at the far edge. But `downscaleNearest`
- * emits **one output pixel per cell**, so a band of one or two source pixels would carry the same
- * weight in the result as a full cell, and the result would no longer be a reduction at one scale.
- * Both ends can produce one: the walk's backward loop stops at a position between 1 and `grid − 1`,
- * and the far edge closes the last cell wherever the extent happens to fall. Measured over the eight
- * sheets in `test_sprites/` at a grid of 6, **thirteen of the sixteen** sheet-and-keying combinations
- * had a band of one or two pixels at one end or the other, and eight of them had one at the *leading*
- * end. `armour.png` shows both ends doing it separately: unkeyed, its x axis ended on a two-pixel
- * band, which is the whole of why a 1254 × 1254 sheet came back 210 × 209; keyed, its y axis carried
- * a one-pixel band at *each* end, which is the 212.
- *
- * So a short end band is **merged** into the cell beside it rather than kept or dropped: its pixels
- * stay in the sheet and vote in that cell's tally, weighted by the area they actually cover. The
- * leading merge moves the first cut down to the image edge; the trailing merge drops the last cut
- * and lets the edge close the cell before it. Nothing is deleted, and no output pixel stands for a
- * band narrower than {@link shortestEndCell} — which is where the line is drawn, and why.
- *
- * **What this buys is an invariant the whole pipeline can be read against**: every interior cell is
- * within tolerance of the grid, and an end cell holds at least {@link shortestEndCell} source pixels
- * — three at every grid from 4 up, and the whole cell at a grid of 2 or 3, where nothing can be
- * merged without swallowing one. Its upper bound is `grid + tolerance + 2 × (shortest − 1)`, because
- * on an axis short enough to hold a single full cell **both** bands merge into that one cell; the
- * corpus never reaches it, and `regularMesh(8, 8, 4, { x: 2, y: 2 })` does.
- *
- * It does *not* make the result's dimensions a function of the source and the grid alone — a mesh
- * that follows drift honestly resolves a different number of cells on a keyed sheet than on the same
- * sheet unkeyed, because each cut may move within tolerance and re-anchor there. That difference is
- * the measurement working; a one-pixel band was not.
- *
- * **The exact detector reads the same bound.** {@link meshCanCutAt} states which lines survive this
- * merge, and `detectPixelGrid` counts a transition on any other line against a scale and never for
- * it — so a band this folds can no longer be the evidence a scale was measured from. Until the
- * detector read this bound, a one-pixel frame round a flat 256-pixel sheet read as exactly 127, and
- * the mesh of 127 merged both bands into the interior and reduced the sheet to one colour.
- */
-function boundEndCells(starts: readonly number[], extent: number, grid: PixelGrid): number[] {
-  const first = starts[0];
-  if (first === undefined) return [];
-  const shortest = shortestEndCell(grid);
-  const bounded = first === 0 ? [...starts] : first < shortest ? [0, ...starts.slice(1)] : [0, ...starts];
-
-  const last = bounded[bounded.length - 1];
-  // A one-cell axis has no neighbour to merge into, and its single cell is the whole extent.
-  if (bounded.length > 1 && last !== undefined && extent - last < shortest) bounded.pop();
-  return bounded;
-}
-
-/**
  * One axis's cell starts: detected boundary lines where they agree with the pitch, completed lines
  * where they do not.
  *
@@ -194,11 +130,19 @@ function boundEndCells(starts: readonly number[], extent: number, grid: PixelGri
  * them squarely, which is what the closeness score reads. Captured mass breaks remaining ties, and
  * the earlier anchor after that, for determinism.
  *
+ * **Periodicity cannot separate them where the detail is periodic too**, and that is the case the
+ * exact branch of {@link boundaryMesh} takes away from this walk. Stray pixels at one offset within
+ * their cells repeat at the pitch exactly as the boundaries do, and where they outweigh faint
+ * boundaries the line list holds the strays and not the boundaries at all — so every walk is a walk
+ * over the strays, and the best of them lands squarely on the wrong lattice. While the strays are
+ * under a tenth of the sheet's transitions the sheet is exactly drawn on the grid and never reaches
+ * this walk. Past a tenth it does, and the walk still cuts on them — issue #279.
+ *
  * **The result is strictly ascending by construction, and nothing needs to re-check it.** Every
  * forward step accepts a position within `tolerance` of the previous one plus `grid`, and
  * `grid − tolerance ≥ 1` at every grid this takes — so each accepted position exceeds its
  * predecessor by at least one, and the backward walk decreases the same way and stops before 1.
- * {@link boundEndCells} closes the axis off at 0 without disturbing that: it either prepends 0
+ * `boundEndCells` closes the axis off at 0 without disturbing that: it either prepends 0
  * below a first cut of at least three, or moves that first cut down to 0, and both sit strictly
  * below the cut after them. A dedupe pass here would be a guard against a state
  * the arithmetic rules out, wearing the look of handling it.

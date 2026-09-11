@@ -47,7 +47,7 @@ function tolerance(grid: number): number {
   return Math.max(1, Math.floor(grid / 3));
 }
 
-/** And its end-cell floor, restated the same way — see `shortestEndCell`. */
+/** And the end-cell floor `boundEndCells.ts` holds every mesh to, restated the same way — see `shortestEndCell`. */
 function shortest(grid: number): number {
   return Math.min(3, grid - 1);
 }

@@ -136,6 +136,11 @@ export const BLEND_VOTE_WEIGHT = 1 / 64;
  * should not deny an otherwise obvious grid. It can afford to be no higher than this and no lower,
  * because of how far apart the two answers sit — the true scale scores 1, and a scale twice as coarse
  * misses every other lattice line and scores about a half. There is nothing legitimate in between.
+ *
+ * **The same figure decides whether the mesh walks.** `detectPixelGrid` and `boundaryMesh` both ask
+ * `exactGridOffset`, so a grid whose lattice holds this share of a sheet's transitions is cut on that
+ * lattice rather than on a walk — which is what makes a scale the tab adopts as exact a scale the
+ * reduction is taken on, and not a claim about a lattice nothing then uses.
  */
 export const GRID_DETECTION_THRESHOLD = 0.9;
 
@@ -1003,7 +1008,7 @@ export const DITHER_LATTICE_CORNERS = 8;
  * share at 127 — and the mesh of 127 merged both bands into the interior and reduced the sheet to one
  * colour. What guards it is that the exact detector never counts a line inside an end band its mesh
  * would fold in a scale's favour, which is a property of each candidate rather than a bound on the
- * count: see `detectPixelGrid`, and `meshCanCutAt` in `gridMesh.ts`. **Nor is a reduction at the
+ * count: see `detectPixelGrid`, and `meshCanCutAt` in `boundEndCells.ts`. **Nor is a reduction at the
  * answered scale lossless**, and nothing here claims it is: a margin narrower than that band — one
  * pixel at a grid of 3, one or two from 4 up — is folded into the cell beside it, whatever read the
  * scale.
