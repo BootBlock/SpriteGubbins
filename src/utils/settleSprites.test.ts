@@ -14,6 +14,14 @@ const SPOT: Rgba = { r: 96, g: 116, b: 146, a: 255 };
 const NARROW = DEFAULT_SPRITE_GAP;
 const WIDE = SPRITE_GAP_RANGE.max;
 
+/*
+ * The fixtures are built afresh for every call rather than shared, and that is what lets "changes no
+ * pixel" be asserted at all. Every pass here hands back its argument by reference wherever it moved
+ * nothing, so a result compared with the very image it was given is one buffer compared with itself —
+ * and a pass that wrote into its input instead of a copy would pass that comparison and leak its edit
+ * into the next case. A second build of the same sheet is the sheet as it arrived.
+ */
+
 /**
  * One subject cut down its seam by two clear columns, with one pixel knocked out of its right edge.
  *
@@ -21,13 +29,15 @@ const WIDE = SPRITE_GAP_RANGE.max;
  * the break from the intact side. Read as two, each half is an edge on one side and fill on the other,
  * which mirrors about nothing — so the snap has no sprite to settle.
  */
-const SPLIT_SUBJECT = imageFrom(12, 8, (x, y) => {
-  if (y < 2 || y >= 6) return CLEAR;
-  if (x === 2) return EDGE;
-  if (x === 3 || x === 4 || x === 7 || x === 8) return FILL;
-  if (x === 9) return y === 3 ? FILL : EDGE;
-  return CLEAR;
-});
+function splitSubject(): ImageData {
+  return imageFrom(12, 8, (x, y) => {
+    if (y < 2 || y >= 6) return CLEAR;
+    if (x === 2) return EDGE;
+    if (x === 3 || x === 4 || x === 7 || x === 8) return FILL;
+    if (x === 9) return y === 3 ? FILL : EDGE;
+    return CLEAR;
+  });
+}
 
 /**
  * Two 4 × 4 blocks six clear columns apart, the second carrying one cell a shade off the first.
@@ -35,12 +45,14 @@ const SPLIT_SUBJECT = imageFrom(12, 8, (x, y) => {
  * Read as two sprites they are one drawing at any tolerance past that shade, so the fold overwrites
  * the spot. Read as one, there is no second sprite to compare it with.
  */
-const NEAR_REPEATS = imageFrom(20, 8, (x, y) => {
-  if (y < 2 || y >= 6) return CLEAR;
-  if (x >= 2 && x < 6) return FILL;
-  if (x >= 12 && x < 16) return x === 12 && y === 2 ? SPOT : FILL;
-  return CLEAR;
-});
+function nearRepeats(): ImageData {
+  return imageFrom(20, 8, (x, y) => {
+    if (y < 2 || y >= 6) return CLEAR;
+    if (x >= 2 && x < 6) return FILL;
+    if (x >= 12 && x < 16) return x === 12 && y === 2 ? SPOT : FILL;
+    return CLEAR;
+  });
+}
 
 /**
  * A row of three 4 × 4 blocks whose middle one sits two pixels right of the pitch the outer two keep.
@@ -49,10 +61,12 @@ const NEAR_REPEATS = imageFrom(20, 8, (x, y) => {
  * two blocks are six clear columns apart and the first two ten, so the widest gap folds only the last
  * pair — which leaves a row of two, and two frames fit any spacing exactly.
  */
-const DRIFTED_ROW = imageFrom(40, 10, (x, y) => {
-  if (y < 3 || y >= 7) return CLEAR;
-  return [2, 16, 26].some((left) => x >= left && x < left + 4) ? FILL : CLEAR;
-});
+function driftedRow(): ImageData {
+  return imageFrom(40, 10, (x, y) => {
+    if (y < 3 || y >= 7) return CLEAR;
+    return [2, 16, 26].some((left) => x >= left && x < left + 4) ? FILL : CLEAR;
+  });
+}
 
 /**
  * Every one of the three passes switched on and none of them acting: the two modes at `CHECK`, the
@@ -99,30 +113,30 @@ const READING_ONLY: QuantiseSettings = {
  */
 describe('settleSprites — the sprite gap', () => {
   it.each([
-    ['the symmetry settle', SPLIT_SUBJECT],
-    ['the duplicate fold', NEAR_REPEATS],
-    ['the frame alignment', DRIFTED_ROW],
+    ['the symmetry settle', splitSubject],
+    ['the duplicate fold', nearRepeats],
+    ['the frame alignment', driftedRow],
   ])('changes no pixel at any gap while %s only reads', (_route, sheet) => {
     for (let gap = SPRITE_GAP_RANGE.min; gap <= SPRITE_GAP_RANGE.max; gap += SPRITE_GAP_RANGE.step) {
-      expect(channels(settleSprites(sheet, { ...READING_ONLY, spriteGap: gap }).image)).toEqual(
-        channels(sheet),
+      expect(channels(settleSprites(sheet(), { ...READING_ONLY, spriteGap: gap }).image)).toEqual(
+        channels(sheet()),
       );
     }
     // The boxes move all the same, and they are what the Aseprite document, the sprite pack and the
     // manifest are cut along — so the half of the guidance that says the PNG stays put is not a
     // promise about those three.
-    expect(settleSprites(sheet, { ...READING_ONLY, spriteGap: WIDE }).sprites).not.toEqual(
-      settleSprites(sheet, { ...READING_ONLY, spriteGap: NARROW }).sprites,
+    expect(settleSprites(sheet(), { ...READING_ONLY, spriteGap: WIDE }).sprites).not.toEqual(
+      settleSprites(sheet(), { ...READING_ONLY, spriteGap: NARROW }).sprites,
     );
   });
 
   it('decides whether the symmetry settle has a sprite to settle', () => {
     const settings = { ...READING_ONLY, symmetry: 'SNAP' as const };
-    const halves = settleSprites(SPLIT_SUBJECT, { ...settings, spriteGap: NARROW });
-    const whole = settleSprites(SPLIT_SUBJECT, { ...settings, spriteGap: WIDE });
+    const halves = settleSprites(splitSubject(), { ...settings, spriteGap: NARROW });
+    const whole = settleSprites(splitSubject(), { ...settings, spriteGap: WIDE });
 
     expect(halves.symmetry?.map((reading) => reading.snapped)).toEqual([false, false]);
-    expect(channels(halves.image)).toEqual(channels(SPLIT_SUBJECT));
+    expect(channels(halves.image)).toEqual(channels(splitSubject()));
 
     expect(whole.symmetry?.map((reading) => reading.snapped)).toEqual([true]);
     expect(readPixel(whole.image.data, pixelOffset(12, 9, 3))).toEqual(EDGE);
@@ -130,26 +144,26 @@ describe('settleSprites — the sprite gap', () => {
 
   it('decides whether the duplicate fold has a pair to fold', () => {
     const settings = { ...READING_ONLY, duplicateSnap: true };
-    const apart = settleSprites(NEAR_REPEATS, { ...settings, spriteGap: NARROW });
-    const joined = settleSprites(NEAR_REPEATS, { ...settings, spriteGap: WIDE });
+    const apart = settleSprites(nearRepeats(), { ...settings, spriteGap: NARROW });
+    const joined = settleSprites(nearRepeats(), { ...settings, spriteGap: WIDE });
 
     expect(apart.snapped).toBe(true);
     expect(readPixel(apart.image.data, pixelOffset(20, 12, 2))).toEqual(FILL);
 
     expect(joined.duplicates).toEqual([]);
     expect(joined.snapped).toBe(false);
-    expect(channels(joined.image)).toEqual(channels(NEAR_REPEATS));
+    expect(channels(joined.image)).toEqual(channels(nearRepeats()));
   });
 
   it('decides whether the frame alignment has a row to align', () => {
     const settings = { ...READING_ONLY, frameAlignment: 'SNAP' as const };
-    const three = settleSprites(DRIFTED_ROW, { ...settings, spriteGap: NARROW });
-    const two = settleSprites(DRIFTED_ROW, { ...settings, spriteGap: WIDE });
+    const three = settleSprites(driftedRow(), { ...settings, spriteGap: NARROW });
+    const two = settleSprites(driftedRow(), { ...settings, spriteGap: WIDE });
 
     expect(three.strips?.[0]?.frames.map((frame) => frame.snapped)).toEqual([false, true, false]);
-    expect(channels(three.image)).not.toEqual(channels(DRIFTED_ROW));
+    expect(channels(three.image)).not.toEqual(channels(driftedRow()));
 
     expect(two.strips).toEqual([]);
-    expect(channels(two.image)).toEqual(channels(DRIFTED_ROW));
+    expect(channels(two.image)).toEqual(channels(driftedRow()));
   });
 });
