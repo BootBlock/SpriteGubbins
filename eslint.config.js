@@ -70,12 +70,22 @@ export default tseslint.config(
     },
   },
 
-  // App source (NOT tests): React rules + type-aware async-safety rules. These need type
-  // information, so the parser is pointed at the nearest tsconfig via the project service.
+  // Every TypeScript file the repository lints — `src/`, `tests/`, `scripts/` and `vite.config.ts`
+  // alike: type information, and the rules that cannot run without it. The parser is pointed at the
+  // nearest tsconfig through the project service, which finds `src/` in `tsconfig.app.json` and the
+  // rest in `tsconfig.node.json`; a TypeScript file in neither program fails to parse rather than
+  // being linted without types.
+  //
+  // These rules sat in the `src/` block below until issue #257, because both sets were written
+  // beside the one parser config there was — and so a floating promise in `tests/` or `scripts/`
+  // passed the gate that rejects it in `src/`. `tests/` is where the app's correctness is
+  // established, which is the same argument `tsconfig.node.json` makes for its strictness block.
+  // `tests/type-aware-lint-scope.test.ts` asks ESLint which rules each file resolves to, and fails
+  // on any rule declaring that it needs type information which is missing from, or set differently
+  // on, one of them.
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['**/*.{ts,tsx,mts,cts}'],
     languageOptions: {
-      globals: { ...globals.browser, ...globals.worker },
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
@@ -83,6 +93,27 @@ export default tseslint.config(
         // fine, so silence the one-time "unsupported version" warning.
         warnOnUnsupportedTypeScriptVersion: false,
       },
+    },
+    rules: {
+      // Async-safety rules — the spec's "NO Fire-and-Forget Async Logic" ban, enforced.
+      // `no-floating-promises` catches the un-awaited call with no `.catch()`;
+      // `no-misused-promises` catches an async callback handed to something that runs it
+      // synchronously, which is exactly the `forEach(async …)` shape the spec calls out.
+      '@typescript-eslint/no-floating-promises': 'error',
+      // JSX event handlers are legitimately `async` (React ignores the returned promise),
+      // so exempt attributes; still flags a promise passed where a plain callback is run.
+      // Outside `.tsx` there are no attributes, so the exemption excuses nothing there.
+      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
+      '@typescript-eslint/await-thenable': 'error',
+    },
+  },
+
+  // App source, colocated tests included, and nothing outside `src/`: the React rules. None of them
+  // needs type information; they are scoped here because React is only written here.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.worker },
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -103,15 +134,6 @@ export default tseslint.config(
       // Accessibility linting at the recommended preset's severities (errors).
       ...jsxA11y.flatConfigs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-      // Async-safety rules — the spec's "NO Fire-and-Forget Async Logic" ban, enforced.
-      // `no-floating-promises` catches the un-awaited call with no `.catch()`;
-      // `no-misused-promises` catches an async callback handed to something that runs it
-      // synchronously, which is exactly the `forEach(async …)` shape the spec calls out.
-      '@typescript-eslint/no-floating-promises': 'error',
-      // JSX event handlers are legitimately `async` (React ignores the returned promise),
-      // so exempt attributes; still flags a promise passed where a plain callback is run.
-      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
-      '@typescript-eslint/await-thenable': 'error',
     },
   },
 
