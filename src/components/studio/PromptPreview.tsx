@@ -64,8 +64,8 @@ export function PromptPreview() {
       exists from `--breakpoint-studio` up. They sat on `lg` for a while, 96px narrower, and across
       1024–1119px the studio was still stacked with nothing capping anything: measured, the panel was
       576px tall at 1023px wide and 10,010px at 1024px, on a page that went from 3,988px to 13,421px.
-      `tests/studio-column-width.test.ts` walks everything the split renders and fails on a
-      page-width variant anywhere in it.
+      `tests/split-page-width.test.ts` walks everything the split renders and fails on a page-width
+      variant anywhere in it.
 
       `studio:min-h-[24rem]` is a floor, and it is not decoration. This panel is `overflow-hidden`, so
       anything flex squeezes out of it is *clipped*, not scrolled — and with a zero block-size

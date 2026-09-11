@@ -60,15 +60,26 @@ export function PresetCollectionPanel({ collection, entries, narrowedBy }: Prese
           The cards each carry their own entrance; this is what makes them arrive as a sweep across
           the row rather than all at once.
 
-          Three columns from `xl` and not from `2xl`, because `xl` is where the page's own
-          `max-w-7xl` cap engages: past 1280px this panel stops widening, so a later breakpoint
-          would switch the column count at a width where nothing about the available space changed.
+          **The column count is a container query, because this grid is inside a column.** The
+          library splits at `lg`, and from there the page and this box stop moving together. It was
+          on two page breakpoints, and measured in Edge they were counting cards for a box they could
+          not see: a 975px grid held two cards at a 1023px page while a 918px grid held three at
+          1280px, and a 735px grid held one while a 720px grid held two.
+
+          Both thresholds are bounded by what the layout hands this box rather than picked. Three
+          across at 57rem is under the 918px the column reaches once `main`'s `max-w-7xl` cap binds —
+          nine of twelve tracks with `gap-6` in 1232px of content — with 6px to spare for the layout
+          engine's rounding, so the widest column is three-up as it always was and a card is never
+          narrower than 288px. Two across at 44rem is under the 720px the stacked page gives this box
+          at `md`, where it has always been two-up, and a card there is never narrower than 340px.
         */
-        <ul className="stagger-children grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {entries.map((entry) => (
-            <PresetCard key={entry.preset.id} preset={entry.preset} index={entry.index} />
-          ))}
-        </ul>
+        <div className="@container">
+          <ul className="stagger-children grid grid-cols-1 gap-6 @[44rem]:grid-cols-2 @[57rem]:grid-cols-3">
+            {entries.map((entry) => (
+              <PresetCard key={entry.preset.id} preset={entry.preset} index={entry.index} />
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   );

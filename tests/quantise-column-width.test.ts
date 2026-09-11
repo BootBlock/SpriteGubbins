@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { MD_BREAKPOINT_PX, pageWidthClassesIn, readColumnSplit, stickyVariantsOf } from './columnSplit.ts';
+import { MD_BREAKPOINT_PX, readColumnSplit, stickyVariantsOf } from './columnSplit.ts';
 import { importGraph } from './importGraph.ts';
 import { SELECT_MIN_PX } from './selectLabelBudget.ts';
 
@@ -228,19 +228,6 @@ describe('quantise column width', () => {
     expect(Number(threshold) * ROOT_FONT_PX).toBeLessThanOrEqual(
       split.contentWidthAt(widest, split.splitWidthPx),
     );
-  });
-
-  /**
-   * The container query above answers how wide a box inside the split is; this answers whether
-   * anything in it asks the page instead. Walked from the split file rather than the tab, because the
-   * tab also renders the guide above the workspace, which is a full-width panel and is entitled to
-   * the page's breakpoints.
-   */
-  it('lays out nothing the split renders by the page’s width', () => {
-    const classes = pageWidthClassesIn(SPLIT_FILE, split.variant);
-    expect(classes.files).toContain(PREVIEW_ROOT);
-    expect(classes.files).not.toContain('src/components/quantise/QuantiseGuide.tsx');
-    expect(classes.found).toStrictEqual([]);
   });
 
   it('makes the preview sticky on the same condition as the split', () => {

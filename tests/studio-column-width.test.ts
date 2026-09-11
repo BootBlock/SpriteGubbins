@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  MD_BREAKPOINT_PX,
-  pageWidthClassesIn,
-  pageWidthVariantPattern,
-  readColumnSplit,
-  stickyVariantsOf,
-} from './columnSplit.ts';
+import { MD_BREAKPOINT_PX, readColumnSplit, stickyVariantsOf } from './columnSplit.ts';
 import { SELECT_MIN_PX } from './selectLabelBudget.ts';
 
 /**
@@ -79,32 +73,5 @@ describe('studio column width', () => {
     const sticky = stickyVariantsOf(TAB_FILE);
     expect(sticky.sticky).toBe(split.variant);
     expect(sticky.scroll).toBe(split.variant);
-  });
-
-  /**
-   * The assertion above holds the column to the split's variant; this holds everything inside it.
-   * `PromptPreview` is the panel that was missed — its height cap came off on `lg` while the column
-   * that bounds it appeared on `studio:`, and at 1024px the studio was a 13,421px page (#191).
-   */
-  it('lays out nothing the split renders by the page’s width', () => {
-    const classes = pageWidthClassesIn(TAB_FILE, split.variant);
-    expect(classes.files).toContain('src/components/studio/PromptPreview.tsx');
-    expect(classes.found).toStrictEqual([]);
-  });
-
-  /**
-   * The sweep above passes on a tree with no page-width class in it and on a pattern that matches
-   * nothing, which read the same. Each shape is assembled from two halves so that this file does not
-   * spell a class the app never wears, which Tailwind would emit from the assertion alone.
-   */
-  it('recognises a page breakpoint in every shape and leaves the rest alone', () => {
-    const pattern = pageWidthVariantPattern(['lg', 'quantise']);
-    const matches = (prefix: string) => [...[prefix, 'flex-1'].join(':').matchAll(pattern)].length > 0;
-    for (const prefix of ['lg', 'max-lg', 'quantise', 'hover:lg', 'min-[70rem]', 'max-[70rem]']) {
-      expect(matches(prefix), prefix).toBe(true);
-    }
-    for (const prefix of ['studio', '@lg', '@[34rem]', 'flag', 'xlg']) {
-      expect(matches(prefix), prefix).toBe(false);
-    }
   });
 });

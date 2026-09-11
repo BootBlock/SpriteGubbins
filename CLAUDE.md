@@ -624,11 +624,15 @@ container query answers how wide the box is; it cannot answer whether the box is
 column or a full-width panel in a stacked page, and that is the question `PromptPreview`'s height
 cap asks. It was on `lg:` while its column was on `studio:`, so across the 96px between them the
 studio was stacked with the cap already gone and the prompt panel ran to 10,010px (#191). So **no
-page breakpoint may appear anywhere a split renders** — not a stock one, and not the *other* tab's
-token. `pageWidthClassesIn` in [columnSplit.ts](tests/columnSplit.ts) walks the split file's imports
-with comments blanked and both column-width tests fail on anything it finds. The one thing it passes
-is a class string that is unconditionally `fixed`, whose box is laid out against a viewport rather
-than a column — the detached preview window's toast is the case in the tree.
+page breakpoint may appear anywhere a split renders** — not a stock one, not its `min-`, `max-` or
+`not-` spelling, and not another split's token.
+[split-page-width.test.ts](tests/split-page-width.test.ts) finds every split by its sticky column —
+the studio's, the quantiser's and the preset library's — walks the split file's imports, and reads
+the class tokens of each string literal with comments blanked. Its first run found the preset
+library's card grid counting columns off the page, which is a container query now. The one thing it
+passes is a string that is unconditionally `fixed`, whose box is laid out against a viewport rather
+than a column; the detached preview window's toast is the case in the tree. A `fixed` inside one
+branch of a `${…}` is a string of its own and exempts only that branch.
 
 **A category's option pool is written in title case, and `NONE` is the only value that may shout.**
 The pools in `src/constants/categories/` are two things at once: the suggestions a `ComboBox`

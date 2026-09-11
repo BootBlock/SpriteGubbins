@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
+import { stickyColumns } from './stickyColumns.ts';
 
 /**
  * No sticky column may state how tall the header is.
@@ -17,11 +17,11 @@ import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
  * rendered wrong enough to fail anything. The preset library carried a fifth, in a tab nobody was
  * looking at while the other two were being fixed.
  *
- * **So the columns are found rather than listed.** A named list is what left that fifth figure
- * behind, and it is the same list a sixth column would not be added to. Anything under `src/` whose
- * class string carries a variant-prefixed `:sticky` is swept, and the sweep fails if it finds fewer
- * than the three that exist — so a column that stops being recognised is a failure rather than a
- * silent gap in the coverage.
+ * **So the columns are found rather than listed**, by `stickyColumns`. A named list is what left
+ * that fifth figure behind, and it is the same list a sixth column would not be added to. Anything
+ * under `src/` whose class string carries a variant-prefixed `:sticky` is swept, and the sweep fails
+ * if it finds fewer than the three that exist — so a column that stops being recognised is a failure
+ * rather than a silent gap in the coverage.
  *
  * Each is asserted negatively as well as positively: not only that the derived properties are used,
  * but that the element carries no length of its own for the browser to prefer.
@@ -63,31 +63,6 @@ function read(file: string): string {
  */
 const OFFSET_VALUE = '[var(--sticky-column-top)]';
 const CAP_VALUE = '[var(--sticky-column-height)]';
-
-/**
- * Every sticky column in the app, as `[file, class string]`.
- *
- * The header itself is deliberately outside this: it is `sticky top-0` with no variant prefix,
- * because it *is* the chrome the columns are clearing rather than something that has to clear it.
- * The prefix is what separates the two, so it is what the pattern requires.
- *
- * `scannableSources` is the walk the other guard suites share, rather than another answer to what
- * counts as source — and it reaches `.ts` as well as `.tsx`, so a class string hoisted into a
- * constant is swept along with the JSX. Its own docblock names who else calls it; a count kept here
- * as well would be a second census, and the stale one is always the one being read.
- */
-function stickyColumns(): readonly (readonly [string, string])[] {
-  const found: (readonly [string, string])[] = [];
-  for (const file of scannableSources()) {
-    for (const match of sourceText(file).matchAll(/className="([^"]*\b[a-z][\w-]*:sticky\b[^"]*)"/g)) {
-      const classes = match[1];
-      if (classes !== undefined) {
-        found.push([relative(process.cwd(), file).replaceAll('\\', '/'), classes] as const);
-      }
-    }
-  }
-  return found;
-}
 
 describe('sticky column offset', () => {
   const columns = stickyColumns();
