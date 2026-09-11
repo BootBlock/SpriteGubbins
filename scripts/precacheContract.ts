@@ -602,8 +602,23 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * the 0.94 two notes above. It is deliberately no wider, for the reason each of those gives and
  * this one now repeats as the fifth: whether 2350 was ever the right figure for what a first visit
  * downloads wants answering by whoever owns this contract, and slack is a poor substitute for it.
+ *
+ * **Raised from 2363 by the colour guidance saying what becomes of a budget.** The Palette Limit and
+ * Palette cards described what each setting asks a generator for and nothing about what comes back,
+ * while no sheet in a 27-sheet pack was drawn inside the budget it was given (#244) — so both now say
+ * not to expect it, and the budget's card states what the Quantise tab reduces a sheet to under each
+ * budget, reading the figures from `PALETTE_COLOR_COUNTS` rather than typing them out. Measured
+ * against `main` at `87e1170`, rebuilt from the same `node_modules` — **2362.10 KiB across 64
+ * entries** — this build reports **2363.00 across 64**, a delta of 0.90 that crossed a ceiling the
+ * base sat 0.90 under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was
+ * renamed. It is guidance prose, constant data the entry chunk reaches, on the footing every raise
+ * above stands on; the docblock beside `PALETTE_TEXT` that argues for leaving the prompt alone is
+ * stripped from the bundle.
+ *
+ * 2364 leaves **1.00 KiB**, the order of the 0.74 and 0.94 the notes above leave, and deliberately
+ * no wider for the reason each of them gives.
  */
-export const PRECACHE_CEILING_KIB = 2363;
+export const PRECACHE_CEILING_KIB = 2364;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
