@@ -424,9 +424,11 @@ export interface SheetPlan {
    * tile — two scales for one building, which is exactly the disagreement section 0's rule exists to
    * stop. A series is one (category, mode) pairing and a batch never spans two modes, so two sheets
    * that can never share a batch are free to name different units. `sheetPlans.test.ts` holds both
-   * halves: every sheet of a series names the same unit, and every series writes that unit somewhere
-   * in its own inventory. That is also why a unit need not be drawn on *this* sheet — FONT's lower-case
-   * sheet is set against the cap height its capitals sheet draws.
+   * halves: every sheet of a series names the same unit, and every word of that unit is written
+   * somewhere in the series' own sheets or in the category's selector label — the label being the only
+   * place `creature` and `building` are written, as `sheetsProseFor` in `src/test/categoryProse.ts`
+   * records. That is also why a unit need not be drawn on *this* sheet — FONT's lower-case sheet is
+   * set against the cap height its capitals sheet draws.
    *
    * **The six categories whose components are parts of one subject take `a full X`**, which is
    * CHARACTER's own shipped wording and not a form chosen fresh. The alternative, `the whole X`, echoes

@@ -557,7 +557,11 @@ describe('section 2’s scale unit is a noun the series in front of the reader w
     }
   });
 
-  it('grounds every series’ unit in that series’ own inventory', () => {
+  it('grounds every series’ unit in that series’ own sheets and the category’s label', () => {
+    // The label is in the corpus because `creature` and `building` are written nowhere else — see
+    // `sheetsProseFor`. It cannot hide the defect this test is for: BACKGROUND's label is
+    // `Background / Parallax Layer`, which grounds “parallax” and not “band”.
+    //
     // Matched with a leading boundary only, so a plan writing the plural — `tiles`, `widgets` — still
     // grounds the singular the phrase is stated in.
     //

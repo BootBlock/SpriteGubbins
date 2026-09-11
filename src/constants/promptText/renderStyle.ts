@@ -113,12 +113,12 @@ export function shareRange(profile: ShareProfile): string {
  * height of the effect filling its cell, with every frame before and after it drawn smaller at that
  * scale, which "one frame of the effect" could not say.
  *
- * **No category noun, and that is what the largest component buys.** The noun a category's sheet is
- * priced in cannot name a piece with a cell on six of the thirteen: `a full figure` is the whole the
- * parts assemble into, and a CHARACTER series draws heads on one sheet and upper legs on the next. A
- * per-sheet noun would be a new answer on every plan, and on the plans whose `SheetPlan.scaleExample`
- * pairs a smallest piece with a largest one it would be a second copy of that largest piece, free to
- * drift from it. A *component* is the prompt's own defined term, and "the largest" picks out one
+ * **No unit noun, and that is what the largest component buys.** The unit a sheet is priced in,
+ * `SheetPlan.scaleUnit`, cannot name a piece with a cell on six of the thirteen categories: `a full
+ * figure` is the whole the parts assemble into, and a CHARACTER series draws heads on one sheet and
+ * upper legs on the next. A noun naming each sheet's largest piece instead would be a new answer on
+ * every plan, and on the plans whose `SheetPlan.scaleExample` pairs a smallest piece with a largest
+ * one it would be a second copy of that largest piece, free to drift from it. A *component* is the prompt's own defined term, and "the largest" picks out one
  * on every sheet without being told which piece that is.
  *
  * It names the grid rather than citing the layout section by number: `[SEC:LAYOUT]` cannot be used

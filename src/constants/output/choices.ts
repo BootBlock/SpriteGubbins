@@ -87,8 +87,9 @@ export const RESOLUTION_PROFILE_CHOICES: readonly OutputChoice<ResolutionProfile
   { value: 'HIGH_RESOLUTION', label: 'HIGH_RESOLUTION (the largest fixed scale)' },
   { value: 'MID_RESOLUTION', label: 'MID_RESOLUTION (a step smaller than high)' },
   // No noun, as the two above carry none: the prompt states this range against the unit the chosen
-  // category's sheet is priced in — a glyph, a tile, a widget — and a label fixed here could only
-  // name one of them. It said "per figure", which is the same defect the prompt line carried.
+  // sheet is priced in — a glyph, a tile, a widget, and on BACKGROUND a band or a mid mass depending
+  // on the sheet — and a label fixed here could only name one of them. It said "per figure", which is
+  // the same defect the prompt line carried.
   { value: 'RETRO_16_BIT', label: 'RETRO_16_BIT (roughly 64–96 px tall)' },
   { value: 'CUSTOM', label: 'CUSTOM (work to the target size below)' },
 ];
