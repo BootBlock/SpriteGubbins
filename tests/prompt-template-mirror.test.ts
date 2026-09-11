@@ -1,7 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PROMPT_TEMPLATE } from '../src/constants/promptTemplate.ts';
+import { BASELINE_PROMPT_DOC as DOC, baselinePromptText } from './baselinePromptDocument.ts';
 
 /**
  * §3 of `docs/todo/baseline-prompt-new.md` is a verbatim copy of `PROMPT_TEMPLATE`, and this suite
@@ -22,8 +21,12 @@ import { PROMPT_TEMPLATE } from '../src/constants/promptTemplate.ts';
  * It lives under `tests/` rather than beside the template because it reads a file off disk: that is
  * the Node-side program (`tsconfig.node.json`, which carries the `node` types), where the
  * design-token contract lives for the same reason.
+ *
+ * **The prose around the fence is held to the code too**, by the `baseline-prompt-*.test.ts` suites
+ * beside this one: §1 describes the placeholder forms this block uses and §2 the parameters it is
+ * filled from, and neither was checked while this suite was the only one reading the document. Both
+ * had drifted the way the fence had (issue #222).
  */
-const DOC = 'docs/todo/baseline-prompt-new.md';
 const HEADING = '## 3. The template';
 
 /**
@@ -42,14 +45,13 @@ const FENCE_LINE = /^(`{3,})(.*)$/;
 /**
  * The first fenced block under §3's heading, or `null` if the document no longer has one.
  *
- * Line endings are normalised on the way in so that a failure is always about content. `.gitattributes`
- * pins the checkout to LF, and a template literal's cooked value is `\n` whatever its source file
- * holds, so the two sides already agree — what this defends against is an editor writing CRLF back
- * into the working tree, where the comparison would otherwise fail on line breaks git normalises away
- * again at commit, reporting the first line of a 425-line block as the culprit.
+ * It reads the document through `baselinePromptText`, which normalises line endings on the way in. A
+ * template literal's cooked value is `\n` whatever its source file holds, so without that an editor
+ * writing CRLF back into the working tree would fail the comparison on line breaks git normalises
+ * away again at commit, reporting the first line of a 425-line block as the culprit.
  */
 function mirroredTemplate(markdown: string): string | null {
-  const lines = markdown.replaceAll('\r\n', '\n').split('\n');
+  const lines = markdown.split('\n');
   const heading = lines.indexOf(HEADING);
   if (heading < 0) return null;
   const open = lines.findIndex((line, index) => index > heading && FENCE_LINE.test(line));
@@ -76,7 +78,7 @@ function firstDifferingLine(left: string, right: string): number {
   return 0;
 }
 
-const mirror = mirroredTemplate(readFileSync(resolve(process.cwd(), DOC), 'utf8'));
+const mirror = mirroredTemplate(baselinePromptText());
 
 describe('the baseline-prompt document mirrors the template', () => {
   it('still has a fenced block under §3 to compare against', () => {
