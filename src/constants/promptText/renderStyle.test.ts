@@ -232,7 +232,7 @@ describe('resolutionProfileDescription — the frame a share is stated in', () =
   } as const;
 
   it('states each share rung as one sentence on every category, naming no category’s unit', () => {
-    // The unit is what reached the six whole-subject categories as `a full figure`, which is a whole
+    // The unit is what reached the six whole-subject categories as `a full X`, which names a whole
     // the sheet draws only in pieces and has no cell of its own. The largest component is a piece
     // every sheet has, so the sentence cannot depend on the category at all.
     for (const profile of SHARE_BEARING) {

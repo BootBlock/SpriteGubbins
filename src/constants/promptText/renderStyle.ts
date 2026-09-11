@@ -118,8 +118,8 @@ export function shareRange(profile: ShareProfile): string {
  * priced in cannot name a piece with a cell on six of the thirteen: `a full figure` is the whole the
  * parts assemble into, and a CHARACTER series draws heads on one sheet and upper legs on the next. A
  * per-sheet noun would be a second copy of the largest piece `SheetPlan.scaleExample` already names,
- * free to drift from it. "The largest component" is the prompt's own defined term, true on every sheet
- * without being told which piece that is.
+ * free to drift from it. A *component* is the prompt's own defined term, and "the largest" picks out one
+ * on every sheet without being told which piece that is.
  *
  * It names the grid rather than citing the layout section by number: `[SEC:LAYOUT]` cannot be used
  * here, because both of that heading's declarations sit inside an `[IF:…]` and
