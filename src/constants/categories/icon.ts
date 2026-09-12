@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -40,7 +44,8 @@ export const ICON: CategoryDefinition = {
       key: 'species',
       label: 'Icon Family',
       tooltip:
-        'What kind of icon this is. It decides the set’s shape before any styling does, because what an icon has to communicate fixes how it is built — an inventory icon depicts an object, a status badge depicts a condition, and a damage-type symbol is an abstract mark with no object behind it at all.',
+        'What kind of icon this is, and what it has to communicate fixes how it is drawn — an inventory icon depicts an object, a status badge depicts a condition, and a damage-type symbol is an abstract mark with no object behind it at all. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Inventory & Item Icon',
         'Ability & Spell Icon',

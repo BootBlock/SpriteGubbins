@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -26,7 +30,9 @@ export const EFFECT: CategoryDefinition = {
       key: 'species',
       label: 'Effect Type',
       tooltip:
-        'What the effect *is*, which decides the shape of its sequence before any styling does. A one-shot explosion, a three-frame muzzle flash and a looping portal are three different animations, and the number of frames each needs is a property of this choice rather than of the art style over it.',
+        'What the effect *is*, which decides what every frame of the sequence is drawn as — a one-shot explosion, a muzzle flash and a looping portal are three different animations. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS +
+        ' Every type is drawn across the same number of frames.',
       options: [
         'Explosion / Detonation',
         'Muzzle Flash / Discharge',

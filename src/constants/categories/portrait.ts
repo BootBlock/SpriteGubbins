@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -56,7 +60,8 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'species',
       label: 'Portrait Subject',
       tooltip:
-        'Who the portrait is of. It fixes the head shape, the skin or hide, and how far the face may depart from a human one before the expressions stop reading — a beak and a muzzle carry a smile very differently from a mouth, and a sheet that is not told which it is drawing tends to split the difference. The augmented entries differ in how much face is left: an augmented human still expresses with skin, where a full conversion expresses with plating and lights, and stating which decides whether the set can carry a smile at all.',
+        'Who the portrait is of. It fixes the head shape, the skin or hide, and how far the face may depart from a human one before the expressions stop reading — a beak and a muzzle carry a smile very differently from a mouth, and a sheet that is not told which it is drawing tends to split the difference. The augmented entries differ in how much face is left: an augmented human still expresses with skin, where a full conversion expresses with plating and lights, and stating which decides whether the set can carry a smile at all. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Human',
         'Elf & Fae Kin',

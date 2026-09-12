@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /** Monsters and beasts — non-humanoid limb layouts, biological rather than worn detail. */
@@ -11,7 +15,9 @@ export const CREATURE: CategoryDefinition = {
       key: 'species',
       label: 'Creature Class',
       tooltip:
-        'The monster classification, which fixes the limb layout everything else hangs off: a quadruped, an insectoid and a void entity break down into completely different component sets. Set this before the anatomy base, which it constrains.',
+        'The monster classification, which decides the body the animal is drawn with: a quadruped, an insectoid and a void entity differ in how they stand, where their weight sits and what reads first at a glance. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS +
+        ' Set this before the anatomy base, which should agree with it.',
       options: [
         'Beast / Quadruped',
         'Mechanical Automaton',

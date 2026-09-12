@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -31,7 +35,8 @@ export const INTERFACE: CategoryDefinition = {
       key: 'species',
       label: 'Element Type',
       tooltip:
-        'Which widget this is. It decides the component split before any styling does, because what a widget has to *do* fixes how it comes apart — a button has states, a panel has stretching edges, and a bar has a track its fill slides inside.',
+        'Which widget this is. It decides what every piece is drawn as, because what a widget has to *do* fixes how it looks — a button has to read as pressable, a panel has edges that stretch, and a bar has a track its fill slides inside. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Button & Key Cap',
         'Panel & Window Frame',

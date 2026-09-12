@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -56,7 +60,9 @@ export const FONT: CategoryDefinition = {
       key: 'species',
       label: 'Font Family',
       tooltip:
-        'What kind of typeface this is. It fixes the whole set’s construction before any styling does, because what a font has to do decides how its letters are built — a display face carries weight a body face cannot afford, and a pixel face is drawn on a grid rather than described by curves. Be aware that image generators render lettering unreliably: the targets that reason over a prompt do better than the diffusion ones, and any set is worth checking glyph by glyph before it reaches an engine.',
+        'What kind of typeface this is. It decides how every letter is drawn, because what a font has to do decides its strokes — a display face carries weight a body face cannot afford, and a pixel face is drawn on a grid rather than described by curves. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS +
+        ' Every family is drawn across the same printable characters, a numeric face included. Be aware that image generators render lettering unreliably: the targets that reason over a prompt do better than the diffusion ones, and any set is worth checking glyph by glyph before it reaches an engine.',
       options: [
         'Blocky Display Face',
         'Narrow Condensed Face',

@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -36,7 +40,8 @@ export const TERRAIN: CategoryDefinition = {
       key: 'species',
       label: 'Terrain Type',
       tooltip:
-        'What the ground itself is. It fixes the material read and the shape of every boundary before any styling is applied — grass, scree and lava crust wash into a neighbouring material in completely different ways.',
+        'What the ground itself is. It fixes the material read and the shape of every boundary before any styling is applied — grass, scree and lava crust wash into a neighbouring material in completely different ways. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Grassland & Meadow',
         'Bare Earth & Dirt Track',

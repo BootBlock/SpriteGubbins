@@ -3,6 +3,7 @@ import {
   ABSENT_OPTION_DROPS_THE_PIECES,
   ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
   HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
@@ -51,7 +52,8 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'species',
       label: 'Layer Type',
       tooltip:
-        'What the backdrop’s scenery is. It sets the shapes its pieces are drawn in rather than which pieces the sheet lists: a sky is one unbroken gradient, a treeline is a broken profile, and a foreground occluder has gaps the player is seen through.',
+        'What the backdrop’s scenery is, which sets the shapes its pieces are drawn in: a sky is one unbroken gradient, a treeline is a broken profile, and a foreground occluder has gaps the player is seen through. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Sky & Cloud Layer',
         'Distant Horizon & Mountain Range',

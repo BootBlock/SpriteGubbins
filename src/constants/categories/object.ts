@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -17,7 +21,9 @@ export const OBJECT: CategoryDefinition = {
       key: 'species',
       label: 'Object Category',
       tooltip:
-        'What the prop fundamentally is. It decides the component breakdown as much as the look — a hinged chest, a turret and a wall panel share no parts at all — so set it before the structure base below.',
+        'What the prop fundamentally is, which decides its look and the shapes its pieces are drawn in — a hinged chest reads by its lid, a turret by its barrel and a wall panel by its flat face. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS +
+        ' Set it before the structure base below, which should agree with it.',
       options: [
         'Interactive Terminal',
         'Loot Chest / Container',

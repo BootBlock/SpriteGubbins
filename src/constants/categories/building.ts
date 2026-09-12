@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -17,7 +21,8 @@ export const BUILDING: CategoryDefinition = {
       key: 'species',
       label: 'Structure Type',
       tooltip:
-        'What the structure is for. It fixes the massing and the entrance treatment before any styling is applied — a watchtower, a market kiosk and a shopfront are different buildings even in identical materials.',
+        'What the structure is for. It fixes the massing and the entrance treatment before any styling is applied — a watchtower, a market kiosk and a shopfront are different buildings even in identical materials. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Modular Watchtower',
         'Ramen Stand Kiosk',

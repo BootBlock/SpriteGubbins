@@ -3,6 +3,7 @@ import {
   ABSENT_OPTION_DROPS_THE_PIECES,
   ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
   HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
@@ -24,7 +25,8 @@ export const VEHICLE: CategoryDefinition = {
       key: 'species',
       label: 'Vehicle Class',
       tooltip:
-        'What carries the vehicle — wheels, tracks, legs, rotors, thrusters or a hull in water. It decides the component split before any styling does, because the drive is the half of a vehicle that has to animate and every class animates differently.',
+        'What carries the vehicle — wheels, tracks, legs, rotors, thrusters or a hull in water. It decides what the drive is drawn as, and the drive is the half of a vehicle that has to animate. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Wheeled Ground Vehicle',
         'Tracked Armour / Tank',

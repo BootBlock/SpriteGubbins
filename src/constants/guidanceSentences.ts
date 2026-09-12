@@ -131,7 +131,7 @@ export const ABSENT_OPTION_DROPS_THE_PIECES =
  * gives 15 — CREATURE said the field decides how many legs get their own sprite slots while
  * `Amorphous — No Fixed Limbs` still ordered four limbs, and OBJECT said `Single Rigid Object` emits
  * one piece where it compiles to 30, 14 and 7 across its three modes. So the fact is written here
- * rather than thirteen times, and `tests/anatomy-base-inventory.test.ts` is what holds it true: it
+ * rather than thirteen times, and `tests/subject-field-inventory.test.ts` is what holds it true: it
  * compiles every value of every `anatomy` pool at every address and fails if any two sections 4
  * differ.
  *
@@ -141,3 +141,30 @@ export const ABSENT_OPTION_DROPS_THE_PIECES =
  */
 export const ASSEMBLY_BASE_ADDS_NO_COMPONENTS =
   'The base reaches the prompt as a statement of how the set is meant to come apart, and no entry of the sheet’s own component list is a function of it — so choosing another adds no slot and removes none.';
+
+/**
+ * What the field naming the subject does to the sheet, on all thirteen categories — which is to name
+ * the subject, and nothing in the inventory.
+ *
+ * `species` opens every form, under thirteen labels: *Species / Archetype*, *Creature Class*,
+ * *Object Category*, *Item Type*, *Effect Type*, *Font Family* and the rest one apiece. It reaches
+ * section 1 verbatim, where every piece the sheet orders is drawn as part of the subject it names, and
+ * **nothing that decides what section 4 orders reads it** — the fact
+ * {@link ASSEMBLY_BASE_ADDS_NO_COMPONENTS} states of the base, for the same reason. What the field
+ * does change is how those pieces are drawn, and each card says that in a sentence of its own,
+ * because what a watchtower's massing or a void entity's stance is differs by category.
+ *
+ * Six cards said the opposite after #233 had corrected the base's (issue #282): CREATURE's said a
+ * quadruped, an insectoid and a void entity “break down into completely different component sets”,
+ * OBJECT's that the category “decides the component breakdown as much as the look”, ITEM's, VEHICLE's
+ * and INTERFACE's that it decides “the component split”, and EFFECT's that the number of frames “is a
+ * property of this choice”. ICON's and FONT's said it fixed how the set “is built”, which invites the
+ * same reading, and BACKGROUND's made the claim until #280 rewrote it. Every value of every pool
+ * compiles a byte-identical section 4, and `tests/subject-field-inventory.test.ts` holds that true.
+ *
+ * **It is on all thirteen for the reason the base's sentence is**: this is the first field a reader
+ * sets and the one they expect to shape the sheet most, so a card that stays silent about the
+ * inventory leaves them to guess the answer six cards got wrong.
+ */
+export const SUBJECT_TYPE_ADDS_NO_COMPONENTS =
+  'What you choose here reaches the prompt as what the subject is, and no entry of the sheet’s own component list is a function of it — so another choice adds no slot and removes none.';

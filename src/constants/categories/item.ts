@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -17,7 +21,8 @@ export const ITEM: CategoryDefinition = {
       key: 'species',
       label: 'Item Type',
       tooltip:
-        'What the item actually is: weapon, potion, armour, artefact. It decides the whole shape language and the component split — a rifle with a detachable magazine breaks down very differently from a single-piece potion.',
+        'What the item actually is: weapon, potion, armour, artefact. It decides the whole shape language — a rifle reads by its long barrel and stock, and a potion by its flask and stopper. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Melee Weapon (Sword/Axe)',
         'Ranged Weapon (Rifle/Bow)',

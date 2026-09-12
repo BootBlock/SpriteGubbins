@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+  SUBJECT_TYPE_ADDS_NO_COMPONENTS,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /** Humanoid characters — the default category, and the one the component-count model was built around. */
@@ -11,7 +15,9 @@ export const CHARACTER: CategoryDefinition = {
       key: 'species',
       label: 'Species / Archetype',
       tooltip:
-        'The base organism or entity type, and the strongest single driver of the whole sheet: it fixes the skeletal layout and the proportions every other field is drawn on top of. Free text is accepted — the list is a starting point, not a constraint.',
+        'The base organism or entity type, and the strongest single influence on the figure: it sets the body shape and the proportions every other field is drawn on top of. ' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS +
+        ' Free text is accepted — the list is a starting point, not a constraint.',
       options: [
         'Human',
         'Cybernetic Cyborg',
