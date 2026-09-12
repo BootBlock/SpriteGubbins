@@ -37,9 +37,10 @@ git branch -d worktree-<topic>
 - **If `git worktree remove` refuses, something is uncommitted**: look at it, never `--force`. Stop
   any dev server running in the tree first.
 - **If the work cannot land**, leave the tree and say so plainly, naming the branch and the blocker.
-- **Tools that walk the project root must skip `.claude/`.** Git, Prettier and Tailwind read
-  `.gitignore`; ESLint's flat config and Vitest do not, so both carry an explicit `.claude/**`. A new
-  root-scanning tool needs the same exclusion in the same change.
+- **Tools that walk the project root must skip `.claude/worktrees/`.** Git, Prettier and Tailwind
+  take that from the rule in `.gitignore`. ESLint's flat config and Vitest do not read `.gitignore`,
+  so both carry an explicit `.claude/**`. A new root-scanning tool needs the same exclusion in the
+  same change.
 
 ## No secrets, and public-repository hygiene
 
@@ -47,7 +48,8 @@ This repository is public, and a committed secret is permanent.
 
 - Never write an API key, token, password, private key, certificate, session cookie or connection
   string into any tracked file, including tests, fixtures, docs, comments and commit messages. Use a
-  placeholder such as `<YOUR_API_KEY>` or `sk-xxxx`. Secrets belong in the git-ignored `.env`.
+  placeholder such as `<YOUR_API_KEY>` or `sk-xxxx`. Secrets belong in the git-ignored `.env`. If
+  something might be a secret, leave it out and ask.
 - **The app never handles a model API key.** A change proposing a key field, an image-generation
   request or a proxy is a new architecture: stop and raise it.
 - No real personal data: use `BootBlock@users.noreply.github.com`, `example.com` / `*.test` and
@@ -57,8 +59,11 @@ This repository is public, and a committed secret is permanent.
 - Everything committed is world-readable: stay professional and neutral, with no internal ticket IDs,
   URLs or hostnames and no TODO naming a person. Option labels, tooltips and preset names are
   user-facing copy.
-- The licence is MIT. Vet a new dependency's licence and upkeep, and keep the dependency list small.
-  A new kind of generated or local file goes in `.gitignore`.
+- The licence is MIT. Never paste code whose licence is incompatible or unknown: write it, or use a
+  properly attributed, compatible dependency. Vet a new dependency's licence and upkeep, and keep the
+  dependency list small.
+- Before committing a new kind of generated or local file, confirm it belongs in the repository. A
+  build artefact, a local cache, or anything that could hold real data goes in `.gitignore` instead.
 
 ## GitHub issues and pull requests
 
@@ -73,9 +78,10 @@ This repository is public, and a committed secret is permanent.
   or user data at risk. Never create a label: propose it in a comment.
 - **Closing.** Once your work on an issue has landed, comment what was done and close it. Leave it
   open only with the reason in that comment: part of it remains, it tracks open children, or it needs
-  someone else's decision. A comment on a closed issue does not reopen it; do the follow-up and add a
-  new comment. Reopen only when the fix failed or the issue was closed on a false premise, and put a
-  `status:` label back.
+  someone else's decision. A comment on a closed issue does not reopen it: do the follow-up and add a
+  new comment, or open a linked new issue for genuinely new work. Reopen only when the fix failed or
+  the issue was closed on a false premise, saying why in a comment and putting a `status:` label
+  back.
 - **Multi-line text goes through a file**: `git commit -F <file>`, `gh … --body-file <file>`.
 
 ## Do the whole fix, never the cheap one
@@ -95,9 +101,10 @@ incompatible database be discarded. Banned: aliases and forwarding re-exports, `
 wrappers, dual code paths reading an older shape, migrations or repair passes over stored data,
 legacy fixtures, and a `v2` beside an undeleted `v1`. These are not compatibility and stay: guards
 against corrupt storage (written against the `as const` array defining each union), the localStorage
-fallback, cross-origin isolation, and the `showPopover` feature detection.
+fallback, cross-origin isolation, and the `showPopover` feature detection. Being pre-1.0 removes only
+the duty to keep the old shape working: say plainly in the commit message what a change breaks.
 
-## Architecture
+## Architecture: the structural laws
 
 - **Under 150 lines of code per file.** Comments and blank lines are not counted, and
   `tests/module-size.test.ts` measures it. Pure declarations (option pools, presets, sheet plans, the
@@ -106,9 +113,10 @@ fallback, cross-origin isolation, and the `showPopover` feature detection.
 - **One thing per file**, named for what it exports.
 - **Directories are concerns.** Domain and compiler logic goes in `src/utils/`, which is pure: no
   store, no DOM, no I/O, and the tests are where its correctness is established. State goes in
-  `src/stores/`, persistence in `src/db/`, constants in `src/constants/`, types in `src/types/`. A
-  hook goes in `src/hooks/` only when two or more call sites share it and it needs React or a store;
-  never write a hook that wraps one `useState`. UI primitives go in `src/components/common/`, panels
+  `src/stores/`, persistence in `src/db/`, constants in `src/constants/`, types in `src/types/`.
+  Browser-effect and shared-interaction hooks go in `src/hooks/`, because they need React, the DOM
+  or a store and so cannot live in the pure `src/utils/`; a hook that only wraps one `useState` is
+  banned wherever it is filed. UI primitives go in `src/components/common/`, panels
   in `src/components/studio/`, `quantise/` and `projects/`, with `modals/`, `tabs/` and `layout/`
   beside them.
 - **`src/workers/` holds threads, not logic**: worker entry points, their protocols, and the near side
@@ -124,7 +132,7 @@ fallback, cross-origin isolation, and the `showPopover` feature detection.
 | Derived state through `useState` + `useEffect` | `react-hooks` compiler rules |
 | `as any`, `@ts-ignore`, `@ts-nocheck` | typescript-eslint |
 | `eslint-disable` comments | `noInlineConfig`, which ignores them |
-| Floating promises, `forEach(async …)` | type-aware lint on every linted file |
+| Floating promises, `forEach(async …)` | type-aware lint on every TypeScript file ESLint lints |
 | Unchecked array indexing | `noUncheckedIndexedAccess`, in both tsconfigs |
 | `as unknown as T` | review: use a type guard or a narrower union |
 | An effect that registers anything without a cleanup | review; Strict Mode double-invokes effects in dev |
@@ -136,10 +144,11 @@ fallback, cross-origin isolation, and the `showPopover` feature detection.
 A colour the app paints with comes from a token in the `@theme` blocks of
 [src/index.css](src/index.css), the only place a colour value is written down. Never a raw hex,
 `rgb()` or `oklch()`, a stock Tailwind palette class (`bg-slate-…`, `text-cyan-…`), a bracketed
-arbitrary size, an inline `cubic-bezier`, or inline `@keyframes`. If no token fits a new role, add one
-there. A colour the app merely *names* (domain data under `src/constants/`, listed in
-`tests/raw-colour-literals.test.ts`) is not a token, and `ColorSwatch` is the only component that
-takes a colour through an inline `style`.
+`text-[…px]` size, an inline `cubic-bezier`, or inline `@keyframes`. If no token fits a new role, add
+one there. A colour the app merely *names* (domain data under `src/constants/`, listed in
+`tests/raw-colour-literals.test.ts`) is not a token. `ColorSwatch` is the only component that shows
+such a colour, through an inline `style`. A list item claims a stop on the hue wheel by setting
+`--color-tab` inline from `spectrumStopAt`.
 
 | Role | Use |
 | --- | --- |
@@ -161,7 +170,9 @@ takes a colour through an inline `style`.
   CSS. The reverse also holds: a whole class name written in a comment or test string ships CSS, and
   the build's dead-utilities guard fails on it.
 - **A floating surface** (dropdown, tooltip, popover) goes in the top layer through
-  `useAnchoredSurface`, never up a `z-index`: every glass panel is a stacking context.
+  `useAnchoredSurface`, never up a `z-index`: every glass panel is a stacking context. A surface with
+  no anchor to place against, such as `ImageDropVeil`, calls `showPopover()` itself behind the same
+  feature check.
 
 ## Every control carries guidance
 
@@ -173,12 +184,17 @@ stored data, or nothing at all), and why someone would use it.
 - **A control that does something** (button, link, chooser, `FilePickerField`) takes `ControlTooltip`,
   which shows the same card on hover or keyboard focus. Never put an ⓘ beside a button, and never use
   a `title` attribute for guidance.
+- **A few controls carry no card on purpose**: a disclosure's `<summary>`, the toast's ✕, one value of
+  a setting (a segmented pill, a combo-box option), the skip link and the combo-box chevron. Each
+  says why in its own file, and a new exception must do the same.
 - **Guidance copy lives in `src/constants/`**: a setting's `*_TOOLTIPS` beside the options it
   explains, an action's in `src/constants/tooltips/`. A sentence true of two controls is written once
   in `src/constants/guidanceSentences.ts` and imported.
-- **Every user-facing string and all prompt text** uses British spelling, plain sentences addressed to
-  "you", and typographic punctuation (`’`, `“ ”`), never straight quotes. The tests check shape and
-  punctuation; whether the words are true is yours.
+- **Every user-facing string and all prompt text** uses British spelling, plain declarative sentences
+  addressed to "you", and typographic punctuation (`’`, `“ ”`). No marketing register, rhetorical
+  triads or "not just X but Y". A straight quote stays only where it is syntax, such as the JSON
+  manifest example a model must reproduce as parseable JSON. The tests check shape and punctuation;
+  whether the words are true is yours.
 
 ## Prompt text is the product
 

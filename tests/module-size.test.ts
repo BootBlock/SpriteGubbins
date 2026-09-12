@@ -11,7 +11,7 @@ import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
  * The law's subject is a file that has taken on a second responsibility, and for a long time its
  * threshold was raw lines — which in this repository measures something else entirely. The house
  * style is prose-heavy on purpose: a docblock here explains why a calibration figure is the figure
- * it is, and the same document asks for that everywhere else it says anything. So the two
+ * it is, and the code explains itself that way almost everywhere else. So the two
  * quantities came apart, and 157 of 553 modules sat past a target nobody could act on, while only
  * 56 were past it on code. Nine phases of the codebase audit each recorded the overflow and each
  * handed the question on with the same three words — "mostly in docblock" — because the rule as

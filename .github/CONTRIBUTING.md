@@ -1,7 +1,7 @@
 # Contributing to Sprite Gubbins
 
 Thank you for looking. This page is the short version; the working conventions a change is held to
-are in [CLAUDE.md](../CLAUDE.md), and the tests enforce most of them.
+are in [CLAUDE.md](../CLAUDE.md), and tests enforce many of them.
 
 ## Pull requests are not accepted
 
