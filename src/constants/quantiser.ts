@@ -292,7 +292,8 @@ const SMALLEST_SPRITE_EDGE = 16;
 export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE_EDGE } as const;
 
 /**
- * How many times the background a position's change must be before it reads as a boundary line.
+ * How many times the background a position's boundary evidence must be before it reads as a boundary
+ * line — its magnitude on a resampled axis, and its share of the lines' transitions on a crisp one.
  *
  * The background is what a position carries when it is *not* a boundary, which `boundaryClusters`
  * separates out rather than taking the axis mean for — a mean is the background and the structure

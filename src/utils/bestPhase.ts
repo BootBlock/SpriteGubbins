@@ -11,8 +11,9 @@ import type { PixelGrid } from '../types/quantiser.ts';
  * spacing to walk, and the best single answer left is the phase whose lattice collects the most of
  * whatever change there is. A grid of `g` at phase `p` claims the image changes on the lines
  * `p, p + g, p + 2g, …`, so the phase the art actually uses is the class holding the most change —
- * measured in magnitude rather than counts, so a softened boundary still votes with the full step
- * it was before the ramp spread it.
+ * measured in the evidence the axis's lines are read from, which is magnitude on a resampled axis,
+ * where a softened boundary still votes with the full step it was before the ramp spread it, and
+ * transitions on a crisp one, where a stray pixel's loud step does not outvote the boundaries.
  *
  * Takes the profile's axis rather than the image, because every caller has already paid for the
  * profile: recomputing it here would be a second full-image pass buying nothing, which is exactly

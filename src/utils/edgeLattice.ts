@@ -113,8 +113,8 @@ interface PhaseCount {
  * band the mesh folds is skipped too — it is change no reduction at this scale keeps — but it stays in
  * the image's total, so it counts against the scale rather than for it; see `detectPixelGrid`.
  *
- * Counts where `bestPhase` in `bestPhase.ts` weighs magnitude, because this is the exact question and
- * that is the soft-edged one: a softened ramp is three transitions and one step. Ties go to the
+ * Counts where `bestPhase` in `bestPhase.ts` weighs a resampled axis by magnitude, because this is the
+ * exact question and that is the soft-edged one: a softened ramp is three transitions and one step. Ties go to the
  * smaller phase, so the answer is deterministic; an axis with no transitions on any line a mesh can
  * cut answers 0 for the same reason.
  */

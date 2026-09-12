@@ -23,7 +23,10 @@ function placed(x: number, y: number): ImageData {
 /** The two phases at once, which is how `boundaryMesh`'s fallback reads them. */
 function phases(image: ImageData, grid: number): { x: number; y: number } {
   const profile = stepProfile(image);
-  return { x: bestPhase(profile.columns, grid), y: bestPhase(profile.rows, grid) };
+  return {
+    x: bestPhase(profile.columnEvidence.values, grid),
+    y: bestPhase(profile.rowEvidence.values, grid),
+  };
 }
 
 describe('bestPhase', () => {

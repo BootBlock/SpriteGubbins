@@ -3,7 +3,7 @@ import { bestPhase } from './bestPhase.ts';
 import { boundaryClusters } from './boundaryClusters.ts';
 import { boundEndCells } from './boundEndCells.ts';
 import { edgeLattice, exactGridOffset } from './edgeLattice.ts';
-import { stepProfile } from './stepProfile.ts';
+import { type BoundaryEvidence, stepProfile } from './stepProfile.ts';
 
 /**
  * Where the cells of a chosen scale actually begin on this sheet.
@@ -22,20 +22,23 @@ import { stepProfile } from './stepProfile.ts';
  * they do, the cuts are that phase class. The walk exists for drift, and an exact sheet has none: art
  * whose blocks wandered would spread its transitions over several phase classes and fall under the
  * threshold. Walking one anyway was a second opinion that could only disagree, and it did. The walk
- * reads its lines by the *magnitude* of each column's change where the detector counts transitions,
- * so a crisp 40 × 40 sheet drawn at 4 — faint cell boundaries, and a strong stray pixel in twenty of
- * its interior cells — was read as exactly 4 and then cut on the strays, two pixels beside every
- * boundary, reducing to 9 × 10 where the art is 10 × 10. Over 461 such sheets, anchored at the
+ * then read its lines by the *magnitude* of each column's change where the detector counts
+ * transitions, so a crisp 40 × 40 sheet drawn at 4 — faint cell boundaries, and a strong stray pixel in
+ * twenty of its interior cells — was read as exactly 4 and then cut on the strays, two pixels beside
+ * every boundary, reducing to 9 × 10 where the art is 10 × 10. Over 461 such sheets, anchored at the
  * corner and read as exact at grids of 2, 3, 4, 5, 6 and 8, 285 were walked off the lattice they had
  * been read on, and 46 reduced to a different image from the same art without its strays: a column
  * short at 4, a column over at 6 and 8, and the right size with the wrong pixels at 2.
  *
  * **The question is asked of the grid, not of how the grid arrived**, so a typed or clicked grid the
  * sheet is exactly drawn on takes the lattice exactly as an adopted reading does, and this stays the
- * one mechanism serving all three. **What it does not reach is a grid the sheet is not exactly drawn
- * on**, and that is where the walk's own weakness is left: twenty-one strays in the same sheet put
- * the lattice of 4 under nine tenths, so a typed 4 is walked, and the walk cuts on the strays as it
- * did before. Issue #279 carries that case.
+ * one mechanism serving all three. **A grid the sheet is not exactly drawn on is still walked, and on
+ * crisp art the walk now reads what the detector reads.** Twenty-one strays in the same sheet put the
+ * lattice of 4 under nine tenths, so a typed 4 is walked — and while the walk read its lines by
+ * magnitude it cut on the strays exactly as before. A crisp axis's lines are read by its transitions
+ * now (`stepProfile` argues when an axis is crisp), so a stray is one transition on a few lines and a
+ * boundary one on nearly every line, and the walk lands on the lattice from twenty-one strays to every
+ * interior cell (#279).
  *
  * **The pitch in force is the prior, not the answer.** Where the sheet is not exact, detected lines
  * are accepted only where they sit close to the position the previous accepted line expects — at most
@@ -69,8 +72,8 @@ export function boundaryMesh(image: ImageData, grid: PixelGrid): GridMesh {
 
   const profile = stepProfile(image);
   return {
-    x: meshAxis(profile.columns, image.width, grid),
-    y: meshAxis(profile.rows, image.height, grid),
+    x: meshAxis(profile.columnEvidence, image.width, grid),
+    y: meshAxis(profile.rowEvidence, image.height, grid),
   };
 }
 
@@ -130,13 +133,15 @@ function axisTolerance(grid: PixelGrid): number {
  * them squarely, which is what the closeness score reads. Captured mass breaks remaining ties, and
  * the earlier anchor after that, for determinism.
  *
- * **Periodicity cannot separate them where the detail is periodic too**, and that is the case the
- * exact branch of {@link boundaryMesh} takes away from this walk. Stray pixels at one offset within
- * their cells repeat at the pitch exactly as the boundaries do, and where they outweigh faint
- * boundaries the line list holds the strays and not the boundaries at all — so every walk is a walk
- * over the strays, and the best of them lands squarely on the wrong lattice. While the strays are
- * under a tenth of the sheet's transitions the sheet is exactly drawn on the grid and never reaches
- * this walk. Past a tenth it does, and the walk still cuts on them — issue #279.
+ * **Periodicity cannot separate them where the detail is periodic too**, which is why the line list
+ * this walks has to be the boundaries' in the first place. Stray pixels at one offset within their
+ * cells repeat at the pitch exactly as the boundaries do, so a list holding the strays makes every walk
+ * a walk over the strays, and the best of them lands squarely on the wrong lattice. Read by magnitude,
+ * crisp strays that outweighed faint boundaries *were* that list, and past a tenth of the sheet's
+ * transitions — where the exact branch of {@link boundaryMesh} no longer takes the sheet away from this
+ * walk — the walk cut on them (#279). A crisp axis is read by its transitions now, where a stray is a
+ * few lines' worth beside a boundary's nearly every line, and `boundaryClusters` splits a run at its
+ * valleys so a stray's transitions touching a boundary do not drag its line off it.
  *
  * **The result is strictly ascending by construction, and nothing needs to re-check it.** Every
  * forward step accepts a position within `tolerance` of the previous one plus `grid`, and
@@ -147,8 +152,9 @@ function axisTolerance(grid: PixelGrid): number {
  * below the cut after them. A dedupe pass here would be a guard against a state
  * the arithmetic rules out, wearing the look of handling it.
  */
-function meshAxis(axis: Float64Array, extent: number, grid: PixelGrid): number[] {
-  const lines = boundaryClusters(axis).filter((line) => line.position < extent);
+function meshAxis(evidence: BoundaryEvidence, extent: number, grid: PixelGrid): number[] {
+  const axis = evidence.values;
+  const lines = boundaryClusters(evidence).filter((line) => line.position < extent);
   // One line anchors nothing: with no second line there is no spacing observed, and a mesh hung off
   // a single cut is a guess wearing a measurement's confidence. The regular lattice is honest.
   if (lines.length < 2) return regularStarts(extent, grid, bestPhase(axis, grid));

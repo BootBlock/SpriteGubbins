@@ -48,8 +48,8 @@ import type { StepProfile } from './stepProfile.ts';
 /** The scale a drifting sheet's boundary spacings imply, or `null` where they imply none. */
 export function estimateMeshPeriod(profile: StepProfile): PixelGrid | null {
   const spacings = [
-    ...axisSpacings(boundaryClusters(profile.columns).map((line) => line.position)),
-    ...axisSpacings(boundaryClusters(profile.rows).map((line) => line.position)),
+    ...axisSpacings(boundaryClusters(profile.columnEvidence).map((line) => line.position)),
+    ...axisSpacings(boundaryClusters(profile.rowEvidence).map((line) => line.position)),
   ];
   if (spacings.length < FEWEST_SPACINGS) return null;
 

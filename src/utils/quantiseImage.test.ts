@@ -35,10 +35,15 @@ const KEYING = { color: MAGENTA, tolerance: 16 };
  * a 4 × 4 trinket at [24, 28) — smaller than one cell of the grid of 8 the sheet is quantised at.
  *
  * The sprite's boundaries at 6 and 22 are the heaviest steps in the image, so `boundaryMesh`
- * anchors on one of them, snaps to the other, and completes the cut between at 14 — the cells
- * become [0, 6), [6, 14), [14, 22), [22, 30), [30, 32) each way: five per axis, the sprite filling
- * four cells exactly and the trinket sitting inside cell (3, 3) with three times as much field
- * around it.
+ * anchors on one of them, snaps to the other, and completes the cut between at 14 — the sprite fills
+ * four cells exactly either way, and the trinket sits in the cell after it with more field than
+ * trinket around it. **Where the last cut lands depends on the reading**, and the ordering test states
+ * both. Unkeyed, the drifting field makes the sheet a resampled one, read by magnitude, and the
+ * trinket's far edge at 28 is a line the walk takes in place of 30: cells [0, 6), [6, 14), [14, 22),
+ * [22, 28), [28, 32), five per axis. Keyed, the field is flat and the sheet is read by its transitions,
+ * where the trinket's edges cross four rows against the sprite's sixteen and do not clear the floor —
+ * so the walk completes 30, the two pixels past it join the cell before, and the axis is
+ * [0, 6), [6, 14), [14, 22), [22, 32), four per axis, with no cut resting on sub-cell detail.
  *
  * The field is a *drifting* magenta — 64 distinct near-magentas, laid out so no two pixels within
  * any 8 × 8 window share a colour. That is exactly what a returned sheet looks like, and it is the
@@ -295,11 +300,10 @@ describe('quantiseImage', () => {
     });
 
     expect(pixels(keyed.image)).toEqual([
-      [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
-      [TRANSPARENT, ART, ART, TRANSPARENT, TRANSPARENT],
-      [TRANSPARENT, ART, ART, TRANSPARENT, TRANSPARENT],
-      [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
-      [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
+      [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
+      [TRANSPARENT, ART, ART, TRANSPARENT],
+      [TRANSPARENT, ART, ART, TRANSPARENT],
+      [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
     ]);
   });
 

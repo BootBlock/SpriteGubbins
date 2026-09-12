@@ -124,10 +124,11 @@ export function measureSheetScale(image: ImageData): SheetScale | null {
  * lossless: a margin too thin to be a cell is still folded, as `boundEndCells` argues it should be,
  * wherever a scale can afford to discard it, and a stray pixel inside a cell is outvoted by the
  * cell's own colour. But every interior cut is a line of the lattice this read, because the mesh
- * asks the same question before it walks anything. For a while it did not ask: the walk reads lines
+ * asks the same question before it walks anything. For a while it did not ask: the walk read lines
  * by the *magnitude* of their change where this counts them, so crisp art whose stray pixels
  * outweighed its faint cell boundaries was read as exactly 4 here and then cut two pixels beside
- * every boundary, losing a column of cells.
+ * every boundary, losing a column of cells. A crisp axis's lines are read by their transitions now as
+ * well, which is what keeps a grid the sheet is *not* exactly drawn on off those strays too (#279).
  *
  * Largest candidate first, because a true grid of 8 also scores perfectly at 4, 2 and 1 — the
  * coarsest grid that holds is the real one. Where the count starts is a property of the image

@@ -149,19 +149,52 @@ describe('boundaryMesh', () => {
 
   it('cuts crisp art on the lattice it is exactly drawn on, even where its strays outweigh its boundaries', () => {
     // Neighbouring cells differ by 2 in red across the sheet and each stray is 210 away in green. By
-    // magnitude, which is how the walk reads its lines, the strays are lines and the boundaries are
-    // not lines at all; by count the lattice holds nine tenths of the transitions, and the sheet reads
-    // as exactly 4. Walked, every cut landed two pixels right of a boundary and the axis came out a
-    // cell short, `[0, 6, 10, …, 34]`. A sheet exactly drawn on a lattice has no drift for a walk to
-    // follow, so it is cut on that lattice.
+    // magnitude the strays' columns carry far more than the boundaries', and by count the lattice holds
+    // nine tenths of the transitions, so the sheet reads as exactly 4. When the walk read its lines by
+    // magnitude it cut two pixels right of every boundary and the axis came out a cell short,
+    // `[0, 6, 10, …, 34]`. A sheet exactly drawn on a lattice has no drift for a walk to follow, so it
+    // is cut on that lattice.
     const sheet = spottedGrid({ spoils: interiorCells(20) });
 
-    // The premise, asserted so the fixture cannot drift into one a walk would have cut correctly.
-    expect(boundaryClusters(stepProfile(sheet).columns).map((line) => line.position)).toEqual([
-      6, 10, 14, 18, 22, 26, 30, 34,
-    ]);
+    // The premise, asserted so the fixture cannot drift into one without the disagreement.
+    const { columns } = stepProfile(sheet);
+    expect(columns[5] ?? 0).toBeGreaterThan(columns[4] ?? 0);
+    expect(exactGridOffset(edgeLattice(sheet), 4)).toEqual({ x: 0, y: 0 });
 
     expect(boundaryMesh(sheet, 4)).toEqual(regularMesh(40, 40, 4, { x: 0, y: 0 }));
+  });
+
+  it.each([21, 40, 64])(
+    'walks the same art onto its lattice once %i strays put it off every exact one',
+    (strays) => {
+      // Past a tenth of the transitions the lattice of 4 is not exact, so the walk places the cuts —
+      // and while it read its lines by magnitude it cut on the strays, `[0, 6, 10, …, 34]`, at every
+      // count here (#279). The sheet is drawn crisply, so its lines are read by transitions: a stray is
+      // one transition on a few rows and a boundary one on every row, and the line list is the
+      // lattice's.
+      const sheet = spottedGrid({ spoils: interiorCells(strays) });
+      const { columns, columnEvidence } = stepProfile(sheet);
+
+      expect(exactGridOffset(edgeLattice(sheet), 4)).toBeNull();
+      expect(columns[5] ?? 0).toBeGreaterThan(columns[4] ?? 0);
+      expect(columnEvidence.reading).toBe('TRANSITIONS');
+      expect(columnEvidence.values[4] ?? 0).toBeGreaterThan(columnEvidence.values[5] ?? 0);
+      expect(boundaryClusters(columnEvidence).map((line) => line.position)).toEqual([
+        4, 8, 12, 16, 20, 24, 28, 32, 36,
+      ]);
+
+      expect(boundaryMesh(sheet, 4)).toEqual(regularMesh(40, 40, 4, { x: 0, y: 0 }));
+    },
+  );
+
+  it('walks art at 3 onto its lattice where every stray touches a boundary', () => {
+    // A stray in the middle of a cell of three changes on the two lines between its cell's boundaries,
+    // so a run of candidates spans the whole sheet. Merged, it was one line off every boundary; split
+    // at the strays, it is the lattice.
+    const sheet = spottedGrid({ grid: 3, stray: { x: 1, y: 1 }, spoils: interiorCells(30) });
+
+    expect(exactGridOffset(edgeLattice(sheet), 3)).toBeNull();
+    expect(boundaryMesh(sheet, 3)).toEqual(regularMesh(30, 30, 3, { x: 0, y: 0 }));
   });
 
   it('cuts the same art on its lattice wherever an inset puts that lattice', () => {

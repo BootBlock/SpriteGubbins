@@ -9,15 +9,16 @@ import { measureSheetScale } from '../src/utils/pixelGrid.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
 
 /**
- * A sheet read as exactly a grid is reduced on the lattice it was read on — interior cuts and all.
+ * Crisp art with stray pixels in it is reduced on the art's own lattice — at an adopted grid or a typed
+ * one, whether or not the sheet is exactly drawn on it.
  *
  * The chain is the one the Quantise tab runs: `measureSheetScale` reads the sheet, `gridInForce` adopts
- * the reading because it is `EXACT`, and `quantiseImage` reduces the sheet at that grid. For a while the
- * reading and the reduction disagreed about where the cells were. The detector counts transitions on a
- * phase class; the mesh walked the lines `boundaryClusters` reads by magnitude. So crisp art whose stray
- * pixels outweighed its faint cell boundaries read as exactly its own grid, and the walk then cut on the
- * strays — beside every boundary, so that a 40 × 40 sheet drawn at 4 reduced to 9 × 10, and the same
- * art at 6 and 8 gained a column instead.
+ * the reading where it is `EXACT`, and `quantiseImage` reduces the sheet at that grid or at one a reader
+ * types. For a while the reading and the reduction disagreed about where the cells were. The detector
+ * counts transitions on a phase class; the mesh walked the lines `boundaryClusters` read by magnitude.
+ * So crisp art whose stray pixels outweighed its faint cell boundaries read as exactly its own grid,
+ * and the walk then cut on the strays — beside every boundary, so that a 40 × 40 sheet drawn at 4
+ * reduced to 9 × 10, and the same art at 6 and 8 gained a column instead.
  *
  * **What is asserted is the reduction, against the same art with no strays in it.** A stray is one
  * pixel in a cell of at least four, so the cell's own colour holds it under the vote, and a sheet cut on
@@ -30,10 +31,12 @@ import { quantiseImage } from '../src/utils/quantiseImage.ts';
  * drawn on the art's lattice it is exactly drawn on each of those too, since every line of the art's
  * lattice is a line of theirs.
  *
- * **The stray counts stop at the threshold, and that is the edge of what this establishes.** Past a
- * tenth of the transitions the sheet is not exactly drawn on the art's lattice, the mesh walks, and the
- * walk still cuts on strays that outweigh the boundaries — issue #279 carries that case. The two sheets
- * below that are not read exactly are compared all the same, and both reduce to their stray-free twins.
+ * **The stray counts run past the threshold, because two fixes are held here and they meet at it.** Up
+ * to a tenth of the transitions the sheet is exactly drawn on the art's lattice, and the mesh cuts on
+ * that lattice without walking (#276). Past it no lattice of the art's grid is exact, so the mesh walks
+ * — and the walk cut on the strays until it read a crisp sheet's lines by their transitions and split a
+ * run of candidates at its valleys (#279). Twenty-one is the first count past the threshold for a stray at (1, 1) in a cell
+ * of four, and sixty-four strays is every interior cell.
  *
  * **The counts are pinned** so the sweep cannot pass by reading nothing exactly. A change to how many of
  * these sheets are adopted is a change to detection, and it has to say so here.
@@ -41,7 +44,7 @@ import { quantiseImage } from '../src/utils/quantiseImage.ts';
 
 const GRIDS: readonly PixelGrid[] = [2, 3, 4, 5, 6, 8];
 const INSETS: readonly number[] = [0, 3];
-const STRAY_COUNTS: readonly number[] = [5, 10, 20];
+const STRAY_COUNTS: readonly number[] = [5, 10, 20, 21, 40, 64];
 
 const {
   keyingEnabled: _keyingEnabled,
@@ -83,7 +86,7 @@ function straySheets(): SpottedGrid[] {
   );
 }
 
-describe('an adopted exact scale', () => {
+describe('crisp art with stray pixels', () => {
   it('reduces the sheet #276 reported to the art’s own ten cells a side', () => {
     const image = spottedGrid({ spoils: interiorCells(20) });
 
@@ -130,12 +133,14 @@ describe('an adopted exact scale', () => {
       }
     }
 
-    // 924 sheets in all. The two left are drawn at 3 with twenty strays in the middle pixel of their
-    // cells — the one place in a cell of three where all four of a stray's transitions miss the
-    // lattice. With no inset that is 540 of 620 transitions on the lattice, and the margin's own lines
-    // do not lift the inset sheet to nine tenths either, so neither is read exactly. Their typed grids
-    // are still reduced and still compared above.
-    expect({ adopted, typed }).toEqual({ adopted: 922, typed: 2220 });
+    // 1,848 sheets in all, and the 196 not adopted are every sheet read as no exact scale — which is
+    // the only reading the tab adopts. Two are drawn at 3 with twenty strays in the middle pixel of
+    // their cells, the one place in a cell of three where all four of a stray's transitions miss the
+    // lattice: with no inset that is 540 of 620 transitions on it, and the margin's own lines do not
+    // lift the inset sheet to nine tenths either. The other 194 are past twenty strays, where no lattice
+    // the detector tries holds nine tenths. Every typed grid is still reduced and still compared above,
+    // and those 194 are the sheets the walk places the cuts on.
+    expect({ adopted, typed }).toEqual({ adopted: 1652, typed: 4440 });
     // About two seconds alone, and past the five-second default beside the rest of the suite.
   }, 60_000);
 });
