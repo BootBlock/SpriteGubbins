@@ -426,7 +426,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * Each half adds 0.30 KiB and passes on its own; together they add 1.46, because the last 0.86 is
  * rolldown re-partitioning the split around the modules both touched rather than any file either
- * branch wrote. **That is the case CLAUDE.md names as the one a local gate cannot see** — several
+ * branch wrote. **That is the case no local gate can see** — several
  * agents merge into `main`, and the combination that lands is one nobody ran anything against. It is
  * also what a 0.02 KiB margin buys: `main` had been sitting that far under the ceiling, so the next
  * branch to land anything at all was going to be the one that paid for it.

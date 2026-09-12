@@ -84,7 +84,8 @@ Read the argument (`low` | `medium` | `high`, default `medium`). It scales the r
 2. **Collect relevant CLAUDE.md files** (paths only, not contents): the root `CLAUDE.md`, plus any
    `CLAUDE.md` in a directory containing a file the diff modifies. When judging a file's compliance,
    only consider CLAUDE.md files that share its path or a parent of it. Also collect the paths of
-   any durable memory notes the session start listed for this project whose descriptions match what
+   the durable memory notes that the root `CLAUDE.md`'s note table names for the kinds of change
+   the diff makes, and of any other note the session start listed whose description matches what
    the diff touches: `CLAUDE.md` keeps the rules that apply to every change, and the conditional
    rules and their rationale are kept in those notes. Treat a rule stated there as a CLAUDE.md rule.
 

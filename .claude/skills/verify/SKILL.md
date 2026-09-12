@@ -133,7 +133,7 @@ fallback — because the fallback path is the one nobody exercises by accident.
 
 Prefer role-based locators (`getByRole('combobox', { name: … })`,
 `getByRole('button', { name: /copy prompt/i })`) over CSS or test IDs. That is not only
-robustness — CLAUDE.md requires the accessibility wiring, so **a role-based locator that
+robustness — every control must carry the accessibility wiring, so **a role-based locator that
 cannot find a control is itself a finding**: it means the control has no accessible name or
 no role, and a keyboard or screen-reader user cannot reach it either.
 

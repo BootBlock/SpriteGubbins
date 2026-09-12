@@ -67,7 +67,7 @@ import type {
  * than about that one: it rests on the whole corpus segmenting into far fewer sprites than the
  * ceiling admits. So that figure is re-derived over all eight sheets, and the fixture the cost was
  * measured on is built here too. A figure measured somewhere other than the reference sheet says
- * which sheet it came from, as CLAUDE.md requires.
+ * which sheet it came from.
  *
  * **The wall-clock half is deliberately not asserted, and no docblock here states one any more.**
  * `duplicateSprites` gives ratios along the dial and an order of magnitude, because a millisecond
