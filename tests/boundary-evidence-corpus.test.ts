@@ -23,10 +23,9 @@ import { stepProfile, type StepProfile } from '../src/utils/stepProfile.ts';
  * arrived; read by whether its changes sit beside unchanged steps, none is. The key is the magenta
  * every one of these sheets was generated on, at the tolerance and hardening the tab opens with.
  *
- * **What is asserted is the reading and the identity of the array**, not a threshold's margin: the
- * evidence is the magnitude itself rather than a copy that happens to hold the same numbers. A sheet
- * added to the corpus that is read by transitions is a different claim, and this is where it has to
- * be made.
+ * **What is asserted is the identity of the array**, not a threshold's margin: the evidence *is* the
+ * magnitude, rather than a copy that happens to hold the same numbers. A sheet added to the corpus
+ * that is read by transitions is a different claim, and this is where it has to be made.
  */
 describe('the boundary evidence of the eight reference sheets', () => {
   const profiles = new Map<string, StepProfile>();
@@ -53,8 +52,7 @@ describe('the boundary evidence of the eight reference sheets', () => {
     const profile = profiles.get(label);
     if (profile === undefined) throw new Error(`${label} was never read`);
 
-    expect([profile.columnEvidence.reading, profile.rowEvidence.reading]).toEqual(['MAGNITUDE', 'MAGNITUDE']);
-    expect(profile.columnEvidence.values).toBe(profile.columns);
-    expect(profile.rowEvidence.values).toBe(profile.rows);
+    expect(profile.columnEvidence).toBe(profile.columns);
+    expect(profile.rowEvidence).toBe(profile.rows);
   });
 });

@@ -24,15 +24,15 @@ describe('stepProfile', () => {
   });
 
   it('reads a crisp axis by its transitions, one vote a line, whatever each step’s size', () => {
-    // Nine steps a row, six of them no change: drawn crisply, where a change is a fact and its size is
-    // not evidence. The faint step and the loud pair are a third of each row's vote, so the loud rows
-    // carry the column no further than the quiet one does.
+    // Nine steps a row, and every change sits beside a step of no change: drawn crisply, where a change
+    // is a fact and its size is not evidence. The faint step and the loud pair are a third of each
+    // row's vote, so the loud steps carry their columns no further than the quiet one does.
     const crisp = [0, 0, 0, 2, 2, 2, 212, 2, 2, 2];
     const { columns, columnEvidence } = stepProfile(strips([crisp, crisp]));
 
-    expect(columnEvidence.reading).toBe('TRANSITIONS');
+    expect(columnEvidence).not.toBe(columns);
     expect(Array.from(columns)).toEqual([0, 0, 0, 4, 0, 0, 420, 420, 0, 0]);
-    expect(rounded(columnEvidence.values)).toEqual([0, 0, 0, 0.666667, 0, 0, 0.666667, 0.666667, 0, 0]);
+    expect(rounded(columnEvidence)).toEqual([0, 0, 0, 0.666667, 0, 0, 0.666667, 0.666667, 0, 0]);
   });
 
   it('gives a loud crisp line the same one vote as a quiet one', () => {
@@ -47,13 +47,13 @@ describe('stepProfile', () => {
     );
 
     expect(columns[3]).toBe(214);
-    expect(columnEvidence.values[3]).toBe(3);
+    expect(columnEvidence[3]).toBe(3);
   });
 
   it('counts a line crowded with changes by its transitions too, on an axis drawn crisply', () => {
     // The third row changes on every step, which is a resampled line by its own count — but two rows of
     // three are crisp, so the axis is, and the crowded row splits its vote five ways.
-    const { columnEvidence } = stepProfile(
+    const { columns, columnEvidence } = stepProfile(
       strips([
         [0, 0, 0, 9, 9, 9],
         [0, 0, 0, 9, 9, 9],
@@ -61,13 +61,14 @@ describe('stepProfile', () => {
       ]),
     );
 
-    expect(columnEvidence.reading).toBe('TRANSITIONS');
-    expect(rounded(columnEvidence.values)).toEqual([0, 0.2, 0.2, 2.2, 0.2, 0.2]);
+    expect(columnEvidence).not.toBe(columns);
+    expect(rounded(columnEvidence)).toEqual([0, 0.2, 0.2, 2.2, 0.2, 0.2]);
   });
 
   it('reads a resampled axis by its magnitude, exactly as the readings before it did', () => {
-    // Every neighbouring pair differs, so a count is the same everywhere and size is what separates the
-    // edge from the ringing beside it. The evidence is the magnitude itself, not a copy of it.
+    // Every neighbouring pair differs on two rows of three, so a count is the same everywhere and size
+    // is what separates the edge from the ringing beside it. The evidence is the magnitude itself, not
+    // a copy of it.
     const { columns, columnEvidence } = stepProfile(
       strips([
         [0, 1, 2, 42, 43, 44],
@@ -76,29 +77,27 @@ describe('stepProfile', () => {
       ]),
     );
 
-    expect(columnEvidence.reading).toBe('MAGNITUDE');
-    expect(columnEvidence.values).toBe(columns);
+    expect(columnEvidence).toBe(columns);
     expect(Array.from(columns)).toEqual([0, 2, 2, 71, 2, 2]);
   });
 
   it('reads a keyed sheet’s resampled art by magnitude, though most of each row is no change', () => {
-    // The field either side of the sprite is flat, so eleven of each row's sixteen steps are unchanged —
+    // The field either side of the sprite is flat, so nine of each row's sixteen steps are unchanged —
     // but inside the sprite the colour changes pixel after pixel, and only the two silhouette steps sit
     // beside an unchanged one. Two isolated transitions of seven is a resampled line.
     const keyed = [0, 0, 0, 0, 0, 0, 40, 47, 41, 52, 44, 50, 0, 0, 0, 0, 0];
     const { columns, columnEvidence } = stepProfile(strips([keyed, keyed]));
 
-    expect(columnEvidence.reading).toBe('MAGNITUDE');
-    expect(columnEvidence.values).toBe(columns);
+    expect(columnEvidence).toBe(columns);
   });
 
   it('reads an axis with no change on it as magnitude, holding nothing', () => {
-    const { columnEvidence, rowEvidence } = stepProfile(
+    const { columns, rows, columnEvidence, rowEvidence } = stepProfile(
       imageFrom(5, 5, () => ({ r: 9, g: 9, b: 9, a: 255 })),
     );
 
-    expect(columnEvidence.reading).toBe('MAGNITUDE');
-    expect(Array.from(columnEvidence.values)).toEqual([0, 0, 0, 0, 0]);
-    expect(Array.from(rowEvidence.values)).toEqual([0, 0, 0, 0, 0]);
+    expect(columnEvidence).toBe(columns);
+    expect(rowEvidence).toBe(rows);
+    expect(Array.from(columnEvidence)).toEqual([0, 0, 0, 0, 0]);
   });
 });

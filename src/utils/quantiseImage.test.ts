@@ -226,9 +226,10 @@ describe('quantiseImage', () => {
   it('keys the field before the alignment votes, so sub-cell art cannot dilate into it', () => {
     // The load-bearing claim about the pipeline's *order*, stated as the difference it makes.
     //
-    // Without keying, the trinket's cell resolves to the trinket: its sixteen pixels of one colour
-    // outvote forty-eight drifting magentas polling one vote each, and a 4 × 4 piece comes back as a
-    // full 8 × 8 cell of solid colour — dilated to four times its own area.
+    // Without keying, the trinket's cell resolves to the trinket: that cell is [22, 28) each way, so
+    // its sixteen pixels of one colour outvote twenty drifting magentas polling one vote each, and a
+    // 4 × 4 piece comes back as a whole cell of solid colour standing for 36 source pixels — dilated
+    // to more than twice its own area.
     const dilated = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: null,
@@ -268,8 +269,8 @@ describe('quantiseImage', () => {
 
     // Keying first collapses those distinct magentas into one value before the vote is taken, so the
     // field outnumbers the trinket in the cell it dominates. The sprite lands on the 2 × 2 it
-    // genuinely fills, and everything else — the trinket's cell included, which the field three
-    // quarters covers — is empty.
+    // genuinely fills, and everything else is empty — the trinket's cell included, which is [22, 32)
+    // each way on this sheet and holds 84 pixels of field against the trinket's sixteen.
     const keyed = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: KEYING,

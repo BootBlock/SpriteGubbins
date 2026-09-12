@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DETAILED_SIZE, DETAILED_STARTS, detailedMarks, detailedSheet } from '../test/detailedSheet.ts';
 import { imageFrom, soften } from '../test/images.ts';
 import { interiorCells, spottedGrid } from '../test/spottedGrid.ts';
@@ -7,6 +7,32 @@ import { boundaryClusters } from './boundaryClusters.ts';
 import { edgeLattice, exactGridOffset } from './edgeLattice.ts';
 import { boundaryMesh, regularMesh } from './gridMesh.ts';
 import { stepProfile } from './stepProfile.ts';
+
+/**
+ * How many step profiles have been taken, counted at `stepProfile` itself.
+ *
+ * `vi.hoisted` because the factory below is lifted above every import, so a plain `const` declared
+ * here would not exist yet when it runs.
+ */
+const profiles = vi.hoisted(() => ({ taken: 0 }));
+
+/**
+ * The real `stepProfile`, counted — which is how a test tells the exact branch from the walk.
+ *
+ * On crisp art the two now cut the same lattice, so the mesh alone cannot say which of them cut it;
+ * the walk reads a step profile and the exact branch never takes one. This file's own premises call
+ * `stepProfile` too, so a test resets the count immediately before the `boundaryMesh` it is reading.
+ */
+vi.mock('./stepProfile.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./stepProfile.ts')>();
+  return {
+    ...actual,
+    stepProfile: (image: ImageData) => {
+      profiles.taken += 1;
+      return actual.stepProfile(image);
+    },
+  };
+});
 
 /** Cells of distinct colours at boundary positions this file writes down explicitly. */
 function sheetWithBoundaries(
@@ -153,7 +179,7 @@ describe('boundaryMesh', () => {
     // nine tenths of the transitions, so the sheet reads as exactly 4. When the walk read its lines by
     // magnitude it cut two pixels right of every boundary and the axis came out a cell short,
     // `[0, 6, 10, …, 34]`. A sheet exactly drawn on a lattice has no drift for a walk to follow, so it
-    // is cut on that lattice.
+    // is cut on that lattice without one.
     const sheet = spottedGrid({ spoils: interiorCells(20) });
 
     // The premise, asserted so the fixture cannot drift into one without the disagreement.
@@ -161,7 +187,11 @@ describe('boundaryMesh', () => {
     expect(columns[5] ?? 0).toBeGreaterThan(columns[4] ?? 0);
     expect(exactGridOffset(edgeLattice(sheet), 4)).toEqual({ x: 0, y: 0 });
 
+    profiles.taken = 0;
     expect(boundaryMesh(sheet, 4)).toEqual(regularMesh(40, 40, 4, { x: 0, y: 0 }));
+    // The walk would land on this lattice too now, so what shows the exact branch cut it is that the
+    // profile a walk reads was never taken.
+    expect(profiles.taken).toBe(0);
   });
 
   it.each([21, 40, 64])(
@@ -177,20 +207,24 @@ describe('boundaryMesh', () => {
 
       expect(exactGridOffset(edgeLattice(sheet), 4)).toBeNull();
       expect(columns[5] ?? 0).toBeGreaterThan(columns[4] ?? 0);
-      expect(columnEvidence.reading).toBe('TRANSITIONS');
-      expect(columnEvidence.values[4] ?? 0).toBeGreaterThan(columnEvidence.values[5] ?? 0);
+      // Read by transitions, the evidence is a vote array of its own rather than the magnitude.
+      expect(columnEvidence).not.toBe(columns);
+      expect(columnEvidence[4] ?? 0).toBeGreaterThan(columnEvidence[5] ?? 0);
       expect(boundaryClusters(columnEvidence).map((line) => line.position)).toEqual([
         4, 8, 12, 16, 20, 24, 28, 32, 36,
       ]);
 
+      profiles.taken = 0;
       expect(boundaryMesh(sheet, 4)).toEqual(regularMesh(40, 40, 4, { x: 0, y: 0 }));
+      expect(profiles.taken).toBe(1);
     },
   );
 
-  it('walks art at 3 onto its lattice where every stray touches a boundary', () => {
+  it('walks art at 3 onto its lattice where every stray changes on both lines inside its cell', () => {
     // A stray in the middle of a cell of three changes on the two lines between its cell's boundaries,
-    // so a run of candidates spans the whole sheet. Merged, it was one line off every boundary; split
-    // at the strays, it is the lattice.
+    // so the rows crossing strays change on every pixel, and by magnitude their steps of 210 outweigh
+    // the boundaries' 2. Read by transitions, those rows are four of thirty, and the walk lands on the
+    // lattice.
     const sheet = spottedGrid({ grid: 3, stray: { x: 1, y: 1 }, spoils: interiorCells(30) });
 
     expect(exactGridOffset(edgeLattice(sheet), 3)).toBeNull();

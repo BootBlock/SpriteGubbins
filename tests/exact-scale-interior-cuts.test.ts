@@ -34,8 +34,7 @@ import { quantiseImage } from '../src/utils/quantiseImage.ts';
  * **The stray counts run past the threshold, because two fixes are held here and they meet at it.** Up
  * to a tenth of the transitions the sheet is exactly drawn on the art's lattice, and the mesh cuts on
  * that lattice without walking (#276). Past it no lattice of the art's grid is exact, so the mesh walks
- * — and the walk cut on the strays until it read a crisp sheet's lines by their transitions and split a
- * run of candidates at its valleys (#279). Twenty-one is the first count past the threshold for a stray at (1, 1) in a cell
+ * — and the walk cut on the strays until it read a crisp sheet's lines by their transitions (#279). Twenty-one is the first count past the threshold for a stray at (1, 1) in a cell
  * of four, and sixty-four strays is every interior cell.
  *
  * **The counts are pinned** so the sweep cannot pass by reading nothing exactly. A change to how many of
@@ -139,7 +138,8 @@ describe('crisp art with stray pixels', () => {
     // lattice: with no inset that is 540 of 620 transitions on it, and the margin's own lines do not
     // lift the inset sheet to nine tenths either. The other 194 are past twenty strays, where no lattice
     // the detector tries holds nine tenths. Every typed grid is still reduced and still compared above,
-    // and those 194 are the sheets the walk places the cuts on.
+    // and wherever a sheet is not exactly drawn on the grid typed — the 194, and also adopted sheets
+    // such as twenty-one strays read as exactly 2 and typed at 4 — the walk places the cuts.
     expect({ adopted, typed }).toEqual({ adopted: 1652, typed: 4440 });
     // About two seconds alone, and past the five-second default beside the rest of the suite.
   }, 60_000);

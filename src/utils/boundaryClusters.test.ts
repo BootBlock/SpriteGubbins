@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DETAILED_STARTS, detailedMarks, detailedSheet } from '../test/detailedSheet.ts';
 import { boundaryClusters } from './boundaryClusters.ts';
-import { stepProfile, type BoundaryEvidence } from './stepProfile.ts';
+import { stepProfile } from './stepProfile.ts';
 
 /** The interior boundaries a detected list has to account for — position 0 is never a candidate. */
 const INTERIOR = DETAILED_STARTS.slice(1);
@@ -22,16 +22,6 @@ function linesOf(mark: (cellX: number, cellY: number) => boolean): {
     rows: boundaryClusters(profile.rowEvidence).map((line) => line.position),
   };
 }
-
-/** An axis handed over as a resampled sheet's magnitude. */
-const magnitude = (values: Float64Array): BoundaryEvidence => ({ values, reading: 'MAGNITUDE' });
-
-/** An axis handed over as a crisp sheet's transitions. */
-const transitions = (values: Float64Array): BoundaryEvidence => ({ values, reading: 'TRANSITIONS' });
-
-/** The line positions an axis reads to. */
-const positions = (evidence: BoundaryEvidence): number[] =>
-  boundaryClusters(evidence).map((line) => line.position);
 
 describe('boundaryClusters', () => {
   it('finds every boundary of a drifting sheet that carries no interior detail at all', () => {
@@ -95,7 +85,7 @@ describe('boundaryClusters', () => {
     // so no position carries a multiple of what the others carry, and a confident line here would
     // be an edge the artwork does not have.
     expect(
-      boundaryClusters(magnitude(Float64Array.from({ length: 64 }, (_, index) => (index === 0 ? 0 : 900)))),
+      boundaryClusters(Float64Array.from({ length: 64 }, (_, index) => (index === 0 ? 0 : 900))),
     ).toEqual([]);
   });
 
@@ -106,7 +96,7 @@ describe('boundaryClusters', () => {
       index === 0 ? 0 : 900 + (((index * 2654435761) >>> 8) % 200),
     );
 
-    expect(boundaryClusters(magnitude(noisy))).toEqual([]);
+    expect(boundaryClusters(noisy)).toEqual([]);
   });
 
   it('keeps a sliver of interior detail out of an axis whose background is exactly nothing', () => {
@@ -119,7 +109,7 @@ describe('boundaryClusters', () => {
     for (const boundary of [6, 12, 18]) axis[boundary] = 672;
     for (const sliver of [7, 8, 9, 10, 11]) axis[sliver] = 12;
 
-    expect(positions(magnitude(axis))).toEqual([6, 12, 18]);
+    expect(boundaryClusters(axis).map((line) => line.position)).toEqual([6, 12, 18]);
   });
 
   it('lets one silhouette edge stand over the boundaries without lifting the floor onto them', () => {
@@ -135,56 +125,15 @@ describe('boundaryClusters', () => {
     for (const boundary of boundaries) axis[boundary] = 100;
     axis[63] = 5000;
 
-    const found = positions(magnitude(axis));
+    const found = boundaryClusters(axis).map((line) => line.position);
 
     for (const boundary of boundaries) {
       expect(found, `lost the boundary at ${String(boundary)}`).toContain(boundary);
     }
   });
 
-  /**
-   * A crisp axis at a grid of 3 with a stray in the middle of every cell: boundaries at 3, 6, … 15,
-   * and the stray's two transitions on the lines between them, under half of a boundary's evidence.
-   * The flat stretch past the art is the background every real axis has, and without it nothing would
-   * clear the floor at all.
-   */
-  function strayedAxis(): Float64Array {
-    const axis = new Float64Array(40);
-    for (const boundary of [3, 6, 9, 12, 15]) axis[boundary] = 2.54;
-    for (const stray of [4, 5, 7, 8, 10, 11, 13, 14]) axis[stray] = 0.97;
-    return axis;
-  }
-
-  it('reads two crisp changes a pixel apart as two lines, not one between them', () => {
-    // A boundary at a grid of 3 touches the transitions of a stray in the middle of its cell, so every
-    // position in the run clears the floor. Merged, the run was one line off every boundary in it;
-    // the strays sit at under half of the boundaries either side of them, which is the gap between two
-    // changes, and each boundary now reads where it is.
-    expect(positions(transitions(strayedAxis()))).toEqual([3, 6, 9, 12, 15]);
-  });
-
-  it('merges the same run whole on an axis read by magnitude, where it is a ramp', () => {
-    // A resampled sheet's neighbouring candidates are the ramp a boundary was spread across, so the
-    // valley test is the crisp reading's alone — here the run is one line, as it always was.
-    expect(positions(magnitude(strayedAxis()))).toEqual([9]);
-  });
-
-  it('keeps a softened ramp one line on either reading, since nothing inside it sits under half of both sides', () => {
-    // The shape the merge exists for. A three-tap ramp rises to its middle and falls away, and its
-    // shoulders carry half the peak on one side only.
-    const axis = new Float64Array(24);
-    for (const boundary of [6, 12, 18]) {
-      axis[boundary - 1] = 0.25;
-      axis[boundary] = 0.5;
-      axis[boundary + 1] = 0.25;
-    }
-
-    expect(positions(transitions(axis))).toEqual([6, 12, 18]);
-    expect(positions(magnitude(axis))).toEqual([6, 12, 18]);
-  });
-
   it('has nothing to report for an axis too short to hold a candidate', () => {
-    expect(boundaryClusters(magnitude(new Float64Array(1)))).toEqual([]);
-    expect(boundaryClusters(transitions(new Float64Array(0)))).toEqual([]);
+    expect(boundaryClusters(new Float64Array(1))).toEqual([]);
+    expect(boundaryClusters(new Float64Array(0))).toEqual([]);
   });
 });

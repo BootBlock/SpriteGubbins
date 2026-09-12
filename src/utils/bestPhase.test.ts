@@ -24,8 +24,8 @@ function placed(x: number, y: number): ImageData {
 function phases(image: ImageData, grid: number): { x: number; y: number } {
   const profile = stepProfile(image);
   return {
-    x: bestPhase(profile.columnEvidence.values, grid),
-    y: bestPhase(profile.rowEvidence.values, grid),
+    x: bestPhase(profile.columnEvidence, grid),
+    y: bestPhase(profile.rowEvidence, grid),
   };
 }
 

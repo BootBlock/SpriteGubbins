@@ -48,30 +48,17 @@ export interface StepProfile {
    * and the length is the image's height.
    */
   readonly rows: Float64Array;
-  /** The evidence of a boundary at each column, read along the image's rows. */
-  readonly columnEvidence: BoundaryEvidence;
-  /** The evidence of a boundary at each row, read down the image's columns. */
-  readonly rowEvidence: BoundaryEvidence;
+  /**
+   * `columnEvidence[x]` — how strongly column `x` reads as a boundary, from the image's rows; see
+   * {@link readAxis}. Where the rows are read by magnitude it **is** `columns`, the same array rather
+   * than a copy, and where they are read by transitions it is an array of its own. Index 0 is unused.
+   */
+  readonly columnEvidence: Float64Array;
+  /** `rowEvidence[y]` — the same for row `y`, from the image's columns, and `rows` itself by magnitude. */
+  readonly rowEvidence: Float64Array;
   /** Every step in the image, both directions together. */
   readonly total: number;
 }
-
-/**
- * What one axis offers the boundary line reader: a figure for each position, and which reading of the
- * axis produced it. Index 0 of `values` is unused, and its length is the axis's.
- *
- * The reading travels with the figures because the reader treats the two differently, and a figure
- * without it would be free to be read the wrong way: a run of neighbouring candidates on an axis read
- * by `MAGNITUDE` is the ramp a resampler spread one boundary across, and on an axis read by
- * `TRANSITIONS` it can be two changes a pixel apart — see `boundaryClusters`.
- */
-export interface BoundaryEvidence {
-  readonly values: Float64Array;
-  readonly reading: BoundaryReading;
-}
-
-/** How an axis's boundary evidence was read — see `readAxis` in `stepProfile.ts`. */
-export type BoundaryReading = 'TRANSITIONS' | 'MAGNITUDE';
 
 /**
  * Every row of the image, then every column, each read as one scan line.
@@ -121,7 +108,7 @@ interface ScanLines {
 /** One axis's magnitude, its boundary evidence, and the whole of the change its lines carry. */
 interface AxisReading {
   readonly magnitude: Float64Array;
-  readonly evidence: BoundaryEvidence;
+  readonly evidence: Float64Array;
   readonly total: number;
 }
 
@@ -198,8 +185,7 @@ function readAxis(data: Uint8ClampedArray, scan: ScanLines): AxisReading {
     }
   }
 
-  const reading: BoundaryReading = crisp * 2 > changing ? 'TRANSITIONS' : 'MAGNITUDE';
-  return { magnitude, evidence: { values: reading === 'TRANSITIONS' ? votes : magnitude, reading }, total };
+  return { magnitude, evidence: crisp * 2 > changing ? votes : magnitude, total };
 }
 
 /** How far apart two pixels are, summed across the four channels. */

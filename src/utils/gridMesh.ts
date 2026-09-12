@@ -3,7 +3,7 @@ import { bestPhase } from './bestPhase.ts';
 import { boundaryClusters } from './boundaryClusters.ts';
 import { boundEndCells } from './boundEndCells.ts';
 import { edgeLattice, exactGridOffset } from './edgeLattice.ts';
-import { type BoundaryEvidence, stepProfile } from './stepProfile.ts';
+import { stepProfile } from './stepProfile.ts';
 
 /**
  * Where the cells of a chosen scale actually begin on this sheet.
@@ -140,8 +140,8 @@ function axisTolerance(grid: PixelGrid): number {
  * crisp strays that outweighed faint boundaries *were* that list, and past a tenth of the sheet's
  * transitions — where the exact branch of {@link boundaryMesh} no longer takes the sheet away from this
  * walk — the walk cut on them (#279). A crisp axis is read by its transitions now, where a stray is a
- * few lines' worth beside a boundary's nearly every line, and `boundaryClusters` splits a run at its
- * valleys so a stray's transitions touching a boundary do not drag its line off it.
+ * few lines' worth beside a boundary's nearly every line, and on every sheet the stray sweep in
+ * `tests/exact-scale-interior-cuts.test.ts` reads, the walk lands on the art's own lattice.
  *
  * **The result is strictly ascending by construction, and nothing needs to re-check it.** Every
  * forward step accepts a position within `tolerance` of the previous one plus `grid`, and
@@ -152,9 +152,8 @@ function axisTolerance(grid: PixelGrid): number {
  * below the cut after them. A dedupe pass here would be a guard against a state
  * the arithmetic rules out, wearing the look of handling it.
  */
-function meshAxis(evidence: BoundaryEvidence, extent: number, grid: PixelGrid): number[] {
-  const axis = evidence.values;
-  const lines = boundaryClusters(evidence).filter((line) => line.position < extent);
+function meshAxis(axis: Float64Array, extent: number, grid: PixelGrid): number[] {
+  const lines = boundaryClusters(axis).filter((line) => line.position < extent);
   // One line anchors nothing: with no second line there is no spacing observed, and a mesh hung off
   // a single cut is a guess wearing a measurement's confidence. The regular lattice is honest.
   if (lines.length < 2) return regularStarts(extent, grid, bestPhase(axis, grid));
