@@ -1,19 +1,19 @@
 # Sprite Gubbins — working conventions
 
-Sprite Gubbins is a browser PWA that writes prompts for generating game sprite sheets and quantises
-the sheets a model returns, with no server and no model calls.
+Sprite Gubbins is a browser PWA that writes sprite-sheet prompts and quantises the sheets a model
+returns, with no server and no model calls.
 [The specification](docs/todo/sprite-gubbins-spec.md) decides *what* to build and wins a
 disagreement; this file decides *how*. Every rule is mandatory. When a guard test fails, read its
 docblock rather than work around it.
 
 ## This file stays small
 
-Every session loads this file whole, so it holds only rules for every change, each in a few lines.
+Every session loads this file whole, so it holds only rules for every change.
 `tests/instruction-file-budget.test.ts` fails when it passes 8,000 characters, a section passes
 1,250, or `AGENTS.md` passes 400; never raise a cap to fit a change. Shorten or replace a rule
-instead, and never explain what lint, a test or a hook enforces beyond a clause naming the check. A
-rule for one kind of change is a note in `P:/Source/!Memories/SpriteGubbins/`, named in the table
-below, and a review that finds one missing restores it there.
+instead, and never explain what lint, a test or a hook enforces beyond naming the check. A rule for
+one kind of change is a note in `P:/Source/!Memories/SpriteGubbins/`, named in the table below, and
+a review that finds one missing restores it there.
 
 ## Before one of these changes, read its notes
 
@@ -24,14 +24,15 @@ below, and a review that finds one missing restores it there.
 | Prompt text, sheet plans, model wrappers, an Output Configuration control | *Changing the compiled prompt's text* |
 | Storage, `src/sw.ts`, a new subresource | *A database change works on both storage backends*, *The app never loads a cross-origin subresource* |
 | Code that reads a sheet, or a test, calibration, browser check or screenshot that needs one | *The test sprite sheets and what each is for* |
+| A new dependency, or code from elsewhere | *Adding a Sprite Gubbins dependency* |
 | A tool that walks the project root | *A root-scanning tool must skip the agent worktrees* |
 | A worktree removal that refuses | *Recovering a stuck worktree removal* |
 | A GitHub issue or pull request | *Sign what you write on a Sprite Gubbins issue*, *Reconcile a Sprite Gubbins issue's labels*, *Close a Sprite Gubbins issue once its work has landed* |
 
 ## Work in a git worktree, and land it
 
-Several agents share this repository, and a shared checkout mixes their edits silently. Make every
-change in its own worktree; the primary checkout is for reading and merging only.
+Several agents share this repository. Make every change in its own worktree; the primary checkout is
+for reading and merging only.
 
 ```bash
 git worktree add .claude/worktrees/<topic> -b worktree-<topic>
@@ -49,8 +50,8 @@ git branch -d worktree-<topic>
   primary checkout's branch, and never run `git clean -ffdx`, which deletes the other agents' trees.
 - A task is done when it is merged into `main` and its tree and branch are removed. If `main` moved,
   merge it into your branch and re-run the gate there first.
-- Never force a worktree removal. If the work cannot land, leave the tree and say so, naming the
-  branch and the blocker.
+- If `git worktree remove` refuses, look at the uncommitted work first; never `--force`. If the work
+  cannot land, leave the tree and say so, naming the branch and the blocker.
 
 ## No secrets, and public-repository hygiene
 
@@ -63,11 +64,12 @@ This repository is public, and a committed secret is permanent.
 - The app never handles a model API key. A key field, an image-generation request or a proxy is a
   new architecture: stop and raise it.
 - No real personal data: use `BootBlock@users.noreply.github.com`, `example.com` and `localhost`.
-  Never commit `*.sqlite`, `*.db`, dumps, prompt archives or keys. A build artefact, a local cache
-  or a file that could hold real data goes in `.gitignore`.
+  Never commit `*.sqlite`, `*.db`, dumps, prompt archives or keys. Commit a new kind of generated or
+  local file only if it belongs; an artefact, a cache or anything that could hold real data goes in
+  `.gitignore`.
 - Everything committed is world-readable: professional and neutral, with no internal ticket IDs,
   URLs, hostnames or TODO naming a person. The licence is MIT: never paste code under an incompatible
-  or unknown licence, and vet a new dependency's licence and upkeep.
+  or unknown licence.
 
 ## Do the whole fix, never the cheap one
 
@@ -81,9 +83,9 @@ decision, say so and leave the defect documented; "minimal change" is not a reas
 While `package.json` says `0.x`, a change replaces what it supersedes: update every call site, let a
 stored value naming a retired option fall back to its default, and discard an incompatible database.
 No aliases, forwarding re-exports, `@deprecated` wrappers, dual read paths, migrations, repair
-passes, legacy fixtures, or a `v2` beside a `v1`. Guards against corrupt storage (written against
-each union's `as const` array), the localStorage fallback, cross-origin isolation and `showPopover`
-detection are not compatibility and stay. The commit message says what the change breaks.
+passes, legacy fixtures, or a `v2` beside a `v1`. Guards against corrupt storage, the localStorage
+fallback, cross-origin isolation and `showPopover` detection are not compatibility and stay. The
+commit message says what the change breaks.
 
 ## Architecture: the structural laws
 
@@ -128,6 +130,6 @@ npm run format
 ```
 
 All five run clean before a change lands. Drive a change with a runtime surface in a browser with
-the `verify` skill, then run `/auto-review high` over the diff and fix every confirmed finding. The
-spec's status banner changes in the change that ships a phase, and a plan's record under
-`docs/todo/` of what it did is never rewritten.
+the `verify` skill, then run `/auto-review high` over the diff and fix every confirmed finding. A
+phase ships with the spec's status banner updated, and a plan's record under `docs/todo/` is never
+rewritten.
