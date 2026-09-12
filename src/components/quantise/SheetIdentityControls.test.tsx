@@ -17,7 +17,8 @@ import { SheetIdentityControls } from './SheetIdentityControls.tsx';
  * `sheetBatch.test.ts`'s. What can only be checked here is that the figure the file carries is the
  * figure on screen — the whole defect this panel closes was that the manifest recorded a sheet
  * position nothing in the tab ever showed, so a reader who forgot to step the studio wrote `west`
- * over the south sheet's pixels and had no way to notice.
+ * over the south sheet's pixels and had no way to notice. What a step writes, and that it stops at
+ * both ends, is `SheetStepButtons.test.tsx`'s, because the studio's strip carries the same buttons.
  */
 
 const CLASSIC = DIRECTION_LISTS.FIVE_CLASSIC;
@@ -82,8 +83,8 @@ describe('SheetIdentityControls', () => {
 
   it('follows the studio when the position is stepped from this tab', async () => {
     // The second half of the fix: a reader spends a batch on this tab, and walking back to the
-    // Studio between every generation was the only way to move the position. Stepping here writes a
-    // whole batch entry, so the line and the file that would be written move together.
+    // Studio between every generation was the only way to move the position. What is this panel's is
+    // that the line and the file that would be written move together.
     const user = userEvent.setup();
     render(<SheetIdentityControls />);
 
@@ -91,8 +92,6 @@ describe('SheetIdentityControls', () => {
 
     const sheet = recorded();
     expect(sheet.ordinal).toBe(2);
-    expect(useOutputStore.getState().output.sheetIndex).toBe(1);
-    expect(useOutputStore.getState().output.primaryDirection).toBe(CLASSIC[0]);
     expect(screen.getByText(`Sheet 2 of ${String(sheet.total)}`)).toBeInTheDocument();
     expect(screen.getByText(new RegExp(`^Articulation · ${String(CLASSIC[0])} ·`))).toBeInTheDocument();
   });

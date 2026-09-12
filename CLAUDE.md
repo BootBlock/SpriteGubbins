@@ -121,10 +121,9 @@ the duty to keep the old shape working: say plainly in the commit message what a
   beside them.
 - **`src/workers/` holds threads, not logic**: worker entry points, their protocols, and the near side
   that owns each one. No component owns a thread, and state that must outlive a view lives in a store.
-- **Reuse the primitives** rather than restyling a bare element: `TextField`, `NumberField`,
-  `SelectField`, `CheckboxField`, `FilePickerField`, `ComboBox`, `Tooltip`, `ControlTooltip`,
-  `ColorSwatch`, `Badge`, `Toast`, `Modal`, `ExternalLink`. Every module in `common/` and `layout/`
-  has a colocated suite that renders it (`tests/shared-component-suites.test.ts`).
+- **Reuse the primitives** rather than restyling a bare element: the fields in `common/`, `ComboBox`,
+  `Tooltip`, `ControlTooltip`, `ColorSwatch`, `Badge`, `Toast`, `Modal`, `ExternalLink`. They carry
+  colocated suites, as `tests/shared-component-suites.test.ts` defines.
 - **YAGNI and completeness.** No speculative layers or configuration nobody asked for, and no
   `TODO: add remaining fields`, stub or truncated option list.
 

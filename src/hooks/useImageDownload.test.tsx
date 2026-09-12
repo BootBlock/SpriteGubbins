@@ -56,7 +56,8 @@ beforeEach(() => {
     return writing.then((file) => ({ kind: 'written', file }) as const);
   };
   vi.stubGlobal('Worker', FakeSheetWriteWorker);
-  // happy-dom provides neither, and both are the point of the hook rather than incidental to it.
+  // Replaced rather than left to happy-dom's own, because both are the point of the hook rather than
+  // incidental to it: the object URL is where the written file is captured.
   URL.createObjectURL = vi.fn((blob: Blob) => {
     saved = blob;
     return 'blob:sheet';

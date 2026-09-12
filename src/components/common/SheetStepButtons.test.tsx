@@ -60,6 +60,13 @@ describe('SheetStepButtons', () => {
     // and on this batch moving from the multi-view trunk to the first run changes the series position
     // *and* pins a facing that was inert a moment ago.
     const user = userEvent.setup();
+    // Settings a step must carry across untouched, at values no default could stand in for.
+    const before = {
+      ...useOutputStore.getState().output,
+      identityLock: 'IRON-KNIGHT-7F3A',
+      componentBudget: 24,
+    };
+    useOutputStore.setState({ output: before });
     const next = batch().sheets[1];
     if (next === undefined) throw new Error('a batch of six should have a second sheet.');
     render(<SheetStepButtons />);
@@ -67,8 +74,8 @@ describe('SheetStepButtons', () => {
     await user.click(stepButton('Next sheet'));
 
     expect(useOutputStore.getState().output).toStrictEqual(next.output);
-    expect(next.output.sheetIndex).toBe(1);
-    expect(next.output.primaryDirection).toBe(CLASSIC[0]);
+    // And that entry is the studio's own configuration with the two step axes moved, nothing else.
+    expect(next.output).toStrictEqual({ ...before, sheetIndex: 1, primaryDirection: CLASSIC[0] });
     expect(batch().ordinal).toBe(2);
   });
 

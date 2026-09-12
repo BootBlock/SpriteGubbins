@@ -1153,10 +1153,10 @@ describe("a view's primary action", () => {
     // than listed, so a shared component later pulled into the chrome stops being checked here
     // without anyone remembering to remove it.
     //
-    // **An importer is a file the app renders, never a suite.** Every shared component has a
-    // colocated test beside it in `common/`, which is outside every view — so counting suites as
-    // importers drops each of them out of this sweep without a sound. The floor below is what
-    // noticed when those suites were first written.
+    // **An importer is a file the app renders, never a suite.** A shared component's colocated
+    // suite sits beside it in `common/`, which is outside every view — so counting suites as
+    // importers drops each tested component out of this sweep without a sound, until the floor below
+    // fails with too few left.
     const sources = scannableSources();
     const appSources = sources.filter((file) => !/\.test\.tsx?$/.test(file));
     const inView = (file: string) =>

@@ -23,12 +23,13 @@ let downloadName: string | null = null;
 beforeEach(() => {
   saved = null;
   downloadName = null;
-  // happy-dom provides neither, and both are how a download leaves the page.
-  URL.createObjectURL = vi.fn((blob: Blob) => {
-    saved = blob;
+  // Both are how a download leaves the page: the object URL is where the file is captured, and the
+  // revoke `useFileSave` schedules must find something to call.
+  vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+    if (blob instanceof Blob) saved = blob;
     return 'blob:pack';
   });
-  URL.revokeObjectURL = vi.fn();
+  vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
     downloadName = this.download;
   });
