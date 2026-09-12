@@ -89,7 +89,7 @@ const ENVIRONMENT_VOCABULARY =
  * have been exempted by an accident of wording.
  */
 const BANS_AN_ENVIRONMENT = SUBJECT_CATEGORIES.filter((category) =>
-  /environments/i.test(CATEGORY_EXCLUSION_TEXT[category]),
+  everySheetOf(category).some((plan) => /environments/i.test(CATEGORY_EXCLUSION_TEXT[category](plan))),
 );
 
 /** Vocabulary that belongs only to a humanoid or creature articulation sheet. */
@@ -773,9 +773,14 @@ describe('no category’s exclusion line names a component of its own plans', ()
     // Every piece the reported rescue named was a compound, which is what a piece of a sheet is
     // usually called.
     for (const category of SUBJECT_CATEGORIES) {
-      const line = CATEGORY_EXCLUSION_TEXT[category].toLowerCase();
+      // Every sheet's line, because the line is handed the sheet and BACKGROUND's differs between its two.
+      const lines = [
+        ...new Set(
+          everySheetOf(category).map((plan) => CATEGORY_EXCLUSION_TEXT[category](plan).toLowerCase()),
+        ),
+      ];
       const named = componentPhrases(category).filter(
-        (phrase) => phrase.includes(' ') && line.includes(phrase),
+        (phrase) => phrase.includes(' ') && lines.some((line) => line.includes(phrase)),
       );
       expect(named, `${category}: section 8 names its own components rather than citing section 4`).toEqual(
         [],
@@ -1021,10 +1026,18 @@ describe('no category calls the subject’s own additions an error in the specif
 
   it.each(SUBJECT_CATEGORIES)('%s splices the exemption into its opening claim', (category) => {
     const label = labelFor(category);
-    for (const [sentence, clause] of [
-      [CATEGORY_GUARD_TEXT[category], EXEMPTS.guard(label)],
-      [CATEGORY_AUDIT_TEXT[category], EXEMPTS.audit(label)],
-    ] as const) {
+    // Every sheet, because each sentence opens with the sheet's own class (issue #278), and the join
+    // has to hold behind every one of them.
+    for (const [sentence, clause] of everySheetOf(category).flatMap((plan) => [
+      [
+        (additions: string | null) => CATEGORY_GUARD_TEXT[category](plan, additions),
+        EXEMPTS.guard(label),
+      ] as const,
+      [
+        (additions: string | null) => CATEGORY_AUDIT_TEXT[category](plan, additions),
+        EXEMPTS.audit(label),
+      ] as const,
+    ])) {
       // Containment alone would pass on a clause that had drifted out of the opening claim into some
       // later sentence of the same entry, which is what the retired EFFECT-only test pinned with a
       // pair of negatives written against its own join. Take the clause back out and what is left

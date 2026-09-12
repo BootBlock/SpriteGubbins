@@ -1,6 +1,7 @@
 import type { ComponentEntry, SheetPlan, SheetSeries } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
+import { FIGURE_ASSEMBLY_FAILURE } from './figureAssemblyFailure.ts';
 import { mirroredLimb } from './mirroredLimb.ts';
 import { RIG_PIECES_OUTRO } from './rigPieces.ts';
 
@@ -55,6 +56,8 @@ export const CHARACTER_POSE_LIBRARY: SheetPlan = {
   posing: 'PER_POSITION',
   scaleExample: 'a hand drawn beside a torso is in proportion to it',
   scaleUnit: 'a full figure',
+  componentClass: 'character anatomy',
+  assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,
@@ -158,6 +161,8 @@ function characterDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTup
     posing: 'UNSTATED',
     scaleExample: 'a head drawn beside the torso it joins is in proportion to it',
     scaleUnit: 'a full figure',
+    componentClass: 'character anatomy',
+    assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
     groups: [
       {
         heading: null,
@@ -251,6 +256,8 @@ export const CHARACTER_ARTICULATION: SheetPlan = {
   // largest piece on the page is an upper leg.
   scaleExample: 'a hand drawn beside an upper leg is in proportion to it',
   scaleUnit: 'a full figure',
+  componentClass: 'character anatomy',
+  assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
   groups: [
     { heading: 'Left arm', entries: LEFT_ARM_ENTRIES },
     {
@@ -319,6 +326,8 @@ export const CHARACTER_CUTOUT_RIG: SheetPlan = {
   posing: 'AT_REST',
   scaleExample: 'a hand drawn beside a torso is in proportion to it',
   scaleUnit: 'a full figure',
+  componentClass: 'character anatomy',
+  assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,

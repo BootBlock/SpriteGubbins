@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EFFECT } from '../categories/effect.ts';
+import { EFFECT_FRAME_SEQUENCE } from '../sheetPlans/effect.ts';
 import { CATEGORY_AUDIT_TEXT, CATEGORY_EXCLUSION_TEXT } from './exclusions.ts';
 
 /**
@@ -111,7 +112,8 @@ function collisionsWith(text: string): readonly string[] {
  * single semicolon-separated sentence by construction.
  */
 const [BAN_CLAUSE = '', CARVE_OUT = ''] = ((): readonly string[] => {
-  const text = CATEGORY_EXCLUSION_TEXT.EFFECT;
+  // EFFECT's one sheet: the line reads nothing from it, but every category's line is handed one.
+  const text = CATEGORY_EXCLUSION_TEXT.EFFECT(EFFECT_FRAME_SEQUENCE);
   const brk = text.indexOf('. ');
   return brk < 0 ? [text] : [text.slice(0, brk), text.slice(brk + 2)];
 })();
@@ -151,7 +153,7 @@ describe('EFFECT’s exclusions against the effect types it offers', () => {
     // than on having checked nothing. That is the stronger of the two positions and it is why the
     // assertion is written as a set: restoring a noun list here puts the terms back and fails, which
     // is the regression worth catching, and a reader can tell the difference from the message.
-    const audit = CATEGORY_AUDIT_TEXT.EFFECT(null);
+    const audit = CATEGORY_AUDIT_TEXT.EFFECT(EFFECT_FRAME_SEQUENCE, null);
     const unnamed = collisionsWith(audit).filter((term) => !audit.toLowerCase().includes(term));
 
     expect(unnamed, 'the audit bans an effect type’s own noun without naming it as the effect').toEqual([]);

@@ -49,6 +49,15 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
   // piece the rest are in proportion to. "One widget" would price a cursor and a window frame at one
   // size. The nine-slice takes the same frame, which is the panel its corners and edges assemble into.
   scaleUnit: 'a panel frame',
+  componentClass: 'a piece of this one interface',
+  // The screen, because a state library is a kit for the screens its widgets are placed on, and a
+  // picture of that screen is what it comes back as when it fails.
+  assemblyFailure: {
+    instruction:
+      'Do not draw the pieces fitted together into the assembled screen anywhere on the sheet, including as a reference or key.',
+    exclusion: 'The screen itself, whole or partly arranged, and any picture of the interface in use.',
+    audit: 'nothing on the sheet is the screen itself, whole or partly arranged',
+  },
   groups: [
     {
       heading: null,
@@ -149,6 +158,19 @@ export const INTERFACE_NINE_SLICE: SheetPlan = {
   // the corner it is laid on, which are the smallest and the largest pieces the nine-slice draws.
   scaleExample: 'a corner ornament drawn beside the frame corner it sits on is in proportion to it',
   scaleUnit: 'a panel frame',
+  componentClass: 'a piece of this one interface',
+  // Not the state library's screen, which these pieces never build (issue #278): they build a panel, a
+  // button and a divider run, and this sheet comes back as one of those drawn whole — corners, edges and
+  // centre already joined into a finished rectangle — rather than as a grid of slices. The forms say "a
+  // panel, button or divider" rather than borrowing the assembly sentence's "at any width", and qualify
+  // it by the fitting, so no single corner or stretching middle is a panel the audit could fail.
+  assemblyFailure: {
+    instruction:
+      'Do not draw the pieces fitted together into a finished panel, button or divider anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'Any panel, button or divider drawn with its pieces already fitted together, and any picture of the interface in use.',
+    audit: 'nothing on the sheet is a panel, button or divider drawn with its pieces already fitted together',
+  },
   groups: [
     {
       heading: 'Panel nine-slice',

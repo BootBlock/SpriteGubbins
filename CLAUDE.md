@@ -1160,7 +1160,9 @@ below was bought with one of those.
   in the character and creature plans name the joins (neck, shoulders, waist, hips) because a
   generator's prior for "torso" includes arms, and only the named boundary stops it.
 - **One prompt must never disagree with itself.** Section 4 may not require what section 8 forbids
-  (exclusions, guards and audits are per-category for exactly this reason); an inventory may not
+  (exclusions, guards and audits are per-category for exactly this reason, and whatever they say a
+  sheet's pieces *are* is the sheet's own — `SheetPlan.componentClass` and `assemblyFailure`, because
+  BACKGROUND's layer library was told not to stack bands only its parallax set draws); an inventory may not
   name views section 3 does not list; anatomy appears only on the sheet that counts it. When adding
   a rule, grep for the sections that state its neighbours and check the pair under every category
   and every direction set — `sheetPlans.test.ts` and `componentSet.test.ts` walk all of them.

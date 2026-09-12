@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BACKGROUND_KEY_COLORS } from '../src/constants/backgroundKeyColors.ts';
+import { fieldLabelFor } from '../src/constants/categories/index.ts';
 import { HARDWARE_PROFILES } from '../src/constants/hardware/index.ts';
 import { PALETTES } from '../src/constants/palettes/index.ts';
 import * as promptText from '../src/constants/promptText/index.ts';
@@ -8,6 +9,7 @@ import { SHEET_INDEX_RANGE, sheetPlanFor } from '../src/constants/sheetPlans/ind
 import type { SheetPlan } from '../src/types/components.ts';
 import { DIRECTIONAL_MODES, DIRECTION_SETS, RESOLUTION_PROFILES } from '../src/types/output.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
+import type { SubjectCategory } from '../src/types/subject.ts';
 
 /**
  * Whether any prose the prompt interpolates still writes a section number by hand.
@@ -47,21 +49,26 @@ const HAND_WRITTEN = /\bsections? \d/i;
  */
 const FEWEST_STRINGS = { plans: 1000, records: 100, composed: 10 } as const;
 
-/** The sheet at every address a configuration can name, once per address. */
-function addressedPlans(): readonly SheetPlan[] {
-  const plans: SheetPlan[] = [];
+/** The sheet at every address a configuration can name, once per address, with the category it is for. */
+function addressedSheets(): readonly { readonly category: SubjectCategory; readonly plan: SheetPlan }[] {
+  const sheets: { category: SubjectCategory; plan: SheetPlan }[] = [];
 
   for (const category of SUBJECT_CATEGORIES) {
     for (const directionalMode of DIRECTIONAL_MODES) {
       for (const directions of DIRECTION_SETS) {
         for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
-          plans.push(sheetPlanFor(category, directionalMode, directions, sheetIndex));
+          sheets.push({ category, plan: sheetPlanFor(category, directionalMode, directions, sheetIndex) });
         }
       }
     }
   }
 
-  return plans;
+  return sheets;
+}
+
+/** The sheet at every address a configuration can name, once per address. */
+function addressedPlans(): readonly SheetPlan[] {
+  return addressedSheets().map(({ plan }) => plan);
 }
 
 /** Every piece of prose the sheet plans contribute, over every address a configuration can name. */
@@ -73,8 +80,18 @@ function planProse(): readonly string[] {
     // 0 and 2 interpolate them verbatim, so a section number written into one would reach the model.
     // Each arrived on the plan from `constants/promptText/`, where the barrel walk below already
     // covered it — moving a string from one of these two sources to the other has to move it between
-    // the walks in the same edit, or the strings leave the check silently.
-    prose.push(plan.name, plan.assembly, plan.scaleExample, plan.scaleUnit);
+    // the walks in the same edit, or the strings leave the check silently. `componentClass` and the
+    // three `assemblyFailure` forms made the same move for the same sections (issue #278).
+    prose.push(
+      plan.name,
+      plan.assembly,
+      plan.scaleExample,
+      plan.scaleUnit,
+      plan.componentClass,
+      plan.assemblyFailure.instruction,
+      plan.assemblyFailure.exclusion,
+      plan.assemblyFailure.audit,
+    );
     for (const group of plan.groups) {
       if (group.heading !== null) prose.push(group.heading);
       if (group.intro !== undefined) prose.push(group.intro);
@@ -117,10 +134,23 @@ function recordProse(): readonly string[] {
  * walk without anything failing. `resolutionProfileDescription` is the composer that puts them back,
  * driven over every unit a plan states and both answers to *does the stated size name the assembly*,
  * which is the whole space the two branches of that function cover.
+ *
+ * **The category's exclusion line, guard and audit joined it for the same reason** (issue #278). All
+ * three are handed the sheet now, so none of them is a string `recordProse` can reach — and the
+ * exclusion line had been, with the citations of section 4 and section 1 it carries. Each is composed
+ * for every sheet its category can be asked for, and the two that except the subject's own pieces
+ * under both answers to whether the sheet lists any.
  */
 function composedProse(): readonly string[] {
   const units = new Set(addressedPlans().map((plan) => plan.scaleUnit));
   return [
+    ...addressedSheets().flatMap(({ category, plan }) => [
+      promptText.CATEGORY_EXCLUSION_TEXT[category](plan),
+      ...[null, fieldLabelFor(category, 'additional_anatomy')].flatMap((additions) => [
+        promptText.CATEGORY_GUARD_TEXT[category](plan, additions),
+        promptText.CATEGORY_AUDIT_TEXT[category](plan, additions),
+      ]),
+    ]),
     // Under every key, because the sentence naming what a key takes out of a list cites a section and
     // is written only where a key takes something.
     ...Object.values(BACKGROUND_KEY_COLORS).flatMap((key) =>

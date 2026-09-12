@@ -65,8 +65,11 @@ export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
   PORTRAIT:
     'the front is the face — the brow, the eyes, the nose and the mouth; the rear is the back of the head and the fall of the hair. The turn stated in section [SEC:SUBJECT] is the sitter’s own pose within a fixed frame and never a rotation of the camera.',
   ICON: 'an icon has no front and no rear — it is a mark drawn flat into its cell, and the angle the depicted object is shown at is fixed by the projection in section [SEC:CAMERA] for every member of the set at once.',
+  // A layer rather than a band, because this record is the category's and only the parallax set draws
+  // bands: the layer library draws a scene panel cut into pieces, and "layer" is the word both sheets
+  // and the category's own label share (issue #278).
   BACKGROUND:
-    'the front is the face of the band that meets the camera; a band has no rear — it is a plane standing at a distance, and what is behind it is the next band back rather than its own far side.',
+    'the front is the face of the layer that meets the camera; a layer has no rear — it is a plane standing at a distance, and what is behind it is the next layer back rather than its own far side.',
   // Behind `[IF:MULTI_DIRECTION]` and therefore never emitted, as the four entries above it are:
   // FONT is bound to `SINGLE_FRONT`. Written honestly rather than left as filler, and the honest
   // answer is the strongest of the five — a glyph turned away from the camera is not merely drawn at

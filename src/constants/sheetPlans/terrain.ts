@@ -1,4 +1,4 @@
-import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
+import type { AssemblyFailure, ComponentEntry, SheetPlan } from '../../types/components.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts';
 
@@ -142,6 +142,36 @@ const TRANSITION_ENTRIES: readonly ComponentEntry[] = [
 
 const TRANSITION_TILE_COUNT = componentTotal(TRANSITION_ENTRIES);
 
+/**
+ * How both TERRAIN sheets forbid their assembled whole.
+ *
+ * **These recover the half `CATEGORY_ASSEMBLY.TERRAIN`'s terms had to give up.** The tiles-already-laid
+ * reading cannot be weighted as a term without negating the subject, so the negative channel says only
+ * the composed-view half — but a whole clause can hold both, because "laid together" is a relation
+ * between tiles rather than a word standing in for one. Section 9's says "drawn already laid together"
+ * for the reason `CATEGORY_AUDIT_TEXT`'s own TERRAIN line is qualified twice over: the audit is applied
+ * tile by tile, and a check reading "no laid tiles" would fail the sheet on the fourteen section 4
+ * requires.
+ *
+ * **Two of the three displaced wording this category already carried.** TERRAIN was the only category
+ * whose assembly failure had reached the body before these forms existed, ad hoc:
+ * `CATEGORY_EXCLUSION_TEXT` banned "any composed landscape, vista or diorama drawn in place of the
+ * component grid" and `CATEGORY_AUDIT_TEXT` asked for "nothing drawn as a landscape view rather than as
+ * a separate piece". Both clauses moved into these forms and their old homes gave them up in the same
+ * change — one list saying one thing twice in two wordings is what these records are for removing.
+ *
+ * Both sheets take them, because both lay tiles: the blend set is nothing else, and the feature
+ * library's elevation edge is tiles of the same ground with its features standing on them.
+ */
+const TERRAIN_ASSEMBLY_FAILURE: AssemblyFailure = {
+  instruction:
+    'Do not draw the tiles laid together, or a landscape composed from them, anywhere on the sheet, including as a reference or key.',
+  exclusion:
+    'The tiles laid together, and any landscape, vista or diorama composed from them in place of the component grid.',
+  audit:
+    'nothing on the sheet is a run of tiles drawn already laid together, or a landscape composed from them',
+};
+
 export const TERRAIN_BLEND_SET: SheetPlan = {
   name: 'Blend set',
   facings: 'run',
@@ -156,6 +186,9 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
   scaleExample:
     'one base material tile and the transition tile beside it are drawn at the same size, their surface scatter at one grain throughout',
   scaleUnit: 'one ground tile',
+  // A ground tile and nothing else: the landform pieces are the feature library's (issue #278).
+  componentClass: 'a ground tile',
+  assemblyFailure: TERRAIN_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,
@@ -208,6 +241,8 @@ export const TERRAIN_FEATURE_LIBRARY: SheetPlan = {
   // The blend set's unit, although this sheet draws a lip, a face and a foot rather than a flat tile:
   // each of those is a tile of the same ground, and the boulder above is placed on one.
   scaleUnit: 'one ground tile',
+  componentClass: 'a ground tile or a landform piece',
+  assemblyFailure: TERRAIN_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: 'Elevation edge',

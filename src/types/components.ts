@@ -339,6 +339,68 @@ export type InventoryPosing =
   | 'UNSTATED';
 
 /**
+ * How one sheet's **assembly failure** — its pieces drawn already put together — is forbidden in the
+ * three sections of the prompt body that state it.
+ *
+ * **The sheet's rather than the category's, and BACKGROUND is why** (issue #278). These forms name the
+ * pieces themselves — the bands stacked, the tiles laid, the pieces fitted — and BACKGROUND's two
+ * sheets share no such noun: its parallax set draws nine bands and its layer library draws none, so a
+ * per-category record told the layer library not to draw “the bands stacked into the finished scene”.
+ * BUILDING and INTERFACE had the same split in a milder form. BUILDING's record named both of its
+ * deliverables at once, so its module library and its directional views were told not to draw a laid
+ * stretch of the tiles neither sheet has; INTERFACE's named only the assembled screen, which left the
+ * nine-slice set's own failure — a panel drawn with its pieces already fitted together — unnamed. The
+ * two terms the wrappers carry stay on `CategoryAssembly`, which says why they can.
+ *
+ * **The three forms are not one sentence spliced three times, and that is the point of having three
+ * fields.** Section 4's is an *instruction* about what not to draw, section 8's an *exclusion* listed
+ * beside the shadows and the text, and section 9's a *check the reader performs* against the delivered
+ * image. `CATEGORY_AUDIT_TEXT` records what the third of those costs when its nouns are left
+ * unqualified — an audit reading "no exhaust" failed a VEHICLE sheet on a component section 4 required
+ * — so each form is worded for the job it does and none is derived from another.
+ *
+ * **A form may use a word `CategoryAssembly.negatives` may not.** A negative prompt reads a phrase word
+ * by word, so a weighted `frame` suppresses every entry on an EFFECT sheet, where “the frames overlaid
+ * into one composited picture” is a clause stating a relation between them — and banning that relation
+ * bans nothing the sheet requires.
+ */
+export interface AssemblyFailure {
+  /**
+   * Section 4's closing instruction, filling `[DEFINE:CATEGORY_ASSEMBLY_INSTRUCTION]` — a whole
+   * sentence, ending the paragraph that has just said not to merge, substitute, pad or omit.
+   *
+   * **It names the drawing, never the capability**, because section 6 asks this same component set to
+   * assemble cleanly into the finished thing and one prompt may not disagree with itself. So the
+   * wording is what the sheet must not *depict* — the parts fitted together — and it deliberately
+   * avoids the phrase {@link SheetPlan.assembly} uses for what the set assembles *into*.
+   */
+  readonly instruction: string;
+  /**
+   * Section 8's bullet, filling `[DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]` — a noun phrase under "Absent
+   * from the image entirely:", sentence case and closed with a full stop like the three fixed bullets it
+   * sits among. It is the fourth of the list's six; `CATEGORY_EXCLUSION_TEXT` is the first, and the
+   * subject's own free-text exclusions are the conditional last.
+   *
+   * **It may not restate `CATEGORY_EXCLUSION_TEXT`**, three bullets up the same list. TERRAIN's line
+   * carried this claim before this field existed and gave it up when it arrived; a sheet saying the
+   * same thing twice in one list in two wordings is what that move exists to prevent — and the distance
+   * between the two is what makes it easy to do rather than a reason it could not happen.
+   */
+  readonly exclusion: string;
+  /**
+   * Section 9's check, filling `[DEFINE:CATEGORY_ASSEMBLY_AUDIT]` — a lower-case clause completing
+   * "Every component stops at its own joins — no entry arrives with a neighbouring piece attached, and
+   * …", so it carries no capital and no closing full stop.
+   *
+   * **Its nouns are qualified**, for the reason recorded on `CATEGORY_AUDIT_TEXT`: this is the one form
+   * the reader applies to the delivered sheet component by component, so a bare noun that a component
+   * answers to fails the sheet on an entry section 4 required. It may not restate `CATEGORY_AUDIT_TEXT`
+   * either — that is the same list's next check but one, with the one-camera check between them.
+   */
+  readonly audit: string;
+}
+
+/**
  * One sheet: what it asks for, how many facings it draws, and what its components must assemble into.
  *
  * The assembly sentence lives here rather than in a table of its own because it is the same
@@ -447,6 +509,36 @@ export interface SheetPlan {
    * article, with no leading capital and no trailing stop.
    */
   readonly scaleUnit: string;
+  /**
+   * What every entry of this sheet is, as section 4's guard and section 9's category check each open
+   * by saying — “Every entry below is …” and “Every component is …”.
+   *
+   * **The sheet's rather than the category's, and BACKGROUND is why** (issue #278). Both sentences were
+   * written per category, and BACKGROUND's called every entry “a band of this one backdrop, or a loose
+   * piece laid over one” above a layer library that draws no band — so the guard over that inventory
+   * placed its sky, its masses and its edge occluders in neither class, which is what its next sentence
+   * calls “an error in this specification, not an instruction to follow”. Two other categories named a
+   * class one of their sheets does not hold, in the milder form of a disjunction with an empty half:
+   * BUILDING's “structural or tile component” over a module library and directional views that hold no
+   * tile, and TERRAIN's “ground tile or a landform piece” over a blend set that holds no landform piece.
+   *
+   * **One phrase for both sentences**, because they state one fact and two wordings of it are what
+   * drift. Each category's record still writes the rest of both — what would not belong, and the check
+   * that category's deliverable needs — because that part is true of every sheet the category has.
+   *
+   * It completes both openings and stands before the additions exemption, so it is a noun phrase with
+   * no leading capital and no trailing stop. `sheetPlans/sheetClaims.test.ts` fails on a word in it, or
+   * in {@link SheetPlan.assemblyFailure}, that names a piece only another sheet of the category draws.
+   */
+  readonly componentClass: string;
+  /**
+   * How this sheet's assembled whole is forbidden in sections 4, 8 and 9 — see {@link AssemblyFailure}.
+   *
+   * It sits beside {@link SheetPlan.assembly} because it is the other half of the same statement: that
+   * sentence is what the pieces must be *able* to build, and these forms are the drawing of it the sheet
+   * must not carry.
+   */
+  readonly assemblyFailure: AssemblyFailure;
 }
 
 /**

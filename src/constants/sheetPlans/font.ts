@@ -1,4 +1,4 @@
-import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
+import type { AssemblyFailure, ComponentEntry, SheetPlan } from '../../types/components.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { spellNumber } from '../../utils/numberWords.ts';
 
@@ -137,6 +137,22 @@ two of them are set side by side as a word, a name, a specimen line or a pangram
 a caption, a codepoint or a key naming it — a pair of letters drawn touching is two entries merged,
 which is the failure the count in section [SEC:CONTRACT] exists to catch.`;
 
+/**
+ * How every FONT sheet forbids its assembled whole: the characters *set*, drawn side by side as text.
+ *
+ * The forms keep the vocabulary `CATEGORY_ASSEMBLY.FONT`'s terms had to give up, for the reason
+ * TERRAIN's do: “set side by side as a word” is a relation between characters rather than a word
+ * standing in for one. All four sheets take them, because each draws single characters and each fails
+ * the same way.
+ */
+const FONT_ASSEMBLY_FAILURE: AssemblyFailure = {
+  instruction:
+    'Do not draw the characters set beside one another into a word, a name, a specimen line or a run of body copy anywhere on the sheet, including as a reference or key.',
+  exclusion:
+    'Any word, name, specimen line or paragraph set from the characters, and any picture of the font in use.',
+  audit: 'no two characters are drawn touching or set side by side as a word',
+};
+
 export const FONT_CAPITALS: SheetPlan = {
   name: 'Capitals',
   facings: 'run',
@@ -156,6 +172,8 @@ export const FONT_CAPITALS: SheetPlan = {
   // remaining metrics are set against and the one section 1 fixes. The three sheets after this one
   // take it too although they draw no capital: they are this series, and are set beside it.
   scaleUnit: 'one capital glyph',
+  componentClass: 'one character of this one font',
+  assemblyFailure: FONT_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,
@@ -181,6 +199,8 @@ export const FONT_LOWER_CASE: SheetPlan = {
   scaleExample:
     'one lower-case letter and the letter beside it are set on the same baseline to the same height above it, with any ascender or descender reaching the same distance throughout',
   scaleUnit: 'one capital glyph',
+  componentClass: 'one character of this one font',
+  assemblyFailure: FONT_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,
@@ -207,6 +227,8 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
   scaleExample:
     'one digit and the punctuation mark beside it are cut to the same stroke weight at the same scale, each sitting at the height against the baseline its own use asks for',
   scaleUnit: 'one capital glyph',
+  componentClass: 'one character of this one font',
+  assemblyFailure: FONT_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: 'Digits',
@@ -238,6 +260,8 @@ export const FONT_SYMBOLS: SheetPlan = {
   scaleExample:
     'one symbol and the symbol beside it are cut to the same construction and weight, so neither reads as borrowed from another font',
   scaleUnit: 'one capital glyph',
+  componentClass: 'one character of this one font',
+  assemblyFailure: FONT_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,
