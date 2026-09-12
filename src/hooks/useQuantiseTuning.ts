@@ -10,10 +10,10 @@ import type { QuantiseTuning } from '../types/quantiser.ts';
  * and the dependency array that decides when to rebuild it, with the same twenty-three names written
  * out three times.
  *
- * **One call site, deliberately.** CLAUDE.md sends a shared hook here and warns against a hook that
- * wraps a single `useState`; this is neither. It needs React and the store, so `src/utils/` is closed
- * to it, and it is not a component. The rule's target is an abstraction that hides nothing — this
- * hides the whole of the tab's store surface.
+ * **One call site, deliberately.** CLAUDE.md sends a hook that needs React, the DOM or a store here,
+ * and bans one that only wraps a single `useState`. This needs React and the store, so `src/utils/`
+ * is closed to it, and it is not a component. The ban's target is an abstraction that hides nothing
+ * — this hides the whole of the tab's store surface.
  *
  * **Atomic selectors, not one subscription over the store.** A component reading the store wholesale
  * re-renders on every unrelated field, and this store also holds the sheet, the grid and a held

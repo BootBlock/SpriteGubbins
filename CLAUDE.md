@@ -1,42 +1,43 @@
 # Sprite Gubbins — working conventions
 
-Sprite Gubbins is a browser PWA that composes prompts for generating game sprite sheets and
-quantises the sheets a model returns. It has no server, makes no model calls, and keeps its data in
-browser SQLite. [The specification](docs/todo/sprite-gubbins-spec.md) decides *what* to build and
-wins a disagreement; this file decides *how*. Every rule is mandatory. When a guard test fails, its
-docblock explains the rule.
+Sprite Gubbins is a browser PWA that writes prompts for generating game sprite sheets and quantises
+the sheets a model returns, with no server and no model calls.
+[The specification](docs/todo/sprite-gubbins-spec.md) decides *what* to build and wins a
+disagreement; this file decides *how*. Every rule is mandatory. When a guard test fails, read its
+docblock rather than work around it.
 
 ## This file stays small
 
-Every session loads this file whole, so it holds only rules that apply to every change, each in a
-few lines. `tests/instruction-file-budget.test.ts` fails when it passes 8,000 characters, a section
-passes 1,250, or `AGENTS.md` passes 400; never raise a cap to fit a change. Shorten or replace a rule
-instead, and do not restate what lint, a test or a hook enforces. A rule for one kind of change is a
-note in `P:/Source/!Memories/SpriteGubbins/`, named in the table below, and a review that finds such
-a rule missing restores it there.
+Every session loads this file whole, so it holds only rules for every change, each in a few lines.
+`tests/instruction-file-budget.test.ts` fails when it passes 8,000 characters, a section passes
+1,250, or `AGENTS.md` passes 400; never raise a cap to fit a change. Shorten or replace a rule
+instead, and never explain what lint, a test or a hook enforces beyond a clause naming the check. A
+rule for one kind of change is a note in `P:/Source/!Memories/SpriteGubbins/`, named in the table
+below, and a review that finds one missing restores it there.
 
 ## Before one of these changes, read its notes
 
 | Change | Notes |
 | --- | --- |
-| Styling | *Which design token paints each role*, *Design tokens for special-purpose surfaces*, *A floating surface goes in the top layer* |
+| Styling, or a new screen | *Which design token paints each role*, *Design tokens for special-purpose surfaces*, *A floating surface goes in the top layer*, *Accessibility wiring beyond jsx-a11y* |
 | A control, or user-facing copy | *Every control carries guidance*, *Accessibility wiring beyond jsx-a11y* |
-| Prompt text, sheet plans, model wrappers | *Changing the compiled prompt's text* |
+| Prompt text, sheet plans, model wrappers, an Output Configuration control | *Changing the compiled prompt's text* |
 | Storage, `src/sw.ts`, a new subresource | *A database change works on both storage backends*, *The app never loads a cross-origin subresource* |
-| A calibration, or a real sheet in a test | *The test sprite sheets and what each is for* |
+| Code that reads a sheet, or a test, calibration, browser check or screenshot that needs one | *The test sprite sheets and what each is for* |
 | A tool that walks the project root | *A root-scanning tool must skip the agent worktrees* |
+| A worktree removal that refuses | *Recovering a stuck worktree removal* |
 | A GitHub issue or pull request | *Sign what you write on a Sprite Gubbins issue*, *Reconcile a Sprite Gubbins issue's labels*, *Close a Sprite Gubbins issue once its work has landed* |
 
 ## Work in a git worktree, and land it
 
-Several agents work here at once, and a shared checkout mixes their edits without failing loudly.
-Make every change in its own worktree; the primary checkout is for reading and merging only.
+Several agents share this repository, and a shared checkout mixes their edits silently. Make every
+change in its own worktree; the primary checkout is for reading and merging only.
 
 ```bash
 git worktree add .claude/worktrees/<topic> -b worktree-<topic>
 # inside the tree: npm install, make the change, run the gate below, then
 git status --short                  # every ?? line is work too
-git add -A && git diff --cached     # the secrets self-audit, on what will be committed
+git add -A && git diff --cached     # the secrets self-audit
 git commit -F <message-file>
 # from the primary checkout
 git merge worktree-<topic>
@@ -48,8 +49,8 @@ git branch -d worktree-<topic>
   primary checkout's branch, and never run `git clean -ffdx`, which deletes the other agents' trees.
 - A task is done when it is merged into `main` and its tree and branch are removed. If `main` moved,
   merge it into your branch and re-run the gate there first.
-- If `git worktree remove` refuses, look at what is uncommitted; never `--force`. If the work cannot
-  land, leave the tree and say so, naming the branch and the blocker.
+- Never force a worktree removal. If the work cannot land, leave the tree and say so, naming the
+  branch and the blocker.
 
 ## No secrets, and public-repository hygiene
 
@@ -62,8 +63,8 @@ This repository is public, and a committed secret is permanent.
 - The app never handles a model API key. A key field, an image-generation request or a proxy is a
   new architecture: stop and raise it.
 - No real personal data: use `BootBlock@users.noreply.github.com`, `example.com` and `localhost`.
-  Never commit `*.sqlite`, `*.db`, dumps, prompt archives or keys, and judge a new kind of generated
-  or local file before committing it.
+  Never commit `*.sqlite`, `*.db`, dumps, prompt archives or keys. A build artefact, a local cache
+  or a file that could hold real data goes in `.gitignore`.
 - Everything committed is world-readable: professional and neutral, with no internal ticket IDs,
   URLs, hostnames or TODO naming a person. The licence is MIT: never paste code under an incompatible
   or unknown licence, and vet a new dependency's licence and upkeep.
@@ -91,15 +92,15 @@ detection are not compatibility and stay. The commit message says what the chang
 - Directories are concerns. `src/utils/` is pure domain and compiler logic, with no store, DOM or
   I/O, and its tests establish its correctness. State goes in `src/stores/`, persistence in
   `src/db/`, constants in `src/constants/`, types in `src/types/`, and hooks that need React, the
-  DOM or a store in `src/hooks/`, never one that only wraps a `useState`. `src/workers/` holds
-  threads and their protocols, not logic, and no component owns a thread. Primitives go in
-  `src/components/common/`, panels in `studio/`, `quantise/` and `projects/`.
-- Reuse the primitives (the fields, `ComboBox`, `Tooltip`, `ControlTooltip`, `ColorSwatch`, `Badge`,
-  `Toast`, `Modal`, `ExternalLink`) rather than restyle a bare element.
+  DOM or a store in `src/hooks/`, never one that only wraps a `useState`. Components go in `common/`
+  (primitives, reused rather than restyling a bare element), `studio/`, `quantise/`, `projects/`,
+  `modals/`, `tabs/` and `layout/` under `src/components/`.
+- `src/workers/` holds threads, their protocols and the near side that owns each, not logic. No
+  component owns a thread, and state that must outlive a view lives in a store.
 - No speculative layers, stubs, `TODO: add remaining fields` or truncated option lists.
-- Lint and the compiler reject the other banned patterns. Review catches the rest: `as unknown as T`,
-  an effect that registers anything without a cleanup, selecting a whole store, and prop-drilling
-  past three levels.
+- Banned, whether or not lint catches it: derived state synchronised through an effect,
+  `as unknown as T`, an effect that registers anything without a cleanup, selecting a whole store,
+  and prop-drilling past three levels.
 
 ## Design tokens are mandatory
 
@@ -127,7 +128,6 @@ npm run format
 ```
 
 All five run clean before a change lands. Drive a change with a runtime surface in a browser with
-the `verify` skill, then run `/auto-review high` over the diff and fix every confirmed finding.
-Tests import `describe`, `it` and `expect` from `vitest` explicitly. A plan under `docs/todo/` keeps
-the status banner its [README](docs/todo/README.md) defines, the spec's banner changes in the change
-that ships a phase, and a plan's record of what it did is never rewritten.
+the `verify` skill, then run `/auto-review high` over the diff and fix every confirmed finding. The
+spec's status banner changes in the change that ships a phase, and a plan's record under
+`docs/todo/` of what it did is never rewritten.

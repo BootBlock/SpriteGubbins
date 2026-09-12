@@ -7,8 +7,9 @@ import { describe, expect, it } from 'vitest';
  * Every agent session loads `CLAUDE.md` whole before it reads the task, so each sentence in it is
  * paid for by every change, including all the changes it has nothing to say about. Rules were added
  * one lesson at a time, each with its rationale and the incident that found it, until the file was
- * 137 KB. A compaction took it to 16 KB, and the review of that compaction added a kilobyte back
- * within the day. A written rule to keep the file small did not keep it small.
+ * 137 KB. A compaction took it to 16 KB, and within the day its review put more than a kilobyte back:
+ * rules the cut had wrongly dropped, restored into the file rather than into notes. Nothing measured
+ * the size, so nothing asked where they belonged.
  *
  * So the caps are numbers this suite holds. A rule that applies to one kind of change is a durable
  * memory note, and `CLAUDE.md` names the note in one row of its table. When this fails, move detail
@@ -26,8 +27,13 @@ const HOW_TO_FIX =
   'Move detail that applies to one kind of change into a memory note named from the table, or ' +
   'shorten a rule. Do not raise the cap without asking the maintainer.';
 
-const claude = readFileSync('CLAUDE.md', 'utf8');
-const agents = readFileSync('AGENTS.md', 'utf8');
+/** A file's text with LF endings, so an editor that writes CRLF into the tree cannot move a count. */
+function textOf(path: string): string {
+  return readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
+}
+
+const claude = textOf('CLAUDE.md');
+const agents = textOf('AGENTS.md');
 
 /** The opening lines and each `## ` section, heading included. */
 const sections = claude.split(/^(?=## )/mu);
