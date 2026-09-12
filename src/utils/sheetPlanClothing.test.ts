@@ -200,7 +200,7 @@ describe('a subject that says it has none of the attribute', () => {
    * taken out where the reader declining the attribute gets a *plainer* sheet, and both of those
    * would have handed them an incomplete one. An icon sheet draws a disabled veil, a highlight halo
    * and four tier marks whatever is picked; a kit sheet draws the corner ornament the trim goes on,
-   * and *Slice Assembly Base* offers a variant built around it. See `sheetPlans/icon.ts` and
+   * and *Widget Assembly Base* offers a variant built around it. See `sheetPlans/icon.ts` and
    * `sheetPlans/interface.ts`.
    */
   const DECLARES_ABSENCE: Partial<Record<SubjectCategory, string>> = {
@@ -422,7 +422,7 @@ describe('a subject that says it has none of the attribute', () => {
   it.each(SUBJECT_CATEGORIES)('lets no other %s field name a component this one deletes', (category) => {
     // The defect this exists for, and the one the mechanism itself created. INTERFACE's
     // *Ornament & Trim* used to open with `Plain Untrimmed Edge`, so the untouched default deleted
-    // the corner ornament — while *Slice Assembly Base* went on offering
+    // the corner ornament — while *Widget Assembly Base* went on offering
     // `Nine-Slice With Fixed Corner Ornament`. Section 1 then named an assembly built around a
     // corner ornament and section 4 listed none: the same §1-names-it / §4-lacks-it contradiction
     // this whole change removes, moved to a different pair of fields and reachable without the

@@ -303,18 +303,30 @@ describe('generatePrompt — the subject', () => {
     // occluders. Sections 8 and 9 also closed on a seam rule for a band meant to loop, where nothing on
     // the sheet loops. The subject's own exclusions are emptied so every band left in these sections
     // is the app's — `No visible seam where the band repeats` is a pooled option a reader may pick.
+    //
+    // **Section 1 joined them with issue #280**, which is the subject rather than the sheet: the subject
+    // a category switch installs labelled a field *Band Proportions & Repeat Length*, answered it with
+    // `Short Repeat, One Screen Wide` and called the layer a `Sky & Cloud Band`.
     const sections = (directionalMode: OutputConfig['directionalMode']) => {
       const prompt = generatePrompt(
         'BACKGROUND',
         { ...defaultSubjectFor('BACKGROUND'), exclusions: '' },
         withOutput({ directionalMode }),
       );
-      return (['COMPONENT INVENTORY', 'EXCLUSIONS', 'LAYOUT AND SELF-AUDIT'] as const).map((heading) =>
-        sectionOf(prompt, heading).replaceAll(/\s+/g, ' '),
-      );
+      return (
+        ['SUBJECT DEFINITION', 'COMPONENT INVENTORY', 'EXCLUSIONS', 'LAYOUT AND SELF-AUDIT'] as const
+      ).map((heading) => sectionOf(prompt, heading).replaceAll(/\s+/g, ' '));
     };
 
-    const [inventory = '', exclusions = '', audit = ''] = sections('SINGLE_DIRECTION_POSE_LIBRARY');
+    const [subjectSection = '', inventory = '', exclusions = '', audit = ''] = sections(
+      'SINGLE_DIRECTION_POSE_LIBRARY',
+    );
+    expect(subjectSection).toContain('- Layer Type: Sky & Cloud Layer');
+    // Up to the template's own paragraph after the list, which asks for “controlled value bands” in
+    // the render style: a band of value, and every category's.
+    const closing = 'Every fitted, applied and worn attribute';
+    expect(subjectSection).toContain(closing);
+    const subjectLines = subjectSection.slice(0, subjectSection.indexOf(closing));
     const layerClass = 'a piece of this one backdrop’s scene panel, or a piece laid over it';
     expect(inventory).toContain(`Every entry below is ${layerClass}. An entry describing anatomy`);
     expect(inventory).toContain(
@@ -332,13 +344,17 @@ describe('generatePrompt — the subject', () => {
     expect(audit).toContain(
       `Every component is ${layerClass} — nothing drawn at the playfield’s own scale, no interface or lettering, and nothing a player could mistake for a platform, a ledge or a pickup.`,
     );
-    for (const section of [inventory, exclusions, audit]) {
+    for (const section of [subjectLines, inventory, exclusions, audit]) {
       expect(section).not.toMatch(/\bbands?\b/i);
     }
 
     // The parallax set keeps every one of them: the statements moved to the sheet so the two could
-    // differ, not so the sheet that draws bands would stop saying so.
-    const [bandInventory = '', bandExclusions = '', bandAudit = ''] = sections('TILESET_MODULAR');
+    // differ, not so the sheet that draws bands would stop saying so. Its section 1 lost the mirror
+    // image of the layer library's, a `Single Non-Repeating Panel` on a sheet of looping bands.
+    const [bandSubject = '', bandInventory = '', bandExclusions = '', bandAudit = ''] =
+      sections('TILESET_MODULAR');
+    expect(bandSubject).toContain('- Layer Assembly Base: Stacked Depth Layers');
+    expect(bandSubject).not.toMatch(/\b(?:non-repeating|single [\w-]+ panel)\b/i);
     expect(bandInventory).toContain(
       'Every entry below is a band of this one backdrop, or a loose piece laid over one.',
     );

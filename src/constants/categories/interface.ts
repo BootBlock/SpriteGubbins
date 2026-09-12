@@ -184,11 +184,18 @@ export const INTERFACE: CategoryDefinition = {
     },
     {
       key: 'anatomy',
-      label: 'Slice Assembly Base',
+      // *Widget* rather than *Slice*, and a first value both sheets draw (issue #280). The label named the
+      // nine-slice on a state library that cuts no slice, and the pool opened on `Single Fixed-Size
+      // Piece`, which the nine-slice set contradicts: every piece on it stretches or repeats. Both
+      // sheets cut a frame, a fill and a trim apart, so that is what the subject a category switch
+      // installs now says, and every value naming one sheet's cut is bound to that sheet in
+      // `modeBoundOptions.ts`.
+      label: 'Widget Assembly Base',
       tooltip:
         'How the widget is cut so the engine can resize it. Choose by which way it has to stretch — a nine-slice keeps four fixed corners while its edges and centre repeat, a three-slice stretches on one axis only, and a fixed piece never resizes at all. ' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
+        'Frame, Fill & Trim Cut Apart',
         'Single Fixed-Size Piece',
         'Three-Slice Horizontal Stretch',
         'Three-Slice Vertical Stretch',
@@ -205,7 +212,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'clothing',
       label: 'Ornament & Trim',
       tooltip:
-        'What is applied along the widget’s edge — rivets, scrollwork, piping, binding. Trim is drawn as its own geometry over the frame beneath it, so it is also the cheapest way to give one panel a rare and a common variant. Every kit sheet draws the corner ornament that carries it, so this names the treatment rather than whether you get the piece, and the pool offers no “none”: an untrimmed edge would delete the ornament that Slice Assembly Base’s own nine-slice-with-corner variant is built around.',
+        'What is applied along the widget’s edge — rivets, scrollwork, piping, binding. Trim is drawn as its own geometry over the frame beneath it, so it is also the cheapest way to give one panel a rare and a common variant. Every kit sheet draws the corner ornament that carries it, so this names the treatment rather than whether you get the piece, and the pool offers no “none”: an untrimmed edge would delete the ornament that Widget Assembly Base’s own nine-slice-with-corner variant is built around.',
       options: [
         'Beaded Metal Rivets',
         'Filigree Corner Scrollwork',

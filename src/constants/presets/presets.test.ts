@@ -8,6 +8,7 @@ import type { PresetArchetype } from '../../types/preset.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { contradictionsIn } from '../categories/exclusionElements.ts';
 import { letteringAskedFor } from '../categories/letteringMarks.ts';
+import { modesAgreeingWith } from '../categories/modeBoundOptions.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 import { LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING, resolveCameraElevation } from '../promptText/index.ts';
 import { PRESETS } from './index.ts';
@@ -257,6 +258,24 @@ describe('every shipped preset', () => {
     );
 
     expect(asking, `${preset.name} asks for what section 0 bans`).toEqual([]);
+  });
+
+  it.each(PRESETS)('$name pins no value its own sheet mode contradicts', (preset) => {
+    // The preset half of issue #280. A preset writes its subject and its sheet mode side by side, so a
+    // value only some of its category's sheets agree with is a claim about the mode as well — and
+    // *Cyberpunk HUD State Library* asked a state library, which cuts no slice, for a three-slice
+    // stretch. `categories/modeBoundOptions.ts` is where the ties are written down, and its suite holds
+    // them against the pools.
+    const mode = preset.output.directionalMode;
+    const contradicted = CATEGORY_OPTIONS[preset.category].fields.flatMap((field) => {
+      const value = preset.subject[field.key];
+      const modes = modesAgreeingWith(preset.category, field.key, value);
+      return modes === null || modes.includes(mode)
+        ? []
+        : [`${field.key} “${value}” agrees only with ${modes.join(' and ')}`];
+    });
+
+    expect(contradicted, `${preset.name} is a ${mode} sheet`).toEqual([]);
   });
 
   it.each(PRESETS)('$name leaves the companion outputs to the user', (preset) => {

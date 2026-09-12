@@ -20,6 +20,12 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * per-category records exist to remove. So each option names the *matching discipline* stripped of
  * its count — `Framed Platform Set` for the nine-patch, `Uniform Self-Tiling Field` for the single
  * tile that needs no transitions — and the sheet plan is left to say how many pieces there are.
+ *
+ * **Each of those disciplines is one sheet's, so the pool opens on neither** (issue #280). The blend
+ * set is a corner-matched or edge-matched field and the feature library is a raised level with
+ * features on it, and section 1 carries the value to both. `Seamless Tiles On One Shared Grid` is
+ * what the two have in common — the feature library's elevation edge is tiles of the same ground —
+ * and every named discipline is bound to the sheet it describes in `modeBoundOptions.ts`.
  */
 export const TERRAIN: CategoryDefinition = {
   label: 'Terrain / Ground Tile',
@@ -182,6 +188,7 @@ export const TERRAIN: CategoryDefinition = {
         'How an autotiler is meant to index the set. Choose by how the pieces will be *placed* — a corner-matched set blends two materials in any arrangement, a nine-patch frames one rectangular platform — because the discipline decides which boundaries have to be drawn at all. It names a discipline rather than a tile count. ' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
+        'Seamless Tiles On One Shared Grid',
         'Corner-Matched Blob Set',
         'Edge-Matched Wang Set',
         'Framed Platform Set',

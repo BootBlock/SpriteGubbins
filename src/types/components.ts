@@ -478,7 +478,7 @@ export interface SheetPlan {
    * per category, and BACKGROUND has no noun true of both of its sheets: its parallax set draws nine
    * bands and its layer library draws none, so `one parallax band` measured a panel with no band on
    * it. No piece is safe on both either — the focal landmark is on each inventory, and the *Focal
-   * Landmark* field offers `No Landmark — Fully Repeatable`.
+   * Landmark* field offers `No Landmark`.
    *
    * **One answer per series, which is the half of the old argument that still holds.** A profile is
    * chosen once and every sheet of a series is generated under it, so a unit that changed between the

@@ -193,7 +193,7 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // pieces assemble into: that is a whole screen, and a 16-bit screen is far taller than 64–96
   // pixels. The mid mass is the piece doing a band's job here — the middle distance, drawn once — and
   // it is the larger half of section 0's pair above. The focal landmark would be the obvious single
-  // piece and cannot be the unit, because *Focal Landmark* offers `No Landmark — Fully Repeatable`.
+  // piece and cannot be the unit, because *Focal Landmark* offers `No Landmark`.
   scaleUnit: 'one mid mass',
   // This sheet's scene panel rather than the parallax set's band. That class was the category's until
   // issue #278, and on this sheet it left the sky, the masses and the edge occluders in no class at all,

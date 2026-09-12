@@ -28,7 +28,7 @@ import type { SheetPlan } from '../../types/components.ts';
  * it.** Both plans draw one, and the reader's choice decides what is *on* it — rivets, scrollwork,
  * braid — rather than whether it is there. The pool used to open with `Plain Untrimmed Edge`, so the
  * untouched default deleted the ornament, and that put a fresh contradiction where the old one had
- * just been: *Slice Assembly Base* offers `Nine-Slice With Fixed Corner Ornament`, so section 1 named
+ * just been: *Widget Assembly Base* offers `Nine-Slice With Fixed Corner Ornament`, so section 1 named
  * an assembly built around a corner ornament while section 4 listed none. Removing the value is
  * ICON's resolution reached the same way — an entry may only be taken out where the reader declining
  * the attribute gets a *plainer* sheet, and here they would get an incomplete one. The

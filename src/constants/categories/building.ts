@@ -68,7 +68,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'age',
       label: 'Era & Architecture',
       tooltip:
-        'The architectural language — proportion, window rhythm, roof pitch, ornament. It carries more of a building’s identity than its materials do, and it is what keeps a street of separate tiles looking like one place.',
+        'The architectural language — proportion, window rhythm, roof pitch, ornament. It carries more of a building’s identity than its materials do, and it is what keeps a street of separate pieces looking like one place.',
       options: [
         'Neo-Tokyo Cyberpunk',
         'Medieval Timber-Frame',
@@ -107,7 +107,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'setting',
       label: 'Environment Biome',
       tooltip:
-        'The surroundings the tile has to sit in. Biome shows up on the structure itself as snow load, sand scour or neon spill, which is what stops a building looking pasted onto its background.',
+        'The surroundings the building has to sit in. Biome shows up on the structure itself as snow load, sand scour or neon spill, which is what stops a building looking pasted onto its background.',
       options: [
         'Rain-Slicked Neon Street',
         'Snowy Mountain Pass',
@@ -127,7 +127,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'build',
       label: 'Building Scale',
       tooltip:
-        'Footprint and storey count. This decides how a tile relates in size to the character sprites beside it, so it is worth setting against the resolution profile rather than in isolation.',
+        'Footprint and storey count. This decides how the structure relates in size to the character sprites beside it, so it is worth setting against the resolution profile rather than in isolation.',
       options: [
         '2-Story Compact Footprint',
         '1-Story Wide Kiosk',
@@ -203,7 +203,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'clothing',
       label: 'Awning & Addons',
       tooltip:
-        'Awnings, scaffolding, solar panels and other attachments to the shell. They break up a flat facade cheaply, and are the easiest way to make repeated tiles of one building look like separate premises.',
+        'Awnings, scaffolding, solar panels and other attachments to the shell. They break up a flat facade cheaply, and are the easiest way to make repeated modules of one building look like separate premises.',
       options: [
         'Striped Fabric Awning',
         'Solar Panel Array',
@@ -280,7 +280,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'materials',
       label: 'Construction Materials',
       tooltip:
-        'What the structure is built from, and how those surfaces read at sprite scale. Brick, timber and concrete stop being individual units once a tile is small and become texture instead, so choose for the pattern each one leaves behind.',
+        'What the structure is built from, and how those surfaces read at sprite scale. Brick, timber and concrete stop being individual units once a piece is small and become texture instead, so choose for the pattern each one leaves behind.',
       options: [
         'Cedar Wood, Clay Tiles & Paper',
         'Cut Granite Blocks & Iron Girders',
@@ -300,7 +300,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping terrain, scenery and inhabitants out of an isolated structure tile. Ground, foliage and cast shadows matter most: each fuses the building to a background the level is going to replace.',
+        'Negative rules keeping terrain, scenery and inhabitants off an isolated structure. Ground, foliage and cast shadows matter most: each fuses the building to a background the level is going to replace.',
       options: [
         'No ground terrain tiles, no characters',
         'No surrounding trees or sky',
