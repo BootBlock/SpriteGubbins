@@ -19,8 +19,8 @@ import { CORPUS_SHEETS, loadCorpusSheet, type CorpusSheetName } from './sheetCor
 /**
  * What the anti-aliasing pass does to the eight reference sheets at the positions its dials open at.
  *
- * **The calibration record for `DEFAULT_ANTI_ALIAS_THRESHOLD`, and the sheet-by-sheet statement
- * CLAUDE.md asks a recalibration to make.** `armour.png` is the reference the figure was chosen on;
+ * **The calibration record for `DEFAULT_ANTI_ALIAS_THRESHOLD`, and the sheet-by-sheet statement a
+ * recalibration makes.** `armour.png` is the reference the figure was chosen on;
  * the other seven are the check that it was not fitted to one layout — the terrain tiles are flat
  * colour with long shallow contours, the UI sheet is thin strokes, and the vehicles are dense
  * texture. A later change to the floor states what it did to all eight here, in this table.
