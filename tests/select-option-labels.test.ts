@@ -138,11 +138,17 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   ),
 };
 
-/** Every `.tsx` under `src/components/`, which is where every `SelectField` call site lives. */
+/**
+ * Every `.tsx` under `src/components/` that the app renders, which is where every `SelectField` call
+ * site lives.
+ *
+ * Colocated suites are left out, as `jsxCallSites.ts` leaves them out: `SelectField.test.tsx` renders
+ * the control over a fixture list, and a fixture is not an option list any reader is shown.
+ */
 function componentFiles(): string[] {
   const root = resolve(process.cwd(), 'src/components');
   return readdirSync(root, { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.tsx'))
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.tsx') && !entry.name.endsWith('.test.tsx'))
     .map((entry) => resolve(entry.parentPath, entry.name));
 }
 

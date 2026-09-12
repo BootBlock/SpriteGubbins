@@ -97,21 +97,6 @@ describe('SheetIdentityControls', () => {
     expect(screen.getByText(new RegExp(`^Articulation · ${String(CLASSIC[0])} ·`))).toBeInTheDocument();
   });
 
-  it('stops at both ends of the batch rather than wrapping', async () => {
-    const user = userEvent.setup();
-    render(<SheetIdentityControls />);
-
-    expect(stepButton('Previous')).toBeDisabled();
-
-    const total = recorded().total;
-    for (let position = 2; position <= total; position += 1) {
-      await user.click(stepButton('Next sheet'));
-      expect(recorded().ordinal).toBe(position);
-    }
-
-    expect(stepButton('Next sheet')).toBeDisabled();
-  });
-
   it('offers no step, and says why, for a configuration that is one generation', () => {
     // An interface widget has no front to turn away from, so its pairing is a single sheet. The
     // panel still states the identity — a manifest records it either way — but two buttons with

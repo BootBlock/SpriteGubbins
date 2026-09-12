@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSectionStore } from '../../stores/useSectionStore.ts';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
-import { SectionToggleAll } from './SectionToggleAll.tsx';
 
 /**
  * The disclosure's contract, which is mostly about what a *folded* group still says.
@@ -181,79 +180,5 @@ describe('CollapsibleSection', () => {
     details?.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: heading }));
 
     expect(document.activeElement).not.toBe(summary);
-  });
-});
-
-describe('SectionToggleAll', () => {
-  const SECTIONS = [
-    { id: 'test:a', defaultOpen: true },
-    { id: 'test:b', defaultOpen: false },
-  ] as const;
-
-  it('offers to expand while anything is still folded, and collapses once all are open', async () => {
-    const user = userEvent.setup();
-    render(<SectionToggleAll sections={SECTIONS} panelLabel="Test panel" />);
-
-    const button = screen.getByRole('button', { name: /expand all/i });
-    expect(button).toHaveAttribute('aria-expanded', 'false');
-    await user.click(button);
-    expect(useSectionStore.getState().openSections).toStrictEqual({
-      'test:a': true,
-      'test:b': true,
-    });
-
-    const collapse = screen.getByRole('button', { name: /collapse all/i });
-    expect(collapse).toHaveAttribute('aria-expanded', 'true');
-    await user.click(collapse);
-    expect(useSectionStore.getState().openSections).toStrictEqual({
-      'test:a': false,
-      'test:b': false,
-    });
-  });
-
-  it('names the regions it controls, so the state it reports can be traced to them', () => {
-    render(<SectionToggleAll sections={SECTIONS} panelLabel="Test panel" />);
-    expect(screen.getByRole('button')).toHaveAttribute('aria-controls', 'section-test:a section-test:b');
-  });
-
-  /**
-   * Collapsing a group the user is standing in must not drop them out of the document. A shut
-   * `<details>` makes its contents unfocusable, so focus falls back to `<body>` — losing the
-   * position and the ring — unless it is moved somewhere deliberate first.
-   */
-  it('moves focus to the summary of the group it is closing, rather than losing it', () => {
-    useSectionStore.setState({ openSections: { 'test:a': true } });
-    render(
-      <>
-        <CollapsibleSection id="test:a" defaultOpen heading="Group A" digest="x">
-          <label htmlFor="inner-a">
-            Inner
-            <input id="inner-a" type="text" defaultValue="" />
-          </label>
-        </CollapsibleSection>
-        <SectionToggleAll sections={[{ id: 'test:a', defaultOpen: true }]} panelLabel="Test panel" />
-      </>,
-    );
-
-    screen.getByLabelText('Inner').focus();
-    expect(document.activeElement).toBe(screen.getByLabelText('Inner'));
-
-    // Fired directly rather than clicked: a real pointer press moves focus to the button first,
-    // which is exactly what masks this in Chromium — and not what a voice-control or AT activation,
-    // or a click in Safari, does.
-    screen.getByRole('button', { name: /collapse all/i }).click();
-
-    // Focus lands on the summary of the group that just closed — the control that reopens it —
-    // rather than falling back to `<body>`, which is where it goes with no recovery at all.
-    expect(document.activeElement?.tagName).toBe('SUMMARY');
-    expect(document.activeElement?.closest('details')?.id).toBe('section-test:a');
-    expect(useSectionStore.getState().openSections['test:a']).toBe(false);
-  });
-
-  it('names the panel it acts on, so two of them are told apart', () => {
-    render(<SectionToggleAll sections={SECTIONS} panelLabel="Output Configuration" />);
-    expect(
-      screen.getByRole('button', { name: 'Expand all Output Configuration sections' }),
-    ).toBeInTheDocument();
   });
 });

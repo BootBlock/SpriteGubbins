@@ -1152,15 +1152,21 @@ describe("a view's primary action", () => {
     // — it counts as being inside a view when every file that imports it is. That is derived rather
     // than listed, so a shared component later pulled into the chrome stops being checked here
     // without anyone remembering to remove it.
+    //
+    // **An importer is a file the app renders, never a suite.** Every shared component has a
+    // colocated test beside it in `common/`, which is outside every view — so counting suites as
+    // importers drops each of them out of this sweep without a sound. The floor below is what
+    // noticed when those suites were first written.
     const sources = scannableSources();
+    const appSources = sources.filter((file) => !/\.test\.tsx?$/.test(file));
     const inView = (file: string) =>
       ['tabs', 'studio', 'quantise'].some((view) => file.includes(`components${sep}${view}${sep}`));
 
-    const sharedInView = sources
-      .filter((file) => file.includes(`components${sep}common${sep}`) && !file.endsWith('.test.tsx'))
+    const sharedInView = appSources
+      .filter((file) => file.includes(`components${sep}common${sep}`))
       .filter((file) => {
         const importPath = new RegExp(`from '[^']*${basename(file, '.tsx')}\\.tsx'`);
-        const importers = sources.filter((other) => other !== file && importPath.test(sourceText(other)));
+        const importers = appSources.filter((other) => other !== file && importPath.test(sourceText(other)));
         // The `length` guard matters: without it a component nobody imports would pass `every`
         // vacuously and be swept in on the strength of having no callers at all.
         return importers.length > 0 && importers.every(inView);

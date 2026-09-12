@@ -18,9 +18,9 @@ import { SheetProgress } from './SheetProgress.tsx';
  *
  * The batch itself is `sheetBatch.test.ts`'s, and which sheets are marked copied is
  * `SheetSplitContents.test.tsx`'s for the drawer. What can only be checked here is that the studio says
- * *which* of them the prompt beside it is, and that stepping writes a configuration the batch
- * actually contains — both axes at once, which is precisely what the two controls in the panel
- * opposite could not do without the user knowing which order to move them in.
+ * *which* of them the prompt beside it is, and says it again after a step. The step itself — a whole
+ * batch entry written back, stopping at both ends — is `SheetStepButtons.test.tsx`'s, because the
+ * Quantise tab carries the same two buttons.
  */
 let backend: PersistenceBackend = new LocalStorageBackend(createMemoryStorage());
 
@@ -101,51 +101,16 @@ describe('SheetProgress', () => {
     expect(screen.getByText(`Directional core · ${String(CLASSIC.length)} facings`)).toBeInTheDocument();
   });
 
-  it('steps to the next sheet by writing the configuration that batch entry names', async () => {
-    // Both axes in one write. Setting the sheet index and the facing separately is the errand this
-    // replaces — and on a batch whose first sheet is multi-view and whose second is a run, moving on
-    // means changing the series position *and* pinning a facing that was inert a moment ago.
+  it('names the sheet a step lands on', async () => {
+    // What the step writes is `SheetStepButtons.test.tsx`'s. What is this strip's is that its label
+    // follows, since a press leaves focus on a button whose own name has not changed.
     const user = userEvent.setup();
     render(<SheetProgress />);
 
     await user.click(stepButton('Next sheet'));
 
-    const { sheets, ordinal } = batch();
-    expect(ordinal).toBe(2);
-    expect(screen.getByText(`Sheet 2 of ${String(sheets.length)}`)).toBeInTheDocument();
-
-    const output = useOutputStore.getState().output;
-    expect(output.sheetIndex).toBe(1);
-    expect(output.primaryDirection).toBe(CLASSIC[0]);
-    // Nothing else moved with it: stepping changes which sheet you are composing, not the subject's
-    // rendering or the lock that ties the batch together.
-    expect(output.identityLock).toBe(DEFAULT_OUTPUT_CONFIG.identityLock);
-    expect(output.componentBudget).toBe(DEFAULT_OUTPUT_CONFIG.componentBudget);
-  });
-
-  it('walks the whole batch in the order the prompt lists it, and stops at both ends', async () => {
-    const user = userEvent.setup();
-    render(<SheetProgress />);
-
-    // The trunk sheet is first and has nothing behind it; a step back from there would silently be a
-    // wrap round to the last run.
-    expect(stepButton('Previous')).toBeDisabled();
-
-    const total = batch().sheets.length;
-    for (let position = 2; position <= total; position += 1) {
-      await user.click(stepButton('Next sheet'));
-      expect(batch().ordinal).toBe(position);
-      expect(stepButton('Previous')).toBeEnabled();
-    }
-
-    expect(stepButton('Next sheet')).toBeDisabled();
-
-    // And back down again, landing on the sheet it started from rather than merely on sheet one.
-    for (let position = total - 1; position >= 1; position -= 1) {
-      await user.click(stepButton('Previous'));
-      expect(batch().ordinal).toBe(position);
-    }
-    expect(useOutputStore.getState().output.sheetIndex).toBe(0);
+    expect(screen.getByText(`Sheet 2 of ${String(batch().sheets.length)}`)).toBeInTheDocument();
+    expect(screen.getByText(`Articulation · ${String(CLASSIC[0])}`)).toBeInTheDocument();
   });
 
   it('reports this sheet as copied only once it is in the history, and counts the batch', async () => {
