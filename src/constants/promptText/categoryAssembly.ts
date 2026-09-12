@@ -1,9 +1,9 @@
 import type { CategoryAssembly, SubjectCategory } from '../../types/subject.ts';
 
 /**
- * What each category's **assembly failure** is called — exploded parts drawn as one finished thing,
- * which is the single claim the prompt makes in five voices and had never been given a category for
- * in any of them.
+ * What each category's **assembly failure** is called in the model wrappers' two channels — exploded
+ * parts drawn as one finished thing, which is the single claim the prompt makes in five voices and had
+ * never been given a category for in any of them.
  *
  * **The defect this record removes:** the two negative blocks opened with `assembled character` and
  * `posed figure`, Flux's leading sentence closed with `no assembled figure`, and the body said it a
@@ -19,20 +19,15 @@ import type { CategoryAssembly, SubjectCategory } from '../../types/subject.ts';
  * terrain sheet's is a view of the ground instead of separable tiles, an effect's is one composited
  * picture instead of a sequence — and none of those had a word spent on them anywhere.
  *
- * **The three body forms arrived after the two wrapper ones and are the larger half.** A wrapper
- * reaches the three targets that declare a channel for it; the body reaches every target the app
- * composes for, so the figure vocabulary was being read by a TERRAIN sheet on ChatGPT, Gemini and
- * Midjourney alike while the negative blocks had already stopped saying it. Each form is written for
- * the section it lands in rather than spliced from one string — an instruction, an exclusion and a
- * check are three different jobs, and `CategoryAssembly` says on each field what its own job costs
- * when it is got wrong.
- *
- * **Two of them displaced wording TERRAIN already carried.** That category was the only one whose
- * assembly failure had reached the body at all, ad hoc: `CATEGORY_EXCLUSION_TEXT` banned "any
- * composed landscape, vista or diorama drawn in place of the component grid" and `CATEGORY_AUDIT_TEXT`
- * asked for "nothing drawn as a landscape view rather than as a separate piece". Both clauses moved
- * here, and their old homes gave them up in the same change — one list saying one thing twice in two
- * wordings is what a per-category record is for removing, not for creating.
+ * **The three body forms began in this record and belong to the sheet now** (issue #278). They reach
+ * every target the app composes for rather than the three that declare a wrapper channel, which is why
+ * they were given a category at all — the figure vocabulary was being read by a TERRAIN sheet on
+ * ChatGPT, Gemini and Midjourney alike while the negative blocks had already stopped saying it. But a
+ * form names pieces, and a category's sheets do not share their pieces: filed here, BACKGROUND's layer
+ * library was told not to draw “the bands stacked into the finished scene”, and it draws no band. So
+ * they are `SheetPlan.assemblyFailure`, written beside the inventory whose pieces they name. The two
+ * terms stay here because `categoryAssembly.test.ts` holds each against every sheet the category can
+ * compile, so a term that passes names no piece of any of them.
  *
  * **One list serves both negative channels**, as `RENDER_STYLE_SURFACE`'s does and for the same
  * reason: Stable Diffusion weighted two terms while Qwen stated three, one of which — `complete
@@ -53,15 +48,9 @@ import type { CategoryAssembly, SubjectCategory } from '../../types/subject.ts';
  * those two, and this record is what stops it being read by the other ten.
  */
 export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembly>> = {
-  // The three body forms are the wording that shipped, unchanged: this is the one category the
-  // figure vocabulary was written for, and giving the other eleven their own is what this record
-  // does rather than a rewrite of the two it always fitted.
   CHARACTER: {
     statement: 'no assembled figure',
     negatives: ['assembled character', 'posed figure'],
-    instruction: 'Do not draw an assembled figure anywhere on the sheet, including as a reference or key.',
-    exclusion: 'Assembled or posed complete figures.',
-    audit: 'nothing on the sheet is an assembled or part-assembled figure',
   },
   // A creature is a figure for a generator's purposes, and both terms hold: the parts joined into
   // one body, and that body doing something. Deliberately not "assembled creature" — the word is a
@@ -70,33 +59,13 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   CREATURE: {
     statement: 'no assembled figure',
     negatives: ['assembled character', 'posed figure'],
-    instruction: 'Do not draw an assembled figure anywhere on the sheet, including as a reference or key.',
-    exclusion: 'Assembled or posed complete figures.',
-    audit: 'nothing on the sheet is an assembled or part-assembled figure',
   },
   // The second term names the *presentation* half, as `posed figure` does above: the whole prop
   // lit and staged as a finished picture. No component of a part library is a product shot, so it
   // survives the word-by-word rule where "complete object" would not.
-  //
-  // The body forms open the shape the four one-subject categories share — "the parts fitted together
-  // into the assembled X", INTERFACE saying "pieces" for what its own inventory calls them — which
-  // names what the sheet must not *depict* without touching what section 6 asks the set to be
-  // *capable* of. "The complete object in its resting state" is that plan's own phrase for the
-  // capability, so this one does not borrow it.
-  //
-  // **The last two forms say "the object itself" rather than "the object, in whole or in part", and
-  // the word is load-bearing.** This sheet's inventory lists a `Primary moving subassembly`, which is
-  // literally parts assembled — so a check reading "nothing is the object assembled, in part" invites
-  // a reader to fail the sheet on an entry section 4 required, which is the `CATEGORY_AUDIT_TEXT`
-  // "no exhaust" mistake wearing this record's clothes. "Itself" anchors both forms to the whole
-  // subject, which no component is.
   OBJECT: {
     statement: 'no assembled object',
     negatives: ['assembled object', 'product shot'],
-    instruction:
-      'Do not draw the parts fitted together into the assembled object anywhere on the sheet, including as a reference or key.',
-    exclusion: 'The object itself, whole or partly built, and any staged product shot of it.',
-    audit: 'nothing on the sheet is the object itself, whole or partly built',
   },
   // The presentation half is OBJECT's word rather than one of its own, and the one it nearly took
   // is the reason the rule reaches past the sheet plans. `inventory icon` names exactly what an item
@@ -108,43 +77,17 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   ITEM: {
     statement: 'no assembled item',
     negatives: ['assembled item', 'product shot'],
-    instruction:
-      'Do not draw the parts fitted together into the assembled item anywhere on the sheet, including as a reference or key.',
-    exclusion: 'The item itself, whole or partly built, and any staged product shot of it.',
-    audit: 'nothing on the sheet is the item itself, whole or partly built',
   },
   // One term, and the missing second is the rule doing its job rather than an omission. Every
-  // candidate for it names what this sheet's components already are: "complete structure" is barred
-  // by the category's own section 4 guard — "Every entry below is a structural or tile component" —
-  // and "finished elevation" or "whole façade" by the directional core, which is wall bays and roof
-  // sections drawn at each yaw. None of those is caught by `categoryAssembly.test.ts`, whose half of
-  // the rule is the literal one; this is the judgement half. "building" is safe for the reason
-  // "character" is: no component of the sheet is one.
-  //
-  // **This is the second category with two deliverables, and the body forms have to name both — a
-  // first draft named only the one the negative term is written for.** `TILESET_MODULAR` is this
-  // category's *default and fallback* mode and its plan is sixteen entries of `kind: 'tile'`, so a
-  // form saying "the modules fitted together" describes a component class that sheet's section 4
-  // never introduces, and leaves the failure it actually comes back as — a room or a wall drawn
-  // instead of a grid of separable tiles — named nowhere in the prompt. That is the same half TERRAIN
-  // recovers below, and this is the only other category that has it. So the forms name the standing
-  // structure and the laid stretch both, and neither noun is bare: a floor tile is not "a stretch of
-  // floor drawn with its tiles already laid", which is what keeps the audit off the sixteen entries
-  // section 4 requires.
-  //
-  // "standing complete" rather than "the complete structure", and "a stretch of floor or wall" rather
-  // than "a straight wall run": both of those are the plans' own words for the capability section 6
-  // asks the set to have, and a form that borrows them reads as forbidding the capability rather than
-  // the depiction.
+  // candidate for it names what this category's components already are: "complete structure" is
+  // barred by the category's own section 4 guards, which call every module-library and directional
+  // entry a structural piece, and "finished elevation" or "whole façade" by the directional views,
+  // which are wall bays and roof sections drawn at each yaw. None of those is caught by
+  // `categoryAssembly.test.ts`, whose half of the rule is the literal one; this is the judgement half.
+  // "building" is safe for the reason "character" is: no component of any sheet is one.
   BUILDING: {
     statement: 'no assembled building',
     negatives: ['assembled building'],
-    instruction:
-      'Do not draw the building standing complete, or a laid stretch of its floor or wall tiles, anywhere on the sheet, including as a reference or key.',
-    exclusion:
-      'The building standing complete, and any stretch of floor or wall drawn with its tiles already laid rather than as separate pieces.',
-    audit:
-      'nothing on the sheet is the building standing complete, or a stretch of floor or wall drawn with its tiles already laid',
   },
   // "complete machine" is the term this entry cannot have — the directional plan's own assembly
   // sentence asks the views to read "as one machine turned", and the hull, drive and mount are
@@ -152,10 +95,6 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   VEHICLE: {
     statement: 'no assembled vehicle',
     negatives: ['assembled vehicle', 'product shot'],
-    instruction:
-      'Do not draw the parts fitted together into the assembled vehicle anywhere on the sheet, including as a reference or key.',
-    exclusion: 'The vehicle itself, whole or partly built, and any staged product shot of it.',
-    audit: 'nothing on the sheet is the vehicle itself, whole or partly built',
   },
   // The category the word-by-word rule bites hardest, and the one whose terms are easiest to get
   // catastrophically wrong. "effect" is out because each component *is* the effect at a moment;
@@ -175,95 +114,45 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   // *be* a smear, since the pools offer `Slash / Weapon Trail` and `Projectile Body & Trail`.
   // Note what is deliberately absent: nothing here negates a repeated shape, which would negate the
   // whole sheet, since an effect's frames *are* one phenomenon drawn over and over.
-  //
-  // The one category whose assembly failure is not a fitting-together at all: its components are
-  // moments rather than parts, so what it comes back as is the moments drawn on top of one another.
-  // The body forms may use "frames", which `negatives` may not — a weighted `frame` would suppress
-  // every entry on the sheet, while "the frames overlaid into one composited picture" is a whole
-  // clause with a stated relation between them, which is the thing being banned. Section 9's counts
-  // the frames rather than naming the whole, because "two or more overlaid" is what a reader can
-  // actually check on the delivered image.
   EFFECT: {
     statement: 'no double exposure or composited picture',
     negatives: ['double exposure', 'composited picture'],
-    instruction:
-      'Do not draw the frames overlaid into one composited picture anywhere on the sheet, including as a reference or key.',
-    exclusion: 'The frames overlaid, blended or composited into one picture of the effect.',
-    audit: 'nothing on the sheet is two or more frames overlaid into one picture',
   },
-  // "screen" is safe where "interface", "panel" and "frame" are not: the inventory lists buttons,
-  // panel frames, bars and toggles, and no component of it is a screen. The second term is what the
-  // sheet is actually returned as when it fails — a picture of a running game rather than a kit of
-  // pieces.
+  // "screen" is safe where "interface", "panel" and "frame" are not: the inventories list buttons,
+  // panel frames, bars, toggles and the slices of a panel, and no component of either is a screen. The
+  // second term is what the sheet is actually returned as when it fails — a picture of a running game
+  // rather than a kit of pieces.
   INTERFACE: {
     statement: 'no assembled screen',
     negatives: ['assembled screen', 'game screenshot'],
-    instruction:
-      'Do not draw the pieces fitted together into the assembled screen anywhere on the sheet, including as a reference or key.',
-    exclusion: 'The screen itself, whole or partly arranged, and any picture of the interface in use.',
-    audit: 'nothing on the sheet is the screen itself, whole or partly arranged',
   },
   // Every word this category's failure wants is a word its components answer to — "landscape",
   // "terrain", "ground", "tile" — and "field" is what section 0 calls the background the sheet is
   // keyed against. So both terms name a *view* rather than the material: nothing on a terrain sheet
   // is a vista or a diorama. `diorama` is the exclusion line's own word and `vista` its own noun;
   // `scenic` is this record's, chosen because the bare noun is thin in a negative channel. The
-  // tiles-already-laid half of the failure is not stated at all, because a term for it would negate
-  // the edge agreement section 9 audits.
-  //
-  // **The body forms recover the half `negatives` had to give up.** The tiles-already-laid reading
-  // cannot be weighted as a term without negating the subject, so the negative channel says only the
-  // composed-view half — but a whole clause can hold both, because "laid together" is a relation
-  // between tiles rather than a word standing in for one. Section 9's says "drawn already laid
-  // together" for the reason that record's own TERRAIN line is qualified twice over: the audit is
-  // applied tile by tile, and a check reading "no laid tiles" would fail the sheet on the fourteen
-  // section 4 requires. The composed-view wording is `CATEGORY_EXCLUSION_TEXT`'s and
-  // `CATEGORY_AUDIT_TEXT`'s own, moved here from both and deleted from both.
+  // tiles-already-laid half of the failure is not stated here at all, because a term for it would
+  // negate the edge agreement section 9 audits — the sheet's own forms state it instead.
   TERRAIN: {
     statement: 'no scenic vista or diorama',
     negatives: ['scenic vista', 'diorama'],
-    instruction:
-      'Do not draw the tiles laid together, or a landscape composed from them, anywhere on the sheet, including as a reference or key.',
-    exclusion:
-      'The tiles laid together, and any landscape, vista or diorama composed from them in place of the component grid.',
-    audit:
-      'nothing on the sheet is a run of tiles drawn already laid together, or a landscape composed from them',
   },
   // "dialogue scene" and "visual novel screenshot" are safe where "portrait", "character" and "face"
   // are not: the inventory is twelve portraits of one person, and no component of it is a scene or a
   // screenshot. The second term is what the sheet is actually returned as when it fails — a picture
   // of the conversation the portraits were drawn for, rather than the set of them.
-  //
-  // The expressions-blended-into-one half of the failure is stated only in the body forms, for the
-  // reason TERRAIN's tiles-already-laid half is: a term naming it would have to name the
-  // expressions, and negating those negates the subject. A whole clause can hold it because "merged
-  // into one face" is a relation between drawings rather than a word standing in for one.
   PORTRAIT: {
     statement: 'no dialogue scene',
     negatives: ['dialogue scene', 'visual novel screenshot'],
-    instruction:
-      'Do not draw the portraits arranged into a conversation, a roster or a single merged face anywhere on the sheet, including as a reference or key.',
-    exclusion:
-      'The portraits arranged into a dialogue scene, a party roster or a character sheet, and any two of them blended into one face.',
-    audit: 'nothing on the sheet is a conversation, a roster, or two expressions merged into one drawing',
   },
   // **"inventory" is the word this entry could not have**, and it is the trap worth recording: it is
   // the obvious name for what an icon set fails as, it is this category's own first option, *and* it
   // is one of the template's own section headings — so it is a required word for every category in
   // the table, not only this one. `menu screen` is INTERFACE's "assembled screen" narrowed to the
   // same failure without reaching for it, and neither term names an icon, a symbol or a mark.
-  //
-  // The body forms keep the vocabulary the terms had to give up, for the reason TERRAIN's do: a
-  // whole clause can say "arranged into an inventory" because that is a relation between the icons
-  // rather than a word standing in for one.
   ICON: {
     statement: 'no assembled menu screen',
     negatives: ['menu screen', 'game screenshot'],
-    instruction:
-      'Do not draw the icons fitted into slots, a bag, a hotbar or a skill tree anywhere on the sheet, including as a reference or key.',
-    exclusion:
-      'The icons arranged into an inventory, a hotbar, a skill tree or any other screen, and any picture of the set in use.',
-    audit: 'nothing on the sheet is an inventory, a hotbar or a skill tree with the icons placed in it',
   },
   // Every word this category's failure wants is a word its components answer to — "scene" is its own
   // `Scene Purpose` field and its own `Full Static Scene Panel` option, and "landscape", "backdrop",
@@ -271,18 +160,9 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   // the material: nothing on a background sheet is a picture or a screenshot. `composited picture`
   // is EFFECT's term, shared deliberately — the two categories fail the same way, one in space and
   // one in time — which is the same licence OBJECT and VEHICLE take with `product shot`.
-  //
-  // The bands-already-stacked half is left to the body forms for TERRAIN's reason, and section 9's
-  // is qualified twice over because the audit is applied band by band: a check reading "no stacked
-  // bands" would fail the sheet on the pieces section 4 requires.
   BACKGROUND: {
     statement: 'no composited picture',
     negatives: ['composited picture', 'game screenshot'],
-    instruction:
-      'Do not draw the bands stacked into the finished scene anywhere on the sheet, including as a reference or key.',
-    exclusion:
-      'The bands stacked into the finished scene, and any picture of the backdrop with the playfield in front of it.',
-    audit: 'nothing on the sheet is the finished scene with its bands already stacked one behind another',
   },
   // **The one category where the assembly failure and the contract are the same question**, which is
   // what makes the terms hard rather than the concept. This sheet's components are lettering — the
@@ -309,16 +189,8 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   // `requiredWords` subtracts for every category.) Flux takes the clause positively rather than as a
   // negative prompt, and `categoryAssembly.test.ts` holds it to the terms rule for exactly that
   // reason: the bleed is the same either way.
-  //
-  // The body forms keep the vocabulary the terms had to give up, for the reason TERRAIN's do: “set
-  // side by side as a word” is a relation between characters rather than a word standing in for one.
   FONT: {
     statement: 'no pangram or paragraph',
     negatives: ['pangram', 'paragraph'],
-    instruction:
-      'Do not draw the characters set beside one another into a word, a name, a specimen line or a run of body copy anywhere on the sheet, including as a reference or key.',
-    exclusion:
-      'Any word, name, specimen line or paragraph set from the characters, and any picture of the font in use.',
-    audit: 'no two characters are drawn touching or set side by side as a word',
   },
 };

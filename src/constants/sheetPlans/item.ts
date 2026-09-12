@@ -1,4 +1,4 @@
-import type { SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { AssemblyFailure, SheetPlan, SheetSeries } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 
@@ -34,6 +34,19 @@ import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalVi
  * machinery existing.
  */
 
+/**
+ * How both ITEM sheets forbid their assembled whole — `OBJECT_ASSEMBLY_FAILURE`'s three forms in this
+ * category's noun, and for that record's reasons: they name the parts fitted together rather than the
+ * capability section 6 asks for, and "the item itself" anchors the last two to the whole subject,
+ * which no component is.
+ */
+const ITEM_ASSEMBLY_FAILURE: AssemblyFailure = {
+  instruction:
+    'Do not draw the parts fitted together into the assembled item anywhere on the sheet, including as a reference or key.',
+  exclusion: 'The item itself, whole or partly built, and any staged product shot of it.',
+  audit: 'nothing on the sheet is the item itself, whole or partly built',
+};
+
 export const ITEM_PART_LIBRARY: SheetPlan = {
   name: 'Part library',
   facings: 'run',
@@ -44,6 +57,8 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
   posing: 'PER_POSITION',
   scaleExample: 'a pommel drawn beside the body or shaft it caps is in proportion to it',
   scaleUnit: 'a full item',
+  componentClass: 'a part of this one item',
+  assemblyFailure: ITEM_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,
@@ -96,6 +111,8 @@ function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
     // smallest piece the directional views actually draw.
     scaleExample: 'a guard drawn beside the shaft it sits on is in proportion to it',
     scaleUnit: 'a full item',
+    componentClass: 'a part of this one item',
+    assemblyFailure: ITEM_ASSEMBLY_FAILURE,
     groups: [
       {
         heading: 'Directional core',

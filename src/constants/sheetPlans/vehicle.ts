@@ -1,4 +1,4 @@
-import type { SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { AssemblyFailure, SheetPlan, SheetSeries } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 
@@ -20,6 +20,19 @@ import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalVi
  * table is what lets that absence be the answer rather than an omission to fill.
  */
 
+/**
+ * How every VEHICLE sheet forbids its assembled whole — `OBJECT_ASSEMBLY_FAILURE`'s three forms in this
+ * category's noun, and for that record's reasons: they name the parts fitted together rather than the
+ * capability section 6 asks for, and "the vehicle itself" anchors the last two to the whole subject,
+ * which no component is.
+ */
+const VEHICLE_ASSEMBLY_FAILURE: AssemblyFailure = {
+  instruction:
+    'Do not draw the parts fitted together into the assembled vehicle anywhere on the sheet, including as a reference or key.',
+  exclusion: 'The vehicle itself, whole or partly built, and any staged product shot of it.',
+  audit: 'nothing on the sheet is the vehicle itself, whole or partly built',
+};
+
 export const VEHICLE_PART_LIBRARY: SheetPlan = {
   name: 'Part library',
   facings: 'run',
@@ -30,6 +43,8 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
   posing: 'PER_POSITION',
   scaleExample: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
   scaleUnit: 'a full vehicle',
+  componentClass: 'a part of this one vehicle',
+  assemblyFailure: VEHICLE_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,
@@ -104,6 +119,8 @@ function vehicleDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTupl
     posing: 'UNSTATED',
     scaleExample: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
     scaleUnit: 'a full vehicle',
+    componentClass: 'a part of this one vehicle',
+    assemblyFailure: VEHICLE_ASSEMBLY_FAILURE,
     groups: [
       {
         heading: 'Directional core',
@@ -156,6 +173,8 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
   posing: 'AT_REST',
   scaleExample: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
   scaleUnit: 'a full vehicle',
+  componentClass: 'a part of this one vehicle',
+  assemblyFailure: VEHICLE_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,

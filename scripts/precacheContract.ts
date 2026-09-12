@@ -678,8 +678,31 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2369 leaves **0.78 KiB**. It is the smallest whole figure over the build, for the reason the notes
  * above give.
+ *
+ * **Raised from 2369 by each sheet saying what its own pieces are** (#278). BACKGROUND's guard, audit
+ * and three assembly forms were written per category, so its layer library was told every entry was a
+ * band and not to stack the bands, where only its parallax set draws one. Every sheet plan now states
+ * `componentClass` and `assemblyFailure`, which gives BUILDING's tile set and its module sheets a
+ * failure each, and INTERFACE's nine-slice set one of its own. Measured against `main` at `e658295`,
+ * rebuilt from the same lockfile — **2368.22 KiB across 64 entries** on the build's summary line —
+ * this build reports **2371.20 across 64** on the same line, a delta of 2.98 that crossed a ceiling
+ * the base sat 0.78 under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was
+ * renamed.
+ *
+ * **The bytes are the two field names as much as the words they hold.** A minifier shortens no
+ * property name, and both are written on every plan literal in `sheetPlans/`; beside them are the class
+ * phrases and the three new sets of forms, less the class and form wording the category records gave
+ * up. How the 2.98 divides between those was not measured. The chunk sizes move as the last note's
+ * did, and further: the exclusion records now read `kindsIn`, so `quantiseDials` grows by 19,109 bytes
+ * while `useCopyPrompt` shrinks by 16,067, five other chunks move by 7 bytes or fewer, and the seven
+ * net to the 2.98. That is consistent with modules moving into the shared chunk rather than being
+ * copied; which modules moved was not traced. No worker chunk changed size, so nothing is paid for
+ * twice. The docblocks recording the move are stripped from the bundle.
+ *
+ * 2372 leaves **0.80 KiB**. It is the smallest whole figure over the build, for the reason the notes
+ * above give.
  */
-export const PRECACHE_CEILING_KIB = 2369;
+export const PRECACHE_CEILING_KIB = 2372;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

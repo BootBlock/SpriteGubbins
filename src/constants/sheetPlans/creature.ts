@@ -1,6 +1,7 @@
 import type { ComponentEntry, SheetPlan, SheetSeries } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
+import { FIGURE_ASSEMBLY_FAILURE } from './figureAssemblyFailure.ts';
 import { mirroredLimb } from './mirroredLimb.ts';
 import { RIG_PIECES_OUTRO } from './rigPieces.ts';
 
@@ -50,10 +51,12 @@ export const CREATURE_POSE_LIBRARY: SheetPlan = {
   // Eight fore and nine hind variants a side: one limb segment per orientation it is drawn at.
   posing: 'PER_POSITION',
   scaleExample: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
-  // Not the "figure" CHARACTER keeps and `CATEGORY_ASSEMBLY` shares with it: that record is naming a
-  // *failure* the two categories have in common, where this is naming the subject itself, and the
-  // word appears nowhere in this category's plans.
+  // Not the "figure" CHARACTER keeps and `CATEGORY_ASSEMBLY` and `FIGURE_ASSEMBLY_FAILURE` share with
+  // it: those name a *failure* the two categories have in common, where this is naming the subject
+  // itself, and the word appears nowhere in this category's inventories.
   scaleUnit: 'a full creature',
+  componentClass: 'creature anatomy',
+  assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,
@@ -151,6 +154,8 @@ function creatureDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTupl
     posing: 'UNSTATED',
     scaleExample: 'a head drawn beside the body it joins is in proportion to it',
     scaleUnit: 'a full creature',
+    componentClass: 'creature anatomy',
+    assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
     groups: [
       {
         heading: null,
@@ -247,6 +252,8 @@ export const CREATURE_ARTICULATION: SheetPlan = {
   // claws` and the singular `foot` appears nowhere on it.
   scaleExample: 'a claw drawn beside an upper limb is in proportion to it',
   scaleUnit: 'a full creature',
+  componentClass: 'creature anatomy',
+  assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
   groups: [
     { heading: 'Left forelimb', entries: LEFT_FORELIMB_ENTRIES },
     {
@@ -315,6 +322,8 @@ export const CREATURE_CUTOUT_RIG: SheetPlan = {
   posing: 'AT_REST',
   scaleExample: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
   scaleUnit: 'a full creature',
+  componentClass: 'creature anatomy',
+  assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,

@@ -42,6 +42,17 @@ export const BACKGROUND_PARALLAX_SET: SheetPlan = {
   // name for the thing sections 4, 8 and 9 each forbid drawing, word for word. Section 0's example
   // above hangs its proportions on a band too, which is the agreement INTERFACE and TERRAIN also have.
   scaleUnit: 'one parallax band',
+  componentClass: 'a band of this one backdrop, or a loose piece laid over one',
+  // The bands-already-stacked half is left to these forms for the reason TERRAIN's tiles-already-laid
+  // half is, and section 9's is qualified twice over because the audit is applied band by band: a check
+  // reading "no stacked bands" would fail the sheet on the pieces section 4 requires.
+  assemblyFailure: {
+    instruction:
+      'Do not draw the bands stacked into the finished scene anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'The bands stacked into the finished scene, and any picture of the backdrop with the playfield in front of it.',
+    audit: 'nothing on the sheet is the finished scene with its bands already stacked one behind another',
+  },
   groups: [
     {
       heading: 'Depth bands',
@@ -184,6 +195,27 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // it is the larger half of section 0's pair above. The focal landmark would be the obvious single
   // piece and cannot be the unit, because *Focal Landmark* offers `No Landmark — Fully Repeatable`.
   scaleUnit: 'one mid mass',
+  // This sheet's scene panel rather than the parallax set's band. That class was the category's until
+  // issue #278, and on this sheet it left the sky, the masses and the edge occluders in no class at all,
+  // directly above a sentence calling anything outside the class an error in the specification.
+  //
+  // **"A piece laid over it" rather than naming the set dressing and the atmosphere**, because the
+  // second of those is not always here: *Applied Atmosphere* opens on its `absentOption`, so the subject
+  // the app starts with takes the whole Atmosphere group away, and a class naming atmosphere would put
+  // it back into the guard above an inventory with none. The set dressing is on every copy of the sheet,
+  // so the second half of the class always has a member.
+  componentClass: 'a piece of this one backdrop’s scene panel, or a piece laid over it',
+  // The parallax set's forms with this sheet's pieces in place of its bands, which are not drawn here.
+  // What fails is the same composite on both sheets, and `the finished scene` is this category's name
+  // for it on both; this sheet's own assembly sentence says `finished backdrop` for the capability,
+  // which is why the forms do not.
+  assemblyFailure: {
+    instruction:
+      'Do not draw the pieces stacked into the finished scene anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'The pieces stacked into the finished scene, and any picture of the backdrop with the playfield in front of it.',
+    audit: 'nothing on the sheet is the finished scene with its pieces already stacked one behind another',
+  },
   groups: [
     {
       heading: 'Scene panel',

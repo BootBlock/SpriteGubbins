@@ -7,6 +7,7 @@ import { CATEGORY_PROJECTIONS } from '../constants/categoryProjections.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
 import {
+  modesFor,
   resolveMode,
   resolveRigMode,
   SHEET_INDEX_RANGE,
@@ -38,6 +39,7 @@ import { sectionOf } from '../test/promptSections.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
+import { sheetFacts } from './promptFacts.ts';
 import { countWords, estimateTokens } from './promptMetrics.ts';
 import { sheetDirections } from './sheetDirections.ts';
 import { sheetRuns } from './sheetRuns.ts';
@@ -293,6 +295,117 @@ describe('generatePrompt — the subject', () => {
       '- Resolution profile: 16-bit retro scale — one parallax band is roughly 64–96 pixels tall',
     );
   });
+
+  it('calls nothing on BACKGROUND’s layer library a band, and leaves the parallax set its bands', () => {
+    // The reported instance of issue #278, the sibling of #275 above. The guard, the audit and the three
+    // assembly forms were the category's, and all five named bands on a sheet that draws none: the
+    // guard put every entry in a class of band or loose piece, above a sky, three masses and two edge
+    // occluders. Sections 8 and 9 also closed on a seam rule for a band meant to loop, where nothing on
+    // the sheet loops. The subject's own exclusions are emptied so every band left in these sections
+    // is the app's — `No visible seam where the band repeats` is a pooled option a reader may pick.
+    const sections = (directionalMode: OutputConfig['directionalMode']) => {
+      const prompt = generatePrompt(
+        'BACKGROUND',
+        { ...defaultSubjectFor('BACKGROUND'), exclusions: '' },
+        withOutput({ directionalMode }),
+      );
+      return (['COMPONENT INVENTORY', 'EXCLUSIONS', 'LAYOUT AND SELF-AUDIT'] as const).map((heading) =>
+        sectionOf(prompt, heading).replaceAll(/\s+/g, ' '),
+      );
+    };
+
+    const [inventory = '', exclusions = '', audit = ''] = sections('SINGLE_DIRECTION_POSE_LIBRARY');
+    const layerClass = 'a piece of this one backdrop’s scene panel, or a piece laid over it';
+    expect(inventory).toContain(`Every entry below is ${layerClass}. An entry describing anatomy`);
+    expect(inventory).toContain(
+      'Do not draw the pieces stacked into the finished scene anywhere on the sheet, including as a reference or key.',
+    );
+    expect(exclusions).toContain(
+      'any pickup, door or interactive object; and interface, logo and lettering. A bird',
+    );
+    expect(exclusions).toContain(
+      '- The pieces stacked into the finished scene, and any picture of the backdrop with the playfield in front of it.',
+    );
+    expect(audit).toContain(
+      'attached, and nothing on the sheet is the finished scene with its pieces already stacked one behind another.',
+    );
+    expect(audit).toContain(
+      `Every component is ${layerClass} — nothing drawn at the playfield’s own scale, no interface or lettering, and nothing a player could mistake for a platform, a ledge or a pickup.`,
+    );
+    for (const section of [inventory, exclusions, audit]) {
+      expect(section).not.toMatch(/\bbands?\b/i);
+    }
+
+    // The parallax set keeps every one of them: the statements moved to the sheet so the two could
+    // differ, not so the sheet that draws bands would stop saying so.
+    const [bandInventory = '', bandExclusions = '', bandAudit = ''] = sections('TILESET_MODULAR');
+    expect(bandInventory).toContain(
+      'Every entry below is a band of this one backdrop, or a loose piece laid over one.',
+    );
+    expect(bandInventory).toContain('Do not draw the bands stacked into the finished scene');
+    expect(bandExclusions).toContain(
+      'interface, logo and lettering; and, on any band meant to loop, a visible join where it repeats',
+    );
+    expect(bandAudit).toContain('Every band meant to loop carries the same profile, materials and values');
+  });
+
+  it.each([
+    [
+      'BUILDING',
+      'TILESET_MODULAR',
+      'a floor or wall tile',
+      'Do not draw the tiles laid together into a stretch of floor or wall anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'BUILDING',
+      'SINGLE_DIRECTION_POSE_LIBRARY',
+      'a structural piece',
+      'Do not draw the building standing complete, or a run of its modules fitted together, anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'BUILDING',
+      'CORE_DIRECTIONAL_VARIANTS',
+      'a structural piece',
+      'Do not draw the building standing complete, or a run of its modules fitted together, anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'TERRAIN',
+      'TILESET_MODULAR',
+      'a ground tile',
+      'Do not draw the tiles laid together, or a landscape composed from them, anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'TERRAIN',
+      'SINGLE_DIRECTION_POSE_LIBRARY',
+      'a ground tile or a landform piece',
+      'Do not draw the tiles laid together, or a landscape composed from them, anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'INTERFACE',
+      'TILESET_MODULAR',
+      'a piece of this one interface',
+      'Do not draw the pieces fitted together into a finished panel, button or divider anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'INTERFACE',
+      'SINGLE_DIRECTION_POSE_LIBRARY',
+      'a piece of this one interface',
+      'Do not draw the pieces fitted together into the assembled screen anywhere on the sheet, including as a reference or key.',
+    ],
+  ] as const)(
+    'states %s / %s in its own class and its own failure',
+    (category, directionalMode, componentClass, instruction) => {
+      // The other three categories whose sheets took different words in issue #278. BUILDING's category
+      // class and forms named tiles on its two sheets with none, INTERFACE's named only the screen its
+      // nine-slice set never builds, and TERRAIN's class named a landform piece its blend set lacks. The
+      // sweeps in `sheetPlans/sheetClaims.test.ts` say what a claim may not name; this is what holds the
+      // wording, on the prompt the default subject compiles to.
+      const prompt = generatePrompt(category, defaultSubjectFor(category), withOutput({ directionalMode }));
+      const inventory = sectionOf(prompt, 'COMPONENT INVENTORY').replaceAll(/\s+/g, ' ');
+      expect(inventory).toContain(`Every entry below is ${componentClass}. An entry describing`);
+      expect(inventory).toContain(instruction);
+    },
+  );
 });
 
 describe('generatePrompt — conditional blocks', () => {
@@ -574,7 +687,8 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
   it('leaves the rest of section 0 in place when it goes', () => {
     // Only the paragraph that asks for a reply is conditional. The contract itself describes the
     // image, and the precedence order settles conflicts the generator can act on either way.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'MIDJOURNEY' }));
+    const output = withOutput({ targetModel: 'MIDJOURNEY' });
+    const prompt = generatePrompt('CHARACTER', SUBJECT, output);
 
     expect(prompt).toContain('## 0. NON-NEGOTIABLE OUTPUT CONTRACT');
     expect(prompt).toContain('Satisfy this section before any aesthetic consideration.');
@@ -583,7 +697,9 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
     // conditioning every target can use.
     // `null`, because the default subject names no additional anatomy — so the sheet appends no
     // block and the guard carries no exemption for one.
-    expect(prompt).toContain(promptText.CATEGORY_GUARD_TEXT.CHARACTER(null));
+    expect(prompt).toContain(
+      promptText.CATEGORY_GUARD_TEXT.CHARACTER(sheetFacts('CHARACTER', SUBJECT, output).plan, null),
+    );
   });
 
   it('never leaves the precedence list carrying an exception the prompt has dropped', () => {
@@ -789,12 +905,14 @@ describe('generatePrompt — the exclusion precedence, stated at both ends', () 
   });
 });
 
-describe('generatePrompt — the assembled whole, named in the category’s own words', () => {
+describe('generatePrompt — the assembled whole, named in the sheet’s own words', () => {
   /**
    * Sections 4, 8 and 9 each state that this sheet must not show its parts drawn as one finished
    * thing, and all three said it in a figure's vocabulary on every category — so a TERRAIN prompt
    * carried "Do not draw an assembled figure" three times over and never once named the composed
-   * landscape it actually comes back as.
+   * landscape it actually comes back as. The category's own words then proved one level too coarse:
+   * BACKGROUND's layer library was told not to stack the bands only its parallax set draws (issue
+   * #278), so the forms are the sheet's, and every mode a category offers is compiled here.
    *
    * Asserted per section rather than against the whole prompt, because the failure this replaced was
    * a *placement* one as much as a wording one: one form spliced into all three would satisfy a
@@ -806,16 +924,27 @@ describe('generatePrompt — the assembled whole, named in the category’s own 
     return prompt.replaceAll(/\s+/g, ' ');
   }
 
-  it.each(SUBJECT_CATEGORIES)('gives %s its own wording in each of the three sections', (category) => {
-    const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
-    const assembly = promptText.CATEGORY_ASSEMBLY[category];
+  it.each(SUBJECT_CATEGORIES)(
+    'gives every %s sheet its own wording in each of the three sections',
+    (category) => {
+      for (const directionalMode of modesFor(category)) {
+        const output = withOutput({ directionalMode });
+        const subject = defaultSubjectFor(category);
+        const prompt = generatePrompt(category, subject, output);
+        // The plan the compiler itself resolved, rather than one looked up beside it.
+        const { assemblyFailure } = sheetFacts(category, subject, output).plan;
+        const where = `${category} / ${directionalMode}`;
 
-    expect(unwrapped(sectionOf(prompt, 'COMPONENT INVENTORY'))).toContain(assembly.instruction);
-    expect(unwrapped(sectionOf(prompt, 'EXCLUSIONS'))).toContain(`- ${assembly.exclusion}`);
-    expect(unwrapped(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT'))).toContain(
-      `attached, and ${assembly.audit}.`,
-    );
-  });
+        expect(unwrapped(sectionOf(prompt, 'COMPONENT INVENTORY')), where).toContain(
+          assemblyFailure.instruction,
+        );
+        expect(unwrapped(sectionOf(prompt, 'EXCLUSIONS')), where).toContain(`- ${assemblyFailure.exclusion}`);
+        expect(unwrapped(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')), where).toContain(
+          `attached, and ${assemblyFailure.audit}.`,
+        );
+      }
+    },
+  );
 
   it('leaves the figure vocabulary to the two categories that are figures', () => {
     // The defect itself, stated as the thing that must not come back. `defaultSubjectFor` is what

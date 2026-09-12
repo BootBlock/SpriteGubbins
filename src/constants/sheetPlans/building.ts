@@ -1,4 +1,4 @@
-import type { SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { AssemblyFailure, SheetPlan, SheetSeries } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 
@@ -38,6 +38,21 @@ export const BUILDING_TILESET: SheetPlan = {
   // and the building both are cut from is the reference they share, which is what section 0's
   // example on the module library already hangs a wall bay on.
   scaleUnit: 'a full building',
+  // Tiles and nothing else: the structural pieces are the other two sheets' class (issue #278).
+  componentClass: 'a floor or wall tile',
+  // A room or a wall drawn instead of a grid of separable tiles is what this sheet comes back as, so
+  // that is what it forbids, and only that — the standing building is the module sheets' failure, see
+  // `STANDING_BUILDING_FAILURE`. "A stretch of floor or wall" rather than "a straight wall run", which
+  // is the capability the assembly sentence above asks for, and the noun is never bare: a floor tile is
+  // not "a stretch of floor drawn with its tiles already laid", which is what keeps the audit off the
+  // sixteen entries section 4 requires.
+  assemblyFailure: {
+    instruction:
+      'Do not draw the tiles laid together into a stretch of floor or wall anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'Any stretch of floor or wall drawn with its tiles already laid rather than as separate pieces.',
+    audit: 'nothing on the sheet is a stretch of floor or wall drawn with its tiles already laid',
+  },
   groups: [
     {
       heading: null,
@@ -89,6 +104,30 @@ carries a feature that reveals repetition when laid in a field.`,
   ],
 };
 
+/**
+ * How the module library and the directional views forbid their assembled whole.
+ *
+ * **This category has two deliverables, and each sheet names the failure its own comes back as**
+ * (issue #278). The per-category record named both on every sheet — the building standing complete,
+ * *or* a laid stretch of its floor or wall tiles — which repaired a first draft that named only the
+ * modules, and in doing so put tiles in front of the two sheets that draw none. A module sheet fails as
+ * the finished structure, or as a run of its modules already joined into a façade; the tile set's
+ * failure is a room or a wall instead of a grid of tiles, and that plan states its own.
+ *
+ * "Standing complete" rather than "the complete structure": that is both plans' own phrase for the
+ * capability section 6 asks the set to have, and a form borrowing it reads as forbidding the capability
+ * rather than the depiction. The run is qualified as "already fitted together" for the reason
+ * `CATEGORY_AUDIT_TEXT` records: the audit is applied module by module, and no single wall bay is a run
+ * of modules.
+ */
+const STANDING_BUILDING_FAILURE: AssemblyFailure = {
+  instruction:
+    'Do not draw the building standing complete, or a run of its modules fitted together, anywhere on the sheet, including as a reference or key.',
+  exclusion: 'The building standing complete, and any run of its modules drawn already fitted together.',
+  audit:
+    'nothing on the sheet is the building standing complete, or a run of its modules drawn already fitted together',
+};
+
 export const BUILDING_MODULE_LIBRARY: SheetPlan = {
   name: 'Module library',
   facings: 'run',
@@ -102,6 +141,8 @@ export const BUILDING_MODULE_LIBRARY: SheetPlan = {
   posing: 'PER_POSITION',
   scaleExample: 'an awning drawn beside the wall bay it hangs on is in proportion to it',
   scaleUnit: 'a full building',
+  componentClass: 'a structural piece',
+  assemblyFailure: STANDING_BUILDING_FAILURE,
   groups: [
     {
       heading: null,
@@ -175,6 +216,8 @@ function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTup
     // here; the corner post is the smallest piece these views draw.
     scaleExample: 'a corner post drawn beside the wall bay it finishes is in proportion to it',
     scaleUnit: 'a full building',
+    componentClass: 'a structural piece',
+    assemblyFailure: STANDING_BUILDING_FAILURE,
     groups: [
       {
         heading: 'Directional core',

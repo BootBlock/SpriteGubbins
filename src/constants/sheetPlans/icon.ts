@@ -75,6 +75,17 @@ export const ICON_SYMBOL_SET: SheetPlan = {
   scaleExample:
     'one core icon and the core icon beside it are drawn to the same weight, each filling its own cell to the same margin',
   scaleUnit: 'one icon',
+  componentClass: 'one member of this one icon set, or a piece laid over one',
+  // The forms keep the vocabulary `CATEGORY_ASSEMBLY.ICON`'s terms had to give up, for the reason
+  // TERRAIN's do: a whole clause can say "arranged into an inventory" because that is a relation
+  // between the icons rather than a word standing in for one.
+  assemblyFailure: {
+    instruction:
+      'Do not draw the icons fitted into slots, a bag, a hotbar or a skill tree anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'The icons arranged into an inventory, a hotbar, a skill tree or any other screen, and any picture of the set in use.',
+    audit: 'nothing on the sheet is an inventory, a hotbar or a skill tree with the icons placed in it',
+  },
   groups: [
     {
       heading: null,

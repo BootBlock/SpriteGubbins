@@ -68,7 +68,7 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * font sheet must not carry is the characters *set together*, which is `assembly.statement`'s job on
  * every other category and does the whole of it here.
  *
- * **And the clause that closes the first sentence is the sheet's, from `CATEGORY_ASSEMBLY`.** It
+ * **And the clause that closes the first sentence is the category's, from `CATEGORY_ASSEMBLY`.** It
  * read "no assembled figure" whatever the subject was, which put a claim about a figure in the
  * position Black Forest Labs' word-order guidance calls the strongest — on a terrain, building or
  * interface sheet, ahead of everything true about it. This is prose rather than a term list, so the

@@ -81,7 +81,7 @@ export function wrapForModel(
      */
     readonly limbsAreComponents: boolean;
     /**
-     * What this sheet's assembled-whole failure is called, from `CATEGORY_ASSEMBLY`.
+     * What this category's assembled-whole failure is called, from `CATEGORY_ASSEMBLY`.
      *
      * The three targets with somewhere to say it read it — Flux as the clause closing its leading
      * sentence, Stable Diffusion and Qwen as the run opening their negative blocks. All three stated

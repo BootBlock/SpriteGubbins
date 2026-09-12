@@ -124,6 +124,20 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   // "one frame" alone would be read as a cell of the sheet grid rather than as a moment of the effect,
   // which is the reading `FRAME_IS_A_COMPONENT` exists to correct elsewhere.
   scaleUnit: 'one frame of the effect',
+  // `CATEGORY_GUARD_TEXT.EFFECT` follows this with its own aside, "a moment in time, not a piece of a
+  // machine", because the failure that guard answers is a reader taking "frame" for a housing.
+  componentClass: 'one frame of this one effect’s sequence',
+  // The one sheet whose assembly failure is not a fitting-together at all: its components are moments
+  // rather than parts, so what it comes back as is the moments drawn on top of one another. The forms
+  // may say "frames", which `CATEGORY_ASSEMBLY.EFFECT.negatives` may not — see `AssemblyFailure`.
+  // Section 9's counts the frames rather than naming the whole, because "two or more overlaid" is what
+  // a reader can actually check on the delivered image.
+  assemblyFailure: {
+    instruction:
+      'Do not draw the frames overlaid into one composited picture anywhere on the sheet, including as a reference or key.',
+    exclusion: 'The frames overlaid, blended or composited into one picture of the effect.',
+    audit: 'nothing on the sheet is two or more frames overlaid into one picture',
+  },
   groups: [
     {
       heading: 'Core sequence',

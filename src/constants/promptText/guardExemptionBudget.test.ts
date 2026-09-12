@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { everySheetOf } from '../../test/categoryProse.ts';
 import { LIBRARY_CONFIGURATIONS } from '../../test/libraryConfigurations.ts';
 import { measurePromptFit } from '../../test/promptFit.ts';
 import { TARGET_MODEL_IDS } from '../../types/output.ts';
@@ -7,6 +8,7 @@ import type { SubjectCategory } from '../../types/subject.ts';
 import { readPromptBudget } from '../../utils/promptBudget.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
 import { CATEGORY_OPTIONS, fieldLabelFor } from '../categories/index.ts';
+import type { SheetPlan } from '../../types/components.ts';
 import { CATEGORY_GUARD_TEXT } from './exclusions.ts';
 
 /**
@@ -43,10 +45,10 @@ import { CATEGORY_GUARD_TEXT } from './exclusions.ts';
  * of the library is in without anyone adding it. That also prices each ceiling in its own unit, so
  * a character budget is never compared with a token one.
  *
- * **The clause is found by the category's own sentence rather than by a copy of its words**, which is
- * what `landmarks.test.ts` does with the same record. This suite prices length, and a rewording that
- * moved the detection out from under it would pass on having measured nothing; the wording itself is
- * pinned in `utils/sheetPlans.test.ts`.
+ * **The clause is found by the category's own sentence rather than by a copy of its words**, composed
+ * for each sheet the category can be asked for. This suite prices length, and a rewording that moved
+ * the detection out from under it would pass on having measured nothing; the wording itself is pinned
+ * in `utils/sheetPlans.test.ts`.
  *
  * **Only the guard's half is priced against a ceiling that binds.** The audit's half is gated on the
  * same value, but it reaches only a target that deliberates, and every such target measured today has
@@ -58,10 +60,22 @@ import { CATEGORY_GUARD_TEXT } from './exclusions.ts';
 /** The field whose pieces the exemption names. */
 const ADDITIONS = 'additional_anatomy';
 
-/** The opening claim of a category's guard, which is the sentence the exemption is spliced into. */
-function openingClaim(category: SubjectCategory, label: string | null): string {
-  const [claim = ''] = CATEGORY_GUARD_TEXT[category](label).split('. ');
+/** The opening claim of a category's guard on one sheet, which is the sentence the exemption is spliced into. */
+function openingClaim(category: SubjectCategory, plan: SheetPlan, label: string | null): string {
+  const [claim = ''] = CATEGORY_GUARD_TEXT[category](plan, label).split('. ');
   return claim;
+}
+
+/**
+ * The opening claim with the exemption in it, as each of the category's sheets states it.
+ *
+ * Every sheet rather than the configuration's own, because the claim opens with the sheet's
+ * `componentClass` (issue #278) and a prompt carries whichever of them its sheet has — so a prompt
+ * carrying any of these carries the exemption.
+ */
+function exemptedClaims(category: SubjectCategory): readonly string[] {
+  const label = fieldLabelFor(category, ADDITIONS);
+  return [...new Set(everySheetOf(category).map((plan) => openingClaim(category, plan, label)))];
 }
 
 /** Every value a configuration's additions field is measured at: its own, and each one its pool offers. */
@@ -86,7 +100,11 @@ describe('the exemption for the subject’s own pieces, against every ceiling th
     // The detection below reads a prompt for the opening claim *with* the exemption in it. If the
     // two forms ever became one sentence, every prompt would match it and the leanest would be a
     // sheet listing no pieces at all.
-    expect(openingClaim(category, fieldLabelFor(category, ADDITIONS))).not.toBe(openingClaim(category, null));
+    for (const plan of everySheetOf(category)) {
+      expect(openingClaim(category, plan, fieldLabelFor(category, ADDITIONS)), plan.name).not.toBe(
+        openingClaim(category, plan, null),
+      );
+    }
   });
 
   it.each(MEASURED_TARGETS)(
@@ -97,14 +115,14 @@ describe('the exemption for the subject’s own pieces, against every ceiling th
 
       let leanest: { readonly name: string; readonly additions: string; readonly used: number } | null = null;
       for (const { name, category, subject, output } of LIBRARY_CONFIGURATIONS) {
-        const exempted = openingClaim(category, fieldLabelFor(category, ADDITIONS));
+        const exempted = exemptedClaims(category);
         for (const additions of additionsFor(category, subject[ADDITIONS])) {
           const prompt = generatePrompt(
             category,
             { ...subject, [ADDITIONS]: additions },
             { ...output, targetModel: target },
           );
-          if (!prompt.includes(exempted)) continue;
+          if (!exempted.some((claim) => prompt.includes(claim))) continue;
 
           const reading = readPromptBudget(prompt, target);
           if (reading === null) throw new Error(`${target} has a ceiling and read no budget`);

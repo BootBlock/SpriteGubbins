@@ -80,6 +80,21 @@ export const PORTRAIT_EXPRESSION_LIBRARY: SheetPlan = {
   // bust to upper chest, or half body — so a unit naming one of those values prices the sheet against
   // a crop the subject may not have asked for.
   scaleUnit: 'one portrait',
+  // “One expression of this one person” rather than “portrait anatomy”, because the failure this sheet
+  // actually has is twelve competent portraits of twelve different people — which “anatomy” would not
+  // name at all.
+  componentClass: 'one expression of this one person’s portrait',
+  // The expressions-blended-into-one half is stated here and not in `CATEGORY_ASSEMBLY.PORTRAIT`'s
+  // terms, for the reason TERRAIN's tiles-already-laid half is: a term naming it would have to name the
+  // expressions, and negating those negates the subject. A whole clause can hold it because "merged
+  // into one face" is a relation between drawings rather than a word standing in for one.
+  assemblyFailure: {
+    instruction:
+      'Do not draw the portraits arranged into a conversation, a roster or a single merged face anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'The portraits arranged into a dialogue scene, a party roster or a character sheet, and any two of them blended into one face.',
+    audit: 'nothing on the sheet is a conversation, a roster, or two expressions merged into one drawing',
+  },
   groups: [
     {
       heading: null,

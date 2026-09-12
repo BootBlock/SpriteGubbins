@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { categoryProseFor } from '../../test/categoryProse.ts';
+import { categoryProseFor, everySheetOf } from '../../test/categoryProse.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
-import { CATEGORY_GUARD_TEXT } from './exclusions.ts';
 import { LANDMARK_TEXT } from './landmarks.ts';
 
 /**
@@ -52,24 +51,23 @@ function namedPiecesIn(landmark: string): readonly string[] {
 const WHOLE_SUBJECT = /\bthe front is\b/;
 
 /**
- * What the category guard positively asserts a component of this sheet is — its **first sentence**,
- * and only that.
+ * What the category's sheets positively assert their components are — each sheet's `componentClass`,
+ * and nothing else the guard says.
  *
- * The guard is the one place a category names the *class* its pieces belong to rather than the
- * pieces themselves, which is what TERRAIN's landmark reaches for: `a landform piece` is the phrase
- * both section 4's guard and section 9's audit use for everything on that sheet that is not a ground
- * tile, and no plan entry writes the word. A landmark stating a rule in the words the sentence above
- * the inventory already uses is the prompt agreeing with itself, not a foreign noun.
+ * The class is the one place a sheet names what its pieces *are* rather than the pieces themselves,
+ * which is what TERRAIN's landmark reaches for: `a landform piece` is the phrase both section 4's guard
+ * and section 9's audit use on the feature library for everything that is not a ground tile, and no
+ * plan entry writes the word. A landmark stating a rule in the words the sentence above the inventory
+ * already uses is the prompt agreeing with itself, not a foreign noun.
  *
- * **The rest of the guard is the half that must stay out.** Every one of them closes by naming what
- * would *not* belong — “An entry describing a head, limb, hand or other anatomy…” — so a corpus
- * taking the whole sentence pair would ground a character's vocabulary in the building guard that
- * bans it, and this check would pass a landmark written from exactly the wrong category. The split
- * is safe because all thirteen open `Every entry below is`, which the assertion below pins.
+ * **The rest of the guard is the half that must stay out.** Every one closes by naming what would *not*
+ * belong — “An entry describing a head, limb, hand or other anatomy…” — so a corpus taking the whole
+ * sentence would ground a character's vocabulary in the building guard that bans it, and this check
+ * would pass a landmark written from exactly the wrong category. Reading the class off the plan is what
+ * keeps that half out, where it used to take splitting the guard at its first full stop.
  */
 function componentClassOf(category: SubjectCategory): string {
-  const [positive = ''] = CATEGORY_GUARD_TEXT[category](null).split('. ');
-  return positive;
+  return [...new Set(everySheetOf(category).map((plan) => plan.componentClass))].join('\n');
 }
 
 describe('LANDMARK_TEXT', () => {
@@ -89,12 +87,6 @@ describe('LANDMARK_TEXT', () => {
       const componentClass = componentClassOf(category);
       const prose = `${categoryProseFor(category)} ${componentClass}`;
       const pieces = namedPiecesIn(landmark);
-
-      // The split above is a claim about the guard's shape, and a guard reworded out of it would
-      // hand the corpus the banning clause as well as the asserting one.
-      expect(componentClass, `${category}: the guard's positive clause is not where it was`).toMatch(
-        /^Every entry below is /,
-      );
 
       // Without this a category whose sentence was reworded into a shape neither pattern reads would
       // pass while asserting nothing at all, which is the one way this check can rot silently.

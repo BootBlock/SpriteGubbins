@@ -2,7 +2,6 @@ import { CATEGORY_OPTIONS, fieldLabelFor } from '../constants/categories/index.t
 import {
   ASPECT_TEXT,
   BACKGROUND_KEY_TEXT,
-  CATEGORY_ASSEMBLY,
   CATEGORY_AUDIT_TEXT,
   CATEGORY_EXCLUSION_TEXT,
   CATEGORY_GUARD_TEXT,
@@ -105,19 +104,22 @@ export function promptValues(
     // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
     // are what let a CHARACTER sheet ask for floors and walls and then forbid them.
     //
-    // The two that take `listedAdditions` are functions of the *sheet* as well, because each opens
-    // by saying what every component of it is, and section 4 appends the subject's own pieces to
-    // that list — see `guardExemption`. They are handed the heading those pieces arrive under, or
-    // `null` where this sheet appends none.
-    CATEGORY_GUARD: CATEGORY_GUARD_TEXT[category](listedAdditions),
+    // All three are functions of the *sheet* as well (issue #278). The guard and the audit each open
+    // by saying what every component is, and that is `SheetPlan.componentClass`: BACKGROUND's two
+    // sheets share no class, so a category's sentence called every layer-library piece a band. Both
+    // also take `listedAdditions`, because section 4 appends the subject's own pieces to that list —
+    // see `guardExemption` — and are handed the heading those pieces arrive under, or `null` where
+    // this sheet appends none. The exclusion line is handed the plan for BACKGROUND's seam clause.
+    CATEGORY_GUARD: CATEGORY_GUARD_TEXT[category](plan, listedAdditions),
     ASSEMBLY_POSES: plan.assembly,
-    CATEGORY_EXCLUSIONS: CATEGORY_EXCLUSION_TEXT[category],
-    CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category](listedAdditions),
-    // The same claim in three sections, from the record that also feeds the wrappers' two negative
-    // channels — so a category names its assembled whole the same way wherever the prompt says it.
-    CATEGORY_ASSEMBLY_INSTRUCTION: CATEGORY_ASSEMBLY[category].instruction,
-    CATEGORY_ASSEMBLY_EXCLUSION: CATEGORY_ASSEMBLY[category].exclusion,
-    CATEGORY_ASSEMBLY_AUDIT: CATEGORY_ASSEMBLY[category].audit,
+    CATEGORY_EXCLUSIONS: CATEGORY_EXCLUSION_TEXT[category](plan),
+    CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category](plan, listedAdditions),
+    // The same claim in three sections, and the sheet's rather than the category's: the forms name the
+    // pieces, and a category's sheets do not share them. The wrappers' two terms are still the
+    // category's, from `CATEGORY_ASSEMBLY` — see `CategoryAssembly` for why they can be.
+    CATEGORY_ASSEMBLY_INSTRUCTION: plan.assemblyFailure.instruction,
+    CATEGORY_ASSEMBLY_EXCLUSION: plan.assemblyFailure.exclusion,
+    CATEGORY_ASSEMBLY_AUDIT: plan.assemblyFailure.audit,
     // Section 0's "one consistent scale" rule is abstract, and its worked example is what makes it
     // land — so the example names pieces the sheet actually holds, rather than the hand and torso it
     // named for every subject the app can describe. **The sheet's and not the category's**: what a

@@ -1,4 +1,4 @@
-import type { SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { AssemblyFailure, SheetPlan, SheetSeries } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 
@@ -16,6 +16,31 @@ import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalVi
  * An object whose decomposition genuinely differs states the extra pieces as additional components.
  */
 
+/**
+ * How every OBJECT sheet forbids its assembled whole, in the three sections that say it.
+ *
+ * The forms open the shape the one-subject categories share — "the parts fitted together into the
+ * assembled X", INTERFACE's state library saying "pieces" for what its own inventory calls them — which
+ * names what the sheet must not *depict* without touching what section 6 asks the set to be *capable*
+ * of. "The complete object in its resting state" is the part library's own phrase for the capability,
+ * so this does not borrow it.
+ *
+ * **The last two forms say "the object itself" rather than "the object, in whole or in part", and the
+ * word is load-bearing.** The part library lists a `Primary moving subassembly`, which is literally
+ * parts assembled — so a check reading "nothing is the object assembled, in part" invites a reader to
+ * fail the sheet on an entry section 4 required, which is the `CATEGORY_AUDIT_TEXT` "no exhaust"
+ * mistake in another form. "Itself" anchors both forms to the whole subject, which no component is.
+ *
+ * All three sheets take it, because each draws the parts of the one object — its states, its views or
+ * its rig pieces — and none of them draws the object.
+ */
+const OBJECT_ASSEMBLY_FAILURE: AssemblyFailure = {
+  instruction:
+    'Do not draw the parts fitted together into the assembled object anywhere on the sheet, including as a reference or key.',
+  exclusion: 'The object itself, whole or partly built, and any staged product shot of it.',
+  audit: 'nothing on the sheet is the object itself, whole or partly built',
+};
+
 export const OBJECT_PART_LIBRARY: SheetPlan = {
   name: 'Part library',
   facings: 'run',
@@ -26,6 +51,8 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
   posing: 'PER_POSITION',
   scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
   scaleUnit: 'a full object',
+  componentClass: 'a part of this one object',
+  assemblyFailure: OBJECT_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,
@@ -103,6 +130,8 @@ function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple
     posing: 'UNSTATED',
     scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
     scaleUnit: 'a full object',
+    componentClass: 'a part of this one object',
+    assemblyFailure: OBJECT_ASSEMBLY_FAILURE,
     groups: [
       {
         heading: 'Directional core',
@@ -149,6 +178,8 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
   posing: 'AT_REST',
   scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
   scaleUnit: 'a full object',
+  componentClass: 'a part of this one object',
+  assemblyFailure: OBJECT_ASSEMBLY_FAILURE,
   groups: [
     {
       heading: null,
