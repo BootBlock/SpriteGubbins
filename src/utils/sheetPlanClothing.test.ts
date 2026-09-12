@@ -347,6 +347,48 @@ describe('a subject that says it has none of the attribute', () => {
     }
   });
 
+  it('drops the groups an absence empties, and only those', () => {
+    // The half of `planAsDrawn` nothing asserted. Taking every entry out of a group leaves its
+    // heading and intro behind unless the group goes too, and `renderGroup` writes both as they
+    // stand: a clear BACKGROUND scene compiled `#### Atmosphere — 0` and the sentence saying what the
+    // layer is for, over no bullets, directly above section 4's rule to draw every entry in full. The
+    // `groups.length` assertion in the test below cannot see that, because keeping the empty group
+    // makes the count larger.
+    //
+    // **It is written as the invariant rather than as BACKGROUND's Atmosphere layer**, so it binds
+    // the next plan to grow a group made entirely of what an absence removes. TERRAIN's
+    // repeat-breaking variants are already the second.
+    //
+    // **And it counts the groups it saw emptied**, because a sweep reaching no such group passes the
+    // first assertion with the drop removed, and would then be asserting nothing about it.
+    let emptied = 0;
+
+    for (const category of SUBJECT_CATEGORIES) {
+      const absent = absentOptionFor(category, 'clothing');
+      if (absent === null) continue;
+
+      for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
+        const drawn = planAsDrawn(plan, category, absent);
+        const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
+
+        for (const group of drawn.groups) {
+          expect(group.entries.length, `${where} — ${group.heading ?? 'unheaded'}`).toBeGreaterThan(0);
+        }
+
+        // Read off the *declared* plan, so a drop that also took a group with something left in it
+        // fails here rather than passing the assertion above.
+        const kept = plan.groups.filter((group) => !group.entries.every(entryNeedsClothing));
+        expect(
+          drawn.groups.map((group) => group.heading),
+          where,
+        ).toStrictEqual(kept.map((group) => group.heading));
+        emptied += plan.groups.length - kept.length;
+      }
+    }
+
+    expect(emptied, 'no sheet has a group an absence empties').toBeGreaterThan(0);
+  });
+
   it('counts, names and describes one sheet, never two', () => {
     // The three walks over a plan have to agree about which entries are on it: the count section 0
     // contracts for, the prose section 4 lists, and the slot names a manifest keys a sprite pack by.
@@ -365,11 +407,11 @@ describe('a subject that says it has none of the attribute', () => {
         expect(names, where).toHaveLength(count);
         expect(planComponentCount(planAsDrawn(plan, category, absent)), where).toBe(count);
 
-        // And the sheet is still a sheet. `planAsDrawn` drops a group that has nothing left in it,
-        // so a plan whose every entry drew the attribute would resolve to an inventory of nothing —
-        // a prompt contracting for zero components, which every assertion below would pass. None of
-        // the three plans this reaches is anywhere near that today; the claim is that the next one
-        // cannot be.
+        // And the sheet is still a sheet. A plan whose every entry the absence took would resolve to
+        // no groups at all — a prompt contracting for zero components, which every assertion below
+        // would pass — and the claim is that the next plan cannot. It is a claim about the plan
+        // surviving, and it cannot see one group emptied inside a plan that did: keeping that group
+        // makes the count larger rather than smaller. The group drop is asserted by the test above.
         expect(planAsDrawn(plan, category, absent).groups.length, where).toBeGreaterThan(0);
         expect(count, where).toBeGreaterThan(0);
 
