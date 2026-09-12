@@ -35,6 +35,7 @@ import {
   TARGET_MODEL_IDS,
 } from '../types/output.ts';
 import type { AspectRatio, OutputConfig } from '../types/output.ts';
+import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
@@ -179,7 +180,8 @@ describe('generatePrompt — the subject', () => {
     for (const category of SUBJECT_CATEGORIES) {
       const plan = sheetPlanFor(
         category,
-        resolveMode(category, OUTPUT.directionalMode),
+        defaultSubjectFor(category),
+        resolveMode(category, defaultSubjectFor(category), OUTPUT.directionalMode),
         OUTPUT.directions,
         OUTPUT.sheetIndex,
       );
@@ -217,7 +219,8 @@ describe('generatePrompt — the subject', () => {
     for (const category of SUBJECT_CATEGORIES) {
       const plan = sheetPlanFor(
         category,
-        resolveMode(category, OUTPUT.directionalMode),
+        defaultSubjectFor(category),
+        resolveMode(category, defaultSubjectFor(category), OUTPUT.directionalMode),
         OUTPUT.directions,
         OUTPUT.sheetIndex,
       );
@@ -554,30 +557,35 @@ describe('generatePrompt — conditional blocks', () => {
   it('never lets one reach it from a value either, under any category or sheet', () => {
     // The branch sweep above pins one category, and the markers that arrive through a *value* are
     // per-category: the exclusions and the inventory guard are keyed by it, and the sheet plans'
-    // prose is keyed by the category, the mode, the direction set and the sheet index together.
-    // Those citations are consumed by `resolveCitations` as the compiler authors each value rather
-    // than by `applySectionNumbers`, so `assertBlocksResolved` — which runs before substitution —
-    // cannot see them. This is what does.
+    // prose is keyed by the category, the assembly base, the mode, the direction set and the sheet
+    // index together. Those citations are consumed by `resolveCitations` as the compiler authors each
+    // value rather than by `applySectionNumbers`, so `assertBlocksResolved` — which runs before
+    // substitution — cannot see them. This is what does.
     for (const category of SUBJECT_CATEGORIES) {
-      // Named anatomy, because `componentBreakdownFor` returns early without it — and the prose it
-      // composes *past* that early return is app-authored, so it is exactly the text a stray marker
-      // could hide in. A default subject names none, so every sweep in this file used to stop short
-      // of that half of the one value the compiler treats specially.
-      const subject = { ...defaultSubjectFor(category), additional_anatomy: 'Sensor Vane ×2' };
-      for (const directionalMode of DIRECTIONAL_MODES) {
-        for (const directions of DIRECTION_SETS) {
-          for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
-            const prompt = generatePrompt(
-              category,
-              subject,
-              withOutput({ directionalMode, directions, sheetIndex }),
-            );
-            expect(prompt, `${category}/${directionalMode}/${directions}/${String(sheetIndex)}`).not.toMatch(
-              MARKER,
-            );
+      // Every plan table the category can be drawn from, each compiled with the subject that selects
+      // it, because a declared base draws sheets of its own (issue #283) — the default subject alone
+      // would leave OBJECT's part library and rig sheet, or a rigid object's views, unswept.
+      for (const base of assemblyBaseSubjectsOf(category)) {
+        // Named anatomy, because `componentBreakdownFor` returns early without it — and the prose it
+        // composes *past* that early return is app-authored, so it is exactly the text a stray marker
+        // could hide in. A default subject names none, so every sweep in this file used to stop short
+        // of that half of the one value the compiler treats specially.
+        const subject = { ...base, additional_anatomy: 'Sensor Vane ×2' };
+        for (const directionalMode of DIRECTIONAL_MODES) {
+          for (const directions of DIRECTION_SETS) {
+            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+              const prompt = generatePrompt(
+                category,
+                subject,
+                withOutput({ directionalMode, directions, sheetIndex }),
+              );
+              const where = `${category}/${base.anatomy}/${directionalMode}/${directions}/${String(sheetIndex)}`;
+              expect(prompt, where).not.toMatch(MARKER);
+            }
           }
         }
       }
+      const subject = { ...defaultSubjectFor(category), additional_anatomy: 'Sensor Vane ×2' };
       // Section 2's palette paragraph cites two sections and no preset ever selects a palette, so it
       // reaches no other sweep in this file.
       for (const palette of PALETTE_IDS) {
@@ -928,7 +936,8 @@ describe('generatePrompt — the assembled whole, named in the sheet’s own wor
    * carried "Do not draw an assembled figure" three times over and never once named the composed
    * landscape it actually comes back as. The category's own words then proved one level too coarse:
    * BACKGROUND's layer library was told not to stack the bands only its parallax set draws (issue
-   * #278), so the forms are the sheet's, and every mode a category offers is compiled here.
+   * #278), so the forms are the sheet's, and every mode a category offers is compiled here — under
+   * every assembly base that draws its own sheets, each with the subject that selects it (issue #283).
    *
    * Asserted per section rather than against the whole prompt, because the failure this replaced was
    * a *placement* one as much as a wording one: one form spliced into all three would satisfy a
@@ -943,21 +952,24 @@ describe('generatePrompt — the assembled whole, named in the sheet’s own wor
   it.each(SUBJECT_CATEGORIES)(
     'gives every %s sheet its own wording in each of the three sections',
     (category) => {
-      for (const directionalMode of modesFor(category)) {
-        const output = withOutput({ directionalMode });
-        const subject = defaultSubjectFor(category);
-        const prompt = generatePrompt(category, subject, output);
-        // The plan the compiler itself resolved, rather than one looked up beside it.
-        const { assemblyFailure } = sheetFacts(category, subject, output).plan;
-        const where = `${category} / ${directionalMode}`;
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const directionalMode of modesFor(category, subject)) {
+          const output = withOutput({ directionalMode });
+          const prompt = generatePrompt(category, subject, output);
+          // The plan the compiler itself resolved, rather than one looked up beside it.
+          const { assemblyFailure } = sheetFacts(category, subject, output).plan;
+          const where = `${category} / ${subject.anatomy} / ${directionalMode}`;
 
-        expect(unwrapped(sectionOf(prompt, 'COMPONENT INVENTORY')), where).toContain(
-          assemblyFailure.instruction,
-        );
-        expect(unwrapped(sectionOf(prompt, 'EXCLUSIONS')), where).toContain(`- ${assemblyFailure.exclusion}`);
-        expect(unwrapped(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')), where).toContain(
-          `attached, and ${assemblyFailure.audit}.`,
-        );
+          expect(unwrapped(sectionOf(prompt, 'COMPONENT INVENTORY')), where).toContain(
+            assemblyFailure.instruction,
+          );
+          expect(unwrapped(sectionOf(prompt, 'EXCLUSIONS')), where).toContain(
+            `- ${assemblyFailure.exclusion}`,
+          );
+          expect(unwrapped(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')), where).toContain(
+            `attached, and ${assemblyFailure.audit}.`,
+          );
+        }
       }
     },
   );
@@ -1260,67 +1272,71 @@ describe('generatePrompt — the facing the sheet is for', () => {
     // sheet has turned away from. OBJECT and VEHICLE are the two categories that reach it today, and
     // the pairing is walked rather than named so a third cannot arrive unchecked.
     //
-    // Every sheet of every direction set the category offers, because the eight-compass core splits
-    // into two sheets covering different facings — and every projection, because the camera outranks
-    // the coverage: directly overhead there is no near side, so the answer collapses to one paragraph
-    // however many facings the sheet draws.
+    // Every plan table the category can be drawn from, each compiled with the subject that selects it,
+    // because the assembly base decides whether a rig sheet exists at all (issue #283): OBJECT's
+    // default subject is a rigid object, which resolves every rig to `NONE`, so a walk of the default
+    // alone skips OBJECT's articulated sheets entirely. Every sheet of every direction set the category
+    // offers, because the eight-compass core splits into two sheets covering different facings — and
+    // every projection, because the camera outranks the coverage: directly overhead there is no near
+    // side, so the answer collapses to one paragraph however many facings the sheet draws.
     let sheetsChecked = 0;
+    const reached = new Set<SubjectCategory>();
 
     for (const category of SUBJECT_CATEGORIES) {
-      for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-        if (
-          resolveRigMode(
-            category,
-            sheetSeriesFor(category, DEFAULT_OUTPUT_CONFIG.directionalMode, directions),
-            'CUTOUT_RIG',
-          ) !== 'CUTOUT_RIG'
-        ) {
-          continue;
-        }
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+          const series = sheetSeriesFor(category, subject, DEFAULT_OUTPUT_CONFIG.directionalMode, directions);
+          if (resolveRigMode(category, subject, series, 'CUTOUT_RIG') !== 'CUTOUT_RIG') continue;
 
-        for (const projection of CATEGORY_PROJECTIONS[category]) {
-          const output = withOutput({
-            directions,
-            rigMode: 'CUTOUT_RIG',
-            projection,
-            cameraElevation: DEFAULT_CAMERA_ELEVATIONS[projection],
-          });
+          for (const projection of CATEGORY_PROJECTIONS[category]) {
+            const output = withOutput({
+              directions,
+              rigMode: 'CUTOUT_RIG',
+              projection,
+              cameraElevation: DEFAULT_CAMERA_ELEVATIONS[projection],
+            });
 
-          for (const run of sheetRuns(category, defaultSubjectFor(category), output)) {
-            const where = `${category} ${directions} ${projection} ${run.plan.name}`;
-            const order = promptText.depthOrder(
-              run.covered,
-              promptText.resolveCameraElevation(projection, output.cameraElevation),
-            );
+            for (const run of sheetRuns(category, subject, output)) {
+              const where = `${category} ${subject.anatomy} ${directions} ${projection} ${run.plan.name}`;
+              const order = promptText.depthOrder(
+                run.covered,
+                promptText.resolveCameraElevation(projection, output.cameraElevation),
+              );
 
-            // The heading and the body are two statements about one shape, and before this they were
-            // decided by two different predicates: the heading counted the facings while the body asked
-            // the camera first, so a plan-view core promised a line per direction over a single
-            // paragraph. Asserted as a pairing rather than against a literal per case, so the check
-            // cannot restate whichever predicate the template happens to use.
-            expect(run.promptText.includes(PER_DIRECTION_DEPTH_HEADING), where).toBe(order.perFacing);
-            expect(run.promptText.match(/^### Depth order .*$/gm)?.length, where).toBe(1);
+              // The heading and the body are two statements about one shape, and before this they were
+              // decided by two different predicates: the heading counted the facings while the body
+              // asked the camera first, so a plan-view core promised a line per direction over a single
+              // paragraph. Asserted as a pairing rather than against a literal per case, so the check
+              // cannot restate whichever predicate the template happens to use.
+              expect(run.promptText.includes(PER_DIRECTION_DEPTH_HEADING), where).toBe(order.perFacing);
+              expect(run.promptText.match(/^### Depth order .*$/gm)?.length, where).toBe(1);
 
-            if (order.perFacing) {
-              for (const facing of run.covered) {
-                expect(run.promptText, `${where} ${facing}`).toContain(promptText.DEPTH_ORDER_TEXT[facing]);
+              if (order.perFacing) {
+                for (const facing of run.covered) {
+                  expect(run.promptText, `${where} ${facing}`).toContain(promptText.DEPTH_ORDER_TEXT[facing]);
+                }
+              } else {
+                expect(run.promptText, where).toContain(order.text);
               }
-            } else {
-              expect(run.promptText, where).toContain(order.text);
-            }
 
-            sheetsChecked += 1;
+              sheetsChecked += 1;
+              reached.add(category);
+            }
           }
         }
       }
     }
 
     // Most categories reach no cut-out rig on a directional pairing, so most of the walk asserts
-    // nothing — which is right, and useless on its own. Without this line a regression in
+    // nothing — which is right, and useless on its own. Without these lines a regression in
     // `resolveRigMode` that stopped answering `CUTOUT_RIG` anywhere would leave the case green having
-    // executed no assertion at all, and the defect this exists for would be back. The figure is a
-    // floor rather than the exact count, so a category gaining the pairing does not fail a test about
-    // what the prompt says.
+    // executed no assertion at all, and the defect this exists for would be back. A count alone was not
+    // enough: VEHICLE on its own clears it, so a walk that lost OBJECT to its rigid default base stayed
+    // green. So each category known to reach the pairing is named as well — a floor rather than the
+    // exact set, so a category gaining the pairing does not fail a test about what the prompt says.
+    expect([...reached], 'a category known to reach a cut-out rig core was never checked').toEqual(
+      expect.arrayContaining(['OBJECT', 'VEHICLE']),
+    );
     expect(sheetsChecked).toBeGreaterThan(1);
   });
 });
@@ -2093,21 +2109,25 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
 
   it('carries no clause written for several facings, under any category or sheet', () => {
     for (const category of SUBJECT_CATEGORIES) {
-      const subject = defaultSubjectFor(category);
-      for (const directionalMode of DIRECTIONAL_MODES) {
-        for (const directions of DIRECTION_SETS) {
-          for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
-            const output = withOutput({ directionalMode, directions, sheetIndex });
-            // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
-            // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
-            // and `sheetDirections` each resolve for themselves, so the stored values go in raw.
-            const plan = sheetPlanFor(category, directionalMode, directions, sheetIndex);
-            if (sheetDirections(category, output, plan).covered.length > 1) continue;
+      // Every plan table the category can be drawn from, each compiled with the subject that selects
+      // it: an assembly base draws sheets of its own (issue #283), so the default subject alone never
+      // compiles OBJECT's standard sheets.
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const directionalMode of DIRECTIONAL_MODES) {
+          for (const directions of DIRECTION_SETS) {
+            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+              const output = withOutput({ directionalMode, directions, sheetIndex });
+              // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
+              // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
+              // and `sheetDirections` each resolve for themselves, so the stored values go in raw.
+              const plan = sheetPlanFor(category, subject, directionalMode, directions, sheetIndex);
+              if (sheetDirections(category, output, plan).covered.length > 1) continue;
 
-            const section = sectionOf(generatePrompt(category, subject, output), SECTION);
-            const where = `${category}/${directionalMode}/${directions}/${String(sheetIndex)}`;
-            for (const clause of MULTI_FACING_CLAUSES) {
-              expect(section, `${where} carries "${clause}"`).not.toContain(clause);
+              const section = sectionOf(generatePrompt(category, subject, output), SECTION);
+              const where = `${category}/${subject.anatomy}/${directionalMode}/${directions}/${String(sheetIndex)}`;
+              for (const clause of MULTI_FACING_CLAUSES) {
+                expect(section, `${where} carries "${clause}"`).not.toContain(clause);
+              }
             }
           }
         }
@@ -3049,7 +3069,7 @@ describe('generatePrompt — the self-audit, per target', () => {
       renderStyle: 'PIXEL_ART',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
     });
-    const prompt = generatePrompt('OBJECT', defaultSubjectFor('OBJECT'), output);
+    const prompt = generatePrompt('OBJECT', standardSubjectOf('OBJECT'), output);
 
     expect(prompt).toContain('Every articulated segment is straight and unposed');
     expect(prompt).toContain('One pixel grid and density throughout');
@@ -3433,8 +3453,10 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
     // The axes are grouped rather than swept as one product: a full cross of every category is
     // fifteen
     // thousand prompts, and most of the pairs select nothing new. Which pairs *do* matter is a
-    // property of the code, not a guess — the plans read the category, the mode, the set and the
-    // index together, so those four are crossed; section 2 reads the style with the detail; and the
+    // property of the code, not a guess — the plans read the category, the assembly base, the mode,
+    // the set and the index together, so those five are crossed, and the base is crossed with every
+    // group below it because it also decides whether a rig section exists and what unit the resolution
+    // profile names (issue #283); section 2 reads the style with the detail; and the
     // target is crossed with both the category and the style, because a wrapper is not the
     // self-contained prose it looks like. `modelWrapperText/flux.ts` interpolates
     // `CATEGORY_ASSEMBLY[category].statement` and `RENDER_STYLE_SURFACE[style].statement`, and the
@@ -3447,31 +3469,32 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
     const EMITTING = { emitComponentMap: true, emitPromptFeedback: true } as const;
 
     for (const category of SUBJECT_CATEGORIES) {
-      const subject = defaultSubjectFor(category);
-      for (const directionalMode of DIRECTIONAL_MODES) {
-        for (const directions of DIRECTION_SETS) {
-          // The bound is derived, not written down: `SHEET_INDEX_RANGE.max` is the longest series
-          // any pairing produces over any set its category offers, so a pairing that grows a sheet
-          // is swept without this loop being touched.
-          for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
-            collect(
-              generatePrompt(
-                category,
-                subject,
-                withOutput({ ...EMITTING, directionalMode, directions, sheetIndex }),
-              ),
-            );
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const directionalMode of DIRECTIONAL_MODES) {
+          for (const directions of DIRECTION_SETS) {
+            // The bound is derived, not written down: `SHEET_INDEX_RANGE.max` is the longest series
+            // any pairing produces over any set its category offers, so a pairing that grows a sheet
+            // is swept without this loop being touched.
+            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+              collect(
+                generatePrompt(
+                  category,
+                  subject,
+                  withOutput({ ...EMITTING, directionalMode, directions, sheetIndex }),
+                ),
+              );
+            }
           }
         }
-      }
-      for (const renderStyle of RENDER_STYLES) {
-        for (const surfaceDetail of SURFACE_DETAILS) {
-          collect(generatePrompt(category, subject, withOutput({ renderStyle, surfaceDetail })));
+        for (const renderStyle of RENDER_STYLES) {
+          for (const surfaceDetail of SURFACE_DETAILS) {
+            collect(generatePrompt(category, subject, withOutput({ renderStyle, surfaceDetail })));
+          }
         }
-      }
-      for (const rigMode of RIG_MODES) {
-        for (const resolutionProfile of RESOLUTION_PROFILES) {
-          collect(generatePrompt(category, subject, withOutput({ rigMode, resolutionProfile })));
+        for (const rigMode of RIG_MODES) {
+          for (const resolutionProfile of RESOLUTION_PROFILES) {
+            collect(generatePrompt(category, subject, withOutput({ rigMode, resolutionProfile })));
+          }
         }
       }
     }

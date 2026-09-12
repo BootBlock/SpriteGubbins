@@ -21,6 +21,7 @@ import {
   planDrawsClothing,
 } from './sheetPlanClothing.ts';
 import { slugify } from './slugify.ts';
+import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
 
 /**
  * Section 1's paint rule against section 4's inventory, on every sheet the app can compile.
@@ -39,16 +40,23 @@ import { slugify } from './slugify.ts';
  * plans whichever way it was written.
  */
 
-/** Every (mode, direction set, sheet) address a category can be compiled at. */
+/**
+ * Every (assembly base, mode, direction set, sheet) address a category can be compiled at, with the
+ * subject that selects the base — the category's default subject, its base set for each plan table in
+ * turn (issue #283). A check compiling that subject is compiling the sheet it was handed.
+ */
 function sheetsOf(category: SubjectCategory) {
-  return modesFor(category).flatMap((mode) =>
-    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-      sheetSeriesFor(category, mode, directions).map((_, sheetIndex) => ({
-        mode,
-        directions,
-        sheetIndex,
-        plan: sheetPlanFor(category, mode, directions, sheetIndex),
-      })),
+  return assemblyBaseSubjectsOf(category).flatMap((subject) =>
+    modesFor(category, subject).flatMap((mode) =>
+      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+        sheetSeriesFor(category, subject, mode, directions).map((_, sheetIndex) => ({
+          subject,
+          mode,
+          directions,
+          sheetIndex,
+          plan: sheetPlanFor(category, subject, mode, directions, sheetIndex),
+        })),
+      ),
     ),
   );
 }
@@ -77,10 +85,10 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
     const label = fieldLabelFor(category, 'clothing');
     const clothing = pooledClothing(category);
 
-    for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
+    for (const { subject, mode, directions, sheetIndex, plan } of sheetsOf(category)) {
       const prompt = generatePrompt(
         category,
-        { ...defaultSubjectFor(category), clothing },
+        { ...subject, clothing },
         { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
       );
       const subjectSection = sectionOf(prompt, 'SUBJECT DEFINITION');
@@ -97,10 +105,10 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
     // additional-anatomy paragraph is gated on its own rendered value rather than on the plan.
     const label = fieldLabelFor(category, 'clothing');
 
-    for (const { mode, directions, sheetIndex } of sheetsOf(category)) {
+    for (const { subject, mode, directions, sheetIndex } of sheetsOf(category)) {
       const prompt = generatePrompt(
         category,
-        { ...defaultSubjectFor(category), clothing: '' },
+        { ...subject, clothing: '' },
         { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
       );
       const subjectSection = sectionOf(prompt, 'SUBJECT DEFINITION');
@@ -118,12 +126,12 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
       // can compile promised a named exception and named none — leaving "Do not infer props, weapons or
       // equipment from the role", the next line, as the only candidate for the exemption it had just
       // announced. The full stop is what makes the sentence true whether or not a paragraph follows.
-      for (const { mode, directions, sheetIndex } of sheetsOf(category)) {
+      for (const { subject, mode, directions, sheetIndex } of sheetsOf(category)) {
         for (const anatomy of ['', 'Extra Piece ×2']) {
           for (const clothing of ['', pooledClothing(category)]) {
             const prompt = generatePrompt(
               category,
-              { ...defaultSubjectFor(category), clothing, additional_anatomy: anatomy },
+              { ...subject, clothing, additional_anatomy: anatomy },
               { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
             );
             const section = sectionOf(prompt, 'SUBJECT DEFINITION');
@@ -227,10 +235,10 @@ describe('a subject that says it has none of the attribute', () => {
     if (absent === null) return;
     const label = fieldLabelFor(category, 'clothing');
 
-    for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
+    for (const { subject, mode, directions, sheetIndex, plan } of sheetsOf(category)) {
       const prompt = generatePrompt(
         category,
-        { ...defaultSubjectFor(category), clothing: absent },
+        { ...subject, clothing: absent },
         { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
       );
       const subjectSection = sectionOf(prompt, 'SUBJECT DEFINITION');
@@ -399,9 +407,10 @@ describe('a subject that says it has none of the attribute', () => {
       const absent = absentOptionFor(category, 'clothing');
       if (absent === null) continue;
 
-      for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
-        const count = componentCountFor(category, mode, directions, sheetIndex, absent, []);
-        const names = componentSlots(category, mode, directions, sheetIndex, absent, []);
+      for (const { subject, mode, directions, sheetIndex, plan } of sheetsOf(category)) {
+        const declining = { ...subject, clothing: absent };
+        const count = componentCountFor(category, declining, mode, directions, sheetIndex, []);
+        const names = componentSlots(category, declining, mode, directions, sheetIndex, []);
         const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
 
         expect(names, where).toHaveLength(count);
@@ -415,11 +424,12 @@ describe('a subject that says it has none of the attribute', () => {
         expect(planAsDrawn(plan, category, absent).groups.length, where).toBeGreaterThan(0);
         expect(count, where).toBeGreaterThan(0);
 
-        const prompt = generatePrompt(
-          category,
-          { ...defaultSubjectFor(category), clothing: absent },
-          { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
-        );
+        const prompt = generatePrompt(category, declining, {
+          ...DEFAULT_OUTPUT_CONFIG,
+          directionalMode: mode,
+          directions,
+          sheetIndex,
+        });
         expect(prompt, where).toContain(`Exactly ${String(count)} components`);
         expect(prompt, where).toContain(`Component count is exactly ${String(count)}.`);
       }

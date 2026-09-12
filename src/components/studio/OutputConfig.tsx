@@ -82,6 +82,11 @@ const ALL_SECTIONS = Object.values(SECTIONS);
 export function OutputConfig() {
   const output = useOutputStore((state) => state.output);
   const category = useSubjectStore((state) => state.category);
+  // The two subject fields a sheet is a function of: the assembly base chooses the plans three of the
+  // digests below describe, and the `clothing` value can decline a piece of one.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
+  const clothing = useSubjectStore((state) => state.subject.clothing);
+  const subject = { anatomy, clothing };
 
   return (
     <section className="animate-view-fade-in glass-panel group/panel rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-585 hover:border-tab/40">
@@ -124,7 +129,11 @@ export function OutputConfig() {
         and no group ever matches — which drew a second horizontal rule 8px under the header's.
       */}
       <div>
-        <CollapsibleSection {...SECTIONS.sheet} heading="Sheet" digest={sheetDigest(category, output)}>
+        <CollapsibleSection
+          {...SECTIONS.sheet}
+          heading="Sheet"
+          digest={sheetDigest(category, subject, output)}
+        >
           <SheetFields />
         </CollapsibleSection>
 
@@ -139,12 +148,16 @@ export function OutputConfig() {
         <CollapsibleSection
           {...SECTIONS.projection}
           heading="Projection & camera"
-          digest={projectionDigest(category, output)}
+          digest={projectionDigest(category, subject, output)}
         >
           <ProjectionFields />
         </CollapsibleSection>
 
-        <CollapsibleSection {...SECTIONS.rigging} heading="Rigging" digest={riggingDigest(category, output)}>
+        <CollapsibleSection
+          {...SECTIONS.rigging}
+          heading="Rigging"
+          digest={riggingDigest(category, subject, output)}
+        >
           <RiggingFields />
         </CollapsibleSection>
 

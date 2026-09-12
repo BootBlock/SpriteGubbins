@@ -1,11 +1,13 @@
 import { resolveProjection } from '../../constants/categoryProjections.ts';
 import { resolveMode } from '../../constants/sheetPlans/index.ts';
 import type { ImageOutputConfig } from '../../types/output.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../../types/subject.ts';
 
 interface PresetCardSpecsProps {
   /** What the preset is of, which is what decides whether it can have the sheet mode it stored. */
   readonly category: SubjectCategory;
+  /** Who the preset is of, whose assembly base narrows the sheet modes its category offers. */
+  readonly subject: SheetSubject;
   readonly output: ImageOutputConfig;
 }
 
@@ -44,11 +46,11 @@ interface PresetCardSpecsProps {
  * transcript of a file — the same rule the compiler, the studio digest and the sheet control follow,
  * and the reason none of them can disagree with this line.
  */
-export function PresetCardSpecs({ category, output }: PresetCardSpecsProps) {
+export function PresetCardSpecs({ category, subject, output }: PresetCardSpecsProps) {
   return (
     <p className="font-mono text-2xs break-words text-ink-faint">
       {output.renderStyle} · {resolveProjection(category, output.projection)} ·{' '}
-      {resolveMode(category, output.directionalMode)}
+      {resolveMode(category, subject, output.directionalMode)}
     </p>
   );
 }

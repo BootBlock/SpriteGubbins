@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
+import { standardSubject } from '../test/sheetSubject.ts';
 import type { OutputConfig } from '../types/output.ts';
 import {
   companionDigest,
@@ -66,7 +67,11 @@ describe('subjectGroupDigest', () => {
 
 describe('sheetDigest', () => {
   it('states an uncapped budget in words rather than printing nought', () => {
-    const digest = sheetDigest('CHARACTER', withOutput({ componentBudget: NO_COMPONENT_BUDGET }));
+    const digest = sheetDigest(
+      'CHARACTER',
+      standardSubject(),
+      withOutput({ componentBudget: NO_COMPONENT_BUDGET }),
+    );
     // "uncapped", not "no budget" — the latter reads in plain English as *no allowance*, which is
     // the exact misreading of `0` this branch exists to prevent.
     expect(digest).toContain('uncapped');
@@ -74,18 +79,24 @@ describe('sheetDigest', () => {
   });
 
   it('states a real budget as a number', () => {
-    expect(sheetDigest('CHARACTER', withOutput({ componentBudget: 43 }))).toContain('budget 43');
+    expect(sheetDigest('CHARACTER', standardSubject(), withOutput({ componentBudget: 43 }))).toContain(
+      'budget 43',
+    );
   });
 
   it('resolves the mode through the category, as the control does', () => {
     // A tileset is not something a character sheet can produce, so the stored value is resolved to
     // the plan the category actually has — and the digest must agree with the select showing it.
-    const digest = sheetDigest('CHARACTER', withOutput({ directionalMode: 'TILESET_MODULAR' }));
+    const digest = sheetDigest(
+      'CHARACTER',
+      standardSubject(),
+      withOutput({ directionalMode: 'TILESET_MODULAR' }),
+    );
     expect(digest).not.toContain('TILESET_MODULAR');
   });
 
   it('names the background key and the canvas aspect', () => {
-    const digest = sheetDigest('CHARACTER', DEFAULT_OUTPUT_CONFIG);
+    const digest = sheetDigest('CHARACTER', standardSubject(), DEFAULT_OUTPUT_CONFIG);
     expect(digest).toContain(DEFAULT_OUTPUT_CONFIG.backgroundKey);
     expect(digest).toContain(DEFAULT_OUTPUT_CONFIG.aspectRatio);
   });
@@ -94,8 +105,8 @@ describe('sheetDigest', () => {
     // The group grew a fifth control, and the rule this module is written to is that a folded group
     // must not hide a setting. Two sheets of one series differ in nothing else the header carries, so
     // without this the collapsed digest read identically above two entirely different inventories.
-    const core = sheetDigest('CHARACTER', withOutput({ sheetIndex: 0 }));
-    const limbs = sheetDigest('CHARACTER', withOutput({ sheetIndex: 1 }));
+    const core = sheetDigest('CHARACTER', standardSubject(), withOutput({ sheetIndex: 0 }));
+    const limbs = sheetDigest('CHARACTER', standardSubject(), withOutput({ sheetIndex: 1 }));
 
     expect(core).toContain('Directional core');
     expect(limbs).toContain('Articulation');
@@ -103,9 +114,9 @@ describe('sheetDigest', () => {
 
     // And silent where the pairing is one generation: the control is not rendered there, and a digest
     // naming a setting that is not on screen is what the module forbids in the other direction.
-    const single = sheetDigest('OBJECT', withOutput({ sheetIndex: 0 }));
+    const single = sheetDigest('OBJECT', standardSubject(), withOutput({ sheetIndex: 0 }));
     expect(single).not.toContain('Directional views');
-    expect(single).toBe(sheetDigest('OBJECT', withOutput({ sheetIndex: 1 })));
+    expect(single).toBe(sheetDigest('OBJECT', standardSubject(), withOutput({ sheetIndex: 1 })));
   });
 });
 
@@ -194,7 +205,9 @@ describe('renderStyleDigest', () => {
 
 describe('projectionDigest', () => {
   it('carries the elevation with its unit', () => {
-    expect(projectionDigest('CHARACTER', withOutput({ cameraElevation: 30 }))).toContain('30°');
+    expect(projectionDigest('CHARACTER', standardSubject(), withOutput({ cameraElevation: 30 }))).toContain(
+      '30°',
+    );
   });
 
   it('names the primary facing only when the mode splits into runs', () => {
@@ -205,7 +218,7 @@ describe('projectionDigest', () => {
       directions: 'THREE_CLASSIC',
       primaryDirection: 'back-three-quarter',
     });
-    expect(projectionDigest('CHARACTER', splitting)).toContain('back-three-quarter');
+    expect(projectionDigest('CHARACTER', standardSubject(), splitting)).toContain('back-three-quarter');
 
     // The default mode draws its own five facings whatever the facing said, and the control is
     // hidden — so the digest must not claim one.
@@ -216,7 +229,9 @@ describe('projectionDigest', () => {
     });
     // Naming the *set* is right; naming the facing is not, and an exact match is the only assertion
     // that can tell those two apart — `back-three-quarter` is a member of `FIVE_CLASSIC`.
-    expect(projectionDigest('CHARACTER', fixed)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
+    expect(projectionDigest('CHARACTER', standardSubject(), fixed)).toBe(
+      'THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC',
+    );
   });
 
   it('names the chosen set on the core mode too, because the core now draws it', () => {
@@ -227,7 +242,9 @@ describe('projectionDigest', () => {
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'north-west',
     });
-    expect(projectionDigest('CHARACTER', steered)).toBe('THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS');
+    expect(projectionDigest('CHARACTER', standardSubject(), steered)).toBe(
+      'THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS',
+    );
 
     // The same stored set on a run-list mode names the facing as well.
     const deferring = withOutput({
@@ -235,7 +252,7 @@ describe('projectionDigest', () => {
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'north-west',
     });
-    expect(projectionDigest('CHARACTER', deferring)).toBe(
+    expect(projectionDigest('CHARACTER', standardSubject(), deferring)).toBe(
       'THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS · north-west',
     );
   });
@@ -252,11 +269,13 @@ describe('projectionDigest', () => {
       directions: 'THREE_CLASSIC',
       primaryDirection: 'front-three-quarter',
     });
-    expect(projectionDigest('INTERFACE', turned)).toBe('ORTHOGRAPHIC_FRONT · 0° · SINGLE_FRONT');
+    expect(projectionDigest('INTERFACE', standardSubject(), turned)).toBe(
+      'ORTHOGRAPHIC_FRONT · 0° · SINGLE_FRONT',
+    );
     // The same configuration under a category whose subject does have a front and can be drawn under
     // any camera, where every part of it is honest — without this pair the assertions above would
     // also pass on a digest that had simply stopped reporting either field.
-    expect(projectionDigest('CHARACTER', turned)).toBe(
+    expect(projectionDigest('CHARACTER', standardSubject(), turned)).toBe(
       'THREE_QUARTER_TOPDOWN · 35° · THREE_CLASSIC · front-three-quarter',
     );
   });
@@ -276,7 +295,7 @@ describe('projectionDigest', () => {
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'north-west',
     });
-    expect(projectionDigest('EFFECT', hidden)).toBe(
+    expect(projectionDigest('EFFECT', standardSubject(), hidden)).toBe(
       'THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS · north-west',
     );
 
@@ -288,13 +307,17 @@ describe('projectionDigest', () => {
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'north-west',
     });
-    expect(projectionDigest('ITEM', shown)).toBe('THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS');
+    expect(projectionDigest('ITEM', standardSubject(), shown)).toBe(
+      'THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS',
+    );
   });
 });
 
 describe('riggingDigest', () => {
   it('says only the mode when the rig has no geometry to describe', () => {
-    expect(riggingDigest('CHARACTER', withOutput({ rigMode: 'POSE_LIBRARY' }))).toBe('POSE_LIBRARY');
+    expect(riggingDigest('CHARACTER', standardSubject(), withOutput({ rigMode: 'POSE_LIBRARY' }))).toBe(
+      'POSE_LIBRARY',
+    );
   });
 
   it('adds the joint, overlap and socket settings for a cut-out rig', () => {
@@ -303,6 +326,7 @@ describe('riggingDigest', () => {
     // reports faithfully, and is `rigModes.test.ts`'s subject rather than this one's.
     const digest = riggingDigest(
       'CHARACTER',
+      standardSubject(),
       withOutput({
         rigMode: 'CUTOUT_RIG',
         directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
@@ -318,6 +342,7 @@ describe('riggingDigest', () => {
     expect(
       riggingDigest(
         'CHARACTER',
+        standardSubject(),
         withOutput({
           rigMode: 'CUTOUT_RIG',
           directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
@@ -332,8 +357,12 @@ describe('riggingDigest', () => {
     // discarded is the one place in the app still reporting it. A stored `CUTOUT_RIG` on a category
     // that turns about nothing emits no section 5, so the header may not claim one — and it may not
     // list the joint geometry either, since the controls for it are not on screen.
-    expect(riggingDigest('INTERFACE', withOutput({ rigMode: 'CUTOUT_RIG', sockets: 'head' }))).toBe('NONE');
-    expect(riggingDigest('BUILDING', withOutput({ rigMode: 'POSE_LIBRARY' }))).toBe('NONE');
+    expect(
+      riggingDigest('INTERFACE', standardSubject(), withOutput({ rigMode: 'CUTOUT_RIG', sockets: 'head' })),
+    ).toBe('NONE');
+    expect(riggingDigest('BUILDING', standardSubject(), withOutput({ rigMode: 'POSE_LIBRARY' }))).toBe(
+      'NONE',
+    );
   });
 });
 

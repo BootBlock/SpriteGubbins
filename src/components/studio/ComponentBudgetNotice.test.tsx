@@ -16,10 +16,10 @@ import { ComponentBudgetNotice } from './ComponentBudgetNotice.tsx';
  */
 const RIG = componentCountFor(
   DEFAULT_PRESET.category,
+  DEFAULT_PRESET.subject,
   'CUTOUT_RIG_SINGLE_DIRECTION',
   DEFAULT_OUTPUT_CONFIG.directions,
   0,
-  '',
   [],
 );
 

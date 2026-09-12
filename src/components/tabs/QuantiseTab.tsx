@@ -67,7 +67,8 @@ export function QuantiseTab() {
   const directions = useOutputStore((state) => state.output.directions);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  // The other subject field the count reads — see `componentSet.ts`.
+  // The other two subject fields the count and the target size read — see `componentSet.ts`.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
   const clothing = useSubjectStore((state) => state.subject.clothing);
   const category = useSubjectStore((state) => state.category);
   // In a store rather than here, because the workflow crosses tabs: the colour budget, the target
@@ -150,9 +151,10 @@ export function QuantiseTab() {
   // *within the target* carries whatever slack separates a torso from a whole body, which is a
   // number nothing here knows. `null` withdraws both, and the app holds no per-piece size to put in
   // their place.
+  const subject = useMemo(() => ({ anatomy, clothing }), [anatomy, clothing]);
   const target = useMemo(
-    () => componentTargetSize(category, directionalMode, directions, sheetIndex, spriteTargetSize),
-    [category, directionalMode, directions, sheetIndex, spriteTargetSize],
+    () => componentTargetSize(category, subject, directionalMode, directions, sheetIndex, spriteTargetSize),
+    [category, subject, directionalMode, directions, sheetIndex, spriteTargetSize],
   );
   // How many components this sheet's own prompt contracts for — the figure the sprite panel holds
   // the segmentation against, and the ceiling the grid suggestion seats. One derivation for both,
@@ -161,13 +163,13 @@ export function QuantiseTab() {
     () =>
       componentCountFor(
         category,
+        subject,
         directionalMode,
         directions,
         sheetIndex,
-        clothing,
         parseAdditionalAnatomy(additionalAnatomy),
       ),
-    [category, directionalMode, directions, sheetIndex, clothing, additionalAnatomy],
+    [category, subject, directionalMode, directions, sheetIndex, additionalAnatomy],
   );
   const suggested = useMemo(
     () => (source === null || target === null ? null : targetSizeGrid(source.image, target, expected)),

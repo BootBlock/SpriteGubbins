@@ -30,9 +30,9 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * inventory.** A flat portrait is redrawn whole per expression; a layered one draws one head once
  * and swaps the brows, eyes and mouth over it, which is how a visual novel gets sixty expressions
  * out of eight sprites. Both are cutting instructions the reader applies to the same twelve
- * drawings, so the field reaches section 1 verbatim and the plan stays a function of the category
- * and the mode alone, as every other plan in this app is. `sheetPlans/portrait.ts` argues that at
- * length, and `Extra Expressions` is where a reader asks for the feature pieces themselves.
+ * drawings, so the field reaches section 1 verbatim and PORTRAIT declares no assembly base that draws
+ * other sheets. `sheetPlans/portrait.ts` records why, and `Extra Expressions` is where a reader asks for
+ * the feature pieces themselves.
  *
  * **A genre is carried by every field at once, not by `World & Era` alone.** A cyberpunk portrait is
  * not a fantasy portrait with the era swapped: the chrome is on the face, the coolant lines and the

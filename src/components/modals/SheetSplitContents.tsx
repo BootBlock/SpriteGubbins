@@ -50,7 +50,7 @@ export function SheetSplitContents() {
   // recovered from the runs above, because the ordinal is that module's own answer — the same one
   // the assembly-capability section of every prompt in the batch states — and deriving it a second
   // way here would be a second definition of where the user is, free to disagree with the first.
-  const { ordinal } = useMemo(() => sheetBatch(category, output), [category, output]);
+  const { ordinal } = useMemo(() => sheetBatch(category, subject, output), [category, subject, output]);
 
   // Parsed once for the drawer and handed down, so the total below and the per-sheet figure on every
   // row are sums over the same pieces rather than two parses of one field.
@@ -61,7 +61,7 @@ export function SheetSplitContents() {
   // nothing in the app was saying: the studio reports what *this sheet* asks for, which is true of
   // each of the eight and no help to someone deciding whether to start a job of one hundred and
   // twenty.
-  const batchTotal = batchComponentCount(category, runs, subject.clothing, additional);
+  const batchTotal = batchComponentCount(category, subject, runs, additional);
 
   // The cap is stated once here rather than on each of the rows that may be over it: every sheet of
   // a batch is the same configuration bar a facing and a sheet index, so they all share one budget,
@@ -118,7 +118,7 @@ export function SheetSplitContents() {
             key={`${run.assembly}::${run.plan.name}`}
             run={run}
             category={category}
-            clothing={subject.clothing}
+            subject={subject}
             additional={additional}
             ordinal={index + 1}
             total={runs.length}

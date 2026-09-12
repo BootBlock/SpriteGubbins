@@ -62,10 +62,13 @@ export function AtlasCalculatorContents() {
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directions = useOutputStore((state) => state.output.directions);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  // Read for the same reason the anatomy is: the count is a function of the subject on both fields,
-  // and a category whose `clothing` pool offers a value meaning the subject has none of what it
-  // describes draws fewer components when the reader chooses it.
+  // Read for the same reason the anatomy is: the count is a function of the subject on three fields.
+  // The assembly base chooses the plans the sheet is drawn from, and a category whose `clothing` pool
+  // offers a value meaning the subject has none of what it describes draws fewer components when the
+  // reader chooses it.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
   const clothing = useSubjectStore((state) => state.subject.clothing);
+  const subject = { anatomy, clothing };
   const category = useSubjectStore((state) => state.category);
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
   const copyText = useClipboard();
@@ -80,10 +83,10 @@ export function AtlasCalculatorContents() {
     // returned image, and two sheets of a batch are two atlases.
     componentCount: componentCountFor(
       category,
+      subject,
       directionalMode,
       directions,
       sheetIndex,
-      clothing,
       parseAdditionalAnatomy(additionalAnatomy),
     ),
     widthBias: widthBiasFor(aspectRatio),
@@ -101,11 +104,18 @@ export function AtlasCalculatorContents() {
   // canvas it names is the one that would seat fifteen whole characters. Both withdraw on `null`,
   // which the empty field has always produced. The memory figures below are a function of the canvas
   // alone and are unaffected either way.
-  const target = componentTargetSize(category, directionalMode, directions, sheetIndex, spriteTargetSize);
+  const target = componentTargetSize(
+    category,
+    subject,
+    directionalMode,
+    directions,
+    sheetIndex,
+    spriteTargetSize,
+  );
   // The sheet's answer rather than the field's. The row below has to be true while the box is empty,
   // and on such a sheet the truthful thing to say then is not "name a size" — nothing the reader can
   // type will make a cell checkable against a component this sheet does not draw.
-  const assembled = statesAssembledSize(category, directionalMode, directions, sheetIndex);
+  const assembled = statesAssembledSize(category, subject, directionalMode, directions, sheetIndex);
   const fit = target === null ? null : spriteFitFor(metrics.usableBounds, target);
   const smallestCanvas = target === null ? null : smallestCanvasFor(config, target);
   const costs = textureCostsFor(canvasSize);

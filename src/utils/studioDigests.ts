@@ -4,7 +4,7 @@ import { resolveCameraElevation, validationPassFor } from '../constants/promptTe
 import type { ValidationPass } from '../types/rendering.ts';
 import { resolveMode, resolveRigMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
-import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
 import { facingApplies, primaryFacing } from './sheetDirections.ts';
@@ -101,9 +101,9 @@ export function subjectGroupDigest(subject: SubjectDefinition, keys: readonly Su
  * plain English as *no allowance* — which is the very misreading this branch exists to prevent,
  * restated in words.
  */
-export function sheetDigest(category: SubjectCategory, output: OutputConfig): string {
-  const mode = resolveMode(category, output.directionalMode);
-  const series = sheetSeriesFor(category, mode, output.directions);
+export function sheetDigest(category: SubjectCategory, subject: SheetSubject, output: OutputConfig): string {
+  const mode = resolveMode(category, subject, output.directionalMode);
+  const series = sheetSeriesFor(category, subject, mode, output.directions);
 
   return join([
     mode,
@@ -112,7 +112,7 @@ export function sheetDigest(category: SubjectCategory, output: OutputConfig): st
     // that is not there. Where it *is* on screen the digest cannot be silent about it — two sheets of
     // one series differ in nothing else the header carries, so a folded group would report the same
     // four values above two entirely different inventories.
-    series.length > 1 ? sheetPlanFor(category, mode, output.directions, output.sheetIndex).name : '',
+    series.length > 1 ? sheetPlanFor(category, subject, mode, output.directions, output.sheetIndex).name : '',
     output.componentBudget === NO_COMPONENT_BUDGET ? 'uncapped' : `budget ${String(output.componentBudget)}`,
     output.backgroundKey,
     output.aspectRatio,
@@ -170,7 +170,11 @@ export function renderStyleDigest(output: OutputConfig): string {
  * field would disagree with the select above it and the prompt below it — and would name a facing,
  * because three classic yaws look like a run list until the category is consulted.
  */
-export function projectionDigest(category: SubjectCategory, output: OutputConfig): string {
+export function projectionDigest(
+  category: SubjectCategory,
+  subject: SheetSubject,
+  output: OutputConfig,
+): string {
   // The camera is resolved through the category too, and it is the third half of the same sentence:
   // an INTERFACE is drawn under `ORTHOGRAPHIC_FRONT` whatever a stored `THREE_QUARTER_TOPDOWN` says,
   // so a header reading the raw field would name a camera section 3 never mentions.
@@ -188,7 +192,7 @@ export function projectionDigest(category: SubjectCategory, output: OutputConfig
     // Only when the control is on screen. Anywhere else the facing is inert — the selected sheet
     // draws its plan's own facings whatever this said — so naming it would promise something the
     // prompt does not carry.
-    facingApplies(category, output) ? primaryFacing(category, output) : '',
+    facingApplies(category, subject, output) ? primaryFacing(category, output) : '',
   ]);
 }
 
@@ -202,9 +206,18 @@ export function projectionDigest(category: SubjectCategory, output: OutputConfig
  * sheet says `CUTOUT_RIG` — with the joint, overlap and socket settings that come with it — because
  * that is what its own inventory is.
  */
-export function riggingDigest(category: SubjectCategory, output: OutputConfig): string {
-  const mode = resolveMode(category, output.directionalMode);
-  const rigMode = resolveRigMode(category, sheetSeriesFor(category, mode, output.directions), output.rigMode);
+export function riggingDigest(
+  category: SubjectCategory,
+  subject: SheetSubject,
+  output: OutputConfig,
+): string {
+  const mode = resolveMode(category, subject, output.directionalMode);
+  const rigMode = resolveRigMode(
+    category,
+    subject,
+    sheetSeriesFor(category, subject, mode, output.directions),
+    output.rigMode,
+  );
   if (rigMode !== 'CUTOUT_RIG') return rigMode;
   return join([rigMode, output.jointCapStyle, output.overlapMargin, output.sockets]);
 }

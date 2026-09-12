@@ -3,6 +3,7 @@ import * as promptText from './promptText/index.ts';
 import { PROMPT_TEMPLATE } from './promptTemplate.ts';
 import { DEFAULT_MODE_FOR, sheetPlanFor } from './sheetPlans/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
+import { standardSubject } from '../test/sheetSubject.ts';
 
 /**
  * The template document's own integrity, as opposed to what the compiler does with it.
@@ -56,7 +57,7 @@ describe('the template itself', () => {
     const exported = new Set(Object.keys(promptText));
     // Any sheet answers the question, since every plan carries every field of the interface; the
     // default pairing is simply the one nothing else here has to be told about.
-    const plan = sheetPlanFor('CHARACTER', DEFAULT_MODE_FOR.CHARACTER, 'FIVE_CLASSIC', 0);
+    const plan = sheetPlanFor('CHARACTER', standardSubject(), DEFAULT_MODE_FOR.CHARACTER, 'FIVE_CLASSIC', 0);
     for (const token of new Set(tokens)) {
       if (COMPUTED_DESCRIPTIONS.has(token)) continue;
       const mapName = token.replace(/_DESCRIPTION$/, '_TEXT');
@@ -82,7 +83,7 @@ describe('the template itself', () => {
     const tokens = new Set(
       [...PROMPT_TEMPLATE.matchAll(/\[DEFINE:([A-Z0-9_]+_DESCRIPTION)\]/g)].map((match) => match[1] ?? ''),
     );
-    const plan = sheetPlanFor('CHARACTER', DEFAULT_MODE_FOR.CHARACTER, 'FIVE_CLASSIC', 0);
+    const plan = sheetPlanFor('CHARACTER', standardSubject(), DEFAULT_MODE_FOR.CHARACTER, 'FIVE_CLASSIC', 0);
     const planFilled = [...tokens]
       .filter((token) => !COMPUTED_DESCRIPTIONS.has(token))
       .filter((token) => Object.hasOwn(plan, planFieldFor(token)));

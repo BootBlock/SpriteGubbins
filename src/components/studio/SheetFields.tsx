@@ -7,7 +7,9 @@ import {
   OUTPUT_TOOLTIPS,
   sheetChoices,
 } from '../../constants/output/index.ts';
+import { fieldLabelFor } from '../../constants/categories/index.ts';
 import {
+  modesWithheldBy,
   resolveMode,
   resolveRigMode,
   resolveSheetIndex,
@@ -35,25 +37,37 @@ export function SheetFields() {
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  // Both lists count the subject's own pieces into their totals, and a category whose `clothing`
-  // pool offers a value meaning the subject has none of what the field describes draws fewer
-  // components when the reader chooses it — so both read that field too.
+  // Both lists count the subject's own pieces into their totals, and two more subject fields move
+  // what those pieces are: the assembly base chooses the plans the sheet is drawn from, and a category
+  // whose `clothing` pool offers a value meaning the subject has none of what the field describes
+  // draws fewer components when the reader chooses it — so both lists read those fields too.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
   const clothing = useSubjectStore((state) => state.subject.clothing);
+  const subject = { anatomy, clothing };
   const category = useSubjectStore((state) => state.category);
 
-  // Only the modes this category can actually produce. Offering the others is what put a tileset's
-  // floors and walls one click away from a character. Both lists read the chosen direction set,
-  // because the set decides how many parts a directional pairing has and how many generations each
-  // of them takes — the mode list through the whole configuration, since a batch is a property of
-  // one and `sheetBatch` is where that expansion is written down.
-  const mode = resolveMode(category, output.directionalMode);
+  // Only the modes this subject can actually be drawn on. Offering the others is what put a
+  // tileset's floors and walls one click away from a character, and a rig sheet one click away from
+  // a rigid object. Both lists read the chosen direction set, because the set decides how many parts
+  // a directional pairing has and how many generations each of them takes — the mode list through the
+  // whole configuration, since a batch is a property of one and `sheetBatch` is where that expansion
+  // is written down.
+  const mode = resolveMode(category, subject, output.directionalMode);
   const modeChoices = directionalModeChoices(
     category,
+    subject,
     output,
-    clothing,
     parseAdditionalAnatomy(additionalAnatomy),
   );
-  const inventoryParts = sheetChoices(category, mode, output.directions, clothing);
+  const inventoryParts = sheetChoices(category, subject, mode, output.directions);
+  // What the base took off the list, said under the control for the reason `RiggingFields` says which
+  // rig its sheets withdrew: an option that disappears without a word reads as a control that failed
+  // to render, and the way to have it back is a field in the other panel.
+  const withheld = modesWithheldBy(category, subject);
+  const withheldSentence =
+    withheld.length === 0
+      ? ''
+      : ` ${fieldLabelFor(category, 'anatomy')} “${anatomy.trim()}” is not drawn as ${withheld.join(' or ')}, so ${withheld.length === 1 ? 'that is' : 'those are'} not offered here. Choose another ${fieldLabelFor(category, 'anatomy')} to have ${withheld.length === 1 ? 'it' : 'them'} back.`;
 
   return (
     <>
@@ -67,7 +81,7 @@ export function SheetFields() {
         // one subject’s variants, one turns a subject, one draws rig pieces and settles Rig Mode,
         // one tiles — which is the case this prop exists for, and the reason the ⓘ no longer recites
         // two of them at whoever has chosen a third.
-        description={DIRECTIONAL_MODE_TOOLTIPS[mode]}
+        description={`${DIRECTIONAL_MODE_TOOLTIPS[mode]}${withheldSentence}`}
         onChange={(value) => {
           // The inventory part goes back to the first in the same write. Every mode has one, and a
           // stored index left pointing at a part the new mode does not have would put the select
@@ -88,7 +102,8 @@ export function SheetFields() {
             // select below cannot leave the store holding one its own sheets refuse.
             rigMode: resolveRigMode(
               category,
-              sheetSeriesFor(category, value, output.directions),
+              subject,
+              sheetSeriesFor(category, subject, value, output.directions),
               output.rigMode,
             ),
             sheetIndex: 0,
@@ -113,7 +128,7 @@ export function SheetFields() {
           tooltip={OUTPUT_TOOLTIPS.sheetIndex}
           // Resolved through the inventory rather than read raw, so a stored index the pairing does
           // not have shows the part the compiler is actually producing instead of an empty control.
-          value={resolveSheetIndex(category, mode, output.directions, output.sheetIndex)}
+          value={resolveSheetIndex(category, subject, mode, output.directions, output.sheetIndex)}
           choices={inventoryParts}
           onChange={(value) => {
             setOutputField('sheetIndex', value);

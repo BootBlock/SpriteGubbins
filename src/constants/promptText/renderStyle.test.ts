@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ResolutionProfile } from '../../types/output.ts';
 import { RESOLUTION_PROFILES } from '../../types/output.ts';
 import { everySheetOf } from '../../test/categoryProse.ts';
+import { standardSubject } from '../../test/sheetSubject.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
 import { statedTargetSize } from '../../utils/componentTargetSize.ts';
@@ -113,6 +114,7 @@ describe('minFeatureSize', () => {
     // too fine is merely inert — so the finest rung is the only answer that cannot be wrong.
     const assembled = statedTargetSize(
       'CHARACTER',
+      standardSubject(),
       'CUTOUT_RIG_SINGLE_DIRECTION',
       'SINGLE_FRONT',
       0,
@@ -127,7 +129,14 @@ describe('minFeatureSize', () => {
     // And the three shipped rig presets that carry CUSTOM keep the floor they always had — each
     // sits on the finest rung by its assembled edge, so this restores rather than changes them.
     for (const size of ['64 × 96 px assembled', '56 × 88 px assembled', '64 × 80 px assembled']) {
-      const rig = statedTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0, size);
+      const rig = statedTargetSize(
+        'CHARACTER',
+        standardSubject(),
+        'CUTOUT_RIG_SINGLE_DIRECTION',
+        'SINGLE_FRONT',
+        0,
+        size,
+      );
       expect(minFeatureSize('CUSTOM', rig, false)).toBe('1 × 1 delivered pixels');
     }
   });

@@ -1,7 +1,7 @@
 import { offersRigMode } from '../sheetPlans/index.ts';
 import type { SheetSeries } from '../../types/components.ts';
 import type { RigMode } from '../../types/rigging.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../../types/subject.ts';
 import type { OutputChoice } from './choices.ts';
 
 /**
@@ -38,6 +38,9 @@ const RIG_MODE_LABELS: readonly OutputChoice<RigMode>[] = [
  * pairing is one deliverable, and a rig stated on half of a set that has to assemble is the same
  * failure the refusal exists to stop.
  *
+ * **And scoped to the assembly base**, because a base with no rig sheet has no pivot: a rigid object
+ * is offered `NONE` alone, as the nine categories below are.
+ *
  * Nine of the thirteen categories are left with one entry, and the control is not what the studio shows
  * them — a select offering a single option is a control with nothing to do, so `RiggingFields` says
  * why the choice is absent instead. This still returns the list rather than the emptiness, because
@@ -51,7 +54,8 @@ const RIG_MODE_LABELS: readonly OutputChoice<RigMode>[] = [
  */
 export function rigModeChoices(
   category: SubjectCategory,
+  subject: SheetSubject,
   series: SheetSeries,
 ): readonly OutputChoice<RigMode>[] {
-  return RIG_MODE_LABELS.filter((choice) => offersRigMode(category, series, choice.value));
+  return RIG_MODE_LABELS.filter((choice) => offersRigMode(category, subject, series, choice.value));
 }

@@ -32,7 +32,7 @@ beforeEach(() => {
 
 /** The batch the studio is currently configured for — the answer every assertion below is against. */
 function batch() {
-  return sheetBatch('CHARACTER', useOutputStore.getState().output);
+  return sheetBatch('CHARACTER', useSubjectStore.getState().subject, useOutputStore.getState().output);
 }
 
 /**
@@ -48,7 +48,9 @@ describe('SheetStepButtons', () => {
     // An interface widget has no front to turn away from, so its pairing is a single sheet, and two
     // buttons with nowhere to go are controls with nothing to do.
     useSubjectStore.setState({ category: 'INTERFACE', subject: defaultSubjectFor('INTERFACE') });
-    expect(sheetRunCount('INTERFACE', useOutputStore.getState().output)).toBe(1);
+    expect(
+      sheetRunCount('INTERFACE', useSubjectStore.getState().subject, useOutputStore.getState().output),
+    ).toBe(1);
 
     const { container } = render(<SheetStepButtons />);
 

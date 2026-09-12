@@ -1,8 +1,9 @@
-import type { SheetSeries } from '../../types/components.ts';
 import { DIRECTIONAL_MODES } from '../../types/output.ts';
 import type { DirectionalMode } from '../../types/output.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
-import type { FacingTuple } from './directionalViews.ts';
+import type { SheetSubject, SubjectCategory } from '../../types/subject.ts';
+import { CATEGORY_ASSEMBLY_BASES } from './assemblyBases.ts';
+import { fixed } from './modePlans.ts';
+import type { ModePlans } from './modePlans.ts';
 import { buildingDirectionalVariants, BUILDING_MODULE_LIBRARY, BUILDING_TILESET } from './building.ts';
 import { characterDirectionalVariants, CHARACTER_CUTOUT_RIG, CHARACTER_POSE_LIBRARY } from './character.ts';
 import { creatureDirectionalVariants, CREATURE_CUTOUT_RIG, CREATURE_POSE_LIBRARY } from './creature.ts';
@@ -18,28 +19,15 @@ import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.
 import { FONT_CAPITALS, FONT_DIGITS_AND_PUNCTUATION, FONT_LOWER_CASE, FONT_SYMBOLS } from './font.ts';
 
 /**
- * Which sheet each category can produce, and which of them it falls back to.
+ * Which sheet each category can produce for a subject's assembly base, and which of them it falls
+ * back to.
  *
  * Split out of this directory's index so `rigModes.ts` can read it: the rig a sheet asks for is
- * partly the sheet's own answer — `CUTOUT_RIG_SINGLE_DIRECTION` draws the rig pieces themselves —
- * and a rig table importing the index it is re-exported from would be a cycle. The index keeps what
- * is built *on* this table: the series a pairing produces, and the sheet of it.
+ * partly the sheet's own answer — `CUTOUT_RIG_SINGLE_DIRECTION` draws the rig pieces themselves, and a
+ * base with no such sheet has no pivot to rig — and a rig table importing the index it is re-exported
+ * from would be a cycle. The index keeps what is built *on* this table: the series a pairing produces,
+ * and the sheet of it.
  */
-
-/**
- * One pairing's series, as a function of the facings the user chose.
- *
- * A function rather than a constant because the directional plans are *written against* the chosen
- * facings — the entries name them, the counts multiply by them, and the eight-compass core splits
- * across two sheets — where every other plan ignores the argument: a run-list sheet's inventory is
- * written for one facing whichever set drives the runs.
- */
-type SeriesFor = (facings: FacingTuple) => SheetSeries;
-
-/** A pairing whose sheets do not vary with the chosen facings. */
-function fixed(...series: SheetSeries): SeriesFor {
-  return () => series;
-}
 
 /**
  * Which sheet each category can actually produce, and what it asks for.
@@ -64,10 +52,14 @@ function fixed(...series: SheetSeries): SeriesFor {
  * used to draw a fixed five whatever the control said. How many sheets a pairing takes is therefore
  * a property of the *chosen set* as well as of the pairing, which is exactly what a constant table
  * could not say.
+ *
+ * **These are each category's standard plans: what it draws for every assembly base it does not
+ * declare**, and for a base typed in words the pool does not offer. A base that comes apart some other
+ * way — a rigid object in one piece, a nine-slice frame that only the nine-slice set cuts — is declared
+ * with its own plans in `assemblyBases.ts`, and {@link plansFor} is the one place the two tables meet
+ * (issue #283).
  */
-export const CATEGORY_SHEET_PLANS: Readonly<
-  Record<SubjectCategory, Readonly<Partial<Record<DirectionalMode, SeriesFor>>>>
-> = {
+export const CATEGORY_SHEET_PLANS: Readonly<Record<SubjectCategory, ModePlans>> = {
   CHARACTER: {
     SINGLE_DIRECTION_POSE_LIBRARY: fixed(CHARACTER_POSE_LIBRARY),
     CORE_DIRECTIONAL_VARIANTS: characterDirectionalVariants,
@@ -158,9 +150,10 @@ export const CATEGORY_SHEET_PLANS: Readonly<
 /**
  * The mode a category falls back to when the one it was given does not exist for it.
  *
- * Every category needs one, and it has to be a mode that category actually supports —
+ * Every category needs one, and it has to be a mode the category's standard plans support —
  * `sheetPlans.test.ts` pins both, because a default pointing at a missing plan would reintroduce the
- * undefined lookup this whole module removes.
+ * undefined lookup this whole module removes. A declared base need not support it, and
+ * {@link resolveMode} says what happens then.
  */
 export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>> = {
   CHARACTER: 'CORE_DIRECTIONAL_VARIANTS',
@@ -191,19 +184,78 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
   FONT: 'SINGLE_DIRECTION_POSE_LIBRARY',
 };
 
-/** Whether this category can produce this kind of sheet at all. */
-export function supportsMode(category: SubjectCategory, mode: DirectionalMode): boolean {
-  return CATEGORY_SHEET_PLANS[category][mode] !== undefined;
+/**
+ * The plans this subject's assembly base is drawn from: the base's own where the category declares
+ * one for its value, and the category's standard plans otherwise.
+ *
+ * **Matched as `declaresNoClothing` matches a `clothing` value, trimmed and case-folded**, because every
+ * subject field is an unfiltered combo box and a reader who types `single rigid object` has chosen the
+ * value the pool offers. Nothing else is recognised: a base typed in other words draws the standard
+ * sheets, which is the answer every undeclared pooled value gets too, and a guess here would change
+ * which components somebody is about to pay a generation for.
+ *
+ * **Returned by identity, and that is a contract.** The studio moves the sheet mode, the rig and the
+ * sheet index only where an edit to the base changes the plans, and it learns that by comparing what
+ * this returns before and after — so two values that draw the same sheets share one table in
+ * `assemblyBases.ts` rather than two equal ones.
+ */
+export function plansFor(category: SubjectCategory, subject: SheetSubject): ModePlans {
+  const base = subject.anatomy.trim().toLowerCase();
+  const declared = Object.entries(CATEGORY_ASSEMBLY_BASES[category] ?? {}).find(
+    ([value]) => value.toLowerCase() === base,
+  );
+  return declared?.[1] ?? CATEGORY_SHEET_PLANS[category];
 }
 
-/** The modes this category offers, in the canonical order `DIRECTIONAL_MODES` declares. */
-export function modesFor(category: SubjectCategory): readonly DirectionalMode[] {
-  return DIRECTIONAL_MODES.filter((mode) => supportsMode(category, mode));
+/** Whether this subject can be drawn on this kind of sheet at all. */
+export function supportsMode(
+  category: SubjectCategory,
+  subject: SheetSubject,
+  mode: DirectionalMode,
+): boolean {
+  return plansFor(category, subject)[mode] !== undefined;
+}
+
+/** The modes this subject can be drawn on, in the canonical order `DIRECTIONAL_MODES` declares. */
+export function modesFor(category: SubjectCategory, subject: SheetSubject): readonly DirectionalMode[] {
+  return DIRECTIONAL_MODES.filter((mode) => supportsMode(category, subject, mode));
 }
 
 /**
- * The mode actually used for this category — the one asked for where it exists, the category's
- * default otherwise.
+ * The modes this category offers for some assembly base and not for this subject's, in canonical
+ * order — what the studio says it has withheld, so a list that lost an option does not read as a
+ * control that failed to render.
+ */
+export function modesWithheldBy(
+  category: SubjectCategory,
+  subject: SheetSubject,
+): readonly DirectionalMode[] {
+  const tables = modePlansOf(category);
+  return DIRECTIONAL_MODES.filter(
+    (mode) => !supportsMode(category, subject, mode) && tables.some((plans) => plans[mode] !== undefined),
+  );
+}
+
+/**
+ * Every plan table a category can be drawn from: its standard plans, then each declared base's once.
+ *
+ * What a check over *every sheet a category can compile* walks, because the sheets of a declared base
+ * are as reachable from the studio as the standard ones — a walk over the standard table alone would
+ * leave a rigid object's sheets out of every structural check in the suite.
+ */
+export function modePlansOf(category: SubjectCategory): readonly ModePlans[] {
+  return [CATEGORY_SHEET_PLANS[category], ...new Set(Object.values(CATEGORY_ASSEMBLY_BASES[category] ?? {}))];
+}
+
+/**
+ * The mode actually used for this subject — the one asked for where its base can be drawn on it, the
+ * category's default where the base can be drawn on that, and the first mode the base offers
+ * otherwise.
+ *
+ * **The third clause is the assembly base's.** A base can offer fewer modes than its category, and not
+ * always the category's default: BACKGROUND defaults to its parallax set, and a `Single Non-Repeating
+ * Panel` is drawn by the layer library alone. `sheetPlans.test.ts` holds every base to at least one
+ * mode, so the last clause always names a sheet.
  *
  * The studio prevents the mismatch (the selector only offers supported modes, and switching category
  * re-resolves the stored one), but this is not defence in depth for its own sake: a preset written
@@ -211,6 +263,16 @@ export function modesFor(category: SubjectCategory): readonly DirectionalMode[] 
  * arrive carrying a pairing that was legal when it was saved. Substituting the default degrades such
  * a record to a coherent sheet, where the alternative is the contaminated prompt this replaced.
  */
-export function resolveMode(category: SubjectCategory, mode: DirectionalMode): DirectionalMode {
-  return supportsMode(category, mode) ? mode : DEFAULT_MODE_FOR[category];
+export function resolveMode(
+  category: SubjectCategory,
+  subject: SheetSubject,
+  mode: DirectionalMode,
+): DirectionalMode {
+  if (supportsMode(category, subject, mode)) return mode;
+  const fallback = DEFAULT_MODE_FOR[category];
+  if (supportsMode(category, subject, fallback)) return fallback;
+  // `modesFor` is never empty for a declared base, which `sheetPlans.test.ts` pins; the category's
+  // default stands in only to discharge the index, and `sheetSeriesFor` would throw on it.
+  const [first] = modesFor(category, subject);
+  return first ?? fallback;
 }

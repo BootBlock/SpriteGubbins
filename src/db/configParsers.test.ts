@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { COMPONENT_BUDGET_RANGE, NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { resolveSheetIndex, SHEET_INDEX_RANGE } from '../constants/sheetPlans/index.ts';
+import { standardSubject } from '../test/sheetSubject.ts';
 import { parseImageConfig, parseOutputConfig } from './configParsers.ts';
 
 /**
@@ -130,8 +131,12 @@ describe('parseOutputConfig — sheetIndex', () => {
     // Resolving that here would need the category, and inventing one is how a configuration would be
     // rewritten by the layer that only had to read it.
     expect(sheetFrom(1)).toBe(1);
-    expect(resolveSheetIndex('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1)).toBe(1);
-    expect(resolveSheetIndex('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1)).toBe(0);
+    expect(
+      resolveSheetIndex('CHARACTER', standardSubject(), 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1),
+    ).toBe(1);
+    expect(
+      resolveSheetIndex('OBJECT', standardSubject(), 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1),
+    ).toBe(0);
   });
 });
 

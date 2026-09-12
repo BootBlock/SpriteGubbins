@@ -136,9 +136,9 @@ export interface FieldOption {
    * The one option in the pool above that means *the subject has none of what this field
    * describes* — `Bare Unclad Frame`, `Clear — No Overlay`, `NONE`.
    *
-   * **It is declared because a sheet plan cannot see the subject.** A plan's entries are a function
-   * of the category, the mode, the direction set and the sheet index, so every one of them is
-   * unconditional: an inventory that lists a cladding panel lists it for a vehicle whose reader has
+   * **It is declared because a sheet plan cannot see this field.** A plan's entries are a function
+   * of the category, the assembly base, the mode, the direction set and the sheet index, so every one
+   * of them is unconditional: an inventory that lists a cladding panel lists it for a vehicle whose reader has
    * just said it has no cladding, section 1 states the subject has none, and section 4's closing
    * rule forbids omitting the entry. Naming the value here is what lets
    * `planAsDrawn` in `utils/sheetPlanClothing.ts` take the entry out, so the two sections agree.
@@ -245,3 +245,15 @@ export interface CategoryDefinition {
  * record to that category's defaults — so consumers never have to handle a missing field.
  */
 export type SubjectDefinition = Record<SubjectFieldKey, string>;
+
+/**
+ * The subject fields a sheet's inventory is a function of: the assembly base, which chooses the plans
+ * a category draws from (`sheetPlans/assemblyBases.ts`), and the `clothing` value, which can decline a
+ * piece of one (`utils/sheetPlanClothing.ts`).
+ *
+ * **One record rather than two strings**, because every function that resolves or counts a sheet
+ * takes both, and two adjacent string parameters are a pair no type checker can tell apart when a call
+ * site swaps them. A whole `SubjectDefinition` satisfies it, which is what the compiler hands down; a
+ * studio control reading two fields out of the store builds one.
+ */
+export type SheetSubject = Pick<SubjectDefinition, 'anatomy' | 'clothing'>;

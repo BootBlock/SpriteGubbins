@@ -39,8 +39,8 @@ function recorded() {
   const { category, subject } = useSubjectStore.getState();
   const { sheet } = sheetIdentity(
     category,
+    subject,
     useOutputStore.getState().output,
-    subject.clothing,
     subject.additional_anatomy,
   );
   if (sheet === null) throw new Error('this configuration should resolve to a sheet of its batch.');

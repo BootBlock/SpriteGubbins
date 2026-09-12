@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { DEFAULT_IMAGE_CONFIG } from '../../constants/output/index.ts';
 import { supportsProjection } from '../../constants/categoryProjections.ts';
 import { DEFAULT_MODE_FOR, supportsMode } from '../../constants/sheetPlans/index.ts';
+import { standardSubject } from '../../test/sheetSubject.ts';
 import { PresetCardSpecs } from './PresetCardSpecs.tsx';
 
 /**
@@ -22,7 +23,9 @@ function specs(): HTMLElement {
 
 describe('PresetCardSpecs', () => {
   it('names the render style, the projection and the sheet mode', () => {
-    render(<PresetCardSpecs category="CHARACTER" output={DEFAULT_IMAGE_CONFIG} />);
+    render(
+      <PresetCardSpecs category="CHARACTER" subject={standardSubject()} output={DEFAULT_IMAGE_CONFIG} />,
+    );
 
     expect(specs()).toHaveTextContent('PIXEL_ART · THREE_QUARTER_TOPDOWN · CORE_DIRECTIONAL_VARIANTS');
   });
@@ -31,6 +34,7 @@ describe('PresetCardSpecs', () => {
     render(
       <PresetCardSpecs
         category="CHARACTER"
+        subject={standardSubject()}
         output={{ ...DEFAULT_IMAGE_CONFIG, directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' }}
       />,
     );
@@ -44,11 +48,12 @@ describe('PresetCardSpecs', () => {
     // Reachable through import alone: `parseImportedPreset` checks `directionalMode` against the flat
     // `DIRECTIONAL_MODES` union with no category in scope, so a hand-written pack can pair a mode with
     // a category that has no plan for it. Nothing on an interface turns about a pivot.
-    expect(supportsMode('INTERFACE', 'CUTOUT_RIG_SINGLE_DIRECTION')).toBe(false);
+    expect(supportsMode('INTERFACE', standardSubject(), 'CUTOUT_RIG_SINGLE_DIRECTION')).toBe(false);
 
     render(
       <PresetCardSpecs
         category="INTERFACE"
+        subject={standardSubject()}
         output={{ ...DEFAULT_IMAGE_CONFIG, directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' }}
       />,
     );
@@ -68,6 +73,7 @@ describe('PresetCardSpecs', () => {
     render(
       <PresetCardSpecs
         category="INTERFACE"
+        subject={standardSubject()}
         output={{ ...DEFAULT_IMAGE_CONFIG, projection: 'THREE_QUARTER_TOPDOWN' }}
       />,
     );
@@ -82,6 +88,7 @@ describe('PresetCardSpecs', () => {
     render(
       <PresetCardSpecs
         category="TERRAIN"
+        subject={standardSubject()}
         output={{ ...DEFAULT_IMAGE_CONFIG, projection: 'ORTHOGRAPHIC_SIDE' }}
       />,
     );

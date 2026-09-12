@@ -7,7 +7,7 @@ import { countWords } from '../utils/promptMetrics.ts';
 import { sheetBatch } from '../utils/sheetBatch.ts';
 import { sheetCoverage } from '../utils/sheetCoverage.ts';
 import type { OutputConfig } from '../types/output.ts';
-import type { SubjectCategory } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import type { SheetRun } from '../utils/sheetRuns.ts';
 import { useClipboard } from './useClipboard.ts';
 
@@ -21,8 +21,8 @@ import { useClipboard } from './useClipboard.ts';
  * configuration has no position to report and says the plain thing instead — a "sheet 1 of 1" is a
  * count nobody was keeping.
  */
-function copyConfirmation(category: SubjectCategory, output: OutputConfig): string {
-  const { sheets, ordinal } = sheetBatch(category, output);
+function copyConfirmation(category: SubjectCategory, subject: SheetSubject, output: OutputConfig): string {
+  const { sheets, ordinal } = sheetBatch(category, subject, output);
   const sheet = sheets[ordinal - 1];
   if (sheets.length < 2 || sheet === undefined) return 'Prompt copied to the clipboard';
 
@@ -62,7 +62,7 @@ export function useCopyPrompt(): (run?: SheetRun) => Promise<void> {
       const output = run?.output ?? useOutputStore.getState().output;
       const promptText = run?.promptText ?? generatePrompt(category, subject, output);
 
-      const copied = await copyText(promptText, copyConfirmation(category, output));
+      const copied = await copyText(promptText, copyConfirmation(category, subject, output));
       if (!copied) return;
 
       // The subject and output travel with the prompt, not just the text they produced: the compiled

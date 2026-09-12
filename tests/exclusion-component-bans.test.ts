@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { CATEGORY_DIRECTION_SETS } from '../src/constants/categoryDirectionSets.ts';
 import { CATEGORY_OPTIONS } from '../src/constants/categories/index.ts';
 import { mentionsTerm } from '../src/constants/categories/exclusionElements.ts';
-import { modesFor, sheetPlanFor, sheetSeriesFor } from '../src/constants/sheetPlans/index.ts';
+import { modesFor, sheetSeriesFor } from '../src/constants/sheetPlans/index.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 import type { SubjectCategory } from '../src/types/subject.ts';
+import { assemblyBaseSubjectsOf } from '../src/test/assemblyBaseSubjects.ts';
 
 /**
  * An `exclusions` option against the components its own category's sheets order.
@@ -42,16 +43,24 @@ import type { SubjectCategory } from '../src/types/subject.ts';
  * actually shipped — cannot come back unnoticed.
  */
 
-/** Every plan a category can compile, across its modes, direction sets and sheets. */
+/**
+ * Every plan a category can compile, across its assembly bases, modes, direction sets and sheets.
+ *
+ * Each base is walked with the subject that selects it, because a declared base draws sheets of its
+ * own (issue #283): a ban naming a piece of a rigid object's views would otherwise never meet them.
+ */
 function plansOf(category: SubjectCategory) {
-  return modesFor(category).flatMap((mode) =>
-    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-      sheetSeriesFor(category, mode, directions).map((_, sheetIndex) => ({
-        mode,
-        directions,
-        sheetIndex,
-        plan: sheetPlanFor(category, mode, directions, sheetIndex),
-      })),
+  return assemblyBaseSubjectsOf(category).flatMap((subject) =>
+    modesFor(category, subject).flatMap((mode) =>
+      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+        sheetSeriesFor(category, subject, mode, directions).map((plan, sheetIndex) => ({
+          base: subject.anatomy,
+          mode,
+          directions,
+          sheetIndex,
+          plan,
+        })),
+      ),
     ),
   );
 }
@@ -77,7 +86,7 @@ describe('no exclusion bans a component its own category orders', () => {
 
     for (const option of field.options) {
       for (const ban of bansIn(option)) {
-        for (const { mode, directions, sheetIndex, plan } of plansOf(category)) {
+        for (const { base, mode, directions, sheetIndex, plan } of plansOf(category)) {
           for (const group of plan.groups) {
             for (const entry of group.entries) {
               // The label as well as the prose, because the label is the identifier the manifest and
@@ -87,7 +96,7 @@ describe('no exclusion bans a component its own category orders', () => {
                 mentionsTerm(entry.text, ban) || mentionsTerm(entry.label.replace(/-/g, ' '), ban);
               expect(
                 named,
-                `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)} — “${option}” bans the ${ban} that “${entry.text}” orders`,
+                `${category} / ${base} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)} — “${option}” bans the ${ban} that “${entry.text}” orders`,
               ).toBe(false);
             }
           }
@@ -106,5 +115,14 @@ describe('no exclusion bans a component its own category orders', () => {
         expect(bansIn(option).length, `${category} — “${option}”`).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('walks every assembly base’s sheets, so a rigid object’s are checked too', () => {
+    // The floor under the plan walk, as the test above is the floor under the parse. OBJECT draws its
+    // rigid sheets only for `Single Rigid Object`, so a walk that lost the base axis would check every
+    // standard sheet and never read these.
+    const sheets = plansOf('OBJECT').map(({ plan }) => plan.name);
+    expect(sheets).toContain('Object states');
+    expect(sheets).toContain('Object views');
   });
 });

@@ -108,39 +108,61 @@ export const ABSENT_OPTION_DROPS_THE_PIECES =
   'A value meaning there is none takes these pieces off the sheet, and the component count falls with them.';
 
 /**
- * What the *Assembly Base* field does to the sheet, on all thirteen of them — which is nothing.
+ * What the *Assembly Base* field does to the sheet on a category that declares no base of its own —
+ * which is nothing.
  *
- * Every category has one, under eleven labels between them: *Anatomy Base* on CHARACTER and
+ * Every category has the field, under eleven labels between them: *Anatomy Base* on CHARACTER and
  * CREATURE, *Set Assembly Base* on FONT and ICON, then *Structure Base*, *Drive & Assembly Base*,
- * *Tile Assembly Base*, *Frame Assembly Base* and the rest one apiece. Each names how the
- * deliverable is meant to come apart, each reaches section 1 verbatim, and **none of them is read by
- * anything that decides what section 4 orders** — the plans are addressed by category, mode,
- * direction set and sheet index, and `sheetPlans/portrait.ts` argues at length why a plan reshaped
- * around the subject would be the only one in that directory that was.
+ * *Tile Assembly Base*, *Frame Assembly Base* and the rest one apiece. Each names how the deliverable
+ * is meant to come apart and reaches section 1 verbatim. **Where a category declares no base in
+ * `sheetPlans/assemblyBases.ts`, nothing reads the value that decides what section 4 orders**, and
+ * this is the sentence its card carries. A category that declares one carries
+ * {@link ASSEMBLY_BASE_CHOOSES_THE_SHEETS} instead (issue #283).
  *
  * **The sentence claims the base is not an input, and no more than that.** It says no entry of the
  * component list is a function of *it*, rather than naming what the list is a function of — because
- * that would be a longer list than the four addressing coordinates, and two of the others are things
- * this app tells the reader about on the very cards this sentence lands on. The `clothing` value
- * removes entries where a pool declares an `absentOption` (see {@link ABSENT_OPTION_DROPS_THE_PIECES}),
- * and the `Additional …` field beside the base *adds* them — which CHARACTER's own card points at in
- * the sentence after this one.
+ * two of the other inputs are things this app tells the reader about on the very cards this sentence
+ * lands on. The `clothing` value removes entries where a pool declares an `absentOption` (see
+ * {@link ABSENT_OPTION_DROPS_THE_PIECES}), and the `Additional …` field beside the base *adds* them —
+ * which CHARACTER's own card points at in the sentence after this one.
  *
- * Three cards said the opposite and stated figures to prove it: CHARACTER promised “the default 9
- * core and 34 limb components” — 9 is the `THREE_CLASSIC` figure where the studio's own default set
+ * Three cards once said the opposite and stated figures to prove it: CHARACTER promised “the default
+ * 9 core and 34 limb components” — 9 is the `THREE_CLASSIC` figure where the studio's own default set
  * gives 15 — CREATURE said the field decides how many legs get their own sprite slots while
  * `Amorphous — No Fixed Limbs` still ordered four limbs, and OBJECT said `Single Rigid Object` emits
- * one piece where it compiles to 30, 14 and 7 across its three modes. So the fact is written here
- * rather than thirteen times, and `tests/subject-field-inventory.test.ts` is what holds it true: it
- * compiles every value of every `anatomy` pool at every address and fails if any two sections 4
- * differ.
+ * one piece where it compiled to 30, 14 and 7 across its three modes. The OBJECT card is true now,
+ * because that base draws its own sheets; the CHARACTER and CREATURE claims stay false until those
+ * categories declare bases, which is why their cards carry this sentence.
+ * `tests/subject-field-inventory.test.ts` holds every card to the declarations behind it.
  *
- * **It is on all thirteen and not only the three that lied**, because a label ending in *Base*
- * invites exactly that reading — naming what a control does not touch is what the guidance rules ask
- * for, and a card that stays silent leaves the reader to guess the answer the three got wrong.
+ * **It is on every card whose category declares no base, and not only the ones that lied**, because a
+ * label ending in *Base* invites exactly that reading — naming what a control does not touch is what
+ * the guidance rules ask for, and a card that stays silent leaves the reader to guess.
  */
 export const ASSEMBLY_BASE_ADDS_NO_COMPONENTS =
   'The base reaches the prompt as a statement of how the set is meant to come apart, and no entry of the sheet’s own component list is a function of it — so choosing another adds no slot and removes none.';
+
+/**
+ * What the *Assembly Base* field does on a category that declares bases of its own in
+ * `sheetPlans/assemblyBases.ts` (issue #283) — the counterpart of {@link ASSEMBLY_BASE_ADDS_NO_COMPONENTS}.
+ *
+ * **Two things a declared base can do, and one sentence for both.** A base can be drawn by only some of
+ * its category's sheet modes — the state library cuts no `Nine-Slice Stretching Frame`, and a rigid
+ * object has no rig sheet — in which case the studio offers only those modes and moves the sheet onto
+ * one of them. Or it can come apart differently from the standard sheets and bring its own list — a
+ * `Single Rigid Object` is drawn whole at each facing where the standard sheets draw a housing, a hatch
+ * and a moving subassembly. A card naming only one would be false of the categories whose bases do the
+ * other, and naming the values here would be a second copy of the table for the card to fall out of
+ * step with.
+ *
+ * **It says “can”, and that is the claim rather than a hedge on it**: some values of every declaring
+ * pool still draw the standard sheets, and some share a table with other declared values, so choosing
+ * between two that draw one table moves nothing. `tests/subject-field-inventory.test.ts` puts it on
+ * exactly the cards whose category has a base that narrows the Sheet Contents or draws a list of its
+ * own, and checks that each half is true of some category.
+ */
+export const ASSEMBLY_BASE_CHOOSES_THE_SHEETS =
+  'Some bases are drawn only by certain Sheet Contents or bring a component list of their own, so choosing another can move the sheet and change what it counts.';
 
 /**
  * What the field naming the subject does to the sheet, on all thirteen categories — which is to name

@@ -3,7 +3,7 @@ import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
-import type { SubjectCategory } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 
 /**
  * Whether this subject has said it has none of what its category's `clothing` field describes.
@@ -27,10 +27,10 @@ export function declaresNoClothing(category: SubjectCategory, clothing: string):
  * The plan as this subject actually draws it: the entries a subject declaring none has declined,
  * taken out.
  *
- * **This is where a sheet plan meets the one fact it is not a function of.** A plan is addressed by
- * category, mode, direction set and sheet index, so every entry in it is unconditional — which is
- * right while a pool describes *which kind* of a thing the sheet always draws, and wrong the moment
- * the pool also offers *no thing at all*. Four categories offered exactly that, and the prompt said
+ * **This is where a sheet plan meets a fact it is not a function of.** A plan is addressed by
+ * category, assembly base, mode, direction set and sheet index, so every entry in it is unconditional
+ * — which is right while a pool describes *which kind* of a thing the sheet always draws, and wrong
+ * the moment the pool also offers *no thing at all*. Four categories offered exactly that, and the prompt said
  * both halves of it in one document: section 1 stated `Armour & Cladding: Bare Unclad Frame`, section
  * 4 ordered `Cladding panel or fairing ×1`, and section 4's closing rule forbade omitting the entry
  * or merging it into another. The generator could not satisfy both, and whichever way it resolved
@@ -120,16 +120,20 @@ export function planDrawsClothing(plan: SheetPlan): boolean {
  *
  * The readers that ask a plan for its `name`, its `facings`, its `assembly` or its `targetQuantity`
  * are deliberately *not* among them, and still call `sheetPlanFor` directly. None of those four moves
- * when an entry is dropped, and three of those callers — `facingApplies`, `sheetDigest` and
- * `statesAssembledSize` — hold no subject at all, so handing them one would be inventing a
- * dependency to satisfy a signature.
+ * when an entry is dropped. They still take the subject, because its assembly base decides which plan
+ * they are asking about — a rigid object's views state a component size where the standard views state
+ * an assembled one.
  */
 export function drawnPlanFor(
   category: SubjectCategory,
+  subject: SheetSubject,
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
-  clothing: string,
 ): SheetPlan {
-  return planAsDrawn(sheetPlanFor(category, mode, directions, sheetIndex), category, clothing);
+  return planAsDrawn(
+    sheetPlanFor(category, subject, mode, directions, sheetIndex),
+    category,
+    subject.clothing,
+  );
 }

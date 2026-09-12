@@ -155,12 +155,14 @@ describe('the built-in library spans the vocabulary', () => {
 });
 
 describe('no shipped preset contradicts itself', () => {
-  it.each(PRESETS)('$name asks for a sheet its own category can produce', (preset) => {
+  it.each(PRESETS)('$name asks for a sheet its own subject can be drawn on', (preset) => {
     // `resolveMode` would silently substitute the category's default, so a mismatch here does not
     // fail — it ships a preset that draws a different sheet from the one it was written for. The
     // library card resolves the mode too, so nothing on screen would report the substitution: this
-    // assertion is the only thing that does.
-    expect(supportsMode(preset.category, preset.output.directionalMode)).toBe(true);
+    // assertion is the only thing that does. It asks the preset's own subject, because an assembly base
+    // narrows the modes its category offers (issue #283): a rigid object has no rig sheet, and the
+    // mode-bound bases of issue #280 are drawn by one sheet of their category's two.
+    expect(supportsMode(preset.category, preset.subject, preset.output.directionalMode)).toBe(true);
   });
 
   it.each(PRESETS)('$name asks for facings its own category can be turned to', (preset) => {
@@ -176,7 +178,7 @@ describe('no shipped preset contradicts itself', () => {
     // `POSE_LIBRARY`, so a preset that spread it without overriding the rig handed section 5's
     // shared pivots to a building. `resolveRigMode` substitutes silently, which is exactly why the
     // library has to be checked rather than trusted to degrade.
-    expect(supportsRigMode(preset.category, preset.output.rigMode)).toBe(true);
+    expect(supportsRigMode(preset.category, preset.subject, preset.output.rigMode)).toBe(true);
   });
 
   it.each(PRESETS)('$name asks for a rig its own sheet agrees with', (preset) => {
@@ -191,8 +193,8 @@ describe('no shipped preset contradicts itself', () => {
     // library names a rig whose rest-orientation rule that inventory's own entries break, and the
     // compiler would substitute `POSE_LIBRARY` behind the card's back.
     const { directionalMode, directions, rigMode } = preset.output;
-    const series = sheetSeriesFor(preset.category, directionalMode, directions);
-    expect(resolveRigMode(preset.category, series, rigMode)).toBe(rigMode);
+    const series = sheetSeriesFor(preset.category, preset.subject, directionalMode, directions);
+    expect(resolveRigMode(preset.category, preset.subject, series, rigMode)).toBe(rigMode);
   });
 
   it.each(PRESETS)('$name names a facing its own direction set contains', (preset) => {

@@ -2,7 +2,7 @@ import { resolveRigMode, sheetSeriesFor } from '../../constants/sheetPlans/index
 import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useScrollableRegion } from '../../hooks/useScrollableRegion.ts';
 import type { AnatomyComponent } from '../../types/anatomy.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../../types/subject.ts';
 import { exceedsComponentBudget } from '../../utils/componentBudget.ts';
 import { sheetComponentCount } from '../../utils/componentSet.ts';
 import { countWords } from '../../utils/promptMetrics.ts';
@@ -21,13 +21,12 @@ interface SheetSplitRunProps {
    */
   readonly category: SubjectCategory;
   /**
-   * The subject's `clothing` value, which is the other subject field the count reads: a category
-   * whose pool offers a value meaning the subject has none of what the field describes draws fewer
-   * components when the reader chooses it. Passed down rather than read from the store for the
-   * reason the anatomy below is — every row and the batch total above have to be sums over one
-   * subject, not over whatever the store held when each of them asked.
+   * The subject fields the count and the rig read: the assembly base, which chooses the plans the
+   * sheet is drawn from, and the `clothing` value, which can decline a piece of one. Passed down rather
+   * than read from the store for the reason the anatomy below is — every row and the batch total above
+   * have to be sums over one subject, not over whatever the store held when each of them asked.
    */
-  readonly clothing: string;
+  readonly subject: SheetSubject;
   /**
    * The subject's own additional anatomy, parsed — the half of this sheet's component count that the
    * plan does not supply. Passed in rather than read from the store because the row is handed
@@ -102,7 +101,7 @@ interface SheetSplitRunProps {
 export function SheetSplitRun({
   run,
   category,
-  clothing,
+  subject,
   additional,
   ordinal,
   total,
@@ -110,7 +109,7 @@ export function SheetSplitRun({
   isCopied,
   onCopy,
 }: SheetSplitRunProps) {
-  const componentCount = sheetComponentCount(category, run, clothing, additional);
+  const componentCount = sheetComponentCount(category, subject, run, additional);
   const isOverBudget = exceedsComponentBudget(componentCount, run.output.componentBudget);
   // What the row already says about itself, in one phrase, so both of its controls can name the
   // sheet they act on. A ten-sheet batch is otherwise ten stops called "Copy this sheet" and ten
@@ -152,7 +151,8 @@ export function SheetSplitRun({
 
       {resolveRigMode(
         category,
-        sheetSeriesFor(category, run.output.directionalMode, run.output.directions),
+        subject,
+        sheetSeriesFor(category, subject, run.output.directionalMode, run.output.directions),
         run.output.rigMode,
       ) === 'CUTOUT_RIG' && <DepthOrderNote run={run} category={category} />}
 

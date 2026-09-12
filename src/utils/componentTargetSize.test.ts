@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DIRECTION_SETS } from '../types/rendering.ts';
+import { standardSubject } from '../test/sheetSubject.ts';
 import { componentTargetSize, statedTargetSize, statesAssembledSize } from './componentTargetSize.ts';
 
 /** The value every shipped cut-out rig preset holds, in the words its author wrote. */
@@ -21,7 +22,7 @@ describe('statesAssembledSize', () => {
       ] as const) {
         for (const directions of DIRECTION_SETS) {
           for (const sheetIndex of [0, 1, 2, 3]) {
-            expect(statesAssembledSize(category, mode, directions, sheetIndex)).toBe(true);
+            expect(statesAssembledSize(category, standardSubject(), mode, directions, sheetIndex)).toBe(true);
           }
         }
       }
@@ -45,7 +46,7 @@ describe('statesAssembledSize', () => {
       ['BACKGROUND', 'TILESET_MODULAR'],
     ] as const) {
       for (const directions of DIRECTION_SETS) {
-        expect(statesAssembledSize(category, mode, directions, 0)).toBe(false);
+        expect(statesAssembledSize(category, standardSubject(), mode, directions, 0)).toBe(false);
       }
     }
   });
@@ -55,9 +56,15 @@ describe('statesAssembledSize', () => {
     // made the field mean two things. And a stored pairing a category cannot produce is degraded
     // first: a FONT carrying `CUTOUT_RIG_SINGLE_DIRECTION` from an older build is drawn its glyph
     // set, so it states a glyph.
-    expect(statesAssembledSize('CHARACTER', 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT', 0)).toBe(true);
-    expect(statesAssembledSize('FONT', 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT', 0)).toBe(false);
-    expect(statesAssembledSize('FONT', 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0)).toBe(false);
+    expect(
+      statesAssembledSize('CHARACTER', standardSubject(), 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT', 0),
+    ).toBe(true);
+    expect(
+      statesAssembledSize('FONT', standardSubject(), 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT', 0),
+    ).toBe(false);
+    expect(
+      statesAssembledSize('FONT', standardSubject(), 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0),
+    ).toBe(false);
   });
 
   it('does not read the stored rig field, because that answers a different question', () => {
@@ -65,14 +72,23 @@ describe('statesAssembledSize', () => {
     // bones — and it still states a size per module, as its own shipped preset writes it: `96 × 128
     // px per bay`. Keyed on `resolveRigMode` this would have withheld a size that is perfectly
     // usable.
-    expect(statesAssembledSize('BUILDING', 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT', 0)).toBe(false);
+    expect(
+      statesAssembledSize('BUILDING', standardSubject(), 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT', 0),
+    ).toBe(false);
   });
 });
 
 describe('componentTargetSize', () => {
   it('reads the pair out of the prose where the sheet states a component size', () => {
     expect(
-      componentTargetSize('BUILDING', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, '32 × 32 px per tile'),
+      componentTargetSize(
+        'BUILDING',
+        standardSubject(),
+        'TILESET_MODULAR',
+        'SINGLE_FRONT',
+        0,
+        '32 × 32 px per tile',
+      ),
     ).toEqual({
       width: 32,
       height: 32,
@@ -90,14 +106,18 @@ describe('componentTargetSize', () => {
       'SINGLE_DIRECTION_POSE_LIBRARY',
       'CORE_DIRECTIONAL_VARIANTS',
     ] as const) {
-      expect(componentTargetSize('CHARACTER', mode, 'SINGLE_FRONT', 0, ASSEMBLED)).toBeNull();
+      expect(
+        componentTargetSize('CHARACTER', standardSubject(), mode, 'SINGLE_FRONT', 0, ASSEMBLED),
+      ).toBeNull();
     }
   });
 
   it('reads the very same words as a component size where the sheet draws whole units', () => {
     // Which is what makes this a question about the sheet plan rather than about the text — the
     // word "assembled" is the preset author's, and nothing here parses it.
-    expect(componentTargetSize('TERRAIN', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, ASSEMBLED)).toEqual({
+    expect(
+      componentTargetSize('TERRAIN', standardSubject(), 'TILESET_MODULAR', 'SINGLE_FRONT', 0, ASSEMBLED),
+    ).toEqual({
       width: 48,
       height: 96,
     });
@@ -108,30 +128,51 @@ describe('componentTargetSize', () => {
     // what the studio's label and the prompt's gate need. A caller asserting the reader *has* named
     // an assembly needs the field's answer, or it describes a size that is not there — which is what
     // put "Not a component size" over an empty box in the atlas panel.
-    expect(statesAssembledSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0)).toBe(true);
-    expect(statedTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0, '')).toBeNull();
+    expect(
+      statesAssembledSize('CHARACTER', standardSubject(), 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0),
+    ).toBe(true);
+    expect(
+      statedTargetSize('CHARACTER', standardSubject(), 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0, ''),
+    ).toBeNull();
   });
 
   it('carries the quantity beside the size, for the readers that can use an assembly', () => {
     expect(
-      statedTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0, ASSEMBLED),
+      statedTargetSize(
+        'CHARACTER',
+        standardSubject(),
+        'CUTOUT_RIG_SINGLE_DIRECTION',
+        'SINGLE_FRONT',
+        0,
+        ASSEMBLED,
+      ),
     ).toEqual({
       quantity: 'ASSEMBLED',
       size: { width: 48, height: 96 },
     });
-    expect(statedTargetSize('BUILDING', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, '32 × 32 px per tile')).toEqual(
-      {
-        quantity: 'COMPONENT',
-        size: { width: 32, height: 32 },
-      },
-    );
+    expect(
+      statedTargetSize(
+        'BUILDING',
+        standardSubject(),
+        'TILESET_MODULAR',
+        'SINGLE_FRONT',
+        0,
+        '32 × 32 px per tile',
+      ),
+    ).toEqual({
+      quantity: 'COMPONENT',
+      size: { width: 32, height: 32 },
+    });
   });
 
   it('answers null for a field with no readable pair in it, as the parse always did', () => {
-    expect(componentTargetSize('TERRAIN', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, '')).toBeNull();
+    expect(
+      componentTargetSize('TERRAIN', standardSubject(), 'TILESET_MODULAR', 'SINGLE_FRONT', 0, ''),
+    ).toBeNull();
     expect(
       componentTargetSize(
         'TERRAIN',
+        standardSubject(),
         'TILESET_MODULAR',
         'SINGLE_FRONT',
         0,

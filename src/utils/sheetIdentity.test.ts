@@ -6,6 +6,8 @@ import { DIRECTION_SETS } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import { sheetBatch } from './sheetBatch.ts';
 import { sheetIdentity } from './sheetIdentity.ts';
+import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
+import { standardSubject } from '../test/sheetSubject.ts';
 
 /**
  * What a downloaded manifest says the sheet is.
@@ -24,15 +26,18 @@ const config = (overrides: Partial<OutputConfig> = {}): OutputConfig => ({
 /** Every sheet of the ten-generation character, as the configuration that composes each of them. */
 function eightCompassCharacter(): readonly OutputConfig[] {
   const batch = config({ directions: 'EIGHT_COMPASS' });
-  return sheetBatch('CHARACTER', batch).sheets.map((sheet) => ({ ...batch, ...sheet.output }));
+  return sheetBatch('CHARACTER', standardSubject(), batch).sheets.map((sheet) => ({
+    ...batch,
+    ...sheet.output,
+  }));
 }
 
 describe('sheetIdentity', () => {
   it('names the sheet the studio is composing, and its place in the batch', () => {
     const { sheet } = sheetIdentity(
       'CHARACTER',
+      standardSubject(),
       config({ directions: 'EIGHT_COMPASS', sheetIndex: 0 }),
-      '',
       '',
     );
 
@@ -51,8 +56,8 @@ describe('sheetIdentity', () => {
   it('gives one name per component, in the inventory’s own order', () => {
     const { names, sheet } = sheetIdentity(
       'CHARACTER',
+      standardSubject(),
       config({ directions: 'EIGHT_COMPASS', sheetIndex: 0 }),
-      '',
       '',
     );
 
@@ -64,8 +69,8 @@ describe('sheetIdentity', () => {
   it('follows the studio to the next sheet of the batch', () => {
     const { names, sheet } = sheetIdentity(
       'CHARACTER',
+      standardSubject(),
       config({ directions: 'EIGHT_COMPASS', sheetIndex: 1 }),
-      '',
       '',
     );
 
@@ -79,8 +84,8 @@ describe('sheetIdentity', () => {
     // the wrong end — so the manifest has to say `CUTOUT_RIG` here however `rigMode` was stored.
     const { sheet } = sheetIdentity(
       'CHARACTER',
+      standardSubject(),
       config({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', rigMode: 'POSE_LIBRARY' }),
-      '',
       '',
     );
 
@@ -90,7 +95,7 @@ describe('sheetIdentity', () => {
   it('degrades a rig the category cannot honour, as every other digest does', () => {
     // A stored pairing from an older build, a preset or a hand-edited export: TERRAIN articulates
     // about nothing, so a manifest claiming a rig for it would be a claim the prompt never made.
-    const { sheet } = sheetIdentity('TERRAIN', config({ rigMode: 'CUTOUT_RIG' }), '', '');
+    const { sheet } = sheetIdentity('TERRAIN', standardSubject(), config({ rigMode: 'CUTOUT_RIG' }), '');
 
     expect(sheet?.rigMode).toBe('NONE');
   });
@@ -101,7 +106,7 @@ describe('sheetIdentity', () => {
       // The runs are what a reader downloads eight of, and until this they were eight archives of
       // fifteen identically-named files.
       const facings = eightCompassCharacter().map(
-        (output) => sheetIdentity('CHARACTER', output, '', '').facing,
+        (output) => sheetIdentity('CHARACTER', standardSubject(), output, '').facing,
       );
 
       expect(facings).toStrictEqual([
@@ -123,8 +128,8 @@ describe('sheetIdentity', () => {
       // download falls back to the ordinal rather than claiming the first.
       const { facing, sheet } = sheetIdentity(
         'CHARACTER',
+        standardSubject(),
         config({ directions: 'EIGHT_COMPASS', sheetIndex: 0 }),
-        '',
         '',
       );
 
@@ -135,7 +140,12 @@ describe('sheetIdentity', () => {
     it('withholds it where the batch is one sheet, which has nothing to be told apart from', () => {
       // A ground tile narrows every stored set to a single direction and produces one sheet, so a
       // per-facing tree would always hold exactly one directory.
-      const { sheet, facing } = sheetIdentity('TERRAIN', config({ directions: 'EIGHT_COMPASS' }), '', '');
+      const { sheet, facing } = sheetIdentity(
+        'TERRAIN',
+        standardSubject(),
+        config({ directions: 'EIGHT_COMPASS' }),
+        '',
+      );
 
       expect(sheet?.total).toBe(1);
       expect(facing).toBeNull();
@@ -144,7 +154,9 @@ describe('sheetIdentity', () => {
     it('withholds it where two sheets of a batch draw the same lone facing', () => {
       // FONT is four sheets of glyphs, every one of them at `front`: the facing is real and names
       // none of them. Naming the files by it would give four downloads one name.
-      const sheets = [0, 1, 2, 3].map((sheetIndex) => sheetIdentity('FONT', config({ sheetIndex }), '', ''));
+      const sheets = [0, 1, 2, 3].map((sheetIndex) =>
+        sheetIdentity('FONT', standardSubject(), config({ sheetIndex }), ''),
+      );
 
       expect(sheets.map((entry) => entry.sheet?.facings)).toStrictEqual([
         ['front'],
@@ -158,19 +170,24 @@ describe('sheetIdentity', () => {
     it('never gives two sheets of one batch the same facing, over every pairing there is', () => {
       // The property the whole change rests on, swept rather than argued: a name two downloads share
       // is the failure this replaced, so it may not be reintroduced by a plan, a mode or a set that
-      // nobody had in mind here. Every category, mode and direction set, which is every batch the
-      // studio can compose.
+      // nobody had in mind here. Every category, assembly base, mode and direction set, which is
+      // every batch the studio can compose — the base because a declared one draws sheets of its own.
       for (const category of SUBJECT_CATEGORIES) {
-        for (const directionalMode of DIRECTIONAL_MODES) {
-          for (const directions of DIRECTION_SETS) {
-            const batch = config({ directionalMode, directions });
-            const named = sheetBatch(category, batch)
-              .sheets.map((sheet) => sheetIdentity(category, { ...batch, ...sheet.output }, '', '').facing)
-              .filter((facing): facing is string => facing !== null);
+        for (const subject of assemblyBaseSubjectsOf(category)) {
+          for (const directionalMode of DIRECTIONAL_MODES) {
+            for (const directions of DIRECTION_SETS) {
+              const batch = config({ directionalMode, directions });
+              const named = sheetBatch(category, subject, batch)
+                .sheets.map(
+                  (sheet) => sheetIdentity(category, subject, { ...batch, ...sheet.output }, '').facing,
+                )
+                .filter((facing): facing is string => facing !== null);
 
-            expect(new Set(named).size, `${category} / ${directionalMode} / ${directions}`).toBe(
-              named.length,
-            );
+              expect(
+                new Set(named).size,
+                `${category} / ${subject.anatomy} / ${directionalMode} / ${directions}`,
+              ).toBe(named.length);
+            }
           }
         }
       }
@@ -180,8 +197,8 @@ describe('sheetIdentity', () => {
   it('counts the subject’s own anatomy, which the sheet contracts for too', () => {
     const { names, sheet } = sheetIdentity(
       'CREATURE',
+      standardSubject(),
       config({ directions: 'FOUR_CARDINAL', sheetIndex: 0 }),
-      '',
       'Tail ×1',
     );
 

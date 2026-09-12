@@ -4,7 +4,7 @@ import { resolveMode, sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import type { SheetPlan } from '../types/components.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { Direction } from '../types/rendering.ts';
-import type { SubjectCategory } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 
 /**
  * Which facings a sheet actually covers, and which of them it assembles towards.
@@ -78,9 +78,13 @@ export function primaryFacing(category: SubjectCategory, output: OutputConfig): 
  * studio uses it to show the facing control, and only where the resolved set names more than one
  * facing — a run list of one has nothing to choose.
  */
-export function facingApplies(category: SubjectCategory, output: OutputConfig): boolean {
-  const mode = resolveMode(category, output.directionalMode);
-  const plan = sheetPlanFor(category, mode, output.directions, output.sheetIndex);
+export function facingApplies(
+  category: SubjectCategory,
+  subject: SheetSubject,
+  output: OutputConfig,
+): boolean {
+  const mode = resolveMode(category, subject, output.directionalMode);
+  const plan = sheetPlanFor(category, subject, mode, output.directions, output.sheetIndex);
   return (
     plan.facings === 'run' && DIRECTION_LISTS[resolveDirectionSet(category, output.directions)].length > 1
   );

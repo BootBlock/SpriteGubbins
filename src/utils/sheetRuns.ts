@@ -62,8 +62,8 @@ export function sheetIdentity(
   subject: SubjectDefinition,
   output: OutputConfig,
 ): string {
-  const mode = resolveMode(category, output.directionalMode);
-  const plan = sheetPlanFor(category, mode, output.directions, output.sheetIndex);
+  const mode = resolveMode(category, subject, output.directionalMode);
+  const plan = sheetPlanFor(category, subject, mode, output.directions, output.sheetIndex);
   const { covered } = sheetDirections(category, output, plan);
   return JSON.stringify([category, subject, mode, plan.name, covered]);
 }
@@ -81,7 +81,7 @@ export function sheetRuns(
   subject: SubjectDefinition,
   output: OutputConfig,
 ): readonly SheetRun[] {
-  return sheetBatch(category, output).sheets.map((sheet) => ({
+  return sheetBatch(category, subject, output).sheets.map((sheet) => ({
     ...sheet,
     promptText: generatePrompt(category, subject, sheet.output),
   }));

@@ -19,15 +19,15 @@ import { spellNumberCapitalised } from '../../utils/numberWords.ts';
  * twelve: every expression has to be the same person, and a generator drawing them one at a time
  * produces twelve people who resemble each other.
  *
- * **The inventory is whole portraits and not feature pieces, and that is a deliberate answer rather
- * than an omission.** `Portrait Assembly Base` in section 1 offers layered cuts — a shared head with
- * swappable brows, eyes and mouths — and a sheet that reshaped its inventory around that field would
- * be the only plan in this directory to be a function of the subject rather than of the category and
- * the mode. What the field does instead is reach section 1 verbatim, where it tells the generator how
- * the set is meant to come apart, while the entries below stay the twelve drawings every portrait
- * deliverable wants. A reader who needs the pieces themselves asks for them through `Extra
- * Expressions`, which is the field that exists for exactly that — `Speaking Mouth Shapes ×4` is one
- * of its pooled values, and it lands in section 4 counted and slotted like any other component.
+ * **The inventory is whole portraits and not feature pieces, for every base this category offers
+ * today.** `Portrait Assembly Base` in section 1 offers layered cuts — a shared head with swappable
+ * brows, eyes and mouths — and PORTRAIT declares no base in `assemblyBases.ts`, so the field reaches
+ * section 1 verbatim and the entries below stay the twelve drawings every portrait deliverable wants.
+ * This used to be argued as a principle, that no plan in this directory was a function of the subject;
+ * issue #281 reversed that, and whether a layered cut should draw its own pieces is issue #292's to
+ * decide. Until then, a reader who needs the pieces themselves asks for them through `Extra
+ * Expressions` — `Speaking Mouth Shapes ×4` is one of its pooled values, and it lands in section 4
+ * counted and slotted like any other component.
  *
  * **The outro is the whole sheet's contract**, and it is this category's version of the one
  * `INTERFACE_STATE_LIBRARY` carries: a state of a widget is that widget changed rather than a second

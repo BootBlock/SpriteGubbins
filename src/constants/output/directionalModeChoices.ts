@@ -3,7 +3,7 @@ import { batchComponentCount } from '../../utils/componentSet.ts';
 import { sheetBatch } from '../../utils/sheetBatch.ts';
 import type { AnatomyComponent } from '../../types/anatomy.ts';
 import type { DirectionalMode, OutputConfig } from '../../types/output.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../../types/subject.ts';
 import type { OutputChoice } from './choices.ts';
 
 /**
@@ -12,7 +12,9 @@ import type { OutputChoice } from './choices.ts';
  * **Scoped to the category**, which is the studio half of the contamination fix: the selector used
  * to offer all four modes to everything, so `TILESET_MODULAR` was one click away from any character
  * and the sheet it produced was floors and walls. A mode the category has no plan for is not
- * rendered, so the mismatch cannot be selected in the first place.
+ * rendered, so the mismatch cannot be selected in the first place. **And scoped to the assembly base**
+ * inside that, for the same reason one level in: a `Single Rigid Object` has no rig sheet and a
+ * `Nine-Slice Stretching Frame` no state library, so neither is offered the mode that cannot draw it.
  *
  * A function rather than a constant because the count is a property of neither axis alone: the
  * category and mode choose the plans, the direction set multiplies the ones drawn a facing at a
@@ -41,14 +43,14 @@ import type { OutputChoice } from './choices.ts';
  */
 export function directionalModeChoices(
   category: SubjectCategory,
+  subject: SheetSubject,
   output: OutputConfig,
-  clothing: string,
   additional: readonly AnatomyComponent[],
 ): readonly OutputChoice<DirectionalMode>[] {
-  return modesFor(category).map((mode) => {
-    const { sheets: batch } = sheetBatch(category, { ...output, directionalMode: mode });
+  return modesFor(category, subject).map((mode) => {
+    const { sheets: batch } = sheetBatch(category, subject, { ...output, directionalMode: mode });
     const sheets = batch.length;
-    const total = String(batchComponentCount(category, batch, clothing, additional));
+    const total = String(batchComponentCount(category, subject, batch, additional));
     // The unit gives way to the sheet count rather than joining it: `SINGLE_DIRECTION_POSE_LIBRARY`
     // leaves 18 characters inside its parenthesis against this file's 50-character budget, and a
     // four-digit total with both spelled out is 27. Which one to drop is not a close call — that a

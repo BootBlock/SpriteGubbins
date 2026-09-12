@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { sameWord } from '../../test/sameWord.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { PROMPT_TEMPLATE } from '../promptTemplate.ts';
-import { CATEGORY_SHEET_PLANS } from '../sheetPlans/modes.ts';
+import { modePlansOf } from '../sheetPlans/modes.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
 import { DIRECTION_LISTS } from './camera.ts';
@@ -26,10 +26,16 @@ import { CATEGORY_ASSEMBLY } from './categoryAssembly.ts';
  * template's section headings, which name the contract the sheet is held to.
  *
  * Two things are deliberately *not* opposition, and both would produce false failures. A category's
- * **own name** — no component of a CHARACTER sheet is "a character", which is the whole basis of
- * `assembled character`. And the **`exclusions` pools**, whose options are written as prohibitions
- * rather than as names (`No composed landscape scene or vista`), so a term sharing a word with one
- * reinforces it rather than contradicting it.
+ * **own name** in its labels and pools — no component of a CHARACTER sheet is "a character", which is
+ * the whole basis of `assembled character`, and the label `Creature / Monster` is where CREATURE writes
+ * its own. And the **`exclusions` pools**, whose options are written as prohibitions rather than as
+ * names (`No composed landscape scene or vista`), so a term sharing a word with one reinforces it
+ * rather than contradicting it.
+ *
+ * **The own-name exemption stops at the sheet entries** (issue #283). It rests on no component being the
+ * whole subject, and an assembly base can make one: every component of a `Single Rigid Object`'s views
+ * is the object, drawn whole, and its entries say so. So the entries are read in full, the category's
+ * name included, and a term negating that name fails where an entry requires it.
  *
  * **It is still the mechanical half of a rule that is wider than it.** `complete structure` passes
  * here, because BUILDING's entries spell their components "wall bay" and "roof section" — and it is
@@ -54,14 +60,15 @@ describe('CATEGORY_ASSEMBLY', () => {
   /**
    * Every word this category's own prompts will state as a requirement.
    *
-   * The plans are walked over every mode and every direction set they admit, and entry text alone:
-   * a group's intro and a plan's assembly sentence both describe the *assembled* result — "the
-   * complete vehicle at rest", "none of them a layer to be stacked on another" — which is precisely
-   * what these terms exist to negate, so including them would fail the terms for saying what they
-   * are for.
+   * The plans are walked over every plan table the category can be drawn from, every mode and every
+   * direction set they admit, and entry text alone: a group's intro and a plan's assembly sentence both
+   * describe the *assembled* result — "the complete vehicle at rest", "none of them a layer to be
+   * stacked on another" — which is precisely what these terms exist to negate, so including them would
+   * fail the terms for saying what they are for.
    */
   function requiredWords(category: SubjectCategory): ReadonlySet<string> {
-    const entries = Object.values(CATEGORY_SHEET_PLANS[category])
+    const entries = modePlansOf(category)
+      .flatMap((plans) => Object.values(plans))
       .flatMap((seriesFor) => Object.values(DIRECTION_LISTS).flatMap((facings) => seriesFor(facings)))
       .flatMap((plan) => plan.groups.flatMap((group) => group.entries.map((entry) => entry.text)));
     const definition = CATEGORY_OPTIONS[category];
@@ -69,9 +76,10 @@ describe('CATEGORY_ASSEMBLY', () => {
       .filter((field) => field.key !== 'exclusions')
       .flatMap((field) => [field.label, ...field.options]);
     const own = wordsIn(`${category} ${definition.label}`);
-    return new Set(
-      [...HEADING_WORDS, ...wordsIn([...entries, ...subject].join(' '))].filter((word) => !own.has(word)),
-    );
+    return new Set([
+      ...[...HEADING_WORDS, ...wordsIn(subject.join(' '))].filter((word) => !own.has(word)),
+      ...wordsIn(entries.join(' ')),
+    ]);
   }
 
   /**

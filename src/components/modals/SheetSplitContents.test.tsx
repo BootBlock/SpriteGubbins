@@ -18,6 +18,7 @@ import { useHistoryStore } from '../../stores/useHistoryStore.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { standardSubjectOf } from '../../test/assemblyBaseSubjects.ts';
 import { batchComponentCount, componentCountFor, sheetComponentCount } from '../../utils/componentSet.ts';
 import { sheetRuns } from '../../utils/sheetRuns.ts';
 import { SheetSplitContents } from './SheetSplitContents.tsx';
@@ -91,7 +92,11 @@ function sheetsOnScreen(): readonly RowUnderTest[] {
   return runs.map((run, index) => {
     const row = rows[index];
     if (row === undefined) throw new Error('the drawer should render one row per sheet of the batch.');
-    return { name: run.plan.name, count: sheetComponentCount('CHARACTER', run, '', []), row };
+    return {
+      name: run.plan.name,
+      count: sheetComponentCount('CHARACTER', defaultSubjectFor('CHARACTER'), run, []),
+      row,
+    };
   });
 }
 
@@ -125,13 +130,13 @@ describe('SheetSplitContents', () => {
     const runs = sheetRuns('CHARACTER', defaultSubjectFor('CHARACTER'), useOutputStore.getState().output);
     const perSheet = componentCountFor(
       'CHARACTER',
+      defaultSubjectFor('CHARACTER'),
       'CUTOUT_RIG_SINGLE_DIRECTION',
       'EIGHT_COMPASS',
       0,
-      '',
       [],
     );
-    const total = batchComponentCount('CHARACTER', runs, '', []);
+    const total = batchComponentCount('CHARACTER', defaultSubjectFor('CHARACTER'), runs, []);
 
     expect(total).toBe(perSheet * FACINGS.length);
     expect(screen.getByText(`${String(total)} components`)).toBeInTheDocument();
@@ -173,7 +178,7 @@ describe('SheetSplitContents', () => {
     // draws five. An eight-compass core is the case with two sheets to compare — one takes the
     // cardinals and the other the diagonals — so a row that named one facing's answer described
     // three of its own four wrongly, and described the other sheet's four not at all.
-    useSubjectStore.setState({ category: 'OBJECT', subject: defaultSubjectFor('OBJECT') });
+    useSubjectStore.setState({ category: 'OBJECT', subject: standardSubjectOf('OBJECT') });
     useOutputStore.setState({
       output: {
         ...DEFAULT_OUTPUT_CONFIG,
@@ -184,7 +189,7 @@ describe('SheetSplitContents', () => {
     });
     render(<SheetSplitContents />);
 
-    const runs = sheetRuns('OBJECT', defaultSubjectFor('OBJECT'), useOutputStore.getState().output);
+    const runs = sheetRuns('OBJECT', standardSubjectOf('OBJECT'), useOutputStore.getState().output);
     const rows = screen.getAllByRole('listitem');
     expect(runs.length).toBeGreaterThan(1);
 

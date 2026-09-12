@@ -1,6 +1,6 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
-  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
   HEX_CODE_PINS_THE_HUE,
   SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
@@ -193,12 +193,12 @@ export const INTERFACE: CategoryDefinition = {
       // nine-slice on a state library that cuts no slice, and the pool opened on `Single Fixed-Size
       // Piece`, which the nine-slice set contradicts: every piece on it stretches or repeats. Both
       // sheets cut a frame, a fill and a trim apart, so that is what the subject a category switch
-      // installs now says, and every value naming one sheet's cut is bound to that sheet in
-      // `modeBoundOptions.ts`.
+      // installs now says, and every value naming one sheet's cut is drawn by that sheet alone in
+      // `sheetPlans/assemblyBases.ts` (issue #283).
       label: 'Widget Assembly Base',
       tooltip:
         'How the widget is cut into the pieces the engine builds it from. Choose by what those pieces have to do — a nine-slice keeps four fixed corners while its edges and centre repeat, a three-slice stretches on one axis only, a fixed piece never resizes at all, and a frame, fill and trim cut apart let a change of state redraw one piece and leave the rest. ' +
-        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+        ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Frame, Fill & Trim Cut Apart',
         'Single Fixed-Size Piece',

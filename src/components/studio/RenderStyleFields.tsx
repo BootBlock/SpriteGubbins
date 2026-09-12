@@ -84,10 +84,15 @@ export function RenderStyleFields() {
   const output = useOutputStore((state) => state.output);
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const category = useSubjectStore((state) => state.category);
+  // The subject fields the sheet is a function of: a rigid object's views state a component size where
+  // the standard views state an assembled one.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
+  const clothing = useSubjectStore((state) => state.subject.clothing);
 
   const pass = validationPassFor(output.renderStyle);
   const assembled = statesAssembledSize(
     category,
+    { anatomy, clothing },
     output.directionalMode,
     output.directions,
     output.sheetIndex,

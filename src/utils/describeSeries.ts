@@ -1,5 +1,5 @@
 import type { AnatomyComponent } from '../types/anatomy.ts';
-import type { SubjectCategory } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { sheetComponentCount } from './componentSet.ts';
 import type { SheetBatch } from './sheetBatch.ts';
 
@@ -25,13 +25,13 @@ import type { SheetBatch } from './sheetBatch.ts';
  */
 export function describeSeries(
   category: SubjectCategory,
+  subject: SheetSubject,
   batch: SheetBatch,
-  clothing: string,
   additional: readonly AnatomyComponent[],
 ): string {
   return batch.sheets
     .map((sheet, index) => {
-      const count = sheetComponentCount(category, sheet, clothing, additional);
+      const count = sheetComponentCount(category, subject, sheet, additional);
       const here = index + 1 === batch.ordinal ? ' *(this sheet)*' : '';
       // Named rather than counted where a sheet draws several, since "5 facings" tells the reader
       // nothing about *which* five and therefore nothing about what this sheet may leave alone.

@@ -251,7 +251,7 @@ export function promptValues(
     // Computed whether or not the block survives, as `PALETTE_DESCRIPTION` is: `substitute` throws
     // on a token it has no value for, and the template's own `[IF:SERIES]` is what decides whether
     // the token is still there to be filled.
-    SERIES_SHEETS: describeSeries(category, batch, subject.clothing, anatomy),
+    SERIES_SHEETS: describeSeries(category, subject, batch, anatomy),
     // What the *series* assembles into, derived from the batch exactly as the sheet list above it is
     // — one bullet per distinct answer the batch holds, rather than this sheet's answer relabelled
     // as the whole deliverable's. Computed whether or not the block survives, as `SERIES_SHEETS` is:
@@ -295,10 +295,10 @@ export function promptValues(
   // rather than a hopeful exclusion.
   values.COMPONENT_BREAKDOWN = componentBreakdownFor(
     category,
+    subject,
     mode,
     output.directions,
     output.sheetIndex,
-    subject.clothing,
     anatomy,
     cite,
   );

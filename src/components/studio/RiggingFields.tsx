@@ -4,7 +4,9 @@ import {
   OVERLAP_MARGIN_CHOICES,
   rigModeChoices,
 } from '../../constants/output/index.ts';
+import { fieldLabelFor } from '../../constants/categories/index.ts';
 import {
+  CATEGORY_RIG_MODES,
   fixedRigMode,
   offersRigMode,
   resolveMode,
@@ -60,6 +62,11 @@ export function RiggingFields() {
   const output = useOutputStore((state) => state.output);
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const category = useSubjectStore((state) => state.category);
+  // The subject fields the sheets are a function of — the assembly base chooses them, and a base with
+  // no rig sheet has no pivot to rig.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
+  const clothing = useSubjectStore((state) => state.subject.clothing);
+  const subject = { anatomy, clothing };
 
   // Resolved rather than read raw, for the reason `SheetFields` resolves the sheet mode: a preset or
   // history row saved before these tables existed can name a rig its category has none of, and a
@@ -70,14 +77,14 @@ export function RiggingFields() {
   // The sheet mode is resolved first and then named, rather than read raw twice: the sentence below
   // tells the user which sheet took the choice over, and it has to name the sheet `SheetFields` is
   // showing rather than the one a stale configuration asked for.
-  const mode = resolveMode(category, output.directionalMode);
+  const mode = resolveMode(category, subject, output.directionalMode);
   // Every sheet the pairing produces, because both halves of the rig relation are properties of the
   // deliverable rather than of one of its sheets — `resolveRigMode` says why. `sheetSeriesFor`
   // resolves the pairing and the direction set on the way, so a stored mode this category cannot
   // produce shows the rig of the sheets the compiler is actually producing.
-  const series = sheetSeriesFor(category, mode, output.directions);
-  const rigChoices = rigModeChoices(category, series);
-  const rigMode = resolveRigMode(category, series, output.rigMode);
+  const series = sheetSeriesFor(category, subject, mode, output.directions);
+  const rigChoices = rigModeChoices(category, subject, series);
+  const rigMode = resolveRigMode(category, subject, series, output.rigMode);
   const fixedBySheet = fixedRigMode(series) !== undefined;
   // The other direction, and the reason it is a description rather than a `disabledReason`: the
   // sheet contents take one option away instead of taking the control over, so the select still has
@@ -85,7 +92,8 @@ export function RiggingFields() {
   // and this pairing does not offer it" rather than as the posing value itself, so the sentence
   // cannot appear beside a list nothing was dropped from.
   const cutoutDroppedBySheet =
-    supportsRigMode(category, 'CUTOUT_RIG') && !offersRigMode(category, series, 'CUTOUT_RIG');
+    supportsRigMode(category, subject, 'CUTOUT_RIG') &&
+    !offersRigMode(category, subject, series, 'CUTOUT_RIG');
   // The sheet the sentence names. A pairing can commit on a sheet that is not the one on screen —
   // the character's directional core leaves the choice open and the articulation sheet behind it
   // does not — so naming the *selected* sheet would point at the wrong inventory.
@@ -117,6 +125,15 @@ export function RiggingFields() {
             setOutputField('rigMode', value);
           }}
         />
+      ) : CATEGORY_RIG_MODES[category].length > 1 ? (
+        // The category articulates and this subject's assembly base does not, so the sentence names the
+        // base: “OBJECT sheets carry nothing that turns” would be false of every other OBJECT, and the
+        // way to have the rig back is the field in the other panel rather than this one.
+        <p className="text-xs leading-relaxed text-ink-muted">
+          {fieldLabelFor(category, 'anatomy')} “{anatomy.trim()}” draws nothing that turns about a pivot, so
+          there is no rig to choose, and the prompt carries no articulation section. Choose another{' '}
+          {fieldLabelFor(category, 'anatomy')} to rig the subject.
+        </p>
       ) : (
         // Plural and article-free on purpose: four of the nine categories that reach this begin
         // with a vowel, so "a {category} sheet" would render "a ITEM sheet" for those four.

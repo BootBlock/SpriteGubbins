@@ -28,6 +28,8 @@ import {
 import { modesFor, sheetSeriesFor } from '../src/constants/sheetPlans/index.ts';
 import { PROJECT_NAME_MAX_LENGTH } from '../src/constants/projects.ts';
 import { OPENING_VIEW_CHOICES } from '../src/constants/settings.ts';
+import { assemblyBaseSubjectsOf } from '../src/test/assemblyBaseSubjects.ts';
+import { standardSubject } from '../src/test/sheetSubject.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 import { LABEL_BUDGET } from './selectLabelBudget.ts';
 
@@ -95,11 +97,18 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   SYMMETRY_MODE_CHOICES: SYMMETRY_MODE_CHOICES.map((choice) => choice.label),
   // Over every set the category offers, because the batch totals in the labels move with it — both
   // the component figure and the generation count, since the set is what multiplies a part drawn one
-  // facing at a time.
+  // facing at a time. And under every assembly base, since a declared base offers modes and sheets of
+  // its own (issue #283), with the standard subject's empty `clothing` so no entry a subject can
+  // decline is left out of the figure: the widest label is the one that has to fit.
   modeChoices: SUBJECT_CATEGORIES.flatMap((category) =>
-    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-      directionalModeChoices(category, { ...DEFAULT_OUTPUT_CONFIG, directions }, '', HEAVY_ANATOMY).map(
-        (choice) => choice.label,
+    assemblyBaseSubjectsOf(category).flatMap(({ anatomy }) =>
+      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+        directionalModeChoices(
+          category,
+          { ...standardSubject(), anatomy },
+          { ...DEFAULT_OUTPUT_CONFIG, directions },
+          HEAVY_ANATOMY,
+        ).map((choice) => choice.label),
       ),
     ),
   ),
@@ -120,21 +129,29 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   // over every direction set, so a series that narrows the list differently is budgeted the moment
   // it exists.
   rigChoices: SUBJECT_CATEGORIES.flatMap((category) =>
-    modesFor(category).flatMap((mode) =>
+    modesFor(category, standardSubject()).flatMap((mode) =>
       CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-        rigModeChoices(category, sheetSeriesFor(category, mode, directions)).map((choice) => choice.label),
+        rigModeChoices(
+          category,
+          standardSubject(),
+          sheetSeriesFor(category, standardSubject(), mode, directions),
+        ).map((choice) => choice.label),
       ),
     ),
   ),
-  // One list per pairing, so an inventory that grows a part is budgeted the moment it exists. No
-  // anatomy: this list distinguishes the parts of one inventory from each other, and the subject's
-  // own anatomy lands on the first of them whatever the inventory holds.
+  // One list per pairing, under every assembly base, so an inventory that grows a part is budgeted the
+  // moment it exists — a declared base's inventories included, with the empty `clothing` the modes
+  // above take. No additional anatomy: this list distinguishes the parts of one inventory from each
+  // other, and the subject's own additions land on the first of them whatever the inventory holds.
   inventoryParts: SUBJECT_CATEGORIES.flatMap((category) =>
-    modesFor(category).flatMap((mode) =>
-      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-        sheetChoices(category, mode, directions, '').map((choice) => choice.label),
-      ),
-    ),
+    assemblyBaseSubjectsOf(category).flatMap(({ anatomy }) => {
+      const subject = { ...standardSubject(), anatomy };
+      return modesFor(category, subject).flatMap((mode) =>
+        CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+          sheetChoices(category, subject, mode, directions).map((choice) => choice.label),
+        ),
+      );
+    }),
   ),
 };
 

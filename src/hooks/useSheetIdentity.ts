@@ -23,12 +23,13 @@ import type { SheetIdentity } from '../utils/sheetIdentity.ts';
 export function useSheetIdentity(): SheetIdentity {
   const category = useSubjectStore((state) => state.category);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  // The other subject field the slot names and the component count read — see `componentSet.ts`.
+  // The other two subject fields the slot names and the component count read — see `componentSet.ts`.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
   const clothing = useSubjectStore((state) => state.subject.clothing);
   const output = useOutputStore((state) => state.output);
 
   return useMemo(
-    () => sheetIdentity(category, output, clothing, additionalAnatomy),
-    [category, output, clothing, additionalAnatomy],
+    () => sheetIdentity(category, { anatomy, clothing }, output, additionalAnatomy),
+    [category, anatomy, clothing, output, additionalAnatomy],
   );
 }

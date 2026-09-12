@@ -9,9 +9,10 @@ import {
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { directionalModeChoices } from '../constants/output/index.ts';
 import {
-  CATEGORY_SHEET_PLANS,
   DEFAULT_MODE_FOR,
+  modePlansOf,
   modesFor,
+  plansFor,
   resolveMode,
   sheetSeriesFor,
   supportsMode,
@@ -26,6 +27,7 @@ import {
 } from '../constants/promptText/index.ts';
 import { everySeriesOf, everySheetOf, planProseFor, sheetsProseFor } from '../test/categoryProse.ts';
 import { sectionOf } from '../test/promptSections.ts';
+import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
@@ -102,23 +104,31 @@ const LIMB_VOCABULARY = /upper arms?:|lower arms?:|left leg|right leg|pelvis|hin
  * A pairing is no longer one prompt: a character's five-view directional core arrives as a core
  * sheet and an articulation sheet, and each has its own inventory to be contaminated. Checking the
  * first alone would have left the second unwatched by every assertion below.
+ *
+ * **And every assembly base a category declares is walked, with the subject that selects it** (issue
+ * #283). A rigid object's views are sheets of their own, as contaminable as any other, and a sweep
+ * over the standard plans alone would never compile one.
  */
 const SHEETS: readonly {
   category: SubjectCategory;
+  subject: SubjectDefinition;
   mode: DirectionalMode;
   directions: DirectionSet;
   sheetIndex: number;
   sheet: string;
 }[] = SUBJECT_CATEGORIES.flatMap((category) =>
-  modesFor(category).flatMap((mode) =>
-    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-      sheetSeriesFor(category, mode, directions).map((plan, sheetIndex) => ({
-        category,
-        mode,
-        directions,
-        sheetIndex,
-        sheet: plan.name,
-      })),
+  assemblyBaseSubjectsOf(category).flatMap((subject) =>
+    modesFor(category, subject).flatMap((mode) =>
+      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+        sheetSeriesFor(category, subject, mode, directions).map((plan, sheetIndex) => ({
+          category,
+          subject,
+          mode,
+          directions,
+          sheetIndex,
+          sheet: plan.name,
+        })),
+      ),
     ),
   ),
 );
@@ -132,11 +142,14 @@ const SHEETS: readonly {
  */
 const EVERY_SERIES: readonly {
   category: SubjectCategory;
+  subject: SubjectDefinition;
   mode: DirectionalMode;
   directions: DirectionSet;
 }[] = SUBJECT_CATEGORIES.flatMap((category) =>
-  modesFor(category).flatMap((mode) =>
-    CATEGORY_DIRECTION_SETS[category].map((directions) => ({ category, mode, directions })),
+  assemblyBaseSubjectsOf(category).flatMap((subject) =>
+    modesFor(category, subject).flatMap((mode) =>
+      CATEGORY_DIRECTION_SETS[category].map((directions) => ({ category, subject, mode, directions })),
+    ),
   ),
 );
 
@@ -147,28 +160,35 @@ const EVERY_PLAN: readonly {
   sheet: string;
   plan: SheetPlan;
 }[] = SUBJECT_CATEGORIES.flatMap((category) =>
-  modesFor(category).flatMap((mode) =>
-    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-      sheetSeriesFor(category, mode, directions).map((plan) => ({
-        category,
-        mode,
-        directions,
-        sheet: plan.name,
-        plan,
-      })),
+  assemblyBaseSubjectsOf(category).flatMap((subject) =>
+    modesFor(category, subject).flatMap((mode) =>
+      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+        sheetSeriesFor(category, subject, mode, directions).map((plan) => ({
+          category,
+          mode,
+          directions,
+          sheet: plan.name,
+          plan,
+        })),
+      ),
     ),
   ),
 );
 
+/**
+ * A prompt for one sheet, compiled from `base` — the category's default subject unless a sweep hands
+ * in the subject that selected the sheet's assembly base.
+ */
 function promptFor(
   category: SubjectCategory,
   mode: DirectionalMode,
   additional?: string,
   sheetIndex = 0,
   directions: DirectionSet = DEFAULT_OUTPUT_CONFIG.directions,
+  base: SubjectDefinition = defaultSubjectFor(category),
 ): string {
   const subject = {
-    ...defaultSubjectFor(category),
+    ...base,
     additional_anatomy: additional ?? NO_ADDITIONAL_ANATOMY,
   };
   return generatePrompt(category, subject, {
@@ -179,19 +199,6 @@ function promptFor(
   });
 }
 
-/**
- * The `clothing` value every prompt in this suite is compiled with — the category's own default,
- * since `promptFor` builds its subject from `defaultSubjectFor`.
- *
- * Stated rather than passed as `''`, because the count is a function of it: BACKGROUND and INTERFACE
- * both default to the value meaning the subject has none of what the field describes, so their plans
- * lose the entries drawing it, and a count taken against the declared plan would be a figure no
- * prompt in this file states.
- */
-function defaultClothing(category: SubjectCategory): string {
-  return defaultSubjectFor(category).clothing;
-}
-
 describe('the plan table itself', () => {
   it('files no plan under a category that cannot contain it', () => {
     // Structural, not textual: an entry of kind `tile` under CHARACTER is the contamination, and it
@@ -200,9 +207,16 @@ describe('the plan table itself', () => {
   });
 
   it.each(SUBJECT_CATEGORIES)('%s offers at least one mode, and defaults to one it supports', (category) => {
-    expect(modesFor(category).length).toBeGreaterThan(0);
+    // Asked of the standard plans, which is what `DEFAULT_MODE_FOR` is written against. A declared
+    // base need not support the default, and `resolveMode` falls back to the base's own first mode —
+    // which is why every base's having one is checked below as well.
+    const standard = standardSubjectOf(category);
+    expect(modesFor(category, standard).length).toBeGreaterThan(0);
     // If this ever failed, `sheetPlanFor` would throw for a pairing a user can reach.
-    expect(supportsMode(category, DEFAULT_MODE_FOR[category])).toBe(true);
+    expect(supportsMode(category, standard, DEFAULT_MODE_FOR[category])).toBe(true);
+    for (const subject of assemblyBaseSubjectsOf(category)) {
+      expect(modesFor(category, subject).length, subject.anatomy).toBeGreaterThan(0);
+    }
   });
 
   it('draws every moving part at rest on the rig sheets, and on no others', () => {
@@ -227,8 +241,8 @@ describe('the plan table itself', () => {
     // `CUTOUT_RIG` while `offersRigMode` was withdrawing it — the two halves of one relation
     // disagreeing, silently, in favour of the rig the posed sheet cannot draw. No pairing does that
     // today, and a plan that made one has to be caught here rather than by whichever answer won.
-    for (const { category, mode, directions } of EVERY_SERIES) {
-      const series = sheetSeriesFor(category, mode, directions);
+    for (const { category, subject, mode, directions } of EVERY_SERIES) {
+      const series = sheetSeriesFor(category, subject, mode, directions);
       const both =
         series.some((plan) => plan.posing === 'AT_REST') &&
         series.some((plan) => plan.posing === 'PER_POSITION');
@@ -262,12 +276,14 @@ describe('the plan table itself', () => {
       'CHARACTER / Articulation',
       'CREATURE / Pose library',
       'CREATURE / Articulation',
-      // A hatch closed, part-open and fully open; a working end in two states; an entrance module
-      // closed and open; a mount stowed, traversed and elevated. Only two of these four categories
-      // articulate — `CATEGORY_RIG_MODES` gives ITEM and BUILDING `NONE` alone — which is the point
-      // the rest of this list makes as well: the value is a statement about an inventory, and a
-      // category with no joints still answers it truthfully.
+      // A hatch closed, part-open and fully open; a rigid object whole at rest and active; a working
+      // end in two states; an entrance module closed and open; a mount stowed, traversed and elevated.
+      // Only two of these four categories articulate — `CATEGORY_RIG_MODES` gives ITEM and BUILDING
+      // `NONE` alone, and a rigid object has no rig sheet — which is the point the rest of this list
+      // makes as well: the value is a statement about an inventory, and a sheet with no joints still
+      // answers it truthfully.
       'OBJECT / Part library',
+      'OBJECT / Object states',
       'ITEM / Part library',
       'BUILDING / Module library',
       'VEHICLE / Part library',
@@ -292,7 +308,9 @@ describe('the plan table itself', () => {
     // is the same requirement a floor field has. Every other category is a *subject* rather than a
     // field of pieces, and a CHARACTER reaching this mode is the exact pairing the reported defect
     // produced.
-    const withTileset = SUBJECT_CATEGORIES.filter((c) => supportsMode(c, 'TILESET_MODULAR'));
+    const withTileset = SUBJECT_CATEGORIES.filter((c) =>
+      modePlansOf(c).some((plans) => plans.TILESET_MODULAR !== undefined),
+    );
     expect(withTileset).toEqual(['BUILDING', 'INTERFACE', 'TERRAIN', 'BACKGROUND']);
   });
 
@@ -326,8 +344,13 @@ describe('the plan table itself', () => {
     // turned by occluding surfaces it does not have. A rig articulates about pivots an effect has
     // none of. What a *directional* effect needs is this mode plus a direction set, which a `'run'`
     // sheet reads as a run list: eight frame sequences, not one sheet of eight frames.
-    expect(modesFor('EFFECT')).toEqual(['SINGLE_DIRECTION_POSE_LIBRARY']);
-    const [sequence] = sheetSeriesFor('EFFECT', 'SINGLE_DIRECTION_POSE_LIBRARY', 'EIGHT_COMPASS');
+    expect(modesFor('EFFECT', standardSubjectOf('EFFECT'))).toEqual(['SINGLE_DIRECTION_POSE_LIBRARY']);
+    const [sequence] = sheetSeriesFor(
+      'EFFECT',
+      standardSubjectOf('EFFECT'),
+      'SINGLE_DIRECTION_POSE_LIBRARY',
+      'EIGHT_COMPASS',
+    );
     expect(sequence.facings).toBe('run');
   });
 
@@ -335,12 +358,15 @@ describe('the plan table itself', () => {
     // Two properties in one: the cardinal sheet holds exactly the multiples of 90 and the diagonal
     // sheet the rest, and together they draw each facing of the set exactly once — a facing drawn
     // twice inflates the count, and one drawn nowhere is a view the game cannot show.
-    for (const category of SUBJECT_CATEGORIES) {
-      if (!supportsMode(category, 'CORE_DIRECTIONAL_VARIANTS')) continue;
+    for (const { category, subject } of SUBJECT_CATEGORIES.flatMap((each) =>
+      assemblyBaseSubjectsOf(each).map((base) => ({ category: each, subject: base })),
+    )) {
+      if (!supportsMode(category, subject, 'CORE_DIRECTIONAL_VARIANTS')) continue;
       if (!CATEGORY_DIRECTION_SETS[category].includes('EIGHT_COMPASS')) continue;
-      const series = sheetSeriesFor(category, 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS');
+      const where = `${category} / ${subject.anatomy}`;
+      const series = sheetSeriesFor(category, subject, 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS');
       const multiView = series.filter((plan) => plan.facings !== 'run');
-      expect(multiView, category).toHaveLength(2);
+      expect(multiView, where).toHaveLength(2);
 
       const [cardinals, diagonals] = multiView;
       if (
@@ -353,7 +379,7 @@ describe('the plan table itself', () => {
       }
       for (const facing of cardinals.facings) expect(OBJECT_YAW[facing] % 90).toBe(0);
       for (const facing of diagonals.facings) expect(OBJECT_YAW[facing] % 90).not.toBe(0);
-      expect([...cardinals.facings, ...diagonals.facings].sort(), category).toEqual(
+      expect([...cardinals.facings, ...diagonals.facings].sort(), where).toEqual(
         [...DIRECTION_LISTS.EIGHT_COMPASS].sort(),
       );
       // And the two halves are tellable apart everywhere a sheet is named.
@@ -676,48 +702,44 @@ describe('every sheet of one series states the same finished capability', () => 
     // four diagonals, and sheets 3 to 10 that it was limbs at one facing and no trunk at all —
     // each of them two lines above a list of all ten sheets.
     let multiSheet = 0;
-    for (const category of SUBJECT_CATEGORIES) {
-      for (const mode of modesFor(category)) {
-        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-          const output = { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions };
-          const sheets = sheetSeriesFor(category, mode, directions).map((_, sheetIndex) =>
-            capabilityOf(generatePrompt(category, defaultSubjectFor(category), { ...output, sheetIndex })),
+    for (const { category, subject, mode, directions } of EVERY_SERIES) {
+      const output = { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions };
+      const sheets = sheetSeriesFor(category, subject, mode, directions).map((_, sheetIndex) =>
+        capabilityOf(generatePrompt(category, subject, { ...output, sheetIndex })),
+      );
+      if (sheets.length < 2) continue;
+      multiSheet += 1;
+      const where = `${category} / ${subject.anatomy} / ${mode} / ${directions}`;
+
+      // One statement of the deliverable across the series, whichever sheet was compiled, and
+      // one branch — a batch cannot be told both that every one of its sheets delivers the
+      // answer and that this one is only a share of it.
+      expect(new Set(sheets.map((sheet) => sheet.series)).size, where).toBe(1);
+      expect(new Set(sheets.map((sheet) => sheet.statesOne)).size, where).toBe(1);
+
+      const answers = new Set(sheets.map((sheet) => sheet.own));
+      const [first] = sheets;
+      if (first === undefined) throw new Error('narrowed by the length check above');
+
+      if (first.statesOne) {
+        // The branch claims every sheet delivers the same thing, so they had better all state
+        // it — and the block below it stays silent, or it restates the sentence the branch has
+        // just made. That pairing is the contradiction the two halves of `seriesCapability.ts`
+        // produced while one compared plan objects and the other assembly sentences: four
+        // categories' split cores took the share branch and then stated the series' capability
+        // as the very sentence it had just set aside, verbatim, three lines on.
+        expect(answers.size, `${where}: one claim, several answers`).toBe(1);
+        expect(first.series, `${where}: the block restates the claim above it`).toBe('');
+      } else {
+        // The other branch says this sheet supplies a share, so the block has to name every
+        // share — including this sheet's — or a sheet is told the deliverable omits its own
+        // work.
+        expect(first.series, `${where}: a share branch with nothing under it`).not.toBe('');
+        expect(answers.size, `${where}: a share branch on a series with one answer`).toBeGreaterThan(1);
+        for (const answer of answers) {
+          expect(first.series, `${where}: a share the series statement omits`).toContain(
+            answer.replace(/\.$/, ''),
           );
-          if (sheets.length < 2) continue;
-          multiSheet += 1;
-          const where = `${category} / ${mode} / ${directions}`;
-
-          // One statement of the deliverable across the series, whichever sheet was compiled, and
-          // one branch — a batch cannot be told both that every one of its sheets delivers the
-          // answer and that this one is only a share of it.
-          expect(new Set(sheets.map((sheet) => sheet.series)).size, where).toBe(1);
-          expect(new Set(sheets.map((sheet) => sheet.statesOne)).size, where).toBe(1);
-
-          const answers = new Set(sheets.map((sheet) => sheet.own));
-          const [first] = sheets;
-          if (first === undefined) throw new Error('narrowed by the length check above');
-
-          if (first.statesOne) {
-            // The branch claims every sheet delivers the same thing, so they had better all state
-            // it — and the block below it stays silent, or it restates the sentence the branch has
-            // just made. That pairing is the contradiction the two halves of `seriesCapability.ts`
-            // produced while one compared plan objects and the other assembly sentences: four
-            // categories' split cores took the share branch and then stated the series' capability
-            // as the very sentence it had just set aside, verbatim, three lines on.
-            expect(answers.size, `${where}: one claim, several answers`).toBe(1);
-            expect(first.series, `${where}: the block restates the claim above it`).toBe('');
-          } else {
-            // The other branch says this sheet supplies a share, so the block has to name every
-            // share — including this sheet's — or a sheet is told the deliverable omits its own
-            // work.
-            expect(first.series, `${where}: a share branch with nothing under it`).not.toBe('');
-            expect(answers.size, `${where}: a share branch on a series with one answer`).toBeGreaterThan(1);
-            for (const answer of answers) {
-              expect(first.series, `${where}: a share the series statement omits`).toContain(
-                answer.replace(/\.$/, ''),
-              );
-            }
-          }
         }
       }
     }
@@ -832,14 +854,19 @@ describe('section 5’s Mirroring rule describes only the sets the sheet in fron
 
   it('answers from the plan’s own entries, on every rigged category', () => {
     const rigged = SUBJECT_CATEGORIES.filter((category) =>
-      modesFor(category).includes('CUTOUT_RIG_SINGLE_DIRECTION'),
+      modesFor(category, standardSubjectOf(category)).includes('CUTOUT_RIG_SINGLE_DIRECTION'),
     );
     // A fifth category gaining a rig has to be answered here, which is the point: whether its pieces
     // mirror is a judgement about the drawing, and a new plan must not inherit an answer.
     expect(Object.keys(RIG_MIRRORS).sort()).toEqual([...rigged].sort());
 
     for (const category of rigged) {
-      const [rig] = sheetSeriesFor(category, 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT');
+      const [rig] = sheetSeriesFor(
+        category,
+        standardSubjectOf(category),
+        'CUTOUT_RIG_SINGLE_DIRECTION',
+        'SINGLE_FRONT',
+      );
       expect(planMirrorsPieces(rig), category).toBe(RIG_MIRRORS[category]);
     }
   });
@@ -849,9 +876,10 @@ describe('section 5’s Mirroring rule describes only the sets the sheet in fron
     // OBJECT rig of six pieces and a VEHICLE rig of a near and a far drive unit what mirroring
     // “between the left and right sets” they permitted — sets neither of them holds.
     for (const category of SUBJECT_CATEGORIES) {
-      if (!modesFor(category).includes('CUTOUT_RIG_SINGLE_DIRECTION')) continue;
+      const standard = standardSubjectOf(category);
+      if (!modesFor(category, standard).includes('CUTOUT_RIG_SINGLE_DIRECTION')) continue;
       const rigSection = sectionOf(
-        generatePrompt(category, defaultSubjectFor(category), {
+        generatePrompt(category, standard, {
           ...DEFAULT_OUTPUT_CONFIG,
           directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
         }),
@@ -880,27 +908,23 @@ describe('section 5’s Mirroring rule describes only the sets the sheet in fron
     // generalised: the VEHICLE rig splits its drive into a near side and a far side, while the
     // directional sheet lists one `Drive unit` per yaw. It said “section 4 lists them separately”
     // and section 4 did not.
-    for (const category of SUBJECT_CATEGORIES) {
-      for (const mode of modesFor(category)) {
-        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-          const rigSection = sectionOf(
-            generatePrompt(category, defaultSubjectFor(category), {
-              ...DEFAULT_OUTPUT_CONFIG,
-              directionalMode: mode,
-              directions,
-              rigMode: 'CUTOUT_RIG',
-            }),
-            'CUT-OUT RIG REQUIREMENTS',
-          );
-          if (rigSection === '') continue;
+    for (const { category, subject, mode, directions } of EVERY_SERIES) {
+      const rigSection = sectionOf(
+        generatePrompt(category, subject, {
+          ...DEFAULT_OUTPUT_CONFIG,
+          directionalMode: mode,
+          directions,
+          rigMode: 'CUTOUT_RIG',
+        }),
+        'CUT-OUT RIG REQUIREMENTS',
+      );
+      if (rigSection === '') continue;
 
-          const where = `${category} / ${mode} / ${directions}`;
-          expect(rigSection, where).toContain('### Mirroring');
-          // The rule states what a generator may not do, and cites only the section that forbids
-          // producing a direction by mirroring — never what this sheet's own inventory holds.
-          expect(rigSection, where).not.toMatch(/lists them separately/);
-        }
-      }
+      const where = `${category} / ${subject.anatomy} / ${mode} / ${directions}`;
+      expect(rigSection, where).toContain('### Mirroring');
+      // The rule states what a generator may not do, and cites only the section that forbids
+      // producing a direction by mirroring — never what this sheet's own inventory holds.
+      expect(rigSection, where).not.toMatch(/lists them separately/);
     }
   });
 });
@@ -1020,8 +1044,8 @@ describe('no category calls the subject’s own additions an error in the specif
 
   /** Every sheet that appends no block, so no sentence on it may except one. */
   const APPENDS_NOTHING = SHEETS.filter(
-    ({ category, mode, directions, sheetIndex }) =>
-      anatomyFacingsFor(category, mode, directions, sheetIndex) === null,
+    ({ category, subject, mode, directions, sheetIndex }) =>
+      anatomyFacingsFor(category, subject, mode, directions, sheetIndex) === null,
   );
 
   it.each(SUBJECT_CATEGORIES)('%s splices the exemption into its opening claim', (category) => {
@@ -1078,7 +1102,7 @@ describe('no category calls the subject’s own additions an error in the specif
         expect(inventory).toContain(`- ${formatAnatomyComponent(piece)}`);
       }
       expect(prompt).toContain(
-        `Exactly ${String(componentCountFor(category, mode, DEFAULT_OUTPUT_CONFIG.directions, 0, defaultClothing(category), pieces))} components`,
+        `Exactly ${String(componentCountFor(category, defaultSubjectFor(category), mode, DEFAULT_OUTPUT_CONFIG.directions, 0, pieces))} components`,
       );
 
       // Sliced by section rather than searched for in the whole prompt: the guard's exemption has to
@@ -1091,7 +1115,7 @@ describe('no category calls the subject’s own additions an error in the specif
 
   it.each(APPENDS_NOTHING)(
     'excepts nothing on $category / $mode / $directions / $sheet, which appends no block',
-    ({ category, mode, directions, sheetIndex }) => {
+    ({ category, subject, mode, directions, sheetIndex }) => {
       // The other half of the rule, and the one an unconditional clause got wrong: these sheets omit
       // the block deliberately — a later sheet of a series draws the trunk's articulation, and a tail
       // beside it would hang on nothing — so §1's line is blanked and the count excludes the pieces.
@@ -1099,7 +1123,7 @@ describe('no category calls the subject’s own additions an error in the specif
       const option = POOLED.find((row) => row.category === category)?.option;
       expect(option).toBeDefined();
 
-      const prompt = promptFor(category, mode, option, sheetIndex, directions);
+      const prompt = promptFor(category, mode, option, sheetIndex, directions, subject);
       expect(prompt).not.toContain('the pieces named under');
       expect(sectionOf(prompt, 'COMPONENT INVENTORY')).not.toContain(`#### ${labelFor(category)} —`);
     },
@@ -1109,8 +1133,8 @@ describe('no category calls the subject’s own additions an error in the specif
 describe('no category emits another category’s components', () => {
   it.each(SHEETS)(
     '$category / $mode / $directions / $sheet',
-    ({ category, mode, directions, sheetIndex }) => {
-      const prompt = promptFor(category, mode, undefined, sheetIndex, directions);
+    ({ category, subject, mode, directions, sheetIndex }) => {
+      const prompt = promptFor(category, mode, undefined, sheetIndex, directions, subject);
       const section = sectionOf(prompt, 'COMPONENT INVENTORY');
       expect(section).not.toBe('');
 
@@ -1143,15 +1167,18 @@ describe('the reported failure: a CHARACTER asked for a tileset', () => {
   const CYBORG = 'Demon Horn ×2, Tail ×1';
 
   it('cannot be configured at all — the mode is not offered to a character', () => {
-    expect(supportsMode('CHARACTER', 'TILESET_MODULAR')).toBe(false);
+    const character = standardSubjectOf('CHARACTER');
+    expect(supportsMode('CHARACTER', character, 'TILESET_MODULAR')).toBe(false);
     expect(
-      directionalModeChoices('CHARACTER', DEFAULT_OUTPUT_CONFIG, '', []).map((choice) => choice.value),
+      directionalModeChoices('CHARACTER', character, DEFAULT_OUTPUT_CONFIG, []).map((choice) => choice.value),
     ).not.toContain('TILESET_MODULAR');
   });
 
   it('degrades to the category’s own sheet if such a pairing arrives from stored data', () => {
     // A preset or history row saved before the plans were split by category can still name it.
-    expect(resolveMode('CHARACTER', 'TILESET_MODULAR')).toBe(DEFAULT_MODE_FOR.CHARACTER);
+    expect(resolveMode('CHARACTER', standardSubjectOf('CHARACTER'), 'TILESET_MODULAR')).toBe(
+      DEFAULT_MODE_FOR.CHARACTER,
+    );
   });
 
   it('produces a humanoid sheet, not floors and walls', () => {
@@ -1254,9 +1281,9 @@ describe('a BUILDING tileset is still a tileset', () => {
 describe('the declared count is the inventory’s own length', () => {
   it.each(SHEETS)(
     '$category / $mode / $directions / $sheet',
-    ({ category, mode, directions, sheetIndex, sheet }) => {
-      const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1', sheetIndex, directions);
-      const expected = componentCountFor(category, mode, directions, sheetIndex, defaultClothing(category), [
+    ({ category, subject, mode, directions, sheetIndex, sheet }) => {
+      const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1', sheetIndex, directions, subject);
+      const expected = componentCountFor(category, subject, mode, directions, sheetIndex, [
         { name: 'Demon Horn', count: 2 },
         { name: 'Tail', count: 1 },
       ]);
@@ -1274,26 +1301,37 @@ describe('every mode of the union is reachable from some category', () => {
     // A mode in the union that no category claims would be dead weight in stored data and in the
     // parser that validates it.
     for (const mode of DIRECTIONAL_MODES) {
-      const owners = SUBJECT_CATEGORIES.filter((category) => supportsMode(category, mode));
+      const owners = SUBJECT_CATEGORIES.filter((category) =>
+        modePlansOf(category).some((plans) => plans[mode] !== undefined),
+      );
       expect(owners.length, `${mode} belongs to no category`).toBeGreaterThan(0);
     }
   });
 
   it('has a plan for every pairing it claims to support', () => {
     for (const category of SUBJECT_CATEGORIES) {
-      for (const mode of modesFor(category)) {
-        expect(CATEGORY_SHEET_PLANS[category][mode]).toBeDefined();
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const mode of modesFor(category, subject)) {
+          expect(plansFor(category, subject)[mode]).toBeDefined();
+        }
       }
     }
   });
 });
 
 describe('every inventory line carries an identifier the manifest can use', () => {
-  /** Every plan the table holds, whatever direction set produces it, with the facings it was built for. */
+  /** Every plan the table holds, whatever base and direction set produce it, with the facings it was built for. */
   const everyPlan = SUBJECT_CATEGORIES.flatMap((category) =>
-    modesFor(category).flatMap((mode) =>
-      (CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[]).flatMap((directions) =>
-        sheetSeriesFor(category, mode, directions).map((plan) => ({ category, mode, directions, plan })),
+    assemblyBaseSubjectsOf(category).flatMap((subject) =>
+      modesFor(category, subject).flatMap((mode) =>
+        (CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[]).flatMap((directions) =>
+          sheetSeriesFor(category, subject, mode, directions).map((plan) => ({
+            category,
+            mode,
+            directions,
+            plan,
+          })),
+        ),
       ),
     ),
   );
@@ -1413,10 +1451,10 @@ function figureWordCapitalised(count: number): string {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
-/** Every sheet of one pairing, at the first direction set its category offers. */
+/** Every standard sheet of one pairing, at the first direction set its category offers. */
 function seriesOf(category: SubjectCategory, mode: DirectionalMode): readonly SheetPlan[] {
   const [directions] = CATEGORY_DIRECTION_SETS[category];
-  return sheetSeriesFor(category, mode, directions);
+  return sheetSeriesFor(category, standardSubjectOf(category), mode, directions);
 }
 
 /** One sheet of a pairing, by the name its inventory heading carries. */
@@ -1612,9 +1650,11 @@ describe('the trunk-termination paragraph is true on every sheet that carries it
  * `ComponentEntry.count` is carried rather than parsed back out of `text`, for the reason its own
  * docblock gives — a line reading `Wall top corners ×4` is one line and four components, and reading
  * the words to work that out is the arithmetic that used to be done twice. But the line still states
- * the figure, so the two can still disagree, and 112 of the 331 distinct lines state one this way
- * with nothing reading them — 106 with a `×N` marker, 10 with a bare integer, and 4 with both. The group intros and outros derive their counts now; an entry's text is authored, so this is
- * what holds it to the number the compiler will actually contract for.
+ * the figure, so the two can still disagree, and 117 of the 341 distinct lines state one this way
+ * with nothing reading them — 111 with a `×N` marker, 10 with a bare integer, and 4 with both,
+ * counted over every assembly base's plans as well as the standard ones. The group intros and outros
+ * derive their counts now; an entry's text is authored, so this is what holds it to the number the
+ * compiler will actually contract for.
  *
  * **Two notations, and both are checked.** A `×N` marker is the inventory's own, and where a line
  * carries several they enumerate its parts — `Fittings: handle ×1, latch or catch ×1, mounting
@@ -1660,14 +1700,10 @@ const UNMARKED_REMAINDER = ['Slider track ×1, slider handle: at rest, held'];
  */
 function everyEntryText(): readonly ComponentEntry[] {
   const seen = new Map<string, ComponentEntry>();
-  for (const category of SUBJECT_CATEGORIES) {
-    for (const mode of modesFor(category)) {
-      for (const directions of CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[]) {
-        for (const plan of sheetSeriesFor(category, mode, directions)) {
-          for (const entry of plan.groups.flatMap((group) => group.entries)) {
-            if (!seen.has(entry.text)) seen.set(entry.text, entry);
-          }
-        }
+  for (const { category, subject, mode, directions } of EVERY_SERIES) {
+    for (const plan of sheetSeriesFor(category, subject, mode, directions)) {
+      for (const entry of plan.groups.flatMap((group) => group.entries)) {
+        if (!seen.has(entry.text)) seen.set(entry.text, entry);
       }
     }
   }

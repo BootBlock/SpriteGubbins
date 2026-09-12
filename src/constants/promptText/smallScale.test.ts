@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { standardSubject } from '../../test/sheetSubject.ts';
 import type { ResolutionProfile } from '../../types/output.ts';
 import { componentTargetSize } from '../../utils/componentTargetSize.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
@@ -76,6 +77,7 @@ describe('smallScaleDiscipline', () => {
     // is what withholds the figure, so the sentence and the line it cites cannot come apart.
     const assembled = componentTargetSize(
       'CHARACTER',
+      standardSubject(),
       'CUTOUT_RIG_SINGLE_DIRECTION',
       'SINGLE_FRONT',
       0,
@@ -86,7 +88,14 @@ describe('smallScaleDiscipline', () => {
     // The same words on a tileset, whose components *are* the thing priced, still fire — so the
     // withdrawal is about the sheet rather than about the size being small.
     expect(
-      componentTargetSize('TERRAIN', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, '24 × 24 px assembled'),
+      componentTargetSize(
+        'TERRAIN',
+        standardSubject(),
+        'TILESET_MODULAR',
+        'SINGLE_FRONT',
+        0,
+        '24 × 24 px assembled',
+      ),
     ).not.toBeNull();
     expect(bulletsFor('CUSTOM', '24 × 24 px assembled')).not.toBe('');
   });

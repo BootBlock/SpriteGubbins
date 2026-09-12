@@ -3,7 +3,7 @@ import { planComponentCount } from '../../utils/componentSet.ts';
 import { planAsDrawn } from '../../utils/sheetPlanClothing.ts';
 import type { DirectionalMode } from '../../types/output.ts';
 import type { DirectionSet } from '../../types/rendering.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../../types/subject.ts';
 import type { OutputChoice } from './choices.ts';
 
 /**
@@ -34,16 +34,16 @@ import type { OutputChoice } from './choices.ts';
  */
 export function sheetChoices(
   category: SubjectCategory,
+  subject: SheetSubject,
   mode: DirectionalMode,
   directions: DirectionSet,
-  clothing: string,
 ): readonly OutputChoice<number>[] {
   // Each plan **as this subject draws it**, so the figure in the menu is the figure the prompt for
   // that sheet contracts for. A reader who has said their vehicle carries no cladding is choosing
   // between inventories that no longer hold a cladding panel, and a label counting one would be the
   // studio advertising a component the prompt does not ask for — see `sheetPlanClothing.ts`.
-  return sheetSeriesFor(category, mode, directions).map((plan, index) => ({
+  return sheetSeriesFor(category, subject, mode, directions).map((plan, index) => ({
     value: index,
-    label: `${plan.name} (${String(planComponentCount(planAsDrawn(plan, category, clothing)))})`,
+    label: `${plan.name} (${String(planComponentCount(planAsDrawn(plan, category, subject.clothing)))})`,
   }));
 }

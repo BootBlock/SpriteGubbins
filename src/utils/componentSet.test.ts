@@ -17,6 +17,8 @@ import { calculateAtlasMetrics, widthBiasFor } from './atlasCalculator.ts';
 import { batchComponentCount, componentCountFor, sheetCountFor } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetBatch } from './sheetBatch.ts';
+import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
+import { standardSubject } from '../test/sheetSubject.ts';
 
 /**
  * One number, six readers.
@@ -43,32 +45,41 @@ function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
  * table, which is the only place that knows which combinations are real; and each pairing is walked
  * down to its individual sheets, because a series' second sheet has its own inventory, its own
  * heading and its own count, none of which the first one's assertions would have looked at.
+ *
+ * **Walked once per plan table a category can be drawn from**, each with the subject that selects it,
+ * because an assembly base draws its own sheets (issue #283): a rigid object's views are sheets of
+ * their own, and a count checked against the standard OBJECT sheets while the prompt compiled the
+ * rigid ones would be comparing two deliverables.
  */
 const SHEETS = SUBJECT_CATEGORIES.flatMap((category) =>
-  modesFor(category).flatMap((mode) =>
-    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-      sheetSeriesFor(category, mode, directions).map((plan, sheetIndex) => ({
-        category,
-        mode,
-        directions,
-        sheetIndex,
-        sheet: plan.name,
-      })),
+  assemblyBaseSubjectsOf(category).flatMap((subject) =>
+    modesFor(category, subject).flatMap((mode) =>
+      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+        sheetSeriesFor(category, subject, mode, directions).map((plan, sheetIndex) => ({
+          category,
+          subject,
+          base: subject.anatomy,
+          mode,
+          directions,
+          sheetIndex,
+          sheet: plan.name,
+        })),
+      ),
     ),
   ),
 );
 
 describe('component counts', () => {
   it.each(SHEETS)(
-    '$category / $mode / $directions / $sheet states one count consistently across the prompt, the inventory and the atlas',
-    ({ category, mode, directions, sheetIndex, sheet }) => {
+    '$category / $base / $mode / $directions / $sheet states one count consistently across the prompt, the inventory and the atlas',
+    ({ category, subject: base, mode, directions, sheetIndex, sheet }) => {
       // A subject naming no additional anatomy, so the plan's own count is the whole count here. The
       // block below covers what happens when a subject adds to it.
-      const subject = { ...defaultSubjectFor(category), additional_anatomy: NONE_ANATOMY };
+      const subject = { ...base, additional_anatomy: NONE_ANATOMY };
       // The subject's own `clothing` value, because the count is a function of it: BACKGROUND and
       // INTERFACE both *default* to the value meaning the subject has none of what the field
       // describes, so a `''` here would price a sheet the prompt below no longer asks for.
-      const count = componentCountFor(category, mode, directions, sheetIndex, subject.clothing, []);
+      const count = componentCountFor(category, subject, mode, directions, sheetIndex, []);
       expect(Number.isInteger(count) && count > 0).toBe(true);
 
       // The prompt states it twice — once as the contract, once as the self-audit — and both must
@@ -101,9 +112,9 @@ describe('component counts', () => {
     // 111 components in one image was deleted for this reason; the ceiling is roughly 40. It bounds
     // one *generation*, which is why a series is checked sheet by sheet rather than in total — a
     // character's five-view core and its limbs are forty-nine together and neither is over.
-    for (const { category, mode, directions, sheetIndex, sheet } of SHEETS) {
+    for (const { category, subject, mode, directions, sheetIndex, sheet } of SHEETS) {
       expect(
-        componentCountFor(category, mode, directions, sheetIndex, '', []),
+        componentCountFor(category, subject, mode, directions, sheetIndex, []),
         `${category}/${mode}/${directions}/${sheet} exceeds the practical ceiling`,
       ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
     }
@@ -120,15 +131,15 @@ describe('component counts', () => {
     // the trunk once, and the limbs at each of the five facings. Both figures now come off the very
     // batch `sheetBatch` enumerates, which is the list the split drawer, the studio's progress strip
     // and every prompt's own section 6 are counting.
-    for (const { category, mode, directions } of SHEETS) {
+    for (const { category, subject, mode, directions } of SHEETS) {
       const output = withOutput({ directionalMode: mode, directions });
-      const { sheets } = sheetBatch(category, output);
-      const choice = directionalModeChoices(category, output, '', []).find(
+      const { sheets } = sheetBatch(category, subject, output);
+      const choice = directionalModeChoices(category, subject, output, []).find(
         (candidate) => candidate.value === mode,
       );
 
       expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
-        String(batchComponentCount(category, sheets, '', [])),
+        String(batchComponentCount(category, subject, sheets, [])),
       );
       if (sheets.length > 1) {
         expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
@@ -142,14 +153,16 @@ describe('component counts', () => {
     // The figure from the report, spelled out rather than derived, so the two axes cannot both move
     // and keep the assertion green: 1 trunk sheet + 5 articulation runs, and 15 + 5 × 34 components.
     const output = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FIVE_CLASSIC' });
-    const label = directionalModeChoices('CHARACTER', output, '', []).find(
+    const label = directionalModeChoices('CHARACTER', standardSubject(), output, []).find(
       (choice) => choice.value === 'CORE_DIRECTIONAL_VARIANTS',
     )?.label;
 
     expect(label).toBe('CORE_DIRECTIONAL_VARIANTS (185 in 6 sheets)');
     // And the inventory axis, which is what the `Inventory Part` select offers: two parts, neither
     // of them numbered, because the batch is the only sequence of sheets anything counts.
-    expect(sheetCountFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC')).toBe(2);
+    expect(sheetCountFor('CHARACTER', standardSubject(), 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC')).toBe(
+      2,
+    );
   });
 
   it('keeps the anatomy on a sheet index the pairing does not have', () => {
@@ -165,16 +178,16 @@ describe('component counts', () => {
     const subject = { ...defaultSubjectFor('OBJECT'), additional_anatomy: 'Demon Horn ×2, Tail ×1' };
     const stale = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', sheetIndex: 1 });
 
-    expect(sheetCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC')).toBe(1);
-    expect(componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1, '', anatomy)).toBe(
-      componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, '', anatomy),
-    );
+    expect(sheetCountFor('OBJECT', subject, 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC')).toBe(1);
+    expect(
+      componentCountFor('OBJECT', subject, 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1, anatomy),
+    ).toBe(componentCountFor('OBJECT', subject, 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, anatomy));
 
     const prompt = generatePrompt('OBJECT', subject, stale);
     // Fifteen, not three: a five-view core draws the three named pieces at each of its facings.
     expect(prompt).toContain('#### Deployable Modules — 15');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, '', anatomy))} components`,
+      `Exactly ${String(componentCountFor('OBJECT', subject, 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, anatomy))} components`,
     );
   });
 
@@ -203,14 +216,14 @@ describe('component counts', () => {
     // trunk — the articulation runs stay bare, because their limbs hang on a trunk the core
     // sheets carry.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
-    for (const { category, mode, directions, sheetIndex } of SHEETS) {
-      const plan = sheetSeriesFor(category, mode, directions)[sheetIndex];
+    for (const { category, subject, mode, directions, sheetIndex } of SHEETS) {
+      const plan = sheetSeriesFor(category, subject, mode, directions)[sheetIndex];
       if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
       const views = plan.facings === 'run' ? (sheetIndex === 0 ? 1 : 0) : plan.facings.length;
       expect(
-        componentCountFor(category, mode, directions, sheetIndex, '', anatomy),
+        componentCountFor(category, subject, mode, directions, sheetIndex, anatomy),
         `${category}/${mode}/${directions}/${plan.name}`,
-      ).toBe(componentCountFor(category, mode, directions, sheetIndex, '', []) + 3 * views);
+      ).toBe(componentCountFor(category, subject, mode, directions, sheetIndex, []) + 3 * views);
     }
   });
 
@@ -223,14 +236,16 @@ describe('component counts', () => {
     const at = (sheetIndex: number, additional: readonly AnatomyComponent[]) =>
       componentCountFor(
         'CHARACTER',
+        standardSubject(),
         'CORE_DIRECTIONAL_VARIANTS',
         'EIGHT_COMPASS',
         sheetIndex,
-        '',
         additional,
       );
 
-    expect(sheetCountFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS')).toBe(3);
+    expect(sheetCountFor('CHARACTER', standardSubject(), 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS')).toBe(
+      3,
+    );
     expect(at(0, anatomy)).toBe(at(0, []) + 3 * 4);
     expect(at(1, anatomy)).toBe(at(1, []) + 3 * 4);
     expect(at(2, anatomy)).toBe(at(2, []));
@@ -241,9 +256,9 @@ describe('component counts', () => {
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       directions: 'EIGHT_COMPASS',
     });
-    const { sheets } = sheetBatch('CHARACTER', eightWay);
-    expect(batchComponentCount('CHARACTER', sheets, '', anatomy)).toBe(
-      batchComponentCount('CHARACTER', sheets, '', []) + 3 * 8,
+    const { sheets } = sheetBatch('CHARACTER', standardSubject(), eightWay);
+    expect(batchComponentCount('CHARACTER', standardSubject(), sheets, anatomy)).toBe(
+      batchComponentCount('CHARACTER', standardSubject(), sheets, []) + 3 * 8,
     );
   });
 
@@ -287,12 +302,12 @@ describe('component counts', () => {
     // carries the sentence, because every one of them accepts a ×N entry; a run sheet has one axis
     // and stays without it.
     const anatomy = 'Demon Horn ×2, Tail ×1';
-    for (const { category, mode, directions, sheetIndex } of SHEETS) {
-      const plan = sheetSeriesFor(category, mode, directions)[sheetIndex];
+    for (const { category, subject, mode, directions, sheetIndex } of SHEETS) {
+      const plan = sheetSeriesFor(category, subject, mode, directions)[sheetIndex];
       if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
       const prompt = generatePrompt(
         category,
-        { ...defaultSubjectFor(category), additional_anatomy: anatomy },
+        { ...subject, additional_anatomy: anatomy },
         withOutput({ directionalMode: mode, directions, sheetIndex }),
       );
 
@@ -316,10 +331,10 @@ describe('component counts', () => {
     // reference counts as naming, and this walks every sheet carrying such an entry to check the
     // two travel together.
     let referringSheets = 0;
-    for (const { category, mode, directions, sheetIndex } of SHEETS) {
+    for (const { category, subject, mode, directions, sheetIndex } of SHEETS) {
       const prompt = generatePrompt(
         category,
-        defaultSubjectFor(category),
+        subject,
         withOutput({ directionalMode: mode, directions, sheetIndex }),
       );
       if (!prompt.includes('at each of the yaws section 3 lists')) continue;
@@ -337,7 +352,7 @@ describe('the count once a subject names anatomy of its own', () => {
   /** `CUTOUT_RIG_SINGLE_DIRECTION`: fifteen pieces, and room to add to them. */
   const RIG = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' });
   // Derived, not restated: the plan is the only place the figure lives now.
-  const BASE = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'FIVE_CLASSIC', 0, '', []);
+  const BASE = componentCountFor('CHARACTER', SUBJECT, 'CUTOUT_RIG_SINGLE_DIRECTION', 'FIVE_CLASSIC', 0, []);
 
   function withAnatomy(additional_anatomy: string): SubjectDefinition {
     return { ...SUBJECT, additional_anatomy };
@@ -411,16 +426,16 @@ describe('the count once a subject names anatomy of its own', () => {
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
     const count = componentCountFor(
       'CHARACTER',
+      SUBJECT,
       'CUTOUT_RIG_SINGLE_DIRECTION',
       'FIVE_CLASSIC',
       0,
-      '',
       anatomy,
     );
     expect(count).toBe(BASE + 3);
 
     const rigOutput = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' });
-    const label = directionalModeChoices('CHARACTER', rigOutput, '', anatomy).find(
+    const label = directionalModeChoices('CHARACTER', SUBJECT, rigOutput, anatomy).find(
       (choice) => choice.value === 'CUTOUT_RIG_SINGLE_DIRECTION',
     )?.label;
     const facings = DIRECTION_LISTS.FIVE_CLASSIC.length;
@@ -484,10 +499,22 @@ describe('what a whole batch asks for', () => {
    * fifteen while the user was about to generate eight of them.
    */
   const RIG = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', rigMode: 'CUTOUT_RIG' });
-  const PER_SHEET = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'FIVE_CLASSIC', 0, '', []);
+  const PER_SHEET = componentCountFor(
+    'CHARACTER',
+    standardSubject(),
+    'CUTOUT_RIG_SINGLE_DIRECTION',
+    'FIVE_CLASSIC',
+    0,
+    [],
+  );
 
   function batchTotal(output: OutputConfig, additional: readonly AnatomyComponent[]): number {
-    return batchComponentCount('CHARACTER', sheetBatch('CHARACTER', output).sheets, '', additional);
+    return batchComponentCount(
+      'CHARACTER',
+      standardSubject(),
+      sheetBatch('CHARACTER', standardSubject(), output).sheets,
+      additional,
+    );
   }
 
   it.each([...DIRECTION_SETS])('prices a rig over %s at one sheet per facing of it', (directions) => {
@@ -522,17 +549,22 @@ describe('what a whole batch asks for', () => {
     // anywhere else the set multiplies the run parts and the batch is legitimately larger.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
     for (const category of SUBJECT_CATEGORIES) {
-      for (const mode of modesFor(category)) {
-        const output = withOutput({ directionalMode: mode, directions: 'SINGLE_FRONT' });
-        const parts = sheetSeriesFor(category, mode, 'SINGLE_FRONT').reduce(
-          (total, _plan, index) =>
-            total + componentCountFor(category, mode, 'SINGLE_FRONT', index, '', anatomy),
-          0,
-        );
-        expect(
-          batchComponentCount(category, sheetBatch(category, output).sheets, '', anatomy),
-          `${category}/${mode}`,
-        ).toBe(parts);
+      // Under every assembly base, whose sheets are a pairing's inventory like any other (issue #283),
+      // with the standard subject's empty `clothing` so no entry a subject can decline leaves the sum.
+      for (const { anatomy: base } of assemblyBaseSubjectsOf(category)) {
+        const subject = { ...standardSubject(), anatomy: base };
+        for (const mode of modesFor(category, subject)) {
+          const output = withOutput({ directionalMode: mode, directions: 'SINGLE_FRONT' });
+          const parts = sheetSeriesFor(category, subject, mode, 'SINGLE_FRONT').reduce(
+            (total, _plan, index) =>
+              total + componentCountFor(category, subject, mode, 'SINGLE_FRONT', index, anatomy),
+            0,
+          );
+          expect(
+            batchComponentCount(category, subject, sheetBatch(category, subject, output).sheets, anatomy),
+            `${category}/${base}/${mode}`,
+          ).toBe(parts);
+        }
       }
     }
   });
@@ -542,20 +574,20 @@ describe('what a whole batch asks for', () => {
     // sheet are two different inventories on one facing, so there is no per-sheet figure to multiply
     // — and both axes multiply, so an eight-set rig mode is not the shape every batch has.
     const output = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'EIGHT_COMPASS' });
-    const { sheets } = sheetBatch('CHARACTER', output);
+    const { sheets } = sheetBatch('CHARACTER', standardSubject(), output);
     const perSheet = sheets.map((sheet) =>
       componentCountFor(
         'CHARACTER',
+        standardSubject(),
         'CORE_DIRECTIONAL_VARIANTS',
         'EIGHT_COMPASS',
         sheet.output.sheetIndex,
-        '',
         [],
       ),
     );
 
     expect(new Set(perSheet).size).toBe(2);
-    expect(batchComponentCount('CHARACTER', sheets, '', [])).toBe(
+    expect(batchComponentCount('CHARACTER', standardSubject(), sheets, [])).toBe(
       perSheet.reduce((total, count) => total + count, 0),
     );
   });

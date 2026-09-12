@@ -31,7 +31,8 @@ export function ComponentBudgetNotice() {
   const directions = useOutputStore((state) => state.output.directions);
   const componentBudget = useOutputStore((state) => state.output.componentBudget);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  // The other subject field the count reads — see `componentSet.ts`.
+  // The other two subject fields the count reads — see `componentSet.ts`.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
   const clothing = useSubjectStore((state) => state.subject.clothing);
   const category = useSubjectStore((state) => state.category);
 
@@ -49,10 +50,10 @@ export function ComponentBudgetNotice() {
   // and select it.
   const count = componentCountFor(
     category,
+    { anatomy, clothing },
     directionalMode,
     directions,
     sheetIndex,
-    clothing,
     parseAdditionalAnatomy(additionalAnatomy),
   );
 

@@ -220,6 +220,96 @@ describe('useSubjectStore', () => {
   });
 
   /**
+   * The same claims, moved by the other field that decides them (issue #283).
+   *
+   * An assembly base chooses the plans its category draws from, so choosing one can leave the store
+   * holding a sheet mode or a rig the new plans cannot draw — a rigid object has no rig sheet, and a
+   * nine-slice frame no state library. The compiler resolves both on every compile; what this protects
+   * is the stored configuration, which a saved preset would persist, and the controls showing it.
+   */
+  describe('the sheet when the assembly base changes', () => {
+    it('drops a sheet mode and a rig the new base cannot be drawn with', () => {
+      useSubjectStore.getState().setCategory('OBJECT');
+      useSubjectStore.getState().setField('anatomy', 'Multi-Segment Turret');
+      useOutputStore.setState({
+        output: {
+          ...useOutputStore.getState().output,
+          directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+          rigMode: 'CUTOUT_RIG',
+        },
+      });
+
+      useSubjectStore.getState().setField('anatomy', 'Single Rigid Object');
+
+      const { output } = useOutputStore.getState();
+      expect(output.directionalMode).toBe(DEFAULT_MODE_FOR.OBJECT);
+      expect(output.rigMode).toBe('NONE');
+    });
+
+    it('moves a base only one sheet can draw onto that sheet', () => {
+      useSubjectStore.getState().setCategory('INTERFACE');
+      expect(useOutputStore.getState().output.directionalMode).toBe('SINGLE_DIRECTION_POSE_LIBRARY');
+
+      useSubjectStore.getState().setField('anatomy', 'Nine-Slice Stretching Frame');
+
+      expect(useOutputStore.getState().output.directionalMode).toBe('TILESET_MODULAR');
+    });
+
+    it('follows a base typed in another case, as the combo box delivers it', () => {
+      useSubjectStore.getState().setCategory('INTERFACE');
+      useSubjectStore.getState().setField('anatomy', 'nine-slice stretching frame');
+
+      expect(useOutputStore.getState().output.directionalMode).toBe('TILESET_MODULAR');
+    });
+
+    it('leaves the sheet index alone for a value that draws the same sheets', () => {
+      // The combo box writes every keystroke, and CHARACTER declares no base, so retyping the field
+      // must not send a reader working through an articulation sheet back to the directional core.
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 } });
+      useSubjectStore.getState().setField('anatomy', 'Tailed Humanoid');
+
+      expect(useOutputStore.getState().output.sheetIndex).toBe(1);
+    });
+
+    it('goes back to the first sheet where the base changes the plans', () => {
+      useSubjectStore.getState().setCategory('OBJECT');
+      useSubjectStore.getState().setField('anatomy', 'Multi-Segment Turret');
+      useOutputStore.setState({
+        output: { ...useOutputStore.getState().output, directions: 'EIGHT_COMPASS', sheetIndex: 1 },
+      });
+
+      useSubjectStore.getState().setField('anatomy', 'Single Rigid Object');
+
+      expect(useOutputStore.getState().output.sheetIndex).toBe(0);
+    });
+
+    it('follows the base a reset and a randomise install', () => {
+      useSubjectStore.getState().setCategory('OBJECT');
+      useSubjectStore.getState().setField('anatomy', 'Multi-Segment Turret');
+      useOutputStore.setState({
+        output: {
+          ...useOutputStore.getState().output,
+          directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+          rigMode: 'CUTOUT_RIG',
+        },
+      });
+
+      // The default OBJECT subject opens on `Single Rigid Object`.
+      useSubjectStore.getState().resetSubject();
+      expect(useOutputStore.getState().output.directionalMode).toBe(DEFAULT_MODE_FOR.OBJECT);
+
+      useSubjectStore.getState().setField('anatomy', 'Multi-Segment Turret');
+      useOutputStore.setState({
+        output: { ...useOutputStore.getState().output, directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' },
+      });
+      // A low draw takes every pool's first option, and the anatomy pool opens on the rigid object.
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+      useSubjectStore.getState().randomizeSubject();
+      expect(useOutputStore.getState().output.directionalMode).toBe(DEFAULT_MODE_FOR.OBJECT);
+    });
+  });
+
+  /**
    * The third leak, and the one that was visible from a default session in one click.
    *
    * `directions` was not reconciled at all, so `THREE_CLASSIC` — the set the app opens on — survived
@@ -368,7 +458,7 @@ describe('useSubjectStore', () => {
    *
    * Switching category is one click and one arrow key from the top of the form, and it replaces all
    * sixteen answers plus six settings in the other store. The stack's own rules are pinned in
-   * `utils/studioHistory.test.ts`; what can only be checked here is that the four acts reach it, and
+   * `utils/studioHistory.test.ts`; what can only be checked here is that every act reaches it, and
    * that stepping back writes *both* stores.
    */
   describe('the undo stack', () => {
@@ -448,7 +538,8 @@ describe('useSubjectStore', () => {
     });
 
     it('keeps the fields edited after an act, in both directions', () => {
-      // Field edits are never recorded, and must never be what an undo throws away either.
+      // A field edit that moves nothing else is never recorded, and must never be what an undo throws
+      // away either.
       useSubjectStore.getState().setCategory('BUILDING');
       useSubjectStore.getState().setField('species', 'Lighthouse');
 
@@ -457,6 +548,41 @@ describe('useSubjectStore', () => {
 
       useSubjectStore.getState().redoStudio();
       expect(useSubjectStore.getState().subject.species).toBe('Lighthouse');
+    });
+
+    it('puts the sheet back after a base that moved it', () => {
+      // Typing the old base back returns the field and not the sheet: the rigid object settled the mode
+      // and the rig, and the turret keeps whatever it is handed. So the edit is an act.
+      useSubjectStore.getState().setCategory('OBJECT');
+      useSubjectStore.getState().setField('anatomy', 'Multi-Segment Turret');
+      useOutputStore.setState({
+        output: {
+          ...useOutputStore.getState().output,
+          directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+          rigMode: 'CUTOUT_RIG',
+        },
+      });
+
+      useSubjectStore.getState().setField('anatomy', 'Single Rigid Object');
+      expect(useOutputStore.getState().output.rigMode).toBe('NONE');
+      useSubjectStore.getState().undoStudio();
+
+      expect(useSubjectStore.getState().subject.anatomy).toBe('Multi-Segment Turret');
+      const { output } = useOutputStore.getState();
+      expect(output.directionalMode).toBe('CUTOUT_RIG_SINGLE_DIRECTION');
+      expect(output.rigMode).toBe('CUTOUT_RIG');
+    });
+
+    it('records no base edit that leaves the sheet where it was', () => {
+      // The rigid object opens on a sheet the turret also draws, so the plans change and nothing
+      // they settle moves — the case every keystroke into the combo box is.
+      useSubjectStore.getState().setCategory('OBJECT');
+      const depth = studioUndoDepth(useSubjectStore.getState().history);
+
+      useSubjectStore.getState().setField('anatomy', 'Multi-Segment Turret');
+      useSubjectStore.getState().setField('anatomy', 'Single Rigid Object');
+
+      expect(studioUndoDepth(useSubjectStore.getState().history)).toBe(depth);
     });
 
     it('records nothing for an act that changed nothing', () => {

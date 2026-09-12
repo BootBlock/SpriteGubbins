@@ -94,8 +94,8 @@ export const PORTRAIT_BUST_PRESETS: readonly PresetArchetype[] = [
       materials: 'Soft Skin, Matte Cloth & Wet Eyes',
       exclusions: 'No background scene behind the head',
       // The pieces a layered cut needs beyond the twelve expressions, asked for through the field
-      // that exists for exactly this — the plan is a function of the category and the mode, never of
-      // a subject field, so `additional_anatomy` is where a per-project deliverable is stated.
+      // that exists for exactly this — PORTRAIT declares no assembly base that draws feature pieces, so
+      // `additional_anatomy` is where a per-project deliverable is stated.
       additional_anatomy: 'Speaking Mouth Shapes ×4',
     },
     output: {

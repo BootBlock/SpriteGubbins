@@ -37,11 +37,11 @@ export function studioUndoDepth(history: StudioHistory): number {
 }
 
 /**
- * Record one of the acts that replaces the whole subject: where the studio was, and where it landed.
+ * Record one of the acts an undo steps back over: where the studio was, and where it landed.
  *
  * Three things happen here, and each answers a way the naive stack goes wrong:
  *
- * - **`before` is written into the cursor slot rather than assumed to be already there.** Field
+ * - **`before` is written into the cursor slot rather than assumed to be already there.** Most field
  *   edits move the studio without recording, so between two acts the entry under the cursor is
  *   whatever the earlier act produced and not what the reader actually has. Taking the live position
  *   as an argument is what stops those edits being the thing an undo throws away.
@@ -51,8 +51,9 @@ export function studioUndoDepth(history: StudioHistory): number {
  * - **Anything after the cursor is dropped**, which is what makes a redo mean the branch just
  *   undone rather than some other branch from earlier.
  *
- * There is deliberately no coalescing. Every act on this stack is a press or a select, so there is
- * no gesture to merge — which is the whole difference between this stack and the dials'.
+ * There is deliberately no coalescing. Every act on this stack is a press, a select, or the one
+ * keystroke on which a typed assembly base moves the sheet, so there is no gesture to merge — which is
+ * the whole difference between this stack and the dials'.
  */
 export function recordStudio(
   history: StudioHistory,

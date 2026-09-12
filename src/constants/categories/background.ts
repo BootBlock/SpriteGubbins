@@ -1,7 +1,7 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
   ABSENT_OPTION_DROPS_THE_PIECES,
-  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
   HEX_CODE_PINS_THE_HUE,
   SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
@@ -37,7 +37,9 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * cards and the pools were written for the parallax set alone, so the subject a category switch
  * installs told the layer library how long its band repeats, and told the parallax set it was a
  * single panel that never repeats. Every pool now opens on a value both sheets agree with, and the
- * values true of one sheet stay on offer, bound to the sheet they describe in `modeBoundOptions.ts`.
+ * values true of one sheet stay on offer: a *Layer Assembly Base* is drawn by that sheet alone in
+ * `sheetPlans/assemblyBases.ts` (issue #283), and every other value is bound to it in
+ * `modeBoundOptions.ts`.
  *
  * **`Focal Landmark` is where the loop shows.** Both sheets draw the landmark as a piece of its own,
  * placed once, because a landmark painted into a looping band would be recognised on every screen.
@@ -223,7 +225,7 @@ export const BACKGROUND: CategoryDefinition = {
       label: 'Layer Assembly Base',
       tooltip:
         'How the backdrop is cut so the engine can move it. Choose by whether it repeats and along which axis — a seamless band loops along one axis for ever, a stacked set is several layers moved at different rates, and a single panel never repeats at all and is sized to the screen instead. ' +
-        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+        ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Stacked Depth Layers',
         'Single Non-Repeating Panel',

@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { defaultSubjectFor } from '../src/constants/categories/index.ts';
 import { CATEGORY_DIRECTION_SETS } from '../src/constants/categoryDirectionSets.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
 import { SHEET_CELL_PITCH } from '../src/constants/sheetCanvas.ts';
-import { modesFor, SHEET_INDEX_RANGE } from '../src/constants/sheetPlans/index.ts';
+import {
+  CATEGORY_SHEET_PLANS,
+  modesFor,
+  plansFor,
+  SHEET_INDEX_RANGE,
+} from '../src/constants/sheetPlans/index.ts';
+import { assemblyBaseSubjectsOf } from '../src/test/assemblyBaseSubjects.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 import { generatePrompt } from '../src/utils/promptCompiler.ts';
 
@@ -78,37 +83,47 @@ describe('the resolution profile against the page it is drawn on', () => {
     const scored = new Set<string>();
 
     for (const category of SUBJECT_CATEGORIES) {
-      const subject = defaultSubjectFor(category);
-      for (const directionalMode of modesFor(category)) {
-        // Every direction set the category offers and every sheet index, because the set and the
-        // index decide which plan compiles — an eight-compass core is two sheets and an articulation
-        // run after them, and the defect this suite exists for was on every one of the three.
-        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-          for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
-            for (const resolutionProfile of SHARE_BEARING) {
-              const where = `${category} / ${directionalMode} / ${directions} / ${String(sheetIndex)} / ${resolutionProfile}`;
-              const prompt = generatePrompt(category, subject, {
-                ...DEFAULT_OUTPUT_CONFIG,
-                directionalMode,
-                directions,
-                sheetIndex,
-                resolutionProfile,
-              });
-              const lines = [...prompt.matchAll(RESOLUTION_LINE)].map((match) => match[1] ?? '');
-              expect(lines, where).toHaveLength(1);
-              const line = lines[0] ?? '';
+      // Every plan table the category can be drawn from, each compiled with the subject that selects
+      // it, because an assembly base draws sheets of its own (issue #283): OBJECT's default subject is
+      // a rigid object, so a walk of the default alone never compiles its part library, its
+      // articulated views or its rig sheet. A subject drawing the standard plans is keyed as `standard`
+      // rather than by its pooled value, which a pool edit can change — and by the plans it draws
+      // rather than by its place in the walk, so the guards below cannot be satisfied by a subject
+      // drawing some other table under the standard label.
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        const base =
+          plansFor(category, subject) === CATEGORY_SHEET_PLANS[category] ? 'standard' : subject.anatomy;
+        for (const directionalMode of modesFor(category, subject)) {
+          // Every direction set the category offers and every sheet index, because the set and the
+          // index decide which plan compiles — an eight-compass core is two sheets and an articulation
+          // run after them, and the defect this suite exists for was on every one of the three.
+          for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+              for (const resolutionProfile of SHARE_BEARING) {
+                const where = `${category} / ${base} / ${directionalMode} / ${directions} / ${String(sheetIndex)} / ${resolutionProfile}`;
+                const prompt = generatePrompt(category, subject, {
+                  ...DEFAULT_OUTPUT_CONFIG,
+                  directionalMode,
+                  directions,
+                  sheetIndex,
+                  resolutionProfile,
+                });
+                const lines = [...prompt.matchAll(RESOLUTION_LINE)].map((match) => match[1] ?? '');
+                expect(lines, where).toHaveLength(1);
+                const line = lines[0] ?? '';
 
-              const found = CELL_SHARE.exec(line);
-              if (found === null) {
-                unpriceable.push(`${where}: ${line}`);
-                continue;
-              }
-              scored.add(`${category} / ${directionalMode}`);
-              const top = Number(found[2]) / 100;
-              if (top * top > COVERAGE_CEILING) {
-                breaches.push(
-                  `${where}: ${String(found[2])}% of a cell covers ${(top * top).toFixed(2)} of the page`,
-                );
+                const found = CELL_SHARE.exec(line);
+                if (found === null) {
+                  unpriceable.push(`${where}: ${line}`);
+                  continue;
+                }
+                scored.add(`${category} / ${base} / ${directionalMode}`);
+                const top = Number(found[2]) / 100;
+                if (top * top > COVERAGE_CEILING) {
+                  breaches.push(
+                    `${where}: ${String(found[2])}% of a cell covers ${(top * top).toFixed(2)} of the page`,
+                  );
+                }
               }
             }
           }
@@ -128,9 +143,21 @@ describe('the resolution profile against the page it is drawn on', () => {
     ).toEqual([]);
     // Non-vacuous, and on the pairing the defect was reported against: a run that scored nothing
     // would mean the line had stopped being reached rather than that every sheet fits.
-    expect(scored.has('CHARACTER / CORE_DIRECTIONAL_VARIANTS'), 'the reported pairing was never scored').toBe(
-      true,
-    );
+    expect(
+      scored.has('CHARACTER / standard / CORE_DIRECTIONAL_VARIANTS'),
+      'the reported pairing was never scored',
+    ).toBe(true);
+    // And on both sides of the one category whose default subject does not draw its standard plans, so
+    // a walk that went back to the default subject — or over to the standard one alone — fails here
+    // rather than silently dropping a table.
+    expect(
+      scored.has('OBJECT / standard / SINGLE_DIRECTION_POSE_LIBRARY'),
+      'OBJECT’s standard part library was never scored',
+    ).toBe(true);
+    expect(
+      scored.has('OBJECT / Single Rigid Object / SINGLE_DIRECTION_POSE_LIBRARY'),
+      'the rigid object’s states were never scored',
+    ).toBe(true);
     expect(breaches, `the stated scale does not fit:\n${breaches.join('\n')}`).toEqual([]);
   });
 });

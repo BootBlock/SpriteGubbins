@@ -71,7 +71,7 @@ export function PresetCard({ preset, index }: PresetCardProps) {
           truncated every built-in description mid-clause.
         */}
         <p className="line-clamp-6 text-xs text-ink-muted">{preset.description}</p>
-        <PresetCardSpecs category={preset.category} output={preset.output} />
+        <PresetCardSpecs category={preset.category} subject={preset.subject} output={preset.output} />
       </div>
 
       <div className="relative flex gap-2">

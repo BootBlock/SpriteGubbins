@@ -2,9 +2,10 @@ import type { OutputConfig } from './output.ts';
 import type { SubjectCategory, SubjectDefinition } from './subject.ts';
 
 /**
- * Everything the studio's four destructive acts throw away, held as one value.
+ * Everything the studio's destructive acts throw away, held as one value.
  *
- * The output configuration is in here beside the subject because `setCategory` rewrites both: the
+ * The output configuration is in here beside the subject because `setCategory` rewrites both, and an
+ * assembly base that moves the sheet rewrites the mode, the rig and the sheet index with it: the
  * mode, the rig, the direction set, the projection, the elevation, the style reference, the pinned
  * facing and the sheet index are all re-resolved against the category being switched to. An undo
  * that put the sixteen answers back and left those where the switch moved them would leave the tab
@@ -27,8 +28,10 @@ export interface StudioPosition {
  * truncates whatever was ahead of the cursor, so a redo means the branch just undone.
  *
  * **What is on the stack is deliberately not every edit.** A field edit is reversible by typing the
- * old value back; the four acts that replace all sixteen answers at once are not, and they are the
- * only things recorded here. That leaves the entry under the cursor able to go stale — a reader
+ * old value back; the four acts that replace all sixteen answers at once are not, and nor is a new
+ * assembly base whose plans move the sheet mode, the rig or the sheet index, because typing the old
+ * base back returns the field and leaves those where the new one put them. Those five are the only
+ * things recorded here. That leaves the entry under the cursor able to go stale — a reader
  * switches category, then edits four fields — so every move re-reads the live studio into that slot
  * before it steps. See {@link recordStudio}.
  */

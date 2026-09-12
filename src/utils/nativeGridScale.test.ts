@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { standardSubject } from '../test/sheetSubject.ts';
 import { componentTargetSize } from './componentTargetSize.ts';
 import { nativeGridScale } from './nativeGridScale.ts';
 import { parseTargetSize } from './targetSize.ts';
@@ -49,6 +50,7 @@ describe('nativeGridScale', () => {
     // because the pairing is what the compiler relies on.
     const assembled = componentTargetSize(
       'CHARACTER',
+      standardSubject(),
       'CUTOUT_RIG_SINGLE_DIRECTION',
       'SINGLE_FRONT',
       0,

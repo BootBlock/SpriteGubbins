@@ -7,6 +7,8 @@ import type { OutputConfig } from '../types/output.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import { DIRECTION_SETS } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
+import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
+import { standardSubject } from '../test/sheetSubject.ts';
 import { facingApplies, primaryFacing, sheetDirections } from './sheetDirections.ts';
 
 /**
@@ -24,11 +26,23 @@ function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
 const RIG = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', directions: 'EIGHT_COMPASS' });
 
 /** The one plan a rig has — a `'run'` sheet draws its single facing per generation. */
-const RIG_PLAN = sheetPlanFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0);
+const RIG_PLAN = sheetPlanFor(
+  'CHARACTER',
+  standardSubject(),
+  'CUTOUT_RIG_SINGLE_DIRECTION',
+  'EIGHT_COMPASS',
+  0,
+);
 
 /** The two sheets a character's five-view pairing arrives as: the trunk turned, then the limbs. */
-const CORE = sheetPlanFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0);
-const ARTICULATION = sheetPlanFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1);
+const CORE = sheetPlanFor('CHARACTER', standardSubject(), 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0);
+const ARTICULATION = sheetPlanFor(
+  'CHARACTER',
+  standardSubject(),
+  'CORE_DIRECTIONAL_VARIANTS',
+  'FIVE_CLASSIC',
+  1,
+);
 
 /**
  * The only sheet an EFFECT has, and the plan a stored `CORE_DIRECTIONAL_VARIANTS` resolves to there.
@@ -37,7 +51,13 @@ const ARTICULATION = sheetPlanFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'FIV
  * entirely, so a stored pairing degrades to the frame sequence — a run sheet driven by the very
  * direction controls the stored mode would have ignored.
  */
-const EFFECT_SEQUENCE = sheetPlanFor('EFFECT', 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS', 0);
+const EFFECT_SEQUENCE = sheetPlanFor(
+  'EFFECT',
+  standardSubject(),
+  'CORE_DIRECTIONAL_VARIANTS',
+  'EIGHT_COMPASS',
+  0,
+);
 
 describe('sheetDirections', () => {
   it('takes the set’s first facing when none is pinned', () => {
@@ -94,6 +114,7 @@ describe('sheetDirections', () => {
     });
     const [cardinals, diagonals, articulation] = sheetSeriesFor(
       'CHARACTER',
+      standardSubject(),
       'CORE_DIRECTIONAL_VARIANTS',
       'EIGHT_COMPASS',
     );
@@ -145,16 +166,21 @@ describe('sheetDirections', () => {
     // sheet and is where an unpinned run starts, so the studio's opening prompt for any sheet of a
     // series describes pieces that go on one figure. A pinned facing deliberately moves the runs —
     // that is what generating the other runs *is* — so the invariant is stated of the default.
+    //
+    // Walked for every assembly base, each with the subject that selects it, as the two sweeps below
+    // are: a declared base builds sheets of its own from the same set (issue #283).
     for (const category of SUBJECT_CATEGORIES) {
-      for (const mode of DIRECTIONAL_MODES) {
-        for (const directions of DIRECTION_SETS) {
-          const series = sheetSeriesFor(category, mode, directions);
-          const output = withOutput({ directionalMode: mode, directions, primaryDirection: null });
-          const [firstPlan] = series;
-          const lead = sheetDirections(category, output, firstPlan).assembly;
-          for (const plan of series) {
-            if (plan.facings !== 'run') continue;
-            expect(sheetDirections(category, output, plan).assembly).toBe(lead);
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const mode of DIRECTIONAL_MODES) {
+          for (const directions of DIRECTION_SETS) {
+            const series = sheetSeriesFor(category, subject, mode, directions);
+            const output = withOutput({ directionalMode: mode, directions, primaryDirection: null });
+            const [firstPlan] = series;
+            const lead = sheetDirections(category, output, firstPlan).assembly;
+            for (const plan of series) {
+              if (plan.facings !== 'run') continue;
+              expect(sheetDirections(category, output, plan).assembly).toBe(lead);
+            }
           }
         }
       }
@@ -162,16 +188,19 @@ describe('sheetDirections', () => {
   });
 
   it('always assembles towards a facing it says it covers', () => {
-    // The invariant both readers depend on, over every combination the app can reach.
+    // The invariant both readers depend on, over every combination the app can reach: category,
+    // assembly base, mode, direction set and pinned facing.
     for (const category of SUBJECT_CATEGORIES) {
-      for (const directionalMode of DIRECTIONAL_MODES) {
-        for (const directions of DIRECTION_SETS) {
-          for (const primaryDirection of [null, ...DIRECTION_LISTS.EIGHT_COMPASS]) {
-            const output = withOutput({ directionalMode, directions, primaryDirection });
-            for (const plan of sheetSeriesFor(category, directionalMode, directions)) {
-              const { covered, assembly } = sheetDirections(category, output, plan);
-              expect(covered).toContain(assembly);
-              expect(covered[0]).toBe(assembly);
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const directionalMode of DIRECTIONAL_MODES) {
+          for (const directions of DIRECTION_SETS) {
+            for (const primaryDirection of [null, ...DIRECTION_LISTS.EIGHT_COMPASS]) {
+              const output = withOutput({ directionalMode, directions, primaryDirection });
+              for (const plan of sheetSeriesFor(category, subject, directionalMode, directions)) {
+                const { covered, assembly } = sheetDirections(category, output, plan);
+                expect(covered).toContain(assembly);
+                expect(covered[0]).toBe(assembly);
+              }
             }
           }
         }
@@ -183,13 +212,15 @@ describe('sheetDirections', () => {
     // The property the digest, the prompt and the split drawer all rely on: whatever arrives, the
     // facings on the sheet are facings of the set actually in force.
     for (const category of SUBJECT_CATEGORIES) {
-      for (const directionalMode of DIRECTIONAL_MODES) {
-        for (const directions of DIRECTION_SETS) {
-          const output = withOutput({ directionalMode, directions, primaryDirection: null });
-          const set = resolveDirectionSet(category, directions);
-          for (const plan of sheetSeriesFor(category, directionalMode, directions)) {
-            const { covered } = sheetDirections(category, output, plan);
-            for (const facing of covered) expect(DIRECTION_LISTS[set]).toContain(facing);
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const directionalMode of DIRECTIONAL_MODES) {
+          for (const directions of DIRECTION_SETS) {
+            const output = withOutput({ directionalMode, directions, primaryDirection: null });
+            const set = resolveDirectionSet(category, directions);
+            for (const plan of sheetSeriesFor(category, subject, directionalMode, directions)) {
+              const { covered } = sheetDirections(category, output, plan);
+              for (const facing of covered) expect(DIRECTION_LISTS[set]).toContain(facing);
+            }
           }
         }
       }
@@ -206,23 +237,34 @@ describe('sheetDirections', () => {
  */
 describe('facingApplies', () => {
   it('is true exactly where the selected sheet is a run over a plural set', () => {
-    expect(facingApplies('CHARACTER', withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' }))).toBe(
-      true,
-    );
-    expect(facingApplies('CHARACTER', withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' }))).toBe(
-      true,
-    );
-    expect(facingApplies('BUILDING', withOutput({ directionalMode: 'TILESET_MODULAR' }))).toBe(true);
+    expect(
+      facingApplies(
+        'CHARACTER',
+        standardSubject(),
+        withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' }),
+      ),
+    ).toBe(true);
+    expect(
+      facingApplies(
+        'CHARACTER',
+        standardSubject(),
+        withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' }),
+      ),
+    ).toBe(true);
+    expect(
+      facingApplies('BUILDING', standardSubject(), withOutput({ directionalMode: 'TILESET_MODULAR' })),
+    ).toBe(true);
     // The default configuration selects the character's directional core — a multi-view sheet.
-    expect(facingApplies('CHARACTER', DEFAULT_OUTPUT_CONFIG)).toBe(false);
+    expect(facingApplies('CHARACTER', standardSubject(), DEFAULT_OUTPUT_CONFIG)).toBe(false);
     // Selecting the articulation sheet of the same pairing selects a run.
-    expect(facingApplies('CHARACTER', withOutput({ sheetIndex: 1 }))).toBe(true);
+    expect(facingApplies('CHARACTER', standardSubject(), withOutput({ sheetIndex: 1 }))).toBe(true);
   });
 
   it('is false where the set names a single facing, whatever the sheet', () => {
     expect(
       facingApplies(
         'CHARACTER',
+        standardSubject(),
         withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', directions: 'SINGLE_FRONT' }),
       ),
     ).toBe(false);
@@ -230,6 +272,7 @@ describe('facingApplies', () => {
     expect(
       facingApplies(
         'INTERFACE',
+        standardSubject(),
         withOutput({ directionalMode: 'TILESET_MODULAR', directions: 'EIGHT_COMPASS' }),
       ),
     ).toBe(false);
@@ -238,10 +281,22 @@ describe('facingApplies', () => {
   it('answers for the mode the category resolves to, in both directions', () => {
     // An ITEM has no cut-out rig, so the stored rig resolves to its directional views — with the
     // core sheet selected, the facing control has nothing to change.
-    expect(facingApplies('ITEM', withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' }))).toBe(false);
+    expect(
+      facingApplies(
+        'ITEM',
+        standardSubject(),
+        withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' }),
+      ),
+    ).toBe(false);
     // An EFFECT has no directional mode, so the stored core resolves to the frame sequence — a run,
     // and the control the studio once hid while the compiler read it.
-    expect(facingApplies('EFFECT', withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS' }))).toBe(true);
+    expect(
+      facingApplies(
+        'EFFECT',
+        standardSubject(),
+        withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS' }),
+      ),
+    ).toBe(true);
   });
 });
 

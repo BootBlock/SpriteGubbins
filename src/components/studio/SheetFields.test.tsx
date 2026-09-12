@@ -4,6 +4,7 @@ import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG, DIRECTIONAL_MODE_TOOLTIPS } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { standardSubjectOf } from '../../test/assemblyBaseSubjects.ts';
 import { SheetFields } from './SheetFields.tsx';
 
 /**
@@ -62,7 +63,9 @@ describe('SheetFields', () => {
     // for it, exactly as a category switch keeps a rig the new category has joints for. An object's
     // directional views turn its moving parts with the camera rather than posing them, so that
     // pairing settles nothing and the rig the sheet had taken over survives the hand-back.
-    useSubjectStore.setState({ category: 'OBJECT', subject: defaultSubjectFor('OBJECT') });
+    // An articulated one, which `standardSubjectOf` gives: the default OBJECT subject opens on
+    // `Single Rigid Object`, whose plans hold no rig sheet at all.
+    useSubjectStore.setState({ category: 'OBJECT', subject: standardSubjectOf('OBJECT') });
     useOutputStore.setState({
       output: { ...DEFAULT_OUTPUT_CONFIG, directionalMode: RIG_SHEET, rigMode: 'CUTOUT_RIG' },
     });
@@ -72,6 +75,27 @@ describe('SheetFields', () => {
 
     expect(useOutputStore.getState().output.directionalMode).toBe('CORE_DIRECTIONAL_VARIANTS');
     expect(useOutputStore.getState().output.rigMode).toBe('CUTOUT_RIG');
+  });
+
+  it('says which sheet contents the assembly base withholds, and how to have them back', () => {
+    // A rigid object has no rig sheet (issue #283), so the list loses an option its category offers.
+    // An option that disappears without a word reads as a control that failed to render, and the way
+    // back is a field in the other panel, so the sentence under the control names it.
+    useSubjectStore.setState({ category: 'OBJECT', subject: defaultSubjectFor('OBJECT') });
+    render(<SheetFields />);
+    const contents = screen.getByRole('combobox', { name: SHEET_CONTENTS });
+    const offered = [...contents.querySelectorAll('option')].map((option) => option.getAttribute('value'));
+
+    expect(offered).not.toContain(RIG_SHEET);
+    expect(describedBy(contents)).toContain(
+      'Structure Base “Single Rigid Object” is not drawn as CUTOUT_RIG_SINGLE_DIRECTION, so that is not offered here. Choose another Structure Base to have it back.',
+    );
+
+    // And nothing is said where the base withholds nothing.
+    act(() => {
+      useSubjectStore.getState().setField('anatomy', 'Multi-Segment Turret');
+    });
+    expect(describedBy(contents)).toBe(DIRECTIONAL_MODE_TOOLTIPS.CORE_DIRECTIONAL_VARIANTS);
   });
 
   it('drops the cut-out rig on a pairing whose artwork already carries the poses', () => {

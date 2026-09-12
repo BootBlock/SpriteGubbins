@@ -21,8 +21,8 @@ import {
  * moves.
  *
  * Everything else here is the shape `dialHistory.ts` already has. That rule is not, and it is what
- * pays for recording only the four destructive acts rather than every field edit — a reader's
- * ordinary typing is never recorded and must still never be lost, in either direction.
+ * pays for recording only the destructive acts rather than every field edit — a reader's ordinary
+ * typing is never recorded and must still never be lost, in either direction.
  */
 
 const OPEN_AT: StudioPosition = {

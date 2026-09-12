@@ -1,6 +1,6 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
-  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
   HEX_CODE_PINS_THE_HUE,
   SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
@@ -192,7 +192,7 @@ export const BUILDING: CategoryDefinition = {
       label: 'Building Assembly Base',
       tooltip:
         'How the structure is split into modular tiles or components. Choose by how it will be placed — a repeating wall module tiles horizontally, a single-piece kiosk does not — because the split has to match the level grid. ' +
-        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+        ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         // First because all three sheets draw it: the tile set's wall tops, faces and corners, and the
         // other two sheets' wall bays and corner posts. `Modular Building Tiles` is the tile set's alone

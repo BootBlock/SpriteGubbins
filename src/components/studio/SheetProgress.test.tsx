@@ -45,7 +45,7 @@ beforeEach(() => {
 
 /** The batch the studio is currently configured for — the answer every assertion below is against. */
 function batch() {
-  return sheetBatch('CHARACTER', useOutputStore.getState().output);
+  return sheetBatch('CHARACTER', useSubjectStore.getState().subject, useOutputStore.getState().output);
 }
 
 /**
@@ -60,7 +60,7 @@ function stepButton(name: 'Previous' | 'Next sheet'): HTMLElement {
 /** One sheet of the batch put into the history exactly as copying it does. */
 async function recordCopyOf(position: number): Promise<void> {
   const { category, subject } = useSubjectStore.getState();
-  const sheet = sheetBatch(category, useOutputStore.getState().output).sheets[position - 1];
+  const sheet = sheetBatch(category, subject, useOutputStore.getState().output).sheets[position - 1];
   if (sheet === undefined) throw new Error(`the batch should have a sheet at position ${String(position)}.`);
 
   await useHistoryStore.getState().addLog({
@@ -79,7 +79,9 @@ describe('SheetProgress', () => {
     // position in a batch of one is not information, and two step buttons with nowhere to go are
     // controls with nothing to do.
     useSubjectStore.setState({ category: 'INTERFACE', subject: defaultSubjectFor('INTERFACE') });
-    expect(sheetRunCount('INTERFACE', useOutputStore.getState().output)).toBe(1);
+    expect(
+      sheetRunCount('INTERFACE', useSubjectStore.getState().subject, useOutputStore.getState().output),
+    ).toBe(1);
 
     const { container } = render(<SheetProgress />);
     expect(container).toBeEmptyDOMElement();

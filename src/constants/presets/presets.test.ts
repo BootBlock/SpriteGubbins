@@ -106,6 +106,7 @@ describe('every shipped preset', () => {
       expect(
         statesAssembledSize(
           preset.category,
+          preset.subject,
           preset.output.directionalMode,
           preset.output.directions,
           preset.output.sheetIndex,
@@ -209,16 +210,21 @@ describe('every shipped preset', () => {
       // direction happens to be conservative, so it could not have let a real overrun through, but
       // the assertion would have stopped measuring the preset.
       const anatomy = parseAdditionalAnatomy(preset.subject.additional_anatomy);
-      const sheets = sheetCountFor(preset.category, preset.output.directionalMode, preset.output.directions);
+      const sheets = sheetCountFor(
+        preset.category,
+        preset.subject,
+        preset.output.directionalMode,
+        preset.output.directions,
+      );
 
       for (let sheetIndex = 0; sheetIndex < sheets; sheetIndex += 1) {
         expect(
           componentCountFor(
             preset.category,
+            preset.subject,
             preset.output.directionalMode,
             preset.output.directions,
             sheetIndex,
-            preset.subject.clothing,
             anatomy,
           ),
           `${preset.name} exceeds the practical ceiling on sheet ${String(sheetIndex + 1)} of ${String(sheets)}`,
@@ -261,11 +267,14 @@ describe('every shipped preset', () => {
   });
 
   it.each(PRESETS)('$name pins no value its own sheet mode contradicts', (preset) => {
-    // The preset half of issue #280. A preset writes its subject and its sheet mode side by side, so a
-    // value only some of its category's sheets agree with is a claim about the mode as well — and
-    // *Cyberpunk HUD State Library* asked a state library, which cuts no slice, for a three-slice
-    // stretch. `categories/modeBoundOptions.ts` is where the ties are written down, and its suite holds
-    // them against the pools.
+    // The preset half of issue #280, for every field but the assembly base. A preset writes its subject
+    // and its sheet mode side by side, so a value only some of its category's sheets agree with is a
+    // claim about the mode as well — a BACKGROUND layer library built as `Short Repeat, One Screen Wide`
+    // would be asked to repeat what that sheet draws once. `categories/modeBoundOptions.ts` is where
+    // those ties are written down, and its suite holds them against the pools. A base's modes are its
+    // plan table in `sheetPlans/assemblyBases.ts`, which `presetCoverage.test.ts` holds every preset to
+    // through `supportsMode` — the check that now catches *Cyberpunk HUD State Library* asking a state
+    // library, which cuts no slice, for a three-slice stretch.
     const mode = preset.output.directionalMode;
     const contradicted = CATEGORY_OPTIONS[preset.category].fields.flatMap((field) => {
       const value = preset.subject[field.key];
@@ -302,7 +311,7 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain('## 5. CUT-OUT RIG REQUIREMENTS');
     expect(prompt).toContain('head, chest, back, hand_left, hand_right');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0, characterRig.subject.clothing, []))} components`,
+      `Exactly ${String(componentCountFor('CHARACTER', characterRig.subject, 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0, []))} components`,
     );
   });
 
@@ -327,7 +336,7 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain('48 × 48 px per tile');
     expect(prompt).toContain('Seamless tiling');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('BUILDING', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, tileset.subject.clothing, []))} components`,
+      `Exactly ${String(componentCountFor('BUILDING', tileset.subject, 'TILESET_MODULAR', 'SINGLE_FRONT', 0, []))} components`,
     );
     // Not articulated, so neither rig section appears — named by their headings rather than by the
     // number, which the assembly capability takes once the rig section is dropped.

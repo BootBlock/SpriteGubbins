@@ -58,6 +58,9 @@ export function ProjectionFields() {
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
   const category = useSubjectStore((state) => state.category);
+  // The subject fields the selected sheet is a function of, which `facingApplies` below resolves.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
+  const clothing = useSubjectStore((state) => state.subject.clothing);
 
   // Resolved through the category rather than read raw, for the same reason `SheetFields` resolves
   // its sheet index: a stored set this subject cannot be turned to would otherwise put the select on
@@ -141,7 +144,7 @@ export function ProjectionFields() {
         }}
       />
 
-      {facingApplies(category, output) && (
+      {facingApplies(category, { anatomy, clothing }, output) && (
         <SelectField
           label="Primary Facing"
           tooltip={OUTPUT_TOOLTIPS.primaryDirection}

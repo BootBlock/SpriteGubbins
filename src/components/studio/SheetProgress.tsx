@@ -34,10 +34,16 @@ import { SheetStepButtons } from '../common/SheetStepButtons.tsx';
  */
 export function SheetProgress() {
   const category = useSubjectStore((state) => state.category);
+  // The subject fields the batch is a function of — the assembly base chooses its sheets.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
+  const clothing = useSubjectStore((state) => state.subject.clothing);
   const output = useOutputStore((state) => state.output);
   const isCopied = useCopiedSheets();
 
-  const { sheets, ordinal } = useMemo(() => sheetBatch(category, output), [category, output]);
+  const { sheets, ordinal } = useMemo(
+    () => sheetBatch(category, { anatomy, clothing }, output),
+    [category, anatomy, clothing, output],
+  );
 
   const current = sheets[ordinal - 1];
   // A batch of one is a configuration with nothing to work through. `current` cannot be missing

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { DIRECTIONAL_MODES } from '../../types/output.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../../types/subject.ts';
-import { modesFor } from '../sheetPlans/index.ts';
+import { modePlansOf } from '../sheetPlans/index.ts';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from './index.ts';
 import { MODE_BOUND_OPTIONS, modesAgreeingWith } from './modeBoundOptions.ts';
 
@@ -40,7 +41,10 @@ describe('the mode-bound option table', () => {
       // pool does not offer binds nothing without saying so, a mode the category cannot compile names a
       // sheet that does not exist, and a list of every mode the category offers is no binding at all —
       // which is also why a single-mode category declares nothing.
-      const offered = modesFor(category);
+      // Every mode some plan table of the category draws, whichever assembly base selects it.
+      const offered = DIRECTIONAL_MODES.filter((mode) =>
+        modePlansOf(category).some((plans) => plans[mode] !== undefined),
+      );
       const pool = CATEGORY_OPTIONS[category].fields.find((field) => field.key === key)?.options ?? [];
 
       expect(pool).toContain(value);

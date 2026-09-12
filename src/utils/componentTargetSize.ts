@@ -1,7 +1,7 @@
 import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import type { DirectionalMode, StatedTargetSize, TargetSize } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
-import type { SubjectCategory } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { parseTargetSize } from './targetSize.ts';
 
 /**
@@ -54,11 +54,12 @@ import { parseTargetSize } from './targetSize.ts';
  */
 export function statesAssembledSize(
   category: SubjectCategory,
+  subject: SheetSubject,
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
 ): boolean {
-  return sheetPlanFor(category, mode, directions, sheetIndex).targetQuantity === 'ASSEMBLED';
+  return sheetPlanFor(category, subject, mode, directions, sheetIndex).targetQuantity === 'ASSEMBLED';
 }
 
 /**
@@ -71,6 +72,7 @@ export function statesAssembledSize(
  */
 export function statedTargetSize(
   category: SubjectCategory,
+  subject: SheetSubject,
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
@@ -80,7 +82,7 @@ export function statedTargetSize(
   if (size === null) return null;
   // The plan's own value, not a ternary rebuilding it from the boolean above — that would be the
   // enumeration written a second time, and the two spellings could then disagree.
-  return { quantity: sheetPlanFor(category, mode, directions, sheetIndex).targetQuantity, size };
+  return { quantity: sheetPlanFor(category, subject, mode, directions, sheetIndex).targetQuantity, size };
 }
 
 /**
@@ -98,11 +100,12 @@ export function statedTargetSize(
  */
 export function componentTargetSize(
   category: SubjectCategory,
+  subject: SheetSubject,
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
   spriteTargetSize: string,
 ): TargetSize | null {
-  const stated = statedTargetSize(category, mode, directions, sheetIndex, spriteTargetSize);
+  const stated = statedTargetSize(category, subject, mode, directions, sheetIndex, spriteTargetSize);
   return stated === null || stated.quantity === 'ASSEMBLED' ? null : stated.size;
 }

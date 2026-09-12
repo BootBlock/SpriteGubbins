@@ -1,6 +1,6 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
-  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
   HEX_CODE_PINS_THE_HUE,
   SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
@@ -185,7 +185,7 @@ export const ITEM: CategoryDefinition = {
       label: 'Item Assembly Base',
       tooltip:
         'What the finished item is meant to separate into — a magazine, a blade, a lid. Choose by what has to detach or animate rather than by how detailed the item looks. ' +
-        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+        ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Single Weapon Item',
         'Weapon With Detachable Mag',

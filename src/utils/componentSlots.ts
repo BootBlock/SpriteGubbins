@@ -1,7 +1,7 @@
 import type { ComponentEntry, SheetFacings, SheetPlan } from '../types/components.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { DirectionalMode, DirectionSet } from '../types/output.ts';
-import type { SubjectCategory } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { anatomyFacingsFor } from './componentSet.ts';
 import { drawnPlanFor } from './sheetPlanClothing.ts';
 import { slugify } from './slugify.ts';
@@ -106,7 +106,7 @@ function unique(names: readonly string[]): readonly string[] {
  * `unique` guarantees the property that test exists to check, so the assertion would pass on a plan
  * whose second `outer-corner-transitions-1` had just been renamed to `outer-corner-transitions-1-2`.
  * The test walking the entries itself is the other way to get this, and it was the first way: it
- * reached only the entries naming their own parts, which is 98 of the 418 in the table, and it
+ * reached only the entries naming their own parts, which is fewer than a quarter of the table's, and it
  * missed the collision that actually matters — an authored name landing on a name another line
  * *derives*, which is a live risk because the authoring convention puts ordinals inside part names
  * (`mounting-bracket-1`) and the derived branch produces exactly that shape.
@@ -117,19 +117,19 @@ export function planSlots(plan: SheetPlan): readonly string[] {
 
 export function componentSlots(
   category: SubjectCategory,
+  subject: SheetSubject,
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
-  clothing: string,
   additional: readonly AnatomyComponent[],
 ): readonly string[] {
   // The plan *as this subject draws it*, for the reason the count is: a name list of a different
   // length from the count maps every sprite after the divergence onto the wrong component, so the
   // two cannot be allowed to disagree about whether a cladding panel is on the sheet.
-  const plan = drawnPlanFor(category, mode, directions, sheetIndex, clothing);
+  const plan = drawnPlanFor(category, subject, mode, directions, sheetIndex);
   const names = [...planSlots(plan)];
 
-  const anatomyFacings = anatomyFacingsFor(category, mode, directions, sheetIndex);
+  const anatomyFacings = anatomyFacingsFor(category, subject, mode, directions, sheetIndex);
   if (anatomyFacings !== null) {
     names.push(...additional.flatMap((component) => anatomySlots(component, anatomyFacings)));
   }

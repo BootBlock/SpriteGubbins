@@ -9,6 +9,7 @@ import {
 import { directionSetChoices } from './output/directionSetChoices.ts';
 import { DIRECTION_LISTS } from './promptText/index.ts';
 import { modesFor, sheetSeriesFor } from './sheetPlans/index.ts';
+import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
 
 /**
  * Which facings each category's subject can be drawn to.
@@ -71,14 +72,19 @@ describe('the table itself', () => {
     // agree. Every series is now built from a set resolved through the category, so a multi-view
     // sheet's facing tuple must sit inside a set the category actually offers — a plan carrying a
     // facing its subject cannot be turned to would be the contamination this table exists to stop,
-    // arriving through the builder instead of the control.
+    // arriving through the builder instead of the control. Walked for every assembly base, each with
+    // the subject that selects it, because a declared base builds sheets of its own (issue #283).
     for (const category of SUBJECT_CATEGORIES) {
-      for (const mode of modesFor(category)) {
-        for (const set of CATEGORY_DIRECTION_SETS[category]) {
-          for (const plan of sheetSeriesFor(category, mode, set)) {
-            if (plan.facings === 'run') continue;
-            for (const facing of plan.facings) {
-              expect(DIRECTION_LISTS[set], `${category} / ${mode} / ${set}`).toContain(facing);
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const mode of modesFor(category, subject)) {
+          for (const set of CATEGORY_DIRECTION_SETS[category]) {
+            for (const plan of sheetSeriesFor(category, subject, mode, set)) {
+              if (plan.facings === 'run') continue;
+              for (const facing of plan.facings) {
+                expect(DIRECTION_LISTS[set], `${category} / ${subject.anatomy} / ${mode} / ${set}`).toContain(
+                  facing,
+                );
+              }
             }
           }
         }

@@ -6,6 +6,7 @@ import type { OutputConfig } from '../types/output.ts';
 import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { describeSeries } from './describeSeries.ts';
 import { sheetBatch } from './sheetBatch.ts';
+import { standardSubject } from '../test/sheetSubject.ts';
 
 /**
  * The list section 6 carries when a configuration is more than one sheet.
@@ -32,11 +33,11 @@ describe('describeSeries', () => {
   it('names every sheet, its own component count and the facings it draws', () => {
     // Both halves of what section 6 needs from the list: the counts say that the number section 0
     // contracts for is this sheet's alone, and the facings say which turns are somebody else's job.
-    const batch = sheetBatch('CHARACTER', { ...TWO_SHEET_SERIES, sheetIndex: 1 });
+    const batch = sheetBatch('CHARACTER', standardSubject(), { ...TWO_SHEET_SERIES, sheetIndex: 1 });
 
     // The articulation sheet is a run now — one generation per facing of the chosen set — so the
     // five-classic pairing is six sheets, and the selected one is the run at the set's first facing.
-    expect(describeSeries('CHARACTER', batch, '', NO_ANATOMY)).toBe(
+    expect(describeSeries('CHARACTER', standardSubject(), batch, NO_ANATOMY)).toBe(
       [
         '- **Sheet 1 — Directional core**: 15 components, covering front, front-three-quarter, right side, back-three-quarter, back.',
         '- **Sheet 2 — Articulation** *(this sheet)*: 34 components, drawn towards front.',
@@ -50,8 +51,11 @@ describe('describeSeries', () => {
 
   it('marks exactly one line as this sheet, whichever facing of a run list it is', () => {
     for (const facing of DIRECTION_LISTS.EIGHT_COMPASS) {
-      const batch = sheetBatch('CHARACTER', { ...EIGHT_WAY_RIG, primaryDirection: facing });
-      const lines = describeSeries('CHARACTER', batch, '', NO_ANATOMY).split('\n');
+      const batch = sheetBatch('CHARACTER', standardSubject(), {
+        ...EIGHT_WAY_RIG,
+        primaryDirection: facing,
+      });
+      const lines = describeSeries('CHARACTER', standardSubject(), batch, NO_ANATOMY).split('\n');
 
       expect(lines, facing).toHaveLength(8);
       expect(
@@ -71,8 +75,8 @@ describe('describeSeries', () => {
     // either half would tell a sheet's reader that its contract was a different number than the
     // one section 0 states.
     const anatomy = parseAdditionalAnatomy('Tail ×2, Wing ×1');
-    const batch = sheetBatch('CHARACTER', TWO_SHEET_SERIES);
-    const lines = describeSeries('CHARACTER', batch, '', anatomy).split('\n');
+    const batch = sheetBatch('CHARACTER', standardSubject(), TWO_SHEET_SERIES);
+    const lines = describeSeries('CHARACTER', standardSubject(), batch, anatomy).split('\n');
 
     expect(lines[0]).toContain('30 components');
     expect(lines[1]).toContain('34 components');

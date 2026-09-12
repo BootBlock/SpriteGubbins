@@ -11,8 +11,8 @@
  *
  * Lower than the quantiser's fifty because the two stacks record different things. A dial emits a
  * change per pixel of a drag, so fifty steps there is a handful of decisions; a step here is a
- * category switch, a Randomise, a Reset or a preset load, each of which a reader performs
- * deliberately. Twenty of those is further back than anyone reaches, and the cap exists only so a
+ * category switch, a Randomise, a Reset, a preset load or an assembly base that moved the sheet, each
+ * of which a reader performs deliberately. Twenty of those is further back than anyone reaches, and the cap exists only so a
  * tab left open all day does not keep every studio it has ever held.
  *
  * The opening position falls off with the rest once twenty acts have been performed past it.
@@ -22,7 +22,7 @@ export const STUDIO_HISTORY_LIMIT = 20;
 /** The paragraph under the two buttons, keyed to whether there is anything to undo. */
 export const STUDIO_HISTORY_GUIDANCE = {
   /** Nothing recorded yet, which is every reader's first sight of this panel. */
-  open: 'Switching category, Randomise and Reset each replace all sixteen answers below at once, and so does loading a preset or restoring a prompt from the history. Every one of those is recorded here before it happens, so the subject you had is one press away rather than gone. Editing a single field records nothing, because typing the old value back is already the way to undo it — but an edit made after one of those acts is not lost either, because stepping forward again brings the studio back exactly as you left it.',
+  open: 'Switching category, Randomise and Reset each replace all sixteen answers below at once, and so does loading a preset or restoring a prompt from the history. Every one of those is recorded here before it happens, so the subject you had is one press away rather than gone. So is choosing an assembly base that moves your sheet or rig, because typing the old base back would not move them home. Editing any other field records nothing, because typing the old value back is already the way to undo it — but an edit made after one of those acts is not lost either, because stepping forward again brings the studio back exactly as you left it.',
 
   /** At least one step back is available. */
   available:

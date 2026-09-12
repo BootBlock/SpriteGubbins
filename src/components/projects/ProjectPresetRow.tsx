@@ -75,7 +75,7 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
         <Badge tone="view">{preset.category}</Badge>
       </div>
 
-      <PresetCardSpecs category={preset.category} output={preset.output} />
+      <PresetCardSpecs category={preset.category} subject={preset.subject} output={preset.output} />
 
       <ProjectSelectField
         label="Project"

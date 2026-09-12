@@ -1,7 +1,7 @@
 import { resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { ManifestSheet } from '../types/spriteManifest.ts';
-import type { SubjectCategory } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { sheetComponentCount } from './componentSet.ts';
 import { componentSlots } from './componentSlots.ts';
@@ -79,15 +79,15 @@ function distinguishingFacing(sheets: readonly BatchSheet[], current: BatchSheet
 
 export function sheetIdentity(
   category: SubjectCategory,
+  subject: SheetSubject,
   output: OutputConfig,
-  clothing: string,
   additionalAnatomy: string,
 ): SheetIdentity {
-  const anatomy = parseAdditionalAnatomy(additionalAnatomy);
+  const additional = parseAdditionalAnatomy(additionalAnatomy);
   // The same enumeration the split drawer and the studio's batch strip read, so the ordinal in a
   // manifest and the "Sheet N of M" on screen are one position in one list rather than two counts
   // that happen to agree.
-  const { sheets, ordinal } = sheetBatch(category, output);
+  const { sheets, ordinal } = sheetBatch(category, subject, output);
   const current = sheets[ordinal - 1];
   if (current === undefined) return { names: [], facing: null, sheet: null };
 
@@ -95,24 +95,25 @@ export function sheetIdentity(
   // studio's stored fields. Those agree in every reachable state — the ordinal is derived from
   // exactly those fields — and reading one of each would make that agreement an assumption rather
   // than a construction, on the very pair whose lengths a manifest's names depend on matching.
-  const mode = resolveMode(category, current.output.directionalMode);
+  const mode = resolveMode(category, subject, current.output.directionalMode);
   // Resolved rather than read raw, as every other field the digests state is: a stored `CUTOUT_RIG`
   // on a category that articulates about nothing is not what the prompt for this sheet carries, and
   // the manifest must record the sheet that was asked for rather than the field that was stored.
   const rigMode = resolveRigMode(
     category,
-    sheetSeriesFor(category, current.output.directionalMode, current.output.directions),
+    subject,
+    sheetSeriesFor(category, subject, current.output.directionalMode, current.output.directions),
     current.output.rigMode,
   );
 
   return {
     names: componentSlots(
       category,
+      subject,
       mode,
       current.output.directions,
       current.output.sheetIndex,
-      clothing,
-      anatomy,
+      additional,
     ),
     facing: distinguishingFacing(sheets, current),
     sheet: {
@@ -122,7 +123,7 @@ export function sheetIdentity(
       total: sheets.length,
       facings: current.covered,
       assembly: current.assembly,
-      components: sheetComponentCount(category, current, clothing, anatomy),
+      components: sheetComponentCount(category, subject, current, additional),
       rigMode,
     },
   };

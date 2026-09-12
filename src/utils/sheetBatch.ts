@@ -4,7 +4,7 @@ import { resolveMode, resolveSheetIndex, sheetSeriesFor } from '../constants/she
 import type { SheetPlan } from '../types/components.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { Direction } from '../types/rendering.ts';
-import type { SubjectCategory } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { primaryFacing, sheetDirections } from './sheetDirections.ts';
 
 /**
@@ -82,9 +82,13 @@ export interface SheetBatch {
 }
 
 /** Every sheet this configuration asks for, and its own position among them. */
-export function sheetBatch(category: SubjectCategory, output: OutputConfig): SheetBatch {
-  const mode = resolveMode(category, output.directionalMode);
-  const series = sheetSeriesFor(category, mode, output.directions);
+export function sheetBatch(
+  category: SubjectCategory,
+  subject: SheetSubject,
+  output: OutputConfig,
+): SheetBatch {
+  const mode = resolveMode(category, subject, output.directionalMode);
+  const series = sheetSeriesFor(category, subject, mode, output.directions);
   const runFacings = DIRECTION_LISTS[resolveDirectionSet(category, output.directions)];
 
   const sheets = series.flatMap((plan, sheetIndex): BatchSheet[] => {
@@ -103,7 +107,7 @@ export function sheetBatch(category: SubjectCategory, output: OutputConfig): She
   // flattening order is stated once, in the `flatMap` above, and an ordinal with its own arithmetic
   // for it would disagree the moment that order changed. A run sheet is identified by its index and
   // its facing; a multi-view sheet by its index alone, since it appears exactly once.
-  const selectedIndex = resolveSheetIndex(category, mode, output.directions, output.sheetIndex);
+  const selectedIndex = resolveSheetIndex(category, subject, mode, output.directions, output.sheetIndex);
   const selectedPlan = series[selectedIndex];
   const selectedFacing =
     selectedPlan !== undefined && selectedPlan.facings === 'run' ? primaryFacing(category, output) : null;
@@ -125,6 +129,10 @@ export function sheetBatch(category: SubjectCategory, output: OutputConfig): She
  * The studio asks this on every keystroke to decide whether to offer the split at all, and compiling
  * a batch of prompts to find out how many there are would be the work the answer exists to avoid.
  */
-export function sheetRunCount(category: SubjectCategory, output: OutputConfig): number {
-  return sheetBatch(category, output).sheets.length;
+export function sheetRunCount(
+  category: SubjectCategory,
+  subject: SheetSubject,
+  output: OutputConfig,
+): number {
+  return sheetBatch(category, subject, output).sheets.length;
 }

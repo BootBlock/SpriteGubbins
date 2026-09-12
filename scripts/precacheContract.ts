@@ -718,8 +718,25 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2373 leaves **0.82 KiB**. It is the smallest whole figure over the build, for the reason the notes
  * above give.
+ *
+ * **Raised from 2373 by letting the assembly base choose a category's sheets** (#283). A plan was a
+ * function of the category, the mode, the direction set and the sheet index, so a pooled base whose
+ * pieces no sheet drew put section 1 against section 4. What a first visit pays for: the table of
+ * declared bases in `sheetPlans/assemblyBases.ts` and the leaf its types live in; a rigid object's two
+ * plans, drawn whole; `plansFor`, `modePlansOf` and `modesWithheldBy`; the subject threaded through
+ * every function that resolves or counts a sheet; `resolveOutputForSubject` and the store's
+ * `outputFollowing`, which records a base that moves the sheet as an undo step; the two sentences
+ * `SheetFields` and `RiggingFields` say about a base; one shared guidance sentence on six cards; and
+ * the undo copy that names the new step. Measured against `main` at `a5e2eef`, rebuilt from the same
+ * lockfile — **2372.61 KiB across 64 entries** on the build's summary line — this build reports
+ * **2378.63 across 64** on the same line, a delta of 6.02 that crossed a ceiling the base sat 0.39
+ * under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed. How the
+ * 6.02 divides between chunks was not measured.
+ *
+ * 2379 leaves **0.37 KiB**. It is the smallest whole figure over the build, for the reason the notes
+ * above give.
  */
-export const PRECACHE_CEILING_KIB = 2373;
+export const PRECACHE_CEILING_KIB = 2379;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

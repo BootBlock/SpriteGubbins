@@ -40,10 +40,16 @@ const STEP_BUTTON =
  */
 export function SheetStepButtons() {
   const category = useSubjectStore((state) => state.category);
+  // The subject fields the batch is a function of — the assembly base chooses its sheets.
+  const anatomy = useSubjectStore((state) => state.subject.anatomy);
+  const clothing = useSubjectStore((state) => state.subject.clothing);
   const output = useOutputStore((state) => state.output);
   const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
 
-  const { sheets, ordinal } = useMemo(() => sheetBatch(category, output), [category, output]);
+  const { sheets, ordinal } = useMemo(
+    () => sheetBatch(category, { anatomy, clothing }, output),
+    [category, anatomy, clothing, output],
+  );
 
   if (sheets.length < 2) return null;
 

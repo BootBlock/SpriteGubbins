@@ -1,6 +1,6 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
-  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
   HEX_CODE_PINS_THE_HUE,
   SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
@@ -210,7 +210,7 @@ export const OBJECT: CategoryDefinition = {
       label: 'Structure Base',
       tooltip:
         'How the finished object is meant to come apart — in one piece if it is rigid, at the hinges and segment joins if it is not. Choose by what has to animate rather than by how complex the prop looks. ' +
-        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+        ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Single Rigid Object',
         'Multi-Segment Turret',

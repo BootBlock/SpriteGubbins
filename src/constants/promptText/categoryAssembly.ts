@@ -60,12 +60,15 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
     statement: 'no assembled figure',
     negatives: ['assembled character', 'posed figure'],
   },
-  // The second term names the *presentation* half, as `posed figure` does above: the whole prop
-  // lit and staged as a finished picture. No component of a part library is a product shot, so it
-  // survives the word-by-word rule where "complete object" would not.
+  // The *presentation* half alone, as `posed figure` is CHARACTER's second term: the whole prop lit and
+  // staged as a finished picture, which no component of any OBJECT sheet is. **`assembled object` went
+  // when OBJECT gained a base drawn in one piece** (issue #283): every component of a `Single Rigid
+  // Object`'s views is the whole object, so a weighted `object` suppressed the subject those sheets ask
+  // for. The rule's exemption for a category's own name holds only while no entry of its sheets is
+  // named for it, and `categoryAssembly.test.ts` now says so.
   OBJECT: {
-    statement: 'no assembled object',
-    negatives: ['assembled object', 'product shot'],
+    statement: 'no staged product shot',
+    negatives: ['product shot'],
   },
   // The presentation half is OBJECT's word rather than one of its own, and the one it nearly took
   // is the reason the rule reaches past the sheet plans. `inventory icon` names exactly what an item

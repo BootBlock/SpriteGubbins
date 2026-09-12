@@ -5,17 +5,19 @@ import type { PresetArchetype } from '../../types/preset.ts';
 /**
  * Powered props — the interactive machines a player walks up to and uses.
  *
- * An object decomposes by housing, mount and what moves, not by limb, which is why these can afford
- * far more additional anatomy than a humanoid can: the largest object plan is thirty components on
- * one sheet, against a humanoid whose forty-nine no longer fit on one at all, so a deployable dish or
- * a second vent is cheap here.
+ * An object is never cut by limb. A rigid one, as the console and the vending machine are, is drawn
+ * whole — at rest and active, or once per facing — and one that comes apart, as the turret and the
+ * gate do, decomposes by housing, mount and what moves. Either way these can afford far more
+ * additional anatomy than a humanoid can: the largest object plan is thirty components on one sheet,
+ * against a humanoid whose forty-nine no longer fit on one at all, so a deployable dish or a second
+ * vent is cheap here.
  */
 export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'prop-terminal',
     name: 'Sci-Fi Control Console',
     description:
-      'A console the player walks up to and uses, with its screens lit from within rather than by a key light. The plainest example of how an object decomposes by housing and mount rather than by limb.',
+      'A console the player walks up to and uses, with its screens lit from within rather than by a key light. A rigid prop drawn whole, at rest and active, with a sensor dish as its one separate piece.',
     category: 'OBJECT',
     subject: {
       species: 'Interactive Terminal',
@@ -43,6 +45,9 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       paletteLimit: 'RESTRAINED_64_COLOR',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       lightingModel: 'UNLIT_EMISSIVE_BAKED',
+      // Stated rather than spread from `DEFAULT_IMAGE_CONFIG`, whose `POSE_LIBRARY` a rigid object has no
+      // pivot for: its plans hold no rig sheet, so the only rig it can carry is none.
+      rigMode: 'NONE',
       aspectRatio: 'SQUARE_1_1',
       targetModel: 'GENERIC',
     },

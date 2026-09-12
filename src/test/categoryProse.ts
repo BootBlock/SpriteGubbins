@@ -1,20 +1,26 @@
 import { CATEGORY_OPTIONS } from '../constants/categories/index.ts';
+import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { DIRECTION_LISTS } from '../constants/promptText/camera.ts';
-import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import { modePlansOf } from '../constants/sheetPlans/index.ts';
 import type { SheetPlan, SheetSeries } from '../types/components.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 
 /**
- * Every series a category can be asked for: each mode it supports, under each direction set.
+ * Every series a category can be asked for: each mode of each plan table it can be drawn from — its
+ * standard plans and every declared assembly base's — under each direction set.
  *
  * A series is the granularity a claim about *one deliverable* is made at, because every sheet of it
  * is generated under one output configuration. `SheetPlan.scaleUnit` is the claim that needs it: a
  * unit may differ between BACKGROUND's two modes and may not differ between the sheets of one series.
  */
 export function everySeriesOf(category: SubjectCategory): readonly SheetSeries[] {
-  return modesFor(category).flatMap((mode) =>
-    (Object.keys(DIRECTION_LISTS) as DirectionSet[]).map((set) => sheetSeriesFor(category, mode, set)),
+  return modePlansOf(category).flatMap((plans) =>
+    Object.values(plans).flatMap((seriesFor) =>
+      (Object.keys(DIRECTION_LISTS) as DirectionSet[]).map((set) =>
+        seriesFor(DIRECTION_LISTS[resolveDirectionSet(category, set)]),
+      ),
+    ),
   );
 }
 

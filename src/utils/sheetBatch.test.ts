@@ -10,6 +10,8 @@ import {
 import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { OutputConfig } from '../types/output.ts';
+import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
+import { standardSubject } from '../test/sheetSubject.ts';
 import { sheetBatch, sheetRunCount } from './sheetBatch.ts';
 import { sheetRuns } from './sheetRuns.ts';
 
@@ -53,12 +55,14 @@ describe('sheetRunCount', () => {
     // A rig is one run sheet over eight facings. A character's directional pairing is one core
     // sheet plus the articulation run over each of the five classic facings — the limbs are drawn
     // per facing now, because a front-facing limb cannot hang on a side-facing trunk.
-    expect(sheetRunCount('CHARACTER', EIGHT_WAY_RIG)).toBe(DIRECTION_LISTS.EIGHT_COMPASS.length);
-    expect(sheetRunCount('CHARACTER', CORE_SERIES)).toBe(1 + CORE_FACINGS.length);
+    expect(sheetRunCount('CHARACTER', standardSubject(), EIGHT_WAY_RIG)).toBe(
+      DIRECTION_LISTS.EIGHT_COMPASS.length,
+    );
+    expect(sheetRunCount('CHARACTER', standardSubject(), CORE_SERIES)).toBe(1 + CORE_FACINGS.length);
     // An OBJECT's directional views have no articulation behind them, so the same mode is a single
     // generation there.
-    expect(sheetRunCount('OBJECT', CORE_SERIES)).toBe(1);
-    expect(sheetRunCount('CHARACTER', SINGLE_SHEET)).toBe(1);
+    expect(sheetRunCount('OBJECT', standardSubject(), CORE_SERIES)).toBe(1);
+    expect(sheetRunCount('CHARACTER', standardSubject(), SINGLE_SHEET)).toBe(1);
   });
 
   it('splits the eight-compass core across a cardinal and a diagonal sheet', () => {
@@ -68,9 +72,11 @@ describe('sheetRunCount', () => {
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       directions: 'EIGHT_COMPASS',
     });
-    expect(sheetRunCount('CHARACTER', eightWay)).toBe(2 + DIRECTION_LISTS.EIGHT_COMPASS.length);
+    expect(sheetRunCount('CHARACTER', standardSubject(), eightWay)).toBe(
+      2 + DIRECTION_LISTS.EIGHT_COMPASS.length,
+    );
 
-    const { sheets } = sheetBatch('CHARACTER', eightWay);
+    const { sheets } = sheetBatch('CHARACTER', standardSubject(), eightWay);
     expect(sheets[0]?.covered).toEqual(['south', 'west', 'north', 'east']);
     expect(sheets[1]?.covered).toEqual(['south-west', 'north-west', 'north-east', 'south-east']);
     expect(sheets.slice(2).map((sheet) => sheet.covered)).toEqual(
@@ -85,14 +91,15 @@ describe('sheetRunCount', () => {
     // eight runs whose prompts were byte-identical, and one copy ticked all eight off.
     // The resolved sheet is the item's directional views over the chosen eight-compass set — two
     // multi-view sheets and no runs, never eight byte-identical rig prompts.
-    expect(sheetRunCount('ITEM', EIGHT_WAY_RIG)).toBe(2);
+    expect(sheetRunCount('ITEM', SUBJECT, EIGHT_WAY_RIG)).toBe(2);
     expect(sheetRuns('ITEM', SUBJECT, EIGHT_WAY_RIG)).toHaveLength(2);
-    expect(sheetBatch('ITEM', EIGHT_WAY_RIG).ordinal).toBe(1);
+    expect(sheetBatch('ITEM', SUBJECT, EIGHT_WAY_RIG).ordinal).toBe(1);
     // An EFFECT has no directional core: the sheet it resolves to is a frame sequence — a run sheet,
     // so the chosen set genuinely is its run list.
     expect(
       sheetRunCount(
         'EFFECT',
+        SUBJECT,
         withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'EIGHT_COMPASS' }),
       ),
     ).toBe(DIRECTION_LISTS.EIGHT_COMPASS.length);
@@ -102,21 +109,28 @@ describe('sheetRunCount', () => {
 describe('sheetBatch — where the configuration sits in its own batch', () => {
   it('counts a run sheet’s facings in the order the direction set lists them', () => {
     for (const [index, facing] of DIRECTION_LISTS.EIGHT_COMPASS.entries()) {
-      const batch = sheetBatch('CHARACTER', { ...EIGHT_WAY_RIG, primaryDirection: facing });
+      const batch = sheetBatch('CHARACTER', standardSubject(), {
+        ...EIGHT_WAY_RIG,
+        primaryDirection: facing,
+      });
       expect(batch.ordinal, facing).toBe(index + 1);
       expect(batch.sheets).toHaveLength(8);
     }
   });
 
   it('counts the series axis in plan order, with the run sheet expanded in place', () => {
-    expect(sheetBatch('CHARACTER', { ...CORE_SERIES, sheetIndex: 0 }).ordinal).toBe(1);
+    expect(sheetBatch('CHARACTER', standardSubject(), { ...CORE_SERIES, sheetIndex: 0 }).ordinal).toBe(1);
     // The articulation sheet with nothing pinned is its first run — the sheet after the core.
-    expect(sheetBatch('CHARACTER', { ...CORE_SERIES, sheetIndex: 1 }).ordinal).toBe(2);
+    expect(sheetBatch('CHARACTER', standardSubject(), { ...CORE_SERIES, sheetIndex: 1 }).ordinal).toBe(2);
     // Pinning a facing selects that run of it.
     const [, ...laterFacings] = CORE_FACINGS;
     for (const [index, facing] of laterFacings.entries()) {
       expect(
-        sheetBatch('CHARACTER', { ...CORE_SERIES, sheetIndex: 1, primaryDirection: facing }).ordinal,
+        sheetBatch('CHARACTER', standardSubject(), {
+          ...CORE_SERIES,
+          sheetIndex: 1,
+          primaryDirection: facing,
+        }).ordinal,
         facing,
       ).toBe(3 + index);
     }
@@ -126,10 +140,12 @@ describe('sheetBatch — where the configuration sits in its own batch', () => {
     // `primaryDirection` is nullable so that "the set's first" survives the set changing underneath
     // it. A batch that could not resolve that would report the studio's opening configuration as
     // sheet zero of eight.
-    expect(sheetBatch('CHARACTER', { ...EIGHT_WAY_RIG, primaryDirection: null }).ordinal).toBe(1);
+    expect(
+      sheetBatch('CHARACTER', standardSubject(), { ...EIGHT_WAY_RIG, primaryDirection: null }).ordinal,
+    ).toBe(1);
     // And a facing the set no longer contains resolves the same way, rather than falling off the end.
     expect(
-      sheetBatch('CHARACTER', {
+      sheetBatch('CHARACTER', standardSubject(), {
         ...EIGHT_WAY_RIG,
         directions: 'THREE_CLASSIC',
         primaryDirection: 'north-east',
@@ -149,7 +165,7 @@ describe('sheetBatch — where the configuration sits in its own batch', () => {
     for (const config of [EIGHT_WAY_RIG, CORE_SERIES, eightWayCore, SINGLE_SHEET]) {
       const runs = sheetRuns('CHARACTER', SUBJECT, config);
       for (const [index, run] of runs.entries()) {
-        const batch = sheetBatch('CHARACTER', run.output);
+        const batch = sheetBatch('CHARACTER', SUBJECT, run.output);
         expect(batch.ordinal, `${String(index)} of ${String(runs.length)}`).toBe(index + 1);
         expect(batch.sheets).toHaveLength(runs.length);
       }
@@ -157,7 +173,7 @@ describe('sheetBatch — where the configuration sits in its own batch', () => {
   });
 
   it('is one sheet of one, for a configuration that is a whole deliverable', () => {
-    const batch = sheetBatch('CHARACTER', SINGLE_SHEET);
+    const batch = sheetBatch('CHARACTER', standardSubject(), SINGLE_SHEET);
     expect(batch.sheets).toHaveLength(1);
     expect(batch.ordinal).toBe(1);
   });
@@ -205,19 +221,19 @@ describe('a subject with no facing is one sheet per plan, whatever set the confi
 
   /** What the plan table alone asks for — the series axis, with nothing multiplied into it. */
   function seriesLength(category: (typeof UNTURNABLE)[number]): number {
-    return sheetSeriesFor(category, TURNED.directionalMode, TURNED.directions).length;
+    return sheetSeriesFor(category, standardSubject(), TURNED.directionalMode, TURNED.directions).length;
   }
 
   it.each(UNTURNABLE)('%s is not split into a run per facing', (category) => {
     // Against the series rather than against `1`: the two are equal for five of the six, and FONT is
     // four sheets of one glyph set at one facing. What is being checked either way is that the
     // facing axis contributed nothing — a stored `THREE_CLASSIC` reaching the batch would treble it.
-    expect(sheetRunCount(category, TURNED)).toBe(seriesLength(category));
-    expect(sheetBatch(category, TURNED).ordinal).toBe(1);
+    expect(sheetRunCount(category, standardSubject(), TURNED)).toBe(seriesLength(category));
+    expect(sheetBatch(category, standardSubject(), TURNED).ordinal).toBe(1);
   });
 
   it.each(UNTURNABLE)('%s draws every sheet front on', (category) => {
-    const { sheets } = sheetBatch(category, TURNED);
+    const { sheets } = sheetBatch(category, standardSubject(), TURNED);
     expect(sheets).toHaveLength(seriesLength(category));
     for (const sheet of sheets) {
       expect(sheet.covered).toEqual(['front']);
@@ -246,10 +262,10 @@ describe('a subject with no facing is one sheet per plan, whatever set the confi
     // meaningful wherever the subject has a front, and a rig worked through three facings is the
     // deliverable the run list exists for.
     const rig = { ...TURNED, directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' } as const;
-    expect(sheetRunCount('CHARACTER', rig)).toBe(DIRECTION_LISTS.THREE_CLASSIC.length);
+    expect(sheetRunCount('CHARACTER', standardSubject(), rig)).toBe(DIRECTION_LISTS.THREE_CLASSIC.length);
     // And an EFFECT, which is the case that decided the table binds two categories and not three:
     // a directional slash is genuinely one frame sequence per facing.
-    expect(sheetRunCount('EFFECT', { ...TURNED, directions: 'EIGHT_COMPASS' })).toBe(
+    expect(sheetRunCount('EFFECT', standardSubject(), { ...TURNED, directions: 'EIGHT_COMPASS' })).toBe(
       DIRECTION_LISTS.EIGHT_COMPASS.length,
     );
   });
@@ -276,36 +292,41 @@ describe('a subject with no facing is one sheet per plan, whatever set the confi
 describe('a batch steps through the whole inventory, whatever part the studio is composing', () => {
   it('holds every part of the pairing, from whichever one the configuration names', () => {
     for (const category of SUBJECT_CATEGORIES) {
-      for (const mode of modesFor(category)) {
-        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-          const parts = sheetSeriesFor(category, mode, directions);
+      // Every assembly base too, each with the subject that selects it: a declared base draws sheets
+      // of its own (issue #283), and its batch is the one the studio composes for that subject.
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const mode of modesFor(category, subject)) {
+          for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+            const parts = sheetSeriesFor(category, subject, mode, directions);
 
-          for (let sheetIndex = 0; sheetIndex < parts.length; sheetIndex += 1) {
-            const { sheets } = sheetBatch(
-              category,
-              withOutput({ directionalMode: mode, directions, sheetIndex }),
-            );
-            const where = `${category}/${mode}/${directions} from part ${String(sheetIndex + 1)}`;
+            for (let sheetIndex = 0; sheetIndex < parts.length; sheetIndex += 1) {
+              const { sheets } = sheetBatch(
+                category,
+                subject,
+                withOutput({ directionalMode: mode, directions, sheetIndex }),
+              );
+              const where = `${category}/${subject.anatomy}/${mode}/${directions} from part ${String(sheetIndex + 1)}`;
 
-            // The whole sequence, not a set of the parts it holds: every part present, each repeated
-            // as many times as it is generated, contiguous, and in plan order. A batch that dropped
-            // a part, repeated one instead of another, expanded a run by the wrong set, or ordered
-            // itself facing-major all fail here, and the last of those is the one a set could not
-            // see — the identity lock depends on the trunk parts being generated before the runs
-            // that have to match them.
-            //
-            // The expectation is written from the plans rather than asked of `sheetBatch`, which is
-            // the point: a right-hand side derived from the code under test would agree with it
-            // however that code changed.
-            const generations = DIRECTION_LISTS[resolveDirectionSet(category, directions)].length;
-            const expected = parts.flatMap((part, index) =>
-              Array.from({ length: part.facings === 'run' ? generations : 1 }, () => index),
-            );
+              // The whole sequence, not a set of the parts it holds: every part present, each repeated
+              // as many times as it is generated, contiguous, and in plan order. A batch that dropped
+              // a part, repeated one instead of another, expanded a run by the wrong set, or ordered
+              // itself facing-major all fail here, and the last of those is the one a set could not
+              // see — the identity lock depends on the trunk parts being generated before the runs
+              // that have to match them.
+              //
+              // The expectation is written from the plans rather than asked of `sheetBatch`, which is
+              // the point: a right-hand side derived from the code under test would agree with it
+              // however that code changed.
+              const generations = DIRECTION_LISTS[resolveDirectionSet(category, directions)].length;
+              const expected = parts.flatMap((part, index) =>
+                Array.from({ length: part.facings === 'run' ? generations : 1 }, () => index),
+              );
 
-            expect(
-              sheets.map((sheet) => sheet.output.sheetIndex),
-              where,
-            ).toEqual(expected);
+              expect(
+                sheets.map((sheet) => sheet.output.sheetIndex),
+                where,
+              ).toEqual(expected);
+            }
           }
         }
       }
@@ -323,7 +344,7 @@ describe('a batch steps through the whole inventory, whatever part the studio is
       componentBudget: 43,
       identityLock: 'Form: Human, Standard Humanoid, Athletic & Slender',
     });
-    const { sheets, ordinal } = sheetBatch('CHARACTER', reported);
+    const { sheets, ordinal } = sheetBatch('CHARACTER', standardSubject(), reported);
 
     expect(sheets.map((sheet) => `${sheet.plan.name} · ${sheet.assembly}`)).toEqual([
       'Directional core · front',

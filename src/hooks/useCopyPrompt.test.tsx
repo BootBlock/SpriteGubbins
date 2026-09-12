@@ -48,7 +48,7 @@ describe('useCopyPrompt', () => {
     // count nobody was keeping.
     useSubjectStore.setState({ category: 'INTERFACE', subject: defaultSubjectFor('INTERFACE') });
     useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
-    expect(sheetRunCount('INTERFACE', DEFAULT_OUTPUT_CONFIG)).toBe(1);
+    expect(sheetRunCount('INTERFACE', useSubjectStore.getState().subject, DEFAULT_OUTPUT_CONFIG)).toBe(1);
 
     await copyTheStudio();
 

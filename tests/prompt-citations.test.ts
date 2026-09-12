@@ -10,6 +10,7 @@ import type { SheetPlan } from '../src/types/components.ts';
 import { DIRECTIONAL_MODES, DIRECTION_SETS, RESOLUTION_PROFILES } from '../src/types/output.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 import type { SubjectCategory } from '../src/types/subject.ts';
+import { assemblyBaseSubjectsOf } from '../src/test/assemblyBaseSubjects.ts';
 
 /**
  * Whether any prose the prompt interpolates still writes a section number by hand.
@@ -41,23 +42,35 @@ const HAND_WRITTEN = /\bsections? \d/i;
  * The floor under each walk, and the only thing standing between one that stops reaching anything
  * and a suite that reports nothing wrong.
  *
- * **Per walk, because a single floor over the total is inert.** The plans contribute around 6,100
- * strings and the other two around 230 and 37, so one number covering the sum is satisfied by the
- * plans alone — and `recordProse` going dark, which would take all three of the exclusions with it,
- * would leave the assertion passing on 97% of its usual input. Each figure sits far below what its
- * own walk currently finds, so adding or removing prose never touches them.
+ * **Per walk, because a single floor over the total is inert.** The plans contribute around 37,500
+ * strings, the records around 180 and the composed blocks around 9,400, so one number covering the sum
+ * is satisfied by the plans alone — and `recordProse` going dark would leave the assertion passing on
+ * more than 99% of its usual input. Each figure sits below what its own walk currently finds, so adding
+ * or removing prose never touches them.
  */
 const FEWEST_STRINGS = { plans: 1000, records: 100, composed: 10 } as const;
 
-/** The sheet at every address a configuration can name, once per address, with the category it is for. */
+/**
+ * The sheet at every address a configuration can name — assembly base, mode, direction set and sheet
+ * index — once per address, with the category it is for.
+ *
+ * **The base is part of the address** (issue #283). A declared base draws sheets of its own, so a walk
+ * compiling one subject per category reads only the standard plans, and a rigid object's views, whose
+ * intro cites `[SEC:CAMERA]`, went unread. Each plan table is walked with the subject that selects it.
+ */
 function addressedSheets(): readonly { readonly category: SubjectCategory; readonly plan: SheetPlan }[] {
   const sheets: { category: SubjectCategory; plan: SheetPlan }[] = [];
 
   for (const category of SUBJECT_CATEGORIES) {
-    for (const directionalMode of DIRECTIONAL_MODES) {
-      for (const directions of DIRECTION_SETS) {
-        for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
-          sheets.push({ category, plan: sheetPlanFor(category, directionalMode, directions, sheetIndex) });
+    for (const subject of assemblyBaseSubjectsOf(category)) {
+      for (const directionalMode of DIRECTIONAL_MODES) {
+        for (const directions of DIRECTION_SETS) {
+          for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            sheets.push({
+              category,
+              plan: sheetPlanFor(category, subject, directionalMode, directions, sheetIndex),
+            });
+          }
         }
       }
     }
@@ -216,6 +229,10 @@ describe('the prompt’s own prose', () => {
     expect(composed.length, 'the composed-block walk found almost nothing').toBeGreaterThan(
       FEWEST_STRINGS.composed,
     );
+    // And across the assembly bases, which no floor on a count can see: a walk that lost that axis
+    // clears the floor on the standard sheets alone, so the rigid object's two sheets are named.
+    expect(plans, 'the sheet-plan walk never reached a rigid object’s states').toContain('Object states');
+    expect(plans, 'the sheet-plan walk never reached a rigid object’s views').toContain('Object views');
   });
 
   it('cites a section by name rather than writing its number down', () => {

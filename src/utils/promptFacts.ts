@@ -119,19 +119,21 @@ export function sheetFacts(
   // arrangement and the one this file is converging on: `sheetDirections` and `sheetBatch` below both
   // do, so there is no way to reach them with an unresolved mode at all, where handing down a
   // pre-resolved one only works for as long as every call site remembers to.
-  const mode = resolveMode(category, output.directionalMode);
+  const mode = resolveMode(category, subject, output.directionalMode);
 
   // Every sheet the pairing produces, and then the one this prompt is for. The series is what the
   // rig is a claim about — see `resolveRigMode` — and the index is resolved through it for the same
   // reason the mode is: a stored index can name a second sheet on a pairing that has one, and
-  // `sheetPlanFor` answers with the series' first rather than with `undefined`.
-  const series = sheetSeriesFor(category, mode, output.directions);
+  // `sheetPlanFor` answers with the series' first rather than with `undefined`. The subject's assembly
+  // base is part of the address: a `Single Rigid Object` draws its whole views where the standard
+  // sheets draw a housing, a hatch and a subassembly, which is what section 1 says it is.
+  const series = sheetSeriesFor(category, subject, mode, output.directions);
   // The plan **as this subject draws it**: a category whose `clothing` pool offers a value meaning
   // the subject has none of what the field describes loses the entries drawing it, so section 4 stops
   // ordering a cladding panel for a `Bare Unclad Frame` and section 1 stops excepting an attribute
   // the inventory no longer carries. Every phase below reads this one plan, which is what keeps the
   // count, the prose and the manifest describing the same sheet — see `sheetPlanClothing.ts`.
-  const plan = drawnPlanFor(category, mode, output.directions, output.sheetIndex, subject.clothing);
+  const plan = drawnPlanFor(category, subject, mode, output.directions, output.sheetIndex);
 
   // And the rig this sheet is actually drawn for, resolved for the same reason and against both
   // axes: a stored configuration can name one its category has no joints for, and section 5 is what
@@ -142,7 +144,7 @@ export function sheetFacts(
   // than the mode for the reason that comment gives one layer in: what a rig is a claim about is the
   // set of sheets that assemble together, and only the series can be reached with the pairing and
   // the direction set already resolved.
-  const rigMode = resolveRigMode(category, series, output.rigMode);
+  const rigMode = resolveRigMode(category, subject, series, output.rigMode);
 
   // Which facings this sheet covers and which it assembles towards — resolved in `sheetDirections`
   // because the splitter labels its runs from the same answer, and two implementations of it would
@@ -183,7 +185,7 @@ export function sheetFacts(
   // of eight arrived claiming a count and a capability belonging to something else. The batch is
   // enumerated rather than passed in because a configuration already *is* one sheet of one batch:
   // the splitter varies nothing but the facing and the sheet index, and both are fields of `output`.
-  const batch = sheetBatch(category, output);
+  const batch = sheetBatch(category, subject, output);
 
   // Only a target that returns text alongside the image can honour a component map; asking a pure
   // image endpoint for one just spends tokens on an instruction it will drop.
@@ -228,10 +230,10 @@ export function sheetFacts(
   // sheet of forty components is enlarged less than a sheet of twelve.
   const componentCount = componentCountFor(
     category,
+    subject,
     mode,
     output.directions,
     output.sheetIndex,
-    subject.clothing,
     anatomy,
   );
 
@@ -242,6 +244,7 @@ export function sheetFacts(
   // into — see `componentTargetSize.ts`.
   const statedTarget = statedTargetSize(
     category,
+    subject,
     output.directionalMode,
     output.directions,
     output.sheetIndex,
@@ -286,7 +289,7 @@ export function sheetFacts(
   // multi-view sheet draws each piece at each of its facings, so its sentence has to say so, where
   // a run sheet draws each piece once. Held in a local as well, because `config` below gates both on
   // it and reading it back off `values` would come out `string | undefined`.
-  const anatomyFacings = anatomyFacingsFor(category, mode, output.directions, output.sheetIndex);
+  const anatomyFacings = anatomyFacingsFor(category, subject, mode, output.directions, output.sheetIndex);
   const additionalAnatomyLine = anatomyFacings !== null ? anatomy.map(formatAnatomyComponent).join(', ') : '';
 
   // The second attribute section 1's paint rule has to except, and the reason that rule is no longer

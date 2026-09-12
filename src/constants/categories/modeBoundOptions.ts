@@ -19,12 +19,15 @@ import type { SubjectCategory, SubjectFieldKey } from '../../types/subject.ts';
  * `presets/presets.test.ts` the presets. It sits beside the pools rather than on `FieldOption`, as
  * `exclusionElements.ts` does, so that a record only the tests read is not downloaded by every visitor.
  *
- * **What may be declared.** A value is bound when it names a piece, a repeat or a stretch that the
- * sheets of some modes draw and another mode's sheets do not — `Tower With Detachable Roof` on
- * BUILDING, whose tile set draws no roof. A list is never empty and never every mode the category
- * offers, so a single-mode category declares nothing. **A value that no sheet of its category agrees
- * with is a different defect** (issue #281) and is not declared here, so a value missing from this
- * table is one tied to no mode rather than one every sheet agrees with.
+ * **What may be declared.** A value is bound when it names a repeat, a stretch or a way of being shown
+ * that the sheets of some modes draw and another mode's sheets do not — `Short Repeat, One Screen Wide`
+ * on BACKGROUND, whose layer library repeats nothing. A list is never empty and never every mode the
+ * category offers, so a single-mode category declares nothing. **An assembly base is not declared
+ * here**: a base chooses the plans its category draws from, so a base only some modes draw is declared
+ * with those modes' plans in `sheetPlans/assemblyBases.ts`, where the studio enforces it rather than
+ * the tests alone (issue #283). The same file answers the value no sheet of its category agrees with
+ * (issue #281), by declaring the sheets that do draw it, so a value missing from this table is one
+ * tied to no mode rather than one every sheet agrees with.
  */
 export const MODE_BOUND_OPTIONS: Readonly<
   Partial<
@@ -47,68 +50,7 @@ export const MODE_BOUND_OPTIONS: Readonly<
       'Long Repeat, Four Screens Wide': ['TILESET_MODULAR'],
       'Full-Screen Single Panel': ['SINGLE_DIRECTION_POSE_LIBRARY'],
     },
-    anatomy: {
-      'Single Non-Repeating Panel': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-      'Horizontally Seamless Band': ['TILESET_MODULAR'],
-      'Seamless Band With Loose Overlays': ['TILESET_MODULAR'],
-      'Seamless Band With Parallax Sub-Layers': ['TILESET_MODULAR'],
-      // The layer library's mid mass and edge occluders, each drawn once for the left and the right.
-      'Panel Split Into Left And Right Halves': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-    },
     exclusions: { 'No visible seam where the band repeats': ['TILESET_MODULAR'] },
-  },
-  // The tile set is a floor field with walls around it, and the module library and the directional views
-  // draw structural pieces and no tile at all.
-  BUILDING: {
-    anatomy: {
-      'Modular Building Tiles': ['TILESET_MODULAR'],
-      // The tile set's wall corners; the other two sheets draw a corner post or quoin instead.
-      'Corner Tile Piece': ['TILESET_MODULAR'],
-      // A roof and an entrance, which the tile set does not draw.
-      'Tower With Detachable Roof': ['SINGLE_DIRECTION_POSE_LIBRARY', 'CORE_DIRECTIONAL_VARIANTS'],
-      'Wall Section With Gate': ['SINGLE_DIRECTION_POSE_LIBRARY', 'CORE_DIRECTIONAL_VARIANTS'],
-    },
-  },
-  // The state library cuts a widget into the pieces its states change, such as a bar's track and fill,
-  // and stretches none of them; the nine-slice set cuts every piece to stretch or repeat.
-  INTERFACE: {
-    anatomy: {
-      'Single Fixed-Size Piece': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-      'Three-Slice Horizontal Stretch': ['TILESET_MODULAR'],
-      'Three-Slice Vertical Stretch': ['TILESET_MODULAR'],
-      'Nine-Slice Stretching Frame': ['TILESET_MODULAR'],
-      'Nine-Slice With Tiling Fill': ['TILESET_MODULAR'],
-      // The state library's title bar and panel frame; the nine-slice set draws no header.
-      'Stacked Header, Body & Footer': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-      'Nine-Slice With Fixed Corner Ornament': ['TILESET_MODULAR'],
-      // The nine-slice set's divider rail between its two end caps.
-      'Repeating Track With Two Caps': ['TILESET_MODULAR'],
-      // The state library's icon plate, drawn empty, filled and highlighted.
-      'Base Plate With Overlay States': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-    },
-  },
-  // The part library draws a detachable part and a working end in two states; the directional views draw
-  // one working end per facing and nothing that detaches.
-  ITEM: {
-    anatomy: {
-      'Weapon With Detachable Mag': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-      'Instrument Body & Detachable Bow': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-      'Tool With Swappable Heads': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-    },
-  },
-  // Every named discipline belongs to one of the two sheets: the blend set joins two materials across a
-  // flat field, and the feature library raises one level and stands features on it.
-  TERRAIN: {
-    anatomy: {
-      'Corner-Matched Blob Set': ['TILESET_MODULAR'],
-      'Edge-Matched Wang Set': ['TILESET_MODULAR'],
-      'Framed Platform Set': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-      'Uniform Self-Tiling Field': ['TILESET_MODULAR'],
-      'Terraced Elevation Set': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-      'Freestanding Feature Pieces': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-      'Dual-Grid Offset Set': ['TILESET_MODULAR'],
-      'Height-Layered Cliff Set': ['SINGLE_DIRECTION_POSE_LIBRARY'],
-    },
   },
 };
 

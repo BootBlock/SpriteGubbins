@@ -1,6 +1,7 @@
 import type { SheetSeries } from '../../types/components.ts';
 import type { RigMode } from '../../types/rigging.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../../types/subject.ts';
+import { supportsMode } from './modes.ts';
 
 /**
  * Which rig each category can actually be asked for.
@@ -80,9 +81,17 @@ export const CATEGORY_RIG_MODES: Readonly<Record<SubjectCategory, readonly RigMo
   FONT: ['NONE'],
 };
 
-/** Whether this category's components can be asked for in this state of articulation at all. */
-export function supportsRigMode(category: SubjectCategory, rigMode: RigMode): boolean {
-  return CATEGORY_RIG_MODES[category].includes(rigMode);
+/**
+ * Whether this subject's components can be asked for in this state of articulation at all.
+ *
+ * The category's answer, narrowed by the assembly base. **A base with no cut-out rig sheet has said it
+ * has no pivot**, for the reason a category without one has: a rigid object draws nothing that turns,
+ * so it is offered `NONE` alone. That is the entailment `rigModes.test.ts` holds between the two
+ * category tables, carried down to each base through this line rather than through a third table.
+ */
+export function supportsRigMode(category: SubjectCategory, subject: SheetSubject, rigMode: RigMode): boolean {
+  if (!CATEGORY_RIG_MODES[category].includes(rigMode)) return false;
+  return rigMode === 'NONE' || supportsMode(category, subject, 'CUTOUT_RIG_SINGLE_DIRECTION');
 }
 
 /**
@@ -164,8 +173,13 @@ export function fixedRigMode(series: SheetSeries): RigMode | undefined {
  * settles the rig on it outright. So this takes nothing away that the app does not offer better one
  * control along.
  */
-export function offersRigMode(category: SubjectCategory, series: SheetSeries, rigMode: RigMode): boolean {
-  if (!supportsRigMode(category, rigMode)) return false;
+export function offersRigMode(
+  category: SubjectCategory,
+  subject: SheetSubject,
+  series: SheetSeries,
+  rigMode: RigMode,
+): boolean {
+  if (!supportsRigMode(category, subject, rigMode)) return false;
   return rigMode !== 'CUTOUT_RIG' || !artworkSettlesMotion(series);
 }
 
@@ -202,12 +216,19 @@ export function offersRigMode(category: SubjectCategory, series: SheetSeries, ri
  * {@link fixedRigMode} exists to stop on the rig sheet. It is still a fall rather than an upgrade,
  * because everything `POSE_LIBRARY` asks for, `CUTOUT_RIG` asked for too.
  */
-export function resolveRigMode(category: SubjectCategory, series: SheetSeries, rigMode: RigMode): RigMode {
+export function resolveRigMode(
+  category: SubjectCategory,
+  subject: SheetSubject,
+  series: SheetSeries,
+  rigMode: RigMode,
+): RigMode {
   const fixed = fixedRigMode(series);
   if (fixed !== undefined) return fixed;
-  if (offersRigMode(category, series, rigMode)) return rigMode;
-  // Guarded on the category as well as the inventories, because posed artwork is not by itself a
-  // promise that the subject articulates: an ITEM part library and an INTERFACE state library are
-  // both drawn per state, and neither may be handed a rig its own table withholds.
-  return artworkSettlesMotion(series) && supportsRigMode(category, 'POSE_LIBRARY') ? 'POSE_LIBRARY' : 'NONE';
+  if (offersRigMode(category, subject, series, rigMode)) return rigMode;
+  // Guarded on the category and the base as well as the inventories, because posed artwork is not by
+  // itself a promise that the subject articulates: an ITEM part library, an INTERFACE state library and
+  // a rigid object's states are all drawn per state, and none may be handed a rig its table withholds.
+  return artworkSettlesMotion(series) && supportsRigMode(category, subject, 'POSE_LIBRARY')
+    ? 'POSE_LIBRARY'
+    : 'NONE';
 }

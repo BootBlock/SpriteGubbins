@@ -1,7 +1,9 @@
 import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
 import { DIRECTION_LISTS } from '../constants/promptText/index.ts';
-import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import { modePlansOf } from '../constants/sheetPlans/index.ts';
+import type { SeriesFor } from '../constants/sheetPlans/index.ts';
 import type { ComponentKind, SheetPlan } from '../types/components.ts';
+import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory } from '../types/subject.ts';
@@ -94,10 +96,13 @@ export function kindsIn(plan: SheetPlan): readonly ComponentKind[] {
   return [...new Set(plan.groups.flatMap((group) => group.entries.map((entry) => entry.kind)))];
 }
 
-/** One thing wrong with one (category, mode) pairing. */
+/**
+ * One thing wrong with one (category, mode) pairing — or, where `mode` is `null`, with a plan table
+ * that offers no mode at all.
+ */
 export interface PlanViolation {
   readonly category: SubjectCategory;
-  readonly mode: DirectionalMode;
+  readonly mode: DirectionalMode | null;
   readonly message: string;
 }
 
@@ -106,73 +111,104 @@ export interface PlanViolation {
  *
  * Returns all of them rather than throwing on the first, so one run reports the full picture —
  * a table with three misfiled plans should not need three runs to find them.
+ *
+ * **Every plan table a category can be drawn from is walked**, each declared assembly base's as well as
+ * the standard one, because a base's sheets reach a prompt exactly as the standard sheets do. A table
+ * offering no mode at all is the one violation that belongs to no mode, and it is reported because
+ * `resolveMode` would then have no sheet to fall back to.
  */
 export function validateAllSheetPlans(): readonly PlanViolation[] {
   const violations: PlanViolation[] = [];
 
   for (const category of SUBJECT_CATEGORIES) {
-    for (const mode of modesFor(category)) {
-      // The series is a function of the chosen direction set now, so every set the category offers
-      // is validated — the eight-compass series holds sheets no other set produces, and checking
-      // one set would leave the others' plans unexamined.
-      for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-        const series = sheetSeriesFor(category, mode, directions);
-        const setFacings = DIRECTION_LISTS[directions];
+    for (const plans of modePlansOf(category)) {
+      const modes = DIRECTIONAL_MODES.filter((mode) => plans[mode] !== undefined);
+      if (modes.length === 0) violations.push({ category, mode: null, message: 'has a base with no mode' });
+      for (const mode of modes) {
+        const seriesFor = plans[mode];
+        if (seriesFor !== undefined) violations.push(...seriesViolations(category, mode, seriesFor));
+      }
+    }
+  }
 
-        // Names are what a run row, a toast and an inventory heading identify a sheet by, and what
-        // `sheetIdentity` keys a batch's progress on — two sheets of one series sharing one would
-        // make the drawer tick both off when either was copied.
-        const names = new Set(series.map((plan) => plan.name));
-        if (names.size !== series.length) {
-          violations.push({ category, mode, message: `has two sheets with the same name on ${directions}` });
-        }
+  return violations;
+}
 
-        for (const plan of series) {
-          for (const kind of kindsIn(plan)) {
-            if (!categoryPermits(category, kind)) {
-              violations.push({
-                category,
-                mode,
-                message: `asks for a component of kind “${kind}”, which ${category} does not admit`,
-              });
-            }
-          }
-          // A multi-view sheet's facings come from the set its series was built for, so a facing
-          // outside that set is a view the Directions control never asked for — the drifted-plan
-          // failure the old fixed-set arrangement made impossible and the builders must not reopen.
-          if (plan.facings !== 'run') {
-            for (const facing of plan.facings) {
-              if (!setFacings.includes(facing)) {
-                violations.push({
-                  category,
-                  mode,
-                  message: `sheet “${plan.name}” draws “${facing}”, which ${directions} does not contain`,
-                });
-              }
-            }
-          }
-          if (plan.groups.length === 0) {
-            violations.push({ category, mode, message: `sheet “${plan.name}” has no component groups` });
-          }
-          for (const group of plan.groups) {
-            if (group.entries.length === 0) {
-              violations.push({
-                category,
-                mode,
-                message: `has an empty group (${group.heading ?? 'unheaded'})`,
-              });
-            }
-            for (const entry of group.entries) {
-              if (entry.count < 1 || !Number.isInteger(entry.count)) {
-                violations.push({
-                  category,
-                  mode,
-                  message: `entry “${entry.text}” contributes ${String(entry.count)} components`,
-                });
-              }
-            }
-          }
-        }
+/** Every structural problem in one mode of one plan table, under every direction set the category offers. */
+function seriesViolations(
+  category: SubjectCategory,
+  mode: DirectionalMode,
+  seriesFor: SeriesFor,
+): readonly PlanViolation[] {
+  const violations: PlanViolation[] = [];
+
+  // The series is a function of the chosen direction set now, so every set the category offers is
+  // validated — the eight-compass series holds sheets no other set produces, and checking one set
+  // would leave the others' plans unexamined.
+  for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+    const setFacings = DIRECTION_LISTS[directions];
+    const series = seriesFor(setFacings);
+
+    // Names are what a run row, a toast and an inventory heading identify a sheet by, and what
+    // `sheetIdentity` keys a batch's progress on — two sheets of one series sharing one would make the
+    // drawer tick both off when either was copied.
+    const names = new Set(series.map((plan) => plan.name));
+    if (names.size !== series.length) {
+      violations.push({ category, mode, message: `has two sheets with the same name on ${directions}` });
+    }
+
+    for (const plan of series) violations.push(...planViolations(category, mode, plan, setFacings));
+  }
+
+  return violations;
+}
+
+/** Every structural problem in one sheet, against the facings of the set its series was built for. */
+function planViolations(
+  category: SubjectCategory,
+  mode: DirectionalMode,
+  plan: SheetPlan,
+  setFacings: readonly string[],
+): readonly PlanViolation[] {
+  const violations: PlanViolation[] = [];
+
+  for (const kind of kindsIn(plan)) {
+    if (!categoryPermits(category, kind)) {
+      violations.push({
+        category,
+        mode,
+        message: `asks for a component of kind “${kind}”, which ${category} does not admit`,
+      });
+    }
+  }
+  // A multi-view sheet's facings come from the set its series was built for, so a facing outside that
+  // set is a view the Directions control never asked for — the drifted-plan failure the old fixed-set
+  // arrangement made impossible and the builders must not reopen.
+  if (plan.facings !== 'run') {
+    for (const facing of plan.facings) {
+      if (!setFacings.includes(facing)) {
+        violations.push({
+          category,
+          mode,
+          message: `sheet “${plan.name}” draws “${facing}”, which its set does not contain`,
+        });
+      }
+    }
+  }
+  if (plan.groups.length === 0) {
+    violations.push({ category, mode, message: `sheet “${plan.name}” has no component groups` });
+  }
+  for (const group of plan.groups) {
+    if (group.entries.length === 0) {
+      violations.push({ category, mode, message: `has an empty group (${group.heading ?? 'unheaded'})` });
+    }
+    for (const entry of group.entries) {
+      if (entry.count < 1 || !Number.isInteger(entry.count)) {
+        violations.push({
+          category,
+          mode,
+          message: `entry “${entry.text}” contributes ${String(entry.count)} components`,
+        });
       }
     }
   }

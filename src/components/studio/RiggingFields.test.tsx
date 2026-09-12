@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
@@ -96,5 +97,19 @@ describe('RiggingFields', () => {
 
     expect(screen.queryByRole('combobox', { name: RIG_MODE })).not.toBeInTheDocument();
     expect(screen.getByText(/BUILDING sheets carry nothing that turns about a pivot/)).toBeInTheDocument();
+  });
+
+  it('names the assembly base where the category articulates and the base does not', () => {
+    // A rigid object has no rig sheet (issue #283), so OBJECT is offered `NONE` alone while it holds
+    // one. The category sentence above would be false of every other OBJECT, and the way to have the
+    // rig back is the field in the other panel — so the sentence names that field and its value.
+    useSubjectStore.setState({ category: 'OBJECT', subject: defaultSubjectFor('OBJECT') });
+    render(<RiggingFields />);
+
+    expect(screen.queryByRole('combobox', { name: RIG_MODE })).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Structure Base “Single Rigid Object” draws nothing that turns about a pivot/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/OBJECT sheets carry nothing/)).not.toBeInTheDocument();
   });
 });

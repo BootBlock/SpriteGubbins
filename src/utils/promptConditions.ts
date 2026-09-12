@@ -1,6 +1,5 @@
 import { deliberates, returnsText } from './targetCapabilities.ts';
 import { isPlanView, LETTERING_IS_A_COMPONENT, perComponentLimit } from '../constants/promptText/index.ts';
-import { statesAssembledSize } from './componentTargetSize.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
 import { seriesStatesOneCapability } from './seriesCapability.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -57,17 +56,11 @@ export function promptConditions(
     // **Not `RIG_MODE`, even though section 5 is gated on that.** A FONT or ICON sheet may carry
     // `CUTOUT_RIG` as a stored value while drawing whole glyphs, and a pose-library sheet may carry
     // it as a perfectly legitimate request — its pieces do get bound to bones. The question here is
-    // which sheet is drawn, and `statesAssembledSize` asks the resolved sheet plan. It asks the plan
-    // alone, so it is right while the field is empty too — which is what this gate needs, since the
+    // which sheet is drawn, and the resolved plan in `facts` is that sheet — its base, its mode and its
+    // index already resolved, so a rigid object's views answer for themselves. It asks the plan alone,
+    // so it is right while the field is empty too — which is what this gate needs, since the
     // `[OPTIONAL:…]` inside it is what decides whether there is a line at all.
-    ASSEMBLED_TARGET: statesAssembledSize(
-      category,
-      output.directionalMode,
-      output.directions,
-      output.sheetIndex,
-    )
-      ? 'yes'
-      : '',
+    ASSEMBLED_TARGET: plan.targetQuantity === 'ASSEMBLED' ? 'yes' : '',
     // Gates four places at once: the precedence clause in section 0, the three surface lines and the
     // surface-discipline block in section 2 — negated — and the paragraph that replaces them. One
     // flag, because a style either states the surface itself or leaves those settings to state it.

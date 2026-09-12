@@ -54,7 +54,7 @@ export function PromptActions({ promptText }: PromptActionsProps) {
 
   // Derived, not compiled: this is asked on every keystroke and only needs the number, where
   // `sheetRuns` would compile a prompt per sheet to arrive at the same figure.
-  const runCount = sheetRunCount(category, output);
+  const runCount = sheetRunCount(category, subject, output);
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
