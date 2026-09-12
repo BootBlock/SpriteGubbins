@@ -85,12 +85,11 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node
-        # No `cache: npm` — this job installs nothing. The version is still pinned because `npm
-        # version` rewrites package-lock.json, and which npm does that decides what the file says:
-        # the runner image's own npm is whatever Node it ships with, and a lockfile written by a
-        # different npm (another major, or an npm 11 before 11.6.3, which flags dependencies
-        # differently) would land on the branch as a change nobody asked for. It reads `.nvmrc`,
-        # as every other job here does.
+        # No `cache: npm` — this job installs nothing. It runs only `node -p` and `npm version`, and
+        # `npm version` rewrites just the two version fields of package-lock.json without building
+        # a dependency tree, so no npm here can change anything else the lockfile says. The Node
+        # still comes from `.nvmrc`, as it does in every job of the gate in tests.yml, so a release
+        # runs on the toolchain the project declares rather than whatever the runner image ships.
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc

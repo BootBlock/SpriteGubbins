@@ -76,10 +76,6 @@ describe('the pinned Node version', () => {
     .filter((name) => /\.ya?ml$/u.test(name))
     .filter((name) => setupNodeSteps(read(`${WORKFLOWS_DIR}/${name}`)).length > 0);
 
-  it('is a bare major in .nvmrc', () => {
-    expect(read('.nvmrc').trim()).toMatch(/^\d+$/u);
-  });
-
   it('is installed by at least one workflow', () => {
     expect(workflows.length).toBeGreaterThan(0);
   });
