@@ -96,9 +96,10 @@ $BasePath = '/SpriteGubbins/'
 # How long to wait for a freshly started server to answer before giving up on the auto-open.
 # The server keeps running either way, and its URL is already on screen in the banner below.
 $ReadyTimeoutSec = 60
-# package.json declares engines.node >= 24 and .nvmrc pins 25. npm does not enforce `engines`
-# unless engine-strict is set, so an older Node fails later and deeper, inside Vite or tsc,
-# with an error that doesn't name the cause.
+# package.json declares engines.node >= 24. `engine-strict` in .npmrc makes `npm install` refuse
+# an older Node (or an npm below engines.npm), but a tree that is already installed never runs it
+# again, and there an older Node fails later and deeper, inside Vite or tsc, with an error that
+# doesn't name the cause.
 $MinNodeMajor = 24
 
 # The host as it appears in a URL (an IPv6 literal must be bracketed: ::1 -> [::1]).
@@ -236,7 +237,8 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
 }
 
 # Warn rather than block on an older Node: the floor is what the project is built and tested
-# against, but an unlisted version that happens to work shouldn't stop you getting into the app.
+# against, but on a tree that is already installed an unlisted version that happens to work
+# shouldn't stop you getting into the app. The first-run install below refuses one regardless.
 $nodeVersion = node --version
 if ($nodeVersion -match '^v(\d+)' -and [int]$Matches[1] -lt $MinNodeMajor) {
   Write-Host "[WARN] Node $nodeVersion is older than the Node $MinNodeMajor this project expects." -ForegroundColor Yellow

@@ -42,8 +42,10 @@ reference the code is held to rather than as open work.
 
 ## Getting started
 
-Requires Node 24 or newer (`engines.node` in [package.json](package.json)). The version
-pinned in [.nvmrc](.nvmrc), and installed by CI, is 25.
+Requires Node 24 or newer and npm 11.6.3 or newer (`engines` in [package.json](package.json)).
+`npm install` refuses anything older, through `engine-strict` in [.npmrc](.npmrc), because an
+older npm flags dependencies differently and rewrites `package-lock.json`. The version pinned in
+[.nvmrc](.nvmrc) is the one CI installs.
 
 **Quick start (Windows):** double-click **`Run.bat`**, or run **`.\Run.ps1`** in PowerShell.
 Either installs dependencies on first use, starts the app, and opens a browser at

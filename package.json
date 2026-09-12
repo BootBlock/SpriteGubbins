@@ -16,7 +16,8 @@
   },
   "homepage": "https://bootblock.github.io/SpriteGubbins/",
   "engines": {
-    "node": ">=24"
+    "node": ">=24",
+    "npm": ">=11.6.3"
   },
   "scripts": {
     "prepare": "node -e \"try{require('node:child_process').execSync('git config core.hooksPath .githooks',{stdio:'ignore'})}catch{}\"",

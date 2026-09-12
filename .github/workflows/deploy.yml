@@ -86,13 +86,14 @@ jobs:
 
       - name: Set up Node
         # No `cache: npm` — this job installs nothing. The version is still pinned because `npm
-        # version` rewrites package-lock.json, and which npm does that decides the lockfile format
-        # it writes back: the runner image's own npm is whatever Node it ships with, and a
-        # lockfileVersion written by a different major would land on the branch as a real change
-        # nobody asked for. Node 25 matches `.nvmrc` and every other job here.
+        # version` rewrites package-lock.json, and which npm does that decides what the file says:
+        # the runner image's own npm is whatever Node it ships with, and a lockfile written by a
+        # different npm (another major, or an npm 11 before 11.6.3, which flags dependencies
+        # differently) would land on the branch as a change nobody asked for. It reads `.nvmrc`,
+        # as every other job here does.
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 25
+          node-version-file: .nvmrc
 
       - name: Resolve, check and record the release version
         id: resolve

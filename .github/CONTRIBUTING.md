@@ -46,7 +46,9 @@ npm install
 npm run dev            # http://localhost:5173/SpriteGubbins/
 ```
 
-Node 24 or newer. The pinned version is in [.nvmrc](../.nvmrc), and it is what CI installs.
+Node 24 or newer, with npm 11.6.3 or newer. `npm install` refuses anything older, because an
+older npm rewrites `package-lock.json`. The pinned Node version is in [.nvmrc](../.nvmrc), and it
+is what CI installs.
 
 The gate every change here has to pass, if you want to hold your own fork to it:
 

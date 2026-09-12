@@ -88,7 +88,7 @@ jobs:
         # one that strips types, which is why the version is still pinned.
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 25
+          node-version-file: .nvmrc
 
       - name: Scan the tree for credential-shaped content
         # `git hash-object -t tree /dev/null` computes this repository's empty-tree id rather than
@@ -108,9 +108,10 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          # Node 25, matching `.nvmrc` and the local dev toolchain, so `npm ci` resolves the
-          # lockfile identically to a developer's machine.
-          node-version: 25
+          # The Node, and so the npm, a developer is told to use. `npm ci` never rewrites the
+          # lockfile, so it could not notice an npm that disagrees with it; `engine-strict` in
+          # `.npmrc` refuses one below the floor in `package.json` instead.
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
@@ -138,7 +139,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 25
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
@@ -170,7 +171,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 25
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
