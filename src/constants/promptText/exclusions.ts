@@ -1,17 +1,17 @@
 import type { SheetPlan } from '../../types/components.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
+import { kindsIn } from '../../utils/sheetPlanValidation.ts';
 
 /**
  * Whether this sheet lists a piece meant to repeat against its own copy — a `tile`.
  *
  * BACKGROUND's seam and landmark clauses are rules about such a piece, and only its parallax set lists
  * one: every band there is a tile, and nothing on the layer library is. Written unconditionally, both
- * clauses named a band on a sheet that draws none (issue #278). Read from the entries rather than
- * declared beside them, as `planDrawsClothing` reads its answer, so a plan that gains or loses a looping
- * piece changes what the two sentences say in the same edit.
+ * clauses named a band on a sheet that draws none (issue #278). Read from the entries through
+ * `kindsIn` rather than declared beside them, as `planDrawsClothing` reads its answer, so a plan that
+ * gains or loses a looping piece changes what the two sentences say in the same edit.
  */
-const listsRepeatingPieces = (plan: SheetPlan): boolean =>
-  plan.groups.some((group) => group.entries.some((entry) => entry.kind === 'tile'));
+const listsRepeatingPieces = (plan: SheetPlan): boolean => kindsIn(plan).includes('tile');
 
 /**
  * What the exclusions section bans, per category, stated for one sheet.
@@ -97,11 +97,12 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, (plan: Sh
   // tiles meant to repeat, because the feature library's focal outcrop is deliberately distinctive
   // and is placed once.
   //
-  // **The composed-landscape clause used to sit in the middle of this line and has moved to
-  // `CATEGORY_ASSEMBLY`**, which now supplies the fourth bullet of the list this line opens. What a
-  // terrain sheet attracts is a view of the ground instead of separable tiles, and that is this
-  // category's assembly failure rather than a second kind of scenery — it was written here only
-  // because this was the one record that had a per-category line to write it in. Leaving it in both
+  // **The composed-landscape clause used to sit in the middle of this line and has moved to the
+  // sheet's `assemblyFailure`** — `TERRAIN_ASSEMBLY_FAILURE` in `sheetPlans/terrain.ts` — which supplies
+  // the fourth bullet of the list this line opens. What a terrain sheet attracts is a view of the
+  // ground instead of separable tiles, and that is this category's assembly failure rather than a
+  // second kind of scenery — it was written here only because this was the one record that had a
+  // per-category line to write it in. Leaving it in both
   // would have section 8 excluding one thing twice in one list, in two wordings, three bullets apart
   // — which is far enough that neither copy looks like a restatement of the other.
   TERRAIN: () =>
@@ -151,7 +152,7 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, (plan: Sh
   // **Where the caption ban went is the half worth recording.** A draft ended this line with “any
   // caption, key, index number or codepoint written beside a component to name it” — which is
   // exactly what the conditional bullet further down the same list now says, and a list stating one
-  // thing twice in two wordings is the duplication `CategoryAssembly.exclusion` is written against.
+  // thing twice in two wordings is the duplication `AssemblyFailure.exclusion` is written against.
   // The template's own bullet is the right home for it, because that boundary is the *contract's*
   // rather than this category's.
   FONT: () =>
@@ -378,8 +379,8 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, CategorySente
   // without a seam, and an audit demanding that fails the sheet on the fourteen tiles section 4
   // requires.
   //
-  // **The landscape-view clause has moved to `CATEGORY_ASSEMBLY`**, which supplies the check two
-  // items above this one in the same list — the one-camera check sits between them — for the reason
+  // **The landscape-view clause has moved to the sheet's `assemblyFailure`**, which supplies the check
+  // two items above this one in the same list — the one-camera check sits between them — for the reason
   // the same clause left `CATEGORY_EXCLUSION_TEXT`: it is this category's assembly failure rather than
   // a subject check, and this record was only ever where a per-category line existed to hold it.
   TERRAIN: (plan, additions) =>

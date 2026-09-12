@@ -150,7 +150,7 @@ const TRANSITION_TILE_COUNT = componentTotal(TRANSITION_ENTRIES);
  * the composed-view half — but a whole clause can hold both, because "laid together" is a relation
  * between tiles rather than a word standing in for one. Section 9's says "drawn already laid together"
  * for the reason `CATEGORY_AUDIT_TEXT`'s own TERRAIN line is qualified twice over: the audit is applied
- * tile by tile, and a check reading "no laid tiles" would fail the sheet on the fourteen section 4
+ * tile by tile, and a check reading "no laid tiles" would fail the sheet on every tile section 4
  * requires.
  *
  * **Two of the three displaced wording this category already carried.** TERRAIN was the only category

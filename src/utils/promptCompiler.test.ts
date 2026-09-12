@@ -315,8 +315,7 @@ describe('generatePrompt — the subject', () => {
     };
 
     const [inventory = '', exclusions = '', audit = ''] = sections('SINGLE_DIRECTION_POSE_LIBRARY');
-    const layerClass =
-      'a piece of this one backdrop’s scene panel, or a piece of set dressing or atmosphere laid over it';
+    const layerClass = 'a piece of this one backdrop’s scene panel, or a piece laid over it';
     expect(inventory).toContain(`Every entry below is ${layerClass}. An entry describing anatomy`);
     expect(inventory).toContain(
       'Do not draw the pieces stacked into the finished scene anywhere on the sheet, including as a reference or key.',
@@ -349,6 +348,64 @@ describe('generatePrompt — the subject', () => {
     );
     expect(bandAudit).toContain('Every band meant to loop carries the same profile, materials and values');
   });
+
+  it.each([
+    [
+      'BUILDING',
+      'TILESET_MODULAR',
+      'a floor or wall tile',
+      'Do not draw the tiles laid together into a stretch of floor or wall anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'BUILDING',
+      'SINGLE_DIRECTION_POSE_LIBRARY',
+      'a structural piece',
+      'Do not draw the building standing complete, or a run of its modules fitted together, anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'BUILDING',
+      'CORE_DIRECTIONAL_VARIANTS',
+      'a structural piece',
+      'Do not draw the building standing complete, or a run of its modules fitted together, anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'TERRAIN',
+      'TILESET_MODULAR',
+      'a ground tile',
+      'Do not draw the tiles laid together, or a landscape composed from them, anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'TERRAIN',
+      'SINGLE_DIRECTION_POSE_LIBRARY',
+      'a ground tile or a landform piece',
+      'Do not draw the tiles laid together, or a landscape composed from them, anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'INTERFACE',
+      'TILESET_MODULAR',
+      'a piece of this one interface',
+      'Do not draw the pieces fitted together into a finished panel, button or divider anywhere on the sheet, including as a reference or key.',
+    ],
+    [
+      'INTERFACE',
+      'SINGLE_DIRECTION_POSE_LIBRARY',
+      'a piece of this one interface',
+      'Do not draw the pieces fitted together into the assembled screen anywhere on the sheet, including as a reference or key.',
+    ],
+  ] as const)(
+    'states %s / %s in its own class and its own failure',
+    (category, directionalMode, componentClass, instruction) => {
+      // The other three categories whose sheets took different words in issue #278. BUILDING's category
+      // class and forms named tiles on its two sheets with none, INTERFACE's named only the screen its
+      // nine-slice set never builds, and TERRAIN's class named a landform piece its blend set lacks. The
+      // sweeps in `sheetPlans/sheetClaims.test.ts` say what a claim may not name; this is what holds the
+      // wording, on the prompt the default subject compiles to.
+      const prompt = generatePrompt(category, defaultSubjectFor(category), withOutput({ directionalMode }));
+      const inventory = sectionOf(prompt, 'COMPONENT INVENTORY').replaceAll(/\s+/g, ' ');
+      expect(inventory).toContain(`Every entry below is ${componentClass}. An entry describing`);
+      expect(inventory).toContain(instruction);
+    },
+  );
 });
 
 describe('generatePrompt — conditional blocks', () => {

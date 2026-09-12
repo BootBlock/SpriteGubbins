@@ -195,12 +195,16 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // it is the larger half of section 0's pair above. The focal landmark would be the obvious single
   // piece and cannot be the unit, because *Focal Landmark* offers `No Landmark — Fully Repeatable`.
   scaleUnit: 'one mid mass',
-  // This sheet's own three group headings — scene panel, set dressing, atmosphere — rather than the
-  // parallax set's band and loose piece. That pair was the category's until issue #278, and on this
-  // sheet it left the sky, the masses and the edge occluders in neither class, directly above a sentence
-  // calling anything outside the class an error in the specification.
-  componentClass:
-    'a piece of this one backdrop’s scene panel, or a piece of set dressing or atmosphere laid over it',
+  // This sheet's scene panel rather than the parallax set's band. That class was the category's until
+  // issue #278, and on this sheet it left the sky, the masses and the edge occluders in no class at all,
+  // directly above a sentence calling anything outside the class an error in the specification.
+  //
+  // **"A piece laid over it" rather than naming the set dressing and the atmosphere**, because the
+  // second of those is not always here: *Applied Atmosphere* opens on its `absentOption`, so the subject
+  // the app starts with takes the whole Atmosphere group away, and a class naming atmosphere would put
+  // it back into the guard above an inventory with none. The set dressing is on every copy of the sheet,
+  // so the second half of the class always has a member.
+  componentClass: 'a piece of this one backdrop’s scene panel, or a piece laid over it',
   // The parallax set's forms with this sheet's pieces in place of its bands, which are not drawn here.
   // What fails is the same composite on both sheets, and `the finished scene` is this category's name
   // for it on both; this sheet's own assembly sentence says `finished backdrop` for the capability,

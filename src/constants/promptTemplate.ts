@@ -43,8 +43,9 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * thing — and all three said it in a figure's vocabulary on every category, so a terrain sheet was
  * told not to draw an assembled *figure* while the composed landscape it actually comes back as went
  * unnamed. The three take `[DEFINE:CATEGORY_ASSEMBLY_INSTRUCTION]`, `[DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]`
- * and `[DEFINE:CATEGORY_ASSEMBLY_AUDIT]` from `CATEGORY_ASSEMBLY`, which holds the same claim in the
- * two negative channels as well. **They are three defines rather than one spliced three times**,
+ * and `[DEFINE:CATEGORY_ASSEMBLY_AUDIT]` from the sheet's `SheetPlan.assemblyFailure`, because they name
+ * the pieces and a category's sheets do not share them (issue #278); `CATEGORY_ASSEMBLY` holds the same
+ * claim for the two negative channels. **They are three defines rather than one spliced three times**,
  * because an instruction, an exclusion and a check the reader performs are three different jobs — the
  * check in particular has to qualify every noun it uses, or it fails a sheet on a component section 4
  * required, which is the mistake `CATEGORY_AUDIT_TEXT` records having made.

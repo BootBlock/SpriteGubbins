@@ -45,10 +45,10 @@ import { CATEGORY_GUARD_TEXT } from './exclusions.ts';
  * of the library is in without anyone adding it. That also prices each ceiling in its own unit, so
  * a character budget is never compared with a token one.
  *
- * **The clause is found by the category's own sentence rather than by a copy of its words**, which is
- * what `landmarks.test.ts` does with the same record. This suite prices length, and a rewording that
- * moved the detection out from under it would pass on having measured nothing; the wording itself is
- * pinned in `utils/sheetPlans.test.ts`.
+ * **The clause is found by the category's own sentence rather than by a copy of its words**, composed
+ * for each sheet the category can be asked for. This suite prices length, and a rewording that moved
+ * the detection out from under it would pass on having measured nothing; the wording itself is pinned
+ * in `utils/sheetPlans.test.ts`.
  *
  * **Only the guard's half is priced against a ceiling that binds.** The audit's half is gated on the
  * same value, but it reaches only a target that deliberates, and every such target measured today has

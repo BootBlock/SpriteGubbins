@@ -528,7 +528,10 @@ export interface SheetPlan {
    *
    * It completes both openings and stands before the additions exemption, so it is a noun phrase with
    * no leading capital and no trailing stop. `sheetPlans/sheetClaims.test.ts` fails on a word in it, or
-   * in {@link SheetPlan.assemblyFailure}, that names a piece only another sheet of the category draws.
+   * in {@link SheetPlan.assemblyFailure}, that names a piece only another sheet of the category draws, a
+   * piece the sheet leaves off for a subject declining its category's `absentOption`, or a component
+   * kind no entry of the sheet has; `utils/promptCompiler.test.ts` pins the compiled wording wherever a
+   * category's sheets differ in it.
    */
   readonly componentClass: string;
   /**

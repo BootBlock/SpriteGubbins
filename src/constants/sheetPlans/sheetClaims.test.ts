@@ -1,15 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { everySheetOf, planProseFor } from '../../test/categoryProse.ts';
 import { sameWord } from '../../test/sameWord.ts';
+import { COMPONENT_KINDS } from '../../types/components.ts';
 import type { SheetPlan } from '../../types/components.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
+import { planAsDrawn } from '../../utils/sheetPlanClothing.ts';
+import { kindsIn } from '../../utils/sheetPlanValidation.ts';
+import { absentOptionFor } from '../categories/index.ts';
 import {
   CATEGORY_AUDIT_TEXT,
   CATEGORY_EXCLUSION_TEXT,
   CATEGORY_GUARD_TEXT,
 } from '../promptText/exclusions.ts';
 import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.ts';
+import { BUILDING_MODULE_LIBRARY } from './building.ts';
 
 /**
  * What a sheet says about itself outside its inventory — the class its guard and audit put every entry
@@ -23,19 +28,27 @@ import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.
  * had no inventory of its own to be checked against. They are `SheetPlan.componentClass` and
  * `SheetPlan.assemblyFailure` now, and this suite is what makes being on the plan mean something.
  *
- * **The sweep asks one narrow question, and it is the question the defect answers yes to**: does a
- * claim name a piece that a *sibling* sheet of the same category draws and this sheet does not write
- * anywhere? A word no sheet of the category draws is not a finding — “the finished scene” and
- * “a composited picture” name the forbidden composite, which by construction no entry is. And a word
- * this sheet's own prose writes is not one either. What is left is the case that moves a noun from one
- * sheet onto another, which is exactly how the band reached the layer library.
+ * **Three sweeps, each asking whether a claim names something the inventory under it does not hold.**
  *
- * **It reads the plan's claims and not the categories' sentences around them.** A category's exclusion
+ * - *A piece only a sibling sheet draws* — a word one of the category's other sheets names a piece with,
+ *   and this sheet never writes. That is how the band reached the layer library. A word no sheet of the
+ *   category draws is not a finding: “the finished scene” and “a composited picture” name the forbidden
+ *   composite, which by construction no entry is.
+ * - *A piece the sheet leaves off* — the same question asked of the sheet as `planAsDrawn` draws it for a
+ *   subject choosing the category's `absentOption`. The layer library's first class named its
+ *   atmosphere, which the subject the app opens with declines, so the guard named a group section 4 had
+ *   just taken away.
+ * - *A kind the sheet lists none of* — a word that is a `ComponentKind` no entry of the sheet has.
+ *   BUILDING's category class was “a structural or tile component” over two sheets with no tile, and no
+ *   entry *name* on its tile set says “tile” for the first sweep to find; the kind is what says it.
+ *
+ * **They read the plan's claims and not the categories' sentences around them.** A category's exclusion
  * line and the tail of its guard are true of every sheet by design, and they legitimately ban a piece
  * one sheet draws — VEHICLE's audit forbids an exhaust plume drawn as a component on the directional
  * views as well as on the part library that lists the vent. The one clause in those sentences that
  * depends on the sheet, BACKGROUND's seam rule, is pinned on the compiled prompt in
- * `utils/promptCompiler.test.ts`, where its presence is what is being asserted.
+ * `utils/promptCompiler.test.ts`, which also pins every class and form a category's sheets differ in —
+ * the wording itself, where these sweeps can only say what it must not name.
  */
 
 /** Every distinct sheet a category can be asked for, once each — the plans told apart by their names. */
@@ -127,18 +140,58 @@ function claimsOf(plan: SheetPlan): readonly (readonly [string, string])[] {
 }
 
 /**
- * Each word in one of `plan`'s claims that names a piece only another of `sheets` draws, with the
- * claim it is in and the sheet that draws it.
+ * Each word in one of `plan`'s claims that a drawer names a piece with and `inventory` never writes,
+ * with the claim it is in and what the drawer is.
+ *
+ * `inventory` is what sits under the claims in a compiled prompt — the plan itself, or the plan as a
+ * subject draws it — and each drawer is a plan paired with the words saying where its pieces are.
  */
-function borrowedPieces(plan: SheetPlan, sheets: readonly SheetPlan[]): readonly string[] {
-  const own = wordsOf(planProseFor(plan));
+function unwrittenPieces(
+  plan: SheetPlan,
+  inventory: SheetPlan,
+  drawers: readonly (readonly [string, SheetPlan])[],
+): readonly string[] {
+  const written = wordsOf(planProseFor(inventory));
   return claimsOf(plan).flatMap(([claim, text]) =>
     [...new Set(wordsOf(text))].flatMap((word) => {
-      if (own.some((written) => sameWord(word, written))) return [];
-      const drawer = sheets.find(
-        (other) => other.name !== plan.name && pieceWordsOf(other).some((piece) => sameWord(word, piece)),
-      );
-      return drawer === undefined ? [] : [`“${word}” in its ${claim}, which only ${drawer.name} draws`];
+      if (written.some((writtenWord) => sameWord(word, writtenWord))) return [];
+      const drawer = drawers.find(([, other]) => pieceWordsOf(other).some((piece) => sameWord(word, piece)));
+      return drawer === undefined ? [] : [`“${word}” in its ${claim}, ${drawer[0]}`];
+    }),
+  );
+}
+
+/** The pieces a sheet's claims name that only another sheet of its category draws. */
+function borrowedPieces(plan: SheetPlan, sheets: readonly SheetPlan[]): readonly string[] {
+  return unwrittenPieces(
+    plan,
+    plan,
+    sheets
+      .filter((other) => other.name !== plan.name)
+      .map((other) => [`which only ${other.name} draws`, other] as const),
+  );
+}
+
+/**
+ * The pieces a sheet's claims name that the sheet leaves off for a subject choosing the category's
+ * `absentOption` — none, for a category whose pool declares no such value.
+ */
+function declinedPieces(category: SubjectCategory, plan: SheetPlan): readonly string[] {
+  const absent = absentOptionFor(category, 'clothing');
+  if (absent === null) return [];
+  return unwrittenPieces(plan, planAsDrawn(plan, category, absent), [
+    [`which a subject choosing “${absent}” takes off this sheet`, plan],
+  ]);
+}
+
+/** Each word in a sheet's claims that is a `ComponentKind` no entry of the sheet has. */
+function absentKinds(plan: SheetPlan): readonly string[] {
+  const listed = kindsIn(plan);
+  const missing = COMPONENT_KINDS.filter((kind) => !listed.includes(kind));
+  return claimsOf(plan).flatMap(([claim, text]) =>
+    [...new Set(wordsOf(text))].flatMap((word) => {
+      const kind = missing.find((candidate) => sameWord(word, candidate));
+      return kind === undefined ? [] : [`“${word}” in its ${claim}, where no entry is a ${kind}`];
     }),
   );
 }
@@ -169,6 +222,21 @@ describe('what a sheet says about itself outside its inventory', () => {
     },
   );
 
+  it.each(SUBJECT_CATEGORIES)(
+    '%s names no piece a sheet leaves off for a subject that declines it',
+    (category) => {
+      for (const plan of sheetsOf(category)) {
+        expect(declinedPieces(category, plan), `${category} / ${plan.name}`).toEqual([]);
+      }
+    },
+  );
+
+  it.each(SUBJECT_CATEGORIES)('%s names no kind of component a sheet lists none of', (category) => {
+    for (const plan of sheetsOf(category)) {
+      expect(absentKinds(plan), `${category} / ${plan.name}`).toEqual([]);
+    }
+  });
+
   it('finds the band in BACKGROUND’s layer library written in the parallax set’s words', () => {
     // The reported instance: the layer library carrying the parallax set's class and forms, which is
     // what the per-category records handed it. Without this the sweep above could pass by reading
@@ -187,6 +255,25 @@ describe('what a sheet says about itself outside its inventory', () => {
         claim,
       ).toBe(true);
     }
+  });
+
+  it('finds the atmosphere in a layer library class written before a clear subject was read', () => {
+    // The class this change first gave the layer library, which named its Atmosphere group — the group
+    // the default subject's `Clear — No Overlay` takes off the sheet.
+    const declined = declinedPieces('BACKGROUND', {
+      ...BACKGROUND_LAYER_LIBRARY,
+      componentClass:
+        'a piece of this one backdrop’s scene panel, or a piece of set dressing or atmosphere laid over it',
+    });
+    expect(declined.join('\n')).toContain('“atmosphere” in its component class');
+  });
+
+  it('finds the tile in BUILDING’s module library under the category’s old class', () => {
+    // The disjunction with an empty half: every BUILDING sheet was “a structural or tile component”,
+    // and the module library lists no tile.
+    expect(
+      absentKinds({ ...BUILDING_MODULE_LIBRARY, componentClass: 'a structural or tile component' }),
+    ).toEqual(['“tile” in its component class, where no entry is a tile']);
   });
 
   it.each(SUBJECT_CATEGORIES)('gives every %s sheet a class that completes both openings', (category) => {
@@ -237,7 +324,8 @@ describe('what a sheet says about itself outside its inventory', () => {
     // it, and both gave the wording up when a record gained somewhere to put it.
     //
     // Four words rather than three, because "on the sheet and" and its like are connective tissue every
-    // one of these lines is built from; four in a row is a phrase somebody wrote twice.
+    // one of these lines is built from; four in a row is a phrase somebody wrote twice. The longest run
+    // any sheet shares today is three, so the threshold is not vacuous.
     //
     // **It covers one of the two duplications it is named for, and the shortfall is worth knowing.**
     // Restoring TERRAIN's old exclusion clause fails this — the replacement kept "landscape, vista or
@@ -267,7 +355,7 @@ describe('what a sheet says about itself outside its inventory', () => {
     // What this catches is a set copied wholesale when a category or a sheet was added, which is how the
     // figure vocabulary reached all nine categories in the first place, in all three forms at once.
     // CHARACTER and CREATURE are the one pair that genuinely shares a failure, and they are named rather
-    // than derived.
+    // than derived. The wrapper terms get the same check in `categoryAssembly.test.ts`.
     const seen = new Map<string, Set<SubjectCategory>>();
     for (const category of SUBJECT_CATEGORIES) {
       for (const plan of sheetsOf(category)) {

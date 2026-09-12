@@ -133,4 +133,21 @@ describe('CATEGORY_ASSEMBLY', () => {
     expect(statement, category).toBe(statement.trim().toLowerCase());
     expect(statement, category).not.toMatch(/[.;]/);
   });
+
+  it('gives no two categories the same statement and terms', () => {
+    // Shared *terms* are fine and deliberate — OBJECT and VEHICLE both fail as a `product shot`. What
+    // this catches is an entry copied wholesale when a category is added, which is how the figure
+    // vocabulary reached all nine in the first place. CHARACTER and CREATURE are the one pair that
+    // genuinely shares a failure, and they are named rather than derived. The three body forms get the
+    // same check per sheet in `sheetPlans/sheetClaims.test.ts`.
+    const seen = new Map<string, SubjectCategory[]>();
+    for (const category of SUBJECT_CATEGORIES) {
+      const { negatives, statement } = CATEGORY_ASSEMBLY[category];
+      const key = [statement, ...negatives].join(' | ');
+      seen.set(key, [...(seen.get(key) ?? []), category]);
+    }
+    expect([...seen.values()].filter((categories) => categories.length > 1)).toEqual([
+      ['CHARACTER', 'CREATURE'],
+    ]);
+  });
 });
