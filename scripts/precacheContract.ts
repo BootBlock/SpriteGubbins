@@ -701,8 +701,25 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2372 leaves **0.80 KiB**. It is the smallest whole figure over the build, for the reason the notes
  * above give.
+ *
+ * **Raised from 2372 by the mesh reading a crisp sheet's lines by its transitions** (#279). A grid a
+ * crisp sheet is not exactly drawn on was walked over lines read by magnitude, so stray pixels that
+ * outweighed faint cell boundaries were the whole line list, and the mesh cut beside every boundary.
+ * `stepProfile` now reads each axis's boundary evidence as well as its magnitude, counting a crisp
+ * axis's transitions line by line. Measured against `main` at `b90b0e2`, rebuilt from the same
+ * lockfile — **2371.20 KiB across 64 entries** on the build's summary line — this build reports
+ * **2372.18 across 64** on the same line, a delta of 0.98 that crossed a ceiling the base sat 0.80
+ * under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * **It is machinery rather than prose, and it lands in two workers.** `quantiseWorker` grows by 512
+ * bytes and `autoTuneWorker` by 499, because each carries its own copy of the step profile, and the
+ * two sum to the 0.98. Every other script chunk is the same size to the byte. The docblocks explaining
+ * the change are stripped from the bundle.
+ *
+ * 2373 leaves **0.82 KiB**. It is the smallest whole figure over the build, for the reason the notes
+ * above give.
  */
-export const PRECACHE_CEILING_KIB = 2372;
+export const PRECACHE_CEILING_KIB = 2373;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
