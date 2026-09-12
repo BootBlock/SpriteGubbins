@@ -1,6 +1,6 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
-  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
   HEX_CODE_PINS_THE_HUE,
   SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
@@ -26,13 +26,13 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * together drop section 3's rotation, occlusion and landmark rules — forty lines about a rotation
  * this sheet does not have.
  *
- * **`Portrait Assembly Base` states how the set is meant to come apart, and it does not reshape the
- * inventory.** A flat portrait is redrawn whole per expression; a layered one draws one head once
- * and swaps the brows, eyes and mouth over it, which is how a visual novel gets sixty expressions
- * out of eight sprites. Both are cutting instructions the reader applies to the same twelve
- * drawings, so the field reaches section 1 verbatim and PORTRAIT declares no assembly base that draws
- * other sheets. `sheetPlans/portrait.ts` records why, and `Extra Expressions` is where a reader asks for
- * the feature pieces themselves.
+ * **`Portrait Assembly Base` chooses the sheet, and it is the only field here that does.** A flat
+ * portrait is redrawn whole per expression, and the sheet is the twelve drawings
+ * `sheetPlans/portrait.ts` lists. A layered one draws the head once with its brow, eye and mouth
+ * regions left clear and the pieces that swap over it beside it, which
+ * `sheetPlans/portraitFeatureCut.ts` lists and `sheetPlans/assemblyBases.ts` selects — and it is how a
+ * visual novel gets hundreds of faces out of a handful of sprites. The field used to offer nine more
+ * layered cuts against the flat sheet alone, which is what issue #292 removed.
  *
  * **A genre is carried by every field at once, not by `World & Era` alone.** A cyberpunk portrait is
  * not a fantasy portrait with the era swapped: the chrome is on the face, the coolant lines and the
@@ -200,7 +200,7 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'build',
       label: 'Framing & Crop',
       tooltip:
-        'How much of the person the frame holds, measured from the top of the head down. This is the single most important field on the sheet: a dialogue box wants a head and shoulders, a party roster wants a bust, and a title screen wants a half body — and a set drawn to two different crops cannot be swapped one for another at runtime.',
+        'How much of the person the frame holds, measured from the top of the head down. This is the single most important field on the sheet: a dialogue box wants a head and shoulders, a party roster wants a bust, and a title screen wants a half body — and a set drawn to two different crops cannot be swapped one for another at runtime. Every value here holds the whole face, because both sheets draw the mouth: one as part of each expression, the other as eight pieces of its own.',
       options: [
         'Head Only',
         'Head And Shoulders',
@@ -209,14 +209,13 @@ export const PORTRAIT: CategoryDefinition = {
         'Three-Quarter Body To Thigh',
         'Full Body Standing',
         'Head And Shoulders, Off-Centre',
-        'Extreme Close Crop On The Eyes',
       ],
     },
     {
       key: 'silhouette',
       label: 'Head Turn & Pose',
       tooltip:
-        'Which way the head and shoulders are turned inside the frame, and how they are held. This is the subject’s own pose, not the camera — the sheet is drawn straight on whatever this says — and it has to hold across every expression, because a head that turns between two expressions cannot be cut to the same box.',
+        'Which way the head and shoulders are turned inside the frame, and how they are held. This is the subject’s own pose, not the camera — the sheet is drawn straight on whatever this says — and it has to hold across every expression, because a head that turns between two expressions cannot be cut to the same box. So no value here hides the face, wears one of the feelings, or fixes a brow, an eye or a mouth: each of those leaves a sheet unable to draw the pieces it was asked for.',
       options: [
         'Facing The Viewer, Level',
         'Slight Three-Quarter Turn',
@@ -228,11 +227,9 @@ export const PORTRAIT: CategoryDefinition = {
         'Turned Away, Glancing Back',
         'Leaning In Toward The Viewer',
         'Hunched, Shoulders Raised',
-        'Head Bowed, Eyes Down',
+        'Head Bowed, Chin Tucked',
         'One Shoulder Forward, Guarded',
-        'Head Thrown Back, Laughing',
         'Both Shoulders Square, Formal',
-        'Turned Fully Away, Face Hidden',
       ],
     },
     {
@@ -281,22 +278,10 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Portrait Assembly Base',
       tooltip:
-        'How the set is cut so the engine can build an expression. A flat portrait redraws the whole head for each one; a layered set draws the head once and swaps the features over it, which is how a dialogue system gets dozens of expressions out of a handful of sprites. Choose by how many expressions the game needs, not by how the art looks. The last three cut for something other than feeling — a lit optic and a damage state are overlays a game turns on, and asking for them as their own pass is what stops them being painted into all twelve expressions. ' +
-        ASSEMBLY_BASE_ADDS_NO_COMPONENTS +
-        ' Extra Expressions is where a reader who wants the feature pieces themselves asks for them.',
-      options: [
-        'Single Flat Portrait Per Expression',
-        'Shared Head With Swappable Mouths',
-        'Shared Head With Swappable Eyes And Mouths',
-        'Shared Head With Swappable Brows, Eyes And Mouths',
-        'Shared Body With Swappable Heads',
-        'Layered Base, Features And Overlay',
-        'Shared Head With Swappable Optics',
-        'Layered Base With Emissive Overlay Pass',
-        'Shared Head With Swappable Damage Overlays',
-        'Shared Head With Swappable Headwear',
-        'Single Portrait With Damage Stages',
-      ],
+        'How the set is cut, and it decides which sheet you get. A flat portrait redraws the whole head for each feeling, and the sheet is twelve finished drawings. A layered set draws the head once with its brow, eye and mouth regions left clear, and the sheet is that head beside the pieces that swap over it — which is how a dialogue system gets hundreds of faces out of a handful of sprites. Choose by how many expressions the game needs, not by how the art looks. ' +
+        ASSEMBLY_BASE_CHOOSES_THE_SHEETS +
+        ' Extra Expressions adds further pieces to whichever of the two you pick.',
+      options: ['Single Flat Portrait Per Expression', 'Shared Head With Swappable Brows, Eyes And Mouths'],
     },
     {
       key: 'clothing',

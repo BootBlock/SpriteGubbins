@@ -86,9 +86,9 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       build: 'Small Centred Mark',
       silhouette: 'Radial & Symmetrical',
       face_head: 'Bolt & Spark',
-      // Standalone, because the card above promises “no object behind them” and `exclusions`
-      // below bans the plate — and the field's own tooltip calls the shared-backing option
-      // “a shared plate with a swappable motif”, which is the thing being banned.
+      // Standalone, because the card above promises “no object behind them” and `exclusions` below
+      // bans the plate. The pool once offered a shared backing with a swappable motif, which is the
+      // thing being banned; no sheet drew it, so it went with issue #292.
       anatomy: 'Single Standalone Icon',
       clothing: 'Cooldown Dimming Veil',
       worn_details: 'Flat Fill, No Interior Detail',

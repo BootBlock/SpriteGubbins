@@ -222,14 +222,13 @@ export const FONT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Set Assembly Base',
       tooltip:
-        'How the sheet is cut so an engine can lay the glyphs out. Choose by how the game measures text — a fixed cell lets a renderer index straight into the sheet by codepoint, where a proportional set needs a width recorded per glyph and reads far better in long runs. ' +
+        'How the sheet is cut so an engine can lay the glyphs out. Choose by how the game measures text — a fixed cell lets a renderer index straight into the sheet by codepoint, where a proportional set needs a width recorded per glyph and reads far better in long runs. Every value names a cell rule or a run the series already draws apart — the digits and sentence marks on the third sheet, the circumflex, grave and tilde on the fourth — and none of them names a sheet layout, which the aspect format fixes. ' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Fixed Cell, One Width For All',
         'Proportional, Width Per Glyph',
         'Fixed Cell With Wide Numerals',
         'Two Cell Widths, Narrow And Wide',
-        'Single Row Strip, One Height',
         'Base Glyph With Accent Marks Apart',
         'Numerals And Punctuation Strip Apart',
       ],

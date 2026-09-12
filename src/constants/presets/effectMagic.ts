@@ -8,9 +8,11 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * The combat four fire, land, and are gone inside half a second. These four are what an effect does
  * when it has to last: **two loop** (the portal and the aura, which say so through
  * `Seamless Loop Cycle`), **one holds** before it pays off (the nova's
- * `Telegraph, Impact, Residue`), and **one travels** (`Core And Secondary Split`, a projectile body
- * with its own trail behind it). Between them that is every Frame Assembly Base shape except the
- * plain burst the combat file already covers.
+ * `Telegraph, Impact, Residue`), and **one travels** (`In, Hold, Out Transitions`, a projectile body
+ * that enters the frame, holds its travelling shape and leaves, with its own trail behind it).
+ * Between the two effect files that is four of the seven Frame Assembly Base shapes; the staggered
+ * burst, the arrival that settles into an idle and the loop with a distinct entry frame are
+ * unspent.
  *
  * The looping pair are the ones that are harder to get right, and the reason is a constraint a burst
  * does not have: the last frame has to read back into the first without a seam, which is a property
@@ -178,7 +180,7 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
       build: 'Thin Trail Or Ribbon',
       silhouette: 'Sweeping Ribbon Arc',
       face_head: 'Dense Molten Core',
-      anatomy: 'Core And Secondary Split',
+      anatomy: 'In, Hold, Out Transitions',
       clothing: 'Smoke & Soot Plume',
       worn_details: 'Scrolling Noise Texture',
       primary_colours: 'Ember Orange #F97316 & Deep Red',

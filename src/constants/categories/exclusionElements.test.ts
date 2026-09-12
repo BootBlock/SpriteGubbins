@@ -13,10 +13,12 @@ import { CATEGORY_OPTIONS, defaultSubjectFor } from './index.ts';
  * The table that says which words name the same visible element, held against the pools it is drawn
  * from and against the subject a category switch installs.
  *
- * Five shipped presets and the default CHARACTER subject each banned an element another of their own
+ * Three shipped presets and the default CHARACTER subject each banned an element another of their own
  * fields asked for — a holstered sidearm under `No weapons`, a cloak under `No cape`, mounted cannons
  * under `No weapons` — and none of them shared a word between the two halves, which is why a
  * bare-word sweep over the library found nothing and every one of them had to be found by reading.
+ * A fifth, a shared backing under a ban on the plate behind an icon, went when ICON's pool stopped
+ * offering a layered backing at all (issue #292), and the `backing` row went with it.
  * The synonyms are what make the check possible; these tests are what stop the synonym list drifting
  * away from the pools that need it.
  *

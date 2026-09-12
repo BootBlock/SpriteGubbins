@@ -185,11 +185,9 @@ export const EFFECT: CategoryDefinition = {
         'Seamless Loop Cycle',
         'Telegraph, Impact, Residue',
         'In, Hold, Out Transitions',
-        'Core And Secondary Split',
         'Staggered Multi-Burst',
         'Arrival, Settle, Idle',
         'Loop With Distinct Entry Frame',
-        'Mirrored Left And Right Variants',
       ],
     },
     {

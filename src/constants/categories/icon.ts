@@ -209,17 +209,13 @@ export const ICON: CategoryDefinition = {
       key: 'anatomy',
       label: 'Set Assembly Base',
       tooltip:
-        'How the set is cut so the engine can build a variant. Choose by what the game needs to change at runtime — a shared plate with a swappable motif gives one drawing per new ability, where a standalone icon has to be redrawn whole every time. ' +
+        'How the set is cut so the engine can build a variant. Choose by what the game needs to change at runtime — a standalone icon is replaced whole, where a state overlay or a tier mark is laid over one the set already has. Every value here names a cut the one sheet draws: a layered backing and a swappable motif are a different deliverable, and neither is on it. ' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Single Standalone Icon',
         'Base Icon With State Overlays',
         'Base Icon In Rarity Tiers',
-        'Shared Backing With Swappable Motif',
-        'Layered Motif Over Backing Shape',
         'Matched Pair, Enabled And Disabled',
-        'Base Icon With Element Variants',
-        'Icon Plus Its Dimmed Silhouette',
         'Set Of Four Tier Steps',
       ],
     },

@@ -31,7 +31,7 @@ import type { SubjectDefinition, SubjectFieldKey } from '../../types/subject.ts'
  * That suite derives its collisions by *stem overlap* between EFFECT's own ban line and its
  * `species` pool, which is enough there because `muzzle` and `Muzzle Flash` share the word. Every
  * pairing here is a synonym — `sidearm` against `weapons`, `cloak` against `cape`, `plinth` against
- * `pedestal` — so a stem comparison returns nothing on all five, which is exactly why they had to be
+ * `pedestal` — so a stem comparison returns nothing on any of them, which is exactly why they had to be
  * found by reading. The two are the same shape of check over two different collision sets, and
  * neither one's mechanism finds the other's.
  *
@@ -60,11 +60,12 @@ export interface ExcludedElement {
 /**
  * The elements, keyed by what the exclusion calls them.
  *
- * Ten, and each one is a pairing some category can make with itself. Five of them were made:
+ * Nine, and each one is a pairing some category can make with itself. Four of them were made:
  * `weapon` twice (the studio's own default subject, and the Cybernetic Attack Drone's cannons),
- * `cape` on the Sci-Fi Void Marine's cloak, `facial feature` on the Isometric Cut-Out Rig's single
- * eye, and `backing` on the Flat Ability Glyph Set — whose card promises “no object behind them”
- * while its `anatomy` pinned one.
+ * `cape` on the Sci-Fi Void Marine's cloak, and `facial feature` on the Isometric Cut-Out Rig's
+ * single eye. A tenth, `backing`, went when ICON's own pool stopped naming one: its two layered
+ * bases described a shared plate and a motif over it that the symbol set never drew, so they were
+ * removed (issue #292) and no configuration can ask for a backing any more.
  *
  * **`pedestal` is the clearest statement of why a word list is needed at all.** OBJECT bans a
  * *pedestal* and its `build` pool offers a *plinth*; nothing about those two strings overlaps, and a
@@ -103,10 +104,6 @@ export const EXCLUDED_ELEMENTS: Readonly<Record<string, ExcludedElement>> = {
     // `Soot-Stained Face` and `Blank Serene Face`, the last of which is the *absence* this ban asks
     // for. Every word here names a feature rather than the surface it sits on.
     names: ['eye', 'brow', 'cheek', 'smile', 'freckle', 'beard', 'jaw', 'nose', 'lip', 'mouth'],
-  },
-  backing: {
-    bans: ['no slot plate', 'frame, plate or panel behind'],
-    names: ['backing'],
   },
   saddle: { bans: ['no saddle'], names: ['saddle'] },
   harness: { bans: ['no harness'], names: ['harness'] },

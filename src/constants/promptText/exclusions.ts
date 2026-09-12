@@ -387,12 +387,21 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, CategorySente
     `Every component is ${plan.componentClass}${auditExemption(additions)} — no characters, creatures, anatomy, buildings or vehicles. Every tile edge carrying a given material is drawn to the same profile wherever it appears, so any two tiles meeting on that material show no seam, and no tile carries a mark that would be recognised twice across a field.`,
   // The second half is this category’s own and is the check no generic audit can stand in for: a
   // portrait sheet can pass every count, background and ordering test and still be unusable, because
-  // whether it is one person only shows up when the drawings are compared with each other. It is
-  // stated as an agreement between the expressions rather than as “every component is identical”,
-  // which would be this record’s VEHICLE mistake again — the expressions are meant to differ, and an
-  // audit demanding they do not fails the sheet on the twelve drawings section 4 requires.
+  // whether it is one person only shows up when the components are compared with each other. It is
+  // stated as an agreement between them rather than as “every component is identical”, which would be
+  // this record’s VEHICLE mistake again — the components are meant to differ, and an audit demanding
+  // they do not fails the expression library on the twelve drawings section 4 requires.
+  //
+  // **It says “components” and not “expressions”, because this category has two sheets and only one of
+  // them draws an expression** (issue #292). It read “any two expressions are recognisably the same
+  // person, drawn to the same crop with the eyes at the same height”, and the feature cut draws a head
+  // and twenty loose brow, eye and mouth pieces — so on that sheet the audit asked a reader to compare
+  // two drawings the same prompt's `assemblyFailure` forbids it to contain, and “the eyes at the same
+  // height” said nothing about a mouth piece. BACKGROUND's line below answers its own two-sheet split by
+  // gating a clause on `listsRepeatingPieces`; there is no such predicate here, because both PORTRAIT
+  // plans draw `anatomy` — and none is needed, since one registration is what both sheets actually owe.
   PORTRAIT: (plan, additions) =>
-    `Every component is ${plan.componentClass}${auditExemption(additions)} — no second figure, no scenery, no anatomy below the stated crop, and no name plate, caption or speech bubble. Any two expressions are recognisably the same person, drawn to the same crop with the eyes at the same height, differing only in what the feeling itself moves.${additions === null ? '' : ' A piece named there is not held to that: it is a loose piece drawn to register over that same head, never a portrait of its own.'}`,
+    `Every component is ${plan.componentClass}${auditExemption(additions)} — no second figure, no scenery, no anatomy below the stated crop, and no name plate, caption or speech bubble. Every component is drawn to one person at one crop and one registration, so any two of them read as that same face rather than as two drawings meeting, and nothing is drawn again that the feeling does not move.${additions === null ? '' : ' A piece named there is not held to that: it is a loose piece drawn to register over that same head, never a portrait of its own.'}`,
   // Qualified throughout, as VEHICLE’s and INTERFACE’s are: this sheet’s components include marks
   // and overlays, so an unqualified “no marks” would fail it on the entries section 4 required. The
   // second half is the check this deliverable actually needs — an icon grid fails by disagreeing

@@ -141,8 +141,8 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
     negatives: ['scenic vista', 'diorama'],
   },
   // "dialogue scene" and "visual novel screenshot" are safe where "portrait", "character" and "face"
-  // are not: the inventory is twelve portraits of one person, and no component of it is a scene or a
-  // screenshot. The second term is what the sheet is actually returned as when it fails — a picture
+  // are not: the inventory is twelve portraits of one person, or that person's head and the pieces
+  // that swap over it, and no component of either is a scene or a screenshot. The second term is what the sheet is actually returned as when it fails — a picture
   // of the conversation the portraits were drawn for, rather than the set of them.
   PORTRAIT: {
     statement: 'no dialogue scene',

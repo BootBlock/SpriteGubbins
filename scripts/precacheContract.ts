@@ -733,10 +733,29 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed. How the
  * 6.02 divides between chunks was not measured.
  *
- * 2379 leaves **0.37 KiB**. It is the smallest whole figure over the build, for the reason the notes
- * above give.
+ * 2379 leaves **0.37 KiB**.
+ *
+ * **Raised from 2379 by the sweep of the five categories whose pools were never read against their
+ * sheets** (#292). PORTRAIT is what it costs: its `Portrait Assembly Base` offered nine layered cuts
+ * on a sheet of twelve whole portraits, and one of them is now drawn, so the build carries a second
+ * PORTRAIT plan in `sheetPlans/portraitFeatureCut.ts` — a shared head, three runs of feature pieces
+ * with twenty part names between them, and the group prose around them — beside the twelve feelings
+ * both PORTRAIT plans now read from `sheetPlans/portraitFeelings.ts`, which carries each feeling in
+ * two registers and is the largest single addition here. Against that, the sweep *removes* pooled
+ * text: nine PORTRAIT bases, four ICON bases, one FONT base, two EFFECT bases, two PORTRAIT poses, a
+ * PORTRAIT crop, a TERRAIN edge profile, and the `backing` row of `EXCLUDED_ELEMENTS` the ICON pair
+ * was the only naming of — set against two TERRAIN mode bindings and seven rewritten cards. All of it
+ * is constant data the entry chunk reaches, which is the footing every raise above stands on.
+ * Measured against `main` at `437aba3`, rebuilt from the same lockfile — **2378.63 KiB across 64
+ * entries** on the build's summary line, the figure the paragraph above records — this build reports
+ * **2382.06 across 64** on the same line, a delta of 3.43 that crossed a ceiling the base sat 0.37
+ * under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed. How the
+ * 3.43 divides between chunks was not measured.
+ *
+ * 2383 leaves **0.94 KiB**, which is wider than the last several raises left and is not a widening:
+ * it is the smallest whole figure over the build, and the build simply lands early in its own KiB.
  */
-export const PRECACHE_CEILING_KIB = 2379;
+export const PRECACHE_CEILING_KIB = 2383;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

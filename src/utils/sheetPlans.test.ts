@@ -293,8 +293,10 @@ describe('the plan table itself', () => {
       // the nine-slice drawn again pressed.
       'INTERFACE / State library',
       'INTERFACE / Nine-slice set',
-      // One face drawn once per expression, and one overlay drawn at two stages of a cooldown.
+      // One face drawn once per expression; a brow, an eye and a mouth once per shape a feeling puts
+      // them in; and one overlay drawn at two stages of a cooldown.
       'PORTRAIT / Expression set',
+      'PORTRAIT / Feature cut',
       'ICON / Symbol set',
     ]);
   });

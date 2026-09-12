@@ -154,7 +154,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'silhouette',
       label: 'Edge & Cliff Profile',
       tooltip:
-        'The shape the boundary takes where one material stops and the next begins, and where the ground steps up. That boundary is the only line in a terrain set the eye actually follows, so a ragged organic edge and a hard geometric one give different sets from identical materials.',
+        'The shape the boundary takes where one material stops and the next begins, and where the ground steps up. That boundary is the only line in a terrain set the eye actually follows, so a ragged organic edge and a hard geometric one give different sets from identical materials. Every value is a shape the ground itself takes: a fence or a wall is a structure, which this category bans on both sheets and Extra Tiles is the place to ask for.',
       options: [
         'Soft Organic Feathered Edge',
         'Ragged Torn Boundary',
@@ -163,7 +163,6 @@ export const TERRAIN: CategoryDefinition = {
         'Overhanging Undercut Cliff',
         'Crumbling Broken Verge',
         'Rounded Rolling Bank',
-        'Straight Fenced Field Boundary',
         'Braided Stream Channel Edge',
         'Gently Scalloped Shoreline',
       ],
@@ -172,7 +171,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'face_head',
       label: 'Focal Feature',
       tooltip:
-        'The one thing the eye lands on — the hero rock, the water surface, the glowing vent. Every other piece in the set is written to go unnoticed, so this is where a terrain sheet is allowed to be distinctive, and it belongs on a piece placed once rather than on a tile that repeats.',
+        'The one thing the eye lands on — the hero rock, the water surface, the glowing vent. Every other piece in the set is written to go unnoticed, so this is where a terrain sheet is allowed to be distinctive, and it belongs on a piece placed once rather than on a tile that repeats. Only the feature library draws such a piece: a blend set is tiles and nothing else, and its own rule against a mark a player could recognise twice is what forbids one there.',
       options: [
         'Hero Boulder Outcrop',
         'Still Water Surface',

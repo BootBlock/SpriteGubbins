@@ -236,12 +236,13 @@ describe('every shipped preset', () => {
   it.each(PRESETS)('$name does not ban an element its own fields ask for', (preset) => {
     // Section 0 ranks the two and section 8 restates it, so a preset holding both halves of a
     // pairing does not read ambiguously — it reads as an instruction to draw the thing and then a
-    // later one to remove it. Five shipped presets did, the studio's own opening state among them:
-    // a `Holstered Sidearm & Pouch` under `No weapons`, a `Cloak` under `No cape`, `Mounted Energy
-    // Cannons` under `No weapons`, a `Monocular Cyber Eye` under `No facial features`, and a
-    // `Shared Backing` under a ban on the plate behind the icon.
+    // later one to remove it. Four shipped configurations did, the studio's own opening state among
+    // them: a `Holstered Sidearm & Pouch` under `No weapons`, a `Cloak` under `No cape`, `Mounted
+    // Energy Cannons` under `No weapons`, and a `Monocular Cyber Eye` under `No facial features`. A
+    // fifth, a `Shared Backing` under a ban on the plate behind the icon, was answered at the pool
+    // instead: ICON offers no layered backing now, because no sheet drew one (issue #292).
     //
-    // None of the five shared a word between its two halves — `sidearm` against `weapons`, `cloak`
+    // None of them shared a word between its two halves — `sidearm` against `weapons`, `cloak`
     // against `cape` — which is why a bare sweep over the library reported nothing and all of them
     // had to be found by reading. `EXCLUDED_ELEMENTS` is where that reading is written down, and
     // `categories/exclusionElements.test.ts` is what holds it against the pools.

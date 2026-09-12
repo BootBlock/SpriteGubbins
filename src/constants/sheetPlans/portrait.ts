@@ -1,6 +1,7 @@
 import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { spellNumberCapitalised } from '../../utils/numberWords.ts';
+import { PORTRAIT_FEELINGS } from './portraitFeelings.ts';
 
 /**
  * What a PORTRAIT sheet asks for.
@@ -19,15 +20,13 @@ import { spellNumberCapitalised } from '../../utils/numberWords.ts';
  * twelve: every expression has to be the same person, and a generator drawing them one at a time
  * produces twelve people who resemble each other.
  *
- * **The inventory is whole portraits and not feature pieces, for every base this category offers
- * today.** `Portrait Assembly Base` in section 1 offers layered cuts — a shared head with swappable
- * brows, eyes and mouths — and PORTRAIT declares no base in `assemblyBases.ts`, so the field reaches
- * section 1 verbatim and the entries below stay the twelve drawings every portrait deliverable wants.
- * This used to be argued as a principle, that no plan in this directory was a function of the subject;
- * issue #281 reversed that, and whether a layered cut should draw its own pieces is issue #292's to
- * decide. Until then, a reader who needs the pieces themselves asks for them through `Extra
- * Expressions` — `Speaking Mouth Shapes ×4` is one of its pooled values, and it lands in section 4
- * counted and slotted like any other component.
+ * **The inventory is whole portraits, and the layered cut is a sheet of its own.** `Portrait Assembly
+ * Base` offers two values: `Single Flat Portrait Per Expression`, which this plan draws, and
+ * `Shared Head With Swappable Brows, Eyes And Mouths`, which `portraitFeatureCut.ts` draws. The pool
+ * used to offer nine more layered cuts against this sheet alone, so section 1 said the set shares a
+ * head while section 4 ordered twelve complete drawings (issue #292). This was once argued as a
+ * principle, that no plan in this directory was a function of the subject; issue #281 reversed it and
+ * issue #283 built the table, so the cut is drawn rather than denied.
  *
  * **The outro is the whole sheet's contract**, and it is this category's version of the one
  * `INTERFACE_STATE_LIBRARY` carries: a state of a widget is that widget changed rather than a second
@@ -43,26 +42,16 @@ import { spellNumberCapitalised } from '../../utils/numberWords.ts';
  * sheet's contract: “twelve competent portraits that are not recognisably one character is the
  * failure this sheet has”. An expression added or dropped would have left that figure describing a
  * set nobody asked for, in the one sentence a reader is told to check the delivery against.
+ *
+ * **Built from `portraitFeelings.ts` rather than written out here**, because the feature cut names the
+ * same twelve in its own outro and the two lists are one fact (issue #292).
  */
-const EXPRESSION_ENTRIES: readonly ComponentEntry[] = [
-  {
-    label: 'resting-portrait',
-    text: 'Resting portrait ×1 — neutral, level gaze, the reference for every expression below',
-    count: 1,
-    kind: 'anatomy',
-  },
-  { label: 'pleased', text: 'Pleased or smiling ×1', count: 1, kind: 'anatomy' },
-  { label: 'laughing', text: 'Laughing or delighted ×1', count: 1, kind: 'anatomy' },
-  { label: 'angry', text: 'Angry ×1', count: 1, kind: 'anatomy' },
-  { label: 'sad', text: 'Sad or downcast ×1', count: 1, kind: 'anatomy' },
-  { label: 'surprised', text: 'Surprised ×1', count: 1, kind: 'anatomy' },
-  { label: 'afraid', text: 'Afraid ×1', count: 1, kind: 'anatomy' },
-  { label: 'disgusted', text: 'Disgusted ×1', count: 1, kind: 'anatomy' },
-  { label: 'thoughtful', text: 'Thoughtful or uncertain ×1', count: 1, kind: 'anatomy' },
-  { label: 'determined', text: 'Determined or resolved ×1', count: 1, kind: 'anatomy' },
-  { label: 'hurt', text: 'Hurt or exhausted ×1', count: 1, kind: 'anatomy' },
-  { label: 'suspicious', text: 'Suspicious or narrowed ×1', count: 1, kind: 'anatomy' },
-];
+const EXPRESSION_ENTRIES: readonly ComponentEntry[] = PORTRAIT_FEELINGS.map(({ label, text }) => ({
+  label,
+  text,
+  count: 1,
+  kind: 'anatomy',
+}));
 
 export const PORTRAIT_EXPRESSION_LIBRARY: SheetPlan = {
   name: 'Expression set',

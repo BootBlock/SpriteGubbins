@@ -93,9 +93,9 @@ export const PORTRAIT_BUST_PRESETS: readonly PresetArchetype[] = [
       accent_colours: 'Emerald Eyes #10B981',
       materials: 'Soft Skin, Matte Cloth & Wet Eyes',
       exclusions: 'No background scene behind the head',
-      // The pieces a layered cut needs beyond the twelve expressions, asked for through the field
-      // that exists for exactly this — PORTRAIT declares no assembly base that draws feature pieces, so
-      // `additional_anatomy` is where a per-project deliverable is stated.
+      // The one preset on the feature cut, so it is where that sheet is demonstrated: the base draws a
+      // shared head beside twenty brow, eye and mouth pieces, and these four are the lip-sync shapes a
+      // visual novel needs on top of them.
       additional_anatomy: 'Speaking Mouth Shapes ×4',
     },
     output: {
@@ -176,7 +176,7 @@ export const PORTRAIT_BUST_PRESETS: readonly PresetArchetype[] = [
       build: 'Full Body Standing',
       silhouette: 'Chin Lifted, Looking Down',
       face_head: 'Faceplate & Optic Lenses',
-      anatomy: 'Shared Body With Swappable Heads',
+      anatomy: 'Single Flat Portrait Per Expression',
       clothing: 'Sealed Suit Collar Ring',
       worn_details: 'Subdermal Circuit Tracery',
       primary_colours: 'Burnished Bronze Plating',

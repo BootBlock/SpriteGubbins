@@ -6,6 +6,7 @@ import { ITEM_PART_LIBRARY } from './item.ts';
 import { fixed } from './modePlans.ts';
 import type { ModePlans } from './modePlans.ts';
 import { objectRigidViewVariants, OBJECT_RIGID_STATES } from './object.ts';
+import { PORTRAIT_FEATURE_CUT } from './portraitFeatureCut.ts';
 import { TERRAIN_BLEND_SET, TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
 
 /**
@@ -61,6 +62,10 @@ const ITEM_PART_LIBRARY_ONLY: ModePlans = { SINGLE_DIRECTION_POSE_LIBRARY: fixed
 const BLEND_SET_ONLY: ModePlans = { TILESET_MODULAR: fixed(TERRAIN_BLEND_SET) };
 const FEATURE_LIBRARY_ONLY: ModePlans = { SINGLE_DIRECTION_POSE_LIBRARY: fixed(TERRAIN_FEATURE_LIBRARY) };
 
+// The expression library draws twelve whole portraits; this draws the head once and the brows, eyes
+// and mouths that swap over it.
+const PORTRAIT_LAYERED_CUT: ModePlans = { SINGLE_DIRECTION_POSE_LIBRARY: fixed(PORTRAIT_FEATURE_CUT) };
+
 // No `CUTOUT_RIG_SINGLE_DIRECTION`: nothing on a rigid object turns about a pivot.
 const RIGID_OBJECT: ModePlans = {
   SINGLE_DIRECTION_POSE_LIBRARY: fixed(OBJECT_RIGID_STATES),
@@ -107,6 +112,9 @@ export const CATEGORY_ASSEMBLY_BASES: Readonly<
   },
   OBJECT: {
     'Single Rigid Object': RIGID_OBJECT,
+  },
+  PORTRAIT: {
+    'Shared Head With Swappable Brows, Eyes And Mouths': PORTRAIT_LAYERED_CUT,
   },
   TERRAIN: {
     'Corner-Matched Blob Set': BLEND_SET_ONLY,

@@ -52,6 +52,28 @@ export const MODE_BOUND_OPTIONS: Readonly<
     },
     exclusions: { 'No visible seam where the band repeats': ['TILESET_MODULAR'] },
   },
+  // The feature library is `SINGLE_DIRECTION_POSE_LIBRARY` and the blend set `TILESET_MODULAR`
+  // (issue #292). Both bound values are height edges rather than material boundaries: a flat field has
+  // no lip to step and no face to undercut, and the feature library's exposed face is where both are
+  // drawn.
+  //
+  // **`Focal Feature` is the pool this table cannot answer, and it is left alone deliberately.** Every
+  // value of it names a piece only the feature library draws — `Focal feature ×1` is an entry of that
+  // plan and of no other — while the blend set draws tiles and forbids a mark a player could recognise
+  // twice across a laid field. Binding all eleven is what the first guard above allows and the second
+  // one refuses: a pool with no unbound value has none for `defaultSubjectFor` to open on, so TERRAIN's
+  // default subject would contradict one of its own sheets whichever value led. The pool needs a value
+  // meaning *there is none*, and that value is false of the feature library in turn — so the answer is
+  // a way for that plan to drop its focal feature. The *shape* of that exists, in `FieldOption.absentOption`
+  // and `ComponentEntry.clothingRole`, but `utils/sheetPlanClothing.ts` asks `absentOptionFor(category,
+  // 'clothing')` and reaches no other field — so generalising it is real work, and issue #292 records
+  // the defect rather than inventing the mechanism inside a sweep.
+  TERRAIN: {
+    silhouette: {
+      'Stepped Terrace Lip': ['SINGLE_DIRECTION_POSE_LIBRARY'],
+      'Overhanging Undercut Cliff': ['SINGLE_DIRECTION_POSE_LIBRARY'],
+    },
+  },
 };
 
 /** The modes whose sheets agree with this pooled value, or `null` where the value is tied to no mode. */
