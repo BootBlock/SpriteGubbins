@@ -29,7 +29,8 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * own copy along its length, which is what makes `TILESET_MODULAR` this category's default sheet
  * rather than an alternative to it.
  *
- * **The cards speak of layers, the scene and the backdrop, never of the band** (issue #280). The two
+ * **The cards speak of layers, the scene and the backdrop, and name a band only as a value** (issue
+ * #280), such as the seamless band *Layer Assembly Base* offers. The two
  * sheets deliver this subject in ways that exclude each other — the parallax set loops, and the layer
  * library repeats nothing at screen size — and section 1 carries each value verbatim on both. The
  * cards and the pools were written for the parallax set alone, so the subject a category switch

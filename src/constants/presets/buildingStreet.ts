@@ -70,7 +70,9 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       build: '2-Story Compact Footprint',
       silhouette: 'Overhanging Neon Signage & Pipes',
       face_head: 'Sliding Automated Glass',
-      anatomy: 'Modular Building Tiles',
+      // A module library draws wall bays and corner posts and no tile, so the tile set's own value put
+      // tiles in section 1 of a sheet that lists none.
+      anatomy: 'Repeating Wall Pieces & Corners',
       clothing: 'Neon Holographic Banner',
       worn_details: 'Holographic Vending Sign',
       primary_colours: 'Concrete Slate & Blue Metal',

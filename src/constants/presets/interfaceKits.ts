@@ -84,8 +84,8 @@ export const INTERFACE_KIT_PRESETS: readonly PresetArchetype[] = [
       build: 'Compact & Tightly Packed',
       silhouette: 'Chamfered Sci-Fi Corners',
       face_head: 'Abstract Geometric Emblem',
-      // A state library cuts no slice, so a three-slice stretch here was section 1 describing the
-      // nine-slice set's button to a sheet that draws the bar whole in its states.
+      // A state library stretches nothing, so a three-slice stretch here was section 1 describing the
+      // nine-slice set's button to a sheet that cuts the bar into a track and a fill for its states.
       anatomy: 'Frame, Fill & Trim Cut Apart',
       clothing: 'Etched Circuit Tracery',
       worn_details: 'Hairline Scan Lines',

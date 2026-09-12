@@ -189,6 +189,10 @@ export const BUILDING: CategoryDefinition = {
         'How the structure is split into modular tiles or components. Choose by how it will be placed — a repeating wall module tiles horizontally, a single-piece kiosk does not — because the split has to match the level grid. ' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
+        // First because all three sheets draw it: the tile set's wall tops, faces and corners, and the
+        // other two sheets' wall bays and corner posts. `Modular Building Tiles` is the tile set's alone
+        // (issue #280).
+        'Repeating Wall Pieces & Corners',
         'Modular Building Tiles',
         'Single Structure Model',
         'Tower With Detachable Roof',
@@ -203,7 +207,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'clothing',
       label: 'Awning & Addons',
       tooltip:
-        'Awnings, scaffolding, solar panels and other attachments to the shell. They break up a flat facade cheaply, and are the easiest way to make repeated modules of one building look like separate premises.',
+        'Awnings, scaffolding, solar panels and other attachments to the shell. They break up a flat facade cheaply, and are the easiest way to make repeated pieces of one building look like separate premises.',
       options: [
         'Striped Fabric Awning',
         'Solar Panel Array',
@@ -300,7 +304,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping terrain, scenery and inhabitants off an isolated structure. Ground, foliage and cast shadows matter most: each fuses the building to a background the level is going to replace.',
+        'Negative rules keeping terrain, scenery and inhabitants off the building’s own pieces. Ground, foliage and cast shadows matter most: each fuses the building to a background the level is going to replace.',
       options: [
         'No ground terrain tiles, no characters',
         'No surrounding trees or sky',

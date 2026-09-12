@@ -16,8 +16,8 @@ import type { SubjectCategory, SubjectFieldKey } from '../../types/subject.ts';
  * changes, so section 1 carries whatever the reader holds. What a reader may not meet is a built-in
  * that contradicts its own sheet — the default subject a category switch installs, or a shipped
  * preset — because nobody chose that pairing. `modeBoundOptions.test.ts` holds the defaults and
- * `presets/presets.test.ts` the presets. It sits beside the pools rather than on `FieldOption` for the
- * reason `exclusionElements.ts` does: a record only the tests read is not downloaded by every visitor.
+ * `presets/presets.test.ts` the presets. It sits beside the pools rather than on `FieldOption`, as
+ * `exclusionElements.ts` does, so that a record only the tests read is not downloaded by every visitor.
  *
  * **What may be declared.** A value is bound when it names a piece, a repeat or a stretch that the
  * sheets of some modes draw and another mode's sheets do not — `Tower With Detachable Roof` on
@@ -57,16 +57,20 @@ export const MODE_BOUND_OPTIONS: Readonly<
     },
     exclusions: { 'No visible seam where the band repeats': ['TILESET_MODULAR'] },
   },
-  // Both name a piece the module library and the directional views draw and the tile set, a floor field
-  // with walls around it, does not.
+  // The tile set is a floor field with walls around it, and the module library and the directional views
+  // draw structural pieces and no tile at all.
   BUILDING: {
     anatomy: {
+      'Modular Building Tiles': ['TILESET_MODULAR'],
+      // The tile set's wall corners; the other two sheets draw a corner post or quoin instead.
+      'Corner Tile Piece': ['TILESET_MODULAR'],
+      // A roof and an entrance, which the tile set does not draw.
       'Tower With Detachable Roof': ['SINGLE_DIRECTION_POSE_LIBRARY', 'CORE_DIRECTIONAL_VARIANTS'],
       'Wall Section With Gate': ['SINGLE_DIRECTION_POSE_LIBRARY', 'CORE_DIRECTIONAL_VARIANTS'],
     },
   },
-  // The state library draws each widget whole in its states, and the nine-slice set cuts every piece to
-  // stretch or repeat.
+  // The state library cuts a widget into the pieces its states change, such as a bar's track and fill,
+  // and stretches none of them; the nine-slice set cuts every piece to stretch or repeat.
   INTERFACE: {
     anatomy: {
       'Single Fixed-Size Piece': ['SINGLE_DIRECTION_POSE_LIBRARY'],

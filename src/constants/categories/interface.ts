@@ -192,7 +192,7 @@ export const INTERFACE: CategoryDefinition = {
       // `modeBoundOptions.ts`.
       label: 'Widget Assembly Base',
       tooltip:
-        'How the widget is cut so the engine can resize it. Choose by which way it has to stretch — a nine-slice keeps four fixed corners while its edges and centre repeat, a three-slice stretches on one axis only, and a fixed piece never resizes at all. ' +
+        'How the widget is cut into the pieces the engine builds it from. Choose by what those pieces have to do — a nine-slice keeps four fixed corners while its edges and centre repeat, a three-slice stretches on one axis only, a fixed piece never resizes at all, and a frame, fill and trim cut apart let a change of state redraw one piece and leave the rest. ' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Frame, Fill & Trim Cut Apart',

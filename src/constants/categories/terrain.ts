@@ -23,9 +23,10 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  *
  * **Each of those disciplines is one sheet's, so the pool opens on neither** (issue #280). The blend
  * set is a corner-matched or edge-matched field and the feature library is a raised level with
- * features on it, and section 1 carries the value to both. `Seamless Tiles On One Shared Grid` is
- * what the two have in common — the feature library's elevation edge is tiles of the same ground —
- * and every named discipline is bound to the sheet it describes in `modeBoundOptions.ts`.
+ * features on it, and section 1 carries the value to both. `Seamless Tiles On One Shared Grid` states
+ * only what an autotiler indexes on both — the blend set's tiles, and the feature library's elevation
+ * edge, whose standing features and openings are placed once and indexed by nothing — and every named
+ * discipline is bound to the sheet it describes in `modeBoundOptions.ts`.
  */
 export const TERRAIN: CategoryDefinition = {
   label: 'Terrain / Ground Tile',
@@ -185,7 +186,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'anatomy',
       label: 'Tile Assembly Base',
       tooltip:
-        'How an autotiler is meant to index the set. Choose by how the pieces will be *placed* — a corner-matched set blends two materials in any arrangement, a nine-patch frames one rectangular platform — because the discipline decides which boundaries have to be drawn at all. It names a discipline rather than a tile count. ' +
+        'How an autotiler is meant to index the set. Choose by how the pieces will be *placed* — a corner-matched set blends two materials in any arrangement, a nine-patch frames one rectangular platform, and seamless tiles on one shared grid commit to nothing beyond edges that meet — because the discipline decides which boundaries have to be drawn at all. It names a discipline rather than a tile count. ' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Seamless Tiles On One Shared Grid',
