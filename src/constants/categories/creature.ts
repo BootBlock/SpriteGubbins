@@ -15,7 +15,7 @@ export const CREATURE: CategoryDefinition = {
       key: 'species',
       label: 'Creature Class',
       tooltip:
-        'The monster classification, which decides the body the animal is drawn with: a quadruped, an insectoid and a void entity differ in how they stand, where their weight sits and what reads first at a glance. ' +
+        'The monster classification, which decides the body the creature is drawn with: a quadruped, an insectoid and a void entity differ in how they stand, where their weight sits and what reads first at a glance. ' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS +
         ' Set this before the anatomy base, which should agree with it.',
       options: [

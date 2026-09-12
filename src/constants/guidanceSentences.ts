@@ -158,8 +158,9 @@ export const ASSEMBLY_BASE_ADDS_NO_COMPONENTS =
  * quadruped, an insectoid and a void entity “break down into completely different component sets”,
  * OBJECT's that the category “decides the component breakdown as much as the look”, ITEM's, VEHICLE's
  * and INTERFACE's that it decides “the component split”, and EFFECT's that the number of frames “is a
- * property of this choice”. ICON's and FONT's said it fixed how the set “is built”, which invites the
- * same reading, and BACKGROUND's made the claim until #280 rewrote it. Every value of every pool
+ * property of this choice”. ICON's said it fixed how an icon “is built” and FONT's that it fixed “the
+ * whole set’s construction”, which invite the same reading, and BACKGROUND's made the claim until #280
+ * rewrote it. Every value of every pool
  * compiles a byte-identical section 4, and `tests/subject-field-inventory.test.ts` holds that true.
  *
  * **It is on all thirteen for the reason the base's sentence is**: this is the first field a reader

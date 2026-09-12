@@ -97,8 +97,8 @@ describe('the subject’s type and assembly base move nothing in the inventory',
   });
 
   it.each(CASES)('every %s %s value contracts for the same count', (category, key) => {
-    // Read out of the compiled prompt rather than from `componentCountFor`, which takes no subject
-    // at all — asking it would be asserting the signature rather than the behaviour, and it would
+    // Read out of the compiled prompt rather than from `componentCountFor`, which takes neither
+    // `species` nor `anatomy` — asking it would be asserting the signature rather than the behaviour, and it would
     // pass however the section above was built. This is the sentence a reader is held to.
     const counts = new Map<string, Set<string>>();
 
