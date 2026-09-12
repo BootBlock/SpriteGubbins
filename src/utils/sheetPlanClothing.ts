@@ -43,8 +43,10 @@ export function declaresNoClothing(category: SubjectCategory, clothing: string):
  * entry each rather than filtered inside their own text. `sheetPlanClothing.test.ts` holds that.
  *
  * **A group with nothing left in it goes too.** BACKGROUND's whole *Atmosphere* group is the applied
- * atmosphere, so a clear scene empties it, and `renderGroup` would otherwise write a heading and an
- * intro over no bullets at all.
+ * atmosphere and TERRAIN's whole *Repeat-breaking variants* group differs in the scatter, so declining
+ * either empties it, and `renderGroup` would otherwise write a heading totalling zero and an intro
+ * over no bullets at all. `sheetPlanClothing.test.ts` holds this half too, over every sheet rather
+ * than those two groups.
  *
  * Everything downstream follows without being told, because the count, the inventory prose and the
  * manifest's slot names all walk this one structure: `componentSet.ts` sums it and renders it,

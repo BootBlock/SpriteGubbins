@@ -115,6 +115,12 @@ describe('what a yaw leaves of a feature on the subject’s left', () => {
 
 describe('the ledger as a block', () => {
   const CARDINALS = DIRECTION_LISTS.FOUR_CARDINAL as readonly [Direction, ...Direction[]];
+  const FEATURES = ['undercut', 'holstered sidearm and pouch'] as const;
+
+  /** The bold sentence that opens a feature's paragraph. */
+  function naming(feature: string): string {
+    return `**The subject carries the ${feature} on its left, and nowhere on its right.**`;
+  }
 
   it('is empty where the subject declares nothing, so no heading is left with nothing under it', () => {
     expect(oneSidedFeatureLedger([], CARDINALS, false)).toBe('');
@@ -122,22 +128,43 @@ describe('the ledger as a block', () => {
   });
 
   it('gives every feature its own paragraph and its own per-facing list', () => {
-    // The defect the enumeration replaced, in one assertion: the prompt used to ask for *one*
-    // witness, so a subject carrying two left the second unconstrained — measured, the holster held
-    // the torso and the pelvis while the head went on reflecting.
-    const both = oneSidedFeatureLedger(['undercut', 'holstered sidearm and pouch'], CARDINALS, false);
+    // The defect the enumeration replaced: the prompt used to ask for *one* witness, so a subject
+    // carrying two left the second unconstrained — measured, the holster held the torso and the
+    // pelvis while the head went on reflecting.
+    //
+    // Read as blocks, because the claim is about the arrangement and `toContain` is true of every
+    // arrangement of the same sentences. The earlier form of this test passed a space join that ran
+    // the holster's statement onto the end of the undercut's `east` bullet, and a single newline
+    // between a sentence and its list, since both keep every sentence and all eight bullets.
+    // Splitting on the blank line fails on either, on a doubled separator, and on the paragraphs
+    // coming back out of order. Each bullet is matched whole against its facing's line rendered
+    // alone, which fails on anything the arrangement adds to one; what that line says is checked
+    // against `FACING_TEXT` above.
+    const blocks = oneSidedFeatureLedger(FEATURES, CARDINALS, false).split('\n\n');
 
-    for (const feature of ['undercut', 'holstered sidearm and pouch']) {
-      expect(both).toContain(`**The subject carries the ${feature} on its left, and nowhere on its right.**`);
+    expect(blocks).toHaveLength(FEATURES.length * 2);
+    for (const [index, feature] of FEATURES.entries()) {
+      const opening = blocks[index * 2] ?? '';
+      expect(opening.startsWith(naming(feature)), opening).toBe(true);
+      expect(opening).not.toContain('\n');
+      expect(blocks[index * 2 + 1]?.split('\n')).toEqual(
+        CARDINALS.map((direction) => `- **${direction}** — ${visibilityLine(direction)}`),
+      );
     }
-    // Four facings twice over, rather than four facings and a second name with nothing under it.
-    expect(both.split('\n').filter((line) => line.startsWith('- **'))).toHaveLength(8);
   });
 
   it('keeps the naming sentence overhead and drops the visibility, which that camera cannot vary', () => {
-    const overhead = oneSidedFeatureLedger(['undercut'], CARDINALS, true);
+    // One paragraph per feature and nothing between them: the same join as below the vertical, with
+    // no list after each sentence to show where one feature ends.
+    const overhead = oneSidedFeatureLedger(FEATURES, CARDINALS, true);
+    const blocks = overhead.split('\n\n');
 
-    expect(overhead).toContain('on its left, and nowhere on its right');
-    expect(overhead).not.toContain('- **south**');
+    expect(overhead).not.toContain('- **');
+    expect(blocks).toHaveLength(FEATURES.length);
+    for (const [index, feature] of FEATURES.entries()) {
+      const opening = blocks[index] ?? '';
+      expect(opening.startsWith(naming(feature)), opening).toBe(true);
+      expect(opening).not.toContain('\n');
+    }
   });
 });
