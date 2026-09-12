@@ -9,8 +9,8 @@
  *
  * - `docs/todo/sprite-gubbins.html`, the single-file application this one was migrated from, kept
  *   as a reference. On its own it emitted **43** stock-palette rules nothing in `src/` references.
- * - The Markdown, above all `CLAUDE.md`, whose design-token table lists the stock-palette classes
- *   (`bg-slate-…`, `text-cyan-…`, `text-amber-…`) in a column headed *"Not"*. The document
+ * - The Markdown, above all `CLAUDE.md`, whose design-token table once listed the stock-palette
+ *   classes (`bg-slate-…`, `text-cyan-…`, `text-amber-…`) in a column headed *"Not"*. The document
  *   forbidding those classes was shipping working versions of all ten of them.
  *
  * Worse than the wasted bytes: they are exactly the ad-hoc palette classes the design-token rule

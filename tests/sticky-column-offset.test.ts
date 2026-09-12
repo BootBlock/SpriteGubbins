@@ -125,8 +125,9 @@ describe('sticky column offset', () => {
        * The `xl:` half is the part worth naming separately. It was not merely a second number, it
        * was the *approximation*: a page breakpoint chosen because the bar happens to stop wrapping
        * near it. With the height measured there is nothing left for it to approximate, and a class
-       * inside a split column that measures the page is the mistake CLAUDE.md already names. Only
-       * the two properties are held to this — a span or a gap may be prefixed however it likes.
+       * inside a split column that measures the page is what `split-page-width.test.ts` rejects.
+       * Only the two properties are held to this — a span or a gap may be prefixed however it
+       * likes.
        */
       it('decides neither offset nor cap by page width', () => {
         expect(classes).not.toMatch(/\bxl:(?:top|max-h)-/);

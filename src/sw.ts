@@ -16,7 +16,7 @@
  * The very first visit is *not* isolated — no worker controls the page yet — so
  * `public/coi-bootstrap.js` reloads once after this worker takes control. **The database is not
  * waiting on that.** SQLite's SAH-pool VFS needs a dedicated worker, not `SharedArrayBuffer`, so
- * it is available from the first load; see the note in CLAUDE.md.
+ * it is available from the first load; see the isolation headers' note in `vite.config.ts`.
  */
 
 import { withIsolationHeaders } from './utils/isolationHeaders.ts';

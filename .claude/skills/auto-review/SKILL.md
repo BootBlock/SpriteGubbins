@@ -83,7 +83,10 @@ Read the argument (`low` | `medium` | `high`, default `medium`). It scales the r
 
 2. **Collect relevant CLAUDE.md files** (paths only, not contents): the root `CLAUDE.md`, plus any
    `CLAUDE.md` in a directory containing a file the diff modifies. When judging a file's compliance,
-   only consider CLAUDE.md files that share its path or a parent of it.
+   only consider CLAUDE.md files that share its path or a parent of it. Also collect the paths of
+   any durable memory notes the session start listed for this project whose descriptions match what
+   the diff touches: `CLAUDE.md` keeps the rules that apply to every change, and the conditional
+   rules and their rationale are kept in those notes. Treat a rule stated there as a CLAUDE.md rule.
 
 3. **Summarise the changes** (skip the dedicated agent at `low` effort — do it inline). Capture the
    author's intent: infer it from the branch name, commit messages (`git log BASE..HEAD`), and the
@@ -91,7 +94,7 @@ Read the argument (`low` | `medium` | `high`, default `medium`). It scales the r
    belongs to — `docs/todo/sprite-gubbins-spec.md` is the blueprint the work is executing.
 
 4. **Launch the review agents in parallel** (count per effort above). Give every agent the change
-   summary + inferred intent, the diff, and the relevant CLAUDE.md paths. Each returns a list of
+   summary + inferred intent, the diff, and the relevant CLAUDE.md and memory-note paths. Each returns a list of
    issues; each issue has a **description** and the **reason** it was flagged (e.g. "CLAUDE.md
    adherence", "bug", "logic", "security", or the machine-artefact check letter it matched).
 
@@ -100,9 +103,9 @@ Read the argument (`low` | `medium` | `high`, default `medium`). It scales the r
      broken. Rules most worth checking here:
      - **Design tokens** — a raw hex, `rgb()`/`oklch()` literal, or an ad-hoc Tailwind palette
        class (`bg-slate-900`, `text-cyan-400`) where a `foundry-*` / `neon` / `gold` / `emerald` /
-       `rose` / `ink-*` token exists. The **only** sanctioned raw-hex sites are
-       `src/constants/colors.ts` (domain data) and `ColorSwatch`'s inline `style` (it renders a
-       *user's* colour). Anything else is a violation.
+       `rose` / `ink-*` token exists. Raw colour literals are sanctioned only in `ColorSwatch`'s
+       inline `style` (it renders a colour that is not the app's) and in the domain-data paths
+       `tests/raw-colour-literals.test.ts` exempts. Anything else is a violation.
      - **The structural laws** — a file over ~150 lines, more than one component/store/util
        exported from one file, or a file in the wrong directory for its concern
        (domain logic outside `src/utils/`, persistence outside `src/db/`, constants inlined into a

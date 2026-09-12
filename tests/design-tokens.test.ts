@@ -16,9 +16,8 @@ import { spectrumStopAt } from '../src/constants/spectrum.ts';
  * so renaming or dropping a token doesn't break the build, it silently un-styles every call
  * site that used it, and the app just renders wrong.
  *
- * Nothing else in the toolchain catches that. These names are quoted in CLAUDE.md's
- * design-token table as the vocabulary components must use, so changing one is a deliberate
- * act that should fail here first and be updated in both places together.
+ * Nothing else in the toolchain catches that. These names are the vocabulary components must
+ * use, so changing one is a deliberate act that should fail here first.
  *
  * The stylesheet is read from disk rather than imported: Vitest runs with `css: false`, which
  * stubs CSS modules out entirely — including `?raw` — so an import would assert against an
@@ -49,7 +48,7 @@ const spectrumModule = readFileSync(resolve(process.cwd(), 'src/constants/spectr
 const spectrumDeclaration = /const SPECTRUM_STOPS = \[([^\]]+)\]/.exec(spectrumModule)?.[1] ?? '';
 const SPECTRUM_STOPS = [...spectrumDeclaration.matchAll(/'([a-z]+)'/g)].map((match) => match[1]);
 
-/** Every token CLAUDE.md's design-token table promises a component can reach for. */
+/** Every token the design-token vocabulary promises a component can reach for. */
 const REQUIRED_THEME_TOKENS = [
   // The scrollbar's own three, which exist because no tone on the ramp clears 3:1 against the track.
   '--color-scrollbar-track',
@@ -455,8 +454,8 @@ describe('design tokens', () => {
 
   it('keeps documentation out of the content scan', () => {
     // Tailwind reads every non-ignored file as a potential template. The preserved original
-    // application and CLAUDE.md's own design-token table — whose *"Not"* column names the stock
-    // palette classes (`bg-slate-…`, `text-cyan-…`) — between them emitted 43 stock-palette
+    // application and the Markdown, where `CLAUDE.md` once listed the banned stock palette classes
+    // (`bg-slate-…`, `text-cyan-…`), between them emitted 43 stock-palette
     // utilities no component references.
     //
     // The bytes are the small half. The real cost is that a component reaching for a stock slate
@@ -715,7 +714,7 @@ describe('the speed a transition runs at when its call site says nothing', () =>
 
     // Exactly one call site in `src/` names a curve, so this declaration decides the easing of every
     // other transition in the app. A raw `cubic-bezier(...)` here would be the literal CLAUDE.md's
-    // token table bans, written in the one place that reaches everything.
+    // design-token rule bans, written in the one place that reaches everything.
     expect(token).not.toBeUndefined();
     expect(declarations).toContain(`${String(token)}: cubic-bezier(`);
   });
@@ -1798,8 +1797,8 @@ describe('a colour declared in the stylesheet', () => {
   it('names a rule that still exists for every colour it excuses on the markup’s behalf', () => {
     // `GROUNDED_BY_MARKUP` is a permission, and a permission nobody uses is how an exemption list
     // rots: a selector renamed or deleted leaves an entry behind that excuses nothing, and the next
-    // reader takes the list as a description of the file. The same guard CLAUDE.md already asks of
-    // the raw-colour exemptions — "it also fails if one of the six stops carrying any".
+    // reader takes the list as a description of the file. The same guard
+    // `raw-colour-literals.test.ts` keeps on its exemptions: one that stops carrying any fails.
     //
     // The reason each entry carries is what fails with it, so the value is read rather than being
     // documentation nothing looks at.

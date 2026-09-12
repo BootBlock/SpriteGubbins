@@ -13,8 +13,8 @@ import { stickyColumns } from './stickyColumns.ts';
 /**
  * Nothing a split renders may decide its layout by the page's width.
  *
- * The rule CLAUDE.md states as "a panel that becomes a column stops being described by a viewport
- * breakpoint", held for every split rather than for the one panel that was last caught. It was caught
+ * The rule that a panel which becomes a column stops being described by a viewport breakpoint,
+ * held for every split rather than for the one panel that was last caught. It was caught
  * twice before this existed: the quantiser's pane grid, which read a 1400px page while its box was
  * 674px, and `PromptPreview`, whose height cap came off at `lg` while the column bounding it appeared
  * at `studio:` — so at 1024px the studio was a 13,421px page (#191). The preset library's card grid

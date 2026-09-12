@@ -140,8 +140,7 @@ collaborator list. Open an [issue](https://github.com/BootBlock/SpriteGubbins/is
 with a short line about the change you want instead — that is the route that works, and it is
 genuinely welcome. [CONTRIBUTING.md](.github/CONTRIBUTING.md) says why, and how to run the app for
 yourself. The working conventions behind it — design tokens, the structural laws, the banned
-patterns and the verification gate — are in [CLAUDE.md](CLAUDE.md), with a short index in
-[AGENTS.md](AGENTS.md).
+patterns and the verification gate — are in [CLAUDE.md](CLAUDE.md).
 
 Please report a security problem privately rather than in an issue:
 [SECURITY.md](.github/SECURITY.md) says how. The

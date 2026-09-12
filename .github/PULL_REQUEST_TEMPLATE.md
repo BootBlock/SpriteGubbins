@@ -10,9 +10,8 @@ The route that works is an issue with a short line about what you want changed:
 
 .github/CONTRIBUTING.md says why. Thank you for the offer either way — please send it as an issue.
 
-The rest of this template is for collaborators. The working conventions are in CLAUDE.md, indexed
-in AGENTS.md. Delete any section below that does not apply; a one-line fix does not need a long
-form.
+The rest of this template is for collaborators. The working conventions are in CLAUDE.md. Delete
+any section below that does not apply; a one-line fix does not need a long form.
 -->
 
 ## What this changes

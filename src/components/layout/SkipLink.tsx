@@ -7,8 +7,7 @@
  * Tabbing past it to reach a form is what WCAG 2.4.1 (Bypass Blocks, level A) exists to spare
  * someone.
  *
- * It carries no guidance card, which the rule in `CLAUDE.md` names as an exception rather than an
- * oversight. Two reasons, and either would be enough: the link's own text is already the whole
+ * It carries no guidance card, as a deliberate exception rather than an oversight. Two reasons, and either would be enough: the link's own text is already the whole
  * explanation, and `ControlTooltip` reveals on `:focus-visible` — which is precisely and only how
  * this link is ever reached, so the card would open on the first Tab of every keyboard session,
  * over the chrome the reader is trying to leave.

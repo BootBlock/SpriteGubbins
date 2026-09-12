@@ -64,7 +64,9 @@ function themeColorPlugin(): Plugin {
  * were. The SAH-pool VFS this app installs needs `createSyncAccessHandle`, which browsers expose
  * only *inside a worker* — so the database lives in `src/db/sqliteWorker.ts`, and it neither needs
  * nor waits on `SharedArrayBuffer`. That requirement belongs to the plain `opfs` VFS, which this app
- * does not use; CLAUDE.md records the check that established the difference.
+ * does not use. The difference was established by installing the pool and writing a row from a
+ * worker on a host sending neither header, with `crossOriginIsolated` false and `SharedArrayBuffer`
+ * undefined.
  *
  * What isolation actually buys is the COEP `require-corp` posture: a cross-origin subresource cannot
  * load unless it opts in. That is the only thing *enforcing* this app's no-third-party-request rule

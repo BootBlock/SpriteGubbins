@@ -1,8 +1,7 @@
 # Contributing to Sprite Gubbins
 
-Thank you for looking. This page is the short version; the rules a change is actually held to are
-in [CLAUDE.md](../CLAUDE.md), with a one-page index in [AGENTS.md](../AGENTS.md). Both describe the
-same project and the same gate.
+Thank you for looking. This page is the short version; the working conventions a change is held to
+are in [CLAUDE.md](../CLAUDE.md), and the tests enforce most of them.
 
 ## Pull requests are not accepted
 

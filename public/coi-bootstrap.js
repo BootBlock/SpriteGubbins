@@ -7,7 +7,8 @@
  *
  * **The database is not waiting on this.** SQLite's SAH-pool VFS needs a dedicated worker, not
  * `SharedArrayBuffer`, so it works from the very first load. What the reload restores is the COEP
- * `require-corp` posture that blocks cross-origin subresources — see the note in CLAUDE.md.
+ * `require-corp` posture that blocks cross-origin subresources — see the isolation headers' note
+ * in `vite.config.ts`.
  *
  * The dev and preview servers set the headers directly, so this is a no-op locally — the
  * `crossOriginIsolated` check below returns immediately.

@@ -125,9 +125,9 @@ describe('the call-site counts ControlTooltip’s docblock states', () => {
     );
   });
 
-  it('states both figures in the prose they are the argument for, here and in CLAUDE.md', () => {
+  it('states both figures in the prose they are the argument for', () => {
     // The prose is what goes stale, so each figure is read back out of the sentence it belongs to.
-    // Both files wrap their prose, and a wrap falls wherever the sentence happens to reach the
+    // The docblock wraps its prose, and a wrap falls wherever the sentence happens to reach the
     // margin — so the comment leaders and the line breaks come out before the search, or the
     // assertion is really about where the text was last reflowed.
     const flowed = (path: string): string =>
@@ -145,11 +145,5 @@ describe('the call-site counts ControlTooltip’s docblock states', () => {
     expect(component).toContain(`${total} more targets`);
     expect(component).toContain(`${disabled} of these wrap a control that can be disabled`);
     expect(component).toContain(`two of the ${disabled} disabled-capable controls`);
-
-    // Both halves of CLAUDE.md's sentence, because the defect this suite is named for was that
-    // sentence stating the figure twice and both halves being wrong.
-    const conventions = flowed('CLAUDE.md');
-    expect(conventions).toContain(`${total} of them`);
-    expect(conventions).toContain(`${total} more glyphs`);
   });
 });

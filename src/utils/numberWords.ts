@@ -46,7 +46,7 @@ const TENS = ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty'
 /**
  * The count as a lower-case word — `fourteen`, `twenty-six`.
  *
- * A hyphenated compound above twenty, which is the spelling CLAUDE.md's option pools already use
+ * A hyphenated compound above twenty, which is the spelling the option pools already use
  * and the one the plans were written in before they derived it.
  */
 export function spellNumber(count: number): string {

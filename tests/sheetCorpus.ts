@@ -7,8 +7,8 @@ import { decodePng } from '../src/test/decodePng.ts';
  * The eight reference sheets in `test_sprites/`, as `ImageData`.
  *
  * The only real generator output this project has, and the corpus every measurement about *what
- * models actually return* has to be checked against. CLAUDE.md describes them one by one and says
- * why there are eight rather than one: `armour.png` is the reference every calibration figure in
+ * models actually return* has to be checked against. There are eight rather than one because
+ * `armour.png` is the reference every calibration figure in
  * `constants/quantiser.ts` and `constants/autoTune.ts` is measured on, and the other seven exist so
  * a recalibration can be checked on sheets it was not fitted to.
  *
@@ -25,7 +25,7 @@ import { decodePng } from '../src/test/decodePng.ts';
  * against files on disk. `columnSplit.ts` and `selectLabelBudget.ts` are the same kind of helper.
  */
 
-/** A sheet's file name, without the directory — the name CLAUDE.md and the calibration docs use. */
+/** A sheet's file name, without the directory — the name the calibration docblocks use. */
 export type CorpusSheetName =
   | 'armour.png'
   | 'character_space_marine_blue.png'
@@ -37,8 +37,7 @@ export type CorpusSheetName =
   | 'vehicles_and_props.png';
 
 /**
- * Every sheet, in the order CLAUDE.md's own table lists them: the reference first, then the seven
- * it is checked against.
+ * Every sheet: the reference first, then the seven it is checked against.
  */
 export const CORPUS_SHEETS: readonly CorpusSheetName[] = [
   'armour.png',
