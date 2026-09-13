@@ -10,6 +10,7 @@ import {
   spriteChoiceOf,
   spriteDecisionOf,
 } from '../../utils/spriteChoice.ts';
+import { spriteLabel } from '../../utils/spriteLabel.ts';
 import { Badge } from '../common/Badge.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 
@@ -18,8 +19,8 @@ interface SpritePieceRowProps {
   readonly sprite: AssignedSprite;
   /** Its place in the sheet's reading order, counting from one, as every other surface numbers it. */
   readonly ordinal: number;
-  /** What the download will write this sprite's piece as, or `null` where it is left out. */
-  readonly writtenAs: string | null;
+  /** What this sprite's piece will be written as, or `null` where it is in no piece to be written. */
+  readonly pieceName: string | null;
   /** The studio's component names, which are the only names a sprite may be given. */
   readonly inventory: readonly string[];
   /** Every other sprite on the sheet, so this one can be joined to any of them. */
@@ -49,7 +50,7 @@ interface SpritePieceRowProps {
 export function SpritePieceRow({
   sprite,
   ordinal,
-  writtenAs,
+  pieceName,
   inventory,
   others,
   selected,
@@ -77,10 +78,13 @@ export function SpritePieceRow({
     >
       <div className="mb-1.5 flex flex-wrap items-center gap-2">
         <Badge tone="neutral">{ordinal}</Badge>
-        {writtenAs === null ? (
+        {/* The same words the preview's chip carries, from the same derivation — see `spriteLabel`,
+            which is why a joined sprite says what it was joined to rather than repeating the piece's
+            name. The two sit side by side and a reader compares them. */}
+        {sprite.piece === null ? (
           <Badge tone="attention">Left out</Badge>
         ) : (
-          <span className="truncate font-mono text-2xs text-ink-faint">{writtenAs}</span>
+          <span className="truncate font-mono text-2xs text-ink-faint">{spriteLabel(sprite, pieceName)}</span>
         )}
       </div>
 

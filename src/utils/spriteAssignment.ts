@@ -25,18 +25,28 @@ export function resolveAssignment(
   const shaped = shapeSheet(boxes, edits);
   const named = namePieces(shaped.pieces, inventory);
 
-  // The first member of each piece, so the preview knows which sprite carries the label and the
-  // others can say what they were joined to. Read off the pieces rather than searched for per
-  // sprite, which would be quadratic on a sheet the ceiling allows 512 of.
-  const leaders = new Set(shaped.pieces.map((piece) => piece.memberIndices[0]));
+  // Which sprite leads each piece, so the preview knows which one carries the name and the others
+  // can say what they were joined to. Read off the pieces rather than searched for per sprite, which
+  // would be quadratic on a sheet the ceiling allows 512 of.
+  const leaders = new Map(
+    shaped.pieces.flatMap((piece, at) =>
+      piece.memberIndices[0] === undefined ? [] : [[at, piece.memberIndices[0]]],
+    ),
+  );
 
-  const sprites: readonly AssignedSprite[] = boxes.map((box, index) => ({
-    box,
-    pin: spritePin(box),
-    piece: shaped.pieceOf[index] ?? null,
-    leads: leaders.has(index),
-    decision: shaped.decisions[index] ?? null,
-  }));
+  const sprites: readonly AssignedSprite[] = boxes.map((box, index) => {
+    const piece = shaped.pieceOf[index] ?? null;
+    const leader = piece === null ? undefined : leaders.get(piece);
+    return {
+      box,
+      pin: spritePin(box),
+      piece,
+      leads: leader === index,
+      // Counting from one, as every surface that numbers a sprite does.
+      joinedTo: leader === undefined || leader === index ? null : leader + 1,
+      decision: shaped.decisions[index] ?? null,
+    };
+  });
 
   return {
     sprites,

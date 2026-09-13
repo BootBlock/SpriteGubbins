@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
@@ -72,6 +72,16 @@ describe('SpriteLabelOverlay', () => {
     expect(useSpriteAssignmentStore.getState().selected).toBeNull();
   });
 
+  it('says a joined sprite is joined rather than repeating its piece’s name', () => {
+    // Two chips carrying one name is indistinguishable on the artwork from the duplicate-name error
+    // the feature exists to reveal — which is how this state actually looked in the browser.
+    useSpriteAssignmentStore.getState().decide({ x: 12, y: 2 }, { kind: 'JOIN', to: { x: 2, y: 2 } });
+    show();
+
+    expect(screen.getByRole('button', { name: '2 · joined to 1' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^2 · sprite/ })).not.toBeInTheDocument();
+  });
+
   it('says which sprites are being left out rather than hiding them', () => {
     // A sprite left out has no piece and so no name, and it stays on the preview: a chip that
     // vanished would leave no way to put it back from the artwork.
@@ -79,6 +89,25 @@ describe('SpriteLabelOverlay', () => {
     show();
 
     expect(screen.getByRole('button', { name: '2 · left out' })).toBeInTheDocument();
+  });
+
+  it('keeps its pointer press away from the scrollport that would swallow the click', async () => {
+    // **The defect only a real browser showed.** `PanViewport` answers a pointerdown by calling
+    // `preventDefault` and capturing the pointer, which suppresses the compatibility mouse events —
+    // `click` among them. So a mouse press on a chip did nothing at all, while this suite's own
+    // `userEvent.click` went on passing, because a synthetic click does not travel that path.
+    const ancestor = vi.fn();
+    const { edits } = useSpriteAssignmentStore.getState();
+    render(
+      <div onPointerDown={ancestor}>
+        <SpriteLabelOverlay assignment={resolveAssignment(BOXES, edits, INVENTORY)} magnification={2} />
+      </div>,
+    );
+
+    await userEvent.click(screen.getAllByRole('button', { name: '1 · arm-left' })[0] as HTMLElement);
+
+    expect(ancestor).not.toHaveBeenCalled();
+    expect(useSpriteAssignmentStore.getState().selected).toStrictEqual({ x: 2, y: 2 });
   });
 
   it('ignores a press that travelled, which is a pan and not a click', async () => {

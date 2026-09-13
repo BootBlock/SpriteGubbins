@@ -149,6 +149,9 @@ describe('resolveAssignment', () => {
       });
       expect(assignment.sprites.map((sprite) => sprite.piece)).toStrictEqual([0, 0, 1]);
       expect(assignment.sprites.map((sprite) => sprite.leads)).toStrictEqual([true, false, true]);
+      // The second member points back at the sprite it was joined to, counting from one, so it can
+      // be labelled `joined to 1` rather than repeating the piece's name on a second chip.
+      expect(assignment.sprites.map((sprite) => sprite.joinedTo)).toStrictEqual([null, 1, null]);
     });
 
     it('folds a chain of three into one piece', () => {

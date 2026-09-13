@@ -61,7 +61,7 @@ export function SpritePieceList({ assignment, inventory }: SpritePieceListProps)
             key={`${String(sprite.pin.x)},${String(sprite.pin.y)}`}
             sprite={sprite}
             ordinal={index + 1}
-            writtenAs={sprite.piece === null ? null : (assignment.pieces[sprite.piece]?.name ?? null)}
+            pieceName={sprite.piece === null ? null : (assignment.pieces[sprite.piece]?.name ?? null)}
             inventory={inventory}
             others={assignment.sprites.flatMap((other, at) =>
               at === index ? [] : [{ ordinal: at + 1, sprite: other }],

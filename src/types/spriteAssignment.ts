@@ -96,8 +96,18 @@ export interface AssignedSprite {
   readonly pin: SpritePin;
   /** Its piece, as an index into {@link SpriteAssignment.pieces}, or `null` where it is left out. */
   readonly piece: number | null;
-  /** Whether it is the first member of that piece, which is the one the preview labels. */
+  /** Whether it is the first member of that piece, which is the one that carries the piece's name. */
   readonly leads: boolean;
+  /**
+   * Where the piece it was joined into starts, in reading order counting from one — `null` where it
+   * leads its own piece or is left out.
+   *
+   * **What a second member is labelled with instead of the piece's name.** Labelling both halves of a
+   * join `sprite-02` is indistinguishable on screen from the duplicate-name error this feature exists
+   * to reveal: two chips, one name, and nothing saying which of the two readings it is. Found by
+   * driving the tab in a browser, where the two states looked identical.
+   */
+  readonly joinedTo: number | null;
   /** The reader's own decision about it, or `null` where reading order is deciding. */
   readonly decision: SpriteDecision | null;
 }

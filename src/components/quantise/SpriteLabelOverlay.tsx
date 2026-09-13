@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
 import type { SpriteAssignment } from '../../types/spriteAssignment.ts';
+import { spriteLabel } from '../../utils/spriteLabel.ts';
 import { samePin } from '../../utils/spritePin.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
@@ -73,6 +74,17 @@ export function SpriteLabelOverlay({ assignment, magnification }: SpriteLabelOve
               <button
                 type="button"
                 onPointerDown={(event) => {
+                  // **Held back from the scrollport, or the press never becomes a click.** The pane
+                  // is panned by dragging the image, and `useDragPan` answers a pointerdown by
+                  // calling `preventDefault` and capturing the pointer on the scrollport — which
+                  // suppresses the compatibility mouse events, `click` among them. So a mouse press
+                  // on a chip did nothing at all while a scripted `element.click()` worked, which is
+                  // how this was found: only driving a real pointer in a browser shows it.
+                  //
+                  // A drag that starts on a chip therefore pans nothing. That is the right trade:
+                  // the chip is a few characters wide and the rest of every sprite is still
+                  // grabbable, where a chip that could not be clicked is the whole feature lost.
+                  event.stopPropagation();
                   pressedAt.current = { x: event.clientX, y: event.clientY };
                 }}
                 onClick={(event) => {
@@ -85,7 +97,7 @@ export function SpriteLabelOverlay({ assignment, magnification }: SpriteLabelOve
                 }}
                 className={`max-w-32 truncate rounded px-1 py-px font-mono text-2xs leading-tight transition-colors duration-390 ${chipTone(piece === null, isSelected)}`}
               >
-                {piece === null ? `${String(index + 1)} · left out` : `${String(index + 1)} · ${piece.name}`}
+                {`${String(index + 1)} · ${spriteLabel(sprite, piece?.name ?? null)}`}
               </button>
             </ControlTooltip>
           </div>
