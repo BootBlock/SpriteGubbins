@@ -72,4 +72,10 @@ export const QUANTISE_ACTION_TOOLTIPS = {
 
   candidateFromTarget:
     'Puts the scale implied by the studio’s target component size into the grid box. It is an upper bound rather than a reading of this image: at any coarser scale the sheet could not hold the number of components the prompt asked for, and a generator that left canvas empty drew finer than this. Worth trying when no reading of the sheet found a scale, and worth checking against the preview either way.',
+
+  clearAssignments:
+    'Takes back everything you have said about which sprite is which — every name you set, every sprite you left out and every pair you joined — and returns the sheet to being read in the order the prompt fixes. The artwork, the dials and the palette are untouched; this discards decisions rather than pixels. Dropping a different sheet clears them for you, since a decision describes a place on one image and means nothing on the next.',
+
+  selectSprite:
+    'Selects this sprite so the list beside the preview scrolls to its row, where you can name it, leave it out or join it to another. The label on it is the name the download will write, so what you see here is what the pack, the Aseprite document and the manifest will all call this piece. A sprite left out is marked as such and stays on the preview, so you can always put it back.',
 } as const;

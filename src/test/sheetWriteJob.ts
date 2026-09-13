@@ -23,6 +23,7 @@ export function sheetWriteJob(overrides: Partial<SheetWriteJob> = {}): SheetWrit
     cell: null,
     duplicates: [],
     names: [],
+    naming: null,
     imageName: 'sheet-quantised.png',
     sheet: null,
     facing: null,

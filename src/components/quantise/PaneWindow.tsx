@@ -36,6 +36,19 @@ export interface PaneContent {
   readonly window: { readonly width: number; readonly height: number };
   /** How far the canvas is pulled up and left, in screen pixels, to land its cells on the source. */
   readonly inset: { readonly x: number; readonly y: number };
+  /**
+   * Elements drawn over the canvas, in the canvas's own coordinate space, or `null` for none.
+   *
+   * The sprite labels are the one thing on this tab that has to sit *above* the artwork rather than
+   * in it: `outlineSprites` writes its rings into the pixels, which is why it can only draw rings.
+   * See `SpriteLabelOverlay`, which is the only thing that passes one.
+   *
+   * **It shares the canvas's placement rather than repeating it.** The overlay box is laid over the
+   * canvas and takes the same `inset` displacement, so an element positioned at a result coordinate
+   * times the magnification lands on the artwork at that coordinate — including on a mesh with a
+   * leading partial cell, which is the case a second placement would get wrong.
+   */
+  readonly overlay?: ReactNode;
 }
 
 interface PaneWindowProps {
@@ -78,8 +91,11 @@ export function PaneWindow({ label, viewportRef, canvasRef, content, alt, placeh
         // The clipping window `PaneContent` describes. It is the first child of the scrollport, so
         // it is also what `useLinkedPanes` measures as the content — which is the point: both
         // panes report the same extent, whatever their canvases overhang by.
+        // `relative` so the overlay below resolves against this box rather than against whatever
+        // ancestor happens to be positioned. It adds no stacking context of its own beyond that, and
+        // the clipping and the measured extent are exactly what they were.
         <div
-          className="overflow-hidden"
+          className="relative overflow-hidden"
           style={{ width: content.window.width, height: content.window.height }}
         >
           <canvas
@@ -114,6 +130,24 @@ export function PaneWindow({ label, viewportRef, canvasRef, content, alt, placeh
               imageRendering: 'pixelated',
             }}
           />
+
+          {/* Laid over the canvas at the canvas's own origin, which is the inset displacement above
+              rather than this box's corner — so an element placed at a result coordinate times the
+              magnification sits on the artwork at that coordinate on a drifting mesh too. Sized to
+              the canvas, so an overlay's own `inset-0` means the artwork and not the window. */}
+          {content.overlay !== undefined && content.overlay !== null && (
+            <div
+              className="absolute"
+              style={{
+                left: -content.inset.x,
+                top: -content.inset.y,
+                width: content.image.width * content.magnification,
+                height: content.image.height * content.magnification,
+              }}
+            >
+              {content.overlay}
+            </div>
+          )}
         </div>
       )}
     </PanViewport>

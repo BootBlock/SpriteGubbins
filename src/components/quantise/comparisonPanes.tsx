@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
 import type { ComparisonPaneProps } from './ComparisonPane.tsx';
 import { emptyReason, secondCaption, sourceCaption } from './paneCaptions.tsx';
@@ -80,6 +81,14 @@ export function secondPane(
   scale: SheetScale | null,
   viewportRef: (view: HTMLDivElement | null) => void,
   canvasRef: (canvas: HTMLCanvasElement | null) => void,
+  /**
+   * The sprite labels, where this frame is the one showing sprite bounds, and `null` everywhere else.
+   *
+   * Decided by the caller rather than here, because building one needs the assignment out of two
+   * stores and this file is a pure description of a frame. It is keyed on `pictured` there rather
+   * than on `shown`, which is the same distinction the label and the alt text above are keyed by.
+   */
+  overlay: ReactNode,
 ): ComparisonPaneProps {
   return {
     caption: secondCaption(shown, quantised, busy),
@@ -101,6 +110,7 @@ export function secondPane(
               x: quantised.result.offset.x > 0 ? (quantised.grid - quantised.result.offset.x) * zoom : 0,
               y: quantised.result.offset.y > 0 ? (quantised.grid - quantised.result.offset.y) * zoom : 0,
             },
+            overlay,
           },
     alt: SECOND_PANE_ALT[pictured],
     placeholder: (

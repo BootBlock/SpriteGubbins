@@ -13,7 +13,7 @@ import { callSitesPassing, callSitesWrappingAttribute } from './jsxCallSites.ts'
  * hung off one is unreachable by both routes, and the figure is the size of what that recovers.
  *
  * Both counts had drifted a long way and nothing recomputed either (issue #199): the file said
- * around fifty call sites where there are **79**, and seven disabled-capable ones where there are
+ * around fifty call sites where there are **81**, and seven disabled-capable ones where there are
  * **19** — with CLAUDE.md repeating the fifty twice in one sentence. Neither argument breaks at the
  * true figure; both get stronger, which is what makes this a live argument on a false premise rather
  * than a stale number beside a live one.
@@ -33,7 +33,7 @@ import { callSitesPassing, callSitesWrappingAttribute } from './jsxCallSites.ts'
  */
 
 /** Every `<ControlTooltip>` the app renders, counted through the `text` its props type requires. */
-const CALL_SITE_COUNT = 79;
+const CALL_SITE_COUNT = 81;
 
 /**
  * Where the wrapped control is written with `disabled`, by the file that renders each.

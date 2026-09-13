@@ -1,11 +1,14 @@
 import { QUANTISE_TOOLTIPS, SPRITE_GAP_RANGE } from '../../constants/quantiser.ts';
 import { SPRITE_GUIDANCE } from '../../constants/spriteSegmentation.ts';
+import { useSheetIdentity } from '../../hooks/useSheetIdentity.ts';
+import { useSpriteAssignment } from '../../hooks/useSpriteAssignment.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { TargetSize } from '../../types/output.ts';
 import type { SpriteSegmentation } from '../../types/quantiser.ts';
 import { widestSprite } from '../../utils/spriteSegments.ts';
 import { Badge } from '../common/Badge.tsx';
 import { RangeField } from '../common/RangeField.tsx';
+import { SpritePieceList } from './SpritePieceList.tsx';
 
 interface SpriteControlsProps {
   /** What the transform found, or `null` while there is no result to have found anything in. */
@@ -74,6 +77,11 @@ interface SpriteControlsProps {
 export function SpriteControls({ sprites, target, expected, busy }: SpriteControlsProps) {
   const spriteGap = useQuantiseStore((state) => state.spriteGap);
   const setSpriteGap = useQuantiseStore((state) => state.setSpriteGap);
+  // The same two readings the preview's labels and the download take, through the same two hooks —
+  // so the name a chip shows, the name a row offers and the name a file is written as are one
+  // answer. See `useSpriteAssignment`, which is a hook for exactly that reason.
+  const assignment = useSpriteAssignment(sprites);
+  const identity = useSheetIdentity();
 
   const boxes = sprites?.kind === 'SEGMENTED' ? sprites.boxes : null;
   const largest = boxes === null ? null : widestSprite(boxes);
@@ -138,6 +146,19 @@ export function SpriteControls({ sprites, target, expected, busy }: SpriteContro
       </div>
 
       <p className="mt-3 text-xs leading-relaxed text-ink-muted">{guidanceFor(sprites, expected)}</p>
+
+      {/* Only where the sheet actually came apart into things a reader can point at. A solid or
+          scattered sheet has no sprites to name, and the paragraph above is already explaining why —
+          a list of nothing under it would read as a second, emptier finding about the same state.
+
+          Withdrawn while a newer result is coming, exactly as the badges and the size line above it
+          are. The previous job's sprites are kept on screen for the *preview*, where a sheet beats a
+          blank frame, but a list of controls that act on boxes the next result may not hold is a
+          different thing: a press against it would pin a decision to a place on a sheet that is
+          already gone. */}
+      {!busy && boxes !== null && boxes.length > 0 && (
+        <SpritePieceList assignment={assignment} inventory={identity.names} />
+      )}
     </section>
   );
 }

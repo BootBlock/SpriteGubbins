@@ -1,4 +1,5 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
+import type { SpriteNaming } from '../types/spriteAssignment.ts';
 import type { SheetFormat, WrittenSheet } from '../types/sheetFormat.ts';
 import type { SpriteCell } from '../types/spriteCell.ts';
 import type { ManifestSheet, SpriteManifest } from '../types/spriteManifest.ts';
