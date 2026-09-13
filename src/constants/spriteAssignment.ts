@@ -2,8 +2,8 @@
  * What the sprite-naming controls say, and what the panel says about the state they are in.
  *
  * Two records, filed together and read by two different rules. `SPRITE_ASSIGNMENT_TOOLTIPS` explains
- * three *controls* and is discovered by `constants/tooltips/tooltips.test.ts` with every other
- * `*_TOOLTIPS` set in the app. `SPRITE_ASSIGNMENT_GUIDANCE` reports the state of the reader's own
+ * the list's own *control* and is discovered by `constants/tooltips/tooltips.test.ts` with every
+ * other `*_TOOLTIPS` set in the app. `SPRITE_ASSIGNMENT_GUIDANCE` reports the state of the reader's own
  * sheet — how many pieces there are against how many the prompt asked for, and what is stopping the
  * names being attached — which is the `SPRITE_GUIDANCE` case rather than the control case, so it is
  * out of that suite's scope for the reason stated there.
