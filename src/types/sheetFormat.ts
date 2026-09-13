@@ -9,6 +9,8 @@
  * readable by the Node-side suites under `tests/`, whose program has no DOM library.
  */
 
+import type { SpriteNaming } from './spriteAssignment.ts';
+
 /**
  * The formats, in the order the control offers them.
  *
@@ -60,14 +62,15 @@ interface WrittenSprites {
   /** How many sprites were described — `0` where the sheet held nothing separable. */
   readonly sprites: number;
   /**
-   * Whether the sprites carry the inventory's own names or positional ones.
+   * How the sprites came by their names, or `null` where they carry positional ones.
    *
    * The confirmation says so, because it is the difference between a pipeline that can key on
-   * `heads-south` and one that has to work from ordinals — and the reason is worth meeting at the
-   * moment of download rather than on opening the file: the sheet came back with a different number
-   * of components from the one the prompt asked for.
+   * `heads-south` and one that has to work from ordinals — and it is worth meeting at the moment of
+   * download rather than on opening the file. It carries the route rather than a boolean because a
+   * sheet can now be named two ways: the counts agreed and reading order was applied, or a reader
+   * said which sprite is which. Those are different warrants, and the toast names which one.
    */
-  readonly named: boolean;
+  readonly naming: SpriteNaming | null;
 }
 
 export interface WrittenSpritePack extends WrittenPixels, WrittenSprites {

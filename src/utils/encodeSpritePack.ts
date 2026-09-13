@@ -93,6 +93,6 @@ export async function encodeSpritePack(
     // whatever subset of it that sprite uses, so a per-sprite figure would be a different claim.
     paletteEntries: written.paletteEntries,
     sprites: manifest.sprites.length,
-    named: manifest.named,
+    naming: manifest.naming,
   };
 }

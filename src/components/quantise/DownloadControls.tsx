@@ -4,6 +4,7 @@ import { SHEET_FORMAT_FILES } from '../../constants/sheetFormats.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
 import { useSheetIdentity } from '../../hooks/useSheetIdentity.ts';
+import { useSpriteAssignment } from '../../hooks/useSpriteAssignment.ts';
 import type { TargetSize } from '../../types/output.ts';
 import type { SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
@@ -97,9 +98,14 @@ export function DownloadControls({
   // would silently ignore.
   const effectiveScale = available.includes(downloadScale) ? downloadScale : PREVIEW_ZOOMS[0];
   const unavailable = resultImage === null || download.saving;
-  // The boxes both the cell controls and the press work from, in the 1:1 result's own coordinates —
-  // one derivation, so the panel's warning and the writer's refusal cannot be about different sets.
-  const boxes = sprites?.kind === 'SEGMENTED' ? sprites.boxes : [];
+  // The **pieces** both the cell controls and the press work from, in the 1:1 result's own
+  // coordinates — one derivation, so the panel's warning and the writer's refusal cannot be about
+  // different sets. Pieces rather than the segmentation's boxes because a joined pair is one file
+  // and has to clear the cell as one, and a sprite left out must not be able to refuse a download it
+  // is not in. The same hook the preview's labels and the panel's list read; see
+  // `useSpriteAssignment`, which is why those three cannot disagree.
+  const assignment = useSpriteAssignment(sprites);
+  const boxes = assignment.pieces.map((piece) => piece.box);
   // Only the two formats that describe sprites read a cell, so only they offer the controls for one.
   // The same conditional `ComparisonToolbar` puts on the heatmap's scale, for the same reason: a
   // control that changed nothing would be a lie on screen.
@@ -191,7 +197,11 @@ export function DownloadControls({
               // controls on screen for it.
               cell: cuts ? resolveSpriteCell(cellChoice, target) : null,
               duplicates,
-              names: identity.names,
+              // One name per piece, already decided, beside the route that decided them — the
+              // inventory itself is not sent, because matching it to the artwork is a question this
+              // tab answers before the press rather than one a writer should be re-opening.
+              names: assignment.pieces.map((piece) => piece.name),
+              naming: assignment.naming,
               facing: identity.facing,
               sheet: identity.sheet,
             });

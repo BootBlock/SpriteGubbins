@@ -1,5 +1,6 @@
 import type { Direction } from './rendering.ts';
 import type { RigMode } from './rigging.ts';
+import type { SpriteNaming } from './spriteAssignment.ts';
 import type { SpriteAnchor } from './spriteCell.ts';
 import type { SubjectCategory } from './subject.ts';
 
@@ -223,6 +224,21 @@ export interface SpriteManifest {
   readonly sheet: ManifestSheet | null;
   /** Whether {@link ManifestSprite.name} carries inventory names or positional ones. */
   readonly named: boolean;
+  /**
+   * How the inventory names were given out, or `null` wherever {@link SpriteManifest.named} is false.
+   *
+   * **Two routes to the same claim, and a consumer is entitled to know which.** `READING_ORDER` is
+   * the rule the prompt states and this app applied on its own: the *n*th sprite is the *n*th
+   * component, asserted because the counts agreed. `ASSIGNED` means a person looked at the sheet and
+   * said which sprite is which — a stronger warrant, and one that survives a sheet whose count was
+   * right and whose order was not, which counting alone cannot detect at all.
+   *
+   * Stated beside {@link SpriteManifest.named} rather than instead of it. The boolean is what an
+   * importer gates on and is the older field; this says what is behind it, so a pipeline that wants
+   * to treat a human assignment differently from an inferred one can, and one that does not is
+   * unaffected.
+   */
+  readonly naming: SpriteNaming | null;
   /**
    * The fixed cell every sprite was cut into, or `null` where each kept its own bounding box.
    *
