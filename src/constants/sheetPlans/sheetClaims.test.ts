@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { everySheetOf, planProseFor } from '../../test/categoryProse.ts';
 import { sameWord } from '../../test/sameWord.ts';
-import { decliningSubject } from '../../test/sheetSubject.ts';
+import { decliningSubject, standardSubject } from '../../test/sheetSubject.ts';
 import { COMPONENT_KINDS } from '../../types/components.ts';
 import type { SheetPlan } from '../../types/components.ts';
 import { DECLINABLE_FIELD_KEYS, SUBJECT_CATEGORIES } from '../../types/subject.ts';
@@ -186,9 +186,11 @@ function declinedPieces(category: SubjectCategory, plan: SheetPlan): readonly st
   return DECLINABLE_FIELD_KEYS.flatMap((key) => {
     const absent = absentOptionFor(category, key);
     if (absent === null) return [];
-    return unwrittenPieces(plan, planAsDrawn(plan, category, decliningSubject(category, key)), [
-      [`which a subject choosing “${absent}” takes off this sheet`, plan],
-    ]);
+    return unwrittenPieces(
+      plan,
+      planAsDrawn(plan, category, decliningSubject(standardSubject(), category, key)),
+      [[`which a subject choosing “${absent}” takes off this sheet`, plan]],
+    );
   });
 }
 

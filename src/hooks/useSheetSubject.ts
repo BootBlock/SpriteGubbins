@@ -11,7 +11,8 @@ import type { SheetSubject } from '../types/subject.ts';
  * value meaning the subject has none of what the field describes. TERRAIN's *Focal Feature* is the
  * third (issue #293), and widening the type broke the eleven in twenty-five places — a half-applied
  * edit the compiler caught only because the record is a type rather than a pair of loose strings. A
- * fourth field now changes `DECLINABLE_FIELD_KEYS` and this hook, and nothing else.
+ * fourth field now changes `DECLINABLE_FIELD_KEYS`, this hook and `test/sheetSubject.ts`, each of
+ * which writes its keys out so that the compiler names the ones still to do.
  *
  * **Field by field rather than the whole subject**, which is the rule about selecting a store: a view
  * subscribing to `state.subject` re-renders on every keystroke in all sixteen fields, and these three

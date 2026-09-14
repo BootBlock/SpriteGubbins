@@ -318,7 +318,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * cladding panel. What a first visit pays for is a `drawsClothing` flag on the **26** inventory
  * entries that draw one — nine on ICON, seven on BACKGROUND, four on OBJECT, three on VEHICLE, two
  * on INTERFACE and one on BUILDING — the three lines that carry the answer from the plan to the
- * template (`utils/sheetPlanClothing.ts`, one field on `SheetFacts` and one gate in
+ * template (`utils/sheetPlanAbsence.ts`, one field on `SheetFacts` and one gate in
  * `promptConditions`), and one rewritten tooltip. The template is close to a wash: a one-line
  * exception paragraph against a fixed clause that named five example attributes, three of which were
  * the very things being excepted.
@@ -345,7 +345,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * field describes, so section 1 stated `Armour & Cladding: Bare Unclad Frame` while section 4 ordered
  * a cladding panel and forbade omitting it. What a first visit pays for is: an `absentOption` on the
  * nine pools that offer one and the resolver that reads it; `planAsDrawn` and `drawnPlanFor` in
- * `utils/sheetPlanClothing.ts`, which take the marked entries out before anything walks the plan; the
+ * `utils/sheetPlanAbsence.ts`, which take the marked entries out before anything walks the plan; the
  * `clothing` argument threaded through the nine functions that count, name or render an inventory
  * and the call sites that reach them; `drawsClothing` widening from `true` to
  * `'entirely' | 'partly'` on 26 entries; two inventory lines split into four so the half a reader can

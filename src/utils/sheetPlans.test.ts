@@ -23,7 +23,7 @@ import {
 import { everySeriesOf, everySheetOf, planProseFor, sheetsProseFor } from '../test/categoryProse.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
-import { decliningEverything } from '../test/sheetSubject.ts';
+import { decliningEverything, standardSubject } from '../test/sheetSubject.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
@@ -452,7 +452,7 @@ function scaleExamplePieces(example: string): readonly string[] {
  * one every reader receives, so it is what section 0's example and section 2's unit have to be true of.
  */
 function leanestSheet(category: SubjectCategory, plan: SheetPlan): SheetPlan {
-  return planAsDrawn(plan, category, decliningEverything(category));
+  return planAsDrawn(plan, category, decliningEverything(standardSubject(), category));
 }
 
 describe('section 0’s scale example names pieces the sheet in front of the reader draws', () => {

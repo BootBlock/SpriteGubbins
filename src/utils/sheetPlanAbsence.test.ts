@@ -9,7 +9,7 @@ import {
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { modesFor, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { sectionOf } from '../test/promptSections.ts';
-import { decliningSubject } from '../test/sheetSubject.ts';
+import { decliningEverything, decliningSubject, standardSubject } from '../test/sheetSubject.ts';
 import { DECLINABLE_FIELD_KEYS, SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { DeclinableFieldKey, SubjectCategory } from '../types/subject.ts';
 import { componentCountFor, planComponentCount } from './componentSet.ts';
@@ -70,7 +70,7 @@ function sheetsOf(category: SubjectCategory) {
  * **The pool's own `absentOption` is stepped over**, because it is a sentinel standing for "this
  * subject has none" rather than a description of anything, and every test above is about a subject
  * that *has* the attribute. Stepping over it is also what keeps those tests honest now that the value
- * takes the entries away: three pools that declare one declare their *first* option, so a naive
+ * takes the entries away: five of the nine pools that declare one declare their *first* option, so a naive
  * `options[0]` would compile every BACKGROUND sheet with an inventory that no longer draws the thing
  * the assertion is about, and every TERRAIN sheet with no focal feature. The subject that does carry
  * it has its own block below.
@@ -403,7 +403,8 @@ describe('a subject that says it has none of the attribute', () => {
     expect(words.length, `${category}.${key} has no word to match on`).toBeGreaterThan(0);
 
     for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
-      for (const group of planAsDrawn(plan, category, decliningSubject(category, key)).groups) {
+      for (const group of planAsDrawn(plan, category, decliningSubject(standardSubject(), category, key))
+        .groups) {
         for (const entry of group.entries) {
           const prose = `${entry.text} ${entry.label.replace(/-/g, ' ')}`.toLowerCase();
           for (const word of words) {
@@ -434,7 +435,7 @@ describe('a subject that says it has none of the attribute', () => {
     let emptied = 0;
 
     for (const { category, key } of DECLARING) {
-      const declining = decliningSubject(category, key);
+      const declining = decliningSubject(standardSubject(), category, key);
 
       for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
         const drawn = planAsDrawn(plan, category, declining);
@@ -472,10 +473,9 @@ describe('a subject that says it has none of the attribute', () => {
     // for them to disagree over.
     for (const category of SUBJECT_CATEGORIES) {
       if (absentFieldsOf(category).length === 0) continue;
-      const absences = decliningSubject(category, ...DECLINABLE_FIELD_KEYS);
 
       for (const { subject, mode, directions, sheetIndex, plan } of sheetsOf(category)) {
-        const declining = { ...subject, ...absences, anatomy: subject.anatomy };
+        const declining = { ...subject, ...decliningEverything(subject, category) };
         const count = componentCountFor(category, declining, mode, directions, sheetIndex, []);
         const names = componentSlots(category, declining, mode, directions, sheetIndex, []);
         const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;

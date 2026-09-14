@@ -8,7 +8,7 @@ import { kindsIn } from '../../utils/sheetPlanValidation.ts';
  * BACKGROUND's seam and landmark clauses are rules about such a piece, and only its parallax set lists
  * one: every band there is a tile, and nothing on the layer library is. Written unconditionally, both
  * clauses named a band on a sheet that draws none (issue #278). Read from the entries through
- * `kindsIn` rather than declared beside them, as `planDrawsClothing` reads its answer, so a plan that
+ * `kindsIn` rather than declared beside them, as `planDraws` reads its answer, so a plan that
  * gains or loses a looping piece changes what the two sentences say in the same edit.
  */
 const listsRepeatingPieces = (plan: SheetPlan): boolean => kindsIn(plan).includes('tile');

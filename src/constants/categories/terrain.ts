@@ -183,7 +183,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'face_head',
       label: 'Focal Feature',
       tooltip:
-        'The one thing the eye lands on — the hero rock, the water surface, the glowing vent. Every other piece in the set is written to go unnoticed, so this is where a terrain sheet is allowed to be distinctive, and it belongs on a piece placed once rather than on a tile that repeats. Only the feature library draws such a piece: a blend set is tiles and nothing else, and its own rule against a mark a player could recognise twice is what forbids one there. No Focal Feature is therefore the value a blend set takes, and on a feature library it removes that one piece and leaves the boulders, the rooted growth and the spoil heap.',
+        'The one thing the eye lands on — the hero rock, the water surface, the glowing vent. Every other piece in the set is written to go unnoticed, so this is where a terrain sheet is allowed to be distinctive, and it belongs on a piece placed once rather than on a tile that repeats. Only the feature library draws such a piece: a blend set is tiles and nothing else, and its own rule against a mark a player could recognise twice is what forbids one there. No Focal Feature is therefore the value a blend set takes, and on a feature library it removes that one piece and leaves the boulders, the rooted growth and the spoil heap, so the component count falls by one.',
       options: [
         'No Focal Feature',
         'Hero Boulder Outcrop',

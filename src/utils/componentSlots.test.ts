@@ -6,7 +6,7 @@ import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import { componentCountFor } from './componentSet.ts';
 import { componentSlots } from './componentSlots.ts';
 import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
-import { standardSubject } from '../test/sheetSubject.ts';
+import { decliningSubject, standardSubject } from '../test/sheetSubject.ts';
 
 /** A tail and a pair of horns, so every walk below carries anatomy as well as the plan's own. */
 const ANATOMY = [
@@ -165,7 +165,7 @@ describe('what a name says', () => {
     // broken one.
     const slots = componentSlots(
       'TERRAIN',
-      standardSubject('Bare Untouched Ground'),
+      decliningSubject(standardSubject(), 'TERRAIN', 'clothing'),
       'TILESET_MODULAR',
       'SINGLE_FRONT',
       0,

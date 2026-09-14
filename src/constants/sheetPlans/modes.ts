@@ -188,7 +188,7 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
  * The plans this subject's assembly base is drawn from: the base's own where the category declares
  * one for its value, and the category's standard plans otherwise.
  *
- * **Matched as `declaresNoClothing` matches a `clothing` value, trimmed and case-folded**, because every
+ * **Matched as `declaresAbsence` matches a declinable field's value, trimmed and case-folded**, because every
  * subject field is an unfiltered combo box and a reader who types `single rigid object` has chosen the
  * value the pool offers. Nothing else is recognised: a base typed in other words draws the standard
  * sheets, which is the answer every undeclared pooled value gets too, and a guess here would change
