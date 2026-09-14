@@ -640,18 +640,25 @@ describe('generatePrompt — numbered lists', () => {
     // The defect: section 9's rig check and pixel-art check are conditional and independent, so a
     // pixel-art sheet in POSE_LIBRARY mode used to emit "…6. 8." — a checklist whose seventh check
     // appears to have gone missing, in the section meant to be worked through item by item.
+    // The background key joined the sweep when section 9 gained a check that is conditional on it:
+    // the audit's key-colour reservation and its alpha-channel check are each other's `[IF]` and
+    // `[IF:…!=yes]`, so exactly one of the two is emitted and the count does not move today. Nothing
+    // holds them that way — a future rule conditional on the key alone would land in the same list —
+    // and this sweep is the guard that would see it.
     for (const targetModel of TARGET_MODEL_IDS) {
       for (const renderStyle of RENDER_STYLES) {
         for (const rigMode of RIG_MODES) {
-          const prompt = generatePrompt(
-            'CHARACTER',
-            SUBJECT,
-            withOutput({ renderStyle, rigMode, targetModel }),
-          );
-          const branch = `${targetModel}/${renderStyle}/${rigMode}`;
+          for (const backgroundKey of BACKGROUND_KEYS) {
+            const prompt = generatePrompt(
+              'CHARACTER',
+              SUBJECT,
+              withOutput({ renderStyle, rigMode, targetModel, backgroundKey }),
+            );
+            const branch = `${targetModel}/${renderStyle}/${rigMode}/${backgroundKey}`;
 
-          for (const run of numberedRuns(prompt)) {
-            expect(run, `${branch}: ${run.join(', ')}`).toStrictEqual(run.map((_item, index) => index + 1));
+            for (const run of numberedRuns(prompt)) {
+              expect(run, `${branch}: ${run.join(', ')}`).toStrictEqual(run.map((_item, index) => index + 1));
+            }
           }
         }
       }
@@ -2712,8 +2719,28 @@ describe('generatePrompt — the machine and its palette', () => {
     // field at magenta, and the Game Boy's four greens pinned here do not contain it.
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'GAME_BOY_DMG' }));
 
-    expect(prompt).toContain('The background field is the exception and stays the key colour');
+    expect(prompt).toContain(
+      'The background field is the exception.\n   It stays the key colour named above.',
+    );
     expect(prompt).toContain('it stays the key colour section 0 fixes, and is not drawn from this palette');
+  });
+
+  it('excepts a transparent field by its transparency, not by a colour it does not have', () => {
+    // Both halves named a colour on every sheet, which read loosely until section 0 gained the clause
+    // banning a painted field: a prompt that asks for alpha and says the field "stays the key colour"
+    // disagrees with itself in one section. Each half branches on the key now, and this is the pair
+    // that would see either of them slip back.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ palette: 'GAME_BOY_DMG', backgroundKey: 'TRANSPARENT' }),
+    );
+
+    expect(prompt).toContain(
+      'The background field is the exception.\n   It stays fully transparent, and takes no colour from the palette.',
+    );
+    expect(prompt).toContain('it stays fully transparent, and takes no colour from this palette');
+    expect(prompt).not.toContain('stays the key colour');
   });
 
   it('reserves the key colour in the contract and the audit, only where the field is a colour', () => {
@@ -2730,6 +2757,30 @@ describe('generatePrompt — the machine and its palette', () => {
         backgroundKey,
       ).toBe(coloured);
       expect(prompt.includes('No part of any component is in the key colour'), backgroundKey).toBe(coloured);
+    }
+  });
+
+  it('asks for a real alpha channel in the contract and the audit, only where the field is transparent', () => {
+    // The mirror image of the reservation above, and the gap it closes is the same shape: section 0
+    // said the field is "fully transparent alpha" and nothing said what that rules out, so a sheet
+    // came back keyable only if the generator happened to mean the file's alpha rather than a picture
+    // of it. OpenAI's GPT Image 2.5 prompting guide names that failure outright — "A drawn
+    // checkerboard is not transparency" — and asks an author to check "does the file contain an alpha
+    // channel rather than a painted background?".
+    // https://developers.openai.com/api/docs/guides/image-prompting
+    for (const backgroundKey of BACKGROUND_KEYS) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ backgroundKey }));
+      const transparent = BACKGROUND_KEY_COLORS[backgroundKey] === null;
+
+      expect(
+        sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT').includes(
+          'Deliver that transparency as the file’s alpha channel',
+        ),
+        backgroundKey,
+      ).toBe(transparent);
+      expect(prompt.includes('transparent in the file’s alpha channel, not a drawn'), backgroundKey).toBe(
+        transparent,
+      );
     }
   });
 

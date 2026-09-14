@@ -28,20 +28,6 @@
  * icons. Whether the split's own chunks belong here as names, as a pattern, or not at all is a
  * decision about this contract rather than about the split, and is left to whoever owns it.
  *
- * **Sixteen of those bundler-chosen names left at once, and a dependency bump is what took them.**
- * `Badge`, `about`, `componentTargetSize`, `dialogs`, `isTextEntry`, `models`, `react-dom`,
- * `sheetCanvas`, `sheetCoverage`, `useClipboard`, `useCopyPrompt`, `useFileDropGuard`,
- * `usePresetStore`, `useProjectStore`, `useQuantiseStore` and `useSettingsStore` were all cut out of
- * the views that share them; on the dependency set the lockfile resolves now, rolldown leaves each of
- * them inside the larger chunk it came from. Every one of the sixteen therefore reported *listed, not
- * precached*, which is the whole list failing rather than a stray file — and no module went missing:
- * the same code is downloaded inside fewer requests. **The delay before it was noticed is the part
- * worth stating.** These names were measured against a working tree whose `node_modules` predated the
- * bump, so the contract passed where it was written and failed the first clean `npm ci`. A figure
- * taken from stale dependencies is not a figure this file can hold anything to, and the paragraph
- * under `PRECACHE_CEILING_KIB` below records what the bump cost once both sides were rebuilt from one
- * install.
- *
  * **Five of them arrived together with `constants/guidanceSentences.ts`**, and they are the cost that
  * docblock predicts rather than a new file the app loads. That module holds the sentences more than
  * one control's guidance states, so it is reached from the studio, the quantiser, the preset library
@@ -76,6 +62,30 @@
  * the three they miss are fixed, small and not what a stray chunk arrives as. Stated as a
  * relationship rather than a pair of counts, because the counts move with every chunk the split
  * produces and the paragraph above already names today's.
+ *
+ * **Sixteen lines left this list in one build, and nothing in this repository moved them.** `vite`
+ * went from 8.1.5 to 8.2.2 in the dependency group merged on 12 September 2026, and the newer
+ * bundler stops cutting sixteen of the split's shared chunks out of the entry chunk: `Badge`,
+ * `about`, `componentTargetSize`, `dialogs`, `isTextEntry`, `models`, `react-dom`, `sheetCanvas`,
+ * `sheetCoverage`, `useClipboard`, `useCopyPrompt`, `useFileDropGuard`, `usePresetStore`,
+ * `useProjectStore`, `useQuantiseStore` and `useSettingsStore` are absent from `dist/` altogether,
+ * and `assets/index-*.js` absorbs them at 326.4 kB against the 222.97 an older note above records.
+ * So what the removals describe is sixteen files a first visit no longer *requests*, not sixteen it
+ * no longer gets. Measured on the base commit with nothing else changed, the build reports **48
+ * entries at 2389.39 KiB**; the commit that prunes this list also adds section 0's transparency
+ * rules and ships at **2389.72**. Both are inside the ceiling, so the ceiling is left where it
+ * stands, on the 6.28 KiB the second figure leaves.
+ *
+ * **The bump landed without this gate run over it, which is the part worth keeping.** `npm run
+ * build` failed on every branch cut after that merge, with sixteen `-` lines and no `+` line —
+ * exactly the shape the paragraph above warns reads like a stray file, arriving sixteen at once
+ * because a bundler minor re-cut the split rather than because anything here was renamed. A
+ * dependency bump changes this contract's subject as surely as a refactor does.
+ *
+ * **Several of the arrival notes above now describe chunks no build emits.** `about`, `dialogs`,
+ * `usePresetStore` and `useSettingsStore` are four of the `guidanceSentences.ts` five, `isTextEntry`
+ * is the note beside them, and `useQuantiseStore` is the identity lock's. They stay as the record of
+ * what each cost on the first visit it arrived on; none of them is a line in the list any more.
  */
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',
@@ -308,7 +318,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * cladding panel. What a first visit pays for is a `drawsClothing` flag on the **26** inventory
  * entries that draw one — nine on ICON, seven on BACKGROUND, four on OBJECT, three on VEHICLE, two
  * on INTERFACE and one on BUILDING — the three lines that carry the answer from the plan to the
- * template (`utils/sheetPlanAbsence.ts`, one field on `SheetFacts` and one gate in
+ * template (`utils/sheetPlanClothing.ts`, one field on `SheetFacts` and one gate in
  * `promptConditions`), and one rewritten tooltip. The template is close to a wash: a one-line
  * exception paragraph against a fixed clause that named five example attributes, three of which were
  * the very things being excepted.
@@ -335,7 +345,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * field describes, so section 1 stated `Armour & Cladding: Bare Unclad Frame` while section 4 ordered
  * a cladding panel and forbade omitting it. What a first visit pays for is: an `absentOption` on the
  * nine pools that offer one and the resolver that reads it; `planAsDrawn` and `drawnPlanFor` in
- * `utils/sheetPlanAbsence.ts`, which take the marked entries out before anything walks the plan; the
+ * `utils/sheetPlanClothing.ts`, which take the marked entries out before anything walks the plan; the
  * `clothing` argument threaded through the nine functions that count, name or render an inventory
  * and the call sites that reach them; `drawsClothing` widening from `true` to
  * `'entirely' | 'partly'` on 26 entries; two inventory lines split into four so the half a reader can
@@ -774,28 +784,8 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * download cards rewritten to describe pieces where they described sprites.
  *
  * 2396 leaves **0.12 KiB**.
- *
- * **Lowered to 2390, which is the first movement in this direction and is not a new discipline.** The
- * 2396 above was measured against a working tree whose `node_modules` predated the dependency bump in
- * `4b38cec`, so it is a figure for dependencies this repository no longer resolves — and the sixteen
- * departed chunk names recorded under `PRECACHE_SHAPES` are the same staleness showing as a failed
- * build. Rebuilt from one install: `main` at `194babe`, with those sixteen shapes removed, reports
- * **2388.89 KiB across 48 entries** where the same tree on the pre-bump install reported 2395.88
- * across 64. So the bump *returns* 6.99 KiB and sixteen requests, by leaving shared modules inside the
- * chunks they came from instead of cutting a chunk for each. Leaving the ceiling at 2396 would bank
- * that as 7.11 KiB of headroom nobody argued for, which is the opposite of what the small margin is
- * for.
- *
- * **The branch that lowers it adds 0.83 KiB and one entry** (#293). Letting any subject field decline
- * a piece of its sheet costs `hooks/useSheetSubject.ts` — the one record eleven call sites read those fields
- * out of, so rolldown cuts it into a chunk they share and names it after the hook, which is the
- * `isTextEntry` and `storageFailure` shape a third time — beside `No Focal Feature` and its guidance in
- * TERRAIN's pool, eleven mode bindings, and `DECLINABLE_FIELD_KEYS`. Against the 2388.89 above, on the
- * same install, this build reports **2389.72 across 49** on the build's summary line.
- *
- * 2390 leaves **0.28 KiB**.
  */
-export const PRECACHE_CEILING_KIB = 2390;
+export const PRECACHE_CEILING_KIB = 2396;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
