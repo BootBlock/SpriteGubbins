@@ -28,6 +28,20 @@
  * icons. Whether the split's own chunks belong here as names, as a pattern, or not at all is a
  * decision about this contract rather than about the split, and is left to whoever owns it.
  *
+ * **Sixteen of those bundler-chosen names left at once, and a dependency bump is what took them.**
+ * `Badge`, `about`, `componentTargetSize`, `dialogs`, `isTextEntry`, `models`, `react-dom`,
+ * `sheetCanvas`, `sheetCoverage`, `useClipboard`, `useCopyPrompt`, `useFileDropGuard`,
+ * `usePresetStore`, `useProjectStore`, `useQuantiseStore` and `useSettingsStore` were all cut out of
+ * the views that share them; on the dependency set the lockfile resolves now, rolldown leaves each of
+ * them inside the larger chunk it came from. Every one of the sixteen therefore reported *listed, not
+ * precached*, which is the whole list failing rather than a stray file — and no module went missing:
+ * the same code is downloaded inside fewer requests. **The delay before it was noticed is the part
+ * worth stating.** These names were measured against a working tree whose `node_modules` predated the
+ * bump, so the contract passed where it was written and failed the first clean `npm ci`. A figure
+ * taken from stale dependencies is not a figure this file can hold anything to, and the paragraph
+ * under `PRECACHE_CEILING_KIB` below records what the bump cost once both sides were rebuilt from one
+ * install.
+ *
  * **Five of them arrived together with `constants/guidanceSentences.ts`**, and they are the cost that
  * docblock predicts rather than a new file the app loads. That module holds the sentences more than
  * one control's guidance states, so it is reached from the studio, the quantiser, the preset library
@@ -67,7 +81,6 @@ export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',
   'assets/autoTuneWorker-*.js',
   'assets/AtlasCalculatorContents-*.js',
-  'assets/Badge-*.js',
   'assets/CheckboxField-*.js',
   'assets/PresetCardSpecs-*.js',
   'assets/PresetsTab-*.js',
@@ -83,32 +96,17 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/SpecTab-*.js',
   'assets/StudioTab-*.js',
   'assets/Tooltip-*.js',
-  'assets/about-*.js',
   'assets/componentBudget-*.js',
-  'assets/componentTargetSize-*.js',
   'assets/database-*.js',
-  'assets/dialogs-*.js',
-  'assets/isTextEntry-*.js',
-  'assets/models-*.js',
   'assets/presets-*.js',
   'assets/quantiseDials-*.js',
-  'assets/react-dom-*.js',
   'assets/rolldown-runtime-*.js',
-  'assets/sheetCanvas-*.js',
-  'assets/sheetCoverage-*.js',
   'assets/spriteSegments-*.js',
   'assets/storageFailure-*.js',
-  'assets/useClipboard-*.js',
   'assets/useConfirmInPlace-*.js',
-  'assets/useCopyPrompt-*.js',
   'assets/useDownload-*.js',
-  'assets/useFileDropGuard-*.js',
   'assets/useFileSave-*.js',
-  'assets/usePresetStore-*.js',
-  'assets/useProjectStore-*.js',
-  'assets/useQuantiseStore-*.js',
   'assets/useScrollableRegion-*.js',
-  'assets/useSettingsStore-*.js',
   'assets/useSheetSubject-*.js',
   'assets/useShowToast-*.js',
   'assets/useSubjectStore-*.js',
@@ -776,8 +774,28 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * download cards rewritten to describe pieces where they described sprites.
  *
  * 2396 leaves **0.12 KiB**.
+ *
+ * **Lowered to 2390, which is the first movement in this direction and is not a new discipline.** The
+ * 2396 above was measured against a working tree whose `node_modules` predated the dependency bump in
+ * `4b38cec`, so it is a figure for dependencies this repository no longer resolves — and the sixteen
+ * departed chunk names recorded under `PRECACHE_SHAPES` are the same staleness showing as a failed
+ * build. Rebuilt from one install: `main` at `194babe`, with those sixteen shapes removed, reports
+ * **2388.89 KiB across 48 entries** where the same tree on the pre-bump install reported 2395.88
+ * across 64. So the bump *returns* 6.99 KiB and sixteen requests, by leaving shared modules inside the
+ * chunks they came from instead of cutting a chunk for each. Leaving the ceiling at 2396 would bank
+ * that as 7.11 KiB of headroom nobody argued for, which is the opposite of what the small margin is
+ * for.
+ *
+ * **The branch that lowers it adds 0.83 KiB and one entry** (#293). Letting any subject field decline
+ * a piece of its sheet costs `hooks/useSheetSubject.ts` — the one record eleven views read those fields
+ * out of, so rolldown cuts it into a chunk they share and names it after the hook, which is the
+ * `isTextEntry` and `storageFailure` shape a third time — beside `No Focal Feature` and its guidance in
+ * TERRAIN's pool, eleven mode bindings, and `DECLINABLE_FIELD_KEYS`. Against the 2388.89 above, on the
+ * same install, this build reports **2389.72 across 49** on the build's summary line.
+ *
+ * 2390 leaves **0.28 KiB**.
  */
-export const PRECACHE_CEILING_KIB = 2396;
+export const PRECACHE_CEILING_KIB = 2390;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
