@@ -141,20 +141,21 @@ export interface FieldOption {
    * of them is unconditional: an inventory that lists a cladding panel lists it for a vehicle whose reader has
    * just said it has no cladding, section 1 states the subject has none, and section 4's closing
    * rule forbids omitting the entry. Naming the value here is what lets
-   * `planAsDrawn` in `utils/sheetPlanClothing.ts` take the entry out, so the two sections agree.
+   * `planAsDrawn` in `utils/sheetPlanAbsence.ts` take the entry out, so the two sections agree.
    *
-   * **A pool declaring one may not carry a `'DRAWS_IT_PARTLY'` entry**, which is the invariant that
-   * makes the arrangement complete rather than nearly complete — see `ComponentEntry.clothingRole`,
-   * whose third value covers the entry that draws none of the attribute and is on the sheet only to
-   * differ in it. Left
+   * **A pool declaring one may not carry a `'DRAWS_IT_PARTLY'` entry bound to its field**, which is the
+   * invariant that makes the arrangement complete rather than nearly complete — see
+   * `ComponentEntry.attribute`, whose third role covers the entry that draws none of the attribute and
+   * is on the sheet only to differ in it. Left
    * undeclared where the pool offers no such value, which is most of them: every option a
    * CHARACTER's *Clothing / Armour* offers is something the subject wears, and an OBJECT standing on
    * a *Freestanding Base* is still mounted on something.
    *
-   * **Only the `clothing` key consumes it today**, because that is the only field any plan draws as
-   * components of its own. It is declared on the field rather than on the category so a second such
-   * field would need no new machinery, and so the declaration sits against the pool it names a
-   * member of — which is what `categories.test.ts` checks.
+   * **Two keys consume it: `clothing` on eight categories and `face_head` on TERRAIN** (issue #293).
+   * It is declared on the field rather than on the category, which is what made the second one need no
+   * new declaration and only a generalised reader, and it puts the declaration against the pool it
+   * names a member of — which is what `categories.test.ts` checks. A `SubjectFieldKey` is enough for
+   * a third, and what a plan says about the field is `ComponentEntry.attribute`.
    */
   readonly absentOption?: string;
   /**
@@ -247,13 +248,31 @@ export interface CategoryDefinition {
 export type SubjectDefinition = Record<SubjectFieldKey, string>;
 
 /**
- * The subject fields a sheet's inventory is a function of: the assembly base, which chooses the plans
- * a category draws from (`sheetPlans/assemblyBases.ts`), and the `clothing` value, which can decline a
- * piece of one (`utils/sheetPlanClothing.ts`).
+ * The fields a pool may declare an `absentOption` in, and therefore the fields a sheet's inventory can
+ * lose an entry to — see `FieldOption.absentOption` and `ComponentEntry.attribute`.
  *
- * **One record rather than two strings**, because every function that resolves or counts a sheet
- * takes both, and two adjacent string parameters are a pair no type checker can tell apart when a call
- * site swaps them. A whole `SubjectDefinition` satisfies it, which is what the compiler hands down; a
- * studio control reading two fields out of the store builds one.
+ * **Written out because a type cannot be computed from the pools.** {@link SheetSubject} has to name
+ * the keys it carries, and a `ComponentEntry` may only bind a field that record holds, so this list is
+ * where those two agree. `categories.test.ts` holds it to the declarations in both directions: a field
+ * declaring an absence and missing from here would be read by nothing, which fails as an absence of
+ * behaviour rather than as an error, and a key here that no pool declares would be a member nothing
+ * uses.
+ *
+ * `clothing` is the first, on eight categories. `face_head` is the second, on TERRAIN alone, whose
+ * *Focal Feature* only the feature library draws (issue #293).
  */
-export type SheetSubject = Pick<SubjectDefinition, 'anatomy' | 'clothing'>;
+export const DECLINABLE_FIELD_KEYS = ['clothing', 'face_head'] as const;
+
+export type DeclinableFieldKey = (typeof DECLINABLE_FIELD_KEYS)[number];
+
+/**
+ * The subject fields a sheet's inventory is a function of: the assembly base, which chooses the plans
+ * a category draws from (`sheetPlans/assemblyBases.ts`), and the {@link DECLINABLE_FIELD_KEYS} values,
+ * each of which can decline a piece of one (`utils/sheetPlanAbsence.ts`).
+ *
+ * **One record rather than a string per field**, because every function that resolves or counts a sheet
+ * takes all of them, and adjacent string parameters are a set no type checker can tell apart when a call
+ * site reorders them. A whole `SubjectDefinition` satisfies it, which is what the compiler hands down; a
+ * studio control reading a few fields out of the store builds one.
+ */
+export type SheetSubject = Pick<SubjectDefinition, 'anatomy' | DeclinableFieldKey>;

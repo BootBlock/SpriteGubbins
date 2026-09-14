@@ -1,6 +1,6 @@
 import { sheetSeriesFor } from '../sheetPlans/index.ts';
 import { planComponentCount } from '../../utils/componentSet.ts';
-import { planAsDrawn } from '../../utils/sheetPlanClothing.ts';
+import { planAsDrawn } from '../../utils/sheetPlanAbsence.ts';
 import type { DirectionalMode } from '../../types/output.ts';
 import type { DirectionSet } from '../../types/rendering.ts';
 import type { SheetSubject, SubjectCategory } from '../../types/subject.ts';
@@ -41,9 +41,9 @@ export function sheetChoices(
   // Each plan **as this subject draws it**, so the figure in the menu is the figure the prompt for
   // that sheet contracts for. A reader who has said their vehicle carries no cladding is choosing
   // between inventories that no longer hold a cladding panel, and a label counting one would be the
-  // studio advertising a component the prompt does not ask for — see `sheetPlanClothing.ts`.
+  // studio advertising a component the prompt does not ask for — see `sheetPlanAbsence.ts`.
   return sheetSeriesFor(category, subject, mode, directions).map((plan, index) => ({
     value: index,
-    label: `${plan.name} (${String(planComponentCount(planAsDrawn(plan, category, subject.clothing)))})`,
+    label: `${plan.name} (${String(planComponentCount(planAsDrawn(plan, category, subject)))})`,
   }));
 }

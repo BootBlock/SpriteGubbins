@@ -31,7 +31,7 @@ import { nativeGridScale } from './nativeGridScale.ts';
 import { sheetBatch } from './sheetBatch.ts';
 import type { SheetBatch } from './sheetBatch.ts';
 import { sheetDirections } from './sheetDirections.ts';
-import { drawnPlanFor, planDrawsClothing } from './sheetPlanClothing.ts';
+import { drawnPlanFor, planDraws } from './sheetPlanAbsence.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**
@@ -86,7 +86,7 @@ export interface SheetFacts {
    * Whether section 1 excepts the `clothing` line from its paint rule on this sheet.
    *
    * Both halves have to hold. The **plan** has to draw the attribute as pieces of its own, which is
-   * a fact about the sheet rather than the category — see `sheetPlanClothing.ts`. And the **line**
+   * a fact about the sheet rather than the category — see `sheetPlanAbsence.ts`. And the **line**
    * has to have been emitted at all: a cleared field puts nothing in section 1, and an exception
    * paragraph naming an attribute nobody stated names an absent line in the section the template
    * calls the sole authority for the subject's design.
@@ -132,7 +132,7 @@ export function sheetFacts(
   // the subject has none of what the field describes loses the entries drawing it, so section 4 stops
   // ordering a cladding panel for a `Bare Unclad Frame` and section 1 stops excepting an attribute
   // the inventory no longer carries. Every phase below reads this one plan, which is what keeps the
-  // count, the prose and the manifest describing the same sheet — see `sheetPlanClothing.ts`.
+  // count, the prose and the manifest describing the same sheet — see `sheetPlanAbsence.ts`.
   const plan = drawnPlanFor(category, subject, mode, output.directions, output.sheetIndex);
 
   // And the rig this sheet is actually drawn for, resolved for the same reason and against both
@@ -309,7 +309,7 @@ export function sheetFacts(
   // **Where a category's pool offers no such value the question does not arise**, which is the answer
   // ICON and INTERFACE take: their sheets draw the attribute whatever is chosen, so the exception is
   // always right and there is no value that could make it wrong. See `sheetPlans/icon.ts`.
-  const clothingIsAComponent = subject.clothing.trim() !== '' && planDrawsClothing(plan);
+  const clothingIsAComponent = subject.clothing.trim() !== '' && planDraws(plan, 'clothing');
 
   return {
     mode,

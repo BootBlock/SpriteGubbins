@@ -1,3 +1,4 @@
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import {
@@ -84,9 +85,7 @@ export function OutputConfig() {
   const category = useSubjectStore((state) => state.category);
   // The two subject fields a sheet is a function of: the assembly base chooses the plans three of the
   // digests below describe, and the `clothing` value can decline a piece of one.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
-  const subject = { anatomy, clothing };
+  const subject = useSheetSubject();
 
   return (
     <section className="animate-view-fade-in glass-panel group/panel rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-585 hover:border-tab/40">

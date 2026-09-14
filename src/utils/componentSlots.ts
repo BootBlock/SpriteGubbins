@@ -3,7 +3,7 @@ import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { DirectionalMode, DirectionSet } from '../types/output.ts';
 import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { anatomyFacingsFor } from './componentSet.ts';
-import { drawnPlanFor } from './sheetPlanClothing.ts';
+import { drawnPlanFor } from './sheetPlanAbsence.ts';
 import { slugify } from './slugify.ts';
 
 /**

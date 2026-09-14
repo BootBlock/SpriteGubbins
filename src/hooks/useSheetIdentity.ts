@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useOutputStore } from '../stores/useOutputStore.ts';
 import { useSubjectStore } from '../stores/useSubjectStore.ts';
+import { useSheetSubject } from './useSheetSubject.ts';
 import { sheetIdentity } from '../utils/sheetIdentity.ts';
 import type { SheetIdentity } from '../utils/sheetIdentity.ts';
 
@@ -23,13 +24,12 @@ import type { SheetIdentity } from '../utils/sheetIdentity.ts';
 export function useSheetIdentity(): SheetIdentity {
   const category = useSubjectStore((state) => state.category);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  // The other two subject fields the slot names and the component count read — see `componentSet.ts`.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
+  // The other subject fields the slot names and the component count read — see `componentSet.ts`.
+  const subject = useSheetSubject();
   const output = useOutputStore((state) => state.output);
 
   return useMemo(
-    () => sheetIdentity(category, { anatomy, clothing }, output, additionalAnatomy),
-    [category, anatomy, clothing, output, additionalAnatomy],
+    () => sheetIdentity(category, subject, output, additionalAnatomy),
+    [category, subject, output, additionalAnatomy],
   );
 }

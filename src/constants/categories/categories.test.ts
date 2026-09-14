@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
-import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../../types/subject.ts';
+import { DECLINABLE_FIELD_KEYS, SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../../types/subject.ts';
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
@@ -97,7 +97,7 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
   it('names an absent option the pool actually offers', () => {
     // `absentOption` is how a pool says it offers a value meaning *the subject has none of this*,
     // and it is what lets a sheet plan drop the entries drawing that attribute — see
-    // `utils/sheetPlanClothing.ts`. A value the pool does not offer would silently never match,
+    // `utils/sheetPlanAbsence.ts`. A value the pool does not offer would silently never match,
     // which fails as an absence of behaviour rather than as an error: the reader would pick the
     // option they can see and the inventory would go on ordering the component anyway, which is the
     // defect the declaration exists to remove.
@@ -106,6 +106,21 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
       expect(field.options, `${category}.${field.key} names an absent option it does not offer`).toContain(
         field.absentOption,
       );
+    }
+  });
+
+  it('declares an absent option only on a key DECLINABLE_FIELD_KEYS holds', () => {
+    // The same failure one step further out, and the reason that list exists (issue #293). A
+    // `SheetSubject` carries the declinable fields and nothing else, and `absentFieldsOf` asks the
+    // pools about those keys alone — so a pool declaring an absence on a key missing from the list is
+    // read by nothing at all. That is the silent shape again: the reader picks `No Focal Feature`, the
+    // inventory goes on ordering the focal feature, and no test fails anywhere.
+    for (const field of fields) {
+      if (field.absentOption === undefined) continue;
+      expect(
+        DECLINABLE_FIELD_KEYS,
+        `${category}.${field.key} declares an absence that nothing would read`,
+      ).toContain(field.key);
     }
   });
 
@@ -238,6 +253,24 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
           value,
         );
       }
+    }
+  });
+});
+
+describe('the declinable field keys', () => {
+  it('holds a key only because some pool declares an absence in it', () => {
+    // The other half of the per-category check above, and the half that fails when a declaration is
+    // *removed* rather than added. `DECLINABLE_FIELD_KEYS` widens `SheetSubject` and what a
+    // `ComponentEntry` may bind, so a key nothing declares carries a field through four call sites and
+    // a hook for no reason — and the list is what a reader goes to for which fields a plan can lose an
+    // entry to, so a stale member makes it lie.
+    for (const key of DECLINABLE_FIELD_KEYS) {
+      const declaring = SUBJECT_CATEGORIES.filter((category) =>
+        CATEGORY_OPTIONS[category].fields.some(
+          (field) => field.key === key && field.absentOption !== undefined,
+        ),
+      );
+      expect(declaring, `no pool declares an absence in ${key}`).not.toEqual([]);
     }
   });
 });

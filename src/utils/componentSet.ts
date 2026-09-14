@@ -13,7 +13,7 @@ import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { countAnatomyComponents, formatAnatomyComponent } from './additionalAnatomy.ts';
 import { componentTotal } from './componentTotal.ts';
 import type { BatchSheet } from './sheetBatch.ts';
-import { drawnPlanFor } from './sheetPlanClothing.ts';
+import { drawnPlanFor } from './sheetPlanAbsence.ts';
 
 /**
  * The components one sheet actually asks for: its plan's entries, plus whatever anatomy the subject
@@ -46,7 +46,7 @@ import { drawnPlanFor } from './sheetPlanClothing.ts';
  * value meaning the subject has none of what the field describes, choosing it takes the entries
  * drawing that attribute out of the plan before any of this walks it. So every function below takes
  * the subject's `SheetSubject`, and `drawnPlanFor` is the one place those two resolutions meet — see
- * `sheetPlanClothing.ts` for what a plan a subject has cut into is, and why an inventory reader may not
+ * `sheetPlanAbsence.ts` for what a plan a subject has cut into is, and why an inventory reader may not
  * reach for the declared one.
  *
  * **There used to be a third, and it was the middle one.** `seriesComponentCount` summed the

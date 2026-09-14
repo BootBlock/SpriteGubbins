@@ -6,6 +6,7 @@ import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useImagePaste } from '../../hooks/useImagePaste.ts';
 import { useQuantiseTuning } from '../../hooks/useQuantiseTuning.ts';
 import { useQuantiseWork } from '../../hooks/useQuantiseWork.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
@@ -67,9 +68,8 @@ export function QuantiseTab() {
   const directions = useOutputStore((state) => state.output.directions);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  // The other two subject fields the count and the target size read — see `componentSet.ts`.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
+  // The other subject fields the count and the target size read — see `componentSet.ts`.
+  const subject = useSheetSubject();
   const category = useSubjectStore((state) => state.category);
   // In a store rather than here, because the workflow crosses tabs: the colour budget, the target
   // size and the background key are studio settings, and `App` unmounts this view when the user goes
@@ -151,7 +151,6 @@ export function QuantiseTab() {
   // *within the target* carries whatever slack separates a torso from a whole body, which is a
   // number nothing here knows. `null` withdraws both, and the app holds no per-piece size to put in
   // their place.
-  const subject = useMemo(() => ({ anatomy, clothing }), [anatomy, clothing]);
   const target = useMemo(
     () => componentTargetSize(category, subject, directionalMode, directions, sheetIndex, spriteTargetSize),
     [category, subject, directionalMode, directions, sheetIndex, spriteTargetSize],

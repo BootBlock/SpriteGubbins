@@ -14,6 +14,7 @@ import {
   sheetSeriesFor,
   supportsRigMode,
 } from '../../constants/sheetPlans/index.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { SelectField } from '../common/SelectField.tsx';
@@ -64,9 +65,7 @@ export function RiggingFields() {
   const category = useSubjectStore((state) => state.category);
   // The subject fields the sheets are a function of — the assembly base chooses them, and a base with
   // no rig sheet has no pivot to rig.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
-  const subject = { anatomy, clothing };
+  const subject = useSheetSubject();
 
   // Resolved rather than read raw, for the reason `SheetFields` resolves the sheet mode: a preset or
   // history row saved before these tables existed can name a rig its category has none of, and a
@@ -130,8 +129,8 @@ export function RiggingFields() {
         // base: “OBJECT sheets carry nothing that turns” would be false of every other OBJECT, and the
         // way to have the rig back is the field in the other panel rather than this one.
         <p className="text-xs leading-relaxed text-ink-muted">
-          {fieldLabelFor(category, 'anatomy')} “{anatomy.trim()}” draws nothing that turns about a pivot, so
-          there is no rig to choose, and the prompt carries no articulation section. Choose another{' '}
+          {fieldLabelFor(category, 'anatomy')} “{subject.anatomy.trim()}” draws nothing that turns about a
+          pivot, so there is no rig to choose, and the prompt carries no articulation section. Choose another{' '}
           {fieldLabelFor(category, 'anatomy')} to rig the subject.
         </p>
       ) : (

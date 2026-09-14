@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { everySheetOf, planProseFor } from '../../test/categoryProse.ts';
 import { sameWord } from '../../test/sameWord.ts';
+import { decliningSubject } from '../../test/sheetSubject.ts';
 import { COMPONENT_KINDS } from '../../types/components.ts';
 import type { SheetPlan } from '../../types/components.ts';
-import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
+import { DECLINABLE_FIELD_KEYS, SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
-import { planAsDrawn } from '../../utils/sheetPlanClothing.ts';
+import { planAsDrawn } from '../../utils/sheetPlanAbsence.ts';
 import { kindsIn } from '../../utils/sheetPlanValidation.ts';
 import { absentOptionFor } from '../categories/index.ts';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../promptText/exclusions.ts';
 import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.ts';
 import { BUILDING_MODULE_LIBRARY } from './building.ts';
+import { TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
 
 /**
  * What a sheet says about itself outside its inventory — the class its guard and audit put every entry
@@ -35,9 +37,9 @@ import { BUILDING_MODULE_LIBRARY } from './building.ts';
  *   category draws is not a finding: “the finished scene” and “a composited picture” name the forbidden
  *   composite, which by construction no entry is.
  * - *A piece the sheet leaves off* — the same question asked of the sheet as `planAsDrawn` draws it for a
- *   subject choosing the category's `absentOption`. The layer library's first class named its
- *   atmosphere, which the subject the app opens with declines, so the guard named a group section 4 had
- *   just taken away.
+ *   subject choosing one of the category's absent options, once per declining field. The layer
+ *   library's first class named its atmosphere, which the subject the app opens with declines, so the
+ *   guard named a group section 4 had just taken away.
  * - *A kind the sheet lists none of* — a word that is a `ComponentKind` no entry of the sheet has.
  *   BUILDING's category class was “a structural or tile component” over two sheets with no tile, and no
  *   entry *name* on its tile set says “tile” for the first sweep to find; the kind is what says it.
@@ -173,15 +175,21 @@ function borrowedPieces(plan: SheetPlan, sheets: readonly SheetPlan[]): readonly
 }
 
 /**
- * The pieces a sheet's claims name that the sheet leaves off for a subject choosing the category's
- * `absentOption` — none, for a category whose pool declares no such value.
+ * The pieces a sheet's claims name that the sheet leaves off for a subject choosing one of the
+ * category's absent options — none, for a category whose pools declare no such value.
+ *
+ * **One field at a time rather than all of them at once**, because a failure has to name the value the
+ * reader chose. A subject declining both of TERRAIN's would report a piece without saying which of its
+ * two pools took it away, and the two are independent choices a reader makes separately.
  */
 function declinedPieces(category: SubjectCategory, plan: SheetPlan): readonly string[] {
-  const absent = absentOptionFor(category, 'clothing');
-  if (absent === null) return [];
-  return unwrittenPieces(plan, planAsDrawn(plan, category, absent), [
-    [`which a subject choosing “${absent}” takes off this sheet`, plan],
-  ]);
+  return DECLINABLE_FIELD_KEYS.flatMap((key) => {
+    const absent = absentOptionFor(category, key);
+    if (absent === null) return [];
+    return unwrittenPieces(plan, planAsDrawn(plan, category, decliningSubject(category, key)), [
+      [`which a subject choosing “${absent}” takes off this sheet`, plan],
+    ]);
+  });
 }
 
 /** Each word in a sheet's claims that is a `ComponentKind` no entry of the sheet has. */
@@ -266,6 +274,18 @@ describe('what a sheet says about itself outside its inventory', () => {
         'a piece of this one backdrop’s scene panel, or a piece of set dressing or atmosphere laid over it',
     });
     expect(declined.join('\n')).toContain('“atmosphere” in its component class');
+  });
+
+  it('finds the focal feature in a feature library class written before a bare field was read', () => {
+    // The second declining field, and the reason the sweep reads them all rather than `clothing` alone
+    // (issue #293). TERRAIN's *Focal Feature* offers `No Focal Feature`, which takes `Focal feature ×1`
+    // off the feature library — so a class naming it would name a piece section 4 had just dropped, and
+    // a sweep asking only about the scatter layer would pass.
+    const declined = declinedPieces('TERRAIN', {
+      ...TERRAIN_FEATURE_LIBRARY,
+      componentClass: 'a ground tile, a landform piece or the focal feature the field is composed around',
+    });
+    expect(declined.join('\n')).toContain('“focal” in its component class');
   });
 
   it('finds the tile in BUILDING’s module library under the category’s old class', () => {

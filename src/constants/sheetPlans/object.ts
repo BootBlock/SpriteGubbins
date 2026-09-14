@@ -69,7 +69,7 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
           text: 'Base, mount or footing ×1',
           count: 1,
           kind: 'structure',
-          clothingRole: 'DRAWS_IT',
+          attribute: { field: 'clothing', role: 'DRAWS_IT' },
         },
         {
           label: 'access-panel',
@@ -102,7 +102,7 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
           text: 'Fittings: handle ×1, latch or catch ×1, mounting bracket ×2',
           count: 4,
           kind: 'structure',
-          clothingRole: 'DRAWS_IT_PARTLY',
+          attribute: { field: 'clothing', role: 'DRAWS_IT_PARTLY' },
         },
       ],
     },
@@ -140,7 +140,7 @@ object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored
 same way are all failures of this entry.`,
         entries: [
           viewsOf('Housings', 'structure', chunk),
-          { ...viewsOf('Bases', 'structure', chunk), clothingRole: 'DRAWS_IT' },
+          { ...viewsOf('Bases', 'structure', chunk), attribute: { field: 'clothing', role: 'DRAWS_IT' } },
         ],
       },
       {
@@ -198,7 +198,7 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
           text: 'Base, mount or footing ×1',
           count: 1,
           kind: 'structure',
-          clothingRole: 'DRAWS_IT',
+          attribute: { field: 'clothing', role: 'DRAWS_IT' },
         },
         {
           label: 'access-panel',

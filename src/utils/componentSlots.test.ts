@@ -159,7 +159,7 @@ describe('what a name says', () => {
 
   it('takes the variant ordinals away with the scatter the reader declined', () => {
     // The same sheet for a subject that says it has none. The variants carry
-    // `clothingRole: 'VARIES_IN_IT'`, so they leave the plan before any of this walks it and the two
+    // `attribute: { field: 'clothing', role: 'VARIES_IN_IT' }`, so they leave the plan before any of this walks it and the two
     // primaries run straight into the transition set — which is the sixteen the group's own intro
     // calls an autotiler's index, and it is what makes the drop a plainer sheet rather than a
     // broken one.

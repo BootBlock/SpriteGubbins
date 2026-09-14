@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { sheetBatch } from '../../utils/sheetBatch.ts';
@@ -41,14 +42,13 @@ const STEP_BUTTON =
 export function SheetStepButtons() {
   const category = useSubjectStore((state) => state.category);
   // The subject fields the batch is a function of — the assembly base chooses its sheets.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
+  const subject = useSheetSubject();
   const output = useOutputStore((state) => state.output);
   const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
 
   const { sheets, ordinal } = useMemo(
-    () => sheetBatch(category, { anatomy, clothing }, output),
-    [category, anatomy, clothing, output],
+    () => sheetBatch(category, subject, output),
+    [category, subject, output],
   );
 
   if (sheets.length < 2) return null;

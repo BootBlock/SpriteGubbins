@@ -91,7 +91,7 @@ export const DOWNLOADS_RECORD_THE_STUDIO =
  * that the subject had none and in section 4 that it was to be drawn. The entries are dropped now,
  * which changes the component count, and that is the one thing about the behaviour a reader cannot
  * see from the field: it is the same fact in the same words because it is the same mechanism. See
- * `utils/sheetPlanClothing.ts`.
+ * `utils/sheetPlanAbsence.ts`.
  *
  * **It says *a value*, not *choosing one*, because BACKGROUND's is its default** — a reader who
  * never opens the field has already declined the atmosphere layer, and a sentence about choosing
