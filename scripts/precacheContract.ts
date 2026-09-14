@@ -787,7 +787,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * for.
  *
  * **The branch that lowers it adds 0.83 KiB and one entry** (#293). Letting any subject field decline
- * a piece of its sheet costs `hooks/useSheetSubject.ts` — the one record eleven views read those fields
+ * a piece of its sheet costs `hooks/useSheetSubject.ts` — the one record eleven call sites read those fields
  * out of, so rolldown cuts it into a chunk they share and names it after the hook, which is the
  * `isTextEntry` and `storageFailure` shape a third time — beside `No Focal Feature` and its guidance in
  * TERRAIN's pool, eleven mode bindings, and `DECLINABLE_FIELD_KEYS`. Against the 2388.89 above, on the

@@ -261,8 +261,8 @@ describe('the declinable field keys', () => {
   it('holds a key only because some pool declares an absence in it', () => {
     // The other half of the per-category check above, and the half that fails when a declaration is
     // *removed* rather than added. `DECLINABLE_FIELD_KEYS` widens `SheetSubject` and what a
-    // `ComponentEntry` may bind, so a key nothing declares carries a field through four call sites and
-    // a hook for no reason — and the list is what a reader goes to for which fields a plan can lose an
+    // `ComponentEntry` may bind, so a key nothing declares carries a field through `useSheetSubject` and
+    // every one of its call sites for no reason — and the list is what a reader goes to for which fields a plan can lose an
     // entry to, so a stale member makes it lie.
     for (const key of DECLINABLE_FIELD_KEYS) {
       const declaring = SUBJECT_CATEGORIES.filter((category) =>
