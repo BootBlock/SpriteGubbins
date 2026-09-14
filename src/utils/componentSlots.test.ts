@@ -46,11 +46,13 @@ describe('one name per component the sheet asks for', () => {
   it.each(SHEETS)(
     '$category / $base / $mode / $directions / $sheet',
     ({ category, subject, mode, directions, sheetIndex }) => {
-      const slots = componentSlots(category, subject, mode, directions, sheetIndex, ANATOMY);
+      const slots = componentSlots(category, subject, mode, directions, sheetIndex, ANATOMY, null);
 
       // The property the manifest rests on: the nth sprite in reading order is the nth component, so a
       // name list of a different length maps every sprite after the divergence onto the wrong one.
-      expect(slots).toHaveLength(componentCountFor(category, subject, mode, directions, sheetIndex, ANATOMY));
+      expect(slots).toHaveLength(
+        componentCountFor(category, subject, mode, directions, sheetIndex, ANATOMY, null),
+      );
       expect(new Set(slots).size).toBe(slots.length);
       for (const slot of slots) expect(slot).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
     },
@@ -66,6 +68,7 @@ describe('what a name says', () => {
       'FOUR_CARDINAL',
       0,
       [],
+      null,
     );
 
     expect(slots).toStrictEqual([
@@ -96,6 +99,7 @@ describe('what a name says', () => {
       'FOUR_CARDINAL',
       0,
       [],
+      null,
     );
 
     expect(slots).toStrictEqual([
@@ -127,6 +131,7 @@ describe('what a name says', () => {
       'FOUR_CARDINAL',
       0,
       [],
+      null,
     );
 
     expect(slots.slice(0, 6)).toStrictEqual([
@@ -144,7 +149,15 @@ describe('what a name says', () => {
     // name to give its second variant that its third does not equally answer to. An ordinal is what
     // such a component is actually called, so the entry states no parts and the suffix stands. The
     // two primaries before it are ×1 lines, which take their label unsuffixed.
-    const slots = componentSlots('TERRAIN', standardSubject(), 'TILESET_MODULAR', 'SINGLE_FRONT', 0, []);
+    const slots = componentSlots(
+      'TERRAIN',
+      standardSubject(),
+      'TILESET_MODULAR',
+      'SINGLE_FRONT',
+      0,
+      [],
+      null,
+    );
 
     expect(slots.slice(0, 7)).toStrictEqual([
       'base-material-tile',
@@ -170,6 +183,7 @@ describe('what a name says', () => {
       'SINGLE_FRONT',
       0,
       [],
+      null,
     );
 
     expect(slots).toHaveLength(16);
@@ -189,6 +203,7 @@ describe('what a name says', () => {
       'FOUR_CARDINAL',
       0,
       ANATOMY,
+      null,
     );
 
     // Last because grid position is the only thing identifying a component: interleaving would
@@ -219,6 +234,7 @@ describe('what a name says', () => {
       'FOUR_CARDINAL',
       1,
       ANATOMY,
+      null,
     );
 
     expect(slots.some((slot) => slot.startsWith('tail'))).toBe(false);
@@ -238,6 +254,7 @@ describe('what a name says', () => {
         { name: '尻尾', count: 1 },
         { name: '???', count: 1 },
       ],
+      null,
     );
 
     expect(slots.slice(-2)).toStrictEqual(['component-38', 'component-39']);
@@ -259,6 +276,7 @@ describe('what a name says', () => {
         { name: 'Tail', count: 1 },
         { name: 'Tail 2', count: 1 },
       ],
+      null,
     );
 
     expect(slots.slice(-3)).toStrictEqual(['tail', 'tail-2', 'tail-2-2']);
@@ -275,6 +293,7 @@ describe('what a name says', () => {
         { name: 'Tail', count: 1 },
         { name: 'tail', count: 1 },
       ],
+      null,
     );
 
     expect(slots.slice(-2)).toStrictEqual(['tail', 'tail-2']);

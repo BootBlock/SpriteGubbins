@@ -12,6 +12,15 @@ interface FilePickerFieldProps {
    */
   readonly tooltip: string;
   readonly acceptFile: (file: File | null | undefined) => void;
+  /**
+   * What the chooser offers, as the `accept` attribute spells it.
+   *
+   * Required rather than defaulted to images: the third caller reads a JSON document rather than a
+   * picture, and a default would have offered it every PNG on the machine and nothing it can read.
+   * A picker that filters for the wrong kind of file is a control that refuses what the user just
+   * chose, after they chose it.
+   */
+  readonly accept: string;
   /** Which tone the label takes, so a picker can sit in a panel or in a form row. */
   readonly tone?: 'muted' | 'faint';
 }
@@ -30,7 +39,13 @@ interface FilePickerFieldProps {
  * file fires no `change` event at all, so a sheet read against the wrong background key could never
  * be retried without picking something else first.
  */
-export function FilePickerField({ label, tooltip, acceptFile, tone = 'muted' }: FilePickerFieldProps) {
+export function FilePickerField({
+  label,
+  tooltip,
+  acceptFile,
+  accept,
+  tone = 'muted',
+}: FilePickerFieldProps) {
   const inputId = useId();
 
   return (
@@ -47,7 +62,7 @@ export function FilePickerField({ label, tooltip, acceptFile, tone = 'muted' }: 
         <input
           id={inputId}
           type="file"
-          accept="image/*"
+          accept={accept}
           onChange={(event) => {
             const input = event.currentTarget;
             acceptFile(input.files?.item(0));

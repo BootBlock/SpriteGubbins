@@ -1,5 +1,6 @@
 import type { RenderStyle } from '../../types/rendering.ts';
 import type { ResolutionProfile, StatedTargetSize, SurfaceDetail } from '../../types/output.ts';
+import type { RigContract } from '../../types/rigContract.ts';
 
 /**
  * How the sheet is drawn, in the prose the prompt carries.
@@ -305,13 +306,40 @@ const ASSEMBLED_MIN_FEATURE = CUSTOM_MIN_FEATURE[0].size;
  * the generator resolves by discarding one half of it — silently, and in whichever direction it
  * likes.
  */
-function minFeatureFigure(profile: ResolutionProfile, stated: StatedTargetSize | null): string {
+function minFeatureFigure(
+  profile: ResolutionProfile,
+  stated: StatedTargetSize | null,
+  rig: RigContract | null,
+): string {
+  // **A loaded rig outranks the profile**, which is the one case where it should. Every other
+  // branch here is reasoning from a size somebody typed, and three of the four profiles answer
+  // without one at all — but a contract states the real size of every real piece, so the rung can
+  // be keyed off the smallest of them rather than off the assembly, a stock figure, or the
+  // permissive floor {@link ASSEMBLED_MIN_FEATURE} takes when the quantity is unavailable. Left to
+  // the profile, a `HIGH_RESOLUTION` rig sheet was told `3 × 3` against an 8 × 22 px arm — a floor
+  // covering more than a third of the piece's width, which is the contradiction the rungs exist to
+  // avoid.
+  if (rig !== null) return rungFor(smallestPieceEdge(rig));
   if (profile !== 'CUSTOM') return PROFILE_MIN_FEATURE[profile];
   if (stated === null) return UNSTATED_MIN_FEATURE;
   if (stated.quantity === 'ASSEMBLED') return ASSEMBLED_MIN_FEATURE;
 
-  const edge = Math.min(stated.size.width, stated.size.height);
+  return rungFor(Math.min(stated.size.width, stated.size.height));
+}
+
+/** The floor for a component whose smaller edge is [param edge], off the one rung table. */
+function rungFor(edge: number): string {
   return CUSTOM_MIN_FEATURE.find((rung) => edge <= rung.upTo)?.size ?? LARGEST_MIN_FEATURE;
+}
+
+/**
+ * The smaller edge of the smallest piece the rig declares.
+ *
+ * The smallest rather than the average or the largest: a floor is a claim about what the *finest*
+ * piece may carry, and a figure derived from a torso forbids detail a hand legitimately needs.
+ */
+function smallestPieceEdge(rig: RigContract): number {
+  return Math.min(...rig.slots.map((slot) => Math.min(slot.piece_size.width, slot.piece_size.height)));
 }
 
 /**
@@ -341,6 +369,7 @@ export function minFeatureSize(
   profile: ResolutionProfile,
   stated: StatedTargetSize | null,
   hasNativeGrid: boolean,
+  rig: RigContract | null,
 ): string {
-  return `${minFeatureFigure(profile, stated)} ${hasNativeGrid ? 'native' : 'delivered'} pixels`;
+  return `${minFeatureFigure(profile, stated, rig)} ${hasNativeGrid ? 'native' : 'delivered'} pixels`;
 }

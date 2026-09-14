@@ -114,6 +114,7 @@ export function sheetIdentity(
       current.output.directions,
       current.output.sheetIndex,
       additional,
+      current.output.rigContract,
     ),
     facing: distinguishingFacing(sheets, current),
     sheet: {

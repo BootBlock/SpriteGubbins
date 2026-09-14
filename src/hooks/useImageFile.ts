@@ -10,10 +10,10 @@ import { useShowToast } from './useShowToast.ts';
  * a canvas and raises toasts — and `src/utils/` stays a pure function of its arguments so the
  * quantiser's maths and the identity palette can be tested without a DOM.
  *
- * **Nothing is uploaded.** The file is decoded in the tab and the pixels never leave it. Of the two
- * things this app reads from disk — the other being the preset JSON `usePresetStore` imports — this
- * is the one the no-network rule matters most for: an image the user is about to ship is exactly the
- * payload that must never go anywhere.
+ * **Nothing is uploaded.** The file is decoded in the tab and the pixels never leave it. Of the
+ * things this app reads from disk — the others being the preset JSON `usePresetStore` imports and
+ * the rig contract `RigContractField` loads — this is the one the no-network rule matters most for:
+ * an image the user is about to ship is exactly the payload that must never go anywhere.
  *
  * Paste and the page-wide drop are deliberately **not** here — they are `useImagePaste` and
  * `useImageDrop`, which a caller adds where an image arriving anywhere is unambiguously meant for

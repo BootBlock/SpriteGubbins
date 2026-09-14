@@ -27,6 +27,7 @@ import type { ImageOutputConfig, OutputConfig, TargetModelId } from '../types/ou
 import type { Direction, DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import { parseRigContract } from '../utils/parseRigContract.ts';
 import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './readers.ts';
 
 /**
@@ -183,6 +184,11 @@ export function parseImageConfig(value: unknown): ImageOutputConfig {
     spriteTargetSize: typeof source['spriteTargetSize'] === 'string' ? source['spriteTargetSize'] : '',
 
     rigMode: pick(source, 'rigMode', DEFAULT_OUTPUT_CONFIG.rigMode, RIG_MODES),
+    // Through the same reader the file import goes through, and refused on the same terms. A row
+    // written before this field existed simply has none, which reads as no contract — the same
+    // answer as a row holding one this app cannot vouch for, and the only answer that adds nothing
+    // to the prompt.
+    rigContract: parseRigContract(source['rigContract']).contract,
     jointCapStyle: pick(source, 'jointCapStyle', DEFAULT_OUTPUT_CONFIG.jointCapStyle, JOINT_CAP_STYLES),
     overlapMargin: pick(source, 'overlapMargin', DEFAULT_OUTPUT_CONFIG.overlapMargin, OVERLAP_MARGINS),
     sockets: typeof source['sockets'] === 'string' ? source['sockets'] : '',

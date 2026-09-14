@@ -48,8 +48,8 @@ interface ControlTooltipProps {
  * ⓘ, because that is what the affordance has marked since the app was built, because a value is
  * worth explaining before the reader knows to ask, and because an ⓘ is the only route a finger has.
  * Anything that **does** something takes this: the chrome's actions, the view switcher, the prompt
- * toolbar, the preset library, the history drawer, the quantiser's buttons. There are eighty-one
- * of those, and a second glyph beside each would be eighty-one more targets in rows that are
+ * toolbar, the preset library, the history drawer, the quantiser's buttons. There are eighty-two
+ * of those, and a second glyph beside each would be eighty-two more targets in rows that are
  * already full — while hovering a control is what a tooltip has always meant.
  * `tests/control-tooltip-call-site-counts.test.ts` re-counts that figure from the components, and
  * the one below it, because both had drifted a long way without moving — fifty and seven were

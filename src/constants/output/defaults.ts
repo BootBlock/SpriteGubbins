@@ -65,6 +65,10 @@ export const DEFAULT_IMAGE_CONFIG: ImageOutputConfig = {
   spriteTargetSize: '',
 
   rigMode: 'POSE_LIBRARY',
+  // No engine's rig until a reader loads one. Nothing this app ships could stand in for it: a
+  // default rig would be a second copy of one project's geometry, which is the thing the file
+  // exists to end.
+  rigContract: null,
   jointCapStyle: 'ROUNDED',
   overlapMargin: 'HALF_CAP',
   sockets: '',

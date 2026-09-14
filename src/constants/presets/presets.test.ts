@@ -226,6 +226,7 @@ describe('every shipped preset', () => {
             preset.output.directions,
             sheetIndex,
             anatomy,
+            preset.output.rigContract,
           ),
           `${preset.name} exceeds the practical ceiling on sheet ${String(sheetIndex + 1)} of ${String(sheets)}`,
         ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
@@ -312,7 +313,7 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain('## 5. CUT-OUT RIG REQUIREMENTS');
     expect(prompt).toContain('head, chest, back, hand_left, hand_right');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('CHARACTER', characterRig.subject, 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0, []))} components`,
+      `Exactly ${String(componentCountFor('CHARACTER', characterRig.subject, 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0, [], null))} components`,
     );
   });
 
@@ -337,7 +338,7 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain('48 × 48 px per tile');
     expect(prompt).toContain('Seamless tiling');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('BUILDING', tileset.subject, 'TILESET_MODULAR', 'SINGLE_FRONT', 0, []))} components`,
+      `Exactly ${String(componentCountFor('BUILDING', tileset.subject, 'TILESET_MODULAR', 'SINGLE_FRONT', 0, [], null))} components`,
     );
     // Not articulated, so neither rig section appears — named by their headings rather than by the
     // number, which the assembly capability takes once the rig section is dropped.

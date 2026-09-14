@@ -784,8 +784,19 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * download cards rewritten to describe pieces where they described sprites.
  *
  * 2396 leaves **0.12 KiB**.
+ *
+ * **Raised from 2396 by the rig contract import.** Measured against `main` at `37a666c`, rebuilt
+ * from the same lockfile — **2390.59 KiB across 49 entries** on the build's summary line — this
+ * build reports **2399.81 across 49** on the same line, a delta of **9.22** that crossed a ceiling
+ * the base sat 5.41 under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was
+ * renamed. The delta is the reader for a file another program writes: the parser and its refusal
+ * sentences, the type, the sheet plan built from a contract, section 5's per-piece geometry, the
+ * sizing resolution and the studio control — all of it reached by the entry chunk, because the
+ * studio is the first view and the prompt compiles on it.
+ *
+ * 2405 leaves **5.19 KiB**, which is the headroom the figure above was set with.
  */
-export const PRECACHE_CEILING_KIB = 2396;
+export const PRECACHE_CEILING_KIB = 2405;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

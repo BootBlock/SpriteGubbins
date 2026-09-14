@@ -8,6 +8,8 @@ import type { SheetSubject, SubjectCategory, SubjectDefinition, SubjectFieldKey 
 import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
 import { facingApplies, primaryFacing } from './sheetDirections.ts';
+import { sheetRigContract } from './sheetRigContract.ts';
+import { sheetTargetSize } from './sheetSizing.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**
@@ -143,14 +145,30 @@ function colourDigest(output: OutputConfig, pass: ValidationPass | null): string
  * pass is the silhouette. `RenderStyleFields` withdraws exactly those controls on the same two
  * lookups, so the header reports the controls the panel is showing.
  */
-export function renderStyleDigest(output: OutputConfig): string {
+export function renderStyleDigest(
+  category: SubjectCategory,
+  subject: SheetSubject,
+  output: OutputConfig,
+): string {
   const pass = validationPassFor(output.renderStyle);
+  // The size the sheet actually states, which is the rig's frame wherever a contract applies — the
+  // same answer `promptFacts` reaches, through the same module. A header naming the field the
+  // contract supersedes would put a value in front of the reader that changes nothing, which is
+  // what this module refuses to do for a machine's colours and a validation pass already.
+  const plan = sheetPlanFor(
+    category,
+    subject,
+    resolveMode(category, subject, output.directionalMode),
+    output.directions,
+    output.sheetIndex,
+  );
+  const stated = sheetTargetSize(category, subject, output, plan, sheetRigContract(plan, output));
 
   return join([
     output.renderStyle,
     pass === null ? output.surfaceDetail : '',
     output.resolutionProfile,
-    output.spriteTargetSize,
+    stated.text,
     colourDigest(output, pass),
     pass === null ? output.outlineStyle : '',
     pass?.withholdsLight === true ? '' : output.lightingModel,
@@ -219,7 +237,11 @@ export function riggingDigest(
     output.rigMode,
   );
   if (rigMode !== 'CUTOUT_RIG') return rigMode;
-  return join([rigMode, output.jointCapStyle, output.overlapMargin, output.sockets]);
+  // The loaded rig names itself here, because folding this group would otherwise hide the setting
+  // that decides section 4's whole inventory, section 5's geometry and section 2's stated size —
+  // which is exactly what this module's first rule forbids a digest to let happen.
+  const rig = output.rigContract === null ? '' : output.rigContract.skeleton_name || 'rig contract';
+  return join([rigMode, rig, output.jointCapStyle, output.overlapMargin, output.sockets]);
 }
 
 /**

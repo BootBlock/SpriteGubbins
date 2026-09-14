@@ -66,6 +66,7 @@ export function QuantiseTab() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
   const directions = useOutputStore((state) => state.output.directions);
+  const rigContract = useOutputStore((state) => state.output.rigContract);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   // The other subject fields the count and the target size read — see `componentSet.ts`.
@@ -149,8 +150,9 @@ export function QuantiseTab() {
   // there, the grid candidate seats fifteen cells of a whole character rather than of a torso, and
   // the Sprites panel compares the largest piece against a size no piece on the sheet has — so its
   // *within the target* carries whatever slack separates a torso from a whole body, which is a
-  // number nothing here knows. `null` withdraws both, and the app holds no per-piece size to put in
-  // their place.
+  // number nothing here knows. `null` withdraws both, rather than putting a figure in their place:
+  // a loaded rig contract does state a size per piece, but the pieces differ, and one number is
+  // exactly what this pair of readers cannot be given honestly.
   const target = useMemo(
     () => componentTargetSize(category, subject, directionalMode, directions, sheetIndex, spriteTargetSize),
     [category, subject, directionalMode, directions, sheetIndex, spriteTargetSize],
@@ -167,8 +169,9 @@ export function QuantiseTab() {
         directions,
         sheetIndex,
         parseAdditionalAnatomy(additionalAnatomy),
+        rigContract,
       ),
-    [category, subject, directionalMode, directions, sheetIndex, additionalAnatomy],
+    [category, subject, directionalMode, directions, sheetIndex, additionalAnatomy, rigContract],
   );
   const suggested = useMemo(
     () => (source === null || target === null ? null : targetSizeGrid(source.image, target, expected)),

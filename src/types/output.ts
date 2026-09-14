@@ -3,6 +3,7 @@ import type { HardwareProfileId } from './hardware.ts';
 import type { PaletteId } from './palette.ts';
 import type { StyleReferenceId } from './styleReference.ts';
 import type { BackgroundKey, Direction, DirectionSet, Projection, RenderStyle } from './rendering.ts';
+import type { RigContract } from './rigContract.ts';
 import type { JointCapStyle, OverlapMargin, RigMode } from './rigging.ts';
 
 /**
@@ -431,6 +432,26 @@ export interface ImageOutputConfig {
   readonly spriteTargetSize: string;
 
   readonly rigMode: RigMode;
+  /**
+   * The engine's own rig, loaded from a file it exported, or `null`.
+   *
+   * **The only field here the reader does not compose** — every other value is one this app offers
+   * and they choose between, and this is a document another program wrote. It is here rather than in
+   * a store of its own because the compiled prompt has to be reproducible: a history row keeps its
+   * `output_json` and restores from it, and a preset carries an `ImageOutputConfig`, so a contract
+   * held anywhere else would let a restored row recompile to a different prompt from the one it
+   * recorded.
+   *
+   * **Inert except on a cut-out rig sheet.** Where it applies it supersedes what a reader typed —
+   * section 4 lists the rig's pieces under the engine's own names, section 5 states each piece's
+   * size and joint, and section 2's assembled size and the native grid come off
+   * `frame_size` — because a number the engine declares beats a number somebody transcribed.
+   *
+   * On any other sheet of the same deliverable it is carried and says nothing, which the control
+   * states rather than leaving the reader to infer: a character's core sheet draws whole figures,
+   * and a rig's piece sizes are not what it is drawing.
+   */
+  readonly rigContract: RigContract | null;
   readonly jointCapStyle: JointCapStyle;
   readonly overlapMargin: OverlapMargin;
   /** Free list, e.g. `head, chest, back, hand_left, hand_right`. Empty means no sockets. */

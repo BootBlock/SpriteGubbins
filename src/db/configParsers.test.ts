@@ -227,3 +227,46 @@ describe('parseOutputConfig — the machine and its palette', () => {
     expect(parsed.palette).toBe('GAME_BOY_DMG');
   });
 });
+
+describe('parseOutputConfig — the engine’s rig contract', () => {
+  /** A contract as the studio would have stored it: this app's own shape, written back out. */
+  const STORED = {
+    format: 'unsung-saviour-rig-contract',
+    version: 1,
+    skeleton_name: 'Humanoid',
+    frame_size: { width: 48, height: 96 },
+    slots: [
+      {
+        slot_id: 'pelvis',
+        pack_piece_name: 'pelvis',
+        parent_slot: '',
+        piece_size: { width: 20, height: 12 },
+        piece_pivot: { x: 10, y: 6 },
+        joint_edge: 'bottom',
+        rest_position_in_frame: { x: 0, y: -48 },
+      },
+    ],
+  };
+
+  it('reads a stored contract back as the contract that went in', () => {
+    // The round trip a restored history row depends on: the compiled prompt is a function of this
+    // configuration, so a contract that did not survive storage would recompile a prompt the row
+    // itself says it produced.
+    const parsed = parseOutputConfig({ rigContract: JSON.parse(JSON.stringify(STORED)) });
+
+    expect(parsed.rigContract).toEqual(STORED);
+  });
+
+  it('reads a row written before the field existed as no contract', () => {
+    expect(parseOutputConfig({}).rigContract).toBeNull();
+  });
+
+  it('refuses a stored contract on exactly the terms the file import refuses one', () => {
+    // The reason there is one reader: a second, laxer path here would let a contract the import
+    // turned away arrive from the database instead, which is the quiet version of not checking.
+    const broken = { ...STORED, slots: [{ ...STORED.slots[0], pack_piece_name: '' }] };
+
+    expect(parseOutputConfig({ rigContract: broken }).rigContract).toBeNull();
+    expect(parseOutputConfig({ rigContract: 'not an object' }).rigContract).toBeNull();
+  });
+});

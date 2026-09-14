@@ -47,6 +47,7 @@ export function ImageDropZone({ acceptFile, currentName, onClear }: ImageDropZon
           label="Choose an image"
           tooltip={QUANTISE_ACTION_TOOLTIPS.chooseImage}
           acceptFile={acceptFile}
+          accept="image/*"
           tone="faint"
         />
 
