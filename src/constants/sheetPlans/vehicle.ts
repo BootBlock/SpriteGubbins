@@ -17,9 +17,9 @@ import type { VehicleDivision } from './vehicleDivision.ts';
  * on the template's behalf for every walker, skiff and gunship that has none.
  *
  * **These are the sheets of a vehicle with a near side and a far side**, and that is a claim about the
- * base rather than about the category (issue #288). A wheeled chassis, a tracked one, a half-track and
- * a walker's legs each divide left from right, so one drive unit per side is what they come apart
- * into. The five bases that divide some other way declare their own division in
+ * base rather than about the category (issue #288). A rotating turret, a wheeled chassis, a tracked
+ * one, a half-track and a walker's legs each divide left from right, so one drive unit per side is
+ * what they come apart into. The five bases that divide some other way declare their own division in
  * `vehicleDivisions.ts`, and `Single Rigid Hull` divides into nothing at all —
  * `vehicleRigidHull.ts` draws it whole.
  *

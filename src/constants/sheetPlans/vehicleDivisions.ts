@@ -79,9 +79,10 @@ const ROTOR_BORNE: VehicleDivision = {
  * A shuttle, an interceptor, a repulsor lifter under thrust: a main engine and a manoeuvring thruster,
  * both of which are shut down or firing.
  *
- * **Its mount takes two positions where every other division's takes three**, and that is the honest
- * count rather than a saving: an aircraft's hardpoint is a pylon that extends or a bay that opens, and
- * neither traverses. A third position would be the entry inventing a motion the subject has not got.
+ * **Its mount takes two positions where a turret takes three**, and that is the honest count rather
+ * than a saving: an aircraft's hardpoint is a pylon that extends or a bay that opens, and neither
+ * traverses. A third position would be the entry inventing a motion the subject has not got.
+ * {@link TWO_WHEEL}'s rack is the other mount that takes two, for the same reason.
  */
 const THRUSTER_BORNE: VehicleDivision = {
   hull: { label: 'fuselage', name: 'Fuselage', noun: 'fuselage', plural: 'Fuselages' },
