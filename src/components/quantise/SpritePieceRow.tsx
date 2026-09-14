@@ -89,8 +89,16 @@ export function SpritePieceRow({
       </div>
 
       {/* The `max-w-md` wrapper every select in this column sits in, so one does not stretch the
-          width of a stacked panel — see `tests/quantise-column-width.test.ts`, which measures 448px
-          against the label budget and has six pixels of headroom. */}
+          width of a stacked panel — `tests/quantise-column-width.test.ts` measures that 448px cap
+          against the 442px label budget.
+
+          **That measurement does not reach this select, and no measurement does.** Every other
+          budgeted select sits directly in its panel; this one sits inside a row that spends 22px of
+          its own on a border and `p-2.5` first, which the column derivation cannot see. So the
+          control has ~420px where the budget asks 442. Nothing truncates today — the longest option
+          this control offers is an inventory slug or `Join to sprite 15` — and the row's chrome is
+          what makes fifteen of these readable as separate things, so it stays. Stated here rather
+          than left as a clean-looking citation of a guarantee that does not cover it. */}
       <div className="max-w-md">
         <SelectField
           label={`Sprite ${String(ordinal)}`}

@@ -150,14 +150,19 @@ describe('cellPivot', () => {
   });
 });
 
+/** One name per box, as `resolveAssignment` hands them to the writer. */
+const NAMES = ['arm-left', 'arm-right', 'torso'];
+
 describe('oversizeReason', () => {
   it('names the first offender, its size and the cell it will not fit', () => {
     const tight: SpriteCell = { ...CELL, width: 6 };
-    const said = oversizeReason(BOXES, tight, [0]);
+    const said = oversizeReason(BOXES, NAMES, tight, [0]);
 
-    // Counting from one, as the manifest's own numbering does, so the piece can be found in the
-    // preview's Sprites mode.
-    expect(said).toContain('Sprite 1');
+    // **Named, not numbered.** A reader who has left a sprite out or joined two has made the piece's
+    // position differ from the number on the preview's chip, so the position would send them to
+    // artwork that fits the cell perfectly. The name is what the chip itself shows.
+    expect(said).toContain('arm-left');
+    expect(said).not.toContain('Sprite 1');
     expect(said).toContain('8 × 6 drawn pixels');
     expect(said).toContain('6 × 16 cell');
   });
@@ -165,10 +170,12 @@ describe('oversizeReason', () => {
   it('counts the rest rather than listing them', () => {
     // A sheet drawn one step too coarse puts every sprite over at once, and a list of fifteen says
     // no more than the first does.
-    expect(oversizeReason(BOXES, { ...CELL, width: 6 }, [0, 2])).toContain('1 more does not fit either');
+    expect(oversizeReason(BOXES, NAMES, { ...CELL, width: 6 }, [0, 2])).toContain(
+      '1 more does not fit either',
+    );
   });
 
   it('says nothing where nothing was over', () => {
-    expect(oversizeReason(BOXES, CELL, [])).toBe('');
+    expect(oversizeReason(BOXES, NAMES, CELL, [])).toBe('');
   });
 });

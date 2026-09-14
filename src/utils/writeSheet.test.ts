@@ -264,8 +264,11 @@ describe('writeSheet', () => {
       // A sprite larger than the cell is a sheet that came back at a coarser scale than the prompt
       // asked for, and resampling it would hand a rig a piece whose pixels no longer line up with
       // any of its neighbours.
+      // Named rather than numbered: a reader who left a sprite out or joined two has made the
+      // piece's position differ from the number on the preview's chip, so a position would send them
+      // to artwork that fits the cell perfectly.
       await expect(writeSheet(job({ format: 'SPRITE_PACK', cell: { ...CELL, width: 1 } }))).rejects.toThrow(
-        /Sprite 1 is 2 × 2 drawn pixels, larger than the 1 × 4 cell/,
+        /heads-south is 2 × 2 drawn pixels, larger than the 1 × 4 cell/,
       );
     });
 

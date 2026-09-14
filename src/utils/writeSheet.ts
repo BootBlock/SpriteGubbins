@@ -59,7 +59,16 @@ export interface SheetWriteJob {
    * and the Aseprite document cutting one sheet two ways.
    */
   readonly boxes: readonly SpriteBox[];
-  /** The duplicate reading over those boxes, which the manifest turns into links between sprites. */
+  /**
+   * The duplicate reading, in the **segmentation's** own boxes rather than in the pieces above.
+   *
+   * The two lists no longer describe the same things, and that is deliberate: which sprites are one
+   * drawing twice is a reading of the artwork, taken before a reader said what a piece is. A manifest
+   * links a piece to another only where a piece's box is still one the reading holds, so a joined
+   * piece — whose box is a union of its members' — carries no link. Dropping it is the honest answer
+   * for the reason `duplicateLinks` gives about a snap: guessing at the nearest box would put a
+   * reference to the wrong artwork into a file a packer acts on.
+   */
   readonly duplicates: readonly SpriteDuplicateGroup[];
   /** The name for each box above, in the same order — one per box, already decided. */
   readonly names: readonly string[];
@@ -98,7 +107,7 @@ export async function writeSheet(job: SheetWriteJob): Promise<WrittenSheet> {
   // magnification multiplies both, so it can neither create nor cure an overhang.
   if (cell !== null) {
     const over = oversizedSprites(boxes, cell);
-    if (over.length > 0) throw new Error(oversizeReason(boxes, cell, over));
+    if (over.length > 0) throw new Error(oversizeReason(boxes, job.names, cell, over));
   }
 
   if (format === 'SPRITE_PACK') {

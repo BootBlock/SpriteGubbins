@@ -74,7 +74,7 @@ export interface ManifestInput {
 /** This manifest shape's version — see {@link SpriteManifest.version}, which is not a compatibility surface. */
 export const MANIFEST_VERSION = 3;
 
-/** A box as its own key, so a duplicate group's member can be found in the segmentation's list. */
+/** A box as its own key, so a duplicate group's member can be looked for among the written pieces. */
 function boxKey(box: SpriteBox): string {
   return `${String(box.left)},${String(box.top)},${String(box.width)},${String(box.height)}`;
 }
@@ -84,9 +84,15 @@ function boxKey(box: SpriteBox): string {
  *
  * **Matched by position rather than by identity**, because a duplicate group carries its own boxes:
  * the reading describes the sheet as it stood before any snap, and a snap rewrites pixels, which can
- * split or join a region. A member whose box the final segmentation no longer holds simply gets no
+ * split or join a region. A member whose box the written pieces no longer hold simply gets no
  * link — dropping it is the honest answer, where guessing at the nearest box would put a reference
  * to the wrong artwork into a file a packer acts on.
+ *
+ * **A joined piece therefore carries no link**, and that is the same answer rather than a new one.
+ * The reading is of the sheet's *sprites*, taken before a reader said what a piece is; a piece made
+ * of two of them has a box that is the union of theirs, which no member's box equals. Saying "this
+ * piece repeats that one" of a drawing the reading never looked at would be a claim nothing here can
+ * support.
  */
 function duplicateLinks(
   boxes: readonly SpriteBox[],

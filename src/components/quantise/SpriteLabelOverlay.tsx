@@ -99,13 +99,16 @@ export function SpriteLabelOverlay({ assignment, magnification }: SpriteLabelOve
                   pressedAt.current = null;
                   dragged.current = from !== null && travelled(from, event);
                 }}
-                onClick={() => {
-                  // A keyboard press reaches here having set nothing, and `dragged` is false from
-                  // the last press that was judged — which is why these are buttons rather than
-                  // pointer targets.
+                onClick={(event) => {
                   const wasDrag = dragged.current;
                   dragged.current = false;
-                  if (wasDrag) return;
+                  // **A keyboard activation is never a drag, whatever a pointer left behind.**
+                  // `detail` is the click count, and it is 0 for a click the keyboard synthesised —
+                  // so Enter and Space are judged on their own rather than on the last gesture's
+                  // travel. Without that test a touch drag that lifts off the chip, which fires a
+                  // `pointerup` here and no `click`, would leave the flag set and swallow the next
+                  // key press on any chip in the layer.
+                  if (event.detail !== 0 && wasDrag) return;
                   select(isSelected ? null : sprite.pin);
                 }}
                 className={`max-w-32 truncate rounded px-1 py-px font-mono text-2xs leading-tight transition-colors duration-390 ${chipTone(piece === null, isSelected)}`}

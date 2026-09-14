@@ -766,15 +766,15 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * — one control card explaining four exclusive answers, six paragraphs naming what stands between a
  * sheet and its names, and two action cards. Measured against `main` at `2294406`, rebuilt from the
  * same lockfile — **2382.06 KiB across 64 entries** on the build's summary line, the figure the
- * paragraph above records — this build reports **2395.85 across 64** on the same line, a delta of
- * 13.79 that crossed a ceiling the base sat 0.94 under. No file was added to or removed from
+ * paragraph above records — this build reports **2395.88 across 64** on the same line, a delta of
+ * 13.82 that crossed a ceiling the base sat 0.94 under. No file was added to or removed from
  * `PRECACHE_SHAPES`, and no chunk was renamed. The delta lands in the `QuantiseTab` chunk, which is
  * the only one that grew a block between the two `dist/assets` listings. Roughly a quarter of it is
  * the guidance rather than the logic: one control card explaining four exclusive answers, six
  * paragraphs naming what stands between a sheet and its names, two action cards, and the four
  * download cards rewritten to describe pieces where they described sprites.
  *
- * 2396 leaves **0.15 KiB**.
+ * 2396 leaves **0.12 KiB**.
  */
 export const PRECACHE_CEILING_KIB = 2396;
 

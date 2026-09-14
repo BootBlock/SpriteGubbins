@@ -58,7 +58,13 @@ export interface SheetDownload {
    * the sentence this hook's own failure toast then carries.
    */
   readonly cell: SpriteCell | null;
-  /** The duplicate reading over those sprites, which a manifest turns into links between them. */
+  /**
+   * The duplicate reading, in the segmentation's own boxes rather than in the pieces above.
+   *
+   * Sent as the quantiser took it, because which sprites are one drawing twice is a reading of the
+   * artwork rather than of what a reader made of it. See `SheetWriteJob.duplicates`, which says what
+   * a manifest can and cannot link once the two lists describe different things.
+   */
   readonly duplicates: readonly SpriteDuplicateGroup[];
   /** The name for each piece above, in the same order — one per piece, already decided. */
   readonly names: readonly string[];

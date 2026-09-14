@@ -135,12 +135,19 @@ export function cellPivot(box: SpriteBox, anchor: SpriteCell['anchor']): { x: nu
  * Why a pack could not be cut into this cell, as the sentence the refusal is reported with.
  *
  * Names the first offender and counts the rest, because a sheet drawn one step too coarse puts every
- * sprite over at once and a list of fifteen would say no more than the first does. The ordinal is
- * the manifest's own numbering, counting from one, so a reader can find the piece in the preview's
- * Sprites mode.
+ * piece over at once and a list of fifteen would say no more than the first does.
+ *
+ * **The offender is named, not numbered**, and that is a correction rather than a flourish. The
+ * sentence used to carry the piece's position, described as the number a reader could find in the
+ * preview's Sprites mode — which held while the pieces *were* the sprites. They came apart when a
+ * reader gained the ability to leave one out or join two: a sheet with sprite 2 left out numbers its
+ * fourth piece 4 while the chip over that artwork reads 5, so the sentence sent the reader to a
+ * sprite that fits the cell perfectly. The name is what the preview's own chip shows, so it points
+ * at the artwork either way.
  */
 export function oversizeReason(
   boxes: readonly SpriteBox[],
+  names: readonly string[],
   cell: SpriteCell,
   over: readonly number[],
 ): string {
@@ -149,5 +156,8 @@ export function oversizeReason(
   if (first === undefined || box === undefined) return '';
   const rest = over.length - 1;
   const others = rest === 0 ? '' : ` and ${String(rest)} more ${rest === 1 ? 'does' : 'do'} not fit either`;
-  return `Sprite ${String(first + 1)} is ${String(box.width)} × ${String(box.height)} drawn pixels, larger than the ${String(cell.width)} × ${String(cell.height)} cell${others} — raise the cell, or re-generate the sheet at the scale the prompt asked for`;
+  // The positional name a sheet that could not be named falls back to is itself `sprite-04`, so the
+  // clause reads the same way whether the sheet is named or numbered.
+  const named = names[first] ?? `piece ${String(first + 1)}`;
+  return `${named} is ${String(box.width)} × ${String(box.height)} drawn pixels, larger than the ${String(cell.width)} × ${String(cell.height)} cell${others} — raise the cell, or re-generate the sheet at the scale the prompt asked for`;
 }

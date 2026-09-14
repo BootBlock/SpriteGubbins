@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { SelectField } from './SelectField.tsx';
 
 /**
- * The labelled dropdown thirty-one controls in the app are made of.
+ * The labelled dropdown thirty-two controls in the app are made of.
  *
  * Every value it holds is an identifier the prompt compiler reads, so the change handler resolves the
  * chosen option back to its own value rather than casting the DOM's string — a numeric choice handed

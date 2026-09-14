@@ -124,4 +124,22 @@ describe('SpriteLabelOverlay', () => {
 
     expect(useSpriteAssignmentStore.getState().selected).toBeNull();
   });
+
+  it('judges a keyboard press on its own, whatever a pointer gesture left behind', async () => {
+    // A touch drag that lifts off the chip fires a `pointerup` here and no `click`, so the "that was
+    // a drag" flag survives the gesture. Without the keyboard's own test it would then swallow the
+    // next Enter on any chip in the layer.
+    show();
+    const chip = screen.getByRole('button', { name: '1 · arm-left' });
+    await userEvent.pointer([
+      { keys: '[TouchA>]', target: chip, coords: { clientX: 10, clientY: 10 } },
+      { target: chip, coords: { clientX: 80, clientY: 60 } },
+      { keys: '[/TouchA]', target: chip, coords: { clientX: 80, clientY: 60 } },
+    ]);
+
+    screen.getByRole('button', { name: '2 · arm-right' }).focus();
+    await userEvent.keyboard('{Enter}');
+
+    expect(useSpriteAssignmentStore.getState().selected).toStrictEqual({ x: 12, y: 2 });
+  });
 });
