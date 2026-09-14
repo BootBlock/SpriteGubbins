@@ -153,6 +153,23 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * reserve, and together they still leave `Side-On Rail Gun Car` inside the Qwen share
  * `presetCoverage.test.ts` allows it.
  *
+ * **A transparent field has its own failure, and section 0 says what it is.** The reservation above
+ * protects a colour the keying pass will remove; the `[IF:KEY_COLOUR!=yes]` clause beside it protects
+ * the *absence* of one, because "fully transparent alpha" is a phrase a generator can satisfy by
+ * painting a picture of transparency. OpenAI name that outcome in their GPT Image 2.5 prompting
+ * guide — "A drawn checkerboard is not transparency" — and give the check the self-audit's own
+ * clause restates: "does the file contain an alpha channel rather than a painted background?". A
+ * drawn field defeats the Quantise tab exactly as a component in the key colour does, so the two
+ * clauses are the same guard on the two states the field can be in, and one of them is always
+ * emitted. https://developers.openai.com/api/docs/guides/image-prompting
+ *
+ * **Three places said "the key colour" where the field may have none, and two of them were reached
+ * by adding that clause.** Section 0's palette item and section 2's `describePalette` rule both
+ * excepted the background from the pinned palette by naming a colour it stays — which read loosely
+ * on a transparent sheet and read as a contradiction once the clause above banned a painted field in
+ * the same section. Both now branch on the same answer, so a sheet is never told in one breath to
+ * deliver alpha and to keep a colour. The third is the reservation itself, which was already gated.
+ *
  * **Section 3 names this subject's one-sided features, and section 9 stopped asking the model to
  * choose one.** The old bullet read "pick one feature the subject carries on one side and not the
  * other — its **chirality witness** — and trace that one feature through every view", and measured
@@ -302,6 +319,10 @@ Satisfy this section before any aesthetic consideration.
    That colour belongs to the background alone: no part of any component is drawn in it, or in a
    shade near enough to be taken for it, whatever colour anything below names.
 [/IF]
+[IF:KEY_COLOUR!=yes]
+   Deliver that transparency as the file’s alpha channel. A drawn checkerboard, a grid of grey
+   squares or a flat matte in place of it is a painted background and fails this rule.
+[/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
 [/IF]
@@ -329,8 +350,13 @@ Satisfy this section before any aesthetic consideration.
 [/IF]
 [IF:PALETTE]
 [N]. Every colour on every component comes from the palette section [SEC:STYLE] fixes, and no colour outside
-   it appears anywhere on them. The background field is the exception and stays the key colour
-   named above.
+   it appears anywhere on them. The background field is the exception.
+[IF:KEY_COLOUR]
+   It stays the key colour named above.
+[/IF]
+[IF:KEY_COLOUR!=yes]
+   It stays fully transparent, and takes no colour from the palette.
+[/IF]
 [/IF]
 [IF:SERIES]
 
@@ -964,6 +990,10 @@ Before delivering, verify:
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
 [IF:KEY_COLOUR]
 [N]. No part of any component is in the key colour, or in a shade near enough to be taken for it.
+[/IF]
+[IF:KEY_COLOUR!=yes]
+[N]. The space between the components is transparent in the file’s alpha channel, not a drawn
+   checkerboard or a painted matte.
 [/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text or labels anywhere.

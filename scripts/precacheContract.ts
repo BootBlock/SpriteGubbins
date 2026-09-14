@@ -62,12 +62,35 @@
  * the three they miss are fixed, small and not what a stray chunk arrives as. Stated as a
  * relationship rather than a pair of counts, because the counts move with every chunk the split
  * produces and the paragraph above already names today's.
+ *
+ * **Sixteen lines left this list in one build, and nothing in this repository moved them.** `vite`
+ * went from 8.1.5 to 8.2.2 in the dependency group merged on 12 September 2026, and the newer
+ * bundler stops cutting sixteen of the split's shared chunks out of the entry chunk: `Badge`,
+ * `about`, `componentTargetSize`, `dialogs`, `isTextEntry`, `models`, `react-dom`, `sheetCanvas`,
+ * `sheetCoverage`, `useClipboard`, `useCopyPrompt`, `useFileDropGuard`, `usePresetStore`,
+ * `useProjectStore`, `useQuantiseStore` and `useSettingsStore` are absent from `dist/` altogether,
+ * and `assets/index-*.js` absorbs them at 326.4 kB against the 222.97 an older note above records.
+ * So what the removals describe is sixteen files a first visit no longer *requests*, not sixteen it
+ * no longer gets. Measured on the base commit with nothing else changed, the build reports **48
+ * entries at 2389.39 KiB**; the commit that prunes this list also adds section 0's transparency
+ * rules and ships at **2389.72**. Both are inside the ceiling, so the ceiling is left where it
+ * stands, on the 6.28 KiB the second figure leaves.
+ *
+ * **The bump landed without this gate run over it, which is the part worth keeping.** `npm run
+ * build` failed on every branch cut after that merge, with sixteen `-` lines and no `+` line —
+ * exactly the shape the paragraph above warns reads like a stray file, arriving sixteen at once
+ * because a bundler minor re-cut the split rather than because anything here was renamed. A
+ * dependency bump changes this contract's subject as surely as a refactor does.
+ *
+ * **Several of the arrival notes above now describe chunks no build emits.** `about`, `dialogs`,
+ * `usePresetStore` and `useSettingsStore` are four of the `guidanceSentences.ts` five, `isTextEntry`
+ * is the note beside them, and `useQuantiseStore` is the identity lock's. They stay as the record of
+ * what each cost on the first visit it arrived on; none of them is a line in the list any more.
  */
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',
   'assets/autoTuneWorker-*.js',
   'assets/AtlasCalculatorContents-*.js',
-  'assets/Badge-*.js',
   'assets/CheckboxField-*.js',
   'assets/PresetCardSpecs-*.js',
   'assets/PresetsTab-*.js',
@@ -83,32 +106,17 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/SpecTab-*.js',
   'assets/StudioTab-*.js',
   'assets/Tooltip-*.js',
-  'assets/about-*.js',
   'assets/componentBudget-*.js',
-  'assets/componentTargetSize-*.js',
   'assets/database-*.js',
-  'assets/dialogs-*.js',
-  'assets/isTextEntry-*.js',
-  'assets/models-*.js',
   'assets/presets-*.js',
   'assets/quantiseDials-*.js',
-  'assets/react-dom-*.js',
   'assets/rolldown-runtime-*.js',
-  'assets/sheetCanvas-*.js',
-  'assets/sheetCoverage-*.js',
   'assets/spriteSegments-*.js',
   'assets/storageFailure-*.js',
-  'assets/useClipboard-*.js',
   'assets/useConfirmInPlace-*.js',
-  'assets/useCopyPrompt-*.js',
   'assets/useDownload-*.js',
-  'assets/useFileDropGuard-*.js',
   'assets/useFileSave-*.js',
-  'assets/usePresetStore-*.js',
-  'assets/useProjectStore-*.js',
-  'assets/useQuantiseStore-*.js',
   'assets/useScrollableRegion-*.js',
-  'assets/useSettingsStore-*.js',
   'assets/useShowToast-*.js',
   'assets/useSubjectStore-*.js',
   'assets/useUIStore-*.js',

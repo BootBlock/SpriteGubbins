@@ -77,8 +77,15 @@ export function describePalette(palette: Palette, key: Rgba | null): string {
  * the reason the caveat exists: a generator that knows the machine would otherwise put them back.
  */
 function rule(palette: Palette, key: Rgba | null): string {
+  // The exception's second half varies on the key for the reason section 0's does: a transparent
+  // field has no colour to hold, so telling the model it "stays the key colour" there asks for a
+  // painted field in the section that has just banned one. `key` is already in hand for
+  // `partitionEntries`, which is what makes this a branch rather than a new parameter.
   const nearest =
-    'Where section [SEC:SUBJECT] names a colour this block does not allow, use the nearest colour it does — never mix, tint or dither one to approximate it. The background field is the exception: it stays the key colour section [SEC:CONTRACT] fixes, and is not drawn from this palette.';
+    'Where section [SEC:SUBJECT] names a colour this block does not allow, use the nearest colour it does — never mix, tint or dither one to approximate it. The background field is the exception: ' +
+    (key === null
+      ? 'it stays fully transparent, and takes no colour from this palette.'
+      : 'it stays the key colour section [SEC:CONTRACT] fixes, and is not drawn from this palette.');
 
   if (palette.space.kind === 'FIXED') {
     const { approximates } = palette.space;
