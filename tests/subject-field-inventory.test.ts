@@ -286,11 +286,12 @@ describe('the assembly base and the inventory it chooses', () => {
     // own. Each half has to be true of some category for the disjunction to be a description rather than
     // a hedge — and `it.each` above passes on helpers that answer `false` for everything, which is the
     // shape a moved table or a renamed pool would take.
-    expect(SUBJECT_CATEGORIES.filter(drawsItsOwnPieces)).toEqual(['OBJECT', 'PORTRAIT']);
+    expect(SUBJECT_CATEGORIES.filter(drawsItsOwnPieces)).toEqual(['OBJECT', 'VEHICLE', 'PORTRAIT']);
     expect(SUBJECT_CATEGORIES.filter(narrowsSheetContents)).toEqual([
       'OBJECT',
       'ITEM',
       'BUILDING',
+      'VEHICLE',
       'INTERFACE',
       'TERRAIN',
       'BACKGROUND',

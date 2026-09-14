@@ -8,6 +8,14 @@ import type { ModePlans } from './modePlans.ts';
 import { objectRigidViewVariants, OBJECT_RIGID_STATES } from './object.ts';
 import { PORTRAIT_FEATURE_CUT } from './portraitFeatureCut.ts';
 import { TERRAIN_BLEND_SET, TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
+import {
+  VEHICLE_ROTOR_PLANS,
+  VEHICLE_SCREW_PLANS,
+  VEHICLE_THRUSTER_PLANS,
+  VEHICLE_TOWED_PLANS,
+  VEHICLE_TWO_WHEEL_PLANS,
+} from './vehicleDivisions.ts';
+import { VEHICLE_RIGID_HULL_PLANS } from './vehicleRigidHull.ts';
 
 /**
  * The assembly bases whose sheets are not their category's standard ones, each mapped to the plans
@@ -115,6 +123,18 @@ export const CATEGORY_ASSEMBLY_BASES: Readonly<
   },
   PORTRAIT: {
     'Shared Head With Swappable Brows, Eyes And Mouths': PORTRAIT_LAYERED_CUT,
+  },
+  // Six of the eleven, and the only pool where a declaration is usually a different *division* of the
+  // same three sheets rather than a different set of sheets (issue #288). The five undeclared values —
+  // a rotating turret, a wheeled chassis, a tracked one, a half-track and a walker's legs — each divide
+  // the vehicle left from right, which is what the standard plans draw.
+  VEHICLE: {
+    'Single Rigid Hull': VEHICLE_RIGID_HULL_PLANS,
+    'Rotor-Borne Airframe': VEHICLE_ROTOR_PLANS,
+    'Thruster-Borne Airframe': VEHICLE_THRUSTER_PLANS,
+    'Hull With Towed Implement': VEHICLE_TOWED_PLANS,
+    'Two-Wheel Frame & Forks': VEHICLE_TWO_WHEEL_PLANS,
+    'Hull With Screw & Rudder': VEHICLE_SCREW_PLANS,
   },
   TERRAIN: {
     'Corner-Matched Blob Set': BLEND_SET_ONLY,

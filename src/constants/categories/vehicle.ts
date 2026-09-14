@@ -1,7 +1,7 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
   ABSENT_OPTION_DROPS_THE_PIECES,
-  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
   HEX_CODE_PINS_THE_HUE,
   SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
@@ -177,8 +177,8 @@ export const VEHICLE: CategoryDefinition = {
       key: 'anatomy',
       label: 'Drive & Assembly Base',
       tooltip:
-        'Where the finished vehicle is meant to divide — a turret ring, a road wheel, a leg joint. Choose by what has to turn, spin or travel rather than by how detailed the hull is. ' +
-        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+        'Where the finished vehicle is meant to divide — a turret ring, a road wheel, a rotor mast, a rudder stock. Choose by what has to turn, spin or travel rather than by how detailed the hull is. ' +
+        ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Single Rigid Hull',
         'Hull With Rotating Turret',
@@ -187,6 +187,7 @@ export const VEHICLE: CategoryDefinition = {
         'Articulated Walker Legs',
         'Rotor-Borne Airframe',
         'Thruster-Borne Airframe',
+        'Hull With Screw & Rudder',
         'Half-Track Chassis',
         'Hull With Towed Implement',
         'Two-Wheel Frame & Forks',

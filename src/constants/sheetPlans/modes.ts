@@ -12,7 +12,7 @@ import { INTERFACE_NINE_SLICE, INTERFACE_STATE_LIBRARY } from './interface.ts';
 import { itemDirectionalVariants, ITEM_PART_LIBRARY } from './item.ts';
 import { objectDirectionalVariants, OBJECT_CUTOUT_RIG, OBJECT_PART_LIBRARY } from './object.ts';
 import { TERRAIN_BLEND_SET, TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
-import { vehicleDirectionalVariants, VEHICLE_CUTOUT_RIG, VEHICLE_PART_LIBRARY } from './vehicle.ts';
+import { VEHICLE_STANDARD_PLANS } from './vehicle.ts';
 import { PORTRAIT_EXPRESSION_LIBRARY } from './portrait.ts';
 import { ICON_SYMBOL_SET } from './icon.ts';
 import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.ts';
@@ -84,11 +84,10 @@ export const CATEGORY_SHEET_PLANS: Readonly<Record<SubjectCategory, ModePlans>> 
     CORE_DIRECTIONAL_VARIANTS: buildingDirectionalVariants,
     TILESET_MODULAR: fixed(BUILDING_TILESET),
   },
-  VEHICLE: {
-    SINGLE_DIRECTION_POSE_LIBRARY: fixed(VEHICLE_PART_LIBRARY),
-    CORE_DIRECTIONAL_VARIANTS: vehicleDirectionalVariants,
-    CUTOUT_RIG_SINGLE_DIRECTION: fixed(VEHICLE_CUTOUT_RIG),
-  },
+  // The one category whose standard table is built rather than written: every VEHICLE base draws the
+  // three sheets of a *division*, and this is the division with a near side and a far side. The five
+  // that divide some other way are in `vehicleDivisions.ts` (issue #288).
+  VEHICLE: VEHICLE_STANDARD_PLANS,
   // The one category that offers a single mode, and the `Partial` above is what lets it say so.
   // An effect's sheet is a flipbook: `'run'` facings are the only kind that leave the whole
   // component budget for *time*, and they are also what turns a direction set into a run list, so a

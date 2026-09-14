@@ -283,6 +283,9 @@ describe('the plan table itself', () => {
       'ITEM / Part library',
       'BUILDING / Module library',
       'VEHICLE / Part library',
+      // The rigid hull drawn at rest and under power, which is the rigid object's entry in this
+      // category's noun (issue #288).
+      'VEHICLE / Vehicle states',
       // One phenomenon at successive moments, which is the same statement about time.
       'EFFECT / Frame sequence',
       // A button body in four states, a toggle in three; and the end caps and stretching middle of

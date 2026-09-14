@@ -153,7 +153,7 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
     id: 'isometric-hover-hauler',
     name: 'Isometric Hover Hauler',
     description:
-      'A low-poly hauler under a true-isometric camera, as four sheets one per cardinal facing. Its working mount is a crane rather than a gun, which is what the part library asks for.',
+      'A low-poly hauler and the trailer it tows, under a true-isometric camera, as four sheets one per cardinal facing. Its working mount is a crane rather than a gun, which is what the part library asks for.',
     category: 'VEHICLE',
     subject: {
       species: 'Hover / Repulsor Craft',
@@ -164,14 +164,21 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
       build: 'Long-Hulled Hauler',
       silhouette: 'Boxy Utilitarian Slab',
       face_head: 'Blank Autonomous Nose',
-      anatomy: 'Single Rigid Hull',
+      // The base that draws the trailer rather than the one that draws nothing. `Single Rigid Hull`
+      // is a vehicle in one piece, whose sheets are the whole hauler at rest and under power — no
+      // hull to cut from a lift pod, no crane, and no hitch (issue #288). A hauler's deliverable is
+      // the parts, and this base is the one that names the thing it is hauling.
+      anatomy: 'Hull With Towed Implement',
       clothing: 'Aerodynamic Fairing Panels',
       worn_details: 'Hazard Stripes & Chevrons',
       primary_colours: 'Matte White & Slate #334155',
       accent_colours: 'Thruster Plasma Blue #22D3EE',
       materials: 'Carbon Fibre & Smoked Glass',
       exclusions: 'No driver, pilot or crew',
-      additional_anatomy: 'Towed Trailer Section ×1',
+      // Not a towed trailer: the base above already orders the drawbar and the implement, and naming
+      // one here would ask for the same piece twice. Two beacons on an eighteen-component part
+      // library is twenty for the generation.
+      additional_anatomy: 'Roof Beacon ×2',
     },
     output: {
       ...DEFAULT_IMAGE_CONFIG,

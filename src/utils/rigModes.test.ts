@@ -589,6 +589,7 @@ describe('a base with no rig sheet offers no rig', () => {
   it('is the rigid object, so the sweep below reads something', () => {
     expect(RIGLESS.map(({ category, base }) => `${category} / ${base}`)).toEqual([
       'OBJECT / Single Rigid Object',
+      'VEHICLE / Single Rigid Hull',
     ]);
   });
 

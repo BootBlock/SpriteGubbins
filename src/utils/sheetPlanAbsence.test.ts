@@ -318,8 +318,18 @@ describe('a subject that says it has none of the attribute', () => {
     // `mode` is stated where the sheet holding the line is not the one the category's default mode
     // compiles. TERRAIN's default is `TILESET_MODULAR`, which is the blend set — and the focal feature
     // is the feature library's, which is exactly why the pool needed an absence at all.
+    //
+    // **VEHICLE states a `base`** (issue #288), because its default subject opens on `Single Rigid
+    // Hull`, whose sheets draw the vehicle whole and so carry neither of the two lines. A side-paired
+    // base is what draws the `Fittings:` line this case was split out of.
     const cases = [
-      { category: 'VEHICLE', key: 'clothing', gone: 'Cladding panel', kept: 'Lamp housing' },
+      {
+        category: 'VEHICLE',
+        key: 'clothing',
+        base: 'Wheeled Chassis & Axles',
+        gone: 'Cladding panel',
+        kept: 'Lamp housing',
+      },
       { category: 'BACKGROUND', key: 'clothing', gone: 'Atmosphere veil', kept: 'Focal landmark' },
       {
         category: 'TERRAIN',
@@ -337,7 +347,8 @@ describe('a subject that says it has none of the attribute', () => {
     ] as const;
 
     for (const { category, key, gone, kept, ...rest } of cases) {
-      const chosen = defaultSubjectFor(category);
+      const opened = defaultSubjectFor(category);
+      const chosen = 'base' in rest ? { ...opened, anatomy: rest.base } : opened;
       const absent = absentOptionFor(category, key) ?? '';
       const output = { ...DEFAULT_OUTPUT_CONFIG, ...('mode' in rest ? { directionalMode: rest.mode } : {}) };
       const declined = generatePrompt(category, { ...chosen, [key]: absent }, output);

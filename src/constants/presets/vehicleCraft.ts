@@ -16,10 +16,11 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * cladding, marking set, colour pairing, material, exclusion and attached module the pool offers,
  * and all eight eras.
  *
- * **The walker is the rig plan's own footnote made literal.** `VEHICLE_CUTOUT_RIG` describes each
- * drive as a "root segment, travelling segment" and then says what that means where a drive has no
- * articulated pair — a wheel against its hub, a nozzle against its housing. A leg is the case that
- * wording was written *from*, and no preset had one.
+ * **The walker is the rig plan's own footnote made literal.** A side-paired vehicle's rig describes
+ * each drive as a "root segment, travelling segment" and then says what that means where a drive has
+ * no articulated pair — a wheel against its hub, a nozzle against its housing. A leg is the case that
+ * wording was written *from*, and no preset had one. The sky-galleon and the interceptor are the two
+ * whose bases now draw a division of their own, so between them these four cover three (issue #288).
  *
  * **The sky-galleon is where the pool runs out, which is worth showing rather than hiding.** These
  * fields are written for hard-surface machines: a wooden ship has no "Cockpit & Front Face" and
@@ -103,9 +104,9 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       primary_colours: 'Crimson Lacquer #DC2626 & Chrome',
       accent_colours: 'Cockpit Glow Green #10B981',
       materials: 'Polished Chrome & Leather',
-      // The thruster is a component drawn at rest and at mid-travel, so the flare is geometry the
-      // sheet already owns. A painted-on plume would be the same event drawn twice, once in a place
-      // it cannot be cut away from.
+      // The thruster is a component drawn shut down and firing, so the flare is geometry the sheet
+      // already owns. A painted-on plume would be the same event drawn twice, once in a place it
+      // cannot be cut away from.
       exclusions: 'No exhaust plume or dust cloud',
       additional_anatomy: 'Deployable Landing Gear ×3',
     },
@@ -126,7 +127,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       directions: 'SINGLE_FRONT',
       primaryDirection: 'front',
       resolutionProfile: 'MID_RESOLUTION',
-      // Laid out tall because a delta planform is, and eighteen of them side by side would waste
+      // Laid out tall because a delta planform is, and seventeen of them side by side would waste
       // most of a wide canvas on background.
       aspectRatio: 'TALL_9_16',
       targetModel: 'MIDJOURNEY',
@@ -152,9 +153,9 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       build: 'Colossal Siege Platform',
       silhouette: 'Rounded Aerodynamic Shell',
       face_head: 'Carved figurehead & open helm',
-      // Lift fans rather than a rigid hull, so the plan's "drive unit" has something concrete to be
-      // at rest and at mid-travel — the sails above are cladding, and a sheet whose only drive was
-      // canvas would leave four components with nothing to draw.
+      // Lift fans rather than a rigid hull, so the rotor division's `Main rotor or lift fan` has
+      // something concrete to be at rest and turning — the sails above are cladding, and a sheet
+      // whose only drive was canvas would leave four components with nothing to draw.
       anatomy: 'Rotor-Borne Airframe',
       clothing: 'Canvas sails & rope rigging',
       worn_details: 'Gilded scrollwork & pennant streamers',

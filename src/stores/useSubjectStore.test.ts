@@ -179,15 +179,16 @@ describe('useSubjectStore', () => {
       expect(useOutputStore.getState().output.rigMode).toBe('NONE');
     });
 
-    it('keeps a rig the new category shares, rather than resetting for its own sake', () => {
-      // VEHICLE rather than CREATURE, because the rig survives a switch only where the *pairing*
-      // can carry it as well as the category: the default sheet mode is `CORE_DIRECTIONAL_VARIANTS`,
-      // and a creature's is a directional core followed by an articulation sheet whose limb variants
-      // rule the cut-out rig out. A vehicle's is directional views throughout.
+    it('drops a rig the new category’s own opening base has no pivot for', () => {
+      // VEHICLE articulates and its standard sheets draw a rig, but the base its form opens on is
+      // `Single Rigid Hull`, which comes apart in one piece and so has no rig sheet (issue #288). The
+      // category is not the whole answer to whether a rig survives, and this is the switch that says
+      // so — the surviving half is `keeps a rig the new base shares` below, which a base change is
+      // now the only way to reach.
       useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, rigMode: 'CUTOUT_RIG' } });
       useSubjectStore.getState().setCategory('VEHICLE');
 
-      expect(useOutputStore.getState().output.rigMode).toBe('CUTOUT_RIG');
+      expect(useOutputStore.getState().output.rigMode).toBe('NONE');
     });
 
     it('does not put a rig back when the category could take one', () => {
@@ -244,6 +245,22 @@ describe('useSubjectStore', () => {
       const { output } = useOutputStore.getState();
       expect(output.directionalMode).toBe(DEFAULT_MODE_FOR.OBJECT);
       expect(output.rigMode).toBe('NONE');
+    });
+
+    it('keeps a rig the new base shares, rather than resetting for its own sake', () => {
+      // The other half of the pairing above: two bases that both draw a rig sheet leave the rig where
+      // the reader put it. VEHICLE, because it is the category where most base changes move between
+      // *divisions* of the same three sheets rather than between sheet modes (issue #288) — and a
+      // reader comparing a wheeled chassis against a rotor should not lose their rig to the comparison.
+      useSubjectStore.getState().setCategory('VEHICLE');
+      useSubjectStore.getState().setField('anatomy', 'Wheeled Chassis & Axles');
+      useOutputStore.setState({
+        output: { ...useOutputStore.getState().output, rigMode: 'CUTOUT_RIG' },
+      });
+
+      useSubjectStore.getState().setField('anatomy', 'Rotor-Borne Airframe');
+
+      expect(useOutputStore.getState().output.rigMode).toBe('CUTOUT_RIG');
     });
 
     it('moves a base only one sheet can draw onto that sheet', () => {

@@ -148,6 +148,11 @@ describe('CATEGORY_ASSEMBLY', () => {
     // vocabulary reached all nine in the first place. CHARACTER and CREATURE are the one pair that
     // genuinely shares a failure, and they are named rather than derived. The three body forms get the
     // same check per sheet in `sheetPlans/sheetClaims.test.ts`.
+    //
+    // **OBJECT and VEHICLE are the second pair, and they converged rather than being copied**: each
+    // gained a base drawn in one piece — `Single Rigid Object` in #283, `Single Rigid Hull` in #288 —
+    // and each lost its subject term to the rule above, leaving the presentation half both already
+    // shared. Either one gaining a second term again parts them.
     const seen = new Map<string, SubjectCategory[]>();
     for (const category of SUBJECT_CATEGORIES) {
       const { negatives, statement } = CATEGORY_ASSEMBLY[category];
@@ -156,6 +161,7 @@ describe('CATEGORY_ASSEMBLY', () => {
     }
     expect([...seen.values()].filter((categories) => categories.length > 1)).toEqual([
       ['CHARACTER', 'CREATURE'],
+      ['OBJECT', 'VEHICLE'],
     ]);
   });
 });

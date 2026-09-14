@@ -1,9 +1,9 @@
-import type { AssemblyFailure, SheetPlan, SheetSeries } from '../../types/components.ts';
-import type { FacingTuple } from './directionalViews.ts';
-import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
+import type { ModePlans } from './modePlans.ts';
+import { vehiclePlansFor } from './vehicleDivision.ts';
+import type { VehicleDivision } from './vehicleDivision.ts';
 
 /**
- * What a VEHICLE sheet asks for, per sheet mode.
+ * What a VEHICLE sheet asks for, per sheet mode — the standard sheets, which are the side-paired ones.
  *
  * A vehicle is hard-surface geometry like an OBJECT, and comes apart nothing like one. An object's
  * inventory is a housing, the base it stands on, and what opens; a vehicle's is a hull, the *drive*
@@ -16,219 +16,70 @@ import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalVi
  * Assembly Base already say which it is. An inventory reading "road wheels" would do that inferring
  * on the template's behalf for every walker, skiff and gunship that has none.
  *
+ * **These are the sheets of a vehicle with a near side and a far side**, and that is a claim about the
+ * base rather than about the category (issue #288). A wheeled chassis, a tracked one, a half-track and
+ * a walker's legs each divide left from right, so one drive unit per side is what they come apart
+ * into. The five bases that divide some other way declare their own division in
+ * `vehicleDivisions.ts`, and `Single Rigid Hull` divides into nothing at all —
+ * `vehicleRigidHull.ts` draws it whole.
+ *
  * There is no tileset plan: a vehicle is a subject, not a repeating field, and `Partial` in the plan
  * table is what lets that absence be the answer rather than an omission to fill.
  */
-
-/**
- * How every VEHICLE sheet forbids its assembled whole — `OBJECT_ASSEMBLY_FAILURE`'s three forms in this
- * category's noun, and for that record's reasons: they name the parts fitted together rather than the
- * capability section 6 asks for, and "the vehicle itself" anchors the last two to the whole subject,
- * which no component is.
- */
-const VEHICLE_ASSEMBLY_FAILURE: AssemblyFailure = {
-  instruction:
-    'Do not draw the parts fitted together into the assembled vehicle anywhere on the sheet, including as a reference or key.',
-  exclusion: 'The vehicle itself, whole or partly built, and any staged product shot of it.',
-  audit: 'nothing on the sheet is the vehicle itself, whole or partly built',
-};
-
-export const VEHICLE_PART_LIBRARY: SheetPlan = {
-  name: 'Part library',
-  facings: 'run',
-  assembly:
-    'the complete vehicle at rest, and in each state its moving parts allow — mount traversed or elevated, hatch open, drive at rest and at mid-travel — without redrawing any part that does not move.',
-  targetQuantity: 'ASSEMBLED',
-  // The mount is drawn stowed, traversed and elevated, the hatch closed and open, each drive at rest and mid-travel.
-  posing: 'PER_POSITION',
-  scaleExample: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
-  scaleUnit: 'a full vehicle',
-  componentClass: 'a part of this one vehicle',
-  assemblyFailure: VEHICLE_ASSEMBLY_FAILURE,
-  groups: [
-    {
-      heading: null,
-      intro: 'One direction’s worth of parts, with a separate component for each state a part has:',
-      entries: [
-        { label: 'hull-or-fuselage', text: 'Hull or fuselage ×1', count: 1, kind: 'structure' },
-        // Split near from far, and each into a state pair, because this group's own intro promises
-        // "a separate component for each state a part has" — and a drive with only two *sides* and
-        // no second state is the one entry that would not have kept that promise, leaving the
-        // assembly sentence above naming a travel the sheet never draws. The rig plan splits the
-        // sides the same way, so the two modes describe one vehicle rather than two.
-        {
-          label: 'near-side-drive-unit',
-          parts: ['near-side-drive-unit-rest', 'near-side-drive-unit-mid-travel'],
-          text: 'Near-side drive unit: at rest, at mid-travel',
-          count: 2,
-          kind: 'mechanism',
-        },
-        {
-          label: 'far-side-drive-unit',
-          parts: ['far-side-drive-unit-rest', 'far-side-drive-unit-mid-travel'],
-          text: 'Far-side drive unit: at rest, at mid-travel',
-          count: 2,
-          kind: 'mechanism',
-        },
-        {
-          label: 'turret',
-          parts: ['turret-stowed', 'turret-traversed', 'turret-elevated'],
-          text: 'Turret, weapon or working mount: stowed, traversed, elevated',
-          count: 3,
-          kind: 'mechanism',
-        },
-        {
-          label: 'crew-hatch-or-canopy',
-          parts: ['crew-hatch-closed', 'crew-hatch-open'],
-          text: 'Crew hatch or canopy: closed, open',
-          count: 2,
-          kind: 'mechanism',
-        },
-        {
-          label: 'cladding-panel-or-fairing',
-          text: 'Cladding panel or fairing ×1',
-          count: 1,
-          kind: 'structure',
-          attribute: { field: 'clothing', role: 'DRAWS_IT' },
-        },
-        {
-          label: 'fittings',
-          parts: ['lamp-housing', 'exhaust-vent', 'hard-point-1', 'hard-point-2'],
-          text: 'Fittings: lamp housing ×1, exhaust or vent ×1, tow or hard point ×2',
-          count: 4,
-          kind: 'structure',
-        },
-      ],
-    },
-  ],
-};
-
-/**
- * The directional views, steered by the chosen facings — six pieces per view, so one sheet holds up
- * to five facings (thirty components) and the eight-compass set splits into a cardinal and a
- * diagonal sheet of twenty-four each, exactly as `objectDirectionalVariants` does.
- */
-function vehicleDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
-  return {
-    name: chunkName('Directional views', chunk, chunks),
-    facings: chunk,
-    assembly:
-      'the complete vehicle seen from each facing, reading as one machine turned rather than several drawings of it, with its drive and mount in matching positions across those views.',
-    targetQuantity: 'ASSEMBLED',
-    // The drive and the mount are drawn once per facing in matching positions, which is the camera turning.
-    posing: 'UNSTATED',
-    scaleExample: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
-    scaleUnit: 'a full vehicle',
-    componentClass: 'a part of this one vehicle',
-    assemblyFailure: VEHICLE_ASSEMBLY_FAILURE,
-    groups: [
+export const VEHICLE_SIDE_PAIRED: VehicleDivision = {
+  hull: { label: 'hull-or-fuselage', name: 'Hull or fuselage', noun: 'hull', plural: 'Hulls or fuselages' },
+  drive: {
+    noun: 'drive',
+    perFacing: 'Drive unit',
+    positions: [
+      { text: 'at rest', slug: 'rest' },
+      { text: 'at mid-travel', slug: 'mid-travel' },
+    ],
+    units: [
       {
-        heading: 'Directional core',
-        intro: `One view of **one** hull and **one** mount per facing: the same piece of geometry drawn at each
-object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies, or views facing the
-same way are all failures of this entry.`,
-        entries: [
-          viewsOf('Hulls or fuselages', 'structure', chunk),
-          viewsOf('Turret, weapon or working mounts', 'mechanism', chunk),
+        label: 'near-side-drive-unit',
+        name: 'Near-side drive unit',
+        segments: [
+          { text: 'root segment', slug: 'root' },
+          { text: 'travelling segment', slug: 'travelling' },
         ],
       },
       {
-        // Grouped by what the entries *are*, not by where they sit on the vehicle. A heading is
-        // rendered into section 4 above its own bullets, so "Running gear" over a cladding panel
-        // describes the group wrongly to the one reader that cannot ask.
-        heading: 'Moving parts',
-        entries: [
-          atEachYaw('Drive unit', 'mechanism', chunk),
-          atEachYaw('Crew hatch or canopy', 'mechanism', chunk),
-        ],
-      },
-      {
-        heading: 'Fittings',
-        entries: [
-          {
-            ...atEachYaw('Cladding panel or fairing', 'structure', chunk),
-            attribute: { field: 'clothing', role: 'DRAWS_IT' },
-          },
-          atEachYaw('Lamp housing', 'structure', chunk),
+        label: 'far-side-drive-unit',
+        name: 'Far-side drive unit',
+        segments: [
+          { text: 'root segment', slug: 'root' },
+          { text: 'travelling segment', slug: 'travelling' },
         ],
       },
     ],
-  };
-}
-
-/** The directional pairing: one sheet for up to five facings, two for the eight-compass set. */
-export function vehicleDirectionalVariants(facings: FacingTuple): SheetSeries {
-  const chunks = coreFacingChunks(facings);
-  const [first, ...rest] = chunks;
-  return [
-    vehicleDirectionalSheet(first, chunks),
-    ...rest.map((chunk) => vehicleDirectionalSheet(chunk, chunks)),
-  ];
-}
-
-export const VEHICLE_CUTOUT_RIG: SheetPlan = {
-  name: 'Rig pieces',
-  facings: 'run',
-  assembly:
-    'any state the rig produces by rotating its drive and its mount about their pivots. The artwork commits to none of them, which is why every piece is drawn in its rest position.',
-  targetQuantity: 'ASSEMBLED',
-  // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
-  posing: 'AT_REST',
-  scaleExample: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
-  scaleUnit: 'a full vehicle',
-  componentClass: 'a part of this one vehicle',
-  assemblyFailure: VEHICLE_ASSEMBLY_FAILURE,
-  groups: [
-    {
-      heading: null,
-      intro: 'One direction’s worth of rig pieces, each drawn once in rest position:',
-      entries: [
-        { label: 'hull-or-fuselage', text: 'Hull or fuselage ×1', count: 1, kind: 'structure' },
-        {
-          label: 'turret',
-          parts: ['turret-base-ring', 'turret-traversing-body'],
-          text: 'Turret, weapon or working mount: base ring ×1, traversing body ×1',
-          count: 2,
-          kind: 'mechanism',
-        },
-        {
-          label: 'near-side-drive-unit',
-          parts: ['near-side-drive-unit-root', 'near-side-drive-unit-travelling'],
-          text: 'Near-side drive unit: root segment, travelling segment',
-          count: 2,
-          kind: 'mechanism',
-        },
-        {
-          label: 'far-side-drive-unit',
-          parts: ['far-side-drive-unit-root', 'far-side-drive-unit-travelling'],
-          text: 'Far-side drive unit: root segment, travelling segment',
-          count: 2,
-          kind: 'mechanism',
-        },
-        {
-          label: 'crew-hatch-or-canopy',
-          text: 'Crew hatch or canopy ×1, drawn closed',
-          count: 1,
-          kind: 'mechanism',
-        },
-        // Two entries rather than one `Fittings:` line, because the pool this category's `clothing`
-        // field offers includes `Bare Unclad Frame` — a reader who chooses it has said the hull
-        // carries no cladding, and a bundled line could only be dropped by taking the lamp housing
-        // with it. A lamp is a fitting whatever the frame is clad in. See
-        // `ComponentEntry.attribute`.
-        {
-          label: 'cladding-panel',
-          text: 'Cladding panel ×1',
-          count: 1,
-          kind: 'structure',
-          attribute: { field: 'clothing', role: 'DRAWS_IT' },
-        },
-        { label: 'lamp-housing', text: 'Lamp housing ×1', count: 1, kind: 'structure' },
-      ],
-      outro: `Each moving piece carries its pivot at the joint it turns about, matched in diameter to the piece
-it turns against, exactly as any other articulated segment on a rigged sheet would. Where a drive has
-no articulated pair — a single road wheel, a fixed thruster — its travelling segment is the part that
-turns or extends against the root: the wheel against its hub, the nozzle against its housing.`,
-    },
-  ],
+  },
+  mount: {
+    label: 'turret',
+    name: 'Turret, weapon or working mount',
+    noun: 'mount',
+    plural: 'Turret, weapon or working mounts',
+    positions: [
+      { text: 'stowed', slug: 'stowed' },
+      { text: 'traversed', slug: 'traversed' },
+      { text: 'elevated', slug: 'elevated' },
+    ],
+    segments: [
+      { text: 'base ring ×1', slug: 'base-ring' },
+      { text: 'traversing body ×1', slug: 'traversing-body' },
+    ],
+  },
+  access: {
+    label: 'crew-hatch-or-canopy',
+    stem: 'crew-hatch',
+    name: 'Crew hatch or canopy',
+    noun: 'hatch',
+    positions: [
+      { text: 'closed', slug: 'closed' },
+      { text: 'open', slug: 'open' },
+    ],
+  },
 };
+
+/** The three sheets a side-paired vehicle is drawn on, which is what the category falls back to. */
+export const VEHICLE_STANDARD_PLANS: ModePlans = vehiclePlansFor(VEHICLE_SIDE_PAIRED);

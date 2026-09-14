@@ -94,10 +94,13 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   },
   // "complete machine" is the term this entry cannot have — the directional plan's own assembly
   // sentence asks the views to read "as one machine turned", and the hull, drive and mount are
-  // machine parts. The staged-render half is safe in the same words OBJECT uses for it.
+  // machine parts. **`assembled vehicle` went when VEHICLE gained a base drawn in one piece**
+  // (issue #288), for the reason `assembled object` went in #283: every component of a
+  // `Single Rigid Hull`'s views is the whole vehicle, so a weighted `vehicle` suppressed the subject
+  // those sheets ask for. The staged-render half is safe in the same words OBJECT uses for it.
   VEHICLE: {
-    statement: 'no assembled vehicle',
-    negatives: ['assembled vehicle', 'product shot'],
+    statement: 'no staged product shot',
+    negatives: ['product shot'],
   },
   // The category the word-by-word rule bites hardest, and the one whose terms are easiest to get
   // catastrophically wrong. "effect" is out because each component *is* the effect at a moment;
