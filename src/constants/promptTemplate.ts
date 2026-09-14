@@ -446,7 +446,12 @@ Where this conflicts with anything above, the identity lock wins.
 [/IF]
 - Resolution profile: [DEFINE:RESOLUTION_PROFILE_DESCRIPTION]
 [IF:ASSEMBLED_TARGET]
+[IF:RIG_CONTRACT!=yes]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target assembled size, for the complete subject once its pieces are put together: [DEFINE:SPRITE_TARGET_SIZE]. This sheet draws the pieces, not the assembly, so no single component is this size — each is drawn at whatever share of the whole it occupies.]
+[/IF]
+[IF:RIG_CONTRACT]
+[OPTIONAL:SPRITE_TARGET_SIZE  | - Target assembled size, for the complete subject once its pieces are put together: [DEFINE:SPRITE_TARGET_SIZE]. This sheet draws the pieces, not the assembly, and section [SEC:RIG] states the size of every one of them within that frame.]
+[/IF]
 [/IF]
 [IF:ASSEMBLED_TARGET!=yes]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target component size: [DEFINE:SPRITE_TARGET_SIZE]]
@@ -502,9 +507,17 @@ earlier in this section, the setting wins — it is what this particular sheet a
 
 ### ${NATIVE_GRID_HEADING}
 
+[IF:RIG_CONTRACT!=yes]
 **The target component size above is a native pixel grid, not a count of delivered pixels.** It is
 the grid a whole subject is drawn on, with every smaller piece in proportion to it on that same
-grid, and it is where detail stops. Draw each component there first, then deliver the finished grid
+grid, and it is where detail stops.
+[/IF]
+[IF:RIG_CONTRACT]
+**The piece sizes in section [SEC:RIG] are a native pixel grid, not a count of delivered pixels.**
+They are the grid the whole figure is drawn on, every piece in proportion to the rest of it on that
+same grid, and it is where detail stops.
+[/IF]
+Draw each component there first, then deliver the finished grid
 enlarged by a whole number — **[DEFINE:NATIVE_GRID_SCALE]× or more** — so that each native pixel becomes a solid square
 block of identical delivered pixels, with hard edges between blocks and no interpolation, blending
 or softened edge anywhere in the enlargement.

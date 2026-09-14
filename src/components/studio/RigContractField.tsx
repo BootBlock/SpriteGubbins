@@ -44,14 +44,15 @@ export function RigContractField({ appliesToSheet }: RigContractFieldProps) {
     void file
       .text()
       .then((text) => {
-        // Both failures are the same to the reader — a file that is not a rig contract — but only
-        // one of them throws, so the parse is what has to be guarded rather than the reading.
         const reading = parseRigContract(JSON.parse(text));
         setProblems(reading.problems);
         if (reading.contract !== null) setOutputField('rigContract', reading.contract);
       })
       .catch(() => {
-        setProblems(['This file is not valid JSON, so nothing could be read out of it.']);
+        // Everything the chain can throw lands here, and the reader is told one thing: a file that
+        // will not read and a file that is not JSON are the same event to them — the file they
+        // chose did not become a contract — and neither has a different next step.
+        setProblems(['This file could not be read as JSON, so nothing was taken from it.']);
       });
   };
 
@@ -89,16 +90,22 @@ export function RigContractField({ appliesToSheet }: RigContractFieldProps) {
         </div>
       )}
 
-      {problems.length > 0 && (
-        // A live region, because the refusal arrives after the file is read rather than in response
-        // to the press: nothing moves on screen at the moment the reader acts, so a screen reader
-        // would otherwise announce nothing at all.
-        <ul aria-live="polite" className="flex flex-col gap-1 text-xs leading-relaxed text-rose">
-          {problems.map((problem) => (
-            <li key={problem}>{problem}</li>
-          ))}
-        </ul>
-      )}
+      {/*
+        A live region, because the refusal arrives after the file is read rather than in response to
+        the press: nothing moves on screen at the moment the reader acts, so a screen reader would
+        otherwise announce nothing at all.
+
+        **Rendered always, with only its contents conditional** — the rule `Toast` and
+        `SpriteCellControls` state at their own call sites: a region inserted into the document in
+        the same commit as its text is not reliably announced, so a region that appears with the
+        first refusal announces nothing, which is the whole of what it was added for. Empty it
+        costs nothing: it has no padding and no children.
+      */}
+      <ul aria-live="polite" className="flex flex-col gap-1 text-xs leading-relaxed text-rose">
+        {problems.map((problem) => (
+          <li key={problem}>{problem}</li>
+        ))}
+      </ul>
     </div>
   );
 }

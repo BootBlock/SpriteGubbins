@@ -96,16 +96,6 @@ function slot(value: unknown, at: number, problems: string[]): RigSlot | null {
   };
 }
 
-function facingsOf(value: unknown, problems: string[]): readonly string[] {
-  if (!Array.isArray(value) || value.length === 0) {
-    problems.push('The contract names no facings, so nothing says how many sheets the rig takes.');
-    return [];
-  }
-  const named = value.map((facing: unknown) => text(facing)).filter((facing) => facing !== '');
-  if (named.length !== value.length) problems.push('One of the facings has no name.');
-  return named;
-}
-
 function refused(problems: readonly string[]): RigContractReading {
   return { contract: null, problems };
 }
@@ -136,7 +126,6 @@ export function parseRigContract(value: unknown): RigContractReading {
     problems.push('The contract states no assembled frame, so no piece size is a share of anything.');
   }
 
-  const facings = facingsOf(value['facings'], problems);
   const declared: unknown = value['slots'];
   const slots: RigSlot[] = [];
   if (!Array.isArray(declared) || declared.length === 0) {
@@ -166,7 +155,6 @@ export function parseRigContract(value: unknown): RigContractReading {
       version: RIG_CONTRACT_VERSION,
       skeleton_name: text(value['skeleton_name']),
       frame_size: frame,
-      facings,
       slots,
     },
     problems: [],

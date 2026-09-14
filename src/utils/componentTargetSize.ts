@@ -94,9 +94,11 @@ export function statedTargetSize(
  * an empty field has always been a possibility. The Sprites panel renders no comparison clause, the
  * grid candidate is not offered, and the native-grid enlargement is not derived.
  *
- * **It deliberately does not guess a per-piece size from the assembled one.** The app holds no
- * per-piece geometry and should not: which piece is what fraction of a figure belongs to the rig
- * contract the art is authored against, which is outside this app entirely.
+ * **It deliberately does not guess a per-piece size from the assembled one.** Which piece is what
+ * fraction of a figure belongs to the rig the art is authored against, and this function is handed
+ * a size somebody typed. Where the reader has loaded that rig — see `parseRigContract` — the
+ * geometry is no longer a guess and `nativeGridScale` reads it directly; nothing derived from this
+ * function does, because the answer is one size per piece rather than one size.
  */
 export function componentTargetSize(
   category: SubjectCategory,

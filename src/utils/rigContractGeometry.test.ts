@@ -29,7 +29,6 @@ function contract(...slots: RigSlot[]): RigContract {
     version: 1,
     skeleton_name: 'Humanoid',
     frame_size: { width: 48, height: 96 },
-    facings: ['east'],
     slots,
   };
 }
@@ -69,13 +68,30 @@ describe('rigContractGeometry', () => {
     expect(right).toContain('11 px right of centre');
   });
 
-  it('names the piece each one is carried by, and the root as the root', () => {
+  it('names the piece each one is carried by, in the vocabulary the sheet uses', () => {
+    // `parent_slot` holds a slot id and the prompt states none of those, so the parent has to be
+    // resolved to its pack name. A rig whose two vocabularies differ — which the writer's own
+    // example does — would otherwise cite `torso_bone`, a word appearing nowhere else in the prompt.
     const block = rigContractGeometry(
-      contract(slot({ pack_piece_name: 'pelvis', parent_slot: '' }), slot({})),
+      contract(
+        slot({ slot_id: 'pelvis_bone', pack_piece_name: 'pelvis', parent_slot: '' }),
+        slot({ slot_id: 'torso_bone', pack_piece_name: 'torso', parent_slot: 'pelvis_bone' }),
+        slot({ parent_slot: 'torso_bone' }),
+      ),
     );
 
-    expect(block).toContain('the rig’s root piece');
+    expect(block).toContain('it is the piece the whole rig hangs from');
+    expect(block).toContain('carried by pelvis');
     expect(block).toContain('carried by torso');
+    expect(block).not.toContain('pelvis_bone');
+    expect(block).not.toContain('torso_bone');
+  });
+
+  it('says nothing about a parent no slot declares, rather than naming it', () => {
+    const block = rigContractGeometry(contract(slot({ parent_slot: 'a_slot_that_is_not_here' })));
+
+    expect(block).not.toContain('a_slot_that_is_not_here');
+    expect(block).toContain('78 px above the base.');
   });
 
   it('writes one line per piece, in the contract’s own order', () => {

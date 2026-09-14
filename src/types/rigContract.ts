@@ -19,11 +19,13 @@
  * one scale for the whole actor, so a limb drawn short against the figure opens a gap at the joint
  * below it and one drawn long overlaps the next.
  *
- * Two fields of the exported document are deliberately absent. `draw_orders` says which pieces sit
+ * Three fields of the exported document are deliberately absent. `draw_orders` says which pieces sit
  * in front of which per facing, and this app draws pieces rather than layering them. The relative
  * `rest_position` is the offset against the parent bone, where the only one a prompt can say
- * anything with is {@link RigSlot.rest_position_in_frame}. A document carrying either is read
- * perfectly well; the fields are dropped rather than refused.
+ * anything with is {@link RigSlot.rest_position_in_frame}. And `facings` lists the directions the
+ * rig draws, which is the studio's own `directions` setting: a second answer to how many sheets the
+ * deliverable takes is one the two could disagree about, and the reader chooses that one. A
+ * document carrying any of the three is read perfectly well; the fields are dropped, never refused.
  */
 
 /** Which end of a piece its joint is at, and therefore which edge its art registers against. */
@@ -73,7 +75,7 @@ export interface RigSlot {
   readonly rest_position_in_frame: RigPoint;
 }
 
-/** The rig: the frame its pieces are measured in, the facings it draws, and every piece. */
+/** The rig: the frame its pieces are measured in, and every piece it declares. */
 export interface RigContract {
   /** What the document says it is. One value is accepted; see `parseRigContract`. */
   readonly format: string;
@@ -83,8 +85,6 @@ export interface RigContract {
   readonly skeleton_name: string;
   /** The assembled frame every {@link RigSlot.piece_size} is a share of. */
   readonly frame_size: RigSize;
-  /** Every facing the rig draws, spelled as the engine spells them, in its own order. */
-  readonly facings: readonly string[];
   /**
    * Every piece, in the contract's declaration order.
    *

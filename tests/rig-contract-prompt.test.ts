@@ -20,7 +20,6 @@ const CONTRACT: RigContract = {
   version: 1,
   skeleton_name: 'Humanoid',
   frame_size: { width: 48, height: 96 },
-  facings: ['east', 'south'],
   slots: [
     {
       slot_id: 'pelvis',
@@ -125,13 +124,45 @@ describe('a compiled prompt with a rig contract loaded', () => {
     expect(prompt).toContain('64 × 128');
   });
 
-  it('compiles the same prompt as before where no contract is loaded', () => {
-    // The guard on every configuration that has nothing to do with rigs: this feature adds a
-    // section and replaces an inventory, and neither may reach a sheet that did not ask for it.
-    const before = generatePrompt('CHARACTER', SUBJECT, RIG_SHEET);
-    const after = generatePrompt('CHARACTER', SUBJECT, { ...RIG_SHEET, rigContract: null });
+  it('changes nothing at all on a sheet that is not the rig sheet', () => {
+    // Byte-for-byte, which the two assertions above cannot say: a contract is carried by the whole
+    // configuration, so "inert" has to mean the prompt is the one the reader would have had.
+    const core: OutputConfig = { ...RIG_SHEET, directionalMode: 'CORE_DIRECTIONAL_VARIANTS' };
 
-    expect(after).toBe(before);
-    expect(before).not.toContain('Piece geometry');
+    expect(generatePrompt('CHARACTER', SUBJECT, { ...core, rigContract: CONTRACT })).toBe(
+      generatePrompt('CHARACTER', SUBJECT, core),
+    );
+  });
+
+  it('stops telling the model that no component has a stated size', () => {
+    // Section 2's own sentence, written when nothing could state a piece size. Left standing it
+    // contradicts section 5 outright, and section 2 is the earlier of the two.
+    const withRig = generatePrompt('CHARACTER', SUBJECT, { ...RIG_SHEET, rigContract: CONTRACT });
+    const without = generatePrompt('CHARACTER', SUBJECT, RIG_SHEET);
+
+    expect(without).toContain('no single component is this size');
+    expect(withRig).not.toContain('no single component is this size');
+    // …and it does not say “assembled” twice, which the words and the label together would.
+    expect(withRig).not.toContain('px assembled.');
+  });
+
+  it('says which sizes the native grid is, rather than pointing at a size that is not there', () => {
+    // The block opens by naming the quantity it enlarges. On a rig sheet the size above it is the
+    // assembly, so the original wording would have a model enlarge the whole 48 × 96 figure by the
+    // multiple priced for a 26 × 26 piece.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, { ...RIG_SHEET, rigContract: CONTRACT });
+
+    expect(prompt).toContain('The piece sizes in section');
+    expect(prompt).not.toContain('The target component size above is a native pixel grid');
+  });
+
+  it('states the feature floor against the smallest piece, in the grid’s own unit', () => {
+    // `HIGH_RESOLUTION` answers `3 × 3`, calibrated for delivered pixels. Printed as native pixels
+    // against this rig's 8 × 22 arm that is a floor covering over a third of the piece — so the
+    // figure comes off the rung table by the smallest piece instead.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, { ...RIG_SHEET, rigContract: CONTRACT });
+
+    expect(prompt).toContain('1 × 1 native pixels');
+    expect(prompt).not.toContain('3 × 3 native pixels');
   });
 });

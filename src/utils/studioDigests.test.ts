@@ -124,7 +124,7 @@ describe('renderStyleDigest', () => {
   it('covers all seven controls when they are all set', () => {
     // With no palette pinned, which is what leaves the colour budget as the group's colour setting.
     const output = withOutput({ spriteTargetSize: '48 × 96 px', palette: 'FREE' });
-    const digest = renderStyleDigest(output);
+    const digest = renderStyleDigest('CHARACTER', standardSubject(), output);
     for (const value of [
       output.renderStyle,
       output.surfaceDetail,
@@ -139,7 +139,9 @@ describe('renderStyleDigest', () => {
   });
 
   it('omits the target size when it has none — the compiler omits its line too', () => {
-    expect(renderStyleDigest(withOutput({ spriteTargetSize: '' }))).not.toContain(' ·  · ');
+    expect(
+      renderStyleDigest('CHARACTER', standardSubject(), withOutput({ spriteTargetSize: '' })),
+    ).not.toContain(' ·  · ');
   });
 
   it('names a pinned palette in place of the budget it supersedes', () => {
@@ -147,6 +149,8 @@ describe('renderStyleDigest', () => {
     // budget doing nothing — the prompt drops its line and the quantiser ignores it. Naming both
     // would put a setting in a folded header that has no effect anywhere.
     const digest = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
       withOutput({ palette: 'GAME_BOY_DMG', paletteLimit: 'STRICT_32_COLOR' }),
     );
 
@@ -160,6 +164,8 @@ describe('renderStyleDigest', () => {
     // longer carries. The lighting model stays: a clay render is read by the way light falls across
     // it, which is the one surface setting this pass keeps.
     const digest = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
       withOutput({
         renderStyle: 'CLAY_RENDER',
         surfaceDetail: 'TEXTURED',
@@ -180,6 +186,8 @@ describe('renderStyleDigest', () => {
     // The narrower half of the same rule, and the one a single validation-pass check would miss: a
     // flat fill of one colour has no surface for a key light, so that control goes as well.
     const digest = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
       withOutput({ renderStyle: 'SILHOUETTE_ONLY', lightingModel: 'ISOMETRIC_TOP_LEFT' }),
     );
 
@@ -191,6 +199,8 @@ describe('renderStyleDigest', () => {
     // The two supersessions stack rather than collide: one material or one fill takes its colour
     // from the pinned list like anything else does, and the prompt still carries the palette block.
     const digest = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
       withOutput({
         renderStyle: 'SILHOUETTE_ONLY',
         palette: 'GAME_BOY_DMG',

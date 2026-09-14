@@ -150,8 +150,9 @@ export function QuantiseTab() {
   // there, the grid candidate seats fifteen cells of a whole character rather than of a torso, and
   // the Sprites panel compares the largest piece against a size no piece on the sheet has — so its
   // *within the target* carries whatever slack separates a torso from a whole body, which is a
-  // number nothing here knows. `null` withdraws both, and the app holds no per-piece size to put in
-  // their place.
+  // number nothing here knows. `null` withdraws both, rather than putting a figure in their place:
+  // a loaded rig contract does state a size per piece, but the pieces differ, and one number is
+  // exactly what this pair of readers cannot be given honestly.
   const subject = useMemo(() => ({ anatomy, clothing }), [anatomy, clothing]);
   const target = useMemo(
     () => componentTargetSize(category, subject, directionalMode, directions, sheetIndex, spriteTargetSize),

@@ -63,7 +63,7 @@ export function nativeGridScale(
 ): number | null {
   if (renderStyle !== 'PIXEL_ART' && renderStyle !== 'RETRO_PIXEL_ART') return null;
 
-  const seated = rig === null ? fromTarget(profile, target, components) : fromRig(rig);
+  const seated = rig === null ? fromTarget(profile, target, components) : fromRig(rig, components);
   if (seated === null) return null;
 
   const scale = componentGridScale(
@@ -86,7 +86,7 @@ function fromTarget(
 }
 
 /**
- * The same, from the engine's rig — where **three of the four `null`s above do not apply**.
+ * The cell from the engine's rig — where **two of the four `null`s above do not apply**.
  *
  * The profile gate is there because the field is free prose and only the reader knows which quantity
  * it names; a contract states the frame, every piece's size and how many pieces there are, so
@@ -97,8 +97,13 @@ function fromTarget(
  * **The largest piece is the cell**, because the canvas has to seat every piece at one scale — the
  * engine's importer picks a single scale for the whole actor, so a multiple that fits the small
  * pieces and not the large one is a multiple the rig cannot use.
+ *
+ * **The count is the caller's, not the rig's.** A sheet draws the rig's pieces *and* whatever
+ * additional anatomy the subject named, and the canvas has to seat all of them: seating the slot
+ * count alone prices a multiple the sheet cannot hold, which the generator resolves by resampling —
+ * the one thing the block this figure appears in forbids.
  */
-function fromRig(rig: RigContract): { cell: TargetSize; components: number } | null {
+function fromRig(rig: RigContract, components: number): { cell: TargetSize; components: number } | null {
   if (rig.slots.length === 0) return null;
   const cell = rig.slots.reduce<TargetSize>(
     (widest, slot) => ({
@@ -107,5 +112,5 @@ function fromRig(rig: RigContract): { cell: TargetSize; components: number } | n
     }),
     { width: 0, height: 0 },
   );
-  return { cell, components: rig.slots.length };
+  return { cell, components };
 }

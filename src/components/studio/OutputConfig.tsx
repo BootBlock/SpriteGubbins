@@ -140,7 +140,7 @@ export function OutputConfig() {
         <CollapsibleSection
           {...SECTIONS.renderStyle}
           heading="Render style"
-          digest={renderStyleDigest(output)}
+          digest={renderStyleDigest(category, subject, output)}
         >
           <RenderStyleFields />
         </CollapsibleSection>

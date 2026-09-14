@@ -11,23 +11,17 @@ import { resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetP
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { oneSidedFeatures } from './oneSidedFeatures.ts';
 import type { StyleReference } from '../types/styleReference.ts';
-import type {
-  Direction,
-  DirectionalMode,
-  OutputConfig,
-  Projection,
-  RigMode,
-  StatedTargetSize,
-  TargetSize,
-} from '../types/output.ts';
+import type { Direction, DirectionalMode, OutputConfig, Projection, RigMode } from '../types/output.ts';
 import type { SheetPlan } from '../types/components.ts';
+import type { RigContract } from '../types/rigContract.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
-import { sheetTargetSize } from './sheetTargetSize.ts';
+import { sheetRigContract } from './sheetRigContract.ts';
+import { sheetSizing } from './sheetSizing.ts';
+import type { SheetSizing } from './sheetSizing.ts';
 import { mirrorPairs } from './mirrorPairs.ts';
-import { nativeGridScale } from './nativeGridScale.ts';
 import { sheetBatch } from './sheetBatch.ts';
 import type { SheetBatch } from './sheetBatch.ts';
 import { sheetDirections } from './sheetDirections.ts';
@@ -76,11 +70,10 @@ export interface SheetFacts {
   readonly reference: StyleReference | null;
   readonly validationPass: ReturnType<typeof validationPassFor>;
   readonly componentCount: number;
-  readonly statedTarget: StatedTargetSize | null;
-  /** The same size as words — the engine's frame where a contract applies, the typed field where not. */
-  readonly statedTargetText: string;
-  readonly componentTarget: TargetSize | null;
-  readonly nativeScale: number | null;
+  /** The rig this sheet is drawn against, or `null` — see the derivation for why it is a fact. */
+  readonly rig: RigContract | null;
+  /** How big this sheet's things are, and the grid they are drawn on. */
+  readonly sizing: SheetSizing;
   readonly anatomyFacings: ReturnType<typeof anatomyFacingsFor>;
   /** The anatomy rendered from the parse, or empty on a sheet that does not carry it. */
   readonly additionalAnatomyLine: string;
@@ -247,45 +240,19 @@ export function sheetFacts(
     output.rigContract,
   );
 
-  // The engine's own rig, where one is loaded and this is the sheet it describes. Resolved once and
-  // read three times below, for the reason every other fact here is: a section deciding for itself
-  // whether the contract applies is how one prompt comes to state the rig's frame in section 2 and
-  // the reader's typed size in section 5.
-  const rig = plan.posing === 'AT_REST' ? output.rigContract : null;
+  // The engine's own rig, where one is loaded and this is the sheet it describes.
+  //
+  // **Published rather than left local**, for the reason every other fact here is: the conditions
+  // phase decides whether section 5's block survives and the values phase fills it, and a phase
+  // deciding for itself whether the contract applies is how one prompt comes to state the rig's
+  // frame in section 2 and the reader's typed size in section 5. It is a property of the sheet, and
+  // a sheet has one answer.
+  const rig = sheetRigContract(plan, output);
 
-  // The size this sheet states, and the words section 2 prints it in — one answer for both, so the
-  // phrase and the arithmetic under it cannot name different figures. See `sheetTargetSize.ts` for
-  // why a loaded contract supersedes the field.
-  const { stated: statedTarget, text: statedTargetText } = sheetTargetSize(
-    category,
-    subject,
-    output,
-    plan,
-    rig,
-  );
-
-  // The same answer narrowed to a genuine component size, for the three readers that can do nothing
-  // with an assembly: each seats or measures one component, and an assembled figure fed to any of
-  // them prices a canvas of fifteen whole characters. `minFeatureSize` takes the wider value
-  // instead, because it has a defensible floor to state on such a sheet and no floor at all is worse
-  // than a permissive one.
-  const componentTarget = statedTarget?.quantity === 'COMPONENT' ? statedTarget.size : null;
-
-  // The whole-number enlargement the native pixel grid is delivered at, or `null` where this
-  // configuration has no native grid — a style that is not pixel art, a profile that states its own
-  // scale, no per-component size, or a component already large enough that there is nothing to
-  // enlarge. Read three times below — as the value, as the flag that gates the three places stating
-  // it, and as the unit the pixel-discipline section counts its minimum feature in — so the prompt
-  // cannot carry the carve-out without the figure it points at, nor name a native pixel where
-  // nothing defines one.
-  const nativeScale = nativeGridScale(
-    output.renderStyle,
-    output.resolutionProfile,
-    componentTarget,
-    output.aspectRatio,
-    componentCount,
-    rig,
-  );
+  // How big this sheet's things are and the grid they are drawn on, resolved together so the phrase
+  // section 2 prints and the arithmetic under it cannot name different figures. See `sheetSizing.ts`
+  // for why a loaded contract supersedes the field, and for the four ways there is no native grid.
+  const sizing = sheetSizing(category, subject, output, plan, rig, componentCount);
 
   // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the
   // same anatomy: a field reading `Tail ×0` cannot say one thing at the top of the prompt and
@@ -344,10 +311,8 @@ export function sheetFacts(
     reference,
     validationPass,
     componentCount,
-    statedTarget,
-    statedTargetText,
-    componentTarget,
-    nativeScale,
+    rig,
+    sizing,
     anatomyFacings,
     additionalAnatomyLine,
     clothingIsAComponent,

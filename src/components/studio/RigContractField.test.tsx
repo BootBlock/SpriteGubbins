@@ -19,7 +19,6 @@ const CONTRACT = {
   version: 1,
   skeleton_name: 'Humanoid',
   frame_size: { width: 48, height: 96 },
-  facings: ['east'],
   slots: [
     {
       slot_id: 'pelvis',
@@ -71,13 +70,21 @@ describe('RigContractField', () => {
     expect(useOutputStore.getState().output.rigContract?.skeleton_name).toBe('Humanoid');
   });
 
+  it('keeps the refusal live region in the document before there is anything to announce', () => {
+    // A region inserted with its first message is not announced, which is the whole of what it is
+    // for. Rendered empty, it is already there when the refusal arrives.
+    const { container } = render(<RigContractField appliesToSheet />);
+
+    expect(container.querySelector('[aria-live="polite"]')).not.toBeNull();
+  });
+
   it('says so when the file is not JSON at all, rather than failing silently', async () => {
     // The one failure that throws rather than returning a refusal, and the reader cannot tell the
     // two apart: both are a file that is not a rig contract.
     render(<RigContractField appliesToSheet />);
     await choose('{ not json');
 
-    expect(await screen.findByText(/not valid JSON/)).toBeTruthy();
+    expect(await screen.findByText(/could not be read as JSON/)).toBeTruthy();
   });
 
   it('gives the sheet back its own inventory when the contract is removed', async () => {

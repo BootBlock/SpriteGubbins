@@ -226,7 +226,7 @@ describe('every shipped preset', () => {
             preset.output.directions,
             sheetIndex,
             anatomy,
-            null,
+            preset.output.rigContract,
           ),
           `${preset.name} exceeds the practical ceiling on sheet ${String(sheetIndex + 1)} of ${String(sheets)}`,
         ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);

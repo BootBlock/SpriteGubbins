@@ -16,12 +16,16 @@ import { sparseSubject } from './sparseSubject.ts';
  * states outright that an absent attribute is the generator's to decide — so these presets ask for
  * exactly the constraints that matter and nothing else.
  *
- * **Two of the values below are the rig's, and a loaded rig contract supersedes both.** That game's
- * Rig Intake exports its skeleton as a file this app reads, and where one is loaded the assembled
- * size comes from its frame and the sheet's pieces from its slots — so `spriteTargetSize` and
- * `EIGHT_COMPASS` are what these presets state for a reader who has not loaded it, rather than a
- * copy anyone has to keep in step. Deleting them was considered and rejected: it leaves that reader
- * holding a prompt that states no size at all.
+ * **`spriteTargetSize` is the rig's, and a loaded rig contract supersedes it.** That game's Rig
+ * Intake exports its skeleton as a file this app reads, and where one is loaded the assembled size
+ * comes from its frame and the sheet's pieces from its slots — so the figure here is what these
+ * presets state for a reader who has not loaded it, rather than a copy anyone has to keep in step
+ * with the rig. Deleting it was considered and rejected: it leaves that reader holding a prompt
+ * that states no size at all.
+ *
+ * `EIGHT_COMPASS` is **not** superseded, and a contract has no opinion about it. How many facings
+ * to generate is the reader's decision about this run rather than a property of the rig, and the
+ * exported document's own `facings` list is deliberately not carried — see `types/rigContract.ts`.
  */
 
 /** What all three share: the projection, scale and lighting discipline the game's renderer needs. */

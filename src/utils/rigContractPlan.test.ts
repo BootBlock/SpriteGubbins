@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import type { RigContract } from '../types/rigContract.ts';
 import { planSlots } from './componentSlots.ts';
+import { planMirrorsPieces } from './planMirroring.ts';
 import { rigContractPlan } from './rigContractPlan.ts';
 
 /**
@@ -18,7 +19,6 @@ const CONTRACT: RigContract = {
   version: 1,
   skeleton_name: 'Humanoid',
   frame_size: { width: 48, height: 96 },
-  facings: ['east'],
   slots: [
     {
       slot_id: 'pelvis',
@@ -69,8 +69,9 @@ describe('rigContractPlan', () => {
   });
 
   it('replaces the shipped inventory rather than adding to it', () => {
-    // The shipped rig plan draws fifteen humanoid pieces in five groups. A contract that appended
-    // would contract for seventeen components and list two of them twice.
+    // The shipped rig plan draws fifteen humanoid pieces, as five entries of three in one group. A
+    // contract that appended would contract for seventeen components and list two of them twice —
+    // and the single group is why keeping the first one's closing prose keeps all of it.
     const before = planSlots(rigSheet());
     const after = planSlots(rigContractPlan(rigSheet(), CONTRACT));
 
@@ -102,6 +103,30 @@ describe('rigContractPlan', () => {
     const plan = rigContractPlan(rigSheet(), CONTRACT);
 
     expect(plan.groups[0]?.intro).toContain('Humanoid');
+  });
+
+  it('declares the mirror pairs the engine’s own names carry', () => {
+    // Section 5 chooses between two mirroring rules on the entries' own declarations, so a rebuilt
+    // inventory with none would tell a rig that plainly has sides that no piece may be mirrored at
+    // all. Only the right-hand member declares it, as the shipped plans do.
+    const sided: RigContract = {
+      ...CONTRACT,
+      slots: [
+        { ...CONTRACT.slots[0]!, pack_piece_name: 'left-upper-arm' },
+        { ...CONTRACT.slots[1]!, pack_piece_name: 'right-upper-arm' },
+      ],
+    };
+    const entries = rigContractPlan(rigSheet(), sided).groups[0]?.entries ?? [];
+
+    expect(entries[0]?.mirrors).toBeUndefined();
+    expect(entries[1]?.mirrors).toBe('left-upper-arm');
+    expect(planMirrorsPieces(rigContractPlan(rigSheet(), sided))).toBe(true);
+  });
+
+  it('claims no mirroring for a rig that has no pair', () => {
+    // The object and vehicle rigs are exactly this: a housing and a subassembly, or two views of one
+    // machine. Declaring a pair there would order a rule about pieces the sheet does not hold.
+    expect(planMirrorsPieces(rigContractPlan(rigSheet(), CONTRACT))).toBe(false);
   });
 
   it('falls back to a plain phrase for a contract that names no rig', () => {

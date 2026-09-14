@@ -114,7 +114,6 @@ describe('nativeGridScale', () => {
         version: 1,
         skeleton_name: 'Humanoid',
         frame_size: { width: 48, height: 96 },
-        facings: ['east'],
         slots: sizes.map((piece, at) => ({
           slot_id: `slot_${String(at)}`,
           pack_piece_name: `piece-${String(at)}`,
@@ -148,27 +147,31 @@ describe('nativeGridScale', () => {
         { width: 64, height: 96 },
       ]);
 
-      const forSmall = nativeGridScale('PIXEL_ART', 'HIGH_RESOLUTION', null, 'WIDE_16_9', 1, small);
-      const forMixed = nativeGridScale('PIXEL_ART', 'HIGH_RESOLUTION', null, 'WIDE_16_9', 1, mixed);
-
-      expect(forSmall).not.toBeNull();
-      expect(forMixed === null || forMixed < (forSmall ?? 0)).toBe(true);
+      // Exact, not "smaller or absent": a regression that answered `null` for both would satisfy an
+      // inequality and tell the prompt nothing at all.
+      expect(nativeGridScale('PIXEL_ART', 'HIGH_RESOLUTION', null, 'WIDE_16_9', 1, small)).toBe(48);
+      expect(nativeGridScale('PIXEL_ART', 'HIGH_RESOLUTION', null, 'WIDE_16_9', 1, mixed)).toBe(4);
     });
 
     it('ignores the typed size entirely once a contract is loaded', () => {
       // Two sources for one figure is the disagreement the contract exists to end, and the studio
       // still shows the field: it is what the sheet falls back to when the contract is removed.
+      // The same count either side, because the count is *not* ignored — the canvas still has to
+      // seat every component the sheet draws. It is the typed size that stops being read.
       const pieces = rig([{ width: 8, height: 22 }]);
       const withField = nativeGridScale(
         'PIXEL_ART',
         'CUSTOM',
         { width: 512, height: 512 },
         'WIDE_16_9',
-        43,
+        3,
         pieces,
       );
 
-      expect(withField).toBe(nativeGridScale('PIXEL_ART', 'CUSTOM', null, 'WIDE_16_9', 1, pieces));
+      // Both sides stated, so a regression answering `null` to each does not satisfy it by agreeing
+      // with itself.
+      expect(withField).toBe(17);
+      expect(nativeGridScale('PIXEL_ART', 'CUSTOM', null, 'WIDE_16_9', 3, pieces)).toBe(17);
     });
 
     it('still says nothing outside pixel art, which is the one gate a rig does not lift', () => {

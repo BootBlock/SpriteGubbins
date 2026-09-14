@@ -22,14 +22,37 @@ import type { RigContract } from '../types/rigContract.ts';
  * its outro are statements about how a rig sheet is drawn, which no contract has an opinion about —
  * and its `posing` is what said this was a rig sheet in the first place.
  */
+/**
+ * The name of the piece on the other side, or `null` where this name names no side.
+ *
+ * Only the right-hand member of a pair declares the mirror, as the shipped plans do: the rule reads
+ * "redrawn for their own side" against the side it was drawn from, and declaring it both ways would
+ * have each piece cite the other.
+ */
+function mirrorOf(name: string): string | null {
+  return name.startsWith('right-') ? `left-${name.slice('right-'.length)}` : null;
+}
+
 export function rigContractPlan(plan: SheetPlan, contract: RigContract): SheetPlan {
-  const entries: readonly ComponentEntry[] = contract.slots.map((slot) => ({
-    label: slot.pack_piece_name,
-    parts: [slot.pack_piece_name],
-    text: slot.pack_piece_name,
-    count: 1,
-    kind: 'anatomy' as const,
-  }));
+  const drawn = new Set(contract.slots.map((slot) => slot.pack_piece_name));
+  const entries: readonly ComponentEntry[] = contract.slots.map((slot) => {
+    const partner = mirrorOf(slot.pack_piece_name);
+    return {
+      label: slot.pack_piece_name,
+      parts: [slot.pack_piece_name],
+      text: slot.pack_piece_name,
+      count: 1,
+      kind: 'anatomy' as const,
+      // **Section 5's mirroring rule is decided by the entries**, so a rebuilt inventory that
+      // declared no pair would swap "left and right are mirrored in silhouette but redrawn for
+      // their own side" for "no piece may be produced by mirroring another" — on a rig that plainly
+      // has sides. The pairing is read off the engine's own names rather than guessed at: they are
+      // the names the importer keys by, and a rig with a `left-upper-arm` and a `right-upper-arm`
+      // has a mirror pair by construction. A rig with no such pair says nothing, which is the
+      // truth for the object and vehicle rigs the rule already excludes.
+      ...(partner !== null && drawn.has(partner) ? { mirrors: partner } : {}),
+    };
+  });
 
   const named = contract.skeleton_name === '' ? 'the rig' : contract.skeleton_name;
   // Spread rather than assigned, because the plan's own group may carry no outro and

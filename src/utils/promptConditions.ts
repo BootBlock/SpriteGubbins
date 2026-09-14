@@ -27,6 +27,7 @@ export function promptConditions(
   const {
     rigMode,
     plan,
+    rig,
     coveredDirections,
     coveredMirrorPairs,
     cameraElevation,
@@ -38,7 +39,7 @@ export function promptConditions(
     keyColor,
     reference,
     validationPass,
-    nativeScale,
+    sizing,
     anatomyFacings,
     additionalAnatomyLine,
     clothingIsAComponent,
@@ -81,7 +82,7 @@ export function promptConditions(
     // nothing else in the prompt asks for. The pixel-discipline minimum is a fourth mention and is
     // deliberately not gated: it changes its unit rather than disappearing, which is why it reads
     // the same `nativeScale` instead of this flag.
-    NATIVE_GRID: nativeScale === null ? '' : 'yes',
+    NATIVE_GRID: sizing.nativeScale === null ? '' : 'yes',
     // Read from the resolved profile rather than from the stored id, so a configuration naming a
     // machine this build no longer has emits no heading rather than an empty one — the same
     // reasoning that makes `resolveMode` the single answer about the sheet mode.
@@ -130,12 +131,11 @@ export function promptConditions(
     // declarations, so a category added to the rig table is answered without anything being
     // extended.
     MIRRORED_SIDES: planMirrorsPieces(plan) ? 'yes' : '',
-    // Whether the engine's own rig is loaded and this is the sheet it describes. Both halves are
-    // required: a contract is carried by every sheet of a batch, and section 5's geometry block
-    // would otherwise state a rig's piece sizes on an articulation sheet that draws none of them.
-    // `ASSEMBLED_TARGET` above is the same fact read for a different purpose, and deliberately not
-    // reused — a plan can price an assembly without being a rig.
-    RIG_CONTRACT: output.rigContract !== null && plan.posing === 'AT_REST' ? 'yes' : '',
+    // Whether the engine's own rig is loaded and this is the sheet it describes — read off the
+    // facts, never re-derived here. A contract is carried by every sheet of a batch, and this gate
+    // decides whether section 5's geometry block survives while `promptValues` decides what fills
+    // it: two readings of one question is how a heading comes to stand over an empty block.
+    RIG_CONTRACT: rig === null ? '' : 'yes',
     // Narrower than MULTI_DIRECTION for the same reason that flag exists at all: the anti-reflection
     // pair rules only bite where the sheet holds both members of a reflection pair, and on the
     // classic sets — which never do — they would be instruction about views the sheet does not hold.

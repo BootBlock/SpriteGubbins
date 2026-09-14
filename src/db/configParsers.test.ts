@@ -235,7 +235,6 @@ describe('parseOutputConfig — the engine’s rig contract', () => {
     version: 1,
     skeleton_name: 'Humanoid',
     frame_size: { width: 48, height: 96 },
-    facings: ['east'],
     slots: [
       {
         slot_id: 'pelvis',

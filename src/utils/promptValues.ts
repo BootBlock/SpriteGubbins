@@ -73,11 +73,9 @@ export function promptValues(
     keyColor,
     reference,
     componentCount,
-    statedTarget,
-    statedTargetText,
+    rig,
+    sizing: { stated, text: statedText, component, nativeScale },
     anatomyFacings,
-    componentTarget,
-    nativeScale,
     additionalAnatomyLine,
     oneSidedFeatures,
   } = facts;
@@ -152,7 +150,7 @@ export function promptValues(
     // component count or by the layout on every plan that carried one — see `SHARE_RANGE`.
     RESOLUTION_PROFILE_DESCRIPTION: resolutionProfileDescription(
       output.resolutionProfile,
-      statedTarget?.quantity === 'ASSEMBLED',
+      stated?.quantity === 'ASSEMBLED',
       plan.scaleUnit,
     ),
     // A function of the target size as well as the profile, because `CUSTOM` is the one profile
@@ -162,10 +160,10 @@ export function promptValues(
     // stated *native* unconditionally for as long as the two were separate, so every pixel-art
     // prompt on a stock profile — the default among them — measured against a unit it never
     // defined.
-    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, statedTarget, nativeScale !== null),
+    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, stated, nativeScale !== null, rig),
     // Sprite-scale bullets join the pixel discipline only when the stated component is small
     // enough that silhouette carries the identity; `''` is what drops the optional line.
-    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, componentTarget),
+    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, component),
     // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
     // the value is still supplied because `substitute` throws on a token it has no value for, and
     // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.
@@ -250,7 +248,7 @@ export function promptValues(
     // Every piece's size, joint end and pivot, from the engine's own rig. Empty on every sheet
     // that carries no contract, which is what `RIG_CONTRACT` gates the block on — the value is
     // still supplied because `substitute` throws on a token it has no value for.
-    RIG_PIECE_GEOMETRY: rigContractGeometry(plan.posing === 'AT_REST' ? output.rigContract : null),
+    RIG_PIECE_GEOMETRY: rigContractGeometry(rig),
 
     SERIES_POSITION: String(batch.ordinal),
     SERIES_TOTAL: String(batch.sheets.length),
@@ -291,10 +289,10 @@ export function promptValues(
   }
 
   // Off the facts rather than off the field, because a loaded rig contract supersedes what the
-  // reader typed: the frame is a number the engine declares. `statedTarget` is the same answer
+  // reader typed: the frame is a number the engine declares. `stated` is the same answer
   // parsed, and the two come from one place so section 2's words and the arithmetic under them
   // cannot name different figures.
-  values.SPRITE_TARGET_SIZE = statedTargetText;
+  values.SPRITE_TARGET_SIZE = statedText;
   values.SOCKETS = output.sockets;
   values.IDENTITY_LOCK = output.identityLock;
   values.ADDITIONAL_ANATOMY = additionalAnatomyLine;

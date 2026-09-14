@@ -17,7 +17,6 @@ function document(): Record<string, unknown> {
     version: RIG_CONTRACT_VERSION,
     skeleton_name: 'Humanoid',
     frame_size: { width: 48, height: 96 },
-    facings: ['east', 'south'],
     slots: [
       {
         slot_id: 'pelvis',
@@ -50,22 +49,25 @@ describe('parseRigContract', () => {
 
     expect(problems).toEqual([]);
     expect(contract?.frame_size).toEqual({ width: 48, height: 96 });
-    expect(contract?.facings).toEqual(['east', 'south']);
     expect(contract?.slots.map((slot) => slot.pack_piece_name)).toEqual(['pelvis', 'left-upper-arm']);
     expect(contract?.slots[1]?.piece_size).toEqual({ width: 8, height: 22 });
     expect(contract?.slots[1]?.joint_edge).toBe('top');
     expect(contract?.slots[1]?.rest_position_in_frame).toEqual({ x: -11, y: -78 });
   });
 
-  it('drops the two fields nothing here can state', () => {
-    // Both are real fields of the exported document, and carrying them would be carrying data no
-    // section prints: this app draws pieces rather than layering them, and the relative rest
-    // position is an offset against a parent bone that only the engine assembles.
-    const { contract } = parseRigContract(document());
+  it('drops the three fields nothing here can state, and refuses none of them', () => {
+    // All three are real fields of the exported document, and carrying them would be carrying data
+    // no section prints: this app draws pieces rather than layering them, the relative rest position
+    // is an offset against a parent bone only the engine assembles, and the facings are the reader's
+    // own `directions` setting. A document is not refused for holding them, or for omitting them.
+    const { contract, problems } = parseRigContract(document());
+    const withoutFacings = parseRigContract({ ...document(), facings: undefined });
 
-    expect(contract).not.toBeNull();
+    expect(problems).toEqual([]);
     expect(contract).not.toHaveProperty('draw_orders');
+    expect(contract).not.toHaveProperty('facings');
     expect(contract?.slots[0]).not.toHaveProperty('rest_position');
+    expect(withoutFacings.contract).not.toBeNull();
   });
 
   it('refuses a JSON file that is not a rig contract, and says what it is instead', () => {

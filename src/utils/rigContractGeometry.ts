@@ -30,13 +30,31 @@ function joinAt(slot: RigSlot): string {
   return `${across}, ${up}`;
 }
 
-function line(slot: RigSlot): string {
+/**
+ * One piece's line, with its parent named as the rest of the prompt names it.
+ *
+ * **`parent_slot` holds a `slot_id`, and the prompt states no slot ids.** Every name in section 4
+ * and every name that leads a line here is a `pack_piece_name`, which is a different vocabulary —
+ * the engine's own pairing is `upper_arm_l` with `left-upper-arm`. Emitting the raw parent would
+ * point the model at an identifier appearing nowhere else in the prompt, which is worse than
+ * silence: the joint hierarchy is the only thing the clause contributes, and an unresolvable name
+ * contributes nothing while looking as though it does.
+ *
+ * A `parent_slot` naming no declared slot therefore says nothing at all, rather than repeating it.
+ */
+function line(slot: RigSlot, named: ReadonlyMap<string, string>): string {
   const size = `${String(slot.piece_size.width)} × ${String(slot.piece_size.height)} px`;
   const pivot = `${String(slot.piece_pivot.x)}, ${String(slot.piece_pivot.y)}`;
-  const onto = slot.parent_slot === '' ? 'the rig’s root piece' : `carried by ${slot.parent_slot}`;
+  const parent = named.get(slot.parent_slot);
+  const onto =
+    slot.parent_slot === ''
+      ? ', and it is the piece the whole rig hangs from'
+      : parent === undefined
+        ? ''
+        : `, carried by ${parent}`;
   return (
     `- **${slot.pack_piece_name}** — ${size}, joint at the ${slot.joint_edge} edge, ` +
-    `pivot at ${pivot}. Its joint sits ${joinAt(slot)}, ${onto}.`
+    `pivot at ${pivot}. Its joint sits ${joinAt(slot)}${onto}.`
   );
 }
 
@@ -50,12 +68,15 @@ export function rigContractGeometry(contract: RigContract | null): string {
   if (contract === null) return '';
 
   const frame = `${String(contract.frame_size.width)} × ${String(contract.frame_size.height)} px`;
+  // Slot id to the name the sheet knows that piece by, because a `parent_slot` is stated in the
+  // first vocabulary and the prompt only ever establishes the second.
+  const named = new Map(contract.slots.map((slot) => [slot.slot_id, slot.pack_piece_name]));
   return (
     `Every piece below is drawn at its stated size within the ${frame} assembled figure, and the ` +
     'assembly is built by rotating these pieces about the joints named here. A piece drawn larger ' +
     'or smaller than its stated size leaves a gap or an overlap at its joint that no rig corrects. ' +
     'Each pivot is given as pixels across and down from that piece’s own top-left corner, and each ' +
     'joint position from the centre of the figure’s base.\n\n' +
-    contract.slots.map(line).join('\n')
+    contract.slots.map((slot) => line(slot, named)).join('\n')
   );
 }

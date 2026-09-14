@@ -35,7 +35,7 @@ const SHEET_UNITS: readonly (readonly [SubjectCategory, string])[] = SUBJECT_CAT
 const NATIVE = ' native pixels';
 function figure(profile: ResolutionProfile, spriteTargetSize: string): string {
   const size = parseTargetSize(spriteTargetSize);
-  const stated = minFeatureSize(profile, size === null ? null : { quantity: 'COMPONENT', size }, true);
+  const stated = minFeatureSize(profile, size === null ? null : { quantity: 'COMPONENT', size }, true, null);
   expect(stated.endsWith(NATIVE), stated).toBe(true);
   return stated.slice(0, -NATIVE.length);
 }
@@ -96,13 +96,13 @@ describe('minFeatureSize', () => {
     // The defect: the bullet said *native pixels* on every pixel-art sheet, while the block defining
     // a native pixel is gated on a far narrower condition — so the app's own default configuration
     // stated a measurement in a unit its prompt never established.
-    expect(minFeatureSize('CUSTOM', { quantity: 'COMPONENT', size: { width: 16, height: 32 } }, true)).toBe(
-      '1 × 1 native pixels',
-    );
-    expect(minFeatureSize('HIGH_RESOLUTION', null, false)).toBe('3 × 3 delivered pixels');
+    expect(
+      minFeatureSize('CUSTOM', { quantity: 'COMPONENT', size: { width: 16, height: 32 } }, true, null),
+    ).toBe('1 × 1 native pixels');
+    expect(minFeatureSize('HIGH_RESOLUTION', null, false, null)).toBe('3 × 3 delivered pixels');
     // The figure does not move with the unit — only the noun does.
-    expect(minFeatureSize('MID_RESOLUTION', null, true)).toBe('2 × 2 native pixels');
-    expect(minFeatureSize('MID_RESOLUTION', null, false)).toBe('2 × 2 delivered pixels');
+    expect(minFeatureSize('MID_RESOLUTION', null, true, null)).toBe('2 × 2 native pixels');
+    expect(minFeatureSize('MID_RESOLUTION', null, false, null)).toBe('2 × 2 delivered pixels');
   });
 
   it('takes the finest rung where the stated size is the assembly, never a coarser guess', () => {
@@ -124,7 +124,7 @@ describe('minFeatureSize', () => {
     // 480 would be past the last rung as a component size, which is what makes this case the one
     // that shows the difference: `3 × 3` on limb segments a few dozen pixels across.
     expect(figure('CUSTOM', '480 × 960 px')).toBe('3 × 3');
-    expect(minFeatureSize('CUSTOM', assembled, false)).toBe('1 × 1 delivered pixels');
+    expect(minFeatureSize('CUSTOM', assembled, false, null)).toBe('1 × 1 delivered pixels');
 
     // And the three shipped rig presets that carry CUSTOM keep the floor they always had — each
     // sits on the finest rung by its assembled edge, so this restores rather than changes them.
@@ -137,7 +137,7 @@ describe('minFeatureSize', () => {
         0,
         size,
       );
-      expect(minFeatureSize('CUSTOM', rig, false)).toBe('1 × 1 delivered pixels');
+      expect(minFeatureSize('CUSTOM', rig, false, null)).toBe('1 × 1 delivered pixels');
     }
   });
 

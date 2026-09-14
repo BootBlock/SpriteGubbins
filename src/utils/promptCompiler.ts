@@ -85,7 +85,7 @@ export function generatePrompt(
     assembly: CATEGORY_ASSEMBLY[category],
     // The same two answers `promptConditions` gave the template's own gates, so a wrapper can never
     // name a block the prompt it wraps does not carry.
-    nativeGrid: facts.nativeScale !== null,
+    nativeGrid: facts.sizing.nativeScale !== null,
     palette: facts.palette !== null,
     // The headings' own numbers, from the same walk that resolved the prompt body's citations — so a
     // wrapper naming a section cannot come to name a different one than the prose does.
