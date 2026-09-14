@@ -68,8 +68,8 @@ export function RigContractField({ appliesToSheet }: RigContractFieldProps) {
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-xs leading-relaxed text-ink-muted">
             {rigContract.skeleton_name === '' ? 'A rig' : rigContract.skeleton_name} —{' '}
-            {rigContract.slots.length} pieces in a {rigContract.frame_size.width} ×{' '}
-            {rigContract.frame_size.height} frame.{' '}
+            {rigContract.slots.length} {rigContract.slots.length === 1 ? 'piece' : 'pieces'} in a{' '}
+            {rigContract.frame_size.width} × {rigContract.frame_size.height} frame.{' '}
             {appliesToSheet
               ? 'The inventory, the piece names and the target size come from it.'
               : 'This sheet does not draw the rig’s pieces, so nothing here reads it — choose the rig sheet under Sheet Contents.'}

@@ -53,7 +53,9 @@ describe('RigContractField', () => {
     await waitFor(() => {
       expect(useOutputStore.getState().output.rigContract?.skeleton_name).toBe('Humanoid');
     });
-    expect(screen.getByText(/1 pieces in a 48 × 96 frame/)).toBeTruthy();
+    // One piece, so the noun is singular: a summary reading “1 pieces” is the kind of thing a
+    // test that only counted characters would have pinned as correct.
+    expect(screen.getByText(/1 piece in a 48 × 96 frame/)).toBeTruthy();
   });
 
   it('says why a file was refused, and keeps the contract already loaded', async () => {
