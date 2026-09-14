@@ -795,8 +795,28 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * studio is the first view and the prompt compiles on it.
  *
  * 2405 leaves **5.19 KiB**, which is the headroom the figure above was set with.
+ *
+ * **Raised from 2405 by VEHICLE's assembly bases drawing the drive they name** (#288). Every VEHICLE
+ * sheet drew a near-side drive unit and a far-side one whatever the base said, so six of the ten
+ * pooled values stated one division above an inventory drawing another. What a first visit pays for
+ * is the builder that turns a *division* into the three sheets and their prose
+ * (`sheetPlans/vehicleDivision.ts`), the five divisions that are not side-paired
+ * (`sheetPlans/vehicleDivisions.ts`), the two sheets of a vehicle in one piece
+ * (`sheetPlans/vehicleRigidHull.ts`), and six rows in `CATEGORY_ASSEMBLY_BASES`. Nearly all of it is
+ * the divisions themselves — six hulls, twelve drive units, six mounts and five access pieces, each
+ * with the words its entry writes and the name each drawing takes — which is constant data the entry
+ * chunk reaches, the footing every raise above stands on. Against it the change *removes* the three
+ * VEHICLE plans written out by hand and one of `CATEGORY_ASSEMBLY`'s two VEHICLE terms. Measured
+ * against `main` at `762d457`, rebuilt from the same lockfile — **2399.81 KiB across 49 entries** on
+ * the build's summary line, the figure the paragraph above records — this build reports **2407.18
+ * across 49** on the same line, a delta of **7.37** that crossed a ceiling the base sat 5.19 under.
+ * No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed. All 7.37 lands in
+ * the `quantiseDials` chunk, which is where this app's constant data is bundled; `index` fell 0.02 and
+ * `useSubjectStore` rose by the same order, so nothing of it reached the code.
+ *
+ * 2408 leaves **0.82 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2405;
+export const PRECACHE_CEILING_KIB = 2408;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
