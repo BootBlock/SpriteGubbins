@@ -9,6 +9,7 @@ import {
 } from '../../constants/output/index.ts';
 import { paletteFor } from '../../constants/palettes/index.ts';
 import { validationPassFor } from '../../constants/promptText/index.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { statesAssembledSize } from '../../utils/componentTargetSize.ts';
@@ -86,13 +87,12 @@ export function RenderStyleFields() {
   const category = useSubjectStore((state) => state.category);
   // The subject fields the sheet is a function of: a rigid object's views state a component size where
   // the standard views state an assembled one.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
+  const subject = useSheetSubject();
 
   const pass = validationPassFor(output.renderStyle);
   const assembled = statesAssembledSize(
     category,
-    { anatomy, clothing },
+    subject,
     output.directionalMode,
     output.directions,
     output.sheetIndex,

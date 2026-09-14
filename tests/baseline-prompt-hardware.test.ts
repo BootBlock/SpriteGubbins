@@ -251,10 +251,25 @@ describe('§2 of the baseline-prompt document describes the hardware, palette an
       `the background field, which stays the key colour §${String(sectionNumber('CONTRACT'))} fixes rather than being drawn from the palette`,
     );
     expect(LIBRARY_PALETTES.length).toBeGreaterThan(0);
-    expect(
-      KEYS.flatMap((key) =>
-        LIBRARY_PALETTES.filter((palette) => !describePalette(palette, key).includes('stays the key colour')),
-      ),
-    ).toStrictEqual([]);
+    // The exception is stated two ways, because on a transparent field there is no colour to hold and
+    // §0 has just banned a painted one. Each palette is held to the half its key earns, so a branch
+    // that stopped varying — or one that varied the wrong way — fails here rather than shipping a
+    // block that argues with the contract above it.
+    expect(prose()).toContain(
+      'the field stays fully transparent and takes no colour from this palette instead',
+    );
+    for (const [name, key] of Object.entries(BACKGROUND_KEY_COLORS)) {
+      const wanted = key === null ? 'stays fully transparent' : 'stays the key colour';
+      const unwanted = key === null ? 'stays the key colour' : 'stays fully transparent';
+
+      expect(
+        LIBRARY_PALETTES.filter((palette) => !describePalette(palette, key).includes(wanted)),
+        name,
+      ).toStrictEqual([]);
+      expect(
+        LIBRARY_PALETTES.filter((palette) => describePalette(palette, key).includes(unwanted)),
+        name,
+      ).toStrictEqual([]);
+    }
   });
 });

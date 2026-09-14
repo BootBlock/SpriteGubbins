@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
-import {
-  absentOptionFor,
-  CATEGORY_OPTIONS,
-  defaultSubjectFor,
-  fieldLabelFor,
-} from '../constants/categories/index.ts';
+import { CATEGORY_OPTIONS, defaultSubjectFor, fieldLabelFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { directionalModeChoices } from '../constants/output/index.ts';
 import {
@@ -28,6 +23,7 @@ import {
 import { everySeriesOf, everySheetOf, planProseFor, sheetsProseFor } from '../test/categoryProse.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
+import { decliningEverything, standardSubject } from '../test/sheetSubject.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
@@ -39,7 +35,7 @@ import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { planSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
-import { planAsDrawn } from './sheetPlanClothing.ts';
+import { planAsDrawn } from './sheetPlanAbsence.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
 /**
@@ -444,19 +440,19 @@ function scaleExamplePieces(example: string): readonly string[] {
 }
 
 /**
- * The sheet as the reader who declines gets it — every entry an `absentOption` can take away
+ * The sheet as the reader who declines everything gets it — every entry an `absentOption` can take away
  * already removed.
  *
- * A plan's entries are unconditional except for the ones drawing what its `clothing` pool offers
- * an absence of, and BACKGROUND's absence is its own *default*: a reader who touches nothing gets
- * a layer library with no atmosphere veil, no light shaft and no drifting particle. So the plan as
- * declared is the wrong corpus — a word naming a light shaft grounds against the plan and is absent
- * from the section 4 the default subject actually compiles, which is the same
- * prompt-disagrees-with-itself defect one field over. The leanest sheet is the only one every
- * reader receives, so it is what section 0's example and section 2's unit have to be true of.
+ * A plan's entries are unconditional except for the ones bound to a pool that offers an absence, and
+ * two such absences are a category's own *default*: a reader who touches nothing gets a BACKGROUND
+ * layer library with no atmosphere veil, no light shaft and no drifting particle, and a TERRAIN blend
+ * set with no focal feature. So the plan as declared is the wrong corpus — a word naming a light shaft
+ * grounds against the plan and is absent from the section 4 the default subject actually compiles,
+ * which is the same prompt-disagrees-with-itself defect one field over. The leanest sheet is the only
+ * one every reader receives, so it is what section 0's example and section 2's unit have to be true of.
  */
 function leanestSheet(category: SubjectCategory, plan: SheetPlan): SheetPlan {
-  return planAsDrawn(plan, category, absentOptionFor(category, 'clothing') ?? '');
+  return planAsDrawn(plan, category, decliningEverything(standardSubject(), category));
 }
 
 describe('section 0’s scale example names pieces the sheet in front of the reader draws', () => {

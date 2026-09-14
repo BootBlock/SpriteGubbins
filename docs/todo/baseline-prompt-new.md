@@ -276,7 +276,11 @@ not a list anybody reads.
 > where a palette is set the strategy line is dropped from §2 rather than emitted alongside it — the
 > same rule the Quantise tab applies when it maps a returned sheet onto the palette instead of
 > choosing colours out of the sheet itself. The one exception written into the palette block is the
-> background field, which stays the key colour §0 fixes rather than being drawn from the palette.
+> background field, which stays the key colour §0 fixes rather than being drawn from the palette. On
+> a sheet whose field is transparent there is no such colour, so the exception says the field stays
+> fully transparent and takes no colour from this palette instead — the wording §0's own palette item
+> branches the same way, because a prompt that asks for alpha and reserves a colour for the same
+> field contradicts itself.
 >
 > **The key is kept off the components in the other direction too.** §0 reserves the key colour for
 > the background on every sheet whose field is a colour, because the Quantise tab keys the field out
@@ -327,6 +331,10 @@ Satisfy this section before any aesthetic consideration.
    That colour belongs to the background alone: no part of any component is drawn in it, or in a
    shade near enough to be taken for it, whatever colour anything below names.
 [/IF]
+[IF:KEY_COLOUR!=yes]
+   Deliver that transparency as the file’s alpha channel. A drawn checkerboard, a grid of grey
+   squares or a flat matte in place of it is a painted background and fails this rule.
+[/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
 [/IF]
@@ -354,8 +362,13 @@ Satisfy this section before any aesthetic consideration.
 [/IF]
 [IF:PALETTE]
 [N]. Every colour on every component comes from the palette section [SEC:STYLE] fixes, and no colour outside
-   it appears anywhere on them. The background field is the exception and stays the key colour
-   named above.
+   it appears anywhere on them. The background field is the exception.
+[IF:KEY_COLOUR]
+   It stays the key colour named above.
+[/IF]
+[IF:KEY_COLOUR!=yes]
+   It stays fully transparent, and takes no colour from the palette.
+[/IF]
 [/IF]
 [IF:SERIES]
 
@@ -1011,6 +1024,10 @@ Before delivering, verify:
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
 [IF:KEY_COLOUR]
 [N]. No part of any component is in the key colour, or in a shade near enough to be taken for it.
+[/IF]
+[IF:KEY_COLOUR!=yes]
+[N]. The space between the components is transparent in the file’s alpha channel, not a drawn
+   checkerboard or a painted matte.
 [/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text or labels anywhere.

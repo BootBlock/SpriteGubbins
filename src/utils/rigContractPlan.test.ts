@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
+import { standardSubject } from '../test/sheetSubject.ts';
 import type { RigContract } from '../types/rigContract.ts';
 import { planSlots } from './componentSlots.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
@@ -43,13 +44,7 @@ const CONTRACT: RigContract = {
 
 /** The shipped rig sheet, which is the plan this override is applied to in the app. */
 function rigSheet() {
-  return sheetPlanFor(
-    'CHARACTER',
-    { anatomy: 'Humanoid Biped', clothing: '' },
-    'CUTOUT_RIG_SINGLE_DIRECTION',
-    'EIGHT_COMPASS',
-    0,
-  );
+  return sheetPlanFor('CHARACTER', standardSubject(), 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0);
 }
 
 describe('rigContractPlan', () => {

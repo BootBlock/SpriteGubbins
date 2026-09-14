@@ -84,25 +84,37 @@ export const DOWNLOADS_RECORD_THE_STUDIO =
 
 /**
  * What a value meaning *the subject has none of this* does to the sheet, on the two fields whose
- * inventory draws the attribute as pieces of its own and offers a way to decline it.
+ * inventory draws the attribute as pieces of its own, offers a way to decline it, and drops **more
+ * than one piece** when a reader does.
  *
  * A sheet plan is otherwise unconditional, so a vehicle's cladding panel and a background's
  * atmosphere layer were ordered whatever the reader had chosen — the prompt stating in section 1
  * that the subject had none and in section 4 that it was to be drawn. The entries are dropped now,
  * which changes the component count, and that is the one thing about the behaviour a reader cannot
  * see from the field: it is the same fact in the same words because it is the same mechanism. See
- * `utils/sheetPlanClothing.ts`.
+ * `utils/sheetPlanAbsence.ts`.
  *
  * **It says *a value*, not *choosing one*, because BACKGROUND's is its default** — a reader who
  * never opens the field has already declined the atmosphere layer, and a sentence about choosing
  * would describe a state that is in force before they arrive.
  *
- * The five pools that offer such a value on a category whose plans draw nothing are deliberately not
- * among them: nothing is dropped there, so the sentence would be false. **TERRAIN is the sixth and
- * is out for the opposite reason** — its blend set does drop seven tiles, but they are the variants
- * that *differ in* the scatter rather than pieces of it, so “these pieces” would name something the
- * sentence before it never described. Its card states the drop in its own words instead, naming the
- * tiles and what is left.
+ * **Nine pools declare such a value and two carry this sentence**, so the seven that do not are worth
+ * naming, in three groups.
+ *
+ * Five offer it on a category whose plans draw nothing: nothing is dropped there, so the sentence
+ * would be false. **TERRAIN's *Scatter Layer* is the sixth and is out for the opposite reason** — its
+ * blend set does drop seven tiles, but they are the variants that *differ in* the scatter rather than
+ * pieces of it, so “these pieces” would name something the sentence before it never described. Its
+ * card states the drop in its own words instead, naming the tiles and what is left.
+ *
+ * **TERRAIN's *Focal Feature* is the seventh, and it is out on number alone** (issue #293). It is the
+ * first field outside `clothing` to declare an absence, and it meets every other test this sentence
+ * sets: `Focal feature ×1` is the attribute and nothing else, its pool offers `No Focal Feature`, and
+ * `planAsDrawn` takes the entry off the feature library. What it does not meet is the plural — one
+ * piece goes, so “these pieces … falls with them” would be a sentence about a quantity the sheet does
+ * not have. Its card therefore says the same fact in the singular, and **it must still say the count
+ * falls**, because that is the half a reader cannot see from the field. A second such field that drops
+ * a run rather than a piece takes this sentence rather than writing a third wording of it.
  */
 export const ABSENT_OPTION_DROPS_THE_PIECES =
   'A value meaning there is none takes these pieces off the sheet, and the component count falls with them.';

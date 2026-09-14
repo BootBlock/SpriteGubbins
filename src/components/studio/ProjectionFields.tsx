@@ -7,6 +7,7 @@ import {
   DIRECTION_LISTS,
   resolveCameraElevation,
 } from '../../constants/promptText/index.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { facingApplies, primaryFacing } from '../../utils/sheetDirections.ts';
@@ -59,8 +60,7 @@ export function ProjectionFields() {
   const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
   const category = useSubjectStore((state) => state.category);
   // The subject fields the selected sheet is a function of, which `facingApplies` below resolves.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
+  const subject = useSheetSubject();
 
   // Resolved through the category rather than read raw, for the same reason `SheetFields` resolves
   // its sheet index: a stored set this subject cannot be turned to would otherwise put the select on
@@ -144,7 +144,7 @@ export function ProjectionFields() {
         }}
       />
 
-      {facingApplies(category, { anatomy, clothing }, output) && (
+      {facingApplies(category, subject, output) && (
         <SelectField
           label="Primary Facing"
           tooltip={OUTPUT_TOOLTIPS.primaryDirection}

@@ -1,3 +1,4 @@
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
@@ -33,8 +34,7 @@ export function ComponentBudgetNotice() {
   const rigContract = useOutputStore((state) => state.output.rigContract);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   // The other two subject fields the count reads — see `componentSet.ts`.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
+  const subject = useSheetSubject();
   const category = useSubjectStore((state) => state.category);
 
   // The same sum the prompt, the inventory heading and the atlas grid all state, read through the
@@ -51,7 +51,7 @@ export function ComponentBudgetNotice() {
   // and select it.
   const count = componentCountFor(
     category,
-    { anatomy, clothing },
+    subject,
     directionalMode,
     directions,
     sheetIndex,

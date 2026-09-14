@@ -31,6 +31,18 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * only what an autotiler indexes on both — the blend set's tiles, and the feature library's elevation
  * edge, whose standing features and openings are placed once and indexed by nothing — and every named
  * discipline is drawn by the sheet it describes alone, in `sheetPlans/assemblyBases.ts` (issue #283).
+ *
+ * **`Focal Feature` is the second field here that a reader can decline, and the first outside
+ * `clothing`** (issue #293). Every one of its eleven named values is a piece placed once — a hero
+ * boulder, a standing stone, a crystal formation — which the feature library draws as
+ * `Focal feature ×1` and the blend set has no way to draw: a tile carrying a landmark is a mark a
+ * viewer picks out twice across a laid field, and that sheet's own outro forbids one. So no value of
+ * the pool is true of both sheets, and `MODE_BOUND_OPTIONS` cannot answer it — a pool with every value
+ * bound has none for `defaultSubjectFor` to open on. `No Focal Feature` is the value that is true of
+ * both, and it leads the pool so that the subject a category switch installs is the one a blend set
+ * agrees with. The feature library drops its focal feature for a reader who picks it, through
+ * `FieldOption.absentOption` and `ComponentEntry.attribute`, and keeps the boulders, the rooted growth
+ * and the spoil heap — a plainer library rather than an incomplete one.
  */
 export const TERRAIN: CategoryDefinition = {
   label: 'Terrain / Ground Tile',
@@ -171,8 +183,9 @@ export const TERRAIN: CategoryDefinition = {
       key: 'face_head',
       label: 'Focal Feature',
       tooltip:
-        'The one thing the eye lands on — the hero rock, the water surface, the glowing vent. Every other piece in the set is written to go unnoticed, so this is where a terrain sheet is allowed to be distinctive, and it belongs on a piece placed once rather than on a tile that repeats. Only the feature library draws such a piece: a blend set is tiles and nothing else, and its own rule against a mark a player could recognise twice is what forbids one there.',
+        'The one thing the eye lands on — the hero rock, the water surface, the glowing vent. Every other piece in the set is written to go unnoticed, so this is where a terrain sheet is allowed to be distinctive, and it belongs on a piece placed once rather than on a tile that repeats. Only the feature library draws such a piece: a blend set is tiles and nothing else, and its own rule against a mark a player could recognise twice is what forbids one there. No Focal Feature is therefore the value a blend set takes, and on a feature library it removes that one piece and leaves the boulders, the rooted growth and the spoil heap, so the component count falls by one.',
       options: [
+        'No Focal Feature',
         'Hero Boulder Outcrop',
         'Still Water Surface',
         'Glowing Vent Or Fissure',
@@ -185,6 +198,7 @@ export const TERRAIN: CategoryDefinition = {
         'Shallow Ford & Stepping Stones',
         'Charred Stump Field',
       ],
+      absentOption: 'No Focal Feature',
     },
     {
       key: 'anatomy',

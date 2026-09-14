@@ -34,13 +34,15 @@
  * a hatch and a footing.
  */
 import type { Direction } from './rendering.ts';
+import type { DeclinableFieldKey } from './subject.ts';
 
 export const COMPONENT_KINDS = ['anatomy', 'appendage', 'mechanism', 'structure', 'tile', 'frame'] as const;
 
 export type ComponentKind = (typeof COMPONENT_KINDS)[number];
 
 /**
- * How one inventory entry stands to what its category's `clothing` field describes.
+ * How one inventory entry stands to the subject attribute it is bound to — see
+ * {@link AttributeBinding}, which names the field.
  *
  * **Two independent questions, and one value answers both**, which is why this is a union rather
  * than a pair of flags free to disagree. Section 1 has to know whether its paint rule is excepted on
@@ -50,20 +52,23 @@ export type ComponentKind = (typeof COMPONENT_KINDS)[number];
  * without drawing it, which is the case a pair of booleans let a plan get wrong and this union does
  * not.
  *
- * **The test of which value an entry takes is what that category's `clothing` field describes**,
- * with the pool as the evidence rather than the criterion. INTERFACE's field is what is applied
- * along the widget's edge, so the nine-slice set's corner ornament carries `'DRAWS_IT'` and its
- * divider rail carries nothing — a rule between two sections is not an edge treatment, and nothing
- * the pool offers is a divider.
+ * **The test of which value an entry takes is what the bound field describes**, with the pool as the
+ * evidence rather than the criterion. INTERFACE's `clothing` field is what is applied along the
+ * widget's edge, so the nine-slice set's corner ornament carries `'DRAWS_IT'` and its divider rail
+ * carries nothing — a rule between two sections is not an edge treatment, and nothing the pool
+ * offers is a divider.
  */
-export type ClothingRole =
+export type AttributeRole =
   /**
    * The entry is the attribute and nothing else — VEHICLE's `Cladding panel or fairing ×1`,
-   * BACKGROUND's `Atmosphere veil ×1`, INTERFACE's `Corner ornament ×1`.
+   * BACKGROUND's `Atmosphere veil ×1`, INTERFACE's `Corner ornament ×1`, TERRAIN's
+   * `Focal feature ×1`.
    *
-   * Section 1 excepts the attribute from its paint rule, and `planAsDrawn` drops the entry for a
-   * subject that has none: the count, the inventory prose and the manifest's slot names all follow,
-   * because all three walk one structure.
+   * `planAsDrawn` drops the entry for a subject that has none: the count, the inventory prose and the
+   * manifest's slot names all follow, because all three walk one structure. Where the bound field is
+   * `clothing`, section 1 also excepts the attribute from its paint rule while the entry is there —
+   * which is a question about that field alone, since the rule it excepts from is the rule about
+   * fitted, applied and worn attributes.
    */
   | 'DRAWS_IT'
   /**
@@ -74,8 +79,8 @@ export type ClothingRole =
    *
    * Section 1 excepts the attribute as above, and the entry **cannot be taken away**: dropping it
    * would take a handle and a latch with it, and keeping it orders a mounting bracket for a subject
-   * that has no mount. So **a category declaring an `absentOption` for `clothing` may carry none of
-   * these at all**, and `sheetPlanClothing.test.ts` fails on one. The remedy is to split the line,
+   * that has no mount. So **a field declaring an `absentOption` may carry none of these at all**, and
+   * `sheetPlanAbsence.test.ts` fails on one. The remedy is to split the line,
    * which is what VEHICLE's rig fittings and INTERFACE's trim were: two entries where the cladding
    * panel and the corner ornament each stand alone, and the lamp housing and the divider rule beside
    * them are ordinary components that were never the reader's to decline.
@@ -99,6 +104,32 @@ export type ClothingRole =
    * indexes — so the deliverable is whole and the reader has simply asked for less variation.
    */
   | 'VARIES_IN_IT';
+
+/**
+ * Which subject field an entry is conditional on, and how — the pair {@link AttributeRole} is half of.
+ *
+ * **The field is named rather than assumed, because two of them declare an absence** (issue #293).
+ * `clothing` was the first and was the only one for as long as the machinery was written against it:
+ * the mechanism read `absentOptionFor(category, 'clothing')` and no entry had to say which attribute
+ * it drew, because there was only one it could be. TERRAIN's *Focal Feature* is the second, and it is
+ * a different kind of thing entirely — the one distinctive piece a field is composed around, which
+ * only the feature library draws, while the blend set forbids a mark a viewer could pick out twice
+ * across a laid field. Naming the field is what lets one plan hold entries bound to both.
+ *
+ * **A field, not a value.** The value that means *there is none* is the pool's own, declared once in
+ * `FieldOption.absentOption`, so an entry says what it is conditional on and the category says what
+ * declining it looks like. An entry naming a value as well would be that string written in two
+ * places, free to drift from the option the reader is actually shown.
+ *
+ * **One binding per entry**, which is the arrangement rather than a limit reached for: an entry drawing
+ * two declinable attributes could be dropped for either and would then be a line no reader can
+ * account for. The remedy is the one `'DRAWS_IT_PARTLY'` already names — split the line — and
+ * `sheetPlanAbsence.test.ts` holds every plan to it.
+ */
+export interface AttributeBinding {
+  readonly field: DeclinableFieldKey;
+  readonly role: AttributeRole;
+}
 
 /**
  * One line of the inventory, and how many components that line is worth.
@@ -158,10 +189,12 @@ export interface ComponentEntry {
   readonly count: number;
   readonly kind: ComponentKind;
   /**
-   * How this entry stands to what the subject's `clothing` field describes — see
-   * {@link ClothingRole}, which states each of the three answers and what follows from it. Absent is
-   * the answer for every entry the attribute is merely painted onto, which is most of them.
+   * Which subject attribute this entry is on the sheet for, and how it stands to it — see
+   * {@link AttributeBinding} for the field half and {@link AttributeRole} for the three answers to the
+   * second. Absent is the answer for every entry an attribute is merely painted onto, which is most
+   * of them.
    *
+   * **Two fields are bound today, and each is bound for its own reason.** `clothing` is the first.
    * Section 1 states that every fitted, applied and worn attribute it lists is painted onto the
    * component it sits on and never drawn as a separate piece. That rule was written for a
    * character's armour and fixed in the template, and the `clothing` key is a different thing in
@@ -172,9 +205,15 @@ export interface ComponentEntry {
    * as a component, which is exactly the §1-forbids / §4-requires contradiction the per-category
    * plans exist to remove.
    *
-   * **The exception is declared here, on the entry, so nothing states it twice.** The sentence
-   * section 1 emits is a fact about one *sheet* — does this inventory draw the attribute
-   * separately? — and `planDrawsClothing` in `utils/sheetPlanClothing.ts` derives that from the
+   * `face_head` is the second, on TERRAIN alone, and no paint rule is involved (issue #293). Its
+   * *Focal Feature* is the one distinctive piece a field is composed around, which the feature library
+   * draws as `Focal feature ×1` and the blend set cannot draw at all — a tile carrying a landmark is a
+   * mark a viewer picks out twice across a laid field, which that sheet's own outro forbids. So the
+   * pool offers `No Focal Feature` and this binding is what takes the entry off.
+   *
+   * **The paint-rule exception is declared here, on the entry, so nothing states it twice.** The
+   * sentence section 1 emits is a fact about one *sheet* — does this inventory draw the attribute
+   * separately? — and `planDraws` in `utils/sheetPlanAbsence.ts` derives that from the
    * entries below, rather than a flag on the plan asserting something no entry anchors. A plan that
    * drops its cladding panel therefore stops claiming the exception in the same edit — which is
    * also how a subject declaring none stops being told the attribute is excepted, since that
@@ -185,7 +224,7 @@ export interface ComponentEntry {
    * set have no fitting at all and paint whatever the reader asked for onto the bay. Both readings
    * are right for the sheet they belong to.
    *
-   * **No entry carries it for `worn_details`**, on any of the thirteen categories: that field is the
+   * **No entry binds `worn_details`**, on any of the thirteen categories: that field is the
    * marks, motifs, runes and texture a surface holds, and every plan paints them. BUILDING is the
    * one worth naming, because its *Facade Details* reach the same `Façade fittings` line the awning
    * does — the flag rides on the awning, which is what *Awning & Addons* offers, and the sign board
@@ -195,7 +234,7 @@ export interface ComponentEntry {
    * `NONE` and neither plan draws a carry piece, so its guidance sends a reader who needs a
    * separable carrier to *Detachable Parts* instead — see `sheetPlans/item.ts`.
    */
-  readonly clothingRole?: ClothingRole;
+  readonly attribute?: AttributeBinding;
   /**
    * What this entry is the opposite-side copy of, named as the inventory names it — `the left arm`.
    *
@@ -529,7 +568,7 @@ export interface SheetPlan {
    * It completes both openings and stands before the additions exemption, so it is a noun phrase with
    * no leading capital and no trailing stop. `sheetPlans/sheetClaims.test.ts` fails on a word in it, or
    * in {@link SheetPlan.assemblyFailure}, that names a piece only another sheet of the category draws, a
-   * piece the sheet leaves off for a subject declining its category's `absentOption`, or a component
+   * piece the sheet leaves off for a subject declining any of its category's absent options, or a component
    * kind no entry of the sheet has; `utils/promptCompiler.test.ts` pins the compiled wording wherever a
    * category's sheets differ in it.
    */

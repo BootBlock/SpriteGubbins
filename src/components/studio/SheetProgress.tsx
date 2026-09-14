@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useCopiedSheets } from '../../hooks/useCopiedSheets.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { sheetBatch } from '../../utils/sheetBatch.ts';
@@ -35,14 +36,13 @@ import { SheetStepButtons } from '../common/SheetStepButtons.tsx';
 export function SheetProgress() {
   const category = useSubjectStore((state) => state.category);
   // The subject fields the batch is a function of — the assembly base chooses its sheets.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
+  const subject = useSheetSubject();
   const output = useOutputStore((state) => state.output);
   const isCopied = useCopiedSheets();
 
   const { sheets, ordinal } = useMemo(
-    () => sheetBatch(category, { anatomy, clothing }, output),
-    [category, anatomy, clothing, output],
+    () => sheetBatch(category, subject, output),
+    [category, subject, output],
   );
 
   const current = sheets[ordinal - 1];

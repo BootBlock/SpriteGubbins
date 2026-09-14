@@ -17,6 +17,7 @@ import {
 } from '../../constants/sheetPlans/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { NumberField } from '../common/NumberField.tsx';
 import { SelectField } from '../common/SelectField.tsx';
@@ -37,13 +38,11 @@ export function SheetFields() {
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  // Both lists count the subject's own pieces into their totals, and two more subject fields move
-  // what those pieces are: the assembly base chooses the plans the sheet is drawn from, and a category
-  // whose `clothing` pool offers a value meaning the subject has none of what the field describes
-  // draws fewer components when the reader chooses it — so both lists read those fields too.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
-  const subject = { anatomy, clothing };
+  // Both lists count the subject's own pieces into their totals, and further subject fields move what
+  // those pieces are: the assembly base chooses the plans the sheet is drawn from, and a field whose
+  // pool offers a value meaning the subject has none of what it describes draws fewer components when
+  // the reader chooses it — so both lists read those fields too, through `useSheetSubject`.
+  const subject = useSheetSubject();
   const category = useSubjectStore((state) => state.category);
 
   // Only the modes this subject can actually be drawn on. Offering the others is what put a
@@ -67,7 +66,7 @@ export function SheetFields() {
   const withheldSentence =
     withheld.length === 0
       ? ''
-      : ` ${fieldLabelFor(category, 'anatomy')} “${anatomy.trim()}” is not drawn as ${withheld.join(' or ')}, so ${withheld.length === 1 ? 'that is' : 'those are'} not offered here. Choose another ${fieldLabelFor(category, 'anatomy')} to have ${withheld.length === 1 ? 'it' : 'them'} back.`;
+      : ` ${fieldLabelFor(category, 'anatomy')} “${subject.anatomy.trim()}” is not drawn as ${withheld.join(' or ')}, so ${withheld.length === 1 ? 'that is' : 'those are'} not offered here. Choose another ${fieldLabelFor(category, 'anatomy')} to have ${withheld.length === 1 ? 'it' : 'them'} back.`;
 
   return (
     <>

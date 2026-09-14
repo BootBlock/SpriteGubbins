@@ -8,6 +8,7 @@ import {
 } from '../../constants/atlas.ts';
 import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useClipboard } from '../../hooks/useClipboard.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
@@ -67,9 +68,7 @@ export function AtlasCalculatorContents() {
   // The assembly base chooses the plans the sheet is drawn from, and a category whose `clothing` pool
   // offers a value meaning the subject has none of what it describes draws fewer components when the
   // reader chooses it.
-  const anatomy = useSubjectStore((state) => state.subject.anatomy);
-  const clothing = useSubjectStore((state) => state.subject.clothing);
-  const subject = { anatomy, clothing };
+  const subject = useSheetSubject();
   const category = useSubjectStore((state) => state.category);
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
   const copyText = useClipboard();

@@ -6,7 +6,7 @@ import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import { componentCountFor } from './componentSet.ts';
 import { componentSlots } from './componentSlots.ts';
 import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
-import { standardSubject } from '../test/sheetSubject.ts';
+import { decliningSubject, standardSubject } from '../test/sheetSubject.ts';
 
 /** A tail and a pair of horns, so every walk below carries anatomy as well as the plan's own. */
 const ANATOMY = [
@@ -172,13 +172,13 @@ describe('what a name says', () => {
 
   it('takes the variant ordinals away with the scatter the reader declined', () => {
     // The same sheet for a subject that says it has none. The variants carry
-    // `clothingRole: 'VARIES_IN_IT'`, so they leave the plan before any of this walks it and the two
+    // `attribute: { field: 'clothing', role: 'VARIES_IN_IT' }`, so they leave the plan before any of this walks it and the two
     // primaries run straight into the transition set — which is the sixteen the group's own intro
     // calls an autotiler's index, and it is what makes the drop a plainer sheet rather than a
     // broken one.
     const slots = componentSlots(
       'TERRAIN',
-      standardSubject('Bare Untouched Ground'),
+      decliningSubject(standardSubject(), 'TERRAIN', 'clothing'),
       'TILESET_MODULAR',
       'SINGLE_FRONT',
       0,

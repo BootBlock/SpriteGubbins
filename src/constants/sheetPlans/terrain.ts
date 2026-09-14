@@ -39,11 +39,21 @@ import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts'
  * the *Scatter Layer* pool offers `Bare Untouched Ground`, and for a reader who picks it the seven
  * variants below were still ordered to differ in a property section 1 had just said the subject does
  * not have — under section 4's own rule against merging entries or substituting duplicates. They
- * carry `clothingRole: 'VARIES_IN_IT'`, which drops them without claiming they ever drew the
+ * carry `attribute: { field: 'clothing', role: 'VARIES_IN_IT' }`, which drops them without claiming they ever drew the
  * scatter, and the group goes with them because `planAsDrawn` takes an emptied group out. What is
  * left is the two primaries and the fourteen transitions — the sixteen the transition group's own
  * intro calls the set an autotiler indexes — so declining buys a plainer sheet rather than a
  * broken one.
+ *
+ * **The feature library's focal feature is the second entry a reader can decline, and it is declined
+ * from a different field** (issue #293). *Focal Feature* names the one piece the field is composed
+ * around, and only this sheet draws such a piece: the blend set's own outro forbids a tile carrying a
+ * landmark a viewer could pick out twice across a laid field, so every named value of that pool is
+ * true of one sheet and false of the other. The pool therefore offers `No Focal Feature`, which is the
+ * value a blend set takes and the one the category opens on, and `Focal feature ×1` below carries
+ * `attribute: { field: 'face_head', role: 'DRAWS_IT' }` so that this sheet drops it for a reader who
+ * picked it. Its group stays: the boulders, the rooted growth and the spoil heap are ordinary set
+ * dressing that were never the reader's to decline, and the sheet they leave is a plainer library.
  */
 
 /**
@@ -94,14 +104,14 @@ const SCATTER_VARIANT_ENTRIES: readonly ComponentEntry[] = [
     text: 'Base material tile variants ×5: the primary redrawn, differing only in surface scatter',
     count: 5,
     kind: 'tile',
-    clothingRole: 'VARIES_IN_IT',
+    attribute: { field: 'clothing', role: 'VARIES_IN_IT' },
   },
   {
     label: 'second-material-tile-variants',
     text: 'Second material tile variants ×2: the primary redrawn, differing only in surface scatter',
     count: 2,
     kind: 'tile',
-    clothingRole: 'VARIES_IN_IT',
+    attribute: { field: 'clothing', role: 'VARIES_IN_IT' },
   },
 ];
 
@@ -290,6 +300,11 @@ neighbours left and right and the three meet without a step where they stack.`,
           text: 'Focal feature ×1 — the one piece the field is composed around',
           count: 1,
           kind: 'structure',
+          // The only piece on either TERRAIN sheet that is the subject's *Focal Feature* and nothing
+          // else, and the reason that pool offers `No Focal Feature` at all (issue #293). A blend set
+          // cannot draw it, so a reader compiling one declines it here and the eleven named values are
+          // bound to this sheet's mode in `categories/modeBoundOptions.ts`.
+          attribute: { field: 'face_head', role: 'DRAWS_IT' },
         },
         {
           label: 'boulder-or-outcrop',
@@ -299,8 +314,14 @@ neighbours left and right and the three meet without a step where they stack.`,
           kind: 'structure',
         },
         {
-          label: 'rooted-feature',
-          text: 'Rooted feature ×2: what the ground has grown or heaved up',
+          // "Rooted feature" until the pool above came to offer an absence, and it had to stop using
+          // the field's own word for something the field does not name: a prompt stating
+          // `Focal Feature: No Focal Feature` in section 1 and ordering a "Rooted feature ×2" in
+          // section 4 reads as one document contradicting itself, whatever the two sentences meant.
+          // `sheetPlanAbsence.test.ts` matches an entry against the words of its field's label, and
+          // this is the collision it found.
+          label: 'rooted-growth',
+          text: 'Rooted growth ×2: what the ground has grown or heaved up',
           count: 2,
           kind: 'structure',
         },

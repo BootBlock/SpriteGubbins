@@ -20,6 +20,12 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * stops. A cliff is a change in height rather than in material, so it needs an exposed face that a
  * flat field has nowhere to put — which is why the elevation edge lives in the feature library, and
  * why a reader who only ever opens `TILESET_MODULAR` would never find it.
+ *
+ * **It is also the only one of the four with a focal feature** (issue #293). A blend set is tiles and
+ * nothing else, and its own outro forbids a landmark a viewer could pick out twice across a laid field,
+ * so the three below state `No Focal Feature` — which is what that pool offers for exactly this. The
+ * cliff preset opens the feature library, which draws `Focal feature ×1`, and names the glowing vent
+ * its volcanic field is composed around.
  */
 export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
   {
@@ -36,7 +42,7 @@ export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
       setting: 'High Fantasy Wilderness',
       build: 'Medium Grain, Balanced',
       silhouette: 'Soft Organic Feathered Edge',
-      face_head: 'Hero Boulder Outcrop',
+      face_head: 'No Focal Feature',
       anatomy: 'Corner-Matched Blob Set',
       clothing: 'Grass Tufts & Weeds',
       worn_details: 'Pebble Runs & Grit',
@@ -77,7 +83,7 @@ export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
       setting: 'Grim Dark Ruin',
       build: 'Coarse Grain, Bold Shapes',
       silhouette: 'Ragged Torn Boundary',
-      face_head: 'Ancient Standing Stone',
+      face_head: 'No Focal Feature',
       anatomy: 'Edge-Matched Wang Set',
       clothing: 'Snow Drift & Ice Crust',
       worn_details: 'Frost Patterning',
@@ -123,7 +129,7 @@ export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
       setting: 'Bright Cartoon Overworld',
       build: 'Chunky Low-Resolution Blocks',
       silhouette: 'Rounded Rolling Bank',
-      face_head: 'Still Water Surface',
+      face_head: 'No Focal Feature',
       anatomy: 'Corner-Matched Blob Set',
       clothing: 'Pebble & Stone Scatter',
       worn_details: 'Wind Ripples & Drift Lines',
