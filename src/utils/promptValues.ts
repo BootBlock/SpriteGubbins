@@ -35,6 +35,7 @@ import { directionalRotation } from './directionalRotation.ts';
 import { leadingSideLedger } from './leadingSideLedger.ts';
 import { oneSidedFeatureLedger } from './oneSidedFeatureLedger.ts';
 import { describeMirrorPairs } from './mirrorPairs.ts';
+import { rigContractGeometry } from './rigContractGeometry.ts';
 import type { SheetFacts } from './promptFacts.ts';
 import { turntableSequence } from './turntableSequence.ts';
 
@@ -59,7 +60,6 @@ export function promptValues(
   cite: (text: string) => string,
 ): Record<string, string> {
   const {
-    mode,
     plan,
     coveredDirections,
     assemblyDirection,
@@ -74,6 +74,8 @@ export function promptValues(
     reference,
     componentCount,
     statedTarget,
+    statedTargetText,
+    anatomyFacings,
     componentTarget,
     nativeScale,
     additionalAnatomyLine,
@@ -245,6 +247,10 @@ export function promptValues(
     ASPECT_DESCRIPTION: ASPECT_TEXT[output.aspectRatio],
     JOINT_CAP_DESCRIPTION: JOINT_CAP_TEXT[output.jointCapStyle],
     OVERLAP_MARGIN_DESCRIPTION: OVERLAP_MARGIN_TEXT[output.overlapMargin],
+    // Every piece's size, joint end and pivot, from the engine's own rig. Empty on every sheet
+    // that carries no contract, which is what `RIG_CONTRACT` gates the block on — the value is
+    // still supplied because `substitute` throws on a token it has no value for.
+    RIG_PIECE_GEOMETRY: rigContractGeometry(plan.posing === 'AT_REST' ? output.rigContract : null),
 
     SERIES_POSITION: String(batch.ordinal),
     SERIES_TOTAL: String(batch.sheets.length),
@@ -284,7 +290,11 @@ export function promptValues(
     values[key.toUpperCase()] = subject[key];
   }
 
-  values.SPRITE_TARGET_SIZE = output.spriteTargetSize;
+  // Off the facts rather than off the field, because a loaded rig contract supersedes what the
+  // reader typed: the frame is a number the engine declares. `statedTarget` is the same answer
+  // parsed, and the two come from one place so section 2's words and the arithmetic under them
+  // cannot name different figures.
+  values.SPRITE_TARGET_SIZE = statedTargetText;
   values.SOCKETS = output.sockets;
   values.IDENTITY_LOCK = output.identityLock;
   values.ADDITIONAL_ANATOMY = additionalAnatomyLine;
@@ -295,10 +305,9 @@ export function promptValues(
   // rather than a hopeful exclusion.
   values.COMPONENT_BREAKDOWN = componentBreakdownFor(
     category,
-    subject,
-    mode,
-    output.directions,
-    output.sheetIndex,
+    plan,
+    componentCount,
+    anatomyFacings,
     anatomy,
     cite,
   );

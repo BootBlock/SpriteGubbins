@@ -30,6 +30,7 @@ export function ComponentBudgetNotice() {
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
   const directions = useOutputStore((state) => state.output.directions);
   const componentBudget = useOutputStore((state) => state.output.componentBudget);
+  const rigContract = useOutputStore((state) => state.output.rigContract);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   // The other two subject fields the count reads — see `componentSet.ts`.
   const anatomy = useSubjectStore((state) => state.subject.anatomy);
@@ -55,6 +56,7 @@ export function ComponentBudgetNotice() {
     directions,
     sheetIndex,
     parseAdditionalAnatomy(additionalAnatomy),
+    rigContract,
   );
 
   return (

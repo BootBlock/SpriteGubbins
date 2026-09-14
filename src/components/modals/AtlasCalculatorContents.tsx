@@ -61,6 +61,7 @@ export function AtlasCalculatorContents() {
   const aspectRatio = useOutputStore((state) => state.output.aspectRatio);
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directions = useOutputStore((state) => state.output.directions);
+  const rigContract = useOutputStore((state) => state.output.rigContract);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   // Read for the same reason the anatomy is: the count is a function of the subject on three fields.
   // The assembly base chooses the plans the sheet is drawn from, and a category whose `clothing` pool
@@ -88,6 +89,7 @@ export function AtlasCalculatorContents() {
       directions,
       sheetIndex,
       parseAdditionalAnatomy(additionalAnatomy),
+      rigContract,
     ),
     widthBias: widthBiasFor(aspectRatio),
   };

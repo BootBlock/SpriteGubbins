@@ -17,6 +17,7 @@ function renderPicker() {
       label="Sprite sheet"
       tooltip="Loads a generated sheet into the quantiser."
       acceptFile={acceptFile}
+      accept="image/*"
     />,
   );
   const input = screen.getByLabelText('Sprite sheet');

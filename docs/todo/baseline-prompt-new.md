@@ -813,6 +813,15 @@ artwork, supplies all motion.
 Draw every piece in its **neutral rest orientation**, not posed: each segment straight and aligned
 along its own long axis, and every articulation left at its neutral angle. Never draw a pre-bent
 segment — flexion comes from the rig rotating separate rigid segments.
+[IF:RIG_CONTRACT]
+
+### Piece geometry — the rig these pieces are drawn for
+[DEFINE:RIG_PIECE_GEOMETRY]
+
+These sizes are the engine’s, not a preference: the pieces are assembled by a rig that places each
+one against the joint named above at one scale for the whole figure. Draw every piece at its stated
+size, or every piece at the same whole multiple of it.
+[/IF]
 
 ### Pivot registration
 - Each piece’s joint end carries a consistent [DEFINE:JOINT_CAP_DESCRIPTION] cap, and **the pivot

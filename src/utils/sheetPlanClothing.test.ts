@@ -409,8 +409,8 @@ describe('a subject that says it has none of the attribute', () => {
 
       for (const { subject, mode, directions, sheetIndex, plan } of sheetsOf(category)) {
         const declining = { ...subject, clothing: absent };
-        const count = componentCountFor(category, declining, mode, directions, sheetIndex, []);
-        const names = componentSlots(category, declining, mode, directions, sheetIndex, []);
+        const count = componentCountFor(category, declining, mode, directions, sheetIndex, [], null);
+        const names = componentSlots(category, declining, mode, directions, sheetIndex, [], null);
         const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
 
         expect(names, where).toHaveLength(count);

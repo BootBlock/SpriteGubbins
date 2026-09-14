@@ -1,6 +1,7 @@
 import { NOMINAL_SHEET_SIZE, SHEET_CELL_PITCH } from '../constants/sheetCanvas.ts';
 import type { AspectRatio, ResolutionProfile, TargetSize } from '../types/output.ts';
 import type { RenderStyle } from '../types/rendering.ts';
+import type { RigContract } from '../types/rigContract.ts';
 import { componentGridScale } from './componentGridScale.ts';
 
 /**
@@ -23,7 +24,10 @@ import { componentGridScale } from './componentGridScale.ts';
 /**
  * The scale, or `null` where this configuration has no native grid to present.
  *
- * Four things have to hold, and each `null` is a case where the prompt is better off saying nothing:
+ * Four things have to hold **where the figure comes from the studio's own fields**, and each `null`
+ * is a case where the prompt is better off saying nothing. Where an engine's rig contract is loaded
+ * the answer comes from that instead, and only the first and the last of the four still apply — see
+ * {@link fromRig}:
  *
  * - **The style has to be pixel art.** A native pixel grid is that style's own unit; a painted or
  *   rendered sheet has no grid to enlarge, and section 0's rule wants to stand there unqualified.
@@ -55,16 +59,53 @@ export function nativeGridScale(
   target: TargetSize | null,
   aspectRatio: AspectRatio,
   components: number,
+  rig: RigContract | null,
 ): number | null {
   if (renderStyle !== 'PIXEL_ART' && renderStyle !== 'RETRO_PIXEL_ART') return null;
-  if (profile !== 'CUSTOM') return null;
-  if (target === null) return null;
+
+  const seated = rig === null ? fromTarget(profile, target, components) : fromRig(rig);
+  if (seated === null) return null;
 
   const scale = componentGridScale(
     NOMINAL_SHEET_SIZE[aspectRatio],
-    { width: target.width * SHEET_CELL_PITCH, height: target.height * SHEET_CELL_PITCH },
-    components,
+    { width: seated.cell.width * SHEET_CELL_PITCH, height: seated.cell.height * SHEET_CELL_PITCH },
+    seated.components,
   );
 
   return scale === null || scale < 2 ? null : scale;
+}
+
+/** The cell and the count to seat, from the studio's own fields. */
+function fromTarget(
+  profile: ResolutionProfile,
+  target: TargetSize | null,
+  components: number,
+): { cell: TargetSize; components: number } | null {
+  if (profile !== 'CUSTOM') return null;
+  return target === null ? null : { cell: target, components };
+}
+
+/**
+ * The same, from the engine's rig — where **three of the four `null`s above do not apply**.
+ *
+ * The profile gate is there because the field is free prose and only the reader knows which quantity
+ * it names; a contract states the frame, every piece's size and how many pieces there are, so
+ * nothing is being inferred and `HIGH_RESOLUTION` no longer means "no answer". That gate is why the
+ * shipped rig preset carried no native-grid block at all, and why the pipeline it was written for
+ * documents editing the size by hand to work at 4×.
+ *
+ * **The largest piece is the cell**, because the canvas has to seat every piece at one scale — the
+ * engine's importer picks a single scale for the whole actor, so a multiple that fits the small
+ * pieces and not the large one is a multiple the rig cannot use.
+ */
+function fromRig(rig: RigContract): { cell: TargetSize; components: number } | null {
+  if (rig.slots.length === 0) return null;
+  const cell = rig.slots.reduce<TargetSize>(
+    (widest, slot) => ({
+      width: Math.max(widest.width, slot.piece_size.width),
+      height: Math.max(widest.height, slot.piece_size.height),
+    }),
+    { width: 0, height: 0 },
+  );
+  return { cell, components: rig.slots.length };
 }

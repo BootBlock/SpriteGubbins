@@ -52,6 +52,12 @@ export const STUDIO_ACTION_TOOLTIPS = {
   readPaletteFromQuantise:
     'Takes the colours from the sheet the Quantise tab is holding and writes them into the identity lock as a palette line, without your having to find the file again. It reads the quantised result rather than the image you dropped into that tab, so the colours it states are the ones you settled there and the ones the palette lock will hold the following sheets to. The Quantise tab is left exactly as it is, and nothing beyond the palette line of the lock changes.',
 
+  loadRigContract:
+    'Reads a rig contract your engine exported — the file its rig tooling writes — and takes the sheet’s piece list from it. Section 4 then lists each piece under the name the engine itself uses, so the pack you cut afterwards needs no renaming, and section 5 states every piece’s size within the assembled frame, which end of it the joint is at, and where that joint sits on the figure. Without it the prompt can state only the assembled size, and each piece comes back at whatever share of the figure the model chose. The file is read in this tab and never leaves it, and it is carried with the rest of the configuration, so a saved preset or a restored prompt keeps it.',
+
+  removeRigContract:
+    'Drops the loaded rig contract. The sheet goes back to the piece list this app authors and to the target size you typed, and nothing else about the configuration changes. Load the file again to get the engine’s own geometry back.',
+
   readPalette:
     'Reads the dominant colours out of a sheet you have accepted and writes them into the identity lock as a palette line, most-used first, with the background key left out. It is the one line of a continuity digest nobody writes accurately by hand — eyeballing hex codes off a sheet is guesswork, and a later generation drifts to whatever the words allowed. The image is decoded in this tab and never leaves it.',
 } as const;

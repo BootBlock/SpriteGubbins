@@ -130,6 +130,12 @@ export function promptConditions(
     // declarations, so a category added to the rig table is answered without anything being
     // extended.
     MIRRORED_SIDES: planMirrorsPieces(plan) ? 'yes' : '',
+    // Whether the engine's own rig is loaded and this is the sheet it describes. Both halves are
+    // required: a contract is carried by every sheet of a batch, and section 5's geometry block
+    // would otherwise state a rig's piece sizes on an articulation sheet that draws none of them.
+    // `ASSEMBLED_TARGET` above is the same fact read for a different purpose, and deliberately not
+    // reused — a plan can price an assembly without being a rig.
+    RIG_CONTRACT: output.rigContract !== null && plan.posing === 'AT_REST' ? 'yes' : '',
     // Narrower than MULTI_DIRECTION for the same reason that flag exists at all: the anti-reflection
     // pair rules only bite where the sheet holds both members of a reflection pair, and on the
     // classic sets — which never do — they would be instruction about views the sheet does not hold.

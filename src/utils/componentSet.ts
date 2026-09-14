@@ -9,6 +9,7 @@ import type { ComponentGroup, SheetFacings, SheetPlan } from '../types/component
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
+import type { RigContract } from '../types/rigContract.ts';
 import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { countAnatomyComponents, formatAnatomyComponent } from './additionalAnatomy.ts';
 import { componentTotal } from './componentTotal.ts';
@@ -116,8 +117,9 @@ export function componentCountFor(
   directions: DirectionSet,
   sheetIndex: number,
   additional: readonly AnatomyComponent[],
+  rig: RigContract | null,
 ): number {
-  const plan = drawnPlanFor(category, subject, mode, directions, sheetIndex);
+  const plan = drawnPlanFor(category, subject, mode, directions, sheetIndex, rig);
   const facings = anatomyFacingsFor(category, subject, mode, directions, sheetIndex);
   return planComponentCount(plan) + (facings === null ? 0 : anatomyCountAt(facings, additional));
 }
@@ -169,6 +171,7 @@ export function sheetComponentCount(
     sheet.output.directions,
     sheet.output.sheetIndex,
     additional,
+    sheet.output.rigContract,
   );
 }
 
@@ -264,22 +267,28 @@ function renderGroup(group: ComponentGroup): string {
  * to the model literally, and nothing else would catch it — `assertBlocksResolved` runs before
  * `substitute`, so it never sees a value's text at all.
  */
+/**
+ * **The three resolved facts are passed in rather than re-derived.** This used to take the five
+ * fields a sheet is addressed by and call `drawnPlanFor`, `componentCountFor` and
+ * `anatomyFacingsFor` for itself — while `promptFacts` had already resolved all three and published
+ * them, so the plan a prompt's inventory described was a second derivation of the plan every other
+ * section of the same prompt was written from. They agreed, and nothing made them go on agreeing.
+ *
+ * The category stays, because the heading over the reader's own pieces is whatever that category
+ * calls the field — *Attached Modules* on a vehicle, *Extra Appendages* on a creature — and no
+ * resolved fact carries it.
+ */
 export function componentBreakdownFor(
   category: SubjectCategory,
-  subject: SheetSubject,
-  mode: DirectionalMode,
-  directions: DirectionSet,
-  sheetIndex: number,
+  plan: SheetPlan,
+  total: number,
+  facings: SheetFacings | null,
   additional: readonly AnatomyComponent[],
   cite: (text: string) => string,
 ): string {
-  const plan = drawnPlanFor(category, subject, mode, directions, sheetIndex);
-  const total = componentCountFor(category, subject, mode, directions, sheetIndex, additional);
-
   const inventory = `### Component inventory: ${plan.name} — ${String(total)} in total
 
 ${plan.groups.map(renderGroup).join('\n\n')}`;
-  const facings = anatomyFacingsFor(category, subject, mode, directions, sheetIndex);
   if (facings === null || additional.length === 0) {
     return cite(inventory);
   }

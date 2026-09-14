@@ -11,12 +11,14 @@ import {
   offersRigMode,
   resolveMode,
   resolveRigMode,
+  sheetPlanFor,
   sheetSeriesFor,
   supportsRigMode,
 } from '../../constants/sheetPlans/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { SelectField } from '../common/SelectField.tsx';
+import { RigContractField } from './RigContractField.tsx';
 import { TextField } from '../common/TextField.tsx';
 
 /**
@@ -145,6 +147,15 @@ export function RiggingFields() {
 
       {rigMode === 'CUTOUT_RIG' && (
         <>
+          {/* First, because everything below it is a preference and this is a measurement: with a
+              contract loaded the sheet's pieces, their names and their sizes stop being this app's
+              to guess. */}
+          <RigContractField
+            appliesToSheet={
+              sheetPlanFor(category, subject, mode, output.directions, output.sheetIndex).posing === 'AT_REST'
+            }
+          />
+
           <SelectField
             label="Joint Cap Style"
             tooltip={OUTPUT_TOOLTIPS.jointCapStyle}

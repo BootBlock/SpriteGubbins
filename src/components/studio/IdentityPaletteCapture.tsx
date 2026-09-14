@@ -53,6 +53,7 @@ export function IdentityPaletteCapture() {
           label="Read the palette from an accepted sheet"
           tooltip={STUDIO_ACTION_TOOLTIPS.readPalette}
           acceptFile={acceptFile}
+          accept="image/*"
         />
       </div>
 

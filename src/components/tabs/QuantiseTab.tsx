@@ -65,6 +65,7 @@ export function QuantiseTab() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
   const directions = useOutputStore((state) => state.output.directions);
+  const rigContract = useOutputStore((state) => state.output.rigContract);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   // The other two subject fields the count and the target size read — see `componentSet.ts`.
@@ -168,8 +169,9 @@ export function QuantiseTab() {
         directions,
         sheetIndex,
         parseAdditionalAnatomy(additionalAnatomy),
+        rigContract,
       ),
-    [category, subject, directionalMode, directions, sheetIndex, additionalAnatomy],
+    [category, subject, directionalMode, directions, sheetIndex, additionalAnatomy, rigContract],
   );
   const suggested = useMemo(
     () => (source === null || target === null ? null : targetSizeGrid(source.image, target, expected)),

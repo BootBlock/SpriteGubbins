@@ -15,6 +15,13 @@ import { sparseSubject } from './sparseSubject.ts';
  * That emptiness is the point of v2's optional lines. A blank field omits its line, and the template
  * states outright that an absent attribute is the generator's to decide — so these presets ask for
  * exactly the constraints that matter and nothing else.
+ *
+ * **Two of the values below are the rig's, and a loaded rig contract supersedes both.** That game's
+ * Rig Intake exports its skeleton as a file this app reads, and where one is loaded the assembled
+ * size comes from its frame and the sheet's pieces from its slots — so `spriteTargetSize` and
+ * `EIGHT_COMPASS` are what these presets state for a reader who has not loaded it, rather than a
+ * copy anyone has to keep in step. Deleting them was considered and rejected: it leaves that reader
+ * holding a prompt that states no size at all.
  */
 
 /** What all three share: the projection, scale and lighting discipline the game's renderer needs. */

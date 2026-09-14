@@ -25,7 +25,7 @@ import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
-import { statedTargetSize } from './componentTargetSize.ts';
+import { sheetTargetSize } from './sheetTargetSize.ts';
 import { mirrorPairs } from './mirrorPairs.ts';
 import { nativeGridScale } from './nativeGridScale.ts';
 import { sheetBatch } from './sheetBatch.ts';
@@ -77,6 +77,8 @@ export interface SheetFacts {
   readonly validationPass: ReturnType<typeof validationPassFor>;
   readonly componentCount: number;
   readonly statedTarget: StatedTargetSize | null;
+  /** The same size as words — the engine's frame where a contract applies, the typed field where not. */
+  readonly statedTargetText: string;
   readonly componentTarget: TargetSize | null;
   readonly nativeScale: number | null;
   readonly anatomyFacings: ReturnType<typeof anatomyFacingsFor>;
@@ -133,7 +135,14 @@ export function sheetFacts(
   // ordering a cladding panel for a `Bare Unclad Frame` and section 1 stops excepting an attribute
   // the inventory no longer carries. Every phase below reads this one plan, which is what keeps the
   // count, the prose and the manifest describing the same sheet — see `sheetPlanClothing.ts`.
-  const plan = drawnPlanFor(category, subject, mode, output.directions, output.sheetIndex);
+  const plan = drawnPlanFor(
+    category,
+    subject,
+    mode,
+    output.directions,
+    output.sheetIndex,
+    output.rigContract,
+  );
 
   // And the rig this sheet is actually drawn for, resolved for the same reason and against both
   // axes: a stored configuration can name one its category has no joints for, and section 5 is what
@@ -235,20 +244,24 @@ export function sheetFacts(
     output.directions,
     output.sheetIndex,
     anatomy,
+    output.rigContract,
   );
 
-  // The size the field states, with the quantity it is a size of, or `null` where it states none.
-  // Resolved once and read by every section-2 feature that turns on it, so they cannot disagree
-  // about what the reader named. The quantity is the sheet's answer, not the text's: a sheet whose
-  // components are the parts one subject is cut into states the size of the subject they assemble
-  // into — see `componentTargetSize.ts`.
-  const statedTarget = statedTargetSize(
+  // The engine's own rig, where one is loaded and this is the sheet it describes. Resolved once and
+  // read three times below, for the reason every other fact here is: a section deciding for itself
+  // whether the contract applies is how one prompt comes to state the rig's frame in section 2 and
+  // the reader's typed size in section 5.
+  const rig = plan.posing === 'AT_REST' ? output.rigContract : null;
+
+  // The size this sheet states, and the words section 2 prints it in — one answer for both, so the
+  // phrase and the arithmetic under it cannot name different figures. See `sheetTargetSize.ts` for
+  // why a loaded contract supersedes the field.
+  const { stated: statedTarget, text: statedTargetText } = sheetTargetSize(
     category,
     subject,
-    output.directionalMode,
-    output.directions,
-    output.sheetIndex,
-    output.spriteTargetSize,
+    output,
+    plan,
+    rig,
   );
 
   // The same answer narrowed to a genuine component size, for the three readers that can do nothing
@@ -271,6 +284,7 @@ export function sheetFacts(
     componentTarget,
     output.aspectRatio,
     componentCount,
+    rig,
   );
 
   // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the
@@ -331,6 +345,7 @@ export function sheetFacts(
     validationPass,
     componentCount,
     statedTarget,
+    statedTargetText,
     componentTarget,
     nativeScale,
     anatomyFacings,

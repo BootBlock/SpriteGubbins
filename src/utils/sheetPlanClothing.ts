@@ -3,7 +3,9 @@ import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
+import type { RigContract } from '../types/rigContract.ts';
 import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
+import { rigContractPlan } from './rigContractPlan.ts';
 
 /**
  * Whether this subject has said it has none of what its category's `clothing` field describes.
@@ -123,6 +125,13 @@ export function planDrawsClothing(plan: SheetPlan): boolean {
  * when an entry is dropped. They still take the subject, because its assembly base decides which plan
  * they are asking about — a rigid object's views state a component size where the standard views state
  * an assembled one.
+ *
+ * **A loaded rig contract replaces the rig sheet's entries here**, for the same reason the clothing
+ * pass runs here: this is the one place every reader of an inventory comes through, so a contract
+ * applied anywhere else would be a second answer to what the sheet draws. It reaches exactly the
+ * sheet whose inventory *is* a rig — `posing === 'AT_REST'`, which is what `fixedRigMode` reads to
+ * settle the rig mode outright — and on every other sheet a loaded contract passes straight through
+ * saying nothing.
  */
 export function drawnPlanFor(
   category: SubjectCategory,
@@ -130,10 +139,12 @@ export function drawnPlanFor(
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
+  rig: RigContract | null,
 ): SheetPlan {
-  return planAsDrawn(
+  const drawn = planAsDrawn(
     sheetPlanFor(category, subject, mode, directions, sheetIndex),
     category,
     subject.clothing,
   );
+  return rig === null || drawn.posing !== 'AT_REST' ? drawn : rigContractPlan(drawn, rig);
 }

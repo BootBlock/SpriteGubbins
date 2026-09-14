@@ -1,6 +1,7 @@
 import type { ComponentEntry, SheetFacings, SheetPlan } from '../types/components.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { DirectionalMode, DirectionSet } from '../types/output.ts';
+import type { RigContract } from '../types/rigContract.ts';
 import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { anatomyFacingsFor } from './componentSet.ts';
 import { drawnPlanFor } from './sheetPlanClothing.ts';
@@ -122,11 +123,12 @@ export function componentSlots(
   directions: DirectionSet,
   sheetIndex: number,
   additional: readonly AnatomyComponent[],
+  rig: RigContract | null,
 ): readonly string[] {
   // The plan *as this subject draws it*, for the reason the count is: a name list of a different
   // length from the count maps every sprite after the divergence onto the wrong component, so the
   // two cannot be allowed to disagree about whether a cladding panel is on the sheet.
-  const plan = drawnPlanFor(category, subject, mode, directions, sheetIndex);
+  const plan = drawnPlanFor(category, subject, mode, directions, sheetIndex, rig);
   const names = [...planSlots(plan)];
 
   const anatomyFacings = anatomyFacingsFor(category, subject, mode, directions, sheetIndex);

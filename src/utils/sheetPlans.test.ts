@@ -1104,7 +1104,7 @@ describe('no category calls the subject’s own additions an error in the specif
         expect(inventory).toContain(`- ${formatAnatomyComponent(piece)}`);
       }
       expect(prompt).toContain(
-        `Exactly ${String(componentCountFor(category, defaultSubjectFor(category), mode, DEFAULT_OUTPUT_CONFIG.directions, 0, pieces))} components`,
+        `Exactly ${String(componentCountFor(category, defaultSubjectFor(category), mode, DEFAULT_OUTPUT_CONFIG.directions, 0, pieces, null))} components`,
       );
 
       // Sliced by section rather than searched for in the whole prompt: the guard's exemption has to
@@ -1285,10 +1285,18 @@ describe('the declared count is the inventory’s own length', () => {
     '$category / $mode / $directions / $sheet',
     ({ category, subject, mode, directions, sheetIndex, sheet }) => {
       const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1', sheetIndex, directions, subject);
-      const expected = componentCountFor(category, subject, mode, directions, sheetIndex, [
-        { name: 'Demon Horn', count: 2 },
-        { name: 'Tail', count: 1 },
-      ]);
+      const expected = componentCountFor(
+        category,
+        subject,
+        mode,
+        directions,
+        sheetIndex,
+        [
+          { name: 'Demon Horn', count: 2 },
+          { name: 'Tail', count: 1 },
+        ],
+        null,
+      );
 
       // Stated four times over; all four are the same sum or the sheet is silently wrong.
       expect(prompt).toContain(`Exactly ${String(expected)} components`);

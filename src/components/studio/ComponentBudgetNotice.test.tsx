@@ -21,6 +21,7 @@ const RIG = componentCountFor(
   DEFAULT_OUTPUT_CONFIG.directions,
   0,
   [],
+  null,
 );
 
 /** Is the warning on screen? Matched on the phrase the notice leads with. */

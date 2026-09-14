@@ -135,6 +135,7 @@ describe('SheetSplitContents', () => {
       'EIGHT_COMPASS',
       0,
       [],
+      null,
     );
     const total = batchComponentCount('CHARACTER', defaultSubjectFor('CHARACTER'), runs, []);
 
