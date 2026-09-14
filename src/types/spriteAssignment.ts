@@ -81,12 +81,8 @@ export interface SpritePiece {
    * third sprite lying inside the union is cut in with them.
    */
   readonly box: SpriteBox;
-  /** Which sprites of the segmentation make it up, in reading order. Never empty. */
-  readonly members: readonly SpriteBox[];
   /** What the file is called: an inventory name, or `sprite-03` where the sheet is not fully named. */
   readonly name: string;
-  /** Whether a reader chose that name, rather than reading order handing it over. */
-  readonly assigned: boolean;
 }
 
 /** One sprite of the segmentation, and what became of it. */
@@ -96,8 +92,24 @@ export interface AssignedSprite {
   readonly pin: SpritePin;
   /** Its piece, as an index into {@link SpriteAssignment.pieces}, or `null` where it is left out. */
   readonly piece: number | null;
-  /** Whether it is the first member of that piece, which is the one that carries the piece's name. */
-  readonly leads: boolean;
+  /**
+   * The pin its decision is filed under, or `null` where it has none.
+   *
+   * **What a control hands back to change this sprite's mind**, rather than the pin above. The store
+   * files an edit under the pin the sprite had when the decision was made, and a dial that re-cut the
+   * sheet moves {@link pin} away from it — so a second decision sent under the current pin was filed
+   * as a *second* edit, and resolution dropped it as one with no sprite left to claim. The reader's
+   * new choice vanished and the panel blamed them for losing it.
+   */
+  readonly decidedAt: SpritePin | null;
+  /**
+   * Which sprite this one is directly joined to, in reading order counting from one, or `null`.
+   *
+   * Not the same question as {@link joinedTo}, which names the piece's *leader*: in a chain of three
+   * the last fragment is joined to the middle one and led by the first. A control offering "join to
+   * sprite N" has to show the sprite the reader actually chose, so it reads this.
+   */
+  readonly joinTarget: number | null;
   /**
    * Where the piece it was joined into starts, in reading order counting from one — `null` where it
    * leads its own piece or is left out.

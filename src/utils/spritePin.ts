@@ -39,17 +39,45 @@ export function samePin(left: SpritePin, right: SpritePin): boolean {
 }
 
 /**
- * Which sprite this pin now falls inside, or `null` where none does.
+ * Which sprite this pin names now: the one whose own pin it *is*, or failing that the one it falls
+ * inside. `null` where neither finds anything.
  *
- * The **first** containing box, which matters because boxes can overlap: the gap merge produces
- * bounding boxes, and one sprite's box can reach across another's. First in reading order is the
- * same tie-break the rest of the app takes, so the answer is the one a reader meets first in the
- * preview rather than whichever the iteration happened to reach.
+ * **The exact match comes first, and that ordering is the whole correctness of this file.** A pin is
+ * written down as a sprite's own centre and read back by containment, and the two answers diverge —
+ * one sprite's bounding box can contain another's centre, which any ring, frame or hoop with
+ * something loose inside it produces, and the gap merge produces it too. Resolving by containment
+ * alone then handed every decision made on the inner sprite to the outer one: the reader left the
+ * dot out and the ring disappeared from the download instead. Trying the exact match first means
+ * that while nothing has moved — which is every sheet nobody has re-cut — each decision finds the
+ * sprite it was made on and no other.
+ *
+ * Containment is the fallback, and it is what carries a decision across a dial that re-cut the
+ * sheet. A box that grew by a row of fringe has a new centre, so no exact match exists, and the old
+ * centre is still inside it.
+ *
+ * **`taken` is how one sprite ends up with one decision.** Resolution walks the reader's decisions in
+ * the order they were made and claims a sprite for each; a later decision may not take a sprite an
+ * earlier one holds. Without it, a merge that folds two sprites into one would silently give the
+ * survivor two decisions and quietly apply whichever the code reached last.
  */
-export function pinnedSprite(boxes: readonly SpriteBox[], pin: SpritePin): number | null {
-  const index = boxes.findIndex(
-    (box) =>
-      pin.x >= box.left && pin.x < box.left + box.width && pin.y >= box.top && pin.y < box.top + box.height,
+export function locateSprite(
+  boxes: readonly SpriteBox[],
+  pin: SpritePin,
+  taken: ReadonlySet<number> = EMPTY,
+): number | null {
+  const exact = boxes.findIndex((box, index) => !taken.has(index) && samePin(spritePin(box), pin));
+  if (exact !== -1) return exact;
+
+  const inside = boxes.findIndex(
+    (box, index) =>
+      !taken.has(index) &&
+      pin.x >= box.left &&
+      pin.x < box.left + box.width &&
+      pin.y >= box.top &&
+      pin.y < box.top + box.height,
   );
-  return index === -1 ? null : index;
+  return inside === -1 ? null : inside;
 }
+
+/** One empty set rather than a fresh one per call, for the callers that claim nothing. */
+const EMPTY: ReadonlySet<number> = new Set();

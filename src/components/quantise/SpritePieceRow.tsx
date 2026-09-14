@@ -95,7 +95,16 @@ export function SpritePieceRow({
         <SelectField
           label={`Sprite ${String(ordinal)}`}
           tooltip={SPRITE_ASSIGNMENT_TOOLTIPS.sprite}
-          value={spriteChoiceOf(sprite.decision)}
+          // Built from where the join *resolved to*, not from the pin the decision was filed under.
+          // The two differ the moment a dial re-cuts the partner's box: the join still holds, because
+          // the old point is still inside the new box, but a value spelled from that old point
+          // matches no option — and a controlled `<select>` with an unmatched value shows its first
+          // option, so the row would read “Reading order” over a join the download was applying.
+          value={
+            sprite.joinTarget === null
+              ? spriteChoiceOf(sprite.decision)
+              : (joinValueFor(sprite.joinTarget, others) ?? READING_ORDER_CHOICE)
+          }
           choices={[
             { value: READING_ORDER_CHOICE, label: 'Reading order' },
             ...inventory.map((name) => ({ value: nameChoice(name), label: name })),
@@ -110,10 +119,23 @@ export function SpritePieceRow({
             // `undefined` is a value the select never offered, so there is nothing to record. It
             // cannot be reached through the UI — `SelectField` resolves a choice back to its own
             // value before calling — and refusing it keeps that true if that ever changes.
-            if (decision !== undefined) decide(sprite.pin, decision);
+            //
+            // **Filed under `decidedAt` where this sprite already holds a decision**, so changing
+            // one's mind replaces it rather than adding a second edit the resolver then drops. See
+            // `AssignedSprite.decidedAt`, which is where the two pins come apart.
+            if (decision !== undefined) decide(sprite.decidedAt ?? sprite.pin, decision);
           }}
         />
       </div>
     </div>
   );
+}
+
+/** The option value naming the sprite at `ordinal`, or `null` where this row does not offer it. */
+function joinValueFor(
+  ordinal: number,
+  others: readonly { readonly ordinal: number; readonly sprite: AssignedSprite }[],
+): string | null {
+  const other = others.find((candidate) => candidate.ordinal === ordinal);
+  return other === undefined ? null : joinChoice(other.sprite.pin);
 }

@@ -52,10 +52,10 @@ export function namePieces(shaped: readonly ShapedPiece[], inventory: readonly s
   let next = 0;
   const pieces = shaped.map((piece, index) => {
     const claim = claims[index];
-    if (claim !== null && claim !== undefined) return { ...asPiece(piece), name: claim, assigned: true };
+    if (claim !== null && claim !== undefined) return { box: piece.box, name: claim };
     const name = spare[next] ?? '';
     next += 1;
-    return { ...asPiece(piece), name, assigned: false };
+    return { box: piece.box, name };
   });
 
   return { pieces, naming: taken.length > 0 ? 'ASSIGNED' : 'READING_ORDER', lost };
@@ -69,14 +69,5 @@ export function namePieces(shaped: readonly ShapedPiece[], inventory: readonly s
  * reading one piece numbered two ways. See `spriteOrdinal`.
  */
 function positional(count: number): (piece: ShapedPiece, index: number) => SpritePiece {
-  return (piece, index) => ({
-    ...asPiece(piece),
-    name: `sprite-${spriteOrdinal(index, count)}`,
-    assigned: false,
-  });
-}
-
-/** The shaped piece's own fields, without the claim that this pass has finished reading. */
-function asPiece(piece: ShapedPiece): Omit<SpritePiece, 'name' | 'assigned'> {
-  return { box: piece.box, members: piece.members };
+  return (piece, index) => ({ box: piece.box, name: `sprite-${spriteOrdinal(index, count)}` });
 }

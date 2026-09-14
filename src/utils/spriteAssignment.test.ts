@@ -39,7 +39,7 @@ describe('resolveAssignment', () => {
 
       expect(assignment.naming).toBe('READING_ORDER');
       expect(assignment.pieces.map((piece) => piece.name)).toStrictEqual(INVENTORY);
-      expect(assignment.pieces.every((piece) => !piece.assigned)).toBe(true);
+      expect(assignment.sprites.every((sprite) => sprite.decision === null)).toBe(true);
     });
 
     it('numbers them where the counts disagree, padded to the sheet’s own width', () => {
@@ -79,7 +79,11 @@ describe('resolveAssignment', () => {
 
       expect(assignment.naming).toBe('ASSIGNED');
       expect(assignment.pieces.map((piece) => piece.name)).toStrictEqual(['arm-right', 'arm-left', 'torso']);
-      expect(assignment.pieces.map((piece) => piece.assigned)).toStrictEqual([true, true, false]);
+      expect(assignment.sprites.map((sprite) => sprite.decision?.kind ?? null)).toStrictEqual([
+        'NAME',
+        'NAME',
+        null,
+      ]);
     });
 
     it('takes an assigned name out of the pool the unnamed pieces draw from', () => {
@@ -148,7 +152,7 @@ describe('resolveAssignment', () => {
         pixels: 32,
       });
       expect(assignment.sprites.map((sprite) => sprite.piece)).toStrictEqual([0, 0, 1]);
-      expect(assignment.sprites.map((sprite) => sprite.leads)).toStrictEqual([true, false, true]);
+      expect(assignment.sprites.map((sprite) => sprite.joinTarget)).toStrictEqual([null, 1, null]);
       // The second member points back at the sprite it was joined to, counting from one, so it can
       // be labelled `joined to 1` rather than repeating the piece's name on a second chip.
       expect(assignment.sprites.map((sprite) => sprite.joinedTo)).toStrictEqual([null, 1, null]);
@@ -158,7 +162,7 @@ describe('resolveAssignment', () => {
       const assignment = resolveAssignment(BOXES, [join(1, 0), join(2, 1)], INVENTORY);
 
       expect(assignment.pieces).toHaveLength(1);
-      expect(assignment.pieces[0]?.members).toHaveLength(3);
+      expect(assignment.sprites.map((sprite) => sprite.piece)).toStrictEqual([0, 0, 0]);
     });
 
     it('names the joined piece through the member the reader named', () => {
@@ -174,7 +178,7 @@ describe('resolveAssignment', () => {
 
       expect(assignment.pieces).toHaveLength(3);
       expect(assignment.pieces[2]?.name).toBe('arm-left');
-      expect(assignment.pieces[2]?.members).toHaveLength(2);
+      expect(assignment.sprites.map((sprite) => sprite.piece)).toStrictEqual([0, 1, 2, 2]);
       expect(assignment.naming).toBe('ASSIGNED');
     });
 
@@ -203,6 +207,42 @@ describe('resolveAssignment', () => {
       // that had worked.
       expect(assignment.sprites[1]?.decision).toBeNull();
     });
+  });
+
+  it('keeps a decision on the sprite it was made on, not on the one enclosing it', () => {
+    // A ring's bounding box contains a loose dot's centre, and the ring sorts first in reading
+    // order — so resolving by containment alone left the dot out of the download and dropped the
+    // ring instead. `locateSprite` tries each sprite's own pin before any containment test.
+    const ring = box(0, 0, 40, 40);
+    const dot = box(17, 17, 5, 5);
+    const assignment = resolveAssignment(
+      [ring, dot],
+      [{ pin: spritePin(dot), decision: { kind: 'LEAVE_OUT' } }],
+      [],
+    );
+
+    expect(assignment.sprites.map((sprite) => sprite.piece)).toStrictEqual([0, null]);
+  });
+
+  it('lets a reader change their mind after a dial has moved the sprite’s pin', () => {
+    // The store files an edit under the pin the sprite had at the time, and a grown box has a new
+    // centre — so a second decision sent under the *current* pin was filed as a second edit, which
+    // resolution then dropped as one with no sprite left to claim. The reader's new choice vanished
+    // and the panel reported it as their loss. A control sends `decidedAt` instead, which is the pin
+    // the surviving decision is actually filed under.
+    const grown = box(10, 10, 23, 20);
+    const stale = spritePin(box(10, 10, 20, 20));
+    const first = resolveAssignment([grown], [{ pin: stale, decision: { kind: 'NAME', name: 'a' } }], ['a']);
+
+    expect(first.sprites[0]?.decidedAt).toStrictEqual(stale);
+
+    const replaced = resolveAssignment(
+      [grown],
+      [{ pin: stale, decision: { kind: 'NAME', name: 'b' } }],
+      ['b'],
+    );
+    expect(replaced.pieces[0]?.name).toBe('b');
+    expect(replaced.lost).toBe(0);
   });
 
   it('drops every decision whose sprite the dials have re-cut away, and counts them', () => {

@@ -47,7 +47,7 @@ interface SelectFieldProps<T extends string | number> {
    *
    * Optional here where those two require it, for the reason `description` is: one of the app's
    * thirty-two selects — the rig mode — has a setting above it that takes its value over, and the other
-   * thirty passing a permanently-empty string would bury the one that does. It is the same
+   * thirty-one passing a permanently-empty string would bury the one that does. It is the same
    * select that carries the seventh `description`, and the two say different things: this one is the
    * sheet taking the choice over, that one the sheet withdrawing an option from a choice the reader
    * still has.

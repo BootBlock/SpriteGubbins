@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SpriteBox } from '../types/quantiser.ts';
-import { pinnedSprite, samePin, spritePin } from './spritePin.ts';
+import { locateSprite, samePin, spritePin } from './spritePin.ts';
 
 const box = (left: number, top: number, width = 4, height = 4): SpriteBox => ({
   left,
@@ -31,31 +31,47 @@ describe('spritePin', () => {
   });
 });
 
-describe('pinnedSprite', () => {
+describe('locateSprite', () => {
   const boxes = [box(0, 0), box(10, 0), box(0, 10)];
 
-  it('finds the sprite the pin falls inside', () => {
-    expect(pinnedSprite(boxes, { x: 11, y: 1 })).toBe(1);
+  it('finds a sprite by its own pin', () => {
+    expect(locateSprite(boxes, spritePin(box(10, 0)))).toBe(1);
+  });
+
+  it('gives a sprite its own pin even when an earlier box encloses it', () => {
+    // **The defect the exact match was added for.** A ring, a frame or a hoop is a bounding box that
+    // contains other sprites' centres, and it sorts first in reading order — so resolving by
+    // containment alone handed every decision made on the inner sprite to the outer one. The reader
+    // left the dot out and the ring vanished from the download instead.
+    const ring = box(0, 0, 40, 40);
+    const dot = box(17, 17, 5, 5);
+
+    expect(locateSprite([ring, dot], spritePin(dot))).toBe(1);
+    expect(locateSprite([ring, dot], spritePin(ring))).toBe(0);
+  });
+
+  it('falls back to containment once a dial has moved the centre', () => {
+    // This is what carries a decision across a re-segmentation: no box has this pin as its own
+    // centre any more, but the sprite it was made on still covers the point.
+    const grown = box(9, 9, 10, 10);
+
+    expect(locateSprite([grown], { x: 13, y: 13 })).toBe(0);
   });
 
   it('treats the far edge as outside, so two touching boxes claim one pixel each', () => {
-    // Half-open on both axes: a box at 0 of width 4 holds columns 0 to 3, and column 4 belongs to
-    // whatever starts there. A closed test would make two adjacent sprites both contain the seam.
-    expect(pinnedSprite([box(0, 0)], { x: 3, y: 3 })).toBe(0);
-    expect(pinnedSprite([box(0, 0)], { x: 4, y: 3 })).toBeNull();
+    expect(locateSprite([box(0, 0)], { x: 3, y: 3 })).toBe(0);
+    expect(locateSprite([box(0, 0)], { x: 4, y: 3 })).toBeNull();
   });
 
   it('answers null rather than guessing when the artwork has gone', () => {
     // The decision this returns null for is dropped and counted, never handed to the nearest box —
     // which is how a reader who fixed one wrong name would end up with a different wrong name.
-    expect(pinnedSprite(boxes, { x: 50, y: 50 })).toBeNull();
+    expect(locateSprite(boxes, { x: 50, y: 50 })).toBeNull();
   });
 
-  it('takes the first containing box in reading order where two overlap', () => {
-    // The gap merge produces bounding boxes, so one sprite's box can reach across another's. First
-    // in reading order is the tie-break the rest of the app takes.
-    const overlapping = [box(0, 0, 20, 20), box(4, 4, 4, 4)];
-
-    expect(pinnedSprite(overlapping, { x: 5, y: 5 })).toBe(0);
+  it('will not take a sprite another decision already claimed', () => {
+    // One sprite holds one decision. Without this, a merge folding two sprites into one would give
+    // the survivor two and silently apply whichever was reached last.
+    expect(locateSprite(boxes, spritePin(box(10, 0)), new Set([1]))).toBeNull();
   });
 });

@@ -7,7 +7,8 @@ const sprite = (over: Partial<AssignedSprite> = {}): AssignedSprite => ({
   box: { left: 0, top: 0, width: 4, height: 4, pixels: 16 },
   pin: { x: 2, y: 2 },
   piece: 0,
-  leads: true,
+  decidedAt: null,
+  joinTarget: null,
   joinedTo: null,
   decision: null,
   ...over,
@@ -22,10 +23,10 @@ describe('spriteLabel', () => {
     // Labelling both halves of a join `sprite-02` puts two chips carrying one name on the artwork,
     // which is indistinguishable from the duplicate-name error the feature exists to reveal. Found
     // by driving the tab in a browser, where the two states looked identical.
-    expect(spriteLabel(sprite({ leads: false, joinedTo: 2 }), 'sprite-02')).toBe('joined to 2');
+    expect(spriteLabel(sprite({ joinTarget: 2, joinedTo: 2 }), 'sprite-02')).toBe('joined to 2');
   });
 
   it('says a sprite is left out where it is in no piece', () => {
-    expect(spriteLabel(sprite({ piece: null, leads: false }), null)).toBe('left out');
+    expect(spriteLabel(sprite({ piece: null }), null)).toBe('left out');
   });
 });

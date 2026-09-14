@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSheetWriteStore } from '../../stores/useSheetWriteStore.ts';
+import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { FakeSheetWriteWorker } from '../../test/fakeSheetWriteWorker.ts';
 import type { SpriteSegmentation } from '../../types/quantiser.ts';
@@ -27,6 +28,8 @@ let release: (() => void) | null = null;
 beforeEach(() => {
   useUIStore.setState({ toastMessage: null });
   useSheetWriteStore.setState({ writing: false });
+  // A decision is pinned to a place on one sheet, so it must not survive into the next test's.
+  useSpriteAssignmentStore.getState().forget();
   FakeSheetWriteWorker.reset();
   FakeSheetWriteWorker.respond = ({ image }) =>
     new Promise((resolve) => {
@@ -156,6 +159,41 @@ describe('DownloadControls', () => {
     expect(FakeSheetWriteWorker.started[0]?.posted[0]).toMatchObject({
       format: 'ASEPRITE',
       boxes: sprites.boxes,
+    });
+    await finish();
+  });
+
+  it('sends the reader’s pieces and their names, not the segmentation’s own boxes', async () => {
+    // **What bullet 4 of the issue asks for, and what nothing else can prove.** Every format takes
+    // the one resolved list, so a sprite left out reaches no writer and two joined reach every
+    // writer as one box — which is what stops a pack and an Aseprite document cutting one sheet two
+    // ways. The assertion above passes either way, because an empty assignment resolves to one piece
+    // per box; this one does not.
+    const sprites: SpriteSegmentation = {
+      kind: 'SEGMENTED',
+      boxes: [
+        { left: 0, top: 0, width: 2, height: 2, pixels: 4 },
+        { left: 8, top: 0, width: 2, height: 2, pixels: 4 },
+        { left: 16, top: 0, width: 2, height: 2, pixels: 4 },
+      ],
+      specks: 0,
+    };
+    // The second sprite joins the first, and the third is left out — so one piece reaches the
+    // writer, cut to the box holding both halves of the join.
+    act(() => {
+      useSpriteAssignmentStore.getState().decide({ x: 9, y: 1 }, { kind: 'JOIN', to: { x: 1, y: 1 } });
+      useSpriteAssignmentStore.getState().decide({ x: 17, y: 1 }, { kind: 'LEAVE_OUT' });
+    });
+    // Driven through the Aseprite format on purpose: it is the one the issue's fourth bullet names,
+    // and the one that could most easily have been left reading the raw boxes.
+    draw(createImage(24, 4), 'ASEPRITE', sprites);
+
+    await userEvent.click(downloadButton());
+    expect(FakeSheetWriteWorker.started[0]?.posted[0]).toMatchObject({
+      format: 'ASEPRITE',
+      boxes: [{ left: 0, top: 0, width: 10, height: 2, pixels: 8 }],
+      names: ['sprite-1'],
+      naming: null,
     });
     await finish();
   });

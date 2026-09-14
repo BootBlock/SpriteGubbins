@@ -766,16 +766,17 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * — one control card explaining four exclusive answers, six paragraphs naming what stands between a
  * sheet and its names, and two action cards. Measured against `main` at `2294406`, rebuilt from the
  * same lockfile — **2382.06 KiB across 64 entries** on the build's summary line, the figure the
- * paragraph above records — this build reports **2394.93 across 64** on the same line, a delta of
- * 12.87 that crossed a ceiling the base sat 0.94 under. No file was added to or removed from
+ * paragraph above records — this build reports **2395.85 across 64** on the same line, a delta of
+ * 13.79 that crossed a ceiling the base sat 0.94 under. No file was added to or removed from
  * `PRECACHE_SHAPES`, and no chunk was renamed. The delta lands in the `QuantiseTab` chunk, which is
- * the only one that grew a block between the two `dist/assets` listings.
+ * the only one that grew a block between the two `dist/assets` listings. Roughly a quarter of it is
+ * the guidance rather than the logic: one control card explaining four exclusive answers, six
+ * paragraphs naming what stands between a sheet and its names, two action cards, and the four
+ * download cards rewritten to describe pieces where they described sprites.
  *
- * 2395 leaves **0.07 KiB**, which is the tightest margin any raise here has left. It is still the
- * smallest whole figure over the build, which is the rule every entry above follows; the next change
- * to reach this chunk will cross it and should raise the ceiling rather than round this one up now.
+ * 2396 leaves **0.15 KiB**.
  */
-export const PRECACHE_CEILING_KIB = 2395;
+export const PRECACHE_CEILING_KIB = 2396;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

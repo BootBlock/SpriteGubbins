@@ -37,6 +37,8 @@ export function SpriteLabelOverlay({ assignment, magnification }: SpriteLabelOve
   const select = useSpriteAssignmentStore((state) => state.select);
   /** Where the pointer went down, so a press that travelled can be told from one that did not. */
   const pressedAt = useRef<{ x: number; y: number } | null>(null);
+  /** Whether the press that has just finished was a drag — read by the click that may follow it. */
+  const dragged = useRef(false);
 
   return (
     // `pointer-events-none` on the layer and back on for each chip: the layer spans the whole canvas,
@@ -87,12 +89,23 @@ export function SpriteLabelOverlay({ assignment, magnification }: SpriteLabelOve
                   event.stopPropagation();
                   pressedAt.current = { x: event.clientX, y: event.clientY };
                 }}
-                onClick={(event) => {
+                // **The travel is judged at the release, not at the click**, because a press that
+                // goes down on a chip and comes up elsewhere fires no `click` at all. Judged there,
+                // the recorded origin outlived the gesture, and the next *keyboard* activation —
+                // which reports 0,0 — measured as a drag the width of the window and was silently
+                // dropped. One press that wandered cost the reader their next Enter.
+                onPointerUp={(event) => {
                   const from = pressedAt.current;
                   pressedAt.current = null;
-                  // A keyboard press reports no travel to measure — `from` is null, because no
-                  // pointer went down — so it selects, which is why these are buttons.
-                  if (from !== null && travelled(from, event)) return;
+                  dragged.current = from !== null && travelled(from, event);
+                }}
+                onClick={() => {
+                  // A keyboard press reaches here having set nothing, and `dragged` is false from
+                  // the last press that was judged — which is why these are buttons rather than
+                  // pointer targets.
+                  const wasDrag = dragged.current;
+                  dragged.current = false;
+                  if (wasDrag) return;
                   select(isSelected ? null : sprite.pin);
                 }}
                 className={`max-w-32 truncate rounded px-1 py-px font-mono text-2xs leading-tight transition-colors duration-390 ${chipTone(piece === null, isSelected)}`}

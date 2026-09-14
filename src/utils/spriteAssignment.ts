@@ -37,12 +37,14 @@ export function resolveAssignment(
   const sprites: readonly AssignedSprite[] = boxes.map((box, index) => {
     const piece = shaped.pieceOf[index] ?? null;
     const leader = piece === null ? undefined : leaders.get(piece);
+    const target = shaped.joinTarget[index] ?? null;
     return {
       box,
       pin: spritePin(box),
       piece,
-      leads: leader === index,
-      // Counting from one, as every surface that numbers a sprite does.
+      decidedAt: shaped.decidedAt[index] ?? null,
+      // Both counting from one, as every surface that numbers a sprite does.
+      joinTarget: target === null ? null : target + 1,
       joinedTo: leader === undefined || leader === index ? null : leader + 1,
       decision: shaped.decisions[index] ?? null,
     };
