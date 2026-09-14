@@ -4,6 +4,7 @@ import { DEFAULT_SPRITE_CELL_CHOICE } from '../../constants/spriteCell.ts';
 import { useDetachedWindow } from '../../hooks/useDetachedWindow.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
 import { useSecondPaneImage } from '../../hooks/useSecondPaneImage.ts';
+import { useSpriteAssignment } from '../../hooks/useSpriteAssignment.ts';
 import type { TargetSize } from '../../types/output.ts';
 import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
@@ -14,6 +15,7 @@ import { ComparisonToolbar } from './ComparisonToolbar.tsx';
 import { DetachedNotice } from './DetachedNotice.tsx';
 import { DetachedPreview } from './DetachedPreview.tsx';
 import { sourcePane, secondPane } from './comparisonPanes.tsx';
+import { SpriteLabelOverlay } from './SpriteLabelOverlay.tsx';
 import { WipePanes } from './WipePanes.tsx';
 
 interface ImageComparisonProps {
@@ -151,6 +153,9 @@ export function ImageComparison({
   // mounted is blank, and the image it wants may not have changed at all.
   // What the right-hand canvas holds, and what that picture is — see `useSecondPaneImage`.
   const { image: secondImage, pictured } = useSecondPaneImage(quantised, shown, differenceScale);
+  // The same reading the Sprites panel's list and the download take, through the one hook — so the
+  // name a chip shows over the artwork is the name the file is written as. See `useSpriteAssignment`.
+  const assignment = useSpriteAssignment(quantised?.result.sprites ?? null);
   useEffect(() => {
     paint(sourceCanvas, source);
     paint(resultCanvas, secondImage);
@@ -169,6 +174,13 @@ export function ImageComparison({
     scale,
     setResultView,
     setResultCanvas,
+    // Only on the frame that is actually drawing the sprite bounds, and keyed on `pictured` rather
+    // than on the pill for the reason the frame's own label and alt text are: what the labels name
+    // has to be what the canvas is holding. The magnification is the pane's own — one result pixel
+    // covers `grid` source pixels — so a chip placed at a result coordinate lands on its artwork.
+    pictured === 'SPRITES' && quantised !== null ? (
+      <SpriteLabelOverlay assignment={assignment} magnification={zoom * quantised.grid} />
+    ) : null,
   );
 
   const isDetached = detached.target !== null;

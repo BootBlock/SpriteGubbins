@@ -754,8 +754,29 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2383 leaves **0.94 KiB**, which is wider than the last several raises left and is not a widening:
  * it is the smallest whole figure over the build, and the build simply lands early in its own KiB.
+ *
+ * **Raised from 2383 by letting a reader say which sprite is which component** (#295). The Quantise
+ * tab attached the inventory's names by counting, so a sheet that came back with the right number of
+ * pieces in the wrong order got a wrong name on every piece after the swap, silently, in a file a rig
+ * importer believes — and nothing showed a name before the download. What a first visit pays for: the
+ * pure layer that resolves a reader's decisions into the pieces a download writes (`spritePin`,
+ * `spritePieces`, `pieceNames`, `spriteAssignment`, `spriteChoice`) and the types under it; the store
+ * holding those decisions and the hook that feeds them; the label overlay drawn over the marked
+ * preview and the per-sprite list in the Sprites panel; and the largest single addition, the guidance
+ * — one control card explaining four exclusive answers, six paragraphs naming what stands between a
+ * sheet and its names, and two action cards. Measured against `main` at `2294406`, rebuilt from the
+ * same lockfile — **2382.06 KiB across 64 entries** on the build's summary line, the figure the
+ * paragraph above records — this build reports **2395.88 across 64** on the same line, a delta of
+ * 13.82 that crossed a ceiling the base sat 0.94 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed. The delta lands in the `QuantiseTab` chunk, which is
+ * the only one that grew a block between the two `dist/assets` listings. Roughly a quarter of it is
+ * the guidance rather than the logic: one control card explaining four exclusive answers, six
+ * paragraphs naming what stands between a sheet and its names, two action cards, and the four
+ * download cards rewritten to describe pieces where they described sprites.
+ *
+ * 2396 leaves **0.12 KiB**.
  */
-export const PRECACHE_CEILING_KIB = 2383;
+export const PRECACHE_CEILING_KIB = 2396;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

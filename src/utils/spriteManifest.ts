@@ -1,9 +1,9 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
+import type { SpriteNaming } from '../types/spriteAssignment.ts';
 import type { SpriteCell } from '../types/spriteCell.ts';
 import type { ManifestCell, ManifestSheet, ManifestSprite, SpriteManifest } from '../types/spriteManifest.ts';
 import { scaleBoxes } from './sheetLayout.ts';
 import { cellOffsets, cellPivot } from './spriteCell.ts';
-import { spriteOrdinal } from './spriteOrdinal.ts';
 
 /**
  * The written sheet described as data: where every sprite sits, what it is called, and which sheet
@@ -14,12 +14,14 @@ import { spriteOrdinal } from './spriteOrdinal.ts';
  * which is the same multiplication the Aseprite frames take. Doing it in one place is what stops the
  * manifest and the frames describing the same sprite at two different coordinates.
  *
- * **Names are attached only where the count matches.** The mapping from sprite to component is
- * positional — section 4 fixes the reading order, `componentSlots` expands the inventory into that
- * order — so it holds exactly while the sheet came back with the number of components it was asked
- * for. A sheet one component short would otherwise have every name after the gap describing the
- * wrong piece, silently, in a file a pipeline believes. Where the two disagree the sprites take
- * positional names and {@link SpriteManifest.named} says so.
+ * **The names arrive decided, and this file does not second-guess them.** Which sprite is which
+ * component is settled before the press by `resolveAssignment`, which applies the reader's own
+ * decisions over the reading order section 4 fixes and reports whether every inventory name came out
+ * taken exactly once. It used to be settled here, by comparing two list lengths, and that is exactly
+ * why a sheet whose count was right and whose order was not produced a wrong name on every piece
+ * after the swap: a length cannot see an order. So this records the answer — {@link
+ * SpriteManifest.named}, and {@link SpriteManifest.naming} for which of the two routes it took — and
+ * writes one name per box in the order it was handed them.
  *
  * **A rect is always the artwork's own bounding box**, whatever the cut is. Where a cell was asked
  * for, the cell is stated once at the top and each sprite carries the displacement its box sits at
@@ -46,8 +48,16 @@ export interface ManifestInput {
   readonly boxes: readonly SpriteBox[];
   /** The duplicate reading, in the same coordinates — empty where nothing was compared. */
   readonly duplicates: readonly SpriteDuplicateGroup[];
-  /** One name per component the prompt asked for, or empty where the studio states no sheet. */
+  /**
+   * The name for each box above, in the same order — already decided, one per box, never empty.
+   *
+   * Not the inventory. `resolveAssignment` has already matched the inventory to the sprites and put
+   * a positional name on every piece where that match could not be made, so a mismatch of lengths
+   * here is a caller error rather than a state this has to interpret.
+   */
   readonly names: readonly string[];
+  /** How those names were arrived at, or `null` where they are positional. See `SpriteNaming`. */
+  readonly naming: SpriteNaming | null;
   /**
    * The fixed cell each sprite is cut into, in the 1:1 result's own pixels, or `null` for the boxes.
    *
@@ -62,9 +72,9 @@ export interface ManifestInput {
 }
 
 /** This manifest shape's version — see {@link SpriteManifest.version}, which is not a compatibility surface. */
-export const MANIFEST_VERSION = 2;
+export const MANIFEST_VERSION = 3;
 
-/** A box as its own key, so a duplicate group's member can be found in the segmentation's list. */
+/** A box as its own key, so a duplicate group's member can be looked for among the written pieces. */
 function boxKey(box: SpriteBox): string {
   return `${String(box.left)},${String(box.top)},${String(box.width)},${String(box.height)}`;
 }
@@ -74,9 +84,15 @@ function boxKey(box: SpriteBox): string {
  *
  * **Matched by position rather than by identity**, because a duplicate group carries its own boxes:
  * the reading describes the sheet as it stood before any snap, and a snap rewrites pixels, which can
- * split or join a region. A member whose box the final segmentation no longer holds simply gets no
+ * split or join a region. A member whose box the written pieces no longer hold simply gets no
  * link — dropping it is the honest answer, where guessing at the nearest box would put a reference
  * to the wrong artwork into a file a packer acts on.
+ *
+ * **A joined piece therefore carries no link**, and that is the same answer rather than a new one.
+ * The reading is of the sheet's *sprites*, taken before a reader said what a piece is; a piece made
+ * of two of them has a box that is the union of theirs, which no member's box equals. Saying "this
+ * piece repeats that one" of a drawing the reading never looked at would be a claim nothing here can
+ * support.
  */
 function duplicateLinks(
   boxes: readonly SpriteBox[],
@@ -107,17 +123,16 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
   // Linked at 1:1, where both the segmentation and the duplicate reading were measured — the keys
   // would still match after scaling, and this keeps the one multiplication above.
   const links = duplicateLinks(input.boxes, input.duplicates);
-  const named = input.names.length === boxes.length;
   // Bottom-centre where no cell was asked for, which is the default `ManifestSprite.pivot`
   // describes — and the same arithmetic, so the two cuts cannot state one point two ways.
   const anchor = cell?.anchor ?? { x: 'CENTRE' as const, y: 'BOTTOM' as const };
 
   const sprites: readonly ManifestSprite[] = boxes.map((box, index) => ({
     index: index + 1,
-    // Padded to the width this sheet's own sprite count needs, by the same function the pack's
-    // file names take their ordinal from — so a reader matching a manifest entry to the PNG beside
-    // it is not reading one sprite numbered two ways. See `spriteOrdinal`.
-    name: named ? (input.names[index] ?? '') : `sprite-${spriteOrdinal(index, boxes.length)}`,
+    // Taken as handed over — `namePieces` is where a name is chosen, including the padded
+    // `sprite-07` a sheet that could not be named falls back to. The `??` narrows an index lookup
+    // and is not a second rule: the two lists are one per box by construction.
+    name: input.names[index] ?? '',
     x: box.left,
     y: box.top,
     width: box.width,
@@ -143,7 +158,10 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
     height: input.height,
     scale: input.scale,
     sheet: input.sheet,
-    named,
+    // Derived from the one answer rather than carried as a second: `naming` is `null` in exactly the
+    // state that used to make `named` false, so the two cannot drift apart in a written file.
+    named: input.naming !== null,
+    naming: input.naming,
     cell: cell === null ? null : manifestCell(cell, input.scale),
     sprites,
   };

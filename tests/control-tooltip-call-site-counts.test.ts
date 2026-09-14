@@ -13,7 +13,7 @@ import { callSitesPassing, callSitesWrappingAttribute } from './jsxCallSites.ts'
  * hung off one is unreachable by both routes, and the figure is the size of what that recovers.
  *
  * Both counts had drifted a long way and nothing recomputed either (issue #199): the file said
- * around fifty call sites where there are **80**, and seven disabled-capable ones where there are
+ * around fifty call sites where there are **82**, and seven disabled-capable ones where there are
  * **19** — with CLAUDE.md repeating the fifty twice in one sentence. Neither argument breaks at the
  * true figure; both get stronger, which is what makes this a live argument on a false premise rather
  * than a stale number beside a live one.
@@ -33,7 +33,7 @@ import { callSitesPassing, callSitesWrappingAttribute } from './jsxCallSites.ts'
  */
 
 /** Every `<ControlTooltip>` the app renders, counted through the `text` its props type requires. */
-const CALL_SITE_COUNT = 80;
+const CALL_SITE_COUNT = 82;
 
 /**
  * Where the wrapped control is written with `disabled`, by the file that renders each.
@@ -69,7 +69,7 @@ const DISABLED_CAPABLE = [
  * A whole number under a hundred, spelled the way this repository's prose spells one.
  *
  * The house voice writes a figure of this size as words, so an assertion looking for the digits
- * would find nothing — and one looking for a hand-typed “eighty” beside an `80` above is two
+ * would find nothing — and one looking for a hand-typed “eighty-two” beside an `82` above is two
  * literals free to part company: the count moves, the first case fails, whoever fixes it edits the
  * constant, and the prose case goes on passing against a sentence that still says the old number.
  * That is this suite reproducing inside itself the drift it exists to stop. Throws rather than

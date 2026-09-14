@@ -1,5 +1,6 @@
 import type { Direction } from './rendering.ts';
 import type { RigMode } from './rigging.ts';
+import type { SpriteNaming } from './spriteAssignment.ts';
 import type { SpriteAnchor } from './spriteCell.ts';
 import type { SubjectCategory } from './subject.ts';
 
@@ -32,15 +33,24 @@ import type { SubjectCategory } from './subject.ts';
  * measure; see `OutputConfig.emitComponentMap`. This one measures the pixels that arrived. Neither
  * can be derived from the other, which is why both exist.
  *
- * **They join on {@link ManifestSprite.index}, and on nothing else.** Both number their entries from
- * one in the reading order section 4 of the prompt fixes, so the *n*th entry of a component map and
- * the *n*th sprite here describe one component. That is what lets a rigging pipeline put the model's
- * `parent` and cell-fraction pivot beside the rect measured here, with no matching step in between —
- * and the map's pivot is the one to take, because the pivot in this file is the convention
- * {@link ManifestSprite.pivotSource} names rather than a measurement. **Not on the name**, which is the pairing that looks equivalent and is
- * not: the map always takes its names from the inventory, while this file only does where
- * {@link SpriteManifest.named} is true, and a sheet that came back a component short is exactly when
- * the two would be matched against each other.
+ * **They join on {@link ManifestSprite.name}, wherever {@link SpriteManifest.named} is true.** That
+ * is what lets a rigging pipeline put the model's `parent` and cell-fraction pivot beside the rect
+ * measured here, with no matching step in between — and the map's pivot is the one to take, because
+ * the pivot in this file is the convention {@link ManifestSprite.pivotSource} names rather than a
+ * measurement. A named manifest has every inventory name on exactly one piece, which is what `named`
+ * asserts, so the name identifies a component in both files and cannot be ambiguous in either.
+ *
+ * **Not on {@link ManifestSprite.index}**, which is the pairing that looks equivalent and is not.
+ * The index is this *sheet's* own reading order, and the sheet's order is exactly what a reader may
+ * correct: a generator that drew the arms the wrong way round produces a manifest whose sixth entry
+ * is the seventh component, and leaving a stray out or joining two fragments shifts every index after
+ * it. The inventory's order does not move, so the two orders are no longer one order.
+ *
+ * **Where `named` is false the two cannot be joined at all**, and that is the honest answer rather
+ * than a gap: positional names mean the pieces could not be matched to the inventory one for one, so
+ * neither key identifies anything. {@link SpriteManifest.naming} says which of the two routes a
+ * named file took, for a consumer that wants to treat a checked assignment differently from an
+ * inferred one.
  */
 
 /**
@@ -68,7 +78,16 @@ export type PivotSource = 'DEFAULT_BOTTOM_CENTRE' | 'CELL_ANCHOR';
 
 /** One sprite, where it sits in the written file, and what the inventory calls it. */
 export interface ManifestSprite {
-  /** Reading order, counting from one — the position section 4 identifies a component by. */
+  /**
+   * This sheet's own reading order, counting from one.
+   *
+   * **Where the piece sits on the sheet, not which component it is.** The two were one number while
+   * the entries were the segmentation and names were attached by counting; they came apart when a
+   * reader gained the ability to say which sprite is which. A name assigned by hand permutes this
+   * order against the inventory's, and leaving a sprite out or joining two shifts every index after
+   * it. Join a component map on {@link ManifestSprite.name} instead — see the note at the top of
+   * this file, which is where that argument is made.
+   */
   readonly index: number;
   /**
    * The inventory's name for this component, or a positional name where the sheet was not named.
@@ -223,6 +242,21 @@ export interface SpriteManifest {
   readonly sheet: ManifestSheet | null;
   /** Whether {@link ManifestSprite.name} carries inventory names or positional ones. */
   readonly named: boolean;
+  /**
+   * How the inventory names were given out, or `null` wherever {@link SpriteManifest.named} is false.
+   *
+   * **Two routes to the same claim, and a consumer is entitled to know which.** `READING_ORDER` is
+   * the rule the prompt states and this app applied on its own: the *n*th sprite is the *n*th
+   * component, asserted because the counts agreed. `ASSIGNED` means a person looked at the sheet and
+   * said which sprite is which — a stronger warrant, and one that survives a sheet whose count was
+   * right and whose order was not, which counting alone cannot detect at all.
+   *
+   * Stated beside {@link SpriteManifest.named} rather than instead of it. The boolean is what an
+   * importer gates on and is the older field; this says what is behind it, so a pipeline that wants
+   * to treat a human assignment differently from an inferred one can, and one that does not is
+   * unaffected.
+   */
+  readonly naming: SpriteNaming | null;
   /**
    * The fixed cell every sprite was cut into, or `null` where each kept its own bounding box.
    *

@@ -10,6 +10,7 @@ import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
 import { quantiseDialSetters, type QuantiseDialSetters } from './quantiseDialSetters.ts';
 import { useAutoTuneStore } from './useAutoTuneStore.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
+import { useSpriteAssignmentStore } from './useSpriteAssignmentStore.ts';
 
 /**
  * The sheet being quantised, and the scale the user chose for it.
@@ -199,6 +200,10 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
       // replaced, so leaving one in place for the render between here and the worker's first reply
       // would caption the new sheet with the old one's colour count and detected scale.
       useQuantiseAnswerStore.getState().forget();
+      // And what the reader said about the last sheet's sprites, for a reason of the same kind: a
+      // decision is pinned to a point on one result, so carrying one over would give a name to
+      // whatever the next sheet happens to have drawn there. See `useSpriteAssignmentStore`.
+      useSpriteAssignmentStore.getState().forget();
       // And the sweep, thread and all, for the same reason and one of its own: a sweep may still be
       // running for the sheet being replaced, and ending it is what stops it holding that sheet and
       // re-enabling a button beside itself. See `abandonSweep`.
@@ -262,6 +267,7 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
       // go in the same breath, or the tab reports a quantiser that could not start while one is
       // running.
       useQuantiseAnswerStore.getState().reset();
+      useSpriteAssignmentStore.getState().forget();
       abandonSweep();
       releaseSheet();
     },
