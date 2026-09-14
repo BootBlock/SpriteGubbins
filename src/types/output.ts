@@ -466,11 +466,13 @@ export interface OutputConfig extends ImageOutputConfig {
    * quantiser's shape instead would lose something rather than unify anything: nothing that draws a
    * sheet can know that file's rects, its magnification or its duplicate links.
    *
-   * The two **join**, which is the next best thing. Both number their entries from one in the
-   * reading order section 4 fixes, so a reader holding both files can put this map's `parent` and
-   * `pivot` beside the quantiser's measured rects for the same sprite. The index is what carries
-   * that, not the name: the quantiser names a sprite from the inventory only where the sheet came
-   * back with the count it was asked for, and numbers it otherwise — see `SpriteManifest.named`.
+   * The two **join**, which is the next best thing. A reader holding both files can put this map's
+   * `parent` and `pivot` beside the quantiser's measured rect for the same component, matching them
+   * on the inventory name. The name is what carries that, not the position: the quantiser's entries
+   * are in the *sheet's* reading order, and a reader who corrects a sheet that drew two components
+   * the wrong way round has deliberately made those two orders differ. Where the quantiser could not
+   * match the pieces to the inventory it numbers them instead, and the two files cannot be joined at
+   * all — see `SpriteManifest.named`.
    */
   readonly emitComponentMap: boolean;
   /**

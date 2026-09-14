@@ -748,8 +748,8 @@ describe('ImageComparison, detached', () => {
  *
  * The panel that moves carries its toolbar, and the toolbar carries the download button — so every
  * confirmation this panel raises is raised in the other document. Both of them are the reader's only
- * copy of what happened: the success names what was actually written, down to whether the sprites
- * were named from the inventory or numbered because the count disagreed with it, and the failure
+ * copy of what happened: the success names what was actually written, down to how the pieces
+ * came by their names — the reading order, the reader's own assignment, or neither — and the failure
  * names why nothing was. Painted on the page behind, both are lost, and the live region announcing
  * them is in the wrong document too.
  *

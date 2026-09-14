@@ -1,4 +1,5 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
+import type { SpriteNaming } from '../types/spriteAssignment.ts';
 import type { SheetFormat, WrittenSheet } from '../types/sheetFormat.ts';
 import type { SpriteCell } from '../types/spriteCell.ts';
 import type { ManifestSheet, SpriteManifest } from '../types/spriteManifest.ts';
@@ -46,17 +47,33 @@ export interface SheetWriteJob {
   readonly scale: number;
   readonly format: SheetFormat;
   /**
-   * The sprites the segmentation found, in the 1:1 result's own coordinates.
+   * The **pieces** the download writes, in reading order, in the 1:1 result's own coordinates.
    *
    * The frames an Aseprite document is cut into, the sprites a pack holds, and the rects a manifest
    * states. Empty where the sheet held nothing to cut. **Sent whatever the format is**, and read
    * only by the writers that have sprites: the press does not have to know which formats care.
+   *
+   * **Pieces, not the segmentation's own boxes**, and the difference is the point: a reader can join
+   * two fragments of one arm and leave a stray out, so what reaches a writer is already the result of
+   * that — see `resolveAssignment`. Every format takes the same list, which is what stops the pack
+   * and the Aseprite document cutting one sheet two ways.
    */
   readonly boxes: readonly SpriteBox[];
-  /** The duplicate reading over those boxes, which the manifest turns into links between sprites. */
+  /**
+   * The duplicate reading, in the **segmentation's** own boxes rather than in the pieces above.
+   *
+   * The two lists no longer describe the same things, and that is deliberate: which sprites are one
+   * drawing twice is a reading of the artwork, taken before a reader said what a piece is. A manifest
+   * links a piece to another only where a piece's box is still one the reading holds, so a joined
+   * piece — whose box is a union of its members' — carries no link. Dropping it is the honest answer
+   * for the reason `duplicateLinks` gives about a snap: guessing at the nearest box would put a
+   * reference to the wrong artwork into a file a packer acts on.
+   */
   readonly duplicates: readonly SpriteDuplicateGroup[];
-  /** One name per component the studio's prompt asks for, or empty where it states no sheet. */
+  /** The name for each box above, in the same order — one per box, already decided. */
   readonly names: readonly string[];
+  /** How those names were arrived at, or `null` where they are positional. See `SpriteNaming`. */
+  readonly naming: SpriteNaming | null;
   /**
    * The fixed cell every sprite is cut into, at 1:1, or `null` where each keeps its bounding box.
    *
@@ -90,7 +107,7 @@ export async function writeSheet(job: SheetWriteJob): Promise<WrittenSheet> {
   // magnification multiplies both, so it can neither create nor cure an overhang.
   if (cell !== null) {
     const over = oversizedSprites(boxes, cell);
-    if (over.length > 0) throw new Error(oversizeReason(boxes, cell, over));
+    if (over.length > 0) throw new Error(oversizeReason(boxes, job.names, cell, over));
   }
 
   if (format === 'SPRITE_PACK') {
@@ -116,7 +133,7 @@ export async function writeSheet(job: SheetWriteJob): Promise<WrittenSheet> {
     format: 'MANIFEST',
     bytes: encodeManifest(manifest),
     sprites: manifest.sprites.length,
-    named: manifest.named,
+    naming: manifest.naming,
   };
 }
 
@@ -144,6 +161,7 @@ function manifestFor(job: SheetWriteJob, image: string, spriteDirectory: string 
     boxes: job.boxes,
     duplicates: job.duplicates,
     names: job.names,
+    naming: job.naming,
     cell: job.cell,
     sheet: job.sheet,
   });

@@ -80,7 +80,14 @@ afterEach(() => {
  * here are about the *file*, so this is the default — the naming suite below overrides `sheet` and
  * `facing`, and the manifest suites are where the rest carry anything.
  */
-const NOTHING_READ = { cell: null, duplicates: [], names: [], facing: null, sheet: null } as const;
+const NOTHING_READ = {
+  cell: null,
+  duplicates: [],
+  names: [],
+  naming: null,
+  facing: null,
+  sheet: null,
+} as const;
 
 /** Runs the download and hands back the file it produced, once the encode has settled. */
 async function download(
@@ -177,6 +184,7 @@ describe('useImageDownload', () => {
           cell: null,
           duplicates: [],
           names: [],
+          naming: null,
           facing,
           sheet,
         });

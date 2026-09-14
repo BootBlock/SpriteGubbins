@@ -27,7 +27,7 @@ import { callSitesPassing } from './jsxCallSites.ts';
  */
 
 /** Every `<SelectField>` the app renders. */
-const CALL_SITE_COUNT = 31;
+const CALL_SITE_COUNT = 32;
 
 /** Where a `description` is passed: the docblock’s seven, by the file that renders each. */
 const DESCRIPTION_CALL_SITES = [
@@ -54,7 +54,7 @@ const DISABLED_REASON_CALL_SITES = ['src/components/studio/RiggingFields.tsx'];
  *
  * One file, and two rows behind it. The qualifier reaches `SelectField` only through
  * `ProjectSelectField`, so a row that renders a select of its own and names it the same way would
- * add an entry here — which is the point at which the docblock’s “one of the thirty-one” is false.
+ * add an entry here — which is the point at which the docblock’s “one of the thirty-two” is false.
  */
 const NAME_QUALIFIER_CALL_SITES = ['src/components/projects/ProjectSelectField.tsx'];
 

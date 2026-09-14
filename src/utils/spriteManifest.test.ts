@@ -21,7 +21,10 @@ const input = {
   scale: 1,
   boxes: BOXES,
   duplicates: [],
-  names: [],
+  // One name per box, as `namePieces` hands them over. The plain case is the positional one, which
+  // is what a sheet whose pieces could not be matched to the inventory comes to.
+  names: ['sprite-1', 'sprite-2', 'sprite-3'],
+  naming: null,
   cell: null,
   sheet: null,
 };
@@ -65,10 +68,18 @@ describe('buildManifest', () => {
     ]);
   });
 
-  it('names the sprites from the inventory when the counts agree', () => {
-    const manifest = buildManifest({ ...input, names: ['heads-south', 'heads-west', 'heads-north'] });
+  it('writes the names it was handed, in the order it was handed them', () => {
+    // It no longer decides. Which sprite is which component is settled by `resolveAssignment` before
+    // the press, because deciding it here meant comparing two list lengths — and a length cannot see
+    // an order, which is why a sheet that drew the right arm first named both arms wrongly.
+    const manifest = buildManifest({
+      ...input,
+      names: ['heads-south', 'heads-west', 'heads-north'],
+      naming: 'READING_ORDER',
+    });
 
     expect(manifest.named).toBe(true);
+    expect(manifest.naming).toBe('READING_ORDER');
     expect(manifest.sprites.map((sprite) => sprite.name)).toStrictEqual([
       'heads-south',
       'heads-west',
@@ -76,31 +87,27 @@ describe('buildManifest', () => {
     ]);
   });
 
-  it('numbers them instead when the sheet came back a different length', () => {
-    // The mapping is positional, so a sheet one component short would otherwise have every name
-    // after the gap describing the wrong piece — silently, in a file a pipeline believes.
-    const manifest = buildManifest({ ...input, names: ['heads-south', 'heads-west'] });
+  it('records that a reader assigned the names rather than the app inferring them', () => {
+    // The two are different warrants over the same claim, and a consumer that wants to treat a
+    // checked name differently from a counted one can only do so if the file says which it holds.
+    const manifest = buildManifest({
+      ...input,
+      names: ['arm-left', 'arm-right', 'torso'],
+      naming: 'ASSIGNED',
+    });
 
-    expect(manifest.named).toBe(false);
-    expect(manifest.sprites.map((sprite) => sprite.name)).toStrictEqual(['sprite-1', 'sprite-2', 'sprite-3']);
+    expect(manifest.named).toBe(true);
+    expect(manifest.naming).toBe('ASSIGNED');
   });
 
-  it('pads a positional name to the width the sheet’s own count needs', () => {
-    // The pad used to be a literal two digits while `spriteSegments` admits up to
-    // `SCATTERED_SPRITE_CEILING` sprites, so a sheet past ninety-nine sorted `sprite-100` between
-    // `sprite-10` and `sprite-11`. A tileset ten across and eleven down reaches this on its own.
-    const boxes = Array.from({ length: 120 }, (_, index) => box(index * 10, 0));
-    const manifest = buildManifest({ ...input, boxes, width: 1200 });
-    const names = manifest.sprites.map((sprite) => sprite.name);
+  it('reports a positional sheet as unnamed, through both fields at once', () => {
+    // `named` is derived from `naming` rather than carried beside it, so the two cannot drift apart
+    // in a written file — the older boolean is what an importer gates on and stays true to the new one.
+    const manifest = buildManifest(input);
 
+    expect(manifest.naming).toBeNull();
     expect(manifest.named).toBe(false);
-    expect([names[0], names[9], names[99], names[119]]).toStrictEqual([
-      'sprite-001',
-      'sprite-010',
-      'sprite-100',
-      'sprite-120',
-    ]);
-    expect([...names].sort()).toStrictEqual(names);
+    expect(manifest.sprites.map((sprite) => sprite.name)).toStrictEqual(['sprite-1', 'sprite-2', 'sprite-3']);
   });
 
   it('links a duplicate to the sprite it repeats, by index', () => {

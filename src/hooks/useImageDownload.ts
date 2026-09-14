@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { SHEET_FORMAT_FILES } from '../constants/sheetFormats.ts';
 import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
+import type { SpriteNaming } from '../types/spriteAssignment.ts';
 import type { SpriteCell } from '../types/spriteCell.ts';
 import type { ManifestSheet } from '../types/spriteManifest.ts';
 import type { SheetFormat, WrittenSheet } from '../types/sheetFormat.ts';
@@ -38,12 +39,16 @@ export interface SheetDownload {
   readonly scale: number;
   readonly format: SheetFormat;
   /**
-   * The sprites the segmentation found, which an Aseprite document is cut into frames along, a pack
-   * is cut into files along, and a manifest states the rects of.
+   * The pieces the assignment resolved to, which an Aseprite document is cut into frames along, a
+   * pack is cut into files along, and a manifest states the rects of.
    *
    * Empty where the sheet held nothing to cut, and ignored by the PNG writer, which produces one
    * picture. Passed in every case rather than only for the formats that read it, so the press does
    * not have to know which formats care.
+   *
+   * **Not the segmentation's own boxes** — a reader can join two fragments into one piece and leave
+   * a stray out, and every format takes the same resolved list so that no two of them cut one sheet
+   * differently. See `resolveAssignment`.
    */
   readonly boxes: readonly SpriteBox[];
   /**
@@ -53,10 +58,18 @@ export interface SheetDownload {
    * the sentence this hook's own failure toast then carries.
    */
   readonly cell: SpriteCell | null;
-  /** The duplicate reading over those sprites, which a manifest turns into links between them. */
+  /**
+   * The duplicate reading, in the segmentation's own boxes rather than in the pieces above.
+   *
+   * Sent as the quantiser took it, because which sprites are one drawing twice is a reading of the
+   * artwork rather than of what a reader made of it. See `SheetWriteJob.duplicates`, which says what
+   * a manifest can and cannot link once the two lists describe different things.
+   */
   readonly duplicates: readonly SpriteDuplicateGroup[];
-  /** One name per component the studio's prompt asks for, in the order section 4 lays them out. */
+  /** The name for each piece above, in the same order — one per piece, already decided. */
   readonly names: readonly string[];
+  /** How those names were arrived at, or `null` where they are positional. See `SpriteNaming`. */
+  readonly naming: SpriteNaming | null;
   /** Which sheet of which deliverable the studio is composing, or `null` where it names none. */
   readonly sheet: ManifestSheet | null;
   /**
@@ -85,7 +98,19 @@ export function useImageDownload(): ImageDownload {
   const saving = useSheetWriteStore((state) => state.writing);
 
   const save = useCallback(
-    ({ sourceName, image, scale, format, boxes, cell, duplicates, names, facing, sheet }: SheetDownload) => {
+    ({
+      sourceName,
+      image,
+      scale,
+      format,
+      boxes,
+      cell,
+      duplicates,
+      names,
+      naming,
+      facing,
+      sheet,
+    }: SheetDownload) => {
       // Read at the press rather than closed over, so the guard cannot go stale behind a render.
       // `writeSheetOffThread` refuses a second write as well; this is what keeps a refused press
       // from reporting a failure the reader did not cause.
@@ -105,6 +130,7 @@ export function useImageDownload(): ImageDownload {
         cell,
         duplicates,
         names,
+        naming,
         facing,
         // What a manifest downloaded on its own says its rects are into: the PNG this same press
         // would have written, at this same magnification, rather than the dropped file — which is
@@ -156,7 +182,7 @@ function reason(error: unknown): string {
  * behind the button is where the two are reconciled; a toast is not.
  */
 function describeWriting(written: WrittenSheet): string {
-  if (written.format === 'MANIFEST') return describeSprites(written.sprites, written.named);
+  if (written.format === 'MANIFEST') return describeSprites(written.sprites, written.naming);
 
   if (written.format === 'PNG') {
     return written.paletteEntries === null
@@ -170,25 +196,30 @@ function describeWriting(written: WrittenSheet): string {
       : `indexed, ${String(written.paletteEntries)}-entry palette`;
 
   if (written.format === 'SPRITE_PACK') {
-    return `${colours}, ${describeSprites(written.sprites, written.named)}`;
+    return `${colours}, ${describeSprites(written.sprites, written.naming)}`;
   }
   return `${colours}, ${describeFrames(written.frames, written.tags)}`;
 }
 
 /**
- * What was described, and whether the descriptions carry the inventory's own names.
+ * What was described, and how the descriptions came by their names.
  *
  * The naming half is reported at the download rather than left to be discovered in the file, because
- * it says something about the *artwork*: names are attached only where the sheet came back with the
- * number of components the prompt asked for, so positional names are the tab telling a reader their
- * generator returned a different set from the one it was asked for.
+ * it says something about the *artwork*: a sheet takes positional names wherever the inventory could
+ * not be matched to the pieces one for one, so it is the tab telling a reader their generator
+ * returned a different set from the one it was asked for.
+ *
+ * **The three routes are named apart** because the reader has to be able to tell their own work from
+ * the app's inference. `READING_ORDER` is a claim the app made by counting, which is exactly the
+ * claim a misordered sheet defeats; `ASSIGNED` is one a person checked. A toast that called both of
+ * them "named from the inventory" would hide the difference at the only moment it is actionable.
  */
-function describeSprites(sprites: number, named: boolean): string {
+function describeSprites(sprites: number, naming: SpriteNaming | null): string {
   if (sprites === 0) return 'no separated sprites, so it describes the sheet alone';
   const counted = `${String(sprites)} ${sprites === 1 ? 'sprite' : 'sprites'}`;
-  return named
-    ? `${counted}, named from the inventory`
-    : `${counted}, numbered rather than named — the count does not match the inventory`;
+  if (naming === 'ASSIGNED') return `${counted}, named as you assigned them`;
+  if (naming === 'READING_ORDER') return `${counted}, named from the inventory in reading order`;
+  return `${counted}, numbered rather than named — the pieces do not match the inventory`;
 }
 
 /**

@@ -78,6 +78,7 @@ function job(overrides: Partial<SheetWriteJob> = {}): SheetWriteJob {
     cell: null,
     duplicates: [],
     names: ['heads-south', 'heads-west'],
+    naming: 'READING_ORDER',
     imageName: 'armour-quantised.png',
     sheet: null,
     facing: null,
@@ -263,8 +264,11 @@ describe('writeSheet', () => {
       // A sprite larger than the cell is a sheet that came back at a coarser scale than the prompt
       // asked for, and resampling it would hand a rig a piece whose pixels no longer line up with
       // any of its neighbours.
+      // Named rather than numbered: a reader who left a sprite out or joined two has made the
+      // piece's position differ from the number on the preview's chip, so a position would send them
+      // to artwork that fits the cell perfectly.
       await expect(writeSheet(job({ format: 'SPRITE_PACK', cell: { ...CELL, width: 1 } }))).rejects.toThrow(
-        /Sprite 1 is 2 × 2 drawn pixels, larger than the 1 × 4 cell/,
+        /heads-south is 2 × 2 drawn pixels, larger than the 1 × 4 cell/,
       );
     });
 
@@ -272,8 +276,16 @@ describe('writeSheet', () => {
       // The ordinal was padded to a literal two digits while `spriteSegments` admits up to
       // `SCATTERED_SPRITE_CEILING` sprites, so `100.png` sorted between `10.png` and `11.png` and a
       // file listing interleaved. The width comes from this sheet's own sprite count instead.
+      // `naming: null` is the unnamed sheet, which is what leaves the ordinal alone on each file:
+      // a positional name is the ordinal again, and `007-sprite-007.png` says nothing twice.
       const written = await writeSheet(
-        job({ format: 'SPRITE_PACK', image: MANY, boxes: MANY_BOXES, names: [] }),
+        job({
+          format: 'SPRITE_PACK',
+          image: MANY,
+          boxes: MANY_BOXES,
+          names: MANY_BOXES.map((_, index) => `sprite-${String(index + 1)}`),
+          naming: null,
+        }),
       );
       const sprites = readZip(written.bytes)
         .map((entry) => entry.name)
@@ -288,8 +300,13 @@ describe('writeSheet', () => {
       expect([...sprites].sort()).toStrictEqual(sprites);
     });
 
-    it('numbers the files where the names do not match the sprites found', async () => {
-      const written = await writeSheet(job({ format: 'SPRITE_PACK', names: ['heads-south'] }));
+    it('numbers the files where the assignment could not name the sheet', async () => {
+      // The writer no longer decides this — `resolveAssignment` does, before the press, and hands the
+      // positional names down with `naming: null` beside them. What is pinned here is that the pack
+      // follows that answer rather than taking a second view of it.
+      const written = await writeSheet(
+        job({ format: 'SPRITE_PACK', names: ['sprite-1', 'sprite-2'], naming: null }),
+      );
 
       expect(readZip(written.bytes).map((entry) => entry.name)).toStrictEqual([
         FLAT_PACK_LAYOUT.sheetFile,
