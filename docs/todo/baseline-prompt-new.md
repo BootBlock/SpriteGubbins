@@ -4,6 +4,8 @@
 >
 > Both departures this banner used to record are closed, each in the direction that made the two agree. §6's tile list was two short of the "sixteen" its own prose claimed, so it now names the wall-face inner corners it was missing and the implementation follows at **16**. `CUSTOM` has been **removed** from §2's `DIRECTIONS` table rather than built, so the table matches the code. §10's follow-up list is closed too: four of its five items shipped, and §10.3 shipped by a route it did not name — its palette line *is* read from an accepted sheet, on-device, while the prose half was removed **as that item framed it**, because describing what a sheet depicts needs an outbound vision-model call this app does not make. The studio derives those lines from the subject definition instead, which needs no image at all. Each item records its outcome in place.
 >
+> §6's `SOCKETS` row is corrected in place too, and in the narrow direction the evidence actually supported: two of its five names were wrong, not the row. [Issue #303](https://github.com/BootBlock/SpriteGubbins/issues/303) read the whole list as invented, because this section's own intro says every value comes from `art-style-three-quarter-view.md` and that document names no socket anywhere. The list came from the engine instead, and §6 now says so and names the constant, which is what stops the next reader re-deriving the same wrong conclusion from the same missing citation.
+>
 > §2's subject line is corrected for the reason those two tables were, and in the direction that stops it needing correcting again. It said "the sixteen `SUBJECT_FIELD_KEYS` across all five categories", which was true of the app this document was written against; `SUBJECT_CATEGORIES` has held **thirteen** since, and the sixteen keys are a figure the sentence never needed. It now states the relationship — every key, in every category — so a fourteenth category and a seventeenth key both leave it true. Restating the corrected figures here was the obvious alternative and is the same defect one banner down: this paragraph would then be a fourth place the category count is written by hand, and it would go stale on the same commit §2 did.
 >
 > The flag §1 and §4 call `EMIT_COMPONENT_MAP` was named `EMIT_MANIFEST` when this document was written, and §6 and §7 still argue for it under that name. It was renamed by [issue #118](https://github.com/BootBlock/SpriteGubbins/issues/118), which found that the document the prompt asked for and the manifest the Quantise tab downloads were two unrelated formats sharing one word. Only the two tables are corrected here, for the reason §2's `DIRECTIONS` table was — they describe the surface the compiler offers, so a reader consults them for a flag name. §6 and §7 are records of why the capability exists and are left as they were written.
@@ -1334,11 +1336,23 @@ change. Nothing else here is theme-dependent.
 | `SPRITE_TARGET_SIZE` | `48 × 96 px assembled (2 metres tall at 48 px per metre)` |
 | `JOINT_CAP_STYLE` | `ROUNDED` |
 | `OVERLAP_MARGIN` | `HALF_CAP` |
-| `SOCKETS` | `head, chest, back, hand_left, hand_right` |
+| `SOCKETS` | `head, chest, back, hands, weapon_main, weapon_offhand` |
 | `EXCLUSIONS` | `No baked shadow of any kind, no ground contact shadow, no assembled figure, no equipment in the sockets` |
 
 `SOCKETS` is what makes the game's deferred visible-equipment decision cheap later: the slots exist
 in the art from the start, kept clear, so gear can be added without redrawing bodies.
+
+**`SOCKETS` is the one row here not taken from `art-style-three-quarter-view.md`**, and it read
+`head, chest, back, hand_left, hand_right` until [issue #303](https://github.com/BootBlock/SpriteGubbins/issues/303).
+That document defers visible equipment (D4, "Sockets designed now, gear left empty") and names no
+region for it, and its rig declares fifteen body slots and no gear slot — so the issue read the list
+as invented. It is not: the names are that game's own equipment slots, declared as `GEAR_SLOTS` in
+`character_pool_manager.gd` and as the `slots` enum in `gear_item_resource.gd`, of which `head`,
+`chest` and `back` are exact members. Only the two hands were wrong, and the engine's names for them
+are `hands`, `weapon_main` and `weapon_offhand`. The seventeen are cut to the gear that changes a
+2 metre figure's silhouette at 48 px per metre — `neck`, `wrist`, the fingers and the trinkets are a
+pixel or two at that scale. Nothing in this app can check the list against its source, because the
+rig contract it imports carries body slots alone; the row is the place that fact is written down.
 
 **Run it eight times**, once per compass direction, with a shared `IDENTITY_LOCK` — 8 sheets ×
 15 pieces = the 120-piece rig, in achievable units.

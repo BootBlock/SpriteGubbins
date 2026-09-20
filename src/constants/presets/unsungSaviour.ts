@@ -8,7 +8,9 @@ import { sparseSubject } from './sparseSubject.ts';
  * re-deriving its numbers.
  *
  * **Every technical value here comes from that game's own `art-style-three-quarter-view.md`** — if it
- * changes there, these follow. They are deliberately *technical* presets: they fix the projection,
+ * changes there, these follow. `sockets` is the one value that does not, because that document
+ * defers visible equipment and names no region for it; the comment on the line says where it comes
+ * from instead. They are deliberately *technical* presets: they fix the projection,
  * the scale, the palette discipline and the rig geometry, and leave the subject almost entirely
  * empty, because who the character is changes per sheet while none of the above does.
  *
@@ -66,9 +68,14 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
       spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
       jointCapStyle: 'ROUNDED',
       overlapMargin: 'HALF_CAP',
-      // The slots exist in the art from the start and are kept clear, which is what makes the
-      // game's deferred visible-equipment decision cheap later.
-      sockets: 'head, chest, back, hand_left, hand_right',
+      // The engine's own gear slots, spelled as `character_pool_manager.gd`'s `GEAR_SLOTS` spells
+      // them, so a region reserved here and a slot equipped there are the same word. `hand_left,
+      // hand_right` stood here until issue #303 and named nothing that game has: `hands` is its
+      // glove slot, and the two weapon slots are what a hand holds. The subset is the gear that
+      // changes a 2 m figure's silhouette at 48 px per metre — `neck`, `wrist`, the fingers and the
+      // trinkets are a pixel or two at that scale. Keeping these areas clear is what makes the art
+      // contract's deferred visible equipment (D4) cheap later, and nothing is drawn in them today.
+      sockets: 'head, chest, back, hands, weapon_main, weapon_offhand',
     },
   },
   {

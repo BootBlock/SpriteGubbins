@@ -311,7 +311,11 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain('- Camera elevation: 30° above the horizon');
     expect(prompt).toContain('flat magenta #FF00FF');
     expect(prompt).toContain('## 5. CUT-OUT RIG REQUIREMENTS');
-    expect(prompt).toContain('head, chest, back, hand_left, hand_right');
+    // Pinned exactly, because nothing in this repository can check it against its source: these are
+    // that game's own gear slots, declared in `character_pool_manager.gd`, and the rig contract this
+    // app imports carries body slots alone. Issue #303 found `hand_left, hand_right` here, naming
+    // nothing that game has, and only a reader of both repositories caught it.
+    expect(prompt).toContain('head, chest, back, hands, weapon_main, weapon_offhand');
     expect(prompt).toContain(
       `Exactly ${String(componentCountFor('CHARACTER', characterRig.subject, 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0, [], null))} components`,
     );
