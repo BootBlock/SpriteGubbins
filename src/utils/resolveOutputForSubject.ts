@@ -11,14 +11,21 @@ import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
  * honour, resolved against what it can.
  *
  * **Two changes reach it, and they differ only in how much each can move.** A category switch can
- * move all six claims below, because the modes, the facings, the cameras and the looks are all
- * category-scoped. A change of assembly base can move three — the sheet mode, the rig and the sheet
+ * move all seven claims below, because the modes, the facings, the cameras and the looks are all
+ * category-scoped, and because a rig contract is a document loaded for one subject. A change of
+ * assembly base can move four — the sheet mode, the rig, the contract that rig carries and the sheet
  * index — because a base chooses the plans its category draws from (issue #283): a rigid object has
  * no rig sheet, and a nine-slice frame has no state library. The other three are functions of the
  * category alone and come back unchanged, so one function serves both rather than two that would have
  * to agree about the three they share. `useSubjectStore` asks it about a base only where the edit
  * changes the plans, which is what leaves a reader's sheet index alone when they retype a value that
  * draws the same sheets.
+ *
+ * **`from` is the category the configuration was composed under**, and it is the one thing here that
+ * cannot be read off the arguments. Every other claim is judged against a table that says which
+ * subjects can honour it; a contract is judged only by whether this is still the kind of subject it
+ * was loaded for, and that question needs both ends. Both callers know the answer — `outputFollowing`
+ * passes the category it was already handed, because a base change stays inside one.
  *
  * Returns the configuration it was handed, unchanged and by identity, where the subject can honour
  * all of it *and* the series is already on its first sheet — the sheet index goes back to the first
@@ -35,6 +42,7 @@ export function resolveOutputForSubject(
   category: SubjectCategory,
   subject: SheetSubject,
   output: OutputConfig,
+  from: SubjectCategory,
 ): OutputConfig {
   // The sheet mode does not survive a change of subject unchanged: the modes are category-scoped and
   // then narrowed by the base, and a stale one is how a character came to be described by a tileset's
@@ -82,6 +90,22 @@ export function resolveOutputForSubject(
   // camera it was rendered under and carries it into section 2 as a measurement, so a look the new
   // subject cannot be drawn to goes rather than standing over a camera that contradicts it.
   const styleReference = resolveStyleReference(category, output.styleReference);
+  // The rig CONTRACT, which is the seventh claim and the only one that is a document rather than a
+  // choice between values this app offers. It names one skeleton — these fifteen slots, at these
+  // sizes, jointed at these ends — so unlike the rig MODE it cannot survive becoming another kind of
+  // subject. `resolveRigMode` deliberately keeps a cut-out rig across CHARACTER → CREATURE, and a
+  // contract carried along with it hands a quadruped a human skeleton: section 4 lists
+  // `left-upper-arm` directly above a plan whose own prose ends a body "at the neck join, the two
+  // forelimb shoulder joins and the join to the hindquarters". Nothing downstream reports it, because
+  // a contract replaces the inventory outright and fifteen pieces is fifteen pieces to every counter
+  // this app has.
+  //
+  // So it survives exactly two things: staying in the category it was loaded under, and a rig still
+  // cut out. It is dropped rather than re-resolved because no table here could judge it — this app
+  // cannot tell a humanoid contract from a creature's, and both are valid documents. A reader who
+  // wants theirs on the new subject loads it again, which is the one act that says which subject it
+  // is for.
+  const rigContract = from === category && rigMode === 'CUTOUT_RIG' ? output.rigContract : null;
 
   // The sheet of the series goes back to the first whether or not the mode survives, because the
   // series is keyed on the *pairing* and the base: a subject the mode still supports can have a
@@ -96,6 +120,7 @@ export function resolveOutputForSubject(
     projection === output.projection &&
     cameraElevation === output.cameraElevation &&
     styleReference === output.styleReference &&
+    rigContract === output.rigContract &&
     output.sheetIndex === 0
   ) {
     return output;
@@ -109,6 +134,7 @@ export function resolveOutputForSubject(
     projection,
     cameraElevation,
     styleReference,
+    rigContract,
     // Cleared with the set exactly as the control clears it, and only then: a facing pinned against
     // `THREE_CLASSIC` is one `SINGLE_FRONT` never turns to, and leaving it behind would let a preset
     // saved from here persist a facing its own set does not contain.

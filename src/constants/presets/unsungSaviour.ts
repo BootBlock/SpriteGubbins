@@ -8,10 +8,13 @@ import { UNSUNG_SAVIOUR_HUMANOID_RIG } from './unsungSaviourRig.ts';
  * Presets encoding the Unsung Saviour art contract, so that project's art can be generated without
  * re-deriving its numbers.
  *
- * **Every technical value here comes from that game's own `art-style-three-quarter-view.md`** — if it
- * changes there, these follow. `sockets` is the one value that does not, because that document
- * defers visible equipment and names no region for it; the comment on the line says where it comes
- * from instead. They are deliberately *technical* presets: they fix the projection,
+ * **Three sources, and every value here names the one it came from.** The projection, the scale, the
+ * palette discipline and the lighting are that game's own `art-style-three-quarter-view.md` — if they
+ * change there, these follow. `sockets` is its equipment slots, `GEAR_SLOTS` in
+ * `character_pool_manager.gd`, because that document defers visible equipment and names no region for
+ * it. And the rig geometry is `humanoid_rig.tres`, by way of the contract its Rig Intake tab exports,
+ * which `unsungSaviourRig.ts` carries. A value here with no source named is the defect issue #303 was
+ * opened for. They are deliberately *technical* presets: they fix the projection,
  * the scale, the palette discipline and the rig geometry, and leave the subject almost entirely
  * empty, because who the character is changes per sheet while none of the above does.
  *
@@ -94,7 +97,7 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
     id: 'us-creature-rig',
     name: 'Unsung Saviour — Creature rig',
     description:
-      'The same technical contract with no attachment sockets, because enemies do not wear the player’s gear. Match the sheet mode to the creature’s anatomy before generating.',
+      'The same projection, scale and palette discipline, carrying no sockets and no rig: enemies do not wear the player’s gear, and a humanoid skeleton is not a quadruped’s. Match the sheet mode to its anatomy first.',
     category: 'CREATURE',
     subject: sparseSubject('CREATURE', {
       exclusions:

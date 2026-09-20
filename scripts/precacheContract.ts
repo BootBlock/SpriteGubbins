@@ -851,15 +851,24 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * What a first visit pays for is fifteen slots of constant data, which is the footing every raise
  * above stands on. Measured against `main` at `219b1d5`, rebuilt from the same lockfile —
- * **2417.63 KiB across 49 entries**, the figure the paragraph above records — this build reports
- * **2420.44 across 49**, a delta of **2.81** that crossed a ceiling the base sat 0.37 under. No file
- * was added to or removed from `PRECACHE_SHAPES` and no chunk was renamed: the whole 2.81 lands in
- * `useSubjectStore-*.js`, the chunk the preset library is already bundled into, and comparing the
- * two `dist/assets` listings no other entry moved by a single byte.
+ * **2417.63 KiB across 49 entries** on the build's summary line, the figure the paragraph above
+ * records — this build reports **2421.48 across 49** on the same line, and `assertPrecacheContract`
+ * receives the same 2421.48, so the two counts the note above warns can differ do not here. That is
+ * a delta of **3.85** that crossed a ceiling the base sat 0.37 under. No file was added to or
+ * removed from `PRECACHE_SHAPES`, and no chunk was renamed.
  *
- * 2421 leaves **0.56 KiB**, the smallest whole figure over the build.
+ * **Two thirds of it is the rig and one third is telling a reader which rig they have.** The fifteen
+ * slots measured **2.81** on their own, all of it in `useSubjectStore-*.js`, the chunk the preset
+ * library is already bundled into, with no other entry moving by a byte. The review of that change
+ * added **1.04** more: 0.75 in `StudioTab-*.js` for `isShippedRigContract` and the sentence it
+ * decides, 0.15 in `useUIStore-*.js` for the chooser's guidance, and 0.15 back in `useSubjectStore`
+ * for the rule that a contract does not follow the reader into another category. Both halves are
+ * reported here rather than only their sum, because the second is the cost of the first being a
+ * copy — a shipped contract that nothing can date is only safe while the studio says it is shipped.
+ *
+ * 2422 leaves **0.52 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2421;
+export const PRECACHE_CEILING_KIB = 2422;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

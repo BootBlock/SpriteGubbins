@@ -7,6 +7,15 @@
  * to the writer, and {@link RigContract.format} and {@link RigContract.version} are the two fields a
  * reader can check it by.
  *
+ * **One contract arrives with no file, and it is a copy rather than an exception to that.**
+ * `constants/presets/unsungSaviourRig.ts` is that same exported document transcribed, so the preset
+ * for that game's rig compiles a prompt with the geometry already in it — and so that loading the
+ * preset does not clear a contract the reader had. It is still the writer's document, still read
+ * through `parseRigContract`, and still judged by the two fields above. What it is not is current by
+ * construction: nothing here can see that rig move, which is why `isShippedRigContract` exists to say
+ * which of the two is in force, and why loading an export over it is the answer whenever the rig has
+ * changed.
+ *
  * **The field names are the writer's**, which is why they are not this codebase's spelling. A reader
  * comparing the file against this type should see the same words in both, and the maintainer at the
  * other end sees them again in the rig resource's own inspector. Renaming them here would be a

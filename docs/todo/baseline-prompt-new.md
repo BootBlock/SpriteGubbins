@@ -6,6 +6,8 @@
 >
 > §6's `SOCKETS` row is corrected in place too, and in the narrow direction the evidence actually supported: two of its five names were wrong, not the row. [Issue #303](https://github.com/BootBlock/SpriteGubbins/issues/303) read the whole list as invented, because this section's own intro says every value comes from `art-style-three-quarter-view.md` and that document names no socket anywhere. The list came from the engine instead, and §6 now says so and names the constant, which is what stops the next reader re-deriving the same wrong conclusion from the same missing citation.
 >
+> §6 gains a `RIG_CONTRACT` row on Preset 1, and its intro stops claiming one source for every value below it. The character preset now carries that game's own rig, which is a third source beside the art document and the engine's gear slots — and a citation missing from that intro is exactly what sent the last reader to the wrong conclusion about `SOCKETS`. The row records what the contract supersedes, since a reader comparing §6 against a compiled prompt would otherwise find §2 and §5 stating sizes this table does not.
+>
 > §2's subject line is corrected for the reason those two tables were, and in the direction that stops it needing correcting again. It said "the sixteen `SUBJECT_FIELD_KEYS` across all five categories", which was true of the app this document was written against; `SUBJECT_CATEGORIES` has held **thirteen** since, and the sixteen keys are a figure the sentence never needed. It now states the relationship — every key, in every category — so a fourteenth category and a seventeenth key both leave it true. Restating the corrected figures here was the obvious alternative and is the same defect one banner down: this paragraph would then be a fourth place the category count is written by hand, and it would go stale on the same commit §2 did.
 >
 > The flag §1 and §4 call `EMIT_COMPONENT_MAP` was named `EMIT_MANIFEST` when this document was written, and §6 and §7 still argue for it under that name. It was renamed by [issue #118](https://github.com/BootBlock/SpriteGubbins/issues/118), which found that the document the prompt asked for and the manifest the Quantise tab downloads were two unrelated formats sharing one word. Only the two tables are corrected here, for the reason §2's `DIRECTIONS` table was — they describe the surface the compiler offers, so a reader consults them for a flag name. §6 and §7 are records of why the capability exists and are left as they were written.
@@ -1311,7 +1313,9 @@ one.
 
 Three presets encoding the art contract from that project's
 `docs/todo/art-style-three-quarter-view.md`, so its art can be generated without re-deriving the
-numbers. **Every value below is taken from that document** — if it changes there, these follow.
+numbers. **Most values below are taken from that document** — if they change there, these follow.
+Two are not, and each names its own source in the row that carries it: `SOCKETS` is that engine's
+gear slots, and `RIG_CONTRACT` is its rig.
 
 The game is fantasy today and moves to cyberpunk later, so `setting` is the only field expected to
 change. Nothing else here is theme-dependent.
@@ -1339,6 +1343,7 @@ change. Nothing else here is theme-dependent.
 | `RIG_MODE` | `CUTOUT_RIG` |
 | `DIRECTIONAL_MODE` | `CUTOUT_RIG_SINGLE_DIRECTION` (15 components) |
 | `DIRECTIONS` | one of `EIGHT_COMPASS`, **one per run** |
+| `RIG_CONTRACT` | the `Humanoid` rig — that project's `resources/rigs/humanoid_rig.tres`, by way of the document its Rig Intake tab exports, transcribed into `constants/presets/unsungSaviourRig.ts` |
 | `SPRITE_TARGET_SIZE` | `48 × 96 px assembled (2 metres tall at 48 px per metre)` |
 | `JOINT_CAP_STYLE` | `ROUNDED` |
 | `OVERLAP_MARGIN` | `HALF_CAP` |
@@ -1347,6 +1352,14 @@ change. Nothing else here is theme-dependent.
 
 `SOCKETS` is what makes the game's deferred visible-equipment decision cheap later: the slots exist
 in the art from the start, kept clear, so gear can be added without redrawing bodies.
+
+`RIG_CONTRACT` supersedes the row above it wherever it applies: on the sheet that draws the rig's
+pieces, §4's inventory is the contract's fifteen slots under the engine's own names, §5 states each
+piece's size, pivot and joint end, and §2's assembled size comes off the rig's frame rather than off
+`SPRITE_TARGET_SIZE`. That row is what a reader sees on the other two presets, and on this one if
+they remove the rig. Carrying the contract is also what stops applying the preset clearing one the
+reader loaded themselves — a preset replaces the whole configuration, and `rigContract` is part of
+it.
 
 **`SOCKETS` is the one row here not taken from `art-style-three-quarter-view.md`**, and it read
 `head, chest, back, hand_left, hand_right` until [issue #303](https://github.com/BootBlock/SpriteGubbins/issues/303).

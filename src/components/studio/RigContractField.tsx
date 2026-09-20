@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { isShippedRigContract } from '../../utils/isShippedRigContract.ts';
 import { parseRigContract } from '../../utils/parseRigContract.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { FilePickerField } from '../common/FilePickerField.tsx';
@@ -12,6 +13,12 @@ import { FilePickerField } from '../common/FilePickerField.tsx';
  * a choice between values this app offers; this takes a rig contract — the file an engine's rig
  * tooling exports — and hands section 4 its piece names and section 5 their sizes and joints. What
  * that is worth is in the guidance behind the chooser.
+ *
+ * **A contract can also arrive without the reader touching this control**, because a preset carries
+ * one and the Unsung Saviour rig preset ships a copy of that game's. On screen the two are the same
+ * sentence, and one of them is a transcription that cannot know when its rig moved — so the line
+ * below says which is in force. See `isShippedRigContract`, and `constants/presets/unsungSaviourRig.ts`
+ * for why a copy is shipped at all.
  *
  * **A refused file says why, and changes nothing.** A contract that will not load is the one outcome
  * a reader cannot act on without being told which part of it is wrong, and dropping the loaded one
@@ -73,7 +80,9 @@ export function RigContractField({ appliesToSheet }: RigContractFieldProps) {
             {rigContract.frame_size.width} × {rigContract.frame_size.height} frame.{' '}
             {appliesToSheet
               ? 'The inventory, the piece names and the target size come from it.'
-              : 'This sheet does not draw the rig’s pieces, so nothing here reads it — choose the rig sheet under Sheet Contents.'}
+              : 'This sheet does not draw the rig’s pieces, so nothing here reads it — choose the rig sheet under Sheet Contents.'}{' '}
+            {isShippedRigContract(rigContract) &&
+              'This is the copy its preset ships, not a file you loaded — export the rig again if it has moved since.'}
           </p>
           <ControlTooltip hint="Remove" text={STUDIO_ACTION_TOOLTIPS.removeRigContract}>
             <button

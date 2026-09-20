@@ -76,13 +76,17 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
 
   setCategory: (category) => {
     act(() => {
+      // Read before the write, because the category being left is half of what settles a loaded rig
+      // contract: a document loaded for a character is not a claim about a creature, however well
+      // the creature's sheets would take a rig.
+      const from = get().category;
       const subject = defaultSubjectFor(category);
       set({ category, subject });
       // A category switch invalidates the most of the technical half; `resolveOutputForSubject`
-      // settles the six claims a category can refuse. Written back only where something moved, so a
-      // switch that decides nothing leaves that object alone.
+      // settles the seven claims a category can refuse. Written back only where something moved, so
+      // a switch that decides nothing leaves that object alone.
       const store = useOutputStore.getState();
-      const resolved = resolveOutputForSubject(category, subject, store.output);
+      const resolved = resolveOutputForSubject(category, subject, store.output, from);
       if (resolved !== store.output) store.setOutputConfig(resolved);
     });
   },
@@ -169,7 +173,9 @@ function outputFollowing(
 ): OutputConfig | null {
   if (plansFor(category, before) === plansFor(category, after)) return null;
   const { output } = useOutputStore.getState();
-  const resolved = resolveOutputForSubject(category, after, output);
+  // The same category on both sides: a base change edits one field of one subject, so a contract
+  // loaded for it is still loaded for it — and only the rig the base leaves behind decides it.
+  const resolved = resolveOutputForSubject(category, after, output, category);
   return resolved === output ? null : resolved;
 }
 
