@@ -165,6 +165,9 @@ describe('useImageDownload', () => {
       // A rig-pieces plan, so the rig its own sheet mode fixes: the name is what this suite is
       // about, and the field is required because a manifest must state which rig it describes.
       rigMode: 'CUTOUT_RIG',
+      // No contract loaded, which is a sheet drawn in the model's own proportions — the state a
+      // download is named identically in, and `sheetIdentity.test.ts` is where it is pinned.
+      rigContract: null,
     });
 
     /** Saves one sheet of that batch and hands back the name the browser was given. */
