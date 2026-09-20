@@ -97,7 +97,7 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
     id: 'us-creature-rig',
     name: 'Unsung Saviour — Creature rig',
     description:
-      'The same projection, scale and palette discipline, carrying no sockets and no rig: enemies do not wear the player’s gear, and a humanoid skeleton is not a quadruped’s. Match the sheet mode to its anatomy first.',
+      'The same projection, scale and palette discipline, carrying no sockets and no rig contract: enemies do not wear the player’s gear, and a humanoid skeleton is not a quadruped’s. Match the sheet mode to its anatomy first.',
     category: 'CREATURE',
     subject: sparseSubject('CREATURE', {
       exclusions:

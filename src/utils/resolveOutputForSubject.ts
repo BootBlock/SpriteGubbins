@@ -27,6 +27,16 @@ import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
  * was loaded for, and that question needs both ends. Both callers know the answer — `outputFollowing`
  * passes the category it was already handed, because a base change stays inside one.
  *
+ * **That makes the contract rule a fact about a CHANGE, and the boundary is worth stating.** A
+ * session row, a history entry, a saved preset and an imported pack each restore a configuration
+ * without passing through here, deliberately: a position on the stack is a studio that existed and is
+ * replayed rather than recomputed. So a row written *before* this rule existed can still carry a
+ * humanoid contract under a creature, and come back that way. It cannot be caught at the parse
+ * boundary either — a `RigContract` names a skeleton and not a category, so nothing there can tell a
+ * stranded humanoid from a legitimate creature rig. The durable fix is to store the category a
+ * contract was loaded for beside it, at which point this rule holds on every path and needs no
+ * `from` at all; that is a change to the shape `ImageOutputConfig` persists, and it is not made here.
+ *
  * Returns the configuration it was handed, unchanged and by identity, where the subject can honour
  * all of it *and* the series is already on its first sheet — the sheet index goes back to the first
  * whether or not anything else moved, and the reason is at the guard below. Callers rely on that
