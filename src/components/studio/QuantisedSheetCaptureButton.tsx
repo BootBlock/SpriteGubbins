@@ -47,6 +47,7 @@ export function QuantisedSheetCaptureButton() {
   const succeeded = useQuantiseAnswerStore((state) => state.succeeded);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const palette = useOutputStore((state) => state.output.palette);
+  const customPalette = useOutputStore((state) => state.output.customPalette);
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   const capture = useIdentityPaletteCapture();
 
@@ -63,7 +64,8 @@ export function QuantisedSheetCaptureButton() {
         settled: succeeded,
         failed: attempt?.kind === 'failed',
         keying: keyingInForce(keyingEnabled, studioKey, keyTolerance),
-        reduction: colorPlanFor(palette, paletteLimit, lockedPalette, paletteSnap).reduction,
+        reduction: colorPlanFor({ palette, customPalette, paletteLimit }, lockedPalette, paletteSnap)
+          .reduction,
         studioKey,
       }),
     [
@@ -76,6 +78,7 @@ export function QuantisedSheetCaptureButton() {
       studioKey,
       keyTolerance,
       palette,
+      customPalette,
       paletteLimit,
       lockedPalette,
       paletteSnap,

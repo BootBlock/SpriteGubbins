@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HARDWARE_PROFILE_IDS } from '../../types/hardware.ts';
 import type { HardwareProfile } from '../../types/hardware.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
-import { paletteFor } from '../palettes/index.ts';
+import { machinePaletteFor } from '../palettes/index.ts';
 import { HARDWARE_PROFILE_CHOICES, HARDWARE_PROFILES, hardwareProfileFor } from './index.ts';
 
 /**
@@ -76,7 +76,7 @@ describe('a profile’s settings', () => {
     // A machine with no palette would apply a package that says nothing about its colours, which is
     // the one thing a user choosing "Game Boy" is certain to expect it to do.
     expect(profile.settings.palette).not.toBe('FREE');
-    expect(paletteFor(profile.settings.palette)).not.toBeNull();
+    expect(machinePaletteFor(profile.settings.palette)).not.toBeNull();
   });
 
   it.each(DEFINED)('$id gives its CUSTOM resolution a size to work to', (profile) => {

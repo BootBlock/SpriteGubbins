@@ -238,10 +238,16 @@ the per-component count. Neither says a word about the other's half, which is wh
 set independently: a Mega Drive profile carrying a Game Boy palette is an unusual request, not a
 prompt that contradicts itself.
 
+`PALETTE` has one value that names no machine at all. `CUSTOM` takes its colours from
+`OutputConfig.customPalette`, which the reader loads from a swatch picture, a `.gpl` or a pasted hex
+list — the three forms a palette leaves this app as. §2 states it exactly as it states a machine's
+fixed list, under the reader's own name for the set, and says none of the three things only hardware
+imposes: no rendering caveat, no on-screen count and no per-component count.
+
 | Parameter | Values | Emits |
 | --- | --- | --- |
 | `HARDWARE_PROFILE` | `NONE` · every machine defined in `src/constants/hardware/` | `### Target hardware` in §2, with the machine's constraint list |
-| `PALETTE` | `FREE` · every palette defined in `src/constants/palettes/` | `### Palette` in §2, plus a clause in §0's contract and one in §9's audit |
+| `PALETTE` | `FREE` · `CUSTOM` · every palette defined in `src/constants/palettes/` | `### Palette` in §2, plus a clause in §0's contract and one in §9's audit |
 | `STYLE_REFERENCE` | `NONE` · the published games in `src/constants/styleReferences/` | `### Art direction reference` in §2, with the look's characteristic list |
 | `NAME_STYLE_REFERENCE` | `false` · `true` | A short passage inside that block naming the game; the characteristics are emitted either way |
 

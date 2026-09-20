@@ -1,4 +1,5 @@
 import type { TargetQuantity } from './components.ts';
+import type { CustomPalette } from './customPalette.ts';
 import type { HardwareProfileId } from './hardware.ts';
 import type { PaletteId } from './palette.ts';
 import type { StyleReferenceId } from './styleReference.ts';
@@ -25,6 +26,7 @@ export type { HardwareProfile, HardwareProfileId, HardwareSettings } from './har
 export { HARDWARE_PROFILE_IDS } from './hardware.ts';
 export type { Palette, PaletteId, PaletteSpace } from './palette.ts';
 export { PALETTE_IDS } from './palette.ts';
+export type { CustomPalette } from './customPalette.ts';
 export type { StyleReference, StyleReferenceId, StyleReferenceSettings } from './styleReference.ts';
 export { STYLE_REFERENCE_IDS } from './styleReference.ts';
 
@@ -378,8 +380,25 @@ export interface ImageOutputConfig {
    * quantiser ignores the count, and the studio withdraws the budget control and says why on this
    * one. A budget cannot express "four shades of green", so where a palette is pinned the budget has
    * nothing left to add.
+   *
+   * `CUSTOM` takes its colours from {@link customPalette}, and is the one member whose meaning is
+   * not decided by this field alone. `pinnedPalette` reads the pair.
    */
   readonly palette: PaletteId;
+  /**
+   * The reader's own colours, where they have loaded some.
+   *
+   * **On the configuration rather than in a store of its own**, for the reason `rigContract` is: a
+   * preset and a history row carry the whole of this object, and a palette held anywhere else would
+   * leave a restored row compiling a prompt it never produced — naming colours the reader has since
+   * replaced, or none at all.
+   *
+   * `null` while nothing is loaded, which is every state but the one the reader built deliberately.
+   * A `palette` of `CUSTOM` standing over a `null` here is not a broken configuration: it is the
+   * moment between choosing the option and loading a file, and `pinnedPalette` answers it exactly as
+   * it answers `FREE`.
+   */
+  readonly customPalette: CustomPalette | null;
 
   readonly renderStyle: RenderStyle;
   readonly projection: Projection;

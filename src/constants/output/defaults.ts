@@ -35,6 +35,9 @@ export const DEFAULT_IMAGE_CONFIG: ImageOutputConfig = {
   // defaulted to a machine would put a hardware contract into every prompt the app composes.
   hardwareProfile: 'NONE',
   palette: 'FREE',
+  // And no colours of the reader's own, for the plainer reason that nothing could stand in for them:
+  // a palette is a file they bring, and until they do there is nothing here to state.
+  customPalette: null,
 
   // No reference either, on the same argument: a sheet drawn to match a published game is a specific
   // request, and defaulting to one would put another game's measurements into every prompt. The

@@ -4,12 +4,12 @@ import type { Rgba } from '../types/quantiser.ts';
 import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
 import type { HardwareProfile } from '../types/hardware.ts';
-import { paletteFor } from '../constants/palettes/index.ts';
 import type { Palette } from '../types/palette.ts';
 import { resolveCameraElevation, validationPassFor } from '../constants/promptText/index.ts';
 import { resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { oneSidedFeatures } from './oneSidedFeatures.ts';
+import { pinnedPalette } from './pinnedPalette.ts';
 import type { StyleReference } from '../types/styleReference.ts';
 import type { Direction, DirectionalMode, OutputConfig, Projection, RigMode } from '../types/output.ts';
 import type { SheetPlan } from '../types/components.ts';
@@ -207,11 +207,12 @@ export function sheetFacts(
   // the contract says it has, which is the one arithmetic the whole template rests on.
   const anatomy = parseAdditionalAnatomy(subject.additional_anatomy);
 
-  // The machine and its colours, or `null` for `NONE`/`FREE`. Resolved once and read four times
-  // below, so the two blocks and the two flags that gate them cannot disagree about whether there
-  // is a machine — the failure mode being a heading with nothing under it.
+  // The machine and its colours, or `null` for `NONE`, for `FREE`, and for a `CUSTOM` palette with
+  // nothing loaded. Resolved once and read four times below, so the two blocks and the two flags
+  // that gate them cannot disagree about whether there is a machine — the failure mode being a
+  // heading with nothing under it.
   const hardware = hardwareProfileFor(output.hardwareProfile);
-  const palette = paletteFor(output.palette);
+  const palette = pinnedPalette(output);
   // The look this sheet is drawn to match, or `null` for `NONE`. Resolved once and read three times
   // below — the two values and the flag that gates their block — so a heading with nothing under it
   // is not expressible, exactly as it is not for the two above.

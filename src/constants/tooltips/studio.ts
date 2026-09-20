@@ -58,6 +58,15 @@ export const STUDIO_ACTION_TOOLTIPS = {
   removeRigContract:
     'Drops the loaded rig contract. The sheet goes back to the piece list this app authors and to the target size you typed, and nothing else about the configuration changes. Load the file again to get the engine’s own geometry back.',
 
+  loadCustomPalette:
+    'Reads a palette of your own out of a file, so the prompt can state the colours your project already uses instead of a machine’s. It takes the three forms this app writes: a swatch picture, a .gpl a pixel editor opens, or a list of hex values. Drop one here or choose it, and the colours it holds are pinned in the order the file lists them. A picture holding more colours than a palette can carry is refused rather than trimmed, and you are offered the reduction instead. The file is read in this tab and never leaves it.',
+
+  reduceCustomPalette:
+    'Takes the picture you just dropped down to 256 colours and pins those, through the same reducer the Quantise tab uses. Every colour it keeps is one the picture already contained, so nothing is blended or invented — but they are chosen by how much of the image each covers, which makes them a measurement of that picture rather than a palette somebody authored. Reach for it when what you dropped was a sheet rather than a swatch.',
+
+  removeCustomPalette:
+    'Drops the colours you loaded. The palette control falls back to the colour budget until you load another, exactly as it does before anything has been read in, and nothing else about the configuration changes.',
+
   readPalette:
     'Reads the dominant colours out of a sheet you have accepted and writes them into the identity lock as a palette line, most-used first, with the background key left out. It is the one line of a continuity digest nobody writes accurately by hand — eyeballing hex codes off a sheet is guesswork, and a later generation drifts to whatever the words allowed. The image is decoded in this tab and never leaves it.',
 } as const;

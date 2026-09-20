@@ -1,13 +1,13 @@
-import { paletteFor } from '../constants/palettes/index.ts';
 import { PALETTE_COLOR_COUNTS } from '../constants/quantiser.ts';
-import type { PaletteId } from '../types/palette.ts';
 import type { PaletteLimit } from '../types/output.ts';
 import type { ColorPlan, LockedPalette } from '../types/quantiser.ts';
 import { channelLevels } from './channelLevels.ts';
 import { fixedPaletteColors } from './paletteEntries.ts';
+import { pinnedPalette } from './pinnedPalette.ts';
+import type { PinnedPaletteSource } from './pinnedPalette.ts';
 
 /**
- * What the studio's two colour settings ask the quantiser to do, and what to call it on screen.
+ * What the studio's colour settings ask the quantiser to do, and what to call it on screen.
  *
  * The one place the "a pinned palette supersedes the budget" rule is turned into a decision, so no
  * caller has to know it and none can get it wrong. The prompt compiler expresses the same rule
@@ -36,13 +36,24 @@ import { fixedPaletteColors } from './paletteEntries.ts';
  *
  * Pure, so it can be asserted on directly rather than through a rendered tab.
  */
+
+/**
+ * The studio's colour fields, taken together.
+ *
+ * One argument rather than three because they are one decision: the budget, the palette pinned over
+ * it, and — where that palette is the reader's own — the colours it is made of. A caller holding an
+ * `OutputConfig` passes it whole.
+ */
+export interface StudioColorSettings extends PinnedPaletteSource {
+  readonly paletteLimit: PaletteLimit;
+}
+
 export function colorPlanFor(
-  palette: PaletteId,
-  limit: PaletteLimit,
+  studioSettings: StudioColorSettings,
   lock: LockedPalette | null,
   snap: number,
 ): ColorPlan {
-  const studio = studioPlan(palette, limit);
+  const studio = studioPlan(studioSettings);
   if (lock === null || snap <= 0) return studio;
 
   const count = lock.entries.length;
@@ -65,8 +76,8 @@ export function colorPlanFor(
  * any other way would be a second reading of the same two settings, which is the failure the whole
  * of `colorPlanFor` exists to prevent.
  */
-function studioPlan(palette: PaletteId, limit: PaletteLimit): ColorPlan {
-  const pinned = paletteFor(palette);
+function studioPlan({ paletteLimit: limit, ...source }: StudioColorSettings): ColorPlan {
+  const pinned = pinnedPalette(source);
 
   if (pinned === null) {
     const maxColors = PALETTE_COLOR_COUNTS[limit];
@@ -87,26 +98,33 @@ function studioPlan(palette: PaletteId, limit: PaletteLimit): ColorPlan {
         };
   }
 
+  // What the tab calls this setting. A machine is its stored identifier, exactly as every other
+  // setting on the tab is; a custom palette has no identifier worth showing — `CUSTOM` names the
+  // control rather than the colours — so it is the reader's own name for the set, which is also what
+  // a lock taken over it records.
+  const name = pinned.id === 'CUSTOM' ? pinned.name : pinned.id;
+
   if (pinned.space.kind === 'CHANNEL_DEPTH') {
     const levels = channelLevels(pinned.space.bitsPerChannel).length;
     return {
       reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: pinned.space.bitsPerChannel },
-      setting: palette,
-      studioSetting: palette,
+      setting: name,
+      studioSetting: name,
       effect: `every channel snapped to the machine’s ${String(levels)} levels`,
       superseded: null,
     };
   }
 
   const entries = fixedPaletteColors(pinned.space.entries);
-  // A palette whose every entry failed to parse is one no test would have let ship — the library's
-  // own suite checks the spelling of all of them — but mapping an image onto an empty palette would
-  // return it unchanged while the studio said it had been pinned. Nothing rather than a lie.
+  // A machine palette whose every entry failed to parse is one no test would have let ship — the
+  // library's own suite checks the spelling of all of them — and a custom one cannot hold an entry
+  // its parser did not accept. But mapping an image onto an empty palette would return it unchanged
+  // while the studio said it had been pinned. Nothing rather than a lie.
   if (entries.length === 0) {
     return {
       reduction: null,
-      setting: palette,
-      studioSetting: palette,
+      setting: name,
+      studioSetting: name,
       effect: 'unreadable, so the colours are left alone',
       superseded: null,
     };
@@ -114,8 +132,8 @@ function studioPlan(palette: PaletteId, limit: PaletteLimit): ColorPlan {
 
   return {
     reduction: { kind: 'PALETTE', entries },
-    setting: palette,
-    studioSetting: palette,
+    setting: name,
+    studioSetting: name,
     effect: `mapped onto its ${String(entries.length)} fixed colours`,
     superseded: null,
   };

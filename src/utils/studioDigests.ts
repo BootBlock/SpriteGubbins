@@ -1,5 +1,4 @@
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
-import { paletteFor } from '../constants/palettes/index.ts';
 import { resolveCameraElevation, validationPassFor } from '../constants/promptText/index.ts';
 import type { ValidationPass } from '../types/rendering.ts';
 import { resolveMode, resolveRigMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
@@ -7,6 +6,7 @@ import type { OutputConfig } from '../types/output.ts';
 import type { SheetSubject, SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
+import { pinnedPalette } from './pinnedPalette.ts';
 import { facingApplies, primaryFacing } from './sheetDirections.ts';
 import { sheetRigContract } from './sheetRigContract.ts';
 import { sheetTargetSize } from './sheetSizing.ts';
@@ -131,8 +131,16 @@ export function sheetDigest(category: SubjectCategory, subject: SheetSubject, ou
  * two supersessions stack rather than collide.
  */
 function colourDigest(output: OutputConfig, pass: ValidationPass | null): string {
-  if (paletteFor(output.palette) !== null) return output.palette;
-  return pass === null ? output.paletteLimit : '';
+  if (pinnedPalette(output) === null) return pass === null ? output.paletteLimit : '';
+
+  // A machine is named by its stored identifier, as every other setting in this header is. The
+  // reader's own palette has none worth showing — `CUSTOM` names the control rather than the
+  // colours — so it is named and counted instead, which is what tells two of them apart. The field
+  // is read directly rather than off the resolved palette because `pinnedPalette` above has already
+  // settled which of the two kinds this is, and asking its space a second time would be a question
+  // with one possible answer.
+  const custom = output.palette === 'CUSTOM' ? output.customPalette : null;
+  return custom === null ? output.palette : `${custom.name} (${String(custom.entries.length)} colours)`;
 }
 
 /**

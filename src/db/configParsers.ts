@@ -27,6 +27,7 @@ import type { ImageOutputConfig, OutputConfig, TargetModelId } from '../types/ou
 import type { Direction, DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import { parseCustomPalette } from '../utils/parseCustomPalette.ts';
 import { parseRigContract } from '../utils/parseRigContract.ts';
 import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './readers.ts';
 
@@ -160,6 +161,11 @@ export function parseImageConfig(value: unknown): ImageOutputConfig {
       HARDWARE_PROFILE_IDS,
     ),
     palette: pick(source, 'palette', DEFAULT_OUTPUT_CONFIG.palette, PALETTE_IDS),
+    // Through the same gate the studio's own intake comes through, so a restored palette is the
+    // object the reader loaded or nothing at all. A stored `CUSTOM` standing over a row whose
+    // colours would not read needs no further handling: `pinnedPalette` takes that pair as no
+    // palette pinned, exactly as it takes `FREE`, so the budget decides the sheet instead.
+    customPalette: parseCustomPalette(source['customPalette']),
 
     // The same fall-back to "none", for the same reason: a stored reference that no longer names a
     // game must not become a different game. The naming switch is a plain boolean, so anything that

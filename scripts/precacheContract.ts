@@ -815,8 +815,26 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * `useSubjectStore` rose by the same order, so nothing of it reached the code.
  *
  * 2408 leaves **0.82 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2408 by the palette a reader loads themselves** (#301). The palette control offered
+ * `FREE` and eighteen machines, so a project's own colours could not be named in a prompt at all.
+ * What a first visit pays for is the reading of the three forms a palette leaves this app as — a
+ * swatch picture, a `.gpl` and a hex list — the gate every route into the configuration passes
+ * through, the resolver that reads the palette and those colours together, the studio panel that
+ * takes a file, a drop or a paste, and its guidance. The largest part is the panel and its words,
+ * and nearly all of it is reached by the entry chunk, because the studio is the first view and the
+ * prompt compiles on it. Measured against `main` at `aa2f794`, rebuilt from the same lockfile —
+ * **2407.57 KiB across 49 entries** on the build's summary line — this build reports **2416.84
+ * across 49** on the same line, a delta of **9.27** that crossed a ceiling the base sat 0.43 under.
+ * No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the
+ * two `dist/assets` listings, 5.77 KiB of it lands in `StudioTab`, which is the panel, the intake
+ * and the two guidance cards; 1.2 in `useUIStore` and 1.08 in `quantiseDials`, which is where this
+ * app's constant data is bundled; 0.98 in `database`, which is the storage gate; and 0.23 in the
+ * stylesheet. `SheetStepButtons` fell 0.4, which is the only entry to move the other way.
+ *
+ * 2417 leaves **0.16 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2408;
+export const PRECACHE_CEILING_KIB = 2417;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

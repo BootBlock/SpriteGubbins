@@ -55,8 +55,12 @@ export function describeHardware(profile: HardwareProfile): string {
  * pixel means nothing — and with keying off the field itself is what should take the key's entry.
  */
 export function describePalette(palette: Palette, key: Rgba | null): string {
+  // An empty part is dropped rather than joined, which is what lets a palette state nothing where it
+  // has nothing to state. Every machine here carries a `note` about how its hardware divided the
+  // palette up; a palette the reader loaded has no hardware and no note, and a blank paragraph
+  // between the entries and the next section would read as a line the compiler failed to fill.
   const parts = [rule(palette, key), ...limits(palette, key), palette.note];
-  return parts.join('\n\n');
+  return parts.filter((part) => part !== '').join('\n\n');
 }
 
 /**

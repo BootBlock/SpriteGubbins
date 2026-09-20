@@ -1,12 +1,14 @@
 import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
-import { PALETTE_CHOICES, paletteFor } from '../../constants/palettes/index.ts';
+import { PALETTE_CHOICES } from '../../constants/palettes/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import type { Palette } from '../../types/palette.ts';
 import { channelLevels, channelSpaceSize } from '../../utils/channelLevels.ts';
 import { fixedPaletteColors } from '../../utils/paletteEntries.ts';
+import { pinnedPalette } from '../../utils/pinnedPalette.ts';
 import { ColorSwatch } from '../common/ColorSwatch.tsx';
 import { PaletteDownload } from '../common/PaletteDownload.tsx';
 import { SelectField } from '../common/SelectField.tsx';
+import { CustomPaletteField } from './CustomPaletteField.tsx';
 
 /**
  * The colours the sheet may use, and — where they are a list — every one of them shown.
@@ -33,9 +35,10 @@ import { SelectField } from '../common/SelectField.tsx';
  */
 export function PaletteField() {
   const palette = useOutputStore((state) => state.output.palette);
+  const customPalette = useOutputStore((state) => state.output.customPalette);
   const setOutputField = useOutputStore((state) => state.setOutputField);
 
-  const pinned = paletteFor(palette);
+  const pinned = pinnedPalette({ palette, customPalette });
 
   return (
     <div>
@@ -49,6 +52,8 @@ export function PaletteField() {
           setOutputField('palette', value);
         }}
       />
+
+      {palette === 'CUSTOM' && <CustomPaletteField />}
 
       {pinned !== null && pinned.space.kind === 'FIXED' && (
         <>

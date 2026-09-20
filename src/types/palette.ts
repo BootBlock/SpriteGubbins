@@ -56,21 +56,27 @@ export type PaletteSpace =
   | { readonly kind: 'CHANNEL_DEPTH'; readonly bitsPerChannel: number };
 
 /**
- * Every palette the studio offers, `FREE` first.
+ * Every palette the studio offers, `FREE` first and `CUSTOM` beside it.
  *
  * `FREE` is a member rather than `palette: PaletteId | null` because this is a `SelectField` value
  * and the control needs something to render — the same reason `RIG_MODE` carries a `NONE`. It maps
  * to `null` in `PALETTES`, so "no palette" is expressed once, in the lookup, rather than at every
  * call site.
  *
- * Ordered by family, which is the order the dropdown shows: the two Nintendo handhelds, the
- * consoles, the home computers, the PC standards, and the one fantasy console. A machine whose
- * colour space is shared with another still gets its own entry — the Master System and EGA have the
- * same 64 colours, and a prompt that names the wrong one of them is a prompt about the wrong
- * machine.
+ * `CUSTOM` maps to `null` there as well, and for a different reason: the reader's own colours are
+ * not a constant, so they arrive on `OutputConfig.customPalette` and `pinnedPalette` is what turns
+ * the pair into a `Palette`. Keeping it in the map keeps the whole union answered, which is what
+ * makes a new member a compile error until it has been.
+ *
+ * The two unpinned members lead, and the rest are ordered by family, which is the order the dropdown
+ * shows: the two Nintendo handhelds, the consoles, the home computers, the PC standards, and the one
+ * fantasy console. A machine whose colour space is shared with another still gets its own entry —
+ * the Master System and EGA have the same 64 colours, and a prompt that names the wrong one of them
+ * is a prompt about the wrong machine.
  */
 export const PALETTE_IDS = [
   'FREE',
+  'CUSTOM',
   'GAME_BOY_DMG',
   'GAME_BOY_MONO',
   'GAME_BOY_COLOR',

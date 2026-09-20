@@ -3,7 +3,7 @@ import { PALETTE_IDS } from '../../types/palette.ts';
 import type { Palette } from '../../types/palette.ts';
 import { channelLevels, channelSpaceSize } from '../../utils/channelLevels.ts';
 import { fromHex, toHex } from '../../utils/imageData.ts';
-import { PALETTE_CHOICES, PALETTES, paletteFor } from './index.ts';
+import { PALETTE_CHOICES, PALETTES, machinePaletteFor } from './index.ts';
 
 /**
  * The palette library's own contract.
@@ -37,9 +37,13 @@ const DEFINED: readonly Palette[] = PALETTE_IDS.map((id) => PALETTES[id]).filter
 );
 
 describe('the palette library', () => {
-  it('defines every id except FREE, and FREE alone', () => {
-    expect(paletteFor('FREE')).toBeNull();
-    expect(DEFINED).toHaveLength(PALETTE_IDS.length - 1);
+  it('defines every id but the two that name no machine, and those two alone', () => {
+    // `FREE` is no palette at all and `CUSTOM` is one the reader loads, so neither has a definition
+    // here. Every other id must, and the count is what says so — a machine added to the union
+    // without its colours would otherwise reach the dropdown wearing one of their labels.
+    expect(machinePaletteFor('FREE')).toBeNull();
+    expect(machinePaletteFor('CUSTOM')).toBeNull();
+    expect(DEFINED).toHaveLength(PALETTE_IDS.length - 2);
   });
 
   it.each(DEFINED)('$id carries its own id, so a lookup cannot return a mislabelled palette', (palette) => {
@@ -138,7 +142,7 @@ describe('the two Game Boys', () => {
    * though it had a fixed list at all. Each half is a different kind of wrong, so each is pinned.
    */
   it('gives the DMG four shade levels, three of them to an object', () => {
-    const dmg = paletteFor('GAME_BOY_DMG');
+    const dmg = machinePaletteFor('GAME_BOY_DMG');
     if (dmg === null || dmg.space.kind !== 'FIXED') throw new Error('the DMG should be a fixed palette.');
 
     // Two bits per pixel is the hardware fact underneath, and it is what the four is *for*.
@@ -150,7 +154,7 @@ describe('the two Game Boys', () => {
   });
 
   it('gives the Color a colour space rather than a list, at five bits a channel', () => {
-    const cgb = paletteFor('GAME_BOY_COLOR');
+    const cgb = machinePaletteFor('GAME_BOY_COLOR');
     if (cgb === null) throw new Error('the Game Boy Color should ship.');
 
     // The claim that has to stay false: that this machine has some canonical set of hex colours.

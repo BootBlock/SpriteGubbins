@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PALETTE_LIMITS } from '../../types/output.ts';
 import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { OUTPUT_TOOLTIPS } from './tooltips.ts';
+import { studioColors } from '../../test/studioColors.ts';
 
 /**
  * That the colour budget's guidance says what becomes of the budget, and not only what it asks for.
@@ -26,7 +27,7 @@ describe('the colour budget guidance', () => {
   });
 
   it.each(PALETTE_LIMITS)('states what the Quantise tab does with %s', (limit) => {
-    const { reduction } = colorPlanFor('FREE', limit, null, 0);
+    const { reduction } = colorPlanFor(studioColors('FREE', limit), null, 0);
 
     if (reduction === null) {
       expect(OUTPUT_TOOLTIPS.paletteLimit).toMatch(

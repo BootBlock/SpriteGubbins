@@ -7,12 +7,12 @@ import {
   RESOLUTION_PROFILE_CHOICES,
   SURFACE_DETAIL_CHOICES,
 } from '../../constants/output/index.ts';
-import { paletteFor } from '../../constants/palettes/index.ts';
 import { validationPassFor } from '../../constants/promptText/index.ts';
 import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { statesAssembledSize } from '../../utils/componentTargetSize.ts';
+import { pinnedPalette } from '../../utils/pinnedPalette.ts';
 import type { ValidationPass } from '../../types/rendering.ts';
 import { SelectField } from '../common/SelectField.tsx';
 import { TextField } from '../common/TextField.tsx';
@@ -54,11 +54,12 @@ function supersession(pass: ValidationPass | null): string {
  * conditional fields, and this control failed it: on a Mega Drive or a Game Boy the budget sat on
  * screen, fully operable, changing nothing.
  *
- * The question is asked as `paletteFor(…) === null` rather than `=== 'FREE'` because that is where
- * "no palette" is defined — `PALETTES` maps the one to the other, so every reader of the rule gets
- * it from the same lookup and none of them can drift. `PaletteField` decides whether to explain the
- * supersession on exactly that predicate, which is what keeps the explanation and the withdrawal
- * from ever both being absent.
+ * The question is asked as `pinnedPalette(…) === null` rather than `=== 'FREE'` because that is where
+ * "no palette" is defined — one resolver reads the palette and the reader's own colours together, so
+ * every reader of the rule gets it from the same answer and none of them can drift. It is also what
+ * keeps the budget on screen while `CUSTOM` is chosen and nothing has been loaded into it yet.
+ * `PaletteField` decides whether to explain the supersession on exactly that predicate, which is
+ * what keeps the explanation and the withdrawal from ever both being absent.
  *
  * **Four controls answer to the render style in the same way**, because two of the ten styles are
  * validation passes rather than finished looks. `CLAY_RENDER` and `SILHOUETTE_ONLY` state the
@@ -157,7 +158,7 @@ export function RenderStyleFields() {
 
       <PaletteField />
 
-      {paletteFor(output.palette) === null && pass === null && (
+      {pinnedPalette(output) === null && pass === null && (
         <SelectField
           label="Palette Limit"
           tooltip={OUTPUT_TOOLTIPS.paletteLimit}

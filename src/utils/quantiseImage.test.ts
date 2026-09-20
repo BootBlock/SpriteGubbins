@@ -9,6 +9,7 @@ import { colorPlanFor } from './colorReduction.ts';
 import { countColors, pixelOffset, readPixel, toHex } from './imageData.ts';
 import { quantiseImage } from './quantiseImage.ts';
 import { spriteSegments } from './spriteSegments.ts';
+import { studioColors } from '../test/studioColors.ts';
 
 /** 16 × 16 art, every pixel a different colour. */
 const SPRITE = imageFrom(16, 16, (x, y) => ({ r: x * 16 + 1, g: y * 16 + 1, b: 64, a: 255 }));
@@ -177,7 +178,7 @@ describe('quantiseImage', () => {
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
-      reduction: colorPlanFor('FREE', 'UNRESTRICTED', null, 0).reduction,
+      reduction: colorPlanFor(studioColors('FREE', 'UNRESTRICTED'), null, 0).reduction,
     });
 
     expect(PALETTE_COLOR_COUNTS.UNRESTRICTED).toBeNull();
@@ -620,7 +621,7 @@ describe('quantiseImage', () => {
   it('maps every pixel onto a pinned palette rather than onto colours the image chose', () => {
     // The difference a pinned palette makes, stated as the thing a budget cannot do: 200 arbitrary
     // colours come back as four *named* ones, and every pixel is one of exactly those four.
-    const gameBoy = colorPlanFor('GAME_BOY_DMG', 'UNRESTRICTED', null, 0).reduction;
+    const gameBoy = colorPlanFor(studioColors('GAME_BOY_DMG', 'UNRESTRICTED'), null, 0).reduction;
     const result = quantiseImage(TWO_HUNDRED_COLORS, {
       grid: 1,
       key: null,
@@ -659,7 +660,7 @@ describe('quantiseImage', () => {
     // The other half of a pinned palette, and the one that would look like a no-op if it were only
     // counted: the Mega Drive's 512 colours barely reduce a 200-colour image, but every channel that
     // survives is a value the machine could actually output.
-    const megaDrive = colorPlanFor('MEGA_DRIVE', 'UNRESTRICTED', null, 0).reduction;
+    const megaDrive = colorPlanFor(studioColors('MEGA_DRIVE', 'UNRESTRICTED'), null, 0).reduction;
     const result = quantiseImage(TWO_HUNDRED_COLORS, {
       grid: 1,
       key: null,
@@ -700,7 +701,7 @@ describe('quantiseImage', () => {
     // The rule the studio states under the budget control, asserted where it is actually applied. A
     // reduction to 32 followed by a map onto four would be two quantisations, and the first would
     // throw away exactly the colours the second needs to choose between.
-    expect(colorPlanFor('GAME_BOY_DMG', 'STRICT_32_COLOR', null, 0).reduction).toEqual({
+    expect(colorPlanFor(studioColors('GAME_BOY_DMG', 'STRICT_32_COLOR'), null, 0).reduction).toEqual({
       kind: 'PALETTE',
       entries: [
         { r: 15, g: 56, b: 15, a: 255 },
@@ -746,7 +747,7 @@ describe('quantiseImage', () => {
         dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,
-        reduction: colorPlanFor(palette, 'UNRESTRICTED', null, 0).reduction,
+        reduction: colorPlanFor(studioColors(palette, 'UNRESTRICTED'), null, 0).reduction,
       });
       expect(readPixel(result.image.data, 0).a, `${palette} flattened a soft edge`).toBe(128);
     }

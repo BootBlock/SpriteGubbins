@@ -12,6 +12,7 @@ import type { BackgroundKeying, QuantiseSettings } from '../../types/quantiser.t
 import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { quantiseImage } from '../../utils/quantiseImage.ts';
 import { QuantisedSheetCaptureButton } from './QuantisedSheetCaptureButton.tsx';
+import { studioColors } from '../../test/studioColors.ts';
 
 /**
  * The route this button exists for, end to end: the sheet in the Quantise tab reaching the identity
@@ -63,8 +64,11 @@ function loadTab(key: BackgroundKeying | null) {
     key,
     // The studio's own colour setting, resolved the way the tab resolves it — so the answer filed
     // here is an answer to the question the button will rebuild, and the staleness guard passes.
-    reduction: colorPlanFor(output.palette, output.paletteLimit, null, QUANTISE_DEFAULT_DIALS.paletteSnap)
-      .reduction,
+    reduction: colorPlanFor(
+      studioColors(output.palette, output.paletteLimit),
+      null,
+      QUANTISE_DEFAULT_DIALS.paletteSnap,
+    ).reduction,
   };
   useQuantiseStore.setState({
     source: { name: 'accepted-sheet.png', image: SHEET },

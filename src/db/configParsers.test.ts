@@ -270,3 +270,34 @@ describe('parseOutputConfig — the engine’s rig contract', () => {
     expect(parseOutputConfig({ rigContract: 'not an object' }).rigContract).toBeNull();
   });
 });
+
+describe('parseOutputConfig — the reader’s own palette', () => {
+  const STORED = { name: 'Dusk Harbour', entries: ['#102030', '#405060'] };
+
+  it('reads a stored palette back as the palette that went in', () => {
+    // The round trip the whole field is held on the configuration for: a restored history row has to
+    // recompile the prompt it recorded, and section 2 states every one of these colours by name.
+    expect(parseOutputConfig({ customPalette: JSON.parse(JSON.stringify(STORED)) }).customPalette).toEqual(
+      STORED,
+    );
+  });
+
+  it('reads a row written before the field existed as no palette', () => {
+    expect(parseOutputConfig({}).customPalette).toBeNull();
+  });
+
+  it('refuses a damaged palette on exactly the terms the studio’s intake refuses one', () => {
+    // One reader, so a palette the intake turned away cannot arrive from the database instead.
+    expect(parseOutputConfig({ customPalette: { name: 'Empty', entries: [] } }).customPalette).toBeNull();
+    expect(parseOutputConfig({ customPalette: 'not an object' }).customPalette).toBeNull();
+  });
+
+  it('keeps a stored CUSTOM standing over a palette that would not read', () => {
+    // Not a broken configuration and not a case needing its own rule: `pinnedPalette` reads the pair
+    // as no palette pinned, exactly as it reads FREE, so the budget decides the sheet instead.
+    const parsed = parseOutputConfig({ palette: 'CUSTOM', customPalette: { entries: ['rust'] } });
+
+    expect(parsed.palette).toBe('CUSTOM');
+    expect(parsed.customPalette).toBeNull();
+  });
+});

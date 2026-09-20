@@ -62,6 +62,7 @@ import { QuantiseWorkspace } from '../quantise/QuantiseWorkspace.tsx';
 export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   const palette = useOutputStore((state) => state.output.palette);
+  const customPalette = useOutputStore((state) => state.output.customPalette);
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
@@ -122,15 +123,15 @@ export function QuantiseTab() {
     [source, keyColor, keyingEnabled, keyTolerance],
   );
 
-  // The studio's two colour settings resolved to one instruction *and* one description of it — a
+  // The studio's colour settings resolved to one instruction *and* one description of it — a
   // pinned palette supersedes the budget, and `colorPlanFor` is the single place that rule is
   // applied. The panel below is handed the same answer the pipeline is, for the same reason
   // `KeyingControls` is handed the keying: two readings of one setting can disagree, and did.
   // A palette locked off an earlier result supersedes both studio settings while it is held, and
   // this is where that rule is applied — one branch, as the pinned-over-budget rule already is.
   const colorPlan = useMemo(
-    () => colorPlanFor(palette, paletteLimit, lockedPalette, paletteSnap),
-    [palette, paletteLimit, lockedPalette, paletteSnap],
+    () => colorPlanFor({ palette, customPalette, paletteLimit }, lockedPalette, paletteSnap),
+    [palette, customPalette, paletteLimit, lockedPalette, paletteSnap],
   );
 
   const { facts, grid, settings, quantised, busy, error } = useQuantiseWork(

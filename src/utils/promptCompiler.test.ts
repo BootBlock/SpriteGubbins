@@ -49,6 +49,9 @@ import { BACKGROUND_KEY_COLORS } from '../constants/backgroundKeyColors.ts';
 import { fromHex } from './imageData.ts';
 import { keyReaches } from './keyReach.ts';
 
+/** Two blank lines: what a block joined from a part that turned out to be empty leaves behind. */
+const BLANK_PARAGRAPH = '\n\n\n';
+
 /** Section 2's palette block, from its heading to the next heading or rule. */
 function paletteBlock(prompt: string): string {
   const start = prompt.indexOf('### Palette — ');
@@ -2647,6 +2650,41 @@ describe('generatePrompt — the machine and its palette', () => {
     // palette does, the budget is not stated at all rather than stated alongside and contradicting.
     expect(prompt).not.toContain('- Palette strategy: ');
     expect(prompt).not.toContain(promptText.PALETTE_TEXT.RESTRAINED_64_COLOR);
+  });
+
+  it('states a palette the reader loaded exactly as it states a machine’s', () => {
+    // The whole of issue #301 in one case: colours no file in this repository declares reach section
+    // 2 under the reader's own name, and take the budget's place there as a machine's list would.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        palette: 'CUSTOM',
+        customPalette: { name: 'Dusk Harbour', entries: ['#102030', '#405060', '#9FD3C7'] },
+        paletteLimit: 'RESTRAINED_64_COLOR',
+      }),
+    );
+
+    expect(prompt).toContain('### Palette — Dusk Harbour');
+    expect(prompt).toContain('exactly one of the 3 colours of Dusk Harbour, listed below');
+    for (const entry of ['#102030', '#405060', '#9FD3C7']) expect(prompt).toContain(entry);
+
+    // No machine behind it, so none of the three things a machine states is invented for it — and
+    // the block ends on its entries rather than on the blank a missing note would leave.
+    expect(prompt).not.toContain('sRGB approximation');
+    expect(prompt).not.toContain('- Palette strategy: ');
+    // A machine's block closes on its `note`; a loaded palette has none, and a part left empty would
+    // leave a blank paragraph where that sentence was.
+    expect(paletteBlock(prompt).trimEnd()).not.toContain(BLANK_PARAGRAPH);
+  });
+
+  it('says nothing of a custom palette with no colours loaded into it', () => {
+    // Choosing the option is not pinning a palette. Until a file is read the sheet is exactly as it
+    // was under FREE, which is what keeps the budget line and the budget control from both going.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'CUSTOM' }));
+
+    expect(prompt).not.toContain('### Palette —');
+    expect(prompt).toContain('- Palette strategy: ');
   });
 
   it('calls an approximated palette’s entries an approximation, without loosening the rule', () => {
