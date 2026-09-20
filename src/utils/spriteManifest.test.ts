@@ -215,6 +215,19 @@ describe('buildManifest', () => {
     });
   });
 
+  it('leaves the contract in its own source pixels, whatever the file is magnified by', () => {
+    // The one set of numbers in the file that does not move with the scale, and deliberately so:
+    // the field is the engine's own document quoted back, so a contract multiplied by a download's
+    // magnification would stop identifying the rig revision it exists to identify.
+    const sheet = { ...RIG_SHEET, rigContract: CONTRACT };
+    const at1 = buildManifest({ ...input, scale: 1, sheet });
+    const at4 = buildManifest({ ...input, scale: 4, sheet });
+
+    expect(at4.scale).toBe(4);
+    expect(at4.sheet?.rigContract).toStrictEqual(CONTRACT);
+    expect(at4.sheet?.rigContract).toStrictEqual(at1.sheet?.rigContract);
+  });
+
   it('states outright that a rig sheet was drawn against no contract', () => {
     // The pack the whole field exists for. It is `named`, every piece finds its socket, and the
     // proportions are the model's — so `null` beside a `CUTOUT_RIG` is what an importer refuses on.

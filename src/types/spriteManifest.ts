@@ -210,9 +210,24 @@ export interface ManifestSheet {
    * with one drawn long. Nothing downstream reports it — every piece still quantises to exactly the
    * size the rig declares — so the first sign is a contact sheet.
    *
-   * **`null` is a statement, and {@link ManifestSheet.rigMode} says which one.** `NONE` beside it is
-   * a sheet no rig applies to, where the pieces are placed rather than jointed. `CUTOUT_RIG` beside
-   * it is exactly the pack above, and an importer is entitled to refuse it outright.
+   * **`null` is a statement, and {@link ManifestSheet.rigMode} says which one.** `CUTOUT_RIG` beside
+   * it is exactly the pack above: no contract was loaded at all, and an importer is entitled to
+   * refuse it outright. `NONE` and `POSE_LIBRARY` beside it are the two a contract does not reach —
+   * the first has no rig, and the second is assembled by hand about shared pivots — so neither is a
+   * pack to refuse.
+   *
+   * **A `null` describes this sheet and never the batch.** A contract is loaded for the whole
+   * configuration and reaches exactly the sheet whose inventory *is* the rig, so a deliverable whose
+   * rig sheet was drawn against one still records `null` on its own core and articulation sheets.
+   * The prompt for each of those stated no piece geometry, so a contract named there would claim a
+   * geometry the artwork was never drawn to.
+   *
+   * **These numbers alone in the file are the contract's own source pixels.** Every other
+   * measurement here — each rect, {@link SpriteManifest.cell}, every {@link ManifestSprite.pivot} —
+   * is in the written file's pixels and moves with {@link SpriteManifest.scale}. This does not, and
+   * must not: the field is the engine's own document quoted back, and a contract multiplied by a
+   * download's magnification would stop identifying the rig revision it exists to identify. So a
+   * `piece_size` is not comparable with a cell width, and nothing in this file relates the two.
    *
    * **The whole contract rather than a version or a digest over it.** {@link RigContract.version} is
    * the *format's* and does not move when a slot's size or pivot does, so it cannot tell one
