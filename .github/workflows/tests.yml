@@ -1,7 +1,11 @@
 name: Tests
 
-# The verification gate CLAUDE.md requires locally, run by GitHub on every push and every pull
-# request — and, through `workflow_call`, on the exact commit `deploy.yml` is about to publish.
+# The verification gate CLAUDE.md requires locally, run by GitHub on every push to every branch —
+# and, through `workflow_call`, on the exact commit `deploy.yml` is about to publish.
+#
+# It is also the gate `main` now stands behind. The ruleset on the default branch requires this
+# workflow's four checks on the commit being merged or pushed, so a run here is no longer advice
+# that a reader may take or leave (issue #297).
 #
 # Until this file existed the gate ran in one place only: a manual deploy. CodeQL ran on every
 # push and nothing else did, so a commit that failed to type-check, lint, format, test or build
@@ -10,23 +14,31 @@ name: Tests
 # worktree, so the combination that actually reaches the branch is the one nobody ran the gate
 # against. This runs it there.
 #
-# It does not replace the local gate. A push that fails here has already reached `main`; the point
-# is that it is reported in four minutes rather than at the next release.
+# It does not replace the local gate. Running it here is what makes the branch's commit landable at
+# all, and running it locally first is what stops four minutes being spent to learn that.
 on:
-  # `main` is where the gap was: several agents merge into it locally and push, so the combination
-  # that lands is one nobody ran the gate against. Other branches are covered as pull requests
-  # instead of as pushes, which is also what stops a same-repository pull request — every Dependabot
-  # bump is one — being checked twice for one commit.
+  # Every branch, and no `pull_request` trigger, because a required status check reads the check
+  # runs attached to a COMMIT. A `push` run attaches its four to the commit that was pushed, and
+  # that one set then answers for the branch, for a pull request opened from it, and for a
+  # fast-forward of `main` onto it. Adding `pull_request` back would check the same commit twice.
+  #
+  # `main` is where the gap was: several agents land into it concurrently and each verifies its own
+  # worktree, so the combination that reaches the branch is one nobody ran the gate against. Every
+  # other branch is here because the ruleset on `main` now requires these four checks on whatever
+  # is merged or pushed, and a run of this workflow is the only thing that can put them there.
+  #
+  # `branches`, not a bare `push`, so a `v*` release tag does not re-run a gate `deploy.yml` has
+  # already run through `workflow_call` on that exact commit.
+  #
+  # A pull request from a FORK therefore gets no run at all, because pushing to a fork raises no
+  # event here, and its four checks stay expected forever. For an OUTSIDE author that is the
+  # intended end: `close-external-pull-requests.yml` closes their pull request on sight. A
+  # collaborator's fork is exempt from that workflow, so a collaborator branches in this
+  # repository rather than in a fork.
   push:
-    branches: [main]
-  pull_request:
+    branches: ['**']
   workflow_call:
     inputs:
-      sha:
-        description: 'Commit to check out. Leave empty to gate the commit that triggered the run.'
-        required: false
-        default: ''
-        type: string
       upload-dist:
         description: 'Upload the built dist/ as an artifact named "dist", for a caller that deploys it.'
         required: false
@@ -43,9 +55,13 @@ permissions:
 # verdict. A `workflow_call` run is deliberately in a different group and is never cancelled: it is
 # the gate a release is waiting on, and `github.event_name` inside a called workflow is the
 # caller's event, so a push landing on `main` mid-release cannot cancel the deploy's gate.
+#
+# `main` is excluded for a different reason. A commit that reaches it has already passed, so its
+# run there is a record rather than a verdict — and a cancelled run would leave a commit that is
+# on `main` displaying `cancelled` where the four greens ought to be.
 concurrency:
   group: tests-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
 
 jobs:
   # This repository is PUBLIC, and a commit's contents are permanent from the moment they are
@@ -66,13 +82,12 @@ jobs:
   # because those bytes are not present until something decompresses them, and nothing here does;
   # nor one in an encoding laid out some other way, such as EBCDIC.
   #
-  # Running it on every push and every pull request is the change: the deploy ran this against the
+  # Running it on every push to every branch is the change: the deploy ran this against the
   # commit it was about to publish, which is the last moment it can be asked, and by then the value
   # has been on `main` for however long it sat there.
-  # Every job checks out `inputs.sha || github.sha`: the commit `deploy.yml` resolved when this
-  # workflow was called, and the commit the event names otherwise. The two differ whenever a release
-  # wrote a version bump, and gating the wrong one of them is the failure that expression exists to
-  # prevent.
+  # Every job checks out `github.sha` explicitly. Inside a reusable workflow that is the CALLER's
+  # commit, so a deploy gates the ref it was dispatched against — the same commit it builds, ships
+  # and tags.
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
@@ -80,7 +95,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Set up Node
         # No `cache: npm` — this job installs nothing. The scanner has no dependencies and reads
@@ -103,7 +118,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -134,7 +149,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -166,7 +181,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -199,7 +214,7 @@ jobs:
           [ "$missing" -eq 0 ] || exit 1
           echo "dist/ carries the app shell, the SPA 404 fallback, the service worker and the manifest."
 
-      # Only for a caller that is going to publish it. A push or a pull request leaves the input at
+      # Only for a caller that is going to publish it. A push leaves the input at
       # its default and uploads nothing, so the ordinary gate costs no storage — and a release gets
       # to deploy the exact bytes every check above was run against, rather than a second build of
       # the same commit that nothing checked. One day is long enough: the artefact is consumed by

@@ -1133,8 +1133,8 @@
   /*
    * The selection highlight, which is a solid role fill carrying text.
    *
-   * `--color-ink` on it measures **2.04:1** and is the pairing CLAUDE.md's design-token rule names
-   * as the mistake the rule exists to stop: no tone on the ink ramp reaches 4.5:1 on *any* solid
+   * `--color-ink` on it measures **2.04:1** and is the pairing the design-token rule exists to
+   * stop: no tone on the ink ramp reaches 4.5:1 on *any* solid
    * role fill this app paints, the best of the eighteen being 3.07:1. The near-black is not the
    * better of two workable choices, it is the only half of the palette that can sit on a role
    * colour at all — here it measures **8.04:1**, and the accent the reader picked does not move
