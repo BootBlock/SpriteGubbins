@@ -42,7 +42,7 @@ const CODE_LINE_TARGET = 150;
  * declaration too.
  *
  * **This is not a blanket pass for `src/constants/`.** That directory holds small resolvers as well
- * as declarations — `resolveDirectionSet`, `paletteFor`, `directionSetChoices` — and a long one of
+ * as declarations — `resolveDirectionSet`, `machinePaletteFor`, `directionSetChoices` — and a long one of
  * those is exactly what the law is about. It would also be a directory violation under the
  * separation-of-concerns law two bullets down, so a file arguing its way onto this list on the
  * strength of its folder rather than its contents is answering the wrong rule.

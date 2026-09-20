@@ -22,7 +22,7 @@ const SHEET = { name: 'returned-sheet.png', image: createImage(4, 4) };
 
 const LOCK = {
   entries: [{ r: 40, g: 160, b: 60, a: 255 }],
-  setting: 'RESTRAINED_64_COLOR',
+  studioIdentity: 'RESTRAINED_64_COLOR',
   sheetName: 'returned-sheet.png',
 };
 

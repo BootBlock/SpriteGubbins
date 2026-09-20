@@ -139,6 +139,45 @@ describe('CustomPaletteField', () => {
     expect(pinned()).toEqual({ name: 'Dusk', entries: ['#102030'] });
   });
 
+  it('keeps the refusal live region in the document before there is anything to announce', () => {
+    // A region inserted with its first message is not announced, which is the whole of what it is
+    // for — and every answer this panel gives arrives after a file has been read, when nothing else
+    // on screen has moved.
+    const { container } = render(<CustomPaletteField />);
+
+    expect(container.querySelector('[aria-live="polite"]')).not.toBeNull();
+  });
+
+  it('says so when a file states nothing at all, rather than changing nothing in silence', async () => {
+    // A blank text file and a `.gpl` with nothing under its header both read as no colours and no
+    // faulty lines. Reported, they are a file the reader can see was read; unreported, the panel
+    // looks exactly as it did before they chose it.
+    render(<CustomPaletteField />);
+    await choose(
+      new File(['GIMP Palette\nName: Empty\nColumns: 0\n#\n'], 'empty.gpl', { type: 'text/plain' }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Nothing in empty.gpl read as a colour/)).toBeVisible();
+    });
+    expect(pinned()).toBeNull();
+  });
+
+  it('keeps the name the reader typed when the pasted list is edited again', async () => {
+    // The box re-reads on every keystroke and a pasted list names nothing, so taking its empty name
+    // would wipe out the typed one the moment a colour was added to the list.
+    const user = userEvent.setup();
+    render(<CustomPaletteField />);
+    await user.click(screen.getByRole('textbox', { name: 'Or paste the colours' }));
+    await user.paste('#102030');
+    await user.type(screen.getByRole('textbox', { name: 'Palette name' }), 'Dusk');
+
+    await user.click(screen.getByRole('textbox', { name: 'Or paste the colours' }));
+    await user.paste('\n#405060');
+
+    expect(pinned()).toEqual({ name: 'Dusk', entries: ['#102030', '#405060'] });
+  });
+
   it('drops the palette on Remove, and empties the box that pinned it', async () => {
     const user = userEvent.setup();
     render(<CustomPaletteField />);

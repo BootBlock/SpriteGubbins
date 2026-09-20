@@ -49,7 +49,7 @@ export interface PaletteTextReading {
   readonly name: string;
   /** The colours as `#RRGGBB`, deduplicated, in the order the text listed them. */
   readonly entries: readonly string[];
-  /** Every line that stated no colour, in the words the studio will show. */
+  /** The lines that stated no colour, in the words the studio will show — see {@link listed}. */
   readonly problems: readonly string[];
 }
 

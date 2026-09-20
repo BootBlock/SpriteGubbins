@@ -6,10 +6,15 @@ import { MAX_PALETTE_ENTRIES } from './pngPalette.ts';
 /**
  * What a custom palette has to be, wherever one arrives from.
  *
- * Two routes reach `OutputConfig.customPalette` and both come through here: the studio's own intake,
- * which has just read a file or a paste, and the storage layer, which is handed whatever a database
- * row holds. One gate rather than two, so a palette restored from a preset is the same object the
- * reader loaded and neither route can admit something the other would refuse.
+ * Every set of colours that reaches `OutputConfig.customPalette` comes through here: the studio's
+ * own intake, which has just read a file or a paste, and the storage layer, which is handed whatever
+ * a database row holds. One gate rather than two, so a palette restored from a preset is the same
+ * object the reader loaded and neither route can admit something the other would refuse.
+ *
+ * **Renaming a loaded palette does not pass through it**, and that is the division rather than a
+ * hole: the question here is which *colours* may be pinned, and a name the reader is typing is not a
+ * colour. Trimming it on the way past would be a control that fights back. `useCustomPaletteIntake`
+ * owns that route and says so at it.
  *
  * **It answers `null` rather than repairing.** An empty list is not a palette, and a list past the
  * ceiling is not one either — keeping the first 256 of 900 colours would pin a palette nobody chose

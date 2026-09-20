@@ -83,7 +83,7 @@ describe('saveQuantisePreset', () => {
       lockedPalette: {
         entries: [{ r: 1, g: 2, b: 3, a: 255 }],
         sheetName: 'armour.png',
-        setting: 'STRICT_32_COLOR',
+        studioIdentity: 'STRICT_32_COLOR',
       },
     });
     // Asserted on what reaches the backend, not on what comes back out of it. The reader builds a
@@ -188,7 +188,7 @@ describe('loadQuantisePreset', () => {
     const lockedPalette = {
       entries: [{ r: 1, g: 2, b: 3, a: 255 }],
       sheetName: 'armour.png',
-      setting: 'STRICT_32_COLOR',
+      studioIdentity: 'STRICT_32_COLOR',
     };
     useQuantiseStore.setState({ gridOverride: 6, lockedPalette });
 

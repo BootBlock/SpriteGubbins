@@ -13,7 +13,7 @@ import type { SubjectCategory, SubjectDefinition } from './subject.ts';
  *
  * Held whole rather than as a patch against the position before it, for the reason `DialHistory.entries`
  * gives in ./quantiseHistory.ts: every step has to produce a complete studio, and a set of seventeen
- * strings beside a configuration of twenty-nine is nothing to copy.
+ * strings beside a configuration of thirty is nothing to copy.
  */
 export interface StudioPosition {
   readonly category: SubjectCategory;

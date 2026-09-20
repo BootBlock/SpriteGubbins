@@ -95,6 +95,10 @@ function rule(palette: Palette, key: Rgba | null): string {
     const { approximates } = palette.space;
     const { offered, withheld } = partitionEntries(palette.space.entries, key);
     const count = String(offered.length);
+    // Singular where the list holds one. No machine in the library has fewer than four entries, so
+    // this could not arise until a palette could be the reader's own — and "one of the 1 colours" in
+    // the highest-weighted section of the prompt is a sentence that reads as a compiler fault.
+    const colours = offered.length === 1 ? 'colour' : 'colours';
     const whose = approximates === null && withheld.length === 0 ? ` of ${palette.name}` : '';
     // The caveat describes the machine's whole palette, so it counts what the key left out as well:
     // “the 3 values above are an sRGB approximation of the four shade levels” argues with itself.
@@ -104,7 +108,7 @@ function rule(palette: Palette, key: Rgba | null): string {
         : `The ${count} values above, with the ${spellNumber(withheld.length)} left out,`;
 
     return [
-      `Every pixel of every component is exactly one of the ${count} colours${whose}, listed below. No other colour appears on any component — not as a gradient, a blend, or an anti-aliased edge.`,
+      `Every pixel of every component is exactly one of the ${count} ${colours}${whose}, listed below. No other colour appears on any component — not as a gradient, a blend, or an anti-aliased edge.`,
       ...(key === null || withheld.length === 0 ? [] : [withheldSentence(withheld, key)]),
       nearest,
       formatEntries(offered),

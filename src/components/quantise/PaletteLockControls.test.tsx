@@ -39,7 +39,7 @@ function panel(overrides: Props = {}) {
     <PaletteLockControls
       resultPalette={RESULT}
       sheetName="armour.png"
-      studioSetting="RESTRAINED_64_COLOR"
+      studioIdentity="RESTRAINED_64_COLOR"
       superseded={null}
       busy={false}
       {...overrides}
@@ -72,7 +72,7 @@ describe('PaletteLockControls', () => {
     const lock = useQuantiseStore.getState().lockedPalette;
     expect(lock?.entries).toEqual(RESULT);
     expect(lock?.sheetName).toBe('armour.png');
-    expect(lock?.setting).toBe('RESTRAINED_64_COLOR');
+    expect(lock?.studioIdentity).toBe('RESTRAINED_64_COLOR');
   });
 
   it('offers the snap distance only once a palette is held', async () => {
@@ -94,7 +94,7 @@ describe('PaletteLockControls', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Re-lock from this sheet' }));
 
-    expect(useQuantiseStore.getState().lockedPalette?.setting).toBe('RESTRAINED_64_COLOR');
+    expect(useQuantiseStore.getState().lockedPalette?.studioIdentity).toBe('RESTRAINED_64_COLOR');
   });
 
   it('lets the palette go, and offers to take one again', async () => {

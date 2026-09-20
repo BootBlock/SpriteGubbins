@@ -6,17 +6,19 @@ interface FilePickerFieldProps {
   /**
    * What the chosen file is read for, shown on hovering or focusing the chooser.
    *
-   * A prop rather than one sentence written here, because the two callers do entirely different
-   * things with the image: one loads a sheet into the quantiser's pipeline, the other reads a palette
-   * out of one and writes it into the identity lock. What they share is the control, not the reason.
+   * A prop rather than one sentence written here, because the callers do entirely different things
+   * with the file: one loads a sheet into the quantiser's pipeline, one reads a palette out of a
+   * sheet and writes it into the identity lock, one reads the colours a project already uses, and
+   * one reads an engine's rig. What they share is the control, not the reason.
    */
   readonly tooltip: string;
   readonly acceptFile: (file: File | null | undefined) => void;
   /**
    * What the chooser offers, as the `accept` attribute spells it.
    *
-   * Required rather than defaulted to images: the third caller reads a JSON document rather than a
-   * picture, and a default would have offered it every PNG on the machine and nothing it can read.
+   * Required rather than defaulted to images: one caller reads a JSON document rather than a
+   * picture and another takes a picture or either of two text formats, so a default would have
+   * offered them every PNG on the machine and nothing else they can read.
    * A picker that filters for the wrong kind of file is a control that refuses what the user just
    * chose, after they chose it.
    */
@@ -28,9 +30,9 @@ interface FilePickerFieldProps {
 /**
  * A labelled file input — the click-to-choose half of every drop target in the app.
  *
- * The drag half is owned elsewhere and differently for each of the two callers — `useImageDrop` on
- * the window for the quantiser, `useFileDropTarget` on the element for the studio's palette capture
- * — and this is the other half, which was copied rather than shared the first time. The class
+ * The drag half is owned elsewhere and differently — `useImageDrop` on the window for the
+ * quantiser, `useFileDropTarget` on the element for the two studio panels that take a file — and
+ * this is the other half, which was copied rather than shared the first time. The class
  * string, the `input.value = ''` reset and the label association are the solved problem, not the
  * presentation: the two callers wrap this in quite different surfaces — one a tab's primary panel,
  * the other a compact row — and that difference stays with them.

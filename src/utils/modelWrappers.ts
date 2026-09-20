@@ -98,7 +98,7 @@ export function wrapForModel(
      */
     readonly nativeGrid: boolean;
     /**
-     * Whether section 2 pinned a palette, from `paletteFor`.
+     * Whether section 2 pinned a palette, from `pinnedPalette`.
      *
      * Read by Sol for the same reason and on the same evidence. Deliberately *whether* rather than
      * which kind: ten of the nineteen palettes state a channel ladder instead of a colour list, and

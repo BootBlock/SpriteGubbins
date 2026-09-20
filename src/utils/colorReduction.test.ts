@@ -79,6 +79,15 @@ describe('colorPlanFor — what happens to the colours', () => {
     // Named for the reader rather than by the identifier, which names the control and not the set.
     expect(plan.setting).toBe('Dusk Harbour');
     expect(plan.effect).toContain('2 fixed colours');
+
+    // Singular where the list holds one, which only a palette the reader loaded can be.
+    const one = colorPlanFor(
+      studioColors('CUSTOM', 'STRICT_32_COLOR', { name: '', entries: ['#102030'] }),
+      null,
+      0,
+    );
+    expect(one.effect).toContain('1 fixed colour');
+    expect(one.effect).not.toContain('1 fixed colours');
   });
 
   it('hands the quantiser opaque colours, since a palette entry is a colour and not a compositing state', () => {
@@ -134,7 +143,7 @@ const LOCK = {
     { r: 10, g: 20, b: 30, a: 255 },
     { r: 200, g: 100, b: 50, a: 255 },
   ],
-  setting: 'RESTRAINED_64_COLOR',
+  studioIdentity: 'RESTRAINED_64_COLOR',
   sheetName: 'armour.png',
 } as const;
 
@@ -184,9 +193,33 @@ describe('colorPlanFor — a locked palette', () => {
   it('reports the studio setting a re-lock should record, not the lock in force', () => {
     // What `PaletteLockControls` stamps a new lock with. Reading `setting` instead would stamp it
     // with the name of the palette it replaced, and the two could never part company again.
-    expect(colorPlanFor(studioColors('FREE', 'STRICT_32_COLOR'), LOCK, 20).studioSetting).toBe(
+    expect(colorPlanFor(studioColors('FREE', 'STRICT_32_COLOR'), LOCK, 20).studioIdentity).toBe(
       'STRICT_32_COLOR',
     );
+  });
+
+  it('decides a custom palette’s supersession on its colours rather than on its name', () => {
+    // A name cannot answer "has the studio moved" for a palette the reader loaded: a pasted list
+    // states none at all, so two entirely different ones are both called `Custom`. Locked under one
+    // and left standing over the other, the notice this field exists for would never appear.
+    const first = studioColors('CUSTOM', 'STRICT_32_COLOR', { name: '', entries: ['#102030'] });
+    const second = studioColors('CUSTOM', 'STRICT_32_COLOR', { name: '', entries: ['#405060'] });
+    const lock = { ...LOCK, studioIdentity: colorPlanFor(first, null, 0).studioIdentity };
+
+    expect(colorPlanFor(first, lock, 20).superseded).toBeNull();
+    expect(colorPlanFor(second, lock, 20).superseded).toBe('Custom');
+  });
+
+  it('supersedes nothing when a palette is renamed and its colours are not', () => {
+    // The other direction, and the reason the identity is the colours rather than name-plus-colours:
+    // renaming a pinned palette changes no pixel of the sheet, so there is nothing to report.
+    const before = studioColors('CUSTOM', 'STRICT_32_COLOR', { name: 'Dusk', entries: ['#102030'] });
+    const after = studioColors('CUSTOM', 'STRICT_32_COLOR', { name: 'Dusk Harbour', entries: ['#102030'] });
+    const lock = { ...LOCK, studioIdentity: colorPlanFor(before, null, 0).studioIdentity };
+
+    expect(colorPlanFor(after, lock, 20).superseded).toBeNull();
+    // What the tab calls it does move, because that is what the reader just changed.
+    expect(colorPlanFor(after, lock, 20).studioSetting).toBe('Dusk Harbour');
   });
 
   it('supersedes nothing at a snap distance of zero, where it reaches nothing', () => {

@@ -8,10 +8,10 @@ import type { DragEventHandler } from 'react';
  * `dropHandlers` is spread onto whichever element draws the target; `isDraggedOver` is what that
  * element styles itself by.
  *
- * **One caller, and it stays a hook.** The quantiser's drop zone was the second, until the Quantise
- * tab took the gesture for its whole page and left the studio's identity-lock control on its own —
- * see `useImageDrop`, which says why the page-wide claim is right on that tab and wrong on a control
- * in a form. What is left here is not a wrapped `useState`: the two `preventDefault()` calls and the
+ * **Two callers, both panels in a form, and it stays a hook.** The quantiser's drop zone was a
+ * third, until the Quantise tab took the gesture for its whole page and left the studio's own
+ * panels holding it — see `useImageDrop`, which says why the page-wide claim is right on that tab
+ * and wrong on a control in a form. What is left here is not a wrapped `useState`: the two `preventDefault()` calls and the
  * `dragleave`-from-a-child test below are platform knowledge with a documented reason each, and the
  * guard's own test renders a real target rather than a mime precisely so the composition it asserts
  * is the one the app runs.

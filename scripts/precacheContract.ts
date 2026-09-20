@@ -824,17 +824,24 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * takes a file, a drop or a paste, and its guidance. The largest part is the panel and its words,
  * and nearly all of it is reached by the entry chunk, because the studio is the first view and the
  * prompt compiles on it. Measured against `main` at `aa2f794`, rebuilt from the same lockfile —
- * **2407.57 KiB across 49 entries** on the build's summary line — this build reports **2416.84
- * across 49** on the same line, a delta of **9.27** that crossed a ceiling the base sat 0.43 under.
- * No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the
- * two `dist/assets` listings, 5.77 KiB of it lands in `StudioTab`, which is the panel, the intake
- * and the two guidance cards; 1.2 in `useUIStore` and 1.08 in `quantiseDials`, which is where this
- * app's constant data is bundled; 0.98 in `database`, which is the storage gate; and 0.23 in the
- * stylesheet. `SheetStepButtons` fell 0.4, which is the only entry to move the other way.
+ * **2407.57 KiB across 49 entries** — this build reports **2417.63 across 49**, a delta of **10.06**
+ * that crossed a ceiling the base sat 0.43 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets` listings, 6.00 KiB of
+ * it lands in `StudioTab`, which is the panel, the intake and the three guidance cards; 1.33 in
+ * `database`, which is the storage gate; 1.20 in `useUIStore` and 1.16 in `quantiseDials`, which is
+ * where this app's constant data is bundled; 0.35 in `index`; and 0.23 in the stylesheet.
+ * `SheetStepButtons` fell 0.47, the only entry to move the other way.
  *
- * 2417 leaves **0.16 KiB**, the smallest whole figure over the build.
+ * **Both figures are the ones `assertPrecacheContract` receives**, taken by forcing the ceiling to
+ * zero in each tree — which is what the note above warns is not the same quantity as the summary
+ * line. On these two builds they agree: the summary reports 49 entries and the same KiB on each
+ * side, where the 2026-09-11 note recorded 64 against 61. A branch that reads the summary and sets
+ * the ceiling from it can still land 0.01 over, which is how this ceiling was first set to 2417 and
+ * failed its own build.
+ *
+ * 2418 leaves **0.37 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2417;
+export const PRECACHE_CEILING_KIB = 2418;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

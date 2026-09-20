@@ -237,8 +237,14 @@ export type ColorReduction =
 export interface LockedPalette {
   /** The colours, most-used first, opaque — see `paletteEntriesFrom` for the order and the dedupe. */
   readonly entries: readonly Rgba[];
-  /** The name of the studio colour setting in force when the palette was taken — a `ColorPlan.setting`. */
-  readonly setting: string;
+  /**
+   * What the studio's colour setting *was* when the palette was taken — a `ColorPlan.studioIdentity`.
+   *
+   * An identity rather than a name, because the only question asked of it is whether the studio has
+   * moved since. A name cannot answer that for a palette the reader loaded: two of them may be
+   * called the same thing, or nothing at all, and renaming one changes no colour on the sheet.
+   */
+  readonly studioIdentity: string;
   /** The file the sheet it was taken from came from, so the panel can say which sheet these are. */
   readonly sheetName: string;
 }
@@ -254,7 +260,14 @@ export interface LockedPalette {
 export interface ColorPlan {
   /** What the palette step will do, or `null` to leave the colours alone. */
   readonly reduction: ColorReduction | null;
-  /** The stored identifier of whichever studio setting decided it — a palette, or the budget. */
+  /**
+   * What the tab calls whichever studio setting decided it — a palette, or the budget.
+   *
+   * A stored identifier for everything the app declares, because that is the term the rest of the
+   * tab is written in. A palette the reader loaded has no identifier worth showing, so it is their
+   * own name for the set, or `Custom` where they gave none. See {@link studioIdentity} for the half
+   * of this that has to survive a rename.
+   */
   readonly setting: string;
   /** What that does to the image, as a clause following the setting's name. */
   readonly effect: string;
@@ -267,6 +280,16 @@ export interface ColorPlan {
    * {@link setting} carries whenever no lock is in force.
    */
   readonly studioSetting: string;
+  /**
+   * The same setting as a value that identifies it, which is what a lock records.
+   *
+   * Separate from {@link studioSetting} because the two answer different questions, and one string
+   * could not answer both once a palette could be the reader's own: `studioSetting` is what the tab
+   * *says*, and this is what it *is*. For everything the app declares they are the same string; for
+   * a loaded palette this carries the colours, so renaming one supersedes nothing and swapping one
+   * for another of the same name supersedes as it should.
+   */
+  readonly studioIdentity: string;
   /**
    * The studio colour setting a locked palette is overriding, or `null` where it overrides nothing.
    *

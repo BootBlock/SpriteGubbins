@@ -31,12 +31,16 @@ const PASTE_ROWS = 4;
  *
  * **What was read is stated where it was read**, rather than through a notification: the colours
  * appear as swatches directly below, under `PaletteField`'s own strip, and anything that would not
- * read is listed here beside the control that failed to read it.
+ * read is announced here beside the control that failed to read it.
+ *
+ * **Every write to the field goes through `useCustomPaletteIntake`**, the rename included. Nothing
+ * here reaches `setOutputField` directly, so there is one place to read to know what can be written
+ * to a pinned palette and what each route does to it.
  */
 export function CustomPaletteField() {
   const customPalette = useOutputStore((state) => state.output.customPalette);
-  const setOutputField = useOutputStore((state) => state.setOutputField);
-  const { problems, oversized, acceptFile, acceptPaste, reduceOversized, clear } = useCustomPaletteIntake();
+  const { problems, oversized, acceptFile, acceptPaste, reduceOversized, rename, clear } =
+    useCustomPaletteIntake();
   const { isDraggedOver, dropHandlers } = useFileDropTarget(acceptFile);
 
   // The box's own text, and the one piece of state here that is not the configuration's. What was
@@ -78,9 +82,7 @@ export function CustomPaletteField() {
             value={customPalette.name}
             placeholder="Dusk Harbour"
             maxLength={CUSTOM_PALETTE_NAME_LIMIT}
-            onChange={(value) => {
-              setOutputField('customPalette', { ...customPalette, name: value });
-            }}
+            onChange={rename}
           />
 
           <div className="flex flex-wrap items-center gap-2">
@@ -105,32 +107,47 @@ export function CustomPaletteField() {
         </>
       )}
 
-      {oversized !== null && (
-        <div role="status" className="flex flex-wrap items-center gap-2">
-          <p className="text-xs leading-relaxed text-ink-muted">
-            {oversized.name} holds {oversized.colors} colours, which is more than the {MAX_PALETTE_ENTRIES} a
-            palette can carry, so nothing has been pinned. It is a sheet rather than a swatch — reduce it if
-            those are the colours you meant.
-          </p>
-          <ControlTooltip hint="Reduce" text={STUDIO_ACTION_TOOLTIPS.reduceCustomPalette}>
-            <button
-              type="button"
-              className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink transition-colors hover:border-accent/50 hover:bg-foundry-700"
-              onClick={reduceOversized}
-            >
-              Reduce to {MAX_PALETTE_ENTRIES}
-            </button>
-          </ControlTooltip>
-        </div>
-      )}
+      {/*
+        A live region, because every answer this panel gives arrives after a file has been read
+        rather than in response to the press: nothing moves on screen at the moment the reader acts,
+        so a screen reader would otherwise announce nothing at all.
 
-      {problems.length > 0 && (
-        <ul role="status" className="flex flex-col gap-1 text-xs leading-relaxed text-rose">
+        **Rendered always, with only its contents conditional** — the rule `RigContractField` and
+        `SpriteCellControls` state at their own call sites: a region inserted into the document in
+        the same commit as its text is not reliably announced, so a region that appears with the
+        first refusal announces nothing, which is the whole of what it was added for. Empty it costs
+        nothing: it has no padding and no children.
+
+        One region for both answers, because they are the same event to the reader — what happened
+        to the file they just handed over — and two live regions announcing in an order neither
+        controls is worse than one.
+      */}
+      <div aria-live="polite" className="flex flex-col gap-2">
+        {oversized !== null && (
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs leading-relaxed text-ink-muted">
+              {oversized.name} holds {oversized.colors} colours, which is more than the {MAX_PALETTE_ENTRIES}{' '}
+              a palette can carry, so nothing has been pinned. It is a sheet rather than a swatch — reduce it
+              if those are the colours you meant.
+            </p>
+            <ControlTooltip hint="Reduce" text={STUDIO_ACTION_TOOLTIPS.reduceCustomPalette}>
+              <button
+                type="button"
+                className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink transition-colors hover:border-accent/50 hover:bg-foundry-700"
+                onClick={reduceOversized}
+              >
+                Reduce to {MAX_PALETTE_ENTRIES}
+              </button>
+            </ControlTooltip>
+          </div>
+        )}
+
+        <ul className="flex flex-col gap-1 text-xs leading-relaxed text-rose">
           {problems.map((problem) => (
             <li key={problem}>{problem}</li>
           ))}
         </ul>
-      )}
+      </div>
     </section>
   );
 }

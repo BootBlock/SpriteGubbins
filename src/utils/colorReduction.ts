@@ -61,10 +61,16 @@ export function colorPlanFor(
     reduction: { kind: 'LOCKED', entries: lock.entries, snap },
     setting: 'Locked palette',
     studioSetting: studio.setting,
+    studioIdentity: studio.studioIdentity,
     effect: `every colour within ${String(snap)} of the ${String(count)} colours locked from ${lock.sheetName} taken to it, the rest kept as they are`,
     // Named only where the studio has moved since the lock was taken. A lock taken under the
     // setting still in force is not overriding anything a reader would want told about it.
-    superseded: studio.setting === lock.setting ? null : studio.setting,
+    //
+    // Asked of the identity rather than the name, because a palette the reader loaded has a name
+    // they can change and may never have given: two different pasted lists are both called `Custom`,
+    // and comparing what the tab *says* would report no supersession across a palette swap and a
+    // false one across a rename.
+    superseded: studio.studioIdentity === lock.studioIdentity ? null : studio.setting,
   };
 }
 
@@ -86,6 +92,7 @@ function studioPlan({ paletteLimit: limit, ...source }: StudioColorSettings): Co
           reduction: null,
           setting: limit,
           studioSetting: limit,
+          studioIdentity: limit,
           effect: 'no colour budget, palette left alone',
           superseded: null,
         }
@@ -93,6 +100,7 @@ function studioPlan({ paletteLimit: limit, ...source }: StudioColorSettings): Co
           reduction: { kind: 'MAX_COLORS', maxColors },
           setting: limit,
           studioSetting: limit,
+          studioIdentity: limit,
           effect: `reduced to ${String(maxColors)} colours chosen from the sheet`,
           superseded: null,
         };
@@ -104,12 +112,21 @@ function studioPlan({ paletteLimit: limit, ...source }: StudioColorSettings): Co
   // a lock taken over it records.
   const name = pinned.id === 'CUSTOM' ? pinned.name : pinned.id;
 
+  // What a lock records, so it can tell later whether this setting has moved. A machine is its own
+  // id; the reader's own palette is its colours, because that is the only part of it that decides
+  // the sheet — the name is theirs to change and two of them may share one.
+  const identity =
+    pinned.space.kind === 'FIXED' && pinned.id === 'CUSTOM'
+      ? `${pinned.id}:${pinned.space.entries.join(',')}`
+      : pinned.id;
+
   if (pinned.space.kind === 'CHANNEL_DEPTH') {
     const levels = channelLevels(pinned.space.bitsPerChannel).length;
     return {
       reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: pinned.space.bitsPerChannel },
       setting: name,
       studioSetting: name,
+      studioIdentity: identity,
       effect: `every channel snapped to the machine’s ${String(levels)} levels`,
       superseded: null,
     };
@@ -125,6 +142,7 @@ function studioPlan({ paletteLimit: limit, ...source }: StudioColorSettings): Co
       reduction: null,
       setting: name,
       studioSetting: name,
+      studioIdentity: identity,
       effect: 'unreadable, so the colours are left alone',
       superseded: null,
     };
@@ -134,7 +152,10 @@ function studioPlan({ paletteLimit: limit, ...source }: StudioColorSettings): Co
     reduction: { kind: 'PALETTE', entries },
     setting: name,
     studioSetting: name,
-    effect: `mapped onto its ${String(entries.length)} fixed colours`,
+    studioIdentity: identity,
+    // Singular where the list holds one, which no machine in the library does and a palette the
+    // reader pasted may: "mapped onto its 1 fixed colours" is a readout that reads as a fault.
+    effect: `mapped onto its ${String(entries.length)} fixed ${entries.length === 1 ? 'colour' : 'colours'}`,
     superseded: null,
   };
 }

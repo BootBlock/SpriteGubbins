@@ -83,13 +83,14 @@ export function PaletteField() {
  *
  * It says "the colour budget" rather than "the colour budget *below*" because there is nothing below
  * once this text is on screen: `RenderStyleFields` withdraws that control on the same
- * `paletteFor(…) === null` this sentence hangs off, so the two are complementary by construction
- * rather than by coincidence.
+ * `pinnedPalette(…) === null` this sentence hangs off, so the two are complementary by construction
+ * rather than by coincidence — including for a `CUSTOM` palette with nothing loaded, where the
+ * budget control stays and this sentence is absent.
  */
 function summarise(palette: Palette): string {
   const size =
     palette.space.kind === 'FIXED'
-      ? `${String(palette.space.entries.length)} fixed colours`
+      ? `${String(palette.space.entries.length)} fixed ${palette.space.entries.length === 1 ? 'colour' : 'colours'}`
       : `${String(channelSpaceSize(palette.space.bitsPerChannel))} colours, ` +
         `${String(channelLevels(palette.space.bitsPerChannel).length)} levels per channel`;
 

@@ -131,16 +131,20 @@ export function sheetDigest(category: SubjectCategory, subject: SheetSubject, ou
  * two supersessions stack rather than collide.
  */
 function colourDigest(output: OutputConfig, pass: ValidationPass | null): string {
-  if (pinnedPalette(output) === null) return pass === null ? output.paletteLimit : '';
+  const pinned = pinnedPalette(output);
+  if (pinned === null) return pass === null ? output.paletteLimit : '';
 
   // A machine is named by its stored identifier, as every other setting in this header is. The
   // reader's own palette has none worth showing — `CUSTOM` names the control rather than the
-  // colours — so it is named and counted instead, which is what tells two of them apart. The field
-  // is read directly rather than off the resolved palette because `pinnedPalette` above has already
-  // settled which of the two kinds this is, and asking its space a second time would be a question
-  // with one possible answer.
+  // colours — so it is named and counted instead, which is what tells two of them apart. The name
+  // comes off the resolved palette rather than the stored field, because a palette the reader never
+  // named has one only once `pinnedPalette` has supplied it; the count comes off the field, because
+  // asking the resolved palette's space for it would be a question with one possible answer.
   const custom = output.palette === 'CUSTOM' ? output.customPalette : null;
-  return custom === null ? output.palette : `${custom.name} (${String(custom.entries.length)} colours)`;
+  if (custom === null) return pinned.id;
+
+  const count = custom.entries.length;
+  return `${pinned.name} (${String(count)} ${count === 1 ? 'colour' : 'colours'})`;
 }
 
 /**

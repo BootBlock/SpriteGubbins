@@ -11,8 +11,9 @@ import { useShowToast } from './useShowToast.ts';
  * quantiser's maths and the identity palette can be tested without a DOM.
  *
  * **Nothing is uploaded.** The file is decoded in the tab and the pixels never leave it. Of the
- * things this app reads from disk — the others being the preset JSON `usePresetStore` imports and
- * the rig contract `RigContractField` loads — this is the one the no-network rule matters most for:
+ * things this app reads from disk — the others being the preset JSON `usePresetStore` imports, the
+ * rig contract `RigContractField` loads and the palette `CustomPaletteField` takes — this is the
+ * one the no-network rule matters most for:
  * an image the user is about to ship is exactly the payload that must never go anywhere.
  *
  * Paste and the page-wide drop are deliberately **not** here — they are `useImagePaste` and

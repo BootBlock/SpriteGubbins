@@ -29,7 +29,8 @@ import { QuantisedSheetCaptureButton } from './QuantisedSheetCaptureButton.tsx';
  * No paste route and no page-wide drop, unlike the Quantise tab: this is one control among a form's
  * many, and a window listener here would rewrite the lock when the user pasted or dropped something
  * meant for somewhere else entirely. So the drag is answered on this element — see
- * `useFileDropTarget`, whose one remaining caller this is.
+ * `useFileDropTarget`, which `CustomPaletteField` answers its own drag through for the same
+ * reason.
  */
 export function IdentityPaletteCapture() {
   const capture = useIdentityPaletteCapture();

@@ -112,7 +112,7 @@ export function QuantiseControlColumn({
       <PaletteLockControls
         resultPalette={quantised?.result.paletteEntries ?? null}
         sheetName={source.name}
-        studioSetting={colorPlan.studioSetting}
+        studioIdentity={colorPlan.studioIdentity}
         superseded={colorPlan.superseded}
         busy={busy}
       />

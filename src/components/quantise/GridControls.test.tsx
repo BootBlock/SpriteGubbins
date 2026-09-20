@@ -16,6 +16,7 @@ const COLOR_PLAN: ColorPlan = {
   reduction: null,
   setting: 'UNRESTRICTED',
   studioSetting: 'UNRESTRICTED',
+  studioIdentity: 'UNRESTRICTED',
   effect: 'left as they are',
   superseded: null,
 };

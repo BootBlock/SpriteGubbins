@@ -22,13 +22,14 @@ interface PaletteLockControlsProps {
   /** The dropped file's name, which is what the lock records the colours as coming from. */
   readonly sheetName: string;
   /**
-   * The studio's own colour setting, which is what a lock taken now records.
+   * The studio's own colour setting as the value that identifies it, which is what a lock records.
    *
-   * From the plan rather than read again from the studio, and `studioSetting` rather than `setting`:
-   * with a lock already held the plan's `setting` is that lock's, so re-locking would stamp the new
-   * palette with the name of the one it replaced. `ColorPlan` says why both are carried.
+   * From the plan rather than read again from the studio, and `studioIdentity` rather than `setting`
+   * for two reasons `ColorPlan` states in full: with a lock already held the plan's `setting` is
+   * that lock's, so re-locking would stamp the new palette with the name of the one it replaced —
+   * and a name cannot say whether the studio has moved when the palette is one the reader loaded.
    */
-  readonly studioSetting: string;
+  readonly studioIdentity: string;
   /**
    * The studio setting the held lock is overriding, where the two have parted company.
    *
@@ -67,7 +68,7 @@ interface PaletteLockControlsProps {
 export function PaletteLockControls({
   resultPalette,
   sheetName,
-  studioSetting,
+  studioIdentity,
   superseded,
   busy,
 }: PaletteLockControlsProps) {
@@ -92,7 +93,7 @@ export function PaletteLockControls({
     // type. The three conditions are one expression, deliberately: two spellings of when a lock may
     // be taken is how a button comes to offer a press its handler declines.
     if (!takeable) return;
-    lockPalette({ entries: resultPalette, setting: studioSetting, sheetName });
+    lockPalette({ entries: resultPalette, studioIdentity, sheetName });
   };
 
   return (

@@ -47,7 +47,7 @@ describe('PaletteExportControls', () => {
   it('offers a held lock whether or not there is a result beside it', () => {
     useQuantiseStore.getState().lockPalette({
       entries: [GREEN],
-      setting: 'RESTRAINED_64_COLOR',
+      studioIdentity: 'RESTRAINED_64_COLOR',
       sheetName: 'cyborg_monk.png',
     });
     show(null);
@@ -61,7 +61,7 @@ describe('PaletteExportControls', () => {
   it('keeps the two palettes apart when both are on offer', () => {
     useQuantiseStore.getState().lockPalette({
       entries: [GREEN],
-      setting: 'RESTRAINED_64_COLOR',
+      studioIdentity: 'RESTRAINED_64_COLOR',
       sheetName: 'armour.png',
     });
     show([GREEN, RED]);

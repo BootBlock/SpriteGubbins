@@ -158,6 +158,48 @@ describe('renderStyleDigest', () => {
     expect(digest).not.toContain('STRICT_32_COLOR');
   });
 
+  it('names and counts a palette the reader loaded, since it has no identifier to show', () => {
+    // Two custom palettes differ in nothing else the header carries, so the count is what tells a
+    // folded group apart from the one the reader had before it.
+    const digest = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
+      withOutput({
+        palette: 'CUSTOM',
+        customPalette: { name: 'Dusk Harbour', entries: ['#102030', '#405060'] },
+        paletteLimit: 'STRICT_32_COLOR',
+      }),
+    );
+
+    expect(digest).toContain('Dusk Harbour (2 colours)');
+    expect(digest).not.toContain('STRICT_32_COLOR');
+  });
+
+  it('calls an unnamed palette what every other reader calls it', () => {
+    // A pasted list names nothing, and the header would otherwise open on a bare count with a
+    // leading space while the prompt and the Quantise tab both called it `Custom`.
+    const digest = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
+      withOutput({ palette: 'CUSTOM', customPalette: { name: '', entries: ['#102030'] } }),
+    );
+
+    expect(digest).toContain('Custom (1 colour)');
+  });
+
+  it('leaves the budget standing under a CUSTOM palette with nothing loaded', () => {
+    // Choosing the option is not pinning a palette: the prompt keeps its budget line and the
+    // control stays on screen, so the header has to keep reporting the budget too.
+    const digest = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
+      withOutput({ palette: 'CUSTOM', paletteLimit: 'STRICT_32_COLOR' }),
+    );
+
+    expect(digest).toContain('STRICT_32_COLOR');
+    expect(digest).not.toContain('CUSTOM');
+  });
+
   it('drops the three settings a validation pass supersedes, and keeps the light a clay pass uses', () => {
     // `RenderStyleFields` withdraws those three controls on the same lookup, so a header naming them
     // would report a configuration the open group no longer offers — and, worse, one the prompt no

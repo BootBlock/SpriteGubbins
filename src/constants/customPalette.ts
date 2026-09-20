@@ -1,3 +1,5 @@
+import { PALETTE_FILE_TYPES } from './paletteFiles.ts';
+
 /**
  * What the reader's own palette is called with no name, how long a name it may carry, and which
  * files the chooser offers to read one out of.
@@ -11,12 +13,21 @@
 /**
  * What a palette is called when nothing named it.
  *
- * It reaches the compiled prompt mid-sentence — "every pixel is one of the 24 colours of your own
- * palette" — so it is a phrase rather than a label, and it is addressed to the reader in the voice
- * the rest of the app's copy is written in. A pasted list names nothing, and neither does a swatch
- * picture whose file name was `palette.png`, so this is the common case rather than the odd one.
+ * **A label, not a phrase**, because a palette's name is read into four different sentences and only
+ * a label fits all four. It follows an article on the Quantise tab — "the Custom setting travels
+ * with the sheet" — takes the word "palette" after it in the download's accessible name, stands
+ * alone in the studio's collapsed header, and follows a dash in the compiled prompt's heading. A
+ * possessive phrase read correctly in the prompt and broke the other three: "the your own palette
+ * setting" and "Download your own palette palette".
+ *
+ * The one sentence it reads less well in is section 2's "one of the 24 colours of Custom", which
+ * states it as though the reader had named their palette that. A reader who minds names it, and a
+ * name is the only thing that could read better there.
+ *
+ * A pasted list names nothing, and neither does a swatch picture whose file name was `palette.png`,
+ * so this is the common case rather than the odd one.
  */
-export const DEFAULT_CUSTOM_PALETTE_NAME = 'your own palette';
+export const DEFAULT_CUSTOM_PALETTE_NAME = 'Custom';
 
 /**
  * How long that name may be.
@@ -29,11 +40,26 @@ export const DEFAULT_CUSTOM_PALETTE_NAME = 'your own palette';
 export const CUSTOM_PALETTE_NAME_LIMIT = 60;
 
 /**
+ * A second spelling of the hex list, for the readers whose editor saves it as `.hex`.
+ *
+ * Not a fourth format and not a download this app offers: `parsePaletteText` reads it as the hex
+ * list it is. It is here rather than in `PALETTE_FILE_TYPES` because that record says what this app
+ * *writes*, and a chooser has to take what the reader already has.
+ */
+const ALSO_READ = '.hex';
+
+/**
  * What the palette chooser offers, as the `accept` attribute spells it.
  *
- * The three forms `PaletteDownload` writes, and nothing else. `.txt` is there because that is what a
- * browser saves a hex list as and what most palette sites hand out, and the media types sit beside
- * the extensions because a file dragged from a phone or a cloud drive often arrives with one and
- * not the other.
+ * **Derived from the formats `PaletteDownload` writes**, rather than written out again — the three
+ * of them, each with the extension and the media type `PALETTE_FILE_TYPES` records. A hand-written
+ * copy is a second place a fourth format would have to be added, and the one that would be
+ * forgotten is the one a reader could export and then not load back.
+ *
+ * Both spellings of each, because a file dragged from a phone or a cloud drive often arrives with a
+ * media type and no extension, or the other way about.
  */
-export const CUSTOM_PALETTE_ACCEPT = 'image/png,.png,.gpl,.txt,.hex,text/plain';
+export const CUSTOM_PALETTE_ACCEPT = [
+  ...new Set(Object.values(PALETTE_FILE_TYPES).flatMap((type) => [`.${type.extension}`, type.mediaType])),
+  ALSO_READ,
+].join(',');
