@@ -2,6 +2,7 @@ import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import type { ImageOutputConfig } from '../../types/output.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 import { sparseSubject } from './sparseSubject.ts';
+import { UNSUNG_SAVIOUR_HUMANOID_RIG } from './unsungSaviourRig.ts';
 
 /**
  * Presets encoding the Unsung Saviour art contract, so that project's art can be generated without
@@ -18,12 +19,19 @@ import { sparseSubject } from './sparseSubject.ts';
  * states outright that an absent attribute is the generator's to decide — so these presets ask for
  * exactly the constraints that matter and nothing else.
  *
- * **`spriteTargetSize` is the rig's, and a loaded rig contract supersedes it.** That game's Rig
- * Intake exports its skeleton as a file this app reads, and where one is loaded the assembled size
- * comes from its frame and the sheet's pieces from its slots — so the figure here is what these
- * presets state for a reader who has not loaded it, rather than a copy anyone has to keep in step
- * with the rig. Deleting it was considered and rejected: it leaves that reader holding a prompt
- * that states no size at all.
+ * **The character preset carries that game's rig, so the prompt states every piece's geometry.**
+ * `UNSUNG_SAVIOUR_HUMANOID_RIG` is its Rig Intake's own exported contract, and a contract is a field
+ * of the configuration a preset applies — so section 4 lists the fifteen pieces under the names the
+ * engine places them by, and section 5 gives each one its size, its joint end and where that joint
+ * sits in the frame. Without it the prompt can state the assembled figure and nothing else, and a
+ * model draws each limb to its own sense of proportion. See `unsungSaviourRig.ts` for why a copy is
+ * shipped rather than left to the reader to load.
+ *
+ * **`spriteTargetSize` is the rig's, and the contract supersedes it.** Where one is loaded the
+ * assembled size comes from its frame and the sheet's pieces from its slots, so the figure written
+ * here is what the two presets that carry no contract state, and what the character preset falls
+ * back to for a reader who removes it. Deleting it was considered and rejected: it leaves that
+ * reader holding a prompt that states no size at all.
  *
  * `EIGHT_COMPASS` is **not** superseded, and a contract has no opinion about it. How many facings
  * to generate is the reader's decision about this run rather than a property of the rig, and the
@@ -52,7 +60,7 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
     id: 'us-character-rig',
     name: 'Unsung Saviour — Character rig',
     description:
-      'A technical contract rather than a worked example — the projection, scale, palette discipline and rig geometry the Unsung Saviour project’s art requires, with the subject left for you to fill in.',
+      'The projection, scale and palette discipline Unsung Saviour’s art requires, carrying that engine’s own fifteen-piece Humanoid rig so each piece is asked for at the size and joint it is placed by. The subject is yours.',
     category: 'CHARACTER',
     subject: sparseSubject('CHARACTER', {
       exclusions:
@@ -62,6 +70,10 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
       ...US_SHARED,
       rigMode: 'CUTOUT_RIG',
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+      // The engine's own rig, so the inventory and the geometry are its numbers rather than this
+      // app's table and the reader's typing. It is the whole reason the preset exists as more than
+      // a projection and a palette.
+      rigContract: UNSUNG_SAVIOUR_HUMANOID_RIG,
       // Run once per compass direction: eight sheets of fifteen pieces is the 120-piece rig in
       // units a model actually delivers.
       directions: 'EIGHT_COMPASS',

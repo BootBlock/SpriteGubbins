@@ -840,8 +840,26 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * failed its own build.
  *
  * 2418 leaves **0.37 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2418 by the Unsung Saviour preset carrying that game's own rig.** Its character
+ * preset could state the assembled 48 × 96 px and nothing else, so the prompt had to admit outright
+ * that no single piece is that size. It now ships `UNSUNG_SAVIOUR_HUMANOID_RIG`, the contract that
+ * game's Rig Intake exports: section 4 lists the fifteen pieces under the engine's own names and
+ * section 5 gives each one its size, its pivot, its joint end and where that joint sits in the
+ * frame. A preset applies a whole `ImageOutputConfig`, so carrying the contract is also what stops
+ * loading the preset clearing one the reader had loaded by hand.
+ *
+ * What a first visit pays for is fifteen slots of constant data, which is the footing every raise
+ * above stands on. Measured against `main` at `219b1d5`, rebuilt from the same lockfile —
+ * **2417.63 KiB across 49 entries**, the figure the paragraph above records — this build reports
+ * **2420.44 across 49**, a delta of **2.81** that crossed a ceiling the base sat 0.37 under. No file
+ * was added to or removed from `PRECACHE_SHAPES` and no chunk was renamed: the whole 2.81 lands in
+ * `useSubjectStore-*.js`, the chunk the preset library is already bundled into, and comparing the
+ * two `dist/assets` listings no other entry moved by a single byte.
+ *
+ * 2421 leaves **0.56 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2418;
+export const PRECACHE_CEILING_KIB = 2421;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
