@@ -22,11 +22,11 @@ a review that finds one missing restores it there.
 | Styling, or a new screen | *Which design token paints each role*, *Design tokens for special-purpose surfaces*, *A floating surface goes in the top layer*, *Accessibility wiring beyond jsx-a11y* |
 | A control, or user-facing copy | *Every control carries guidance*, *Accessibility wiring beyond jsx-a11y* |
 | Prompt text, sheet plans, model wrappers, an Output Configuration control | *Changing the compiled prompt's text* |
-| Storage, `src/sw.ts`, a new subresource | *A database change works on both storage backends*, *The app never loads a cross-origin subresource* |
-| Code that reads a sheet, or a test, calibration, browser check or screenshot that needs one | *The test sprite sheets and what each is for* |
-| A new dependency, or code from elsewhere | *Adding a Sprite Gubbins dependency* |
+| Storage, `src/sw.ts`, a subresource | *A database change works on both storage backends*, *The app never loads a cross-origin subresource* |
+| Code that reads a sheet, or a test or check that needs one | *The test sprite sheets and what each is for* |
+| A dependency, or code from elsewhere | *Adding a Sprite Gubbins dependency* |
 | A tool that walks the project root | *A root-scanning tool must skip the agent worktrees* |
-| A worktree removal that refuses | *Recovering a stuck worktree removal* |
+| Landing work, or a refused worktree removal | *Landing work on a gated main*, *Recovering a stuck worktree removal* |
 | A GitHub issue or pull request | *Sign what you write on a Sprite Gubbins issue*, *Reconcile a Sprite Gubbins issue's labels*, *Close a Sprite Gubbins issue once its work has landed* |
 
 ## Work in a git worktree, and land it
@@ -36,20 +36,21 @@ for reading and merging only.
 
 ```bash
 git worktree add .claude/worktrees/<topic> -b worktree-<topic>
-# inside the tree: npm install, make the change, run the gate below, then
+# inside the tree: npm install, change it, run the gate, then
 git status --short                  # every ?? line is work too
 git add -A && git diff --cached     # the secrets self-audit
 git commit -F <message-file>
-# from the primary checkout
-git merge worktree-<topic>
+git merge main && git push -u origin worktree-<topic> # `main` takes only a green commit
+# from the primary checkout, once its checks pass
+git merge --ff-only worktree-<topic> && git push
 git worktree remove .claude/worktrees/<topic>
 git branch -d worktree-<topic>
+git push -d origin worktree-<topic>
 ```
 
 - One worktree, one branch, one task. Never adopt or land another agent's tree, never switch the
   primary checkout's branch, and never run `git clean -ffdx`, which deletes the other agents' trees.
-- A task is done when it is merged into `main` and its tree and branch are removed. If `main` moved,
-  merge it into your branch and re-run the gate there first.
+- A task is done once it is on `main` and its tree and branches are gone.
 - If `git worktree remove` refuses, look at the uncommitted work first; never `--force`. If the work
   cannot land, leave the tree and say so, naming the branch and the blocker.
 
@@ -109,9 +110,8 @@ commit message says what the change breaks.
 A colour the app paints with is a token from the `@theme` blocks of `src/index.css`, the one place a
 colour value is written down. Never write a raw hex, `rgb()` or `oklch()`, a stock palette class, a
 bracketed `text-[…px]`, an inline `cubic-bezier` or inline `@keyframes`. A colour the app only names
-is domain data under `src/constants/`. Text on a solid role fill takes `text-foundry-950`: `text-ink`
-on `accent` measures 2.04:1. An unknown Tailwind utility emits nothing and raises no error, so
-confirm a new one in the built CSS.
+is domain data under `src/constants/`. Text on a solid role fill takes `text-foundry-950`. An
+unknown Tailwind utility emits nothing and raises no error, so confirm a new one in the built CSS.
 
 ## Copy and guidance
 

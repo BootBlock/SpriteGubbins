@@ -60,9 +60,10 @@ npm run build
 npm run format
 ```
 
-Every push to `main` and every pull request runs the same checks again in
-[tests.yml](workflows/tests.yml) — the pull requests being Dependabot's and the
-collaborators', which are the ones that exist.
+Every push, to every branch, runs the same checks again in
+[tests.yml](workflows/tests.yml). `main` requires all four of them on whatever
+reaches it, so a commit whose run is red can be neither merged nor pushed there,
+and a Dependabot bump merges itself as soon as its run is green.
 
 Two rules are worth repeating because the cost of missing them is unrecoverable:
 

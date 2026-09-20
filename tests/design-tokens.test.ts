@@ -1686,7 +1686,7 @@ function styleRules(source: string): StyleRule[] {
  * a `className`'s subtree, the other reads one branch of a ternary at a time — and a rule written
  * here names no class, sits in no component, and is invisible to each. Three defects were open at
  * once on that single blind spot: `::selection` painting `--color-ink` on a solid `--color-accent`
- * at **2.04:1** (the exact pairing CLAUDE.md names as the mistake the rule exists to stop), every
+ * at **2.04:1** (the exact pairing the design-token rule exists to stop), every
  * `::placeholder` in the app left on Tailwind preflight's `currentcolor` at 50% and landing at
  * **4.44:1**, and the forced-colours block painting `HighlightText` where the platform draws a
  * `Canvas` backplate. A fix that corrected the three ratios and left the sweep blind would be

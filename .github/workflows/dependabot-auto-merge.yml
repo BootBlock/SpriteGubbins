@@ -1,0 +1,63 @@
+name: Auto-merge Dependabot pull requests
+
+# `main` requires four status checks — `Secret scan`, `Lint, format & type-check`, `Unit tests` and
+# `Build` — on the commit being merged, and requires the branch to be up to date with `main` first.
+# That is a wall, not a warning, and it is what this workflow is paired with: a bump can no longer
+# be merged red, so merging it the moment it is green costs nothing and waiting for a human to
+# press the button costs a week.
+#
+# Two bumps reached `main` red before the wall existed (issue #297): an `eslint` major whose peer
+# range `eslint-plugin-jsx-a11y` did not accept, so a clean `npm ci` aborted, and a `vite` minor
+# that changed the bundle split out from under the precache contract. Both were merged by hand
+# against a red run. Auto-merge is the half of the fix that keeps the green ones moving.
+#
+# This needs `allow_auto_merge` turned on for the repository. Without it GitHub refuses the request
+# outright and this job is red on every bump, which looks like a broken workflow and is a setting.
+#
+# This does not merge anything itself. `gh pr merge --auto` asks GitHub to merge the pull request
+# WHEN its requirements are met, and GitHub is the one holding the four checks. A red bump sits
+# there until Dependabot supersedes it or somebody closes it.
+on:
+  # `pull_request`, not `pull_request_target`, and it is safe here for the same reason the external
+  # pull request workflow is: nothing is checked out. Every step is a `gh` call, so there is no
+  # point at which a head branch's content could run. GitHub's own documented recipe uses this
+  # trigger with the `permissions:` block below.
+  #
+  # `synchronize` is included because Dependabot force-pushes a rebase whenever `main` moves, and
+  # the up-to-date requirement above means that happens often. Auto-merge survives a rebase, so the
+  # repeat is usually a no-op; it costs one API call and it covers the case where it is not.
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+# Dependabot-triggered runs start from a read-only token, so both scopes are named explicitly.
+# `pull-requests: write` enables auto-merge; `contents: write` is what performing the eventual
+# merge takes. Nothing else is granted, and an omitted scope is set to `none`.
+permissions:
+  contents: write
+  pull-requests: write
+
+# One attempt per pull request at a time. A rebase can land a second `synchronize` while the first
+# run is still talking to the API, and the newer event is the one worth acting on.
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    name: Turn on auto-merge
+    # The author, not `github.actor`. A human who reopens a Dependabot pull request is the actor of
+    # that event, and the pull request is still a Dependabot bump that should merge when green.
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask GitHub to merge this bump once its checks pass
+        # Squash, because a bump is one change however many commits Dependabot needed to express
+        # it, and a grouped update arrives as several.
+        # The fallback covers the one case `--auto` refuses. GitHub offers auto-merge only where
+        # something is left to wait for, so a bump that is already green and already up to date
+        # comes back `Pull request is in clean status`. Merging it outright is safe, because the
+        # wall that refuses an un-green merge is the ruleset, not this step.
+        run: gh pr merge --auto --squash "$PR_URL" || gh pr merge --squash "$PR_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}

@@ -4,11 +4,16 @@ name: Deploy to GitHub Pages
 # the repository's "Actions" tab, selecting this workflow, and clicking "Run workflow". It builds
 # the chosen ref (default: main) and deploys it to https://bootblock.github.io/SpriteGubbins/.
 #
-# The dialog carries a version box, and it is the whole release procedure: type the version this
-# release is to carry and the `release` job writes it into package.json, pushes that one commit,
-# and hands every job below the commit it made — so nothing has to be edited, committed or pushed
-# by hand before dispatching. Leave the box empty to redeploy whatever version package.json
-# already declares, which is what a rollback and an idempotent re-run both need.
+# There is no version box, and the `release` job writes no commit. The version a release carries is
+# whatever `package.json` already declares, so bumping it is an ordinary change: edit the field in
+# a worktree, run the gate, land it on `main`, then dispatch this. `main` requires four status
+# checks on whatever reaches it, and a commit this workflow wrote with `GITHUB_TOKEN` can never
+# have them — a `GITHUB_TOKEN` push raises no events, so nothing would ever run on it. A release
+# commit is a commit, and issue #297 is precisely about an unchecked one reaching `main`.
+#
+# What the `release` job still does is refuse a release that cannot be recorded: a malformed
+# version, or one whose `v<version>` tag already names a different commit. Re-deploying the same
+# commit is idempotent and allowed, which is what a rollback needs.
 #
 # Any ref can be dispatched and will be gated and built, but only `main` and a `v*` release tag
 # can actually *reach* production — see the note on the `deploy` job below.
@@ -17,26 +22,17 @@ name: Deploy to GitHub Pages
 # ever checked — and this is the app's only publish path, so the `gate` job below runs the checks
 # CLAUDE.md requires locally (secret scan, types, lint, formatting, unit tests, build) against
 # exactly the commit being deployed, and everything after it needs the gate. That is the only thing
-# stopping a broken or credential-carrying commit reaching every user's device in one click. The
-# gate takes the commit from `needs.release.outputs.sha`, and hands it to every job it runs, rather
-# than taking the dispatched ref — which the version bump moves out from under the run.
+# stopping a broken or credential-carrying commit reaching every user's device in one click.
 #
 # The gate itself is `tests.yml`, as it is in the sibling Gubbins repository: a reusable workflow
-# this one invokes, which also runs on every push to `main` and on every pull request. Only that
-# second half is new here. Publishing is still manual and still this file's alone — what changed is
-# that a commit no longer waits for a release to find out whether it passes.
+# this one invokes, which also runs on every push to every branch. Only that second half is new
+# here. Publishing is still manual and still this file's alone — what changed is that a commit no
+# longer waits for a release to find out whether it passes.
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version, e.g. 0.13.0 — leave empty to redeploy the version package.json already declares'
-        required: false
-        default: ''
-        type: string
 
 # Least-privilege. `pages: write` and `id-token: write` are what the Pages deployment needs; the
-# `release` and `tag` jobs re-grant `contents: write` for themselves alone, so nothing else in this
-# run can push.
+# `tag` job re-grants `contents: write` for itself alone, so nothing else in this run can push.
 permissions:
   contents: read
   pages: write
@@ -51,33 +47,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Decide what is being published, before a single second is spent building it. This is the only
-  # job that reads the version box, and everything below takes the commit it names — so the gate,
-  # the build, the bundle's own About badge and the `v<version>` tag all describe one commit whose
-  # package.json is true. `vite.config.ts` inlines that field as `__APP_VERSION__`, which is why a
-  # version entered here has to reach the file rather than only the tag: a run that tagged one
-  # number and shipped a bundle displaying another would leave nobody able to say what is serving.
+  # Decide what is being published, before a single second is spent building it. It reads
+  # `package.json`, and everything below takes the commit this run was dispatched against — so the
+  # gate, the build, the bundle's own About badge and the `v<version>` tag all describe one commit
+  # whose package.json is true. `vite.config.ts` inlines that field as `__APP_VERSION__`, which is
+  # why the version has to be in the file rather than only in the tag: a run that tagged one number
+  # and shipped a bundle displaying another would leave nobody able to say what is serving.
   #
-  # Release marker, and it is checked here rather than after the build for the same reason. With no
-  # tags at all, "what is currently deployed?" is unanswerable and "redeploy the last good build"
-  # means picking a SHA out of `git log` by eye. The `tag` job below marks the commit it publishes
-  # as `v<version>` — but that only stays meaningful if each new deploy carries a new version, so
-  # refuse before a build is spent. Re-deploying the *same* commit is idempotent and allowed;
-  # re-deploying different code under a version already published is not.
+  # Release marker, and it is checked here rather than after the build. With no tags at all, "what
+  # is currently deployed?" is unanswerable and "redeploy the last good build" means picking a SHA
+  # out of `git log` by eye. The `tag` job below marks the commit it publishes as `v<version>` —
+  # but that only stays meaningful if each new deploy carries a new version, so refuse before a
+  # build is spent. Re-deploying the *same* commit is idempotent and allowed; re-deploying
+  # different code under a version already published is not.
   #
-  # The bump is pushed before the gate runs, which is deliberate: the promise this workflow makes
-  # is that every check runs against exactly the commit being deployed, and that commit does not
-  # exist until the bump is written. The cost is that a gate failure leaves a version bump on the
-  # branch for a release that never shipped — which is self-correcting, because no tag was created,
-  # so dispatching again with the box empty publishes that same version once the code is fixed.
+  # This job writes nothing and pushes nothing, which is why it reads `contents` rather than
+  # writing it. Bumping the version is an ordinary change that lands through the gate like any
+  # other; see the note at the top of this file.
   release:
     name: Resolve the release version
     runs-on: ubuntu-latest
-    # Re-granted for this job alone, and it writes at most one commit.
-    permissions:
-      contents: write
     outputs:
-      sha: ${{ steps.resolve.outputs.sha }}
       tag: ${{ steps.resolve.outputs.tag }}
       version: ${{ steps.resolve.outputs.version }}
     steps:
@@ -85,28 +75,22 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node
-        # No `cache: npm` — this job installs nothing. It runs only `node -p` and `npm version`, and
-        # `npm version` rewrites just the two version fields of package-lock.json without building
-        # a dependency tree, so no npm here can change anything else the lockfile says. The Node
-        # still comes from `.nvmrc`, as it does in every job of the gate in tests.yml, so a release
-        # runs on the toolchain the project declares rather than whatever the runner image ships.
+        # No `cache: npm` — this job installs nothing. It runs only `node -p`, to read one field of
+        # package.json with the same parser the build will use. The Node still comes from `.nvmrc`,
+        # as it does in every job of the gate in tests.yml, so a release runs on the toolchain the
+        # project declares rather than whatever the runner image ships.
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
 
       - name: Resolve, check and record the release version
         id: resolve
-        env:
-          REQUESTED: ${{ inputs.version }}
-          REF_TYPE: ${{ github.ref_type }}
-          REF_NAME: ${{ github.ref_name }}
         run: |
-          current="$(node -p "require('./package.json').version")"
-          version="${REQUESTED:-$current}"
+          version="$(node -p "require('./package.json').version")"
 
-          # Refuse a malformed entry here rather than letting it become a tag nothing can order.
+          # Refuse a malformed value here rather than letting it become a tag nothing can order.
           if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
-            echo "::error title=Malformed version::\"$version\" is not a version this workflow can publish. Use MAJOR.MINOR.PATCH, optionally with a -prerelease suffix."
+            echo "::error title=Malformed version::package.json declares \"$version\", which is not a version this workflow can publish. Use MAJOR.MINOR.PATCH, optionally with a -prerelease suffix."
             exit 1
           fi
 
@@ -121,64 +105,37 @@ jobs:
             existing="$(git ls-remote origin "refs/tags/$tag" | cut -f1)"
           fi
 
-          if [ "$version" = "$current" ]; then
-            # Nothing to write — the box was empty, or it named the version this ref already
-            # carries. Either way the deployed commit is the dispatched one.
-            if [ -n "$existing" ] && [ "$existing" != "$GITHUB_SHA" ]; then
-              echo "::error title=Release version already published::Tag $tag already points at $existing, but this deploy is $GITHUB_SHA. Enter a new version in the \"Run workflow\" dialog, or dispatch $tag itself to redeploy the code it names."
-              exit 1
-            fi
-            sha="$GITHUB_SHA"
-            echo "Deploying $tag from $GITHUB_SHA — package.json already declares $version."
-          else
-            # A bump was asked for, so the commit that gets deployed does not exist yet and any tag
-            # of this name is therefore a different commit's.
-            if [ -n "$existing" ]; then
-              echo "::error title=Release version already published::Tag $tag already points at $existing. Enter a version no release has used."
-              exit 1
-            fi
-            if [ "$REF_TYPE" != "branch" ]; then
-              echo "::error title=Nowhere to commit the bump::The version box asks this run to write $version into package.json, but it was dispatched against $REF_TYPE \"$REF_NAME\", which has no branch to commit to. Dispatch a branch, or leave the box empty to redeploy the version this ref already declares."
-              exit 1
-            fi
-            # `npm version` writes package.json and package-lock.json together, which is what `npm
-            # ci` in every job below needs: the lockfile records the root package's version too,
-            # and an install against a lockfile that disagrees is refused.
-            npm version "$version" --no-git-tag-version > /dev/null
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package.json package-lock.json
-            git commit -m "Release $version" -m "Written by the deploy workflow from the version box of run $GITHUB_RUN_ID. This commit is what the run gates, builds, deploys and tags."
-            # A non-fast-forward here means the branch moved under the run. Failing is right: the
-            # gate would otherwise describe a commit nobody asked to deploy.
-            git push origin "HEAD:refs/heads/$REF_NAME"
-            sha="$(git rev-parse HEAD)"
-            echo "Bumped $current to $version and pushed $sha to $REF_NAME."
+          if [ -n "$existing" ] && [ "$existing" != "$GITHUB_SHA" ]; then
+            echo "::error title=Release version already published::Tag $tag already points at $existing, but this deploy is $GITHUB_SHA. Land a version bump on the branch you are deploying, or dispatch $tag itself to redeploy the code it names."
+            exit 1
           fi
 
+          echo "Deploying $tag from $GITHUB_SHA."
+
           {
-            echo "sha=$sha"
             echo "tag=$tag"
             echo "version=$version"
           } >> "$GITHUB_OUTPUT"
 
-  # The gate, which is now one definition rather than this file's own copy of it.
+  # The gate, which is one definition rather than this file's own copy of it.
   #
   # These jobs used to be inlined here, with a note saying they were inlined because Sprite Gubbins
   # had no push or pull-request workflow to delegate to. It has one now — `tests.yml` runs the same
-  # secret scan, type-check, lint, format check, unit tests and build on every push to `main` and on
-  # every pull request — so the deploy calls it instead of restating it. One definition means a
-  # check added to the gate is a check a release runs, without anybody remembering to add it twice.
+  # secret scan, type-check, lint, format check, unit tests and build on every push — so the
+  # deploy calls it instead of restating it. One definition means a check added to the gate is a
+  # check a release runs, without anybody remembering to add it twice.
   #
-  # `sha` is what makes the promise above literally true: every job in the called workflow checks
-  # out the commit `release` resolved, which is the version bump rather than the dispatched ref
-  # whenever the version box asked for one.
+  # The called workflow checks out `github.sha`, which inside a reusable workflow is the caller's
+  # commit — the ref this run was dispatched against. That is the commit `release` resolved, the
+  # commit the build ships and the commit the tag records.
+  #
+  # It runs even though `main` has already gated this commit, and that is the point: any ref can be
+  # dispatched, including an unmerged branch, and this is the app's only publish path.
   gate:
     name: Gate
     needs: release
     uses: ./.github/workflows/tests.yml
     with:
-      sha: ${{ needs.release.outputs.sha }}
       upload-dist: true
 
   # Package what the gate built, and hand it to Pages.
@@ -187,7 +144,7 @@ jobs:
   # commit — one that no check had been run against. The gate uploads its `dist/` when the deploy
   # asks for it (`upload-dist: true`), so the bytes that reach a reader's device are the bytes the
   # secret scan, the type-check, the lint, the tests and the build's own guards were run over. A
-  # push or a pull request leaves that input alone and uploads nothing.
+  # push leaves that input alone and uploads nothing.
   #
   # Nothing here needs a checkout: `actions/download-artifact` fetches the bundle from the gate,
   # which ran in this same workflow run, and the two Pages actions read only that directory.
@@ -219,12 +176,12 @@ jobs:
   #
   # One record this job writes is knowingly one commit behind, and the tag is the answer to it.
   # `actions/deploy-pages` takes the deployment's commit from the workflow run's own context and
-  # exposes no input to set it, so a run that wrote a version bump records the deployment against
-  # the ref it was dispatched from rather than against the commit it actually built. Measured on
-  # the 0.13.0 release: the environment names the parent while the artefact, and the bundle serving
-  # from it, are the bump. `v<version>` is therefore the *record* of what is deployed, which is what
-  # the `tag` job below exists for — read that, not the Deployments list, to answer "which commit is
-  # serving?".
+  # exposes no input to set it. That once mattered, because a run that wrote a version bump built a
+  # commit the run's context had never heard of — measured on the 0.13.0 release, where the
+  # environment named the parent while the artefact, and the bundle serving from it, were the bump.
+  # The bump is no longer written here, so the two now agree. `v<version>` remains the *record* of
+  # what is deployed, which is what the `tag` job below exists for — read that, not the Deployments
+  # list, to answer "which commit is serving?".
   deploy:
     name: Deploy
     needs: build
@@ -265,7 +222,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.release.outputs.sha }}
+          ref: ${{ github.sha }}
 
       - name: Tag the deployed commit
         env:
@@ -281,8 +238,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # Tags HEAD, which the checkout above pinned to the commit that was gated, built and
-          # deployed — not $GITHUB_SHA, which is the dispatched ref and is one commit behind
-          # whenever the version box asked for a bump.
+          # deployed.
           git tag -a "$TAG" -m "Sprite Gubbins $VERSION — deployed to GitHub Pages by run $GITHUB_RUN_ID."
           git push origin "refs/tags/$TAG"
           echo "Recorded release $TAG at $(git rev-parse HEAD)."

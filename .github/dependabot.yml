@@ -15,8 +15,9 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    # Every pull request now runs the full gate through `tests.yml`, so a bump that breaks the
-    # build says so before it is merged rather than at the next release.
+    # Every bump's branch runs the full gate through `tests.yml`, and `main` requires those four
+    # checks, so a bump that breaks the build cannot be merged at all. `dependabot-auto-merge.yml`
+    # turns on auto-merge for each one, so a green bump lands without waiting to be noticed.
     labels:
       - dependencies
       - 'area: dependencies'
