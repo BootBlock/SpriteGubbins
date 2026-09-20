@@ -7,6 +7,7 @@ import { sheetComponentCount } from './componentSet.ts';
 import { componentSlots } from './componentSlots.ts';
 import { sheetBatch } from './sheetBatch.ts';
 import type { BatchSheet } from './sheetBatch.ts';
+import { sheetRigContract } from './sheetRigContract.ts';
 import { slugify } from './slugify.ts';
 
 /**
@@ -126,6 +127,13 @@ export function sheetIdentity(
       assembly: current.assembly,
       components: sheetComponentCount(category, subject, current, additional),
       rigMode,
+      // Asked of `sheetRigContract` rather than read off the configuration, which is the same rule
+      // the rig mode above follows: a contract is loaded for the whole deliverable and reaches
+      // exactly the sheet whose inventory *is* the rig, so a manifest carrying the stored field
+      // would claim a geometry for the core sheet that the prompt for it never stated. That module
+      // is where every other reader asks the question, so the file and the prompt cannot disagree
+      // about which sheet the rig applied to.
+      rigContract: sheetRigContract(current.plan, current.output),
     },
   };
 }

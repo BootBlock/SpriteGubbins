@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SpriteBox } from '../types/quantiser.ts';
+import type { RigContract } from '../types/rigContract.ts';
+import type { ManifestSheet } from '../types/spriteManifest.ts';
 import { buildManifest, encodeManifest, MANIFEST_VERSION } from './spriteManifest.ts';
 
 const box = (left: number, top: number, width = 4, height = 4): SpriteBox => ({
@@ -27,6 +29,38 @@ const input = {
   naming: null,
   cell: null,
   sheet: null,
+};
+
+/** One slot of the engine's humanoid rig, which is enough to tell one revision of it from another. */
+const CONTRACT: RigContract = {
+  format: 'unsung-saviour-rig-contract',
+  version: 1,
+  skeleton_name: 'Humanoid',
+  frame_size: { width: 48, height: 96 },
+  slots: [
+    {
+      slot_id: 'upper_arm_l',
+      pack_piece_name: 'left-upper-arm',
+      parent_slot: 'torso',
+      piece_size: { width: 8, height: 22 },
+      piece_pivot: { x: 4, y: 3 },
+      joint_edge: 'top',
+      rest_position_in_frame: { x: -11, y: -78 },
+    },
+  ],
+};
+
+/** The cut-out rig sheet, which is the one sheet of a character batch a contract reaches. */
+const RIG_SHEET: ManifestSheet = {
+  category: 'CHARACTER',
+  plan: 'Rig pieces',
+  ordinal: 3,
+  total: 10,
+  facings: ['south'],
+  assembly: 'south',
+  components: 15,
+  rigMode: 'CUTOUT_RIG',
+  rigContract: null,
 };
 
 describe('buildManifest', () => {
@@ -144,10 +178,64 @@ describe('buildManifest', () => {
         assembly: 'south',
         components: 12,
         rigMode: 'CUTOUT_RIG',
+        rigContract: null,
       },
     });
 
     expect(manifest.sheet).toMatchObject({ ordinal: 1, total: 10, components: 12 });
+  });
+
+  it('writes the rig contract into the file under the engine’s own field names', () => {
+    // The names are a quotation rather than this app's spelling, so a consumer holding the manifest
+    // and the contract beside it compares `piece_size` with `piece_size`. `JSON.stringify` is what
+    // a renamed field would slip past silently, so the assertion is made against the written bytes.
+    const manifest = buildManifest({ ...input, sheet: { ...RIG_SHEET, rigContract: CONTRACT } });
+    const written: unknown = JSON.parse(new TextDecoder().decode(encodeManifest(manifest)));
+
+    expect(written).toMatchObject({
+      sheet: {
+        rigMode: 'CUTOUT_RIG',
+        rigContract: {
+          format: 'unsung-saviour-rig-contract',
+          version: 1,
+          skeleton_name: 'Humanoid',
+          frame_size: { width: 48, height: 96 },
+          slots: [
+            {
+              slot_id: 'upper_arm_l',
+              pack_piece_name: 'left-upper-arm',
+              piece_size: { width: 8, height: 22 },
+              piece_pivot: { x: 4, y: 3 },
+              joint_edge: 'top',
+              rest_position_in_frame: { x: -11, y: -78 },
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  it('leaves the contract in its own source pixels, whatever the file is magnified by', () => {
+    // The one set of numbers in the file that does not move with the scale, and deliberately so:
+    // the field is the engine's own document quoted back, so a contract multiplied by a download's
+    // magnification would stop identifying the rig revision it exists to identify.
+    const sheet = { ...RIG_SHEET, rigContract: CONTRACT };
+    const at1 = buildManifest({ ...input, scale: 1, sheet });
+    const at4 = buildManifest({ ...input, scale: 4, sheet });
+
+    expect(at4.scale).toBe(4);
+    expect(at4.sheet?.rigContract).toStrictEqual(CONTRACT);
+    expect(at4.sheet?.rigContract).toStrictEqual(at1.sheet?.rigContract);
+  });
+
+  it('states outright that a rig sheet was drawn against no contract', () => {
+    // The pack the whole field exists for. It is `named`, every piece finds its socket, and the
+    // proportions are the model's — so `null` beside a `CUTOUT_RIG` is what an importer refuses on.
+    const manifest = buildManifest({ ...input, sheet: RIG_SHEET });
+    const written = new TextDecoder().decode(encodeManifest(manifest));
+
+    expect(manifest.sheet?.rigContract).toBeNull();
+    expect(written).toContain('"rigContract": null');
   });
 });
 

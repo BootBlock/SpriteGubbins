@@ -66,6 +66,7 @@ function core(ordinal: number, total = 10): ManifestSheet {
     assembly: 'south',
     components: 2,
     rigMode: 'CUTOUT_RIG',
+    rigContract: null,
   };
 }
 
