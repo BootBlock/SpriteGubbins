@@ -72,7 +72,7 @@ export interface ManifestInput {
 }
 
 /** This manifest shape's version — see {@link SpriteManifest.version}, which is not a compatibility surface. */
-export const MANIFEST_VERSION = 3;
+export const MANIFEST_VERSION = 4;
 
 /** A box as its own key, so a duplicate group's member can be looked for among the written pieces. */
 function boxKey(box: SpriteBox): string {

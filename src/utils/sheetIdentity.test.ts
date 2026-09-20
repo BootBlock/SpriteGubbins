@@ -3,6 +3,7 @@ import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { DIRECTION_SETS } from '../types/rendering.ts';
+import type { RigContract } from '../types/rigContract.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import { sheetBatch } from './sheetBatch.ts';
 import { sheetIdentity } from './sheetIdentity.ts';
@@ -22,6 +23,34 @@ const config = (overrides: Partial<OutputConfig> = {}): OutputConfig => ({
   ...DEFAULT_OUTPUT_CONFIG,
   ...overrides,
 });
+
+/** Two slots of the engine's humanoid rig, which is a whole contract for everything asked here. */
+const CONTRACT: RigContract = {
+  format: 'unsung-saviour-rig-contract',
+  version: 1,
+  skeleton_name: 'Humanoid',
+  frame_size: { width: 48, height: 96 },
+  slots: [
+    {
+      slot_id: 'pelvis',
+      pack_piece_name: 'pelvis',
+      parent_slot: '',
+      piece_size: { width: 20, height: 12 },
+      piece_pivot: { x: 10, y: 6 },
+      joint_edge: 'bottom',
+      rest_position_in_frame: { x: 0, y: -48 },
+    },
+    {
+      slot_id: 'upper_arm_l',
+      pack_piece_name: 'left-upper-arm',
+      parent_slot: 'torso',
+      piece_size: { width: 8, height: 22 },
+      piece_pivot: { x: 4, y: 3 },
+      joint_edge: 'top',
+      rest_position_in_frame: { x: -11, y: -78 },
+    },
+  ],
+};
 
 /** Every sheet of the ten-generation character, as the configuration that composes each of them. */
 function eightCompassCharacter(): readonly OutputConfig[] {
@@ -98,6 +127,53 @@ describe('sheetIdentity', () => {
     const { sheet } = sheetIdentity('TERRAIN', standardSubject(), config({ rigMode: 'CUTOUT_RIG' }), '');
 
     expect(sheet?.rigMode).toBe('NONE');
+  });
+
+  describe('the rig contract the sheet was drawn against', () => {
+    it('records the whole contract on the sheet whose inventory is the rig', () => {
+      // Every field, because the version is the *format's*: it does not move when a slot's size or
+      // pivot does, so a pack drawn against a superseded revision of one rig is otherwise
+      // indistinguishable from a current one. The slots are what tell the two apart.
+      const { names, sheet } = sheetIdentity(
+        'CHARACTER',
+        standardSubject(),
+        config({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', rigContract: CONTRACT }),
+        '',
+      );
+
+      expect(sheet?.rigContract).toStrictEqual(CONTRACT);
+      // The same contract the inventory came from, which is what makes the record a statement about
+      // this sheet rather than about the configuration it was composed under.
+      expect(names).toStrictEqual(['pelvis', 'left-upper-arm']);
+    });
+
+    it('states none where a rig sheet was drawn without one', () => {
+      // The pack this field exists for: the shipped inventory names its pieces as the engine's
+      // sockets do, so it imports `named` and complete, in the model's proportions.
+      const { sheet } = sheetIdentity(
+        'CHARACTER',
+        standardSubject(),
+        config({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' }),
+        '',
+      );
+
+      expect(sheet?.rigMode).toBe('CUTOUT_RIG');
+      expect(sheet?.rigContract).toBeNull();
+    });
+
+    it('withholds it from a sheet of the same deliverable that does not draw the pieces', () => {
+      // A contract is loaded for the whole configuration and reaches exactly the rig sheet, so a
+      // core sheet's manifest would otherwise claim a geometry its own prompt never stated.
+      const { sheet } = sheetIdentity(
+        'CHARACTER',
+        standardSubject(),
+        config({ directions: 'EIGHT_COMPASS', sheetIndex: 0, rigContract: CONTRACT }),
+        '',
+      );
+
+      expect(sheet?.plan).toBe('Directional core — cardinal facings');
+      expect(sheet?.rigContract).toBeNull();
+    });
   });
 
   describe('the facing a download is named by', () => {

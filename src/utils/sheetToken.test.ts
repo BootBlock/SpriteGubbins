@@ -13,6 +13,7 @@ function sheet(ordinal: number, total = 10): ManifestSheet {
     assembly: 'south',
     components: 15,
     rigMode: 'CUTOUT_RIG',
+    rigContract: null,
   };
 }
 

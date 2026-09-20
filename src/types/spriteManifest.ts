@@ -1,4 +1,5 @@
 import type { Direction } from './rendering.ts';
+import type { RigContract } from './rigContract.ts';
 import type { RigMode } from './rigging.ts';
 import type { SpriteNaming } from './spriteAssignment.ts';
 import type { SpriteAnchor } from './spriteCell.ts';
@@ -196,6 +197,38 @@ export interface ManifestSheet {
    * as a number to replace.
    */
   readonly rigMode: RigMode;
+  /**
+   * The rig this sheet was drawn against, as this app read it — or `null` where there was none.
+   *
+   * **What tells a pack drawn against the rig from one drawn against nothing at all.** A sheet
+   * generated with no contract loaded still produces a pack an importer accepts: the shipped rig
+   * inventory names its pieces as the engine's sockets do, so the manifest comes out
+   * {@link SpriteManifest.named}, every name finds a socket, and every piece is placed. What differs
+   * is the geometry. Without a contract the prompt can state only the assembled figure, so the
+   * pieces come back in the model's proportions rather than the rig's, and an importer registering
+   * them at one scale for the whole actor opens a gap under a limb drawn short and overlaps the next
+   * with one drawn long. Nothing downstream reports it — every piece still quantises to exactly the
+   * size the rig declares — so the first sign is a contact sheet.
+   *
+   * **`null` is a statement, and {@link ManifestSheet.rigMode} says which one.** `NONE` beside it is
+   * a sheet no rig applies to, where the pieces are placed rather than jointed. `CUTOUT_RIG` beside
+   * it is exactly the pack above, and an importer is entitled to refuse it outright.
+   *
+   * **The whole contract rather than a version or a digest over it.** {@link RigContract.version} is
+   * the *format's* and does not move when a slot's size or pivot does, so it cannot tell one
+   * revision of a rig from another — and a pack drawn against a superseded revision fails in the
+   * same silent way. A digest would tell them apart and say nothing else: the engine would have to
+   * reproduce this app's canonicalisation exactly to compute one, and a mismatch could name no
+   * piece. The slots themselves need no shared algorithm and let an importer report which piece
+   * moved.
+   *
+   * **It is the contract as this app read it, which is not the exported document verbatim.**
+   * `parseRigContract` drops `draw_orders`, the relative `rest_position` and `facings`, for the
+   * reasons {@link RigContract} gives. What remains is what reached the prompt, which is what the
+   * artwork was drawn to — so this states the geometry the sheet was asked for, not the geometry the
+   * engine happened to export.
+   */
+  readonly rigContract: RigContract | null;
 }
 
 /** The sheet, what came back on it, and where each piece of it is. */
