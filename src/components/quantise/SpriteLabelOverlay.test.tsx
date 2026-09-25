@@ -72,6 +72,21 @@ describe('SpriteLabelOverlay', () => {
     expect(useSpriteAssignmentStore.getState().selected).toBeNull();
   });
 
+  it('says which chip is selected as a pressed state, not only as a fill', async () => {
+    // The fill is all a sighted reader gets. A screen reader hears the pressed state, and the
+    // forced-colours rule in `index.css` paints `Highlight` on `[aria-pressed='true']` alone.
+    show();
+    const second = screen.getByRole('button', { name: '2 · arm-right' });
+    expect(second).toHaveAttribute('aria-pressed', 'false');
+
+    await userEvent.click(second);
+    expect(second).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '1 · arm-left' })).toHaveAttribute('aria-pressed', 'false');
+
+    await userEvent.click(second);
+    expect(second).toHaveAttribute('aria-pressed', 'false');
+  });
+
   it('says a joined sprite is joined rather than repeating its piece’s name', () => {
     // Two chips carrying one name is indistinguishable on the artwork from the duplicate-name error
     // the feature exists to reveal — which is how this state actually looked in the browser.
