@@ -1,4 +1,8 @@
-import { PREVIEW_MODE_LABELS } from '../../constants/previewModes.ts';
+import {
+  PREVIEW_MODE_LABELS,
+  RESULT_PREVIEW_MODES,
+  RESULT_PREVIEW_MODES_UNAVAILABLE,
+} from '../../constants/previewModes.ts';
 import { DIFFERENCE_SCALES, PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/quantise.ts';
 import { PREVIEW_MODES } from '../../types/quantiser.ts';
@@ -28,7 +32,10 @@ interface ComparisonToolbarProps {
   readonly onDownloadFormatChange: (format: SheetFormat) => void;
   /** The dropped file's name — what the download is named after. */
   readonly sourceName: string;
-  /** `null` until a grid is settled, which is the only state the download can be refused in. */
+  /**
+   * `null` until a grid is settled, which is the only state the download can be refused in — and the
+   * state in which only the pair can be chosen, since every other layout draws the result.
+   */
   readonly resultImage: ImageData | null;
   /** What the sheet broke into: an Aseprite document’s frames, a pack's files, a manifest's rects. */
   readonly sprites: SpriteSegmentation | null;
@@ -90,6 +97,11 @@ export function ComparisonToolbar({
             value={mode}
             format={(option) => PREVIEW_MODE_LABELS[option]}
             onChange={onModeChange}
+            unavailable={
+              resultImage === null
+                ? { values: RESULT_PREVIEW_MODES, reason: RESULT_PREVIEW_MODES_UNAVAILABLE }
+                : undefined
+            }
           />
         </div>
 
