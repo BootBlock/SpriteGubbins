@@ -32,9 +32,9 @@ function copyConfirmation(category: SubjectCategory, subject: SheetSubject, outp
 /**
  * Taking a prompt away: compile it, copy it, and record that it was taken.
  *
- * Shared because three places offer it — the header's primary call to action, the preview's own
- * button, and the sheet splitter, once per run — and copying without logging in any of them would
- * leave the history quietly incomplete.
+ * Shared because four places offer it — the header's primary call to action, the preview's own
+ * button, the preview's Copy, open & next, and the sheet splitter, once per run — and copying
+ * without logging in any of them would leave the history quietly incomplete.
  *
  * The studio state is read with `getState()` at click time rather than subscribed to. That is the
  * point of the hook: the header offers this button but must not re-render on every keystroke in the
@@ -52,22 +52,24 @@ function copyConfirmation(category: SubjectCategory, subject: SheetSubject, outp
  * sheet — its facing and its place in the plan's series both — where an entry holding the batch's
  * configuration would come back as run one whatever prompt it showed.
  *
- * @returns whether the prompt reached the clipboard, so a caller with more to do after a copy —
- * the preview's Copy, open & next, which opens a generator and steps on — does none of it when the
- * copy failed.
+ * @param onCopied what the caller does once the prompt is on the clipboard, and never when the copy
+ * failed. It runs *before* the history write rather than after it: the preview's Copy, open & next
+ * opens a tab here, and a popup is allowed only within the press's transient activation, which a
+ * slow storage backend could otherwise spend.
  */
-export function useCopyPrompt(): (run?: SheetRun) => Promise<boolean> {
+export function useCopyPrompt(): (run?: SheetRun, onCopied?: () => void) => Promise<void> {
   const copyText = useClipboard();
   const addLog = useHistoryStore((state) => state.addLog);
 
   return useCallback(
-    async (run) => {
+    async (run, onCopied) => {
       const { category, subject } = useSubjectStore.getState();
       const output = run?.output ?? useOutputStore.getState().output;
       const promptText = run?.promptText ?? generatePrompt(category, subject, output);
 
       const copied = await copyText(promptText, copyConfirmation(category, subject, output));
-      if (!copied) return false;
+      if (!copied) return;
+      onCopied?.();
 
       // The subject and output travel with the prompt, not just the text they produced: the compiled
       // prompt is a one-way rendering of them, so this is the only moment the studio state that made
@@ -80,7 +82,6 @@ export function useCopyPrompt(): (run?: SheetRun) => Promise<boolean> {
         subject,
         output,
       });
-      return true;
     },
     [copyText, addLog],
   );

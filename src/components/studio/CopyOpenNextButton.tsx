@@ -32,16 +32,16 @@ interface SpentPress {
  * sheet with a successor moves the studio to it, so the prompt it copies next is a different one.
  *
  * **A press with nowhere to step spends the button** — the last sheet of a batch, or a configuration
- * that is one sheet. It remembers the prompt and the output configuration it was pressed on, and it
- * stays unavailable while both are what they were. Any change to the prompt, or any step (which writes
- * a new configuration object even when it lands back on this sheet), gives it back. The memory is
- * this component's own state, because it guards against a stray second press and nothing else: a
- * reader who leaves the studio and comes back has made a deliberate return, not a double click.
+ * that is one sheet. It stays unavailable until the prompt or the output configuration changes, and
+ * the first render that sees either change forgets the press, so stepping away and back, a restore
+ * from the history or an undo that lands on the very same configuration all give it back. The
+ * memory is this component's own state, because it guards against a stray second press and nothing
+ * else: a reader who leaves the studio and comes back has made a deliberate return.
  *
- * **The copy is awaited before the tab opens.** `navigator.clipboard.writeText` refuses a document
- * that has lost focus, and a tab opened first takes the focus before the write can finish. Opening
- * after the await stays inside the press's transient activation, which lasts seconds against a
- * clipboard write that takes milliseconds, so the popup blocker still sees a user gesture.
+ * **The tab opens as soon as the clipboard has the prompt**, through `useCopyPrompt`'s `onCopied`,
+ * which runs before the history write. Not earlier: `navigator.clipboard.writeText` refuses a
+ * document that has lost focus, and a tab opened first takes the focus. Not later: a popup is
+ * allowed only within the press's transient activation, and the storage write is not bounded.
  *
  * **The step is skipped if the studio moved while the copy was in flight**, since writing the
  * successor computed at the press would then undo whatever the reader did in between.
@@ -54,6 +54,10 @@ export function CopyOpenNextButton({ promptText }: CopyOpenNextButtonProps) {
   const copyPrompt = useCopyPrompt();
 
   const [spent, setSpent] = useState<SpentPress | null>(null);
+  const isSpent = spent !== null && spent.promptText === promptText && spent.output === output;
+  // Forgotten during render, the moment the studio is anywhere but where the press left it.
+  if (spent !== null && !isSpent) setSpent(null);
+
   // A press in flight, so a double click cannot copy the same sheet twice before the step lands. A
   // ref rather than state, because nothing on screen changes for the milliseconds it is set.
   const pending = useRef(false);
@@ -66,7 +70,6 @@ export function CopyOpenNextButton({ promptText }: CopyOpenNextButtonProps) {
   const site = TARGET_MODEL_ENTRIES.get(output.targetModel)?.generatorSite;
   const siteUrl = site?.kind === 'PUBLIC' ? site.url : null;
 
-  const isSpent = spent !== null && spent.promptText === promptText && spent.output === output;
   const label = ['Copy', siteUrl !== null && 'open', next !== undefined && 'next']
     .filter((part) => part !== false)
     .join(', ')
@@ -84,13 +87,12 @@ export function CopyOpenNextButton({ promptText }: CopyOpenNextButtonProps) {
     if (isSpent || pending.current) return;
     const pressedOn = output;
     pending.current = true;
-    const copied = await copyPrompt();
+    await copyPrompt(undefined, () => {
+      if (siteUrl !== null) window.open(siteUrl, '_blank', 'noopener,noreferrer');
+      if (next === undefined) setSpent({ promptText, output: pressedOn });
+      else if (useOutputStore.getState().output === pressedOn) setOutputConfig(next.output);
+    });
     pending.current = false;
-    if (!copied) return;
-
-    if (siteUrl !== null) window.open(siteUrl, '_blank', 'noopener,noreferrer');
-    if (next === undefined) setSpent({ promptText, output: pressedOn });
-    else if (useOutputStore.getState().output === pressedOn) setOutputConfig(next.output);
   };
 
   return (

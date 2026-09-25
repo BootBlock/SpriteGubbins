@@ -24,10 +24,10 @@ interface PromptActionsProps {
  * the clipboard, or to the clipboard and the generator with the studio stepped on to the next sheet.
  *
  * Its own component because the preview panel is the *prompt* — the rail, the counts and the text —
- * and this is a toolbar with its own handlers and its own filename rule. The combined action is a
- * component of its own, `CopyOpenNextButton`, because it keeps state about its last press. Everything but the compiled
- * text is read from the stores here rather than threaded down, so adding an action is a change to
- * this file alone.
+ * and this is a toolbar with its own handlers and its own filename rule. Everything but the compiled
+ * text is read from the stores rather than threaded down. The combined action is a component of its
+ * own, `CopyOpenNextButton`, because it keeps state about its last press, and it takes the compiled
+ * text as a prop for the reason this component does.
  */
 export function PromptActions({ promptText }: PromptActionsProps) {
   const category = useSubjectStore((state) => state.category);

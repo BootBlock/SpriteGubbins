@@ -44,13 +44,12 @@ export const STUDIO_ACTION_TOOLTIPS = {
     'Compiles this configuration and puts the finished prompt on the clipboard, ready for whichever generator the Target Model names. The prompt and the studio state behind it go into the history at the same time, so the setup can be restored later even after you have moved on. The header carries the same action for when the foot of the form is a long way down.',
 
   copyOpenNext:
-    'Does in one press the three things each sheet of a batch asks of you. It copies this sheet’s prompt exactly as Copy Prompt does, history entry included, opens the chosen generator’s image page in a new tab, and moves the studio on to the next sheet — so the prompt in front of you is always one you have not taken yet. It follows the sheet the studio is on rather than what the history says was copied, so after stepping back to the first sheet and changing a setting, pressing it again works through the batch afresh from there. On the last sheet, or for a configuration that is one sheet, it copies and opens without moving. If the copy fails, nothing opens and nothing moves.',
+    'Copies this sheet’s prompt as Copy Prompt does, opens the chosen generator’s image page in a new tab, and moves the studio on to the next sheet. Its label names the steps it takes here: on the last sheet, or for a configuration of one sheet, it does not move. If the copy fails, nothing opens and nothing moves.',
 
-  copyOpenNextNoSite:
-    'The chosen target has no generator page to open, so for this target it copies and moves on without opening a tab.',
+  copyOpenNextNoSite: 'The chosen target has no generator page, so it opens nothing.',
 
   copyOpenNextSpent:
-    'You have just taken this sheet with it, so it waits until the prompt changes or you step to another sheet, and a second press cannot copy the same prompt again by accident. Copy Prompt still copies it if you mean to.',
+    'You have just taken this prompt with it, so it waits until the prompt changes or you step to another sheet. Copy Prompt still copies it if you mean to.',
 
   describeSubject:
     'Writes what the panels above already say about the subject into the identity lock, as the labelled lines the lock is read in. It only ever replaces its own lines — your own prose and the palette line are left where they are — so it is safe to press again after changing a field. Treat what it produces as a first draft: what actually holds a series together is concrete, countable detail taken off the sheet you accepted, and this can only restate the terms you chose from a list.',

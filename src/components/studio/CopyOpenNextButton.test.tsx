@@ -112,8 +112,83 @@ describe('CopyOpenNextButton', () => {
       'noopener,noreferrer',
     );
     expect(useOutputStore.getState().output).toEqual(sheets[1]?.output);
-    // The copy came first: the tab opened only after the clipboard had the prompt.
-    expect(writeText.mock.invocationCallOrder[0]).toBeLessThan(openWindow.mock.invocationCallOrder[0] ?? 0);
+  });
+
+  it('opens the tab once the clipboard has the prompt, and before the history write', async () => {
+    const user = setup();
+    let finishWrite = (): void => undefined;
+    writeText.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishWrite = resolve;
+        }),
+    );
+    // What the history held at the moment the tab opened.
+    const loggedAtOpen: number[] = [];
+    openWindow.mockImplementation(() => {
+      loggedAtOpen.push(useHistoryStore.getState().historyLogs.length);
+      return null;
+    });
+    render(<Harness />);
+
+    await user.click(screen.getByRole('button', { name: 'Copy, open & next' }));
+    // The write is still pending, so nothing has opened and the studio has not moved.
+    expect(openWindow).not.toHaveBeenCalled();
+    expect(batch().ordinal).toBe(1);
+
+    finishWrite();
+    await waitFor(() => {
+      expect(useHistoryStore.getState().historyLogs).toHaveLength(1);
+    });
+    expect(loggedAtOpen).toEqual([0]);
+    expect(batch().ordinal).toBe(2);
+  });
+
+  it('copies once for a second press made while the first is still copying', async () => {
+    const user = setup();
+    let finishWrite = (): void => undefined;
+    writeText.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishWrite = resolve;
+        }),
+    );
+    render(<Harness />);
+    const button = screen.getByRole('button', { name: 'Copy, open & next' });
+
+    await user.click(button);
+    await user.click(button);
+    finishWrite();
+    await waitFor(() => {
+      expect(useHistoryStore.getState().historyLogs).toHaveLength(1);
+    });
+
+    expect(writeText).toHaveBeenCalledOnce();
+    expect(batch().ordinal).toBe(2);
+  });
+
+  it('does not step over a change the reader made while the copy was in flight', async () => {
+    const user = setup();
+    let finishWrite = (): void => undefined;
+    writeText.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishWrite = resolve;
+        }),
+    );
+    render(<Harness />);
+
+    await user.click(screen.getByRole('button', { name: 'Copy, open & next' }));
+    act(() => {
+      stepTo(-1);
+    });
+    const chosen = useOutputStore.getState().output;
+    finishWrite();
+    await waitFor(() => {
+      expect(useHistoryStore.getState().historyLogs).toHaveLength(1);
+    });
+
+    expect(useOutputStore.getState().output).toBe(chosen);
   });
 
   it('never takes the same prompt twice on the way through, and stops on the last sheet', async () => {
@@ -168,6 +243,25 @@ describe('CopyOpenNextButton', () => {
     expect(button).toHaveAttribute('aria-disabled', 'false');
   });
 
+  it('comes back after stepping away, even when a restore returns the very same configuration', async () => {
+    // A history restore or an undo writes back the configuration object it holds, which is the one
+    // the press was made on — so a button that compared against it would be spent again.
+    const user = setup();
+    stepTo(-1);
+    const pressedOn = useOutputStore.getState().output;
+    render(<Harness />);
+
+    await press(user, 'Copy & open');
+    act(() => {
+      stepTo(-2);
+    });
+    act(() => {
+      useOutputStore.getState().setOutputConfig(pressedOn);
+    });
+
+    expect(screen.getByRole('button', { name: 'Copy & open' })).toHaveAttribute('aria-disabled', 'false');
+  });
+
   it('works through the batch again from the first sheet after a setting changes', async () => {
     // Issue #307's second workflow: every sheet has been copied, the reader goes back to the first,
     // changes a setting and starts again. Each sheet already reads as copied in the history, so a
@@ -201,6 +295,21 @@ describe('CopyOpenNextButton', () => {
     expect(writeText).toHaveBeenCalledOnce();
     expect(openWindow).not.toHaveBeenCalled();
     expect(batch().ordinal).toBe(2);
+  });
+
+  it('only copies on the last sheet for a target that has no generator page, then waits', async () => {
+    const user = setup();
+    useOutputStore.getState().setOutputField('targetModel', 'GENERIC');
+    stepTo(-1);
+    const onLast = useOutputStore.getState().output;
+    render(<Harness />);
+
+    await press(user, 'Copy');
+
+    expect(writeText).toHaveBeenCalledOnce();
+    expect(openWindow).not.toHaveBeenCalled();
+    expect(useOutputStore.getState().output).toBe(onLast);
+    expect(screen.getByRole('button', { name: 'Copy' })).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('copies and opens a configuration that is one sheet, then waits', async () => {
