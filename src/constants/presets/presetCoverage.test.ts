@@ -248,4 +248,14 @@ describe('no shipped preset contradicts itself', () => {
 
     expect(preset.output.spriteTargetSize).not.toBe('');
   });
+
+  it.each(PRESETS)('$name states a size only under CUSTOM, the profile that reads one', (preset) => {
+    // The converse, and issue #405: the other three profiles each state a scale of their own, so the
+    // field is read only under `CUSTOM`. A size carried beside a stock profile is a value the prompt
+    // never states, the studio never shows and the quantiser never measures against, which is what
+    // nineteen presets did before the field was gated.
+    if (preset.output.spriteTargetSize === '') return;
+
+    expect(preset.output.resolutionProfile).toBe('CUSTOM');
+  });
 });

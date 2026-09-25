@@ -89,7 +89,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.OBLIQUE_45,
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       directions: 'SINGLE_FRONT',
-      resolutionProfile: 'MID_RESOLUTION',
+      resolutionProfile: 'CUSTOM',
       surfaceDetail: 'DETAILED_PRODUCTION',
       lightingModel: 'UNLIT_EMISSIVE_BAKED',
       rigMode: 'NONE',

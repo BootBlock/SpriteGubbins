@@ -118,6 +118,7 @@ describe('minFeatureSize', () => {
       'CUTOUT_RIG_SINGLE_DIRECTION',
       'SINGLE_FRONT',
       0,
+      'CUSTOM',
       '480 × 960 px assembled',
     );
     expect(assembled).toEqual({ quantity: 'ASSEMBLED', size: { width: 480, height: 960 } });
@@ -135,6 +136,7 @@ describe('minFeatureSize', () => {
         'CUTOUT_RIG_SINGLE_DIRECTION',
         'SINGLE_FRONT',
         0,
+        'CUSTOM',
         size,
       );
       expect(minFeatureSize('CUSTOM', rig, false, null)).toBe('1 × 1 delivered pixels');

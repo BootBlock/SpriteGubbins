@@ -163,8 +163,9 @@ export function renderStyleDigest(
   output: OutputConfig,
 ): string {
   const pass = validationPassFor(output.renderStyle);
-  // The size the sheet actually states, which is the rig's frame wherever a contract applies — the
-  // same answer `promptFacts` reaches, through the same module. A header naming the field the
+  // The profile and the size the sheet actually states, which are `CUSTOM` and the rig's frame
+  // wherever a contract applies, and no size under a profile that states its own scale — the same
+  // answer `promptFacts` reaches, through the same module. A header naming the field the
   // contract supersedes would put a value in front of the reader that changes nothing, which is
   // what this module refuses to do for a machine's colours and a validation pass already.
   const plan = sheetPlanFor(
@@ -174,13 +175,13 @@ export function renderStyleDigest(
     output.directions,
     output.sheetIndex,
   );
-  const stated = sheetTargetSize(category, subject, output, plan, sheetRigContract(plan, output));
+  const sizing = sheetTargetSize(category, subject, output, plan, sheetRigContract(plan, output));
 
   return join([
     output.renderStyle,
     pass === null ? output.surfaceDetail : '',
-    output.resolutionProfile,
-    stated.text,
+    sizing.profile,
+    sizing.text,
     colourDigest(output, pass),
     pass === null ? output.outlineStyle : '',
     pass?.withholdsLight === true ? '' : output.lightingModel,

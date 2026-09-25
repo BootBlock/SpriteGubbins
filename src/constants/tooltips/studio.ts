@@ -87,7 +87,7 @@ export const STUDIO_ACTION_TOOLTIPS = {
     'The contract is carried with the configuration, so a saved preset or a restored prompt keeps it. The line under this control says when the one in force came with a preset.',
 
   removeRigContract:
-    'Drops the loaded rig contract. The sheet goes back to the piece list this app authors and to the target size you typed, and nothing else changes. Load the file again to get the engine’s own geometry back.',
+    'Drops the loaded rig contract. The sheet goes back to the piece list this app authors and to the resolution profile and target size you chose, and nothing else changes. Load the file again to get the engine’s own geometry back.',
 
   loadCustomPalette:
     'Reads a palette of your own from a file, so the prompt states the colours your project already uses instead of a machine’s. The file is read in this tab and never leaves it. It takes the three forms this app writes:\n\n' +

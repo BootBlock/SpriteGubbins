@@ -123,7 +123,11 @@ describe('sheetDigest', () => {
 describe('renderStyleDigest', () => {
   it('covers all seven controls when they are all set', () => {
     // With no palette pinned, which is what leaves the colour budget as the group's colour setting.
-    const output = withOutput({ spriteTargetSize: '48 × 96 px', palette: 'FREE' });
+    const output = withOutput({
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '48 × 96 px',
+      palette: 'FREE',
+    });
     const digest = renderStyleDigest('CHARACTER', standardSubject(), output);
     for (const value of [
       output.renderStyle,
@@ -136,6 +140,17 @@ describe('renderStyleDigest', () => {
     ]) {
       expect(digest).toContain(value);
     }
+  });
+
+  it('omits a typed size under a profile that states its own scale, as the compiler does', () => {
+    const digest = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
+      withOutput({ resolutionProfile: 'HIGH_RESOLUTION', spriteTargetSize: '48 × 96 px', palette: 'FREE' }),
+    );
+
+    expect(digest).toContain('HIGH_RESOLUTION');
+    expect(digest).not.toContain('48 × 96 px');
   });
 
   it('omits the target size when it has none — the compiler omits its line too', () => {

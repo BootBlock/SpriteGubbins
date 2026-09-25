@@ -164,7 +164,7 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
       // edge for a gap to appear at, so the joints can butt exactly and the seam is masked by the
       // material rather than by geometry.
       overlapMargin: 'NONE',
-      resolutionProfile: 'MID_RESOLUTION',
+      resolutionProfile: 'CUSTOM',
       spriteTargetSize: '64 × 64 px assembled',
       aspectRatio: 'SQUARE_1_1',
       targetModel: 'CHATGPT_5_6_SOL',

@@ -2385,6 +2385,7 @@ describe('generatePrompt — technical settings in prose', () => {
       withOutput({
         directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
         rigMode: 'CUTOUT_RIG',
+        resolutionProfile: 'CUSTOM',
         spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
       }),
     );
@@ -2403,6 +2404,7 @@ describe('generatePrompt — technical settings in prose', () => {
       defaultSubjectFor('ICON'),
       withOutput({
         directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+        resolutionProfile: 'CUSTOM',
         spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
       }),
     );
@@ -2416,6 +2418,7 @@ describe('generatePrompt — technical settings in prose', () => {
       SUBJECT,
       withOutput({
         directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+        resolutionProfile: 'CUSTOM',
         spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
       }),
     );

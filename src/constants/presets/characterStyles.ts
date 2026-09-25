@@ -43,7 +43,7 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
       renderStyle: 'RETRO_PIXEL_ART',
       // The three that make a retro sheet retro, rather than a modern sheet described as one: a small
       // figure, a small palette, and no interior detail competing with the outline.
-      resolutionProfile: 'RETRO_16_BIT',
+      resolutionProfile: 'CUSTOM',
       paletteLimit: 'STRICT_32_COLOR',
       surfaceDetail: 'MINIMAL',
       outlineStyle: 'PURE_BLACK_OUTLINE',

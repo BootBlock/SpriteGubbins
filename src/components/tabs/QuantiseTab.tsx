@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { KEY_OFFER_BORDER_SHARE } from '../../constants/keyOffer.ts';
+import { useComponentTargetSize } from '../../hooks/useComponentTargetSize.ts';
 import { useImageDrop } from '../../hooks/useImageDrop.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useImagePaste } from '../../hooks/useImagePaste.ts';
@@ -16,7 +17,6 @@ import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { keyingInForce } from '../../utils/keyingInForce.ts';
 import { statusOf } from '../../utils/quantiseStatus.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
-import { componentTargetSize } from '../../utils/componentTargetSize.ts';
 import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
 import { ImageDropVeil } from '../quantise/ImageDropVeil.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
@@ -63,7 +63,6 @@ export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   const palette = useOutputStore((state) => state.output.palette);
   const customPalette = useOutputStore((state) => state.output.customPalette);
-  const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
   const directions = useOutputStore((state) => state.output.directions);
@@ -146,18 +145,16 @@ export function QuantiseTab() {
   // `grid`: it is an upper bound derived from how many components the sheet has to seat, not a
   // measurement of this image, so it is offered to click and never silently preferred.
   //
-  // Read through `componentTargetSize` rather than parsed here, because both things downstream of it
-  // are per-component and a sheet of parts states the assembled subject instead. Fed the raw field
+  // Read through `useComponentTargetSize` rather than parsed here, because both things downstream of
+  // it are per-component and a sheet of parts states the assembled subject instead. Fed the raw field
   // there, the grid candidate seats fifteen cells of a whole character rather than of a torso, and
   // the Sprites panel compares the largest piece against a size no piece on the sheet has — so its
   // *within the target* carries whatever slack separates a torso from a whole body, which is a
-  // number nothing here knows. `null` withdraws both, rather than putting a figure in their place:
-  // a loaded rig contract does state a size per piece, but the pieces differ, and one number is
+  // number nothing here knows. `null` withdraws both, rather than putting a figure in their place,
+  // and it is the answer under every profile but `CUSTOM` too, since each states a scale of its own.
+  // A loaded rig contract does state a size per piece, but the pieces differ, and one number is
   // exactly what this pair of readers cannot be given honestly.
-  const target = useMemo(
-    () => componentTargetSize(category, subject, directionalMode, directions, sheetIndex, spriteTargetSize),
-    [category, subject, directionalMode, directions, sheetIndex, spriteTargetSize],
-  );
+  const target = useComponentTargetSize();
   // How many components this sheet's own prompt contracts for — the figure the sprite panel holds
   // the segmentation against, and the ceiling the grid suggestion seats. One derivation for both,
   // because two would be two answers to "what did the prompt ask for" on one screen.

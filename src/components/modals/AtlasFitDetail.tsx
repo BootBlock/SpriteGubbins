@@ -67,7 +67,8 @@ export function AtlasFitDetail({
     return (
       <p className="text-xs leading-relaxed text-ink-muted">
         Each component has <Pixels>{`${usableBounds} × ${usableBounds} px`}</Pixels> to itself. Name a{' '}
-        <span className="font-semibold">Target Component Size</span> in the studio —{' '}
+        <span className="font-semibold">Target Component Size</span> in the studio, which the{' '}
+        <span className="font-mono">CUSTOM</span> resolution profile offers —{' '}
         <span className="font-mono">48 × 96 px</span>, say — and this becomes a check against it.
       </p>
     );

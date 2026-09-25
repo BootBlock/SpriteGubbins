@@ -7,7 +7,7 @@ import { callSitesPassing } from './jsxCallSites.ts';
  * That docblock argues three of its optional props into existence by counting: `description` is
  * optional because only seven of the app’s selects have anything to say under them — six reading a
  * row out of a table behind them, and the rig mode saying which sheet withdrew an option —
- * `disabledReason` because exactly one has a setting above it that takes its value over, and
+ * `disabledReason` because exactly two have a setting that takes their value over, and
  * `nameQualifier` because exactly one is rendered once for each item in a list. The counts *are* the
  * argument — at one exception, the claim that a permanently-empty string everywhere else would bury
  * it is self-evident, and at half the call sites it would be false — so a figure that has drifted is
@@ -41,13 +41,17 @@ const DESCRIPTION_CALL_SITES = [
 ];
 
 /**
- * Where a `disabledReason` is passed: the rig mode, which the sheet contents can fix.
+ * Where a `disabledReason` is passed: the rig mode, which the sheet contents can fix, and the
+ * resolution profile, which a loaded rig contract sets to `CUSTOM` on the sheet it describes.
  *
- * The same file now appears in both lists, which is the pairing worth noticing rather than a
+ * The rig mode's file appears in both lists, which is the pairing worth noticing rather than a
  * duplicate: one sheet takes the rig choice over outright, and another withdraws one option from it,
  * so the control says both things through the two props that exist for them.
  */
-const DISABLED_REASON_CALL_SITES = ['src/components/studio/RiggingFields.tsx'];
+const DISABLED_REASON_CALL_SITES = [
+  'src/components/studio/RenderStyleFields.tsx',
+  'src/components/studio/RiggingFields.tsx',
+];
 
 /**
  * Where a `nameQualifier` is passed: the project dropdown, which each saved-preset row renders.

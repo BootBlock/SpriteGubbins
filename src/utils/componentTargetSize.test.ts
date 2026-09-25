@@ -87,6 +87,7 @@ describe('componentTargetSize', () => {
         'TILESET_MODULAR',
         'SINGLE_FRONT',
         0,
+        'CUSTOM',
         '32 × 32 px per tile',
       ),
     ).toEqual({
@@ -107,7 +108,7 @@ describe('componentTargetSize', () => {
       'CORE_DIRECTIONAL_VARIANTS',
     ] as const) {
       expect(
-        componentTargetSize('CHARACTER', standardSubject(), mode, 'SINGLE_FRONT', 0, ASSEMBLED),
+        componentTargetSize('CHARACTER', standardSubject(), mode, 'SINGLE_FRONT', 0, 'CUSTOM', ASSEMBLED),
       ).toBeNull();
     }
   });
@@ -116,7 +117,15 @@ describe('componentTargetSize', () => {
     // Which is what makes this a question about the sheet plan rather than about the text — the
     // word "assembled" is the preset author's, and nothing here parses it.
     expect(
-      componentTargetSize('TERRAIN', standardSubject(), 'TILESET_MODULAR', 'SINGLE_FRONT', 0, ASSEMBLED),
+      componentTargetSize(
+        'TERRAIN',
+        standardSubject(),
+        'TILESET_MODULAR',
+        'SINGLE_FRONT',
+        0,
+        'CUSTOM',
+        ASSEMBLED,
+      ),
     ).toEqual({
       width: 48,
       height: 96,
@@ -132,7 +141,15 @@ describe('componentTargetSize', () => {
       statesAssembledSize('CHARACTER', standardSubject(), 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0),
     ).toBe(true);
     expect(
-      statedTargetSize('CHARACTER', standardSubject(), 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0, ''),
+      statedTargetSize(
+        'CHARACTER',
+        standardSubject(),
+        'CUTOUT_RIG_SINGLE_DIRECTION',
+        'SINGLE_FRONT',
+        0,
+        'CUSTOM',
+        '',
+      ),
     ).toBeNull();
   });
 
@@ -144,6 +161,7 @@ describe('componentTargetSize', () => {
         'CUTOUT_RIG_SINGLE_DIRECTION',
         'SINGLE_FRONT',
         0,
+        'CUSTOM',
         ASSEMBLED,
       ),
     ).toEqual({
@@ -157,6 +175,7 @@ describe('componentTargetSize', () => {
         'TILESET_MODULAR',
         'SINGLE_FRONT',
         0,
+        'CUSTOM',
         '32 × 32 px per tile',
       ),
     ).toEqual({
@@ -167,7 +186,7 @@ describe('componentTargetSize', () => {
 
   it('answers null for a field with no readable pair in it, as the parse always did', () => {
     expect(
-      componentTargetSize('TERRAIN', standardSubject(), 'TILESET_MODULAR', 'SINGLE_FRONT', 0, ''),
+      componentTargetSize('TERRAIN', standardSubject(), 'TILESET_MODULAR', 'SINGLE_FRONT', 0, 'CUSTOM', ''),
     ).toBeNull();
     expect(
       componentTargetSize(
@@ -176,6 +195,7 @@ describe('componentTargetSize', () => {
         'TILESET_MODULAR',
         'SINGLE_FRONT',
         0,
+        'CUSTOM',
         '2 metres tall at 48 px per metre',
       ),
     ).toBeNull();

@@ -8,6 +8,7 @@ import {
 } from '../../constants/atlas.ts';
 import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useClipboard } from '../../hooks/useClipboard.ts';
+import { useComponentTargetSize } from '../../hooks/useComponentTargetSize.ts';
 import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
@@ -16,7 +17,7 @@ import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { textureCostsFor } from '../../utils/atlasBudget.ts';
 import { smallestCanvasFor, spriteFitFor } from '../../utils/atlasFit.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
-import { componentTargetSize, statesAssembledSize } from '../../utils/componentTargetSize.ts';
+import { statesAssembledSize } from '../../utils/componentTargetSize.ts';
 import {
   buildEngineMetadata,
   calculateAtlasMetrics,
@@ -60,7 +61,6 @@ export function AtlasCalculatorContents() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
   const aspectRatio = useOutputStore((state) => state.output.aspectRatio);
-  const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directions = useOutputStore((state) => state.output.directions);
   const rigContract = useOutputStore((state) => state.output.rigContract);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
@@ -93,26 +93,15 @@ export function AtlasCalculatorContents() {
     widthBias: widthBiasFor(aspectRatio),
   };
   const metrics = calculateAtlasMetrics(config);
-  // Derived during render rather than memoised. Every input is a primitive that changed this render
-  // anyway, so a memo keyed on the two objects above would rebuild on every pass and only add a
-  // cache that never hits.
-  //
   // Per-component, and asked for as such: a cell holds one component, so a configuration whose
   // stated size is the assembly has no size to check a cell against. That is any sheet whose
   // components are the parts one subject is cut into — a rig's head, torso, pelvis and twelve limb
   // segments, a pose library's, an ITEM part library's grip and shaft. Checked against the subject
   // they assemble into, the fit row answered for a component none of them is, and the smallest
   // canvas it names is the one that would seat fifteen whole characters. Both withdraw on `null`,
-  // which the empty field has always produced. The memory figures below are a function of the canvas
-  // alone and are unaffected either way.
-  const target = componentTargetSize(
-    category,
-    subject,
-    directionalMode,
-    directions,
-    sheetIndex,
-    spriteTargetSize,
-  );
+  // which the empty field and every profile but `CUSTOM` produce. The memory figures below are a
+  // function of the canvas alone and are unaffected either way.
+  const target = useComponentTargetSize();
   // The sheet's answer rather than the field's. The row below has to be true while the box is empty,
   // and on such a sheet the truthful thing to say then is not "name a size" — nothing the reader can
   // type will make a cell checkable against a component this sheet does not draw.

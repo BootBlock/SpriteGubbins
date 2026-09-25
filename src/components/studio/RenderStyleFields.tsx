@@ -8,11 +8,14 @@ import {
   SURFACE_DETAIL_CHOICES,
 } from '../../constants/output/index.ts';
 import { validationPassFor } from '../../constants/promptText/index.ts';
+import { resolveMode, sheetPlanFor } from '../../constants/sheetPlans/index.ts';
 import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { statesAssembledSize } from '../../utils/componentTargetSize.ts';
 import { pinnedPalette } from '../../utils/pinnedPalette.ts';
+import { resolveResolutionProfile } from '../../utils/resolveResolutionProfile.ts';
+import { sheetRigContract } from '../../utils/sheetRigContract.ts';
 import type { ValidationPass } from '../../types/rendering.ts';
 import { SelectField } from '../common/SelectField.tsx';
 import { TextField } from '../common/TextField.tsx';
@@ -98,6 +101,20 @@ export function RenderStyleFields() {
     output.directions,
     output.sheetIndex,
   );
+  // The profile the sheet is drawn at, which a rig contract takes over on the sheet it describes —
+  // the answer the compiler and the header take, so the select cannot show a profile the prompt
+  // does not carry. See `resolveResolutionProfile`.
+  const rig = sheetRigContract(
+    sheetPlanFor(
+      category,
+      subject,
+      resolveMode(category, subject, output.directionalMode),
+      output.directions,
+      output.sheetIndex,
+    ),
+    output,
+  );
+  const profile = resolveResolutionProfile(output.resolutionProfile, rig);
 
   return (
     <>
@@ -127,8 +144,13 @@ export function RenderStyleFields() {
       <SelectField
         label="Resolution Profile"
         tooltip={OUTPUT_TOOLTIPS.resolutionProfile}
-        value={output.resolutionProfile}
+        value={profile}
         choices={RESOLUTION_PROFILE_CHOICES}
+        disabledReason={
+          rig === null
+            ? ''
+            : 'The loaded rig contract states the size of every piece, so this sheet is drawn to it. Remove the contract to choose a profile yourself.'
+        }
         onChange={(value) => {
           setOutputField('resolutionProfile', value);
         }}
@@ -145,16 +167,22 @@ export function RenderStyleFields() {
           px assembled` into section 2, a label and a value contradicting each other on one line, and
           what sent that figure on to five readers that treat it as one component's. The studio is
           where the field is filled in, so it is where the two quantities are told apart.
-          `statesAssembledSize` is the same answer the compiler and the two panels take. */}
-      <TextField
-        label={assembled ? 'Target Assembled Size' : 'Target Component Size'}
-        tooltip={OUTPUT_TOOLTIPS.spriteTargetSize}
-        value={output.spriteTargetSize}
-        placeholder={assembled ? '48 × 96 px assembled' : '48 × 96 px'}
-        onChange={(value) => {
-          setOutputField('spriteTargetSize', value);
-        }}
-      />
+          `statesAssembledSize` is the same answer the compiler and the two panels take.
+
+          Offered under `CUSTOM` alone, because the other three profiles each state a scale of their
+          own and a size beside one of them was a second answer to one question (issue #405). The
+          value stays in the store while it is withdrawn, as every withdrawn control's does. */}
+      {profile === 'CUSTOM' && (
+        <TextField
+          label={assembled ? 'Target Assembled Size' : 'Target Component Size'}
+          tooltip={OUTPUT_TOOLTIPS.spriteTargetSize}
+          value={output.spriteTargetSize}
+          placeholder={assembled ? '48 × 96 px assembled' : '48 × 96 px'}
+          onChange={(value) => {
+            setOutputField('spriteTargetSize', value);
+          }}
+        />
+      )}
 
       <PaletteField />
 

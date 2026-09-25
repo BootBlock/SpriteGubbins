@@ -1,5 +1,5 @@
 import { NOMINAL_SHEET_SIZE, SHEET_CELL_PITCH } from '../constants/sheetCanvas.ts';
-import type { AspectRatio, ResolutionProfile, TargetSize } from '../types/output.ts';
+import type { AspectRatio, TargetSize } from '../types/output.ts';
 import type { RenderStyle } from '../types/rendering.ts';
 import type { RigContract } from '../types/rigContract.ts';
 import { componentGridScale } from './componentGridScale.ts';
@@ -24,22 +24,20 @@ import { componentGridScale } from './componentGridScale.ts';
 /**
  * The scale, or `null` where this configuration has no native grid to present.
  *
- * Four things have to hold **where the figure comes from the studio's own fields**, and each `null`
+ * Three things have to hold **where the figure comes from the studio's own fields**, and each `null`
  * is a case where the prompt is better off saying nothing. Where an engine's rig contract is loaded
- * the answer comes from that instead, and only the first and the last of the four still apply — see
+ * the answer comes from that instead, and only the first and the last of the three still apply — see
  * {@link fromRig}:
  *
  * - **The style has to be pixel art.** A native pixel grid is that style's own unit; a painted or
  *   rendered sheet has no grid to enlarge, and section 0's rule wants to stand there unqualified.
- * - **The profile has to be `CUSTOM`**, which is the gate `minFeatureSize` and `smallScaleDiscipline`
- *   already apply to this same field and for the same reason: the other three profiles *are* a scale
- *   and state their own figure, so a second derived figure beside one of them is two answers to one
- *   question.
- * - **There has to be a per-component size.** The field is free prose, so it may hold no `W × H`
- *   pair at all — and on a sheet whose components are the parts one subject is cut into, the pair it
- *   holds is the *assembled* size, as the shipped preset *"48 × 96 px assembled (2 metres tall at 48
- *   px per metre)"* says outright.
- *   `componentTargetSize` answers both, and the caller resolves it: the search below seats one cell
+ * - **There has to be a per-component size.** Under any profile but `CUSTOM` there is none, because
+ *   `targetSizeField` reads the field only there: the other three profiles *are* a scale and state
+ *   their own figure, so a derived figure beside one of them is two answers to one question. The
+ *   field is free prose, so it may hold no `W × H` pair at all — and on a sheet whose components are
+ *   the parts one subject is cut into, the pair it holds is the *assembled* size, as the shipped
+ *   preset *"48 × 96 px assembled (2 metres tall at 48 px per metre)"* says outright.
+ *   `componentTargetSize` answers all three, and the caller resolves it: the search below seats one cell
  *   per component, so an assembled figure fed into it prices a canvas of fifteen whole characters
  *   and returns a scale for a sheet nobody asked for.
  * - **The enlargement has to be an enlargement.** A component already large enough to fill its share
@@ -55,7 +53,6 @@ import { componentGridScale } from './componentGridScale.ts';
  */
 export function nativeGridScale(
   renderStyle: RenderStyle,
-  profile: ResolutionProfile,
   target: TargetSize | null,
   aspectRatio: AspectRatio,
   components: number,
@@ -63,7 +60,7 @@ export function nativeGridScale(
 ): number | null {
   if (renderStyle !== 'PIXEL_ART' && renderStyle !== 'RETRO_PIXEL_ART') return null;
 
-  const seated = rig === null ? fromTarget(profile, target, components) : fromRig(rig, components);
+  const seated = rig === null ? fromTarget(target, components) : fromRig(rig, components);
   if (seated === null) return null;
 
   const scale = componentGridScale(
@@ -77,22 +74,20 @@ export function nativeGridScale(
 
 /** The cell and the count to seat, from the studio's own fields. */
 function fromTarget(
-  profile: ResolutionProfile,
   target: TargetSize | null,
   components: number,
 ): { cell: TargetSize; components: number } | null {
-  if (profile !== 'CUSTOM') return null;
   return target === null ? null : { cell: target, components };
 }
 
 /**
- * The cell from the engine's rig — where **two of the four `null`s above do not apply**.
+ * The cell from the engine's rig — where **the middle `null` above does not apply**.
  *
- * The profile gate is there because the field is free prose and only the reader knows which quantity
- * it names; a contract states the frame, every piece's size and how many pieces there are, so
- * nothing is being inferred and `HIGH_RESOLUTION` no longer means "no answer". That gate is why the
- * shipped rig preset carried no native-grid block at all, and why the pipeline it was written for
- * documents editing the size by hand to work at 4×.
+ * The typed size is read only under `CUSTOM` and may name the assembly, because the field is free
+ * prose and only the reader knows which quantity it names; a contract states the frame, every
+ * piece's size and how many pieces there are, so nothing is being inferred. A loaded rig resolves
+ * the sheet's profile to `CUSTOM` for the same reason — see `resolveResolutionProfile` — so the
+ * figure derived here is the sheet's one scale rather than a second one beside a share of the cell.
  *
  * **The largest piece is the cell**, because the canvas has to seat every piece at one scale — the
  * engine's importer picks a single scale for the whole actor, so a multiple that fits the small

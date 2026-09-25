@@ -32,10 +32,11 @@ export const OUTPUT_TOOLTIPS = {
     '- `CLEAN_PRODUCTION` is the usual choice.\n' +
     '- `TEXTURED` is for large pieces that will be seen close up.',
   resolutionProfile:
-    'The scale the sheet is drawn at, given as a share of the sheet’s own component grid rather than in pixels, so it holds whatever canvas the generator returns. It is independent of render style.\n\n' +
+    'The scale the sheet is drawn at, as a share of the sheet’s own component grid rather than in pixels, so it holds whatever canvas the generator returns.\n\n' +
     `The largest component fills ${shareRange('HIGH_RESOLUTION')} of its cell height at high resolution and ${shareRange('MID_RESOLUTION')} at mid, and every other component is drawn to that scale, so a hand stays smaller than its torso. Each sheet fills its own grid, so a sheet of twelve components draws them larger than a sheet of thirty-four.\n\n` +
     '- `RETRO_16_BIT` states a height in pixels instead.\n' +
-    '- `CUSTOM` is for an exact component size, or for pieces on different sheets that must come out at one size. State the size in Target Component Size.',
+    '- `CUSTOM` states an exact size instead, in Target Component Size, which no other profile offers. Use it for a pixel grid, or for pieces on different sheets that must come out at one size.\n\n' +
+    'A loaded rig contract sets `CUSTOM` on the sheet it describes, because the rig states every piece’s size.',
   // The figures are the quantiser's, not the prompt's: the prompt states a range, value bands or no
   // budget at all, and the tab reduces to one fixed count per budget, so they are read from the table
   // that tab reads rather than typed out.
@@ -119,9 +120,9 @@ export const OUTPUT_TOOLTIPS = {
     'Pick `TRANSPARENT` only if the target really returns alpha; most return a flat matte whatever you ask for. On that choice the prompt asks for the file’s own alpha channel and rules out a drawn checkerboard, a grid of grey squares and that flat matte.\n\n' +
     'Any other choice is reserved for the background: the prompt keeps that colour, and any shade near enough to be keyed out with it, off every component and out of a pinned palette’s colours.',
   spriteTargetSize:
-    'Sets an exact pixel size for one component, such as “48 × 96 px”. Leave it empty and the prompt omits the line.\n\n' +
+    'Sets an exact pixel size for one component, such as “48 × 96 px”. Leave it empty and the prompt omits the line. Only the `CUSTOM` resolution profile offers it.\n\n' +
     'On a sheet of parts that assemble into one subject — a cut-out rig, a pose library, an articulation sheet, an item’s part library — the label reads Target Assembled Size, the size describes the whole assembled subject, and the per-component readings below do not apply.\n\n' +
-    'Under the `CUSTOM` profile it sets the smallest feature allowed, and 32 px or under on the shorter edge adds sprite-scale rules. On a pixel-art sheet under that profile it is read as the native grid, and the prompt asks for hard pixel edges at a whole-number scale above 1:1.\n\n' +
+    'It sets the smallest feature allowed, and 32 px or under on the shorter edge adds sprite-scale rules. On a pixel-art sheet it is read as the native grid, and the prompt asks for hard pixel edges at a whole-number scale above 1:1.\n\n' +
     'A loaded rig contract overrides this field on the sheet it describes, and what you type here returns when you remove it.',
 
   rigMode:

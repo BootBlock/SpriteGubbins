@@ -90,6 +90,7 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       jointCapStyle: 'SQUARED',
       overlapMargin: 'NONE',
       surfaceDetail: 'DETAILED_PRODUCTION',
+      resolutionProfile: 'CUSTOM',
       spriteTargetSize: '48 × 64 px assembled',
       aspectRatio: 'SQUARE_1_1',
       targetModel: 'GENERIC',

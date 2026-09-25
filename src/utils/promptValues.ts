@@ -73,7 +73,7 @@ export function promptValues(
     reference,
     componentCount,
     rig,
-    sizing: { stated, text: statedText, component, nativeScale },
+    sizing: { profile, stated, text: statedText, component, nativeScale },
     anatomyFacings,
     additionalAnatomyLine,
     oneSidedFeatures,
@@ -148,7 +148,7 @@ export function promptValues(
     // component's own cell on every sheet, because a share of the sheet height was decided by the
     // component count or by the layout on every plan that carried one — see `SHARE_RANGE`.
     RESOLUTION_PROFILE_DESCRIPTION: resolutionProfileDescription(
-      output.resolutionProfile,
+      profile,
       stated?.quantity === 'ASSEMBLED',
       plan.scaleUnit,
     ),
@@ -159,10 +159,10 @@ export function promptValues(
     // stated *native* unconditionally for as long as the two were separate, so every pixel-art
     // prompt on a stock profile — the default among them — measured against a unit it never
     // defined.
-    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, stated, nativeScale !== null, rig),
+    MIN_FEATURE_SIZE: minFeatureSize(profile, stated, nativeScale !== null, rig),
     // Sprite-scale bullets join the pixel discipline only when the stated component is small
     // enough that silhouette carries the identity; `''` is what drops the optional line.
-    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, component),
+    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(profile, component),
     // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
     // the value is still supplied because `substitute` throws on a token it has no value for, and
     // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.

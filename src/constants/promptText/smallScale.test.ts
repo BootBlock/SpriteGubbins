@@ -81,6 +81,7 @@ describe('smallScaleDiscipline', () => {
       'CUTOUT_RIG_SINGLE_DIRECTION',
       'SINGLE_FRONT',
       0,
+      'CUSTOM',
       '24 × 24 px assembled',
     );
     expect(assembled).toBeNull();
@@ -94,6 +95,7 @@ describe('smallScaleDiscipline', () => {
         'TILESET_MODULAR',
         'SINGLE_FRONT',
         0,
+        'CUSTOM',
         '24 × 24 px assembled',
       ),
     ).not.toBeNull();

@@ -14,7 +14,8 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * Every one states its tile size outright, for the reason the building tile sets do: a tile that does
  * not match the engine's grid is not a stylistic miss, it is unusable, and no resolution profile can
  * say it, since a profile states a share of the largest component's own cell in the exploded grid
- * rather than an absolute size — and a share is still not a pixel count an engine can be handed.
+ * rather than an absolute size — and a share is still not a pixel count an engine can be handed. So
+ * every one takes `CUSTOM`, the one profile that reads a stated size.
  *
  * **The cliff preset is the one that is not a blend set**, and it is here to show where the blend set
  * stops. A cliff is a change in height rather than in material, so it needs an exposed face that a
@@ -144,7 +145,7 @@ export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
       directionalMode: 'TILESET_MODULAR',
       directions: 'SINGLE_FRONT',
       renderStyle: 'RETRO_PIXEL_ART',
-      resolutionProfile: 'RETRO_16_BIT',
+      resolutionProfile: 'CUSTOM',
       paletteLimit: 'STRICT_32_COLOR',
       surfaceDetail: 'MINIMAL',
       outlineStyle: 'PURE_BLACK_OUTLINE',

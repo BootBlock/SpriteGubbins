@@ -6,21 +6,15 @@ import { parseTargetSize } from './targetSize.ts';
 import type { RigContract } from '../types/rigContract.ts';
 
 /**
- * The configuration the size is read under: pixel art, and the one profile that has no scale.
+ * The configuration the size is read under: pixel art.
  *
  * The size arrives parsed, because that is how the compiler hands it over — through
- * `componentTargetSize`, which answers whether the field states a component at all. The prose stays
+ * `componentTargetSize`, which answers whether the field states a component at all, and states none
+ * under a profile other than `CUSTOM`. The prose stays
  * written out here so each case still reads as the field a user would have typed.
  */
 function scaleFor(spriteTargetSize: string, components: number): number | null {
-  return nativeGridScale(
-    'PIXEL_ART',
-    'CUSTOM',
-    parseTargetSize(spriteTargetSize),
-    'WIDE_16_9',
-    components,
-    null,
-  );
+  return nativeGridScale('PIXEL_ART', parseTargetSize(spriteTargetSize), 'WIDE_16_9', components, null);
 }
 
 describe('nativeGridScale', () => {
@@ -40,7 +34,7 @@ describe('nativeGridScale', () => {
 
   it('is a function of the sheet shape as well', () => {
     // A square canvas is 1024 × 1024 rather than 1024 × 576, so the same twelve components fit at 7×.
-    expect(nativeGridScale('PIXEL_ART', 'CUSTOM', { width: 16, height: 32 }, 'SQUARE_1_1', 12, null)).toBe(7);
+    expect(nativeGridScale('PIXEL_ART', { width: 16, height: 32 }, 'SQUARE_1_1', 12, null)).toBe(7);
   });
 
   it('reads the size out of the kind of prose a preset actually holds', () => {
@@ -62,10 +56,11 @@ describe('nativeGridScale', () => {
       'CUTOUT_RIG_SINGLE_DIRECTION',
       'SINGLE_FRONT',
       0,
+      'CUSTOM',
       '48 × 96 px assembled (2 metres tall at 48 px per metre)',
     );
     expect(assembled).toBeNull();
-    expect(nativeGridScale('PIXEL_ART', 'CUSTOM', assembled, 'WIDE_16_9', 15, null)).toBeNull();
+    expect(nativeGridScale('PIXEL_ART', assembled, 'WIDE_16_9', 15, null)).toBeNull();
     // The same words on a sheet whose components *are* the figure still answer — the test above —
     // which is what shows the withdrawal is about the sheet rather than about the text.
   });
@@ -73,24 +68,28 @@ describe('nativeGridScale', () => {
   it('says nothing where the style has no native grid to enlarge', () => {
     // Section 0's resampling rule stands unqualified on a painted sheet, which is correct there:
     // there is no grid of placed pixels to multiply.
-    expect(
-      nativeGridScale('PAINTED_2D', 'CUSTOM', { width: 16, height: 32 }, 'WIDE_16_9', 12, null),
-    ).toBeNull();
-    expect(
-      nativeGridScale('CLAY_RENDER', 'CUSTOM', { width: 16, height: 32 }, 'WIDE_16_9', 12, null),
-    ).toBeNull();
-    expect(
-      nativeGridScale('RETRO_PIXEL_ART', 'CUSTOM', { width: 16, height: 32 }, 'WIDE_16_9', 12, null),
-    ).toBe(6);
+    expect(nativeGridScale('PAINTED_2D', { width: 16, height: 32 }, 'WIDE_16_9', 12, null)).toBeNull();
+    expect(nativeGridScale('CLAY_RENDER', { width: 16, height: 32 }, 'WIDE_16_9', 12, null)).toBeNull();
+    expect(nativeGridScale('RETRO_PIXEL_ART', { width: 16, height: 32 }, 'WIDE_16_9', 12, null)).toBe(6);
   });
 
-  it('says nothing where the profile states a scale of its own', () => {
-    // The gate `minFeatureSize` and `smallScaleDiscipline` already apply to this field: the other
-    // three profiles *are* a scale, so a derived figure beside one is two answers to one question.
+  it('says nothing where the profile states a scale of its own, because no size reaches it', () => {
+    // The other three profiles *are* a scale, so a derived figure beside one is two answers to one
+    // question. `componentTargetSize` reads the field only under `CUSTOM`, so the same words that
+    // answer 6 there arrive here as no size at all. Driven end to end, because the gate moved out of
+    // this function and into the resolver (issue #405).
     for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const) {
-      expect(
-        nativeGridScale('PIXEL_ART', profile, { width: 16, height: 32 }, 'WIDE_16_9', 12, null),
-      ).toBeNull();
+      const target = componentTargetSize(
+        'TERRAIN',
+        standardSubject(),
+        'TILESET_MODULAR',
+        'SINGLE_FRONT',
+        0,
+        profile,
+        '16 × 32 px',
+      );
+      expect(target, profile).toBeNull();
+      expect(nativeGridScale('PIXEL_ART', target, 'WIDE_16_9', 12, null), profile).toBeNull();
     }
   });
 
@@ -126,16 +125,17 @@ describe('nativeGridScale', () => {
       };
     }
 
-    it('answers under a profile that states its own scale, which a typed size cannot', () => {
-      // The profile gate exists because the field is free prose and only the reader knows which
-      // quantity it names. A contract states the frame, every piece and how many there are, so
-      // nothing is inferred — and this is the case the shipped rig preset is in.
+    it('answers from the contract with no typed size at all', () => {
+      // A typed size is read only under `CUSTOM` and may name the assembly, because the field is free
+      // prose and only the reader knows which quantity it names. A contract states the frame, every
+      // piece and how many there are, so nothing is inferred — and a loaded one resolves the sheet's
+      // profile to `CUSTOM`, so this is the sheet's one scale.
       const pieces = rig([
         { width: 20, height: 12 },
         { width: 8, height: 22 },
       ]);
 
-      expect(nativeGridScale('PIXEL_ART', 'HIGH_RESOLUTION', null, 'WIDE_16_9', 2, pieces)).not.toBeNull();
+      expect(nativeGridScale('PIXEL_ART', null, 'WIDE_16_9', 2, pieces)).not.toBeNull();
     });
 
     it('seats the largest piece, because the whole actor is imported at one scale', () => {
@@ -149,8 +149,8 @@ describe('nativeGridScale', () => {
 
       // Exact, not "smaller or absent": a regression that answered `null` for both would satisfy an
       // inequality and tell the prompt nothing at all.
-      expect(nativeGridScale('PIXEL_ART', 'HIGH_RESOLUTION', null, 'WIDE_16_9', 1, small)).toBe(48);
-      expect(nativeGridScale('PIXEL_ART', 'HIGH_RESOLUTION', null, 'WIDE_16_9', 1, mixed)).toBe(4);
+      expect(nativeGridScale('PIXEL_ART', null, 'WIDE_16_9', 1, small)).toBe(48);
+      expect(nativeGridScale('PIXEL_ART', null, 'WIDE_16_9', 1, mixed)).toBe(4);
     });
 
     it('ignores the typed size entirely once a contract is loaded', () => {
@@ -159,25 +159,18 @@ describe('nativeGridScale', () => {
       // The same count either side, because the count is *not* ignored — the canvas still has to
       // seat every component the sheet draws. It is the typed size that stops being read.
       const pieces = rig([{ width: 8, height: 22 }]);
-      const withField = nativeGridScale(
-        'PIXEL_ART',
-        'CUSTOM',
-        { width: 512, height: 512 },
-        'WIDE_16_9',
-        3,
-        pieces,
-      );
+      const withField = nativeGridScale('PIXEL_ART', { width: 512, height: 512 }, 'WIDE_16_9', 3, pieces);
 
       // Both sides stated, so a regression answering `null` to each does not satisfy it by agreeing
       // with itself.
       expect(withField).toBe(17);
-      expect(nativeGridScale('PIXEL_ART', 'CUSTOM', null, 'WIDE_16_9', 3, pieces)).toBe(17);
+      expect(nativeGridScale('PIXEL_ART', null, 'WIDE_16_9', 3, pieces)).toBe(17);
     });
 
     it('still says nothing outside pixel art, which is the one gate a rig does not lift', () => {
       const pieces = rig([{ width: 8, height: 22 }]);
 
-      expect(nativeGridScale('CLAY_RENDER', 'HIGH_RESOLUTION', null, 'WIDE_16_9', 1, pieces)).toBeNull();
+      expect(nativeGridScale('CLAY_RENDER', null, 'WIDE_16_9', 1, pieces)).toBeNull();
     });
   });
 });

@@ -252,7 +252,7 @@ export function sheetFacts(
 
   // How big this sheet's things are and the grid they are drawn on, resolved together so the phrase
   // section 2 prints and the arithmetic under it cannot name different figures. See `sheetSizing.ts`
-  // for why a loaded contract supersedes the field, and for the four ways there is no native grid.
+  // for why a loaded contract supersedes the field, and for the three ways there is no native grid.
   const sizing = sheetSizing(category, subject, output, plan, rig, componentCount);
 
   // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the

@@ -48,6 +48,7 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
       surfaceDetail: 'DETAILED_PRODUCTION',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
       spriteTargetSize: '32 × 32 px per cell',
       aspectRatio: 'SQUARE_1_1',
       targetModel: 'GENERIC',
