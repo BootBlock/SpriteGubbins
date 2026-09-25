@@ -6,7 +6,8 @@ import { useSheetWriteStore } from '../../stores/useSheetWriteStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { createImage } from '../../utils/imageData.ts';
 import { encodePng } from '../../utils/encodePng.ts';
-import type { QuantiseResult, SheetScale } from '../../types/quantiser.ts';
+import { RESULT_PREVIEW_MODES_UNAVAILABLE } from '../../constants/previewModes.ts';
+import type { Quantised, QuantiseResult, SheetScale } from '../../types/quantiser.ts';
 import { Toast } from '../common/Toast.tsx';
 import { ImageComparison } from './ImageComparison.tsx';
 
@@ -582,9 +583,6 @@ describe('ImageComparison’s preview modes', () => {
   });
 
   it('falls back to the pair when there is no result, rather than wiping against nothing', () => {
-    // Both of the other modes need something to compare with. Derived rather than corrected in
-    // state, which is the call the toolbar already makes about a download rung a result has
-    // outgrown: what the pills show is what the panel is actually doing.
     show(null);
     choose('Wipe');
 
@@ -595,6 +593,78 @@ describe('ImageComparison’s preview modes', () => {
       'aria-pressed',
       'true',
     );
+  });
+
+  it('says why the result’s layouts cannot be chosen, on each of them, until there is a result', () => {
+    show(null);
+
+    const pills = screen.getByRole('group', { name: 'Preview layout' });
+    for (const layout of ['Wipe', 'Difference', 'Sprites', 'Onion skin']) {
+      const pill = within(pills).getByRole('button', { name: layout });
+      expect(pill).toHaveAttribute('aria-disabled', 'true');
+      expect(pill).toHaveAccessibleDescription(RESULT_PREVIEW_MODES_UNAVAILABLE);
+    }
+    expect(within(pills).getByRole('button', { name: 'Side by side' })).toHaveAttribute(
+      'aria-disabled',
+      'false',
+    );
+    expect(screen.getByText(RESULT_PREVIEW_MODES_UNAVAILABLE)).toBeVisible();
+  });
+
+  it('does not replay a press made before the result, when the result arrives', () => {
+    // The press used to be stored while the pills went on showing the pair, so typing a grid later
+    // switched the panel into the wipe unasked.
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    const panel = (quantised: Quantised | null) => (
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={null}
+        grid={quantised?.grid ?? null}
+        quantised={quantised}
+        target={null}
+        busy={false}
+      />
+    );
+    const { rerender } = render(panel(null));
+    choose('Wipe');
+
+    rerender(panel({ result: resultFor(8), grid: 8 }));
+
+    expect(screen.queryByRole('slider')).toBeNull();
+    const pills = screen.getByRole('group', { name: 'Preview layout' });
+    expect(within(pills).getByRole('button', { name: 'Side by side' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.queryByText(RESULT_PREVIEW_MODES_UNAVAILABLE)).toBeNull();
+  });
+
+  it('returns to the layout chosen with a result on screen, once the grid is retyped', () => {
+    // A layout the reader chose and saw is theirs; an edit to the grid passes through an empty box,
+    // and should not cost them it.
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    const panel = (quantised: Quantised | null) => (
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={null}
+        grid={quantised?.grid ?? null}
+        quantised={quantised}
+        target={null}
+        busy={false}
+      />
+    );
+    const { rerender } = render(panel({ result: resultFor(8), grid: 8 }));
+    choose('Wipe');
+    rerender(panel(null));
+    expect(screen.queryByRole('slider')).toBeNull();
+
+    rerender(panel({ result: resultFor(4), grid: 4 }));
+
+    expect(screen.getByRole('slider')).toBeInTheDocument();
   });
 });
 

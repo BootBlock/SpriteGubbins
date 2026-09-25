@@ -124,10 +124,13 @@ export function ImageComparison({
   const panel = useRef<HTMLElement>(null);
   const detached = useDetachedWindow(`Sprite Gubbins — ${sourceName}`);
 
-  // With nothing to compare against there is nothing to wipe and nothing to have cost anything, so
-  // both of those modes would draw a placeholder over the sheet and call it a comparison. Derived
-  // rather than corrected in state, which is the call `DownloadControls` makes about a download
-  // magnification the result has outgrown: what the pills show is what the panel is actually doing.
+  // With nothing to compare against, every layout but the pair would draw a placeholder over the
+  // sheet and call it a comparison, so the toolbar will not take a press on one (#395): a press that
+  // changed nothing was stored, and replayed unasked the moment a result arrived. What can still be
+  // held is a layout chosen while a result was on screen, whose grid has since been cleared — so the
+  // pair is derived here rather than written into state, which is the call `DownloadControls` makes
+  // about a magnification the result has outgrown. Retyping the grid then returns the reader to the
+  // layout they chose and saw, instead of dropping it on every edit that passes through an empty box.
   const shown: PreviewMode = quantised === null ? 'SIDE_BY_SIDE' : mode;
 
   // `zoom` is the scale for *both* panes, because it is measured per source pixel: the second canvas

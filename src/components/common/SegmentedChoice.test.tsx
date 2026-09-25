@@ -51,4 +51,61 @@ describe('SegmentedChoice', () => {
 
     expect(onChange).toHaveBeenCalledWith(8);
   });
+
+  it('ignores a press on an unavailable value, and says why on the pill and under the row', async () => {
+    const onChange = vi.fn();
+    render(
+      <SegmentedChoice
+        label="Preview magnification"
+        values={[1, 2, 4, 8]}
+        value={1}
+        format={(scale) => `${String(scale)}×`}
+        onChange={onChange}
+        unavailable={{ values: [4, 8], reason: 'Too large for this sheet.' }}
+      />,
+    );
+    const group = screen.getByRole('group', { name: 'Preview magnification' });
+    const blocked = within(group).getByRole('button', { name: '8×' });
+
+    await userEvent.click(blocked);
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(blocked).toHaveAttribute('aria-disabled', 'true');
+    expect(blocked).toHaveAccessibleDescription('Too large for this sheet.');
+    expect(within(group).getByRole('button', { name: '2×' })).not.toHaveAccessibleDescription();
+    expect(within(group).getByText('Too large for this sheet.')).toBeVisible();
+  });
+
+  it('keeps an unavailable value in the tab order, so the reason can be reached', async () => {
+    render(
+      <SegmentedChoice
+        label="Preview magnification"
+        values={[1, 2]}
+        value={1}
+        format={(scale) => `${String(scale)}×`}
+        onChange={vi.fn()}
+        unavailable={{ values: [2], reason: 'Too large for this sheet.' }}
+      />,
+    );
+
+    await userEvent.tab();
+    await userEvent.tab();
+
+    expect(screen.getByRole('button', { name: '2×' })).toHaveFocus();
+  });
+
+  it('shows no reason while every value is available', () => {
+    render(
+      <SegmentedChoice
+        label="Preview magnification"
+        values={[1, 2]}
+        value={1}
+        format={(scale) => `${String(scale)}×`}
+        onChange={vi.fn()}
+        unavailable={{ values: [8], reason: 'Too large for this sheet.' }}
+      />,
+    );
+
+    expect(screen.queryByText('Too large for this sheet.')).toBeNull();
+  });
 });

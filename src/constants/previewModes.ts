@@ -20,3 +20,22 @@ export const PREVIEW_MODE_LABELS: Readonly<Record<PreviewMode, string>> = {
   SPRITES: 'Sprites',
   ONION: 'Onion skin',
 };
+
+/**
+ * The layouts that need a result to draw, which is every one but the pair.
+ *
+ * Side by side is the only layout whose second frame can stand empty and still say something: its
+ * placeholder names why there is no result. The other four would draw a placeholder over the sheet
+ * and call it a comparison, so they cannot be chosen until a result exists.
+ */
+export const RESULT_PREVIEW_MODES: readonly PreviewMode[] = ['WIPE', 'DIFFERENCE', 'SPRITES', 'ONION'];
+
+/**
+ * Why {@link RESULT_PREVIEW_MODES} cannot be chosen yet, shown under the pills while they cannot.
+ *
+ * It names no cause for the missing result: the result pane already states that, in whichever of its
+ * four forms applies, and a second account here would be free to disagree with it.
+ */
+export const RESULT_PREVIEW_MODES_UNAVAILABLE = `${new Intl.ListFormat('en-GB').format(
+  RESULT_PREVIEW_MODES.map((mode) => PREVIEW_MODE_LABELS[mode]),
+)} compare the sheet with its result, so you can choose them once there is one.`;
