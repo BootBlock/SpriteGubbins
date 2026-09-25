@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { ErrorBoundary } from './components/common/ErrorBoundary.tsx';
 import { LoadingPlaceholder } from './components/common/LoadingPlaceholder.tsx';
 import { AppOverlays } from './components/layout/AppOverlays.tsx';
+import { AppUpdateBanner } from './components/layout/AppUpdateBanner.tsx';
 import { Header } from './components/layout/Header.tsx';
 import { PWAInstallBanner } from './components/layout/PWAInstallBanner.tsx';
 import { SkipLink } from './components/layout/SkipLink.tsx';
@@ -178,6 +179,7 @@ export function App() {
         <SkipLink />
 
         <Header />
+        <AppUpdateBanner />
         <PWAInstallBanner />
 
         {/*

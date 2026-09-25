@@ -17,10 +17,12 @@ export class RecordingRequest {
   ) {}
 }
 
-/** As much of an `ExtendableEvent` or a `FetchEvent` as the worker's handlers touch. */
+/** As much of an `ExtendableEvent`, a `FetchEvent` or a message as the worker's handlers touch. */
 interface HandlerEvent {
   /** Present on a fetch; `install` and `activate` carry none. */
   readonly request: Partial<Request> | undefined;
+  /** Present on a message. */
+  readonly data: unknown;
   waitUntil(promise: Promise<unknown>): void;
   respondWith(response: Promise<Response>): void;
 }
@@ -33,6 +35,12 @@ interface HandlerEvent {
  * governs both `fetch` and `addAll`, which fetches too — and, as the real one does, rejects
  * without writing anything when a single request fails.
  */
+/** As much of a cache lookup's options as the double reads. */
+interface MatchOptions {
+  readonly cacheName?: string;
+  readonly ignoreVary?: boolean;
+}
+
 export class ServiceWorkerDouble {
   readonly stores = new Map<string, Map<string, string>>();
   /** Every request an `addAll` asked for, in order and with repeats intact. */
@@ -40,6 +48,15 @@ export class ServiceWorkerDouble {
   /** How many `addAll` calls ran, whether or not they wrote anything. */
   fills = 0;
   online = true;
+  /** The ids of the window clients open now, as `clients.matchAll` reports them. */
+  windows: string[] = [];
+  /**
+   * Whether the host sends `Vary: Origin`, as Vite's preview server does. Every entry was stored from
+   * a request without an `Origin` header, so a lookup for a request carrying one then misses unless
+   * it passes `ignoreVary`, as the Cache API's own `Vary` rule makes it.
+   */
+  varyOnOrigin = false;
+  readonly skipWaiting = vi.fn(() => Promise.resolve());
   private readonly handlers = new Map<string, (event: HandlerEvent) => void>();
 
   /**
@@ -53,8 +70,11 @@ export class ServiceWorkerDouble {
   async load(manifest: readonly ManifestEntry[]): Promise<void> {
     vi.stubGlobal('__WB_MANIFEST', manifest);
     vi.stubGlobal('Request', RecordingRequest);
-    vi.stubGlobal('skipWaiting', () => Promise.resolve());
-    vi.stubGlobal('clients', { claim: () => Promise.resolve() });
+    vi.stubGlobal('skipWaiting', this.skipWaiting);
+    vi.stubGlobal('clients', {
+      matchAll: () => Promise.resolve(this.windows.map((id) => ({ id }))),
+      claim: () => Promise.resolve(),
+    });
     vi.stubGlobal('addEventListener', (type: string, handler: (event: HandlerEvent) => void) => {
       this.handlers.set(type, handler);
     });
@@ -62,6 +82,10 @@ export class ServiceWorkerDouble {
       open: (name: string) => Promise.resolve(this.cache(name)),
       keys: () => Promise.resolve([...this.stores.keys()]),
       delete: (name: string) => Promise.resolve(this.stores.delete(name)),
+      match: (target: string | Partial<Request>, options: MatchOptions = {}) =>
+        Promise.resolve(
+          options.cacheName === undefined ? undefined : this.lookUp(options.cacheName, target, options),
+        ),
     });
     vi.stubGlobal('fetch', (request: Request) =>
       this.online
@@ -76,13 +100,14 @@ export class ServiceWorkerDouble {
    * Run the worker's `type` handler and wait for everything it hands the browser — its response,
    * then every promise it passed to `waitUntil`, including one it passes while answering.
    */
-  async dispatch(type: string, request?: Partial<Request>): Promise<Response | undefined> {
+  async dispatch(type: string, request?: Partial<Request>, data?: unknown): Promise<Response | undefined> {
     const handler = this.handlers.get(type);
     if (!handler) throw new Error(`the worker registered no ${type} handler`);
     const extensions: Promise<unknown>[] = [];
     let response: Promise<Response> | undefined;
     handler({
       request,
+      data,
       waitUntil: (promise) => extensions.push(promise),
       respondWith: (answer) => {
         response = answer;
@@ -104,11 +129,27 @@ export class ServiceWorkerDouble {
         for (const { url } of requests) store.set(url, `precached ${url}`);
         return Promise.resolve();
       },
-      match: (target: string | Partial<Request>) => {
-        const body = store.get(resolved(typeof target === 'string' ? target : (target.url ?? '')));
-        return Promise.resolve(body === undefined ? undefined : new Response(body));
+      match: (target: string | Partial<Request>, options: MatchOptions = {}) =>
+        Promise.resolve(this.lookUp(name, target, options)),
+      put: async (target: string, response: Response) => {
+        store.set(resolved(target), await response.text());
       },
     };
+  }
+
+  /** What the named cache answers for `target`, honouring {@link varyOnOrigin}. */
+  private lookUp(
+    name: string,
+    target: string | Partial<Request>,
+    options: MatchOptions,
+  ): Response | undefined {
+    const body = this.stores
+      .get(name)
+      ?.get(resolved(typeof target === 'string' ? target : (target.url ?? '')));
+    if (body === undefined) return undefined;
+    const sendsOrigin = typeof target !== 'string' && target.headers?.has('Origin') === true;
+    if (this.varyOnOrigin && sendsOrigin && options.ignoreVary !== true) return undefined;
+    return new Response(body);
   }
 }
 
