@@ -10,7 +10,7 @@ import {
   unpackColor,
   writePixel,
 } from './imageData.ts';
-import { locateEntries, nearestOklab } from './lockedPalette.ts';
+import { type LockReach, lockReach, lockedEntryFor } from './lockedPalette.ts';
 import { DITHER_LATTICE_CORNERS } from '../constants/quantiser.ts';
 import { ditherCandidates, mixingPlan } from './mixingPlan.ts';
 import type { MixingPlan } from './mixingPlan.ts';
@@ -33,8 +33,8 @@ import { buildPalette } from './wuQuantiser.ts';
  * scaled OKLab every colour *tolerance* on this tab now uses, with coverage as a fourth axis on the
  * same scale — the metric `mixingPlan` needs to compare a mixture with a target at all, and the one
  * every other colour gate in this tab already speaks. So a colour whose plan comes back flat can land
- * on a different entry than the undithered step would have chosen. Only the locked palette is
- * measured identically both ways, because both arms read `lockedPalette.nearestOklab`.
+ * on a different entry than the undithered step would have chosen. Only the locked palette's escape
+ * is decided identically both ways, because both arms read `lockedPalette.lockedEntryFor`.
  *
  * **The candidate set is what the four reductions differ in.** A budget, a pinned list and a locked
  * palette are all lists, so the plan searches the whole list; a channel-depth space is a lattice with
@@ -67,9 +67,11 @@ export function ditherImage(image: ImageData, reduction: ColorReduction, matrix:
   // way there is nothing to dither against, and the sheet passes through.
   if (listed !== null && listed.length === 0) return copyOf(image);
 
+  const reach = reduction.kind === 'LOCKED' ? lockReach(reduction.entries, reduction.snap) : null;
+  // A lock whose snap reaches nothing leaves every colour as it arrived, as `applyLockedPalette` does.
+  if (reduction.kind === 'LOCKED' && reach === null) return copyOf(image);
+
   const candidates = listed === null ? null : ditherCandidates(listed);
-  const located = reduction.kind === 'LOCKED' ? locateEntries(reduction.entries) : null;
-  const escape = reduction.kind === 'LOCKED' ? reduction.snap * reduction.snap : 0;
   // Only a budget's entries are pixels of this sheet, so only a budget's carry a coverage worth
   // writing. The other three are lists of colours — see the note above.
   const keepsAlpha = reduction.kind !== 'MAX_COLORS';
@@ -88,7 +90,7 @@ export function ditherImage(image: ImageData, reduction: ColorReduction, matrix:
     let plan = plans.get(key);
     if (plan === undefined) {
       const color = unpackColor(key);
-      plan = planFor(color, candidates, lattice, located, escape, matrix.levels);
+      plan = planFor(color, candidates, lattice, reach, matrix.levels);
       plans.set(key, plan);
     }
 
@@ -126,14 +128,10 @@ function planFor(
   color: Rgba,
   candidates: ReturnType<typeof ditherCandidates> | null,
   lattice: readonly number[] | null,
-  located: ReturnType<typeof locateEntries> | null,
-  escape: number,
+  reach: LockReach | null,
   levels: number,
 ): MixingPlan | null {
-  if (located !== null) {
-    const nearest = nearestOklab(color, located);
-    if (nearest === null || nearest.distance > escape) return null;
-  }
+  if (reach !== null && lockedEntryFor(color, reach) === null) return null;
   if (lattice !== null) {
     // Every corner, not the nearest few — see `DITHER_LATTICE_CORNERS` for the grey that came back
     // dithered against red when the pairs were drawn by nearness.

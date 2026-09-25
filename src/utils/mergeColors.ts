@@ -1,5 +1,15 @@
 import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
-import { type Oklab, srgbToOklab } from './oklab.ts';
+import { srgbToOklab } from './oklab.ts';
+import { oklabLattice } from './oklabLattice.ts';
+
+/** A colour that stands, where it sits, and the order it came to stand in. */
+interface Keeper {
+  readonly key: number;
+  readonly L: number;
+  readonly a: number;
+  readonly b: number;
+  readonly rank: number;
+}
 
 /**
  * The colour merge: every colour in the image folded into the most popular colour within reach of
@@ -34,11 +44,11 @@ import { type Oklab, srgbToOklab } from './oklab.ts';
  * transparent pixels are outside it entirely. A tolerance of zero returns the input's bytes
  * unchanged.
  *
- * The keeper search is bucketed on a lattice of tolerance-sized cells over the OKLab axes, so
- * each colour consults only the twenty-seven cells that could hold a keeper within reach rather
- * than every keeper so far — which is what keeps the pass near-linear on the worst input the app
- * admits: a sheet quantised at a grid of 1 with its colours left alone can carry *millions* of
- * distinct colours, and the plain quadratic scan measured a quarter of a minute there.
+ * The keeper search is bucketed on `oklabLattice`, a lattice of tolerance-sized cells over the
+ * OKLab axes, so each colour consults only the twenty-seven cells that could hold a keeper within
+ * reach rather than every keeper so far — which is what keeps the pass near-linear on the worst
+ * input the app admits: a sheet quantised at a grid of 1 with its colours left alone can carry
+ * *millions* of distinct colours, and the plain quadratic scan measured a quarter of a minute there.
  */
 export function mergeColors(image: ImageData, tolerance: number): ImageData {
   const output = new ImageData(new Uint8ClampedArray(image.data), image.width, image.height);
@@ -56,53 +66,30 @@ export function mergeColors(image: ImageData, tolerance: number): ImageData {
   }
 
   const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).map(([key]) => key);
-  // Keepers filed by the tolerance-lattice cell their colour sits in; `rank` is insertion order,
-  // which is what "the highest-ranked keeper within tolerance" is judged by across cells.
-  const cells = new Map<number, { key: number; L: number; a: number; b: number; rank: number }[]>();
-  // `AXIS_LIFT` moves the two chroma axes — which run to about −80 — into positive cell space, and
-  // `CELL_STRIDE` packs the three cell indices into one number. Any point within one tolerance of
-  // another differs by at most one cell per axis, so the 27-cell walk below is exhaustive. The
-  // packing is linear, so a neighbour's key is always this key plus a fixed offset — which keeps
-  // the walk correct even below tolerances small enough for indices to reach the stride, where
-  // colliding cells merely add candidates the exact distance test then rejects.
-  const AXIS_LIFT = 128;
-  const CELL_STRIDE = 1024;
-  const cellOf = (color: Oklab): number =>
-    (Math.floor((color.L + AXIS_LIFT) / tolerance) * CELL_STRIDE +
-      Math.floor((color.a + AXIS_LIFT) / tolerance)) *
-      CELL_STRIDE +
-    Math.floor((color.b + AXIS_LIFT) / tolerance);
+  // Keepers filed on the tolerance lattice; `rank` is insertion order, which is what "the
+  // highest-ranked keeper within tolerance" is judged by across cells.
+  const keepers = oklabLattice<Keeper>(tolerance);
   const target = new Map<number, number>();
+  const nearby: Keeper[] = [];
   let standing = 0;
 
   for (const key of ranked) {
     const color = srgbToOklab((key >>> 16) & 0xff, (key >>> 8) & 0xff, key & 0xff);
-    const cellKey = cellOf(color);
     let home = key;
     let homeRank = Infinity;
-    for (let dl = -1; dl <= 1; dl += 1) {
-      for (let da = -1; da <= 1; da += 1) {
-        for (let db = -1; db <= 1; db += 1) {
-          const cell = cells.get(cellKey + (dl * CELL_STRIDE + da) * CELL_STRIDE + db);
-          if (cell === undefined) continue;
-          for (const keeper of cell) {
-            if (keeper.rank >= homeRank) continue;
-            const dL = color.L - keeper.L;
-            const dA = color.a - keeper.a;
-            const dB = color.b - keeper.b;
-            if (dL * dL + dA * dA + dB * dB <= limit) {
-              home = keeper.key;
-              homeRank = keeper.rank;
-            }
-          }
-        }
+    keepers.near(color, nearby);
+    for (const keeper of nearby) {
+      if (keeper.rank >= homeRank) continue;
+      const dL = color.L - keeper.L;
+      const dA = color.a - keeper.a;
+      const dB = color.b - keeper.b;
+      if (dL * dL + dA * dA + dB * dB <= limit) {
+        home = keeper.key;
+        homeRank = keeper.rank;
       }
     }
     if (home === key) {
-      const cell = cells.get(cellKey);
-      const entry = { key, L: color.L, a: color.a, b: color.b, rank: standing };
-      if (cell === undefined) cells.set(cellKey, [entry]);
-      else cell.push(entry);
+      keepers.add(color, { key, L: color.L, a: color.a, b: color.b, rank: standing });
       standing += 1;
     } else {
       target.set(key, home);
