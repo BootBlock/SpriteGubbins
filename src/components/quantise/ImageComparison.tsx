@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { DEFAULT_DIFFERENCE_SCALE, DEFAULT_WIPE, PREVIEW_ZOOMS } from '../../constants/quantiser.ts';
 import { DEFAULT_SPRITE_CELL_CHOICE } from '../../constants/spriteCell.ts';
+import { useCanvasPaint } from '../../hooks/useCanvasPaint.ts';
 import { useDetachedWindow } from '../../hooks/useDetachedWindow.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
 import { useSecondPaneImage } from '../../hooks/useSecondPaneImage.ts';
@@ -110,8 +111,8 @@ export function ImageComparison({
   const [wipeAt, setWipeAt] = useState(DEFAULT_WIPE);
   // The four elements as **state**, not as refs, because choosing a layout replaces every one of
   // them: the pair and the wipe are different trees, so React unmounts one and mounts the other.
-  // A ref object survives that with its identity intact, so the two effects below — which are the
-  // only things that put pixels on a canvas and hold the panes together — could not tell that what
+  // A ref object survives that with its identity intact, so the hooks below — which are the only
+  // things that put pixels on a canvas and hold the panes together — could not tell that what
   // they were holding had been thrown away. Both symptoms were silent and total: a preview of two
   // blank frames, and a pair that stopped moving as one. The setters are stable, so they are ref
   // callbacks as they stand.
@@ -144,25 +145,14 @@ export function ImageComparison({
     sourceHeight: source.height,
   });
 
-  // React writes the `width`/`height` attributes first, which blanks the backing store, so the paint
-  // has to follow the commit rather than sit in the render. Zoom is absent from the dependencies on
-  // purpose: it changes the CSS box, never the pixels.
-  //
-  // **The pixels, and the canvas they go on — nothing else.** The `ImageData` is what changes when
-  // there is something new to draw, and the canvas takes its size from that same value, so nothing
-  // can resize without this re-running; depending on `quantised` instead would mean two
-  // `putImageData` calls of up to 67 megabytes each, on the main thread, for every render of the
-  // panel. The two elements are dependencies for the opposite reason: a canvas that has just been
-  // mounted is blank, and the image it wants may not have changed at all.
+  // One paint per canvas, so a new second picture never redraws the sheet — see `useCanvasPaint`.
+  useCanvasPaint(sourceCanvas, source);
   // What the right-hand canvas holds, and what that picture is — see `useSecondPaneImage`.
   const { image: secondImage, pictured } = useSecondPaneImage(quantised, shown, differenceScale);
   // The same reading the Sprites panel's list and the download take, through the one hook — so the
   // name a chip shows over the artwork is the name the file is written as. See `useSpriteAssignment`.
   const assignment = useSpriteAssignment(quantised?.result.sprites ?? null);
-  useEffect(() => {
-    paint(sourceCanvas, source);
-    paint(resultCanvas, secondImage);
-  }, [sourceCanvas, resultCanvas, source, secondImage]);
+  useCanvasPaint(resultCanvas, secondImage);
 
   const first = sourcePane(source, sourceColors, zoom, setSourceView, setSourceCanvas);
   const second = secondPane(
@@ -267,10 +257,4 @@ export function ImageComparison({
       <DetachedPreview target={detached.target}>{surface}</DetachedPreview>
     </>
   );
-}
-
-/** Put the pixels on the canvas verbatim. A missing canvas is the pane that is showing its `<p>`. */
-function paint(canvas: HTMLCanvasElement | null, image: ImageData | undefined): void {
-  if (canvas === null || image === undefined) return;
-  canvas.getContext('2d')?.putImageData(image, 0, 0);
 }
