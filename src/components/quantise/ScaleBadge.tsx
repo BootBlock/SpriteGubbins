@@ -32,7 +32,8 @@ interface ScaleBadgeProps {
  * from too.
  *
  * A reading that failed is gold as well, and settled rather than pulsing: nothing is being read any
- * more, and the reader has a number to type all the same. The error above the panels says why.
+ * more, and after a survey that failed on this sheet the reader has a number to type all the same.
+ * The error above the panels says why, and the panel beside the badge says whether typing helps.
  *
  * The gold states never appear together, so sharing a tone costs no distinction: an estimate is
  * only ever read from a sheet the exact pass found nothing in, and a failed reading found nothing.
