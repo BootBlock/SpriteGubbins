@@ -76,6 +76,7 @@ const HTML_MARKS: readonly (readonly [RegExp, string])[] = [
 
 /** How often each exclusion actually suppressed a straight mark, so none of them can go vacuous. */
 interface Tally {
+  sql: number;
   class: number;
   json: number;
   modules: number;
@@ -89,24 +90,32 @@ interface Offence {
   readonly line: string;
 }
 
+/** The two exclusions decided by where a string is authored rather than by what it says. */
+type Silence = 'sql' | 'class';
+
 /**
- * Whether this node binds a class string, whose marks are syntax rather than punctuation.
+ * Why the marks beneath this node are syntax, or `null` where they are punctuation.
  *
- * Decided by the *authoring position*, which is what lets it be answered without guessing at prose.
- * Tailwind spells an arbitrary value with straight quotes inside brackets, so the string is matched
- * by where it is bound rather than by that bracket syntax: a run of `[…]` is also how an array
- * prints, and a rule loose enough to blank one would excuse a straight-quoted array in a sentence.
+ * Both answers are about the *authoring position*, which is what lets them be decided without
+ * guessing at prose. A statement bound to a `*_SQL` name is parsed by SQLite, whose string delimiter
+ * is the straight apostrophe and whose quoted identifier takes the straight double quote. A class
+ * string is read by Tailwind, which spells an arbitrary value with straight quotes inside brackets —
+ * matched by where the string is bound rather than by that bracket syntax, because a run of `[…]` is
+ * also how an array prints, and a rule loose enough to blank one would excuse a straight-quoted array
+ * in a sentence.
  *
- * A statement bound to a `*_SQL` name had an exclusion of its own, on the same ground — SQLite's
- * string delimiter is the straight apostrophe — and it went when the last string literal left the
- * schema, since an exclusion that suppresses nothing fails below. A statement that needs a literal
- * again is where it comes back; rewording the SQL to dodge this suite is not the answer.
+ * The SQL exclusion is counted like the others, so it fails once no statement needs a quote, and it
+ * is then deleted rather than kept for later. Rewording SQL to dodge this suite is not the answer.
  */
-function bindsClassString(node: ts.Node): boolean {
+function silencedBy(node: ts.Node): Silence | null {
   if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
-    return /_CLASS(ES)?$/.test(node.name.text);
+    if (node.name.text.endsWith('_SQL')) return 'sql';
+    if (/_CLASS(ES)?$/.test(node.name.text)) return 'class';
   }
-  return ts.isJsxAttribute(node) && ts.isIdentifier(node.name) && node.name.text === 'className';
+  if (ts.isJsxAttribute(node) && ts.isIdentifier(node.name) && node.name.text === 'className') {
+    return 'class';
+  }
+  return null;
 }
 
 /** The text of a node that carries authored characters, or `null` for everything else. */
@@ -144,8 +153,8 @@ function offencesIn(path: string, tally: Tally): Offence[] {
   );
   const offences: Offence[] = [];
 
-  const visit = (node: ts.Node, insideClassString: boolean): void => {
-    const classString = insideClassString || bindsClassString(node);
+  const visit = (node: ts.Node, silence: Silence | null): void => {
+    const reason = silence ?? silencedBy(node);
     const text = authoredText(node);
 
     if (text !== null) {
@@ -157,8 +166,8 @@ function offencesIn(path: string, tally: Tally): Offence[] {
       for (const [offset, raw] of decoded.split('\n').entries()) {
         const line = raw.trim();
         if (!/['"]/.test(line)) continue;
-        if (classString) {
-          tally.class += 1;
+        if (reason !== null) {
+          tally[reason] += 1;
           continue;
         }
         if (isJsonDocument(line)) {
@@ -170,15 +179,15 @@ function offencesIn(path: string, tally: Tally): Offence[] {
     }
 
     ts.forEachChild(node, (child) => {
-      visit(child, classString);
+      visit(child, reason);
     });
   };
 
-  visit(tree, false);
+  visit(tree, null);
   return offences;
 }
 
-const TALLY: Tally = { class: 0, json: 0, modules: 0, components: 0, strings: 0 };
+const TALLY: Tally = { sql: 0, class: 0, json: 0, modules: 0, components: 0, strings: 0 };
 const OFFENCES = SOURCES.flatMap((path) => offencesIn(path, TALLY));
 
 describe('the punctuation the interface ships with', () => {
@@ -191,6 +200,7 @@ describe('the punctuation the interface ships with', () => {
   });
 
   it.each([
+    ['a SQL statement', 'sql'],
     ['a class string', 'class'],
     ['the JSON manifest example', 'json'],
   ] as const)('still finds %s to excuse', (_what, key) => {
