@@ -26,9 +26,9 @@ interface PresetDetailsFormProps {
  * A real `<form>`, so Enter submits without a keydown handler re-implementing what the platform
  * already does.
  *
- * **Re-filing is not here**, and the row's project dropdown is why: choosing a project is one press
- * rather than something typed, so putting it in a form that has to be opened and submitted would be
- * three steps for one decision.
+ * **Re-filing is not here**, and the row's `ProjectMoveField` is why: a project is chosen from a
+ * list rather than typed, and the row already offers it as a choice and a Move press, so putting it
+ * in a form that has to be opened and submitted as well would add a step to the same decision.
  *
  * **Every control names the preset it edits**, because each row keeps its own editor and opening one
  * closes no other. Two open editors were two `Save`s, two `Cancel`s and two pairs of ⓘs, and the ⓘs

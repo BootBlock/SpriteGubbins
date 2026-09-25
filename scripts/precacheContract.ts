@@ -895,8 +895,23 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * out of `index`. It is almost all the refusal sentences, which are the point of the change.
  *
  * 2425 leaves **0.44 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2425 by the saved row's Move button** (issue #354). The project dropdown on a saved
+ * preset or set moved it on every `change`, which a closed native select fires on each arrow key, so
+ * a keyboard reader filed it under the first project they passed and lost their place with the row.
+ * The dropdown now chooses and a Move button commits. Measured against `main` at `f0535ad`, rebuilt
+ * from the same lockfile, with the ceiling forced to zero in each tree so both figures are the ones
+ * `assertPrecacheContract` receives: **2424.56 KiB** on `main` and **2426.04** here, a delta of
+ * **1.48** that crossed a ceiling the base sat 0.44 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`. Comparing the two `dist/assets` listings summed by chunk name, 0.89 KiB lands in
+ * `QuantisePresetRow`, the chunk `ProjectMoveField` is bundled into; 0.38 net between
+ * `ProjectSelectField` and `useUIStore`, which the bundler re-split (5.30 out of one, 5.68 into the
+ * other) and which holds the four guidance cards; 0.11 in `quantiseDials`; 0.10 in
+ * `useConfirmInPlace`, where `keepFocusThrough` now sits; and 0.01 in the rest.
+ *
+ * 2427 leaves **0.96 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2425;
+export const PRECACHE_CEILING_KIB = 2427;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
