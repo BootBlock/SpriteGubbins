@@ -868,8 +868,21 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * copy — a shipped contract that nothing can date is only safe while the studio says it is shipped.
  *
  * 2422 leaves **0.51 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2422 by Copy, open & next** (issue #307), the button beside the preview's Copy
+ * Prompt that copies the sheet the studio is on, opens the chosen generator's page and steps to the
+ * next sheet, where a batch had asked for three presses a sheet. Measured against `main` at
+ * `770adf6`, rebuilt from the same lockfile, with the ceiling forced to zero in each tree so both
+ * figures are the ones `assertPrecacheContract` receives: **2421.49 KiB** on `main` and **2423.81**
+ * here, a delta of **2.32** that crossed a ceiling the base sat 0.51 under. No file was added to or
+ * removed from `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets`
+ * listings, 1.20 KiB lands in `StudioTab`, which is the button and the shared `PromptActionButton`;
+ * 0.57 in `useUIStore`, where the three guidance cards are bundled; 0.53 in the stylesheet, which is
+ * the `aria-disabled:` variants that paint the button unavailable; and 0.01 in `index`.
+ *
+ * 2424 leaves **0.19 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2422;
+export const PRECACHE_CEILING_KIB = 2424;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
