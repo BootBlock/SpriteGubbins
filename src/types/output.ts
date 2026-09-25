@@ -360,8 +360,8 @@ export interface ImageOutputConfig {
    *
    * Choosing one in the studio writes the settings package it implies — see `StyleReference` — and
    * then stays, because what the sheet is *for* outlives the act of setting it up. What it emits is
-   * the look's own measurements: the grid, the figure size, the facings, the contour, the light.
-   * Whether the game is also named is {@link nameStyleReference}'s, which is why the two are separate
+   * the look's own measurements: the grid, the figure size, the contour, the light. Never the
+   * facings, which {@link directions} states and a reference leaves alone. Whether the game is also named is {@link nameStyleReference}'s, which is why the two are separate
    * fields rather than one nullable name.
    */
   readonly styleReference: StyleReferenceId;

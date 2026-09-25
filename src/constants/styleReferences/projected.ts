@@ -51,7 +51,7 @@ const DIABLO_II: StyleReference = {
 const AGE_OF_EMPIRES_II: StyleReference = {
   id: 'AGE_OF_EMPIRES_II',
   name: 'Age of Empires II',
-  label: 'Age of Empires II — 2:1 diamond, 97 × 49 tiles',
+  label: 'Age of Empires II — 2:1 diamond, 97 × 49 px tiles',
   characteristics: [
     'A terrain tile spans 97 pixels across and 49 rows down, its edge advancing two pixels sideways for every row it drops.',
     'Every pixel is an index into a single 256-colour palette, and each player’s colours occupy a reserved block of it that is substituted as the unit is drawn.',
