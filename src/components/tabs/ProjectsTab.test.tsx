@@ -7,6 +7,7 @@ import { QUANTISE_DEFAULT_DIALS } from '../../constants/quantiseDials.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
+import { namesOmittingLabels } from '../../test/namesOmittingLabels.ts';
 import { repeatedControlNames } from '../../test/repeatedControlNames.ts';
 import type { CustomArchetype } from '../../types/preset.ts';
 import type { Project } from '../../types/project.ts';
@@ -268,6 +269,7 @@ describe('ProjectsTab', () => {
     // here, and one per saved item in a real library, with nothing saying which save it would move.
     // The visible label stays `Project`, and the name opens with it, as WCAG 2.5.3 asks.
     expect(repeatedControlNames()).toStrictEqual([]);
+    expect(namesOmittingLabels()).toStrictEqual([]);
     expect(screen.getByRole('combobox', { name: 'Project for preset My Knight' })).toHaveValue(HARBOUR.id);
     expect(
       screen.getByRole('button', { name: 'Guidance: Project for preset Harbour Guard' }),
@@ -294,6 +296,7 @@ describe('ProjectsTab', () => {
     // The editor's two ⓘs, its Save and its Cancel were four more names repeated once per open row,
     // and the two ⓘs matched the project editor's own as well.
     expect(repeatedControlNames()).toStrictEqual([]);
+    expect(namesOmittingLabels()).toStrictEqual([]);
     expect(screen.getByRole('button', { name: 'Guidance: New name for My Knight' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save — the details for Harbour Guard' })).toBeInTheDocument();
     expect(

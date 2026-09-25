@@ -15,7 +15,8 @@ interface PaletteDownloadProps {
    * The buttons read `Swatch PNG`, `.gpl` and `Hex list` wherever they appear, so on a page offering
    * two palettes there would otherwise be two controls with the same accessible name and nothing to
    * tell them apart. This is what distinguishes them, and it is a phrase rather than the palette’s
-   * own name because it is read inside a sentence.
+   * own name because it is read inside a sentence. The name opens with the button’s own label, so a
+   * reader driving the app by speech can still say what they see.
    */
   readonly subject: string;
 }
@@ -60,7 +61,7 @@ export function PaletteDownload({ palette, subject }: PaletteDownloadProps) {
           <Button
             variant="secondary"
             size="sm"
-            aria-label={`Download ${subject} as ${PALETTE_FILE_TYPES[format].phrase}`}
+            aria-label={`${PALETTE_FILE_TYPES[format].label} — download ${subject} as ${PALETTE_FILE_TYPES[format].phrase}`}
             onClick={() => {
               download(palette, format);
             }}

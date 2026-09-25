@@ -19,11 +19,13 @@ export interface PaletteFileType {
   /** What the `Blob` is labelled with. */
   readonly mediaType: string;
   /**
-   * The file as a phrase mid-sentence, for the accessible name of a button.
+   * What the file is, as a phrase mid-sentence, for the accessible name of a button.
    *
    * Three palettes can be downloaded and each offers all three formats, so the visible label is not
    * a name on its own — `Swatch PNG` says which file and nothing about which palette. The button’s
-   * accessible name is built from this and the palette’s own description instead.
+   * accessible name opens with the label, as WCAG 2.5.3 asks, and goes on with the palette’s own
+   * description and this: `.gpl — download the locked palette as a GIMP palette`. It describes the
+   * file rather than repeating the label, which the name has already said.
    */
   readonly phrase: string;
   /**
@@ -50,7 +52,7 @@ export const PALETTE_FILE_TYPES: Readonly<Record<PaletteFileFormat, PaletteFileT
     label: 'Swatch PNG',
     extension: 'png',
     mediaType: 'image/png',
-    phrase: 'a swatch PNG',
+    phrase: 'a picture of its colours',
     maxEntries: MAX_PALETTE_ENTRIES,
   },
   // `.gpl` has no registered media type — it is a plain-text interchange format — so it takes the
@@ -66,7 +68,7 @@ export const PALETTE_FILE_TYPES: Readonly<Record<PaletteFileFormat, PaletteFileT
     label: 'Hex list',
     extension: 'txt',
     mediaType: 'text/plain',
-    phrase: 'a hex list',
+    phrase: 'plain text',
     maxEntries: null,
   },
 };
