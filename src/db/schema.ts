@@ -49,7 +49,9 @@ export const SESSION_ROW_ID = 1;
  *
  * There is no migration machinery beside it, and deliberately so — the project's standing policy is
  * that stored local data has no claim on the design, so a schema change is made here and an
- * incompatible database is discarded rather than translated.
+ * incompatible database is discarded rather than translated. `discardIncompatibleDatabase.ts` runs
+ * first and does that, reading what this declares by running it in an empty database; so a change
+ * here needs nothing written anywhere else for an existing database to be judged against it.
  */
 export const CREATE_TABLES_SQL = `
 CREATE TABLE IF NOT EXISTS ${PROJECTS_TABLE} (
@@ -108,56 +110,16 @@ CREATE INDEX IF NOT EXISTS idx_prompt_history_created_at
 `;
 
 /**
- * The columns each table above declares, as a set the worker can compare a *stored* table against.
- *
- * `CREATE TABLE IF NOT EXISTS` runs against a database that usually already exists, and it does
- * nothing at all when the table is there — so adding a column to the DDL leaves every existing
- * install with the old table, and the first `SELECT` naming the new column fails with
- * "no such column" for as long as that database lives. Nothing about that is loud: the stores catch
- * a failed read and raise a toast, so the symptom is a collection that is permanently empty and a
- * save that is permanently refused.
- *
- * This is what makes the file's own rule — *an incompatible database is discarded rather than
- * translated* — something the code actually does. The worker reads `PRAGMA table_info` for each
- * table on boot, drops any whose columns are not exactly this set, and lets the DDL rebuild it. That
- * is a discard and not a migration: there is no version column, no upgrade step and no translation
- * of a stored row into a newer shape, and the data in a table that no longer matches is gone rather
- * than repaired. Pre-1.0 that is the bargain, and it is the same one `db/configParsers.ts` makes.
- *
- * Written out rather than parsed back out of the DDL, because a regular expression over SQL is a
- * second thing to get wrong. `schema.test.ts` extracts the columns from `CREATE_TABLES_SQL` and
- * fails unless the two agree, so the drift this would otherwise invite is caught at build time.
+ * Every object a database declares, with the statement it was declared by, less SQLite's own. The
+ * boot-time discard compares these; see `discardIncompatibleDatabase.ts`.
  */
-export const TABLE_COLUMNS = {
-  [PROJECTS_TABLE]: ['id', 'name', 'description', 'created_at', 'updated_at'],
-  [PROMPT_HISTORY_TABLE]: [
-    'id',
-    'category',
-    'prompt_text',
-    'created_at',
-    'word_count',
-    'model_used',
-    'subject_json',
-    'output_json',
-  ],
-  [CUSTOM_PRESETS_TABLE]: [
-    'id',
-    'project_id',
-    'name',
-    'description',
-    'category',
-    'subject_json',
-    'output_json',
-    'updated_at',
-  ],
-  [APP_SETTINGS_TABLE]: ['id', 'settings_json'],
-  [STUDIO_SESSION_TABLE]: ['id', 'category', 'subject_json', 'output_json'],
-  [QUANTISE_PRESETS_TABLE]: ['id', 'project_id', 'name', 'description', 'dials_json', 'updated_at'],
-} as const satisfies Record<string, readonly string[]>;
+export const SCHEMA_OBJECTS_SQL = `
+SELECT type, name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite^_%' ESCAPE '^'
+`;
 
-/** What the stored table's columns are read with, and what a mismatched one is dropped by. */
-export const TABLE_INFO_SQL = (table: string) => `PRAGMA table_info(${table})`;
-export const DROP_TABLE_SQL = (table: string) => `DROP TABLE IF EXISTS ${table}`;
+/** Drop one table or view by the name the schema reports, which an identifier cannot be bound to. */
+export const DROP_SCHEMA_OBJECT_SQL = (type: 'table' | 'view', name: string) =>
+  `DROP ${type.toUpperCase()} IF EXISTS "${name.replaceAll('"', '""')}"`;
 
 /**
  * Where the localStorage fallback keeps each of the tables above.

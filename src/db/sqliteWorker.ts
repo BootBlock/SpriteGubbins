@@ -1,15 +1,9 @@
 /// <reference lib="webworker" />
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import type { Database } from '@sqlite.org/sqlite-wasm';
-import {
-  CREATE_TABLES_SQL,
-  DATABASE_FILENAME,
-  DROP_TABLE_SQL,
-  OPFS_POOL_NAME,
-  TABLE_COLUMNS,
-  TABLE_INFO_SQL,
-} from './schema.ts';
-import { handleRequest, select } from './sqliteRequests.ts';
+import { discardIncompatibleDatabase } from './discardIncompatibleDatabase.ts';
+import { CREATE_TABLES_SQL, DATABASE_FILENAME, OPFS_POOL_NAME } from './schema.ts';
+import { handleRequest } from './sqliteRequests.ts';
 import type { DatabaseRefusal, WorkerCall, WorkerHandshake, WorkerReply } from './workerProtocol.ts';
 
 /**
@@ -46,40 +40,18 @@ worker.addEventListener('message', (event: MessageEvent<WorkerCall>) => {
   }
 });
 
-/**
- * Drop any stored table whose columns are not the ones the DDL now declares.
- *
- * This runs **before** `CREATE_TABLES_SQL` and is what makes that DDL's `IF NOT EXISTS` safe to
- * change: on its own, adding a column leaves an existing database with the old table and every
- * statement naming the new column failing for the life of that database. `TABLE_COLUMNS` in
- * `schema.ts` says why this is a discard rather than a migration, and what it costs.
- *
- * A table that is absent is left alone — there is nothing to discard, and the DDL below is about to
- * create it. Compared as a set both ways, so a column *removed* from the DDL is as much a mismatch
- * as one added: a stale column would otherwise survive every future boot, still holding data the app
- * no longer has a name for.
- */
-function discardIncompatibleTables(database: Database): void {
-  for (const [table, columns] of Object.entries(TABLE_COLUMNS)) {
-    const stored = select(database, TABLE_INFO_SQL(table))
-      .map((row) => (row !== null && typeof row === 'object' ? (row as { name?: unknown }).name : undefined))
-      .filter((name): name is string => typeof name === 'string');
-
-    if (stored.length === 0) continue;
-
-    const present = new Set(stored);
-    if (present.size === columns.length && columns.every((column) => present.has(column))) continue;
-
-    database.exec(DROP_TABLE_SQL(table));
-  }
-}
-
 async function open(): Promise<void> {
   const sqlite3 = await sqlite3InitModule();
   // `initialCapacity` must exceed the number of database files, with room for journals.
   const pool = await sqlite3.installOpfsSAHPoolVfs({ name: OPFS_POOL_NAME, initialCapacity: 6 });
   const database = new pool.OpfsSAHPoolDb(DATABASE_FILENAME);
-  discardIncompatibleTables(database);
+  // In memory, so the schema the DDL declares is read without touching the pool or the reader's file.
+  const scratch = new sqlite3.oo1.DB(':memory:');
+  try {
+    discardIncompatibleDatabase(database, scratch);
+  } finally {
+    scratch.close();
+  }
   database.exec(CREATE_TABLES_SQL);
   db = database;
 }
