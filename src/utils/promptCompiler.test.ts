@@ -614,7 +614,9 @@ describe('generatePrompt — conditional blocks', () => {
         ).not.toMatch(MARKER);
       }
     }
-  });
+    // Every declared base table is swept, so this grows with each category that declares one, as the
+    // punctuation sweep below does.
+  }, 30_000);
 });
 
 describe('generatePrompt — numbered lists', () => {
@@ -3620,7 +3622,9 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
     // never reached would make the whole assertion pass for the wrong reason.
     expect(sawComponentMapExample, 'the sweep never reached the component map’s JSON example').toBe(true);
     expect([...offenders], `the prompt writes a straight quote:\n${[...offenders].join('\n')}`).toEqual([]);
-  });
+    // The sweep grows with every assembly base a category declares a table for, as the term sweep
+    // above does, and passed the default five seconds on CI once CHARACTER's six bodies joined it.
+  }, 30_000);
 });
 
 /**
