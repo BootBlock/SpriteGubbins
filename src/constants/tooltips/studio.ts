@@ -84,6 +84,7 @@ export const STUDIO_ACTION_TOOLTIPS = {
   loadRigContract:
     'Reads a rig contract your engine’s rig tooling exported and takes the sheet’s piece list from it. The file never leaves this tab.\n\n' +
     'Section 4 then names each piece as the engine does, so the pack you cut needs no renaming, and section 5 states each piece’s size, joint end and joint position within the assembled frame. Without it, the prompt states only the assembled size and the model picks each piece’s share.\n\n' +
+    'While it is loaded, the resolution profile is `CUSTOM` on that sheet.\n\n' +
     'The contract is carried with the configuration, so a saved preset or a restored prompt keeps it. The line under this control says when the one in force came with a preset.',
 
   removeRigContract:

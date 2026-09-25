@@ -79,7 +79,7 @@ export function RigContractField({ appliesToSheet }: RigContractFieldProps) {
             {rigContract.slots.length} {rigContract.slots.length === 1 ? 'piece' : 'pieces'} in a{' '}
             {rigContract.frame_size.width} × {rigContract.frame_size.height} frame.{' '}
             {appliesToSheet
-              ? 'The inventory, the piece names and the target size come from it.'
+              ? 'The inventory, the piece names and the target size come from it, and the resolution profile is CUSTOM while it is loaded.'
               : 'This sheet does not draw the rig’s pieces, so nothing here reads it — choose the rig sheet under Sheet Contents.'}{' '}
             {isShippedRigContract(rigContract) &&
               'This is the copy its preset ships, not a file you loaded — export the rig again if it has moved since.'}

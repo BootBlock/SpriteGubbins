@@ -13,7 +13,7 @@ import { useSheetSubject } from './useSheetSubject.ts';
  * a texture cell against it. Each once read the raw field, and a sheet of parts states the assembled
  * subject there — so `componentTargetSize` answers instead, which withholds an assembly, and withholds
  * every size under a profile other than `CUSTOM` (issue #405): a stock profile states a scale of its
- * own, and a panel measuring against a size the prompt no longer carries would be checking the art
+ * own, and a panel measuring against a size the prompt does not carry would be checking the art
  * against a figure nobody asked the generator for.
  *
  * Field by field rather than the whole output, which is the rule about selecting a store.

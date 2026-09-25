@@ -12,7 +12,7 @@ import {
 } from '../src/types/output.ts';
 import { BACKGROUND_KEYS } from '../src/types/rendering.ts';
 import { JOINT_CAP_STYLES, OVERLAP_MARGINS, RIG_MODES } from '../src/types/rigging.ts';
-import { targetSizeField } from '../src/utils/componentTargetSize.ts';
+import { targetSizeField } from '../src/utils/targetSizeField.ts';
 import { nativeGridScale } from '../src/utils/nativeGridScale.ts';
 import { generatePrompt } from '../src/utils/promptCompiler.ts';
 import { deliberates, returnsText } from '../src/utils/targetCapabilities.ts';

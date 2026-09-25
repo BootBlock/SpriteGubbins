@@ -13,8 +13,10 @@ import type { RigContract } from '../types/rigContract.ts';
  * apart.
  *
  * It is `resolveCameraElevation`'s pattern: the stored value is left alone, so it returns the moment
- * the contract is removed, and every reader — the compiler, the studio header and the control —
- * takes this answer rather than the raw field.
+ * the contract is removed. The compiler, the studio header and the control take this answer rather
+ * than the raw field. The quantiser and the atlas planner read the stored profile, which gives the
+ * same result: they want one component's size, and every sheet a rig applies to states an assembly,
+ * so `componentTargetSize` answers `null` there under any profile.
  */
 export function resolveResolutionProfile(
   profile: ResolutionProfile,

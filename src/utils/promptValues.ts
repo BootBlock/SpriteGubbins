@@ -162,7 +162,7 @@ export function promptValues(
     MIN_FEATURE_SIZE: minFeatureSize(profile, stated, nativeScale !== null, rig),
     // Sprite-scale bullets join the pixel discipline only when the stated component is small
     // enough that silhouette carries the identity; `''` is what drops the optional line.
-    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(profile, component),
+    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(component),
     // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
     // the value is still supplied because `substitute` throws on a token it has no value for, and
     // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.

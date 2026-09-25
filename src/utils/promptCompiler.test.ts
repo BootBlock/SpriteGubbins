@@ -3550,7 +3550,7 @@ describe('generatePrompt — a term the prompt uses is a term the prompt defines
   const GATED_TERMS = [{ term: /native pixel/, definedBy: `### ${NATIVE_GRID_HEADING}` }] as const;
 
   /**
-   * The sizes that reach each side of `nativeGridScale`'s four conditions.
+   * The sizes that reach each side of the conditions that give a sheet a native grid.
    *
    * `''` and the prose one never parse; `16 × 32 px` is small enough to enlarge and `512 × 512 px`
    * is large enough that there is nothing left to enlarge — so `CUSTOM` appears in this sweep on

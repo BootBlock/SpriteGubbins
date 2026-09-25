@@ -123,7 +123,7 @@ export const OUTPUT_TOOLTIPS = {
     'Sets an exact pixel size for one component, such as “48 × 96 px”. Leave it empty and the prompt omits the line. Only the `CUSTOM` resolution profile offers it.\n\n' +
     'On a sheet of parts that assemble into one subject — a cut-out rig, a pose library, an articulation sheet, an item’s part library — the label reads Target Assembled Size, the size describes the whole assembled subject, and the per-component readings below do not apply.\n\n' +
     'It sets the smallest feature allowed, and 32 px or under on the shorter edge adds sprite-scale rules. On a pixel-art sheet it is read as the native grid, and the prompt asks for hard pixel edges at a whole-number scale above 1:1.\n\n' +
-    'A loaded rig contract overrides this field on the sheet it describes, and what you type here returns when you remove it.',
+    'A loaded rig contract states the size on the sheet it describes, so the field withdraws there. What you type returns when you remove it.',
 
   rigMode:
     'What the components are for once they leave the sheet. Only the categories whose components have joints offer a choice.\n\n' +

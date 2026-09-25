@@ -1,4 +1,4 @@
-import type { ResolutionProfile, TargetSize } from '../../types/output.ts';
+import type { TargetSize } from '../../types/output.ts';
 
 /**
  * The bullets section 2's pixel discipline adds when the stated component is sprite-sized.
@@ -8,12 +8,12 @@ import type { ResolutionProfile, TargetSize } from '../../types/output.ts';
  * no microtexture — say nothing about that inversion. A generator asked for a 16 × 16 icon under
  * the generic rules alone returns a miniature illustration: correct pixels, unreadable sprite.
  *
- * The gate mirrors `minFeatureSize`'s reasoning exactly: only `CUSTOM` consults the stated size,
- * because the other three profiles *are* a scale and state their own figure — and the coarsest of
- * those, `RETRO_16_BIT` at roughly 64–96 pixels per unit drawn, is well past sprite scale, so none
- * of them can ever need these bullets. (*Per unit drawn* rather than *per figure*: which noun that
+ * Only `CUSTOM` hands this a size at all, because `targetSizeField` reads the field only there: the
+ * other three profiles *are* a scale and state their own figure — and the coarsest of those,
+ * `RETRO_16_BIT` at roughly 64–96 pixels per unit drawn, is well past sprite scale, so none of them
+ * can ever need these bullets. (*Per unit drawn* rather than *per figure*: which noun that
  * range is stated against is the sheet's, from `SheetPlan.scaleUnit`, and the range itself is what
- * this gate reasons from.)
+ * this reasoning rests on.)
  *
  * **The size arrives resolved, from `componentTargetSize`.** These bullets are about how one
  * component is drawn, and on a sheet whose components are the parts one subject is cut into the
@@ -64,8 +64,7 @@ const SPRITE_SCALE_EDGE = 32;
  *   so each bullet states what is true of the finished sheet, as the 1:1 inspection bullet beside
  *   it does.
  */
-export function smallScaleDiscipline(profile: ResolutionProfile, target: TargetSize | null): string {
-  if (profile !== 'CUSTOM') return '';
+export function smallScaleDiscipline(target: TargetSize | null): string {
   if (target === null || Math.min(target.width, target.height) > SPRITE_SCALE_EDGE) return '';
 
   return [

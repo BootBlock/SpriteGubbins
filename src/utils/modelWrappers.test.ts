@@ -43,8 +43,8 @@ const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
 /**
  * A configuration whose section 2 carries a native grid, which is what the Sol tests below need.
  *
- * Four of the five fields are `nativeGridScale`'s gate — a pixel-art style, the `CUSTOM` profile and
- * a size that parses, on a canvas that seats the components at a multiple above 1 — and
+ * Four of the five fields are what give a sheet a native grid — a pixel-art style, the `CUSTOM`
+ * profile and a size that parses, on a canvas that seats the components at a multiple above 1 — and
  * `targetModel` is what puts Sol's wrapper round the result. The four are the Stardew Valley style
  * reference's own settings, which is the look the traced run asked for.
  *

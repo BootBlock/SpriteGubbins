@@ -149,7 +149,7 @@ export function RenderStyleFields() {
         disabledReason={
           rig === null
             ? ''
-            : 'The loaded rig contract states the size of every piece, so this sheet is drawn to it. Remove the contract to choose a profile yourself.'
+            : 'The loaded rig contract states the size of every piece, so this sheet is drawn to it and the target size withdraws. Remove the contract to choose them yourself.'
         }
         onChange={(value) => {
           setOutputField('resolutionProfile', value);
@@ -170,9 +170,11 @@ export function RenderStyleFields() {
           `statesAssembledSize` is the same answer the compiler and the two panels take.
 
           Offered under `CUSTOM` alone, because the other three profiles each state a scale of their
-          own and a size beside one of them was a second answer to one question (issue #405). The
-          value stays in the store while it is withdrawn, as every withdrawn control's does. */}
-      {profile === 'CUSTOM' && (
+          own and a size beside one of them was a second answer to one question (issue #405). And
+          not where a rig contract applies, whose frame supersedes the field on that sheet — the
+          profile's own reason says so. The value stays in the store while it is withdrawn, as every
+          withdrawn control's does. */}
+      {profile === 'CUSTOM' && rig === null && (
         <TextField
           label={assembled ? 'Target Assembled Size' : 'Target Component Size'}
           tooltip={OUTPUT_TOOLTIPS.spriteTargetSize}

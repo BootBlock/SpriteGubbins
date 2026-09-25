@@ -2,7 +2,8 @@ import type { SheetPlan } from '../types/components.ts';
 import type { OutputConfig, ResolutionProfile, StatedTargetSize, TargetSize } from '../types/output.ts';
 import type { RigContract } from '../types/rigContract.ts';
 import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
-import { statedTargetSize, targetSizeField } from './componentTargetSize.ts';
+import { statedTargetSize } from './componentTargetSize.ts';
+import { targetSizeField } from './targetSizeField.ts';
 import { nativeGridScale } from './nativeGridScale.ts';
 import { resolveResolutionProfile } from './resolveResolutionProfile.ts';
 

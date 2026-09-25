@@ -3,6 +3,7 @@ import type { DirectionalMode, ResolutionProfile, StatedTargetSize, TargetSize }
 import type { DirectionSet } from '../types/rendering.ts';
 import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { parseTargetSize } from './targetSize.ts';
+import { targetSizeField } from './targetSizeField.ts';
 
 /**
  * Which quantity `spriteTargetSize` states, and the per-component size where it states one.
@@ -24,7 +25,7 @@ import { parseTargetSize } from './targetSize.ts';
  * are pieces of one.
  *
  * The other two — the pixel-discipline floor and the sprite-scale bullets — read the size only
- * under the `CUSTOM` resolution profile, as every reader now does, and every rig preset carrying a
+ * under the `CUSTOM` resolution profile, as every reader does, and every rig preset carrying a
  * size carries `CUSTOM`, so they were live there too. The profile decides whether the sheet states a
  * size at all and has nothing to say about which quantity the size names.
  *
@@ -63,23 +64,8 @@ export function statesAssembledSize(
 }
 
 /**
- * The field as a sheet reads it: its text under the `CUSTOM` profile, and empty under any other.
- *
- * **The field is read only under `CUSTOM`** (issue #405). The other three profiles each state a
- * scale of their own, so a size read beside one of them is a second answer to the question the
- * profile has already answered: the prompt printed a share of the cell or a retro height one line
- * above a pixel size, and the quantiser and the atlas measured against a figure the prompt's own
- * profile contradicted. The studio offers the field only under `CUSTOM`, and a value typed there
- * stays in the store for the reader who switches back to it. Section 2's words and every parse below
- * take this answer, so the line and the arithmetic cannot disagree about whether a size is stated.
- */
-export function targetSizeField(profile: ResolutionProfile, spriteTargetSize: string): string {
-  return profile === 'CUSTOM' ? spriteTargetSize : '';
-}
-
-/**
  * The size in the field with the quantity it is a size of, or `null` where the field states none —
- * which includes every profile but `CUSTOM`, per {@link targetSizeField}.
+ * which includes every profile but `CUSTOM`, per `targetSizeField`.
  *
  * The full answer, for the two readers that have something to say about an assembly rather than
  * nothing: `minFeatureSize`, whose floor must not be keyed off a figure no component has, and the
@@ -108,8 +94,9 @@ export function statedTargetSize(
  * `null` covers every way there is none: a profile other than `CUSTOM`, a field holding no `W × H`
  * pair at all, and a field whose pair names the assembled subject. All three are the same answer to
  * the question these callers are asking — *how big is a component meant to be* — and every one of
- * them already handles it, because an empty field has always been a possibility. The Sprites panel renders no comparison clause, the
- * grid candidate is not offered, and the native-grid enlargement is not derived.
+ * them already handles it, because an empty field has always been a possibility. The Sprites panel
+ * renders no comparison clause, the grid candidate is not offered, and the native-grid enlargement
+ * is not derived.
  *
  * **It deliberately does not guess a per-piece size from the assembled one.** Which piece is what
  * fraction of a figure belongs to the rig the art is authored against, and this function is handed
