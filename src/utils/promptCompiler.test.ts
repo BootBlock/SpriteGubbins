@@ -1648,7 +1648,7 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
 
     expect(prompt).toContain('**A mirrored copy is not a rotation.**');
     expect(prompt).toContain('**Rotation never swaps the subject’s own left and right.**');
-    expect(prompt).toContain('a “side” view that is the three-quarter view with');
+    expect(prompt).toContain('a “side” view that is a three-quarter view with');
     expect(prompt).toContain('### Directional audit');
   });
 
