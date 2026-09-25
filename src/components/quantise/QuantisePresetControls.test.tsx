@@ -7,6 +7,7 @@ import { DEFAULT_PROJECT_ID, createDefaultProject } from '../../constants/projec
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
+import { namesOmittingLabels } from '../../test/namesOmittingLabels.ts';
 import { repeatedControlNames } from '../../test/repeatedControlNames.ts';
 import type { QuantisePreset } from '../../types/quantisePreset.ts';
 import { QuantisePresetControls } from './QuantisePresetControls.tsx';
@@ -192,6 +193,7 @@ describe('QuantisePresetControls', () => {
     // through. The project dropdown is the one #269 added: each row's was called `Project`, beside
     // an ⓘ called `Guidance: Project`, while the buttons either side of it named the set.
     expect(repeatedControlNames()).toStrictEqual([]);
+    expect(namesOmittingLabels()).toStrictEqual([]);
     for (const name of ['Flat sheets', 'Painterly sheets']) {
       expect(screen.getByRole('button', { name: `Load the saved settings “${name}”` })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: `Delete the saved settings “${name}”` })).toBeInTheDocument();
@@ -217,6 +219,9 @@ describe('QuantisePresetControls', () => {
     expect(
       screen.getByRole('button', { name: 'Delete the saved settings “Flat sheets”, for good' }),
     ).toBeInTheDocument();
+    // #385. The Cancel beside it was named `Keep the saved settings …`, so a reader saying “click
+    // Cancel” reached nothing.
+    expect(namesOmittingLabels()).toStrictEqual([]);
   });
 
   it('deletes on the confirmation, naming the row it was pressed on', async () => {
@@ -238,7 +243,9 @@ describe('QuantisePresetControls', () => {
     render(<QuantisePresetControls />);
 
     await userEvent.click(screen.getByRole('button', { name: /^Delete the saved settings “Flat sheets”$/ }));
-    await userEvent.click(screen.getByRole('button', { name: 'Keep the saved settings “Flat sheets”' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Cancel — keep the saved settings “Flat sheets”' }),
+    );
 
     expect(deleteQuantisePreset).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Load the saved settings “Flat sheets”' })).toBeInTheDocument();

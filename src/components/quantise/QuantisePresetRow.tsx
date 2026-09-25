@@ -84,7 +84,7 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
               <button
                 ref={attachCancel}
                 type="button"
-                aria-label={`Keep the saved settings “${preset.name}”`}
+                aria-label={`Cancel — keep the saved settings “${preset.name}”`}
                 onClick={cancel}
                 className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors duration-390 hover:bg-foundry-700 hover:text-ink"
               >

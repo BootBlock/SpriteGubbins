@@ -23,14 +23,18 @@ describe('PaletteField', () => {
     render(<PaletteField />);
 
     // By name, because the label carries a guidance ⓘ that is a button too.
-    expect(screen.queryByRole('button', { name: /^Download/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: / — download / })).toBeNull();
   });
 
   it('offers the machine’s own colours once one is pinned', () => {
     useOutputStore.getState().setOutputField('palette', 'PICO_8');
     render(<PaletteField />);
 
-    expect(screen.getByRole('button', { name: 'Download PICO-8 palette as a swatch PNG' })).toBeVisible();
+    expect(
+      screen.getByRole('button', {
+        name: 'Swatch PNG — download PICO-8 palette as a picture of its colours',
+      }),
+    ).toBeVisible();
   });
 
   it('offers the reader’s own colours the same way, once they have loaded some', () => {
@@ -46,7 +50,9 @@ describe('PaletteField', () => {
     render(<PaletteField />);
 
     expect(
-      screen.getByRole('button', { name: 'Download Dusk Harbour palette as a swatch PNG' }),
+      screen.getByRole('button', {
+        name: 'Swatch PNG — download Dusk Harbour palette as a picture of its colours',
+      }),
     ).toBeVisible();
   });
 
@@ -58,7 +64,7 @@ describe('PaletteField', () => {
 
     expect(screen.getByLabelText('Palette file')).toBeVisible();
     // By name, because the label carries a guidance ⓘ that is a button too.
-    expect(screen.queryByRole('button', { name: /^Download/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: / — download / })).toBeNull();
   });
 
   it('offers nothing for a machine whose palette is a ladder rather than a list', () => {
@@ -66,6 +72,6 @@ describe('PaletteField', () => {
     render(<PaletteField />);
 
     // By name, because the label carries a guidance ⓘ that is a button too.
-    expect(screen.queryByRole('button', { name: /^Download/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: / — download / })).toBeNull();
   });
 });
