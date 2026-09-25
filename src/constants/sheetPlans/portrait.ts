@@ -96,7 +96,7 @@ across the set, and only what the feeling itself moves — the brows, the eyes, 
 the jaw — is redrawn. The crop is identical in every one, measured from the top of the head, so the
 eyes fall at the same height on every drawing and a portrait swapped in at runtime does not jump.
 ${spellNumberCapitalised(componentTotal(EXPRESSION_ENTRIES))} competent portraits that are not recognisably one character is the failure this sheet has, and
-it is the one to check for before delivering.`,
+it is the one to check for.`,
     },
   ],
 };

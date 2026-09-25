@@ -911,22 +911,38 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2427 leaves **0.67 KiB**, the smallest whole figure over the build.
  *
- * **Raised from 2427 by the saved row's Move button** (issue #354). The project dropdown on a saved
+ * **Raised from 2427 by the plan-before-render audit** (issue #398). Sol hands its render to an
+ * image tool and sees it when the reader does, yet its prompt told it to verify the sheet and
+ * redraw before delivering, which it could only obey with a second image. Targets now declare
+ * `seesCanvasBeforeDelivery`, and sections 3 and 9 and the adherence report carry a second wording
+ * for the targets that do not, beside a Sol paragraph asking for exactly one image call. Measured
+ * against `main` at `b48a5fa`, rebuilt from the same lockfile, with the ceiling forced to zero in
+ * each tree so both figures are the ones `assertPrecacheContract` receives: **2426.45 KiB** on
+ * `main` and **2428.22** here, a delta of **1.77** that crossed a ceiling the base sat 0.55 under.
+ * No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the
+ * two `dist/assets` listings, 1.79 KiB lands in `index`, which is where the template and the
+ * wrappers are bundled, and 0.02 comes back out of `quantiseDials`. It is almost all prompt text:
+ * the second wording is a whole branch of the template that every target now ships.
+ *
+ * 2429 leaves **0.78 KiB**, the smallest whole figure over the build. Merged with `main` at `d39af28`,
+ * whose Sol wrapper change landed alongside it, the build reports **2428.25**, which leaves 0.75.
+ *
+ * **Raised from 2429 by the saved row's Move button** (issue #354). The project dropdown on a saved
  * preset or set moved it on every `change`, which a closed native select fires on each arrow key, so
  * a keyboard reader filed it under the first project they passed and lost their place with the row.
- * The dropdown now chooses and a Move button commits. Measured against `main` at `b48a5fa`, rebuilt
+ * The dropdown now chooses and a Move button commits. Measured against `main` at `0531d03`, rebuilt
  * from the same lockfile, with the ceiling forced to zero in each tree so both figures are the ones
- * `assertPrecacheContract` receives: **2426.45 KiB** on `main` and **2427.94** here, a delta of
- * **1.49** that crossed a ceiling the base sat 0.55 under. No file was added to or removed from
+ * `assertPrecacheContract` receives: **2428.25 KiB** on `main` and **2429.74** here, a delta of
+ * **1.49** that crossed a ceiling the base sat 0.75 under. No file was added to or removed from
  * `PRECACHE_SHAPES`. Comparing the two `dist/assets` listings summed by chunk name, 0.89 KiB lands in
  * `QuantisePresetRow`, the chunk `ProjectMoveField` is bundled into; 0.38 net between
  * `ProjectSelectField` and `useUIStore`, which the bundler re-split (5.30 out of one, 5.68 into the
  * other) and which holds the four guidance cards; 0.11 in `quantiseDials`; 0.10 in
  * `useConfirmInPlace`, where `keepFocusThrough` now sits; and 0.01 in `ProjectsTab`.
  *
- * 2428 leaves **0.06 KiB**, the smallest whole figure over the build.
+ * 2430 leaves **0.26 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2428;
+export const PRECACHE_CEILING_KIB = 2430;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
