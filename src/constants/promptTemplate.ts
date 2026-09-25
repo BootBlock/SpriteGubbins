@@ -1,13 +1,14 @@
 /**
- * The heading of section 2's native-grid block, named here because a second file has to point at it.
+ * The heading of the STYLE section's native-grid block, named here because a second file has to point
+ * at it.
  *
  * `utils/modelWrapperText/sol.ts` tells Sol to carry that block across its hand-off to the image
  * tool word for word, and a hand-typed copy of the heading in the wrapper would go stale the first
  * time this one is reworded — silently, since a pointer at a heading that no longer exists reads as
  * an instruction rather than as a fault. One constant, substituted into the template below, is what
- * makes the two the same string rather than two strings a test has to keep level. Section 0 names
- * it too, so that its native-grid carve-out points at a block Sol forwards rather than at a section
- * number the image model never receives.
+ * makes the two the same string rather than two strings a test has to keep level. The CONTRACT
+ * section names it too, so that its native-grid carve-out points at a block Sol forwards rather than
+ * at a section number the image model never receives.
  *
  * It, `RIG_GEOMETRY_HEADING`, `SCOPE_AND_PRECEDENCE_HEADING` and `ONE_SIDED_FEATURES_HEADING` are
  * the only headings extracted this way, because they are the only ones another file names. A heading
@@ -18,7 +19,7 @@
 export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is delivered at';
 
 /**
- * The heading of section 5's piece-geometry block, which states every size the native grid counts
+ * The heading of the RIG section's piece-geometry block, which states every size the native grid counts
  * in when a rig contract is loaded.
  *
  * On that sheet the native-grid block states no size of its own: it points at this block, so
@@ -28,7 +29,7 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
 export const RIG_GEOMETRY_HEADING = 'Piece geometry — the rig these pieces are drawn for';
 
 /**
- * The heading that divides section 0 into what the image must be and how to read everything else.
+ * The heading that divides the CONTRACT section into what the image must be and how to read everything else.
  *
  * Above it are the numbered items, which describe the delivered image and cite no other section, so
  * they stay true wherever they travel. Below it are the series note, the category tripwire and the
@@ -41,7 +42,7 @@ export const RIG_GEOMETRY_HEADING = 'Piece geometry — the rig these pieces are
 export const SCOPE_AND_PRECEDENCE_HEADING = 'Scope and precedence';
 
 /**
- * The heading of section 3's ledger of the one-sided features this subject carries.
+ * The heading of the CAMERA section's ledger of the one-sided features this subject carries.
  *
  * `utils/modelWrapperText/sol.ts` names it among what Sol must forward to the image tool as written,
  * for the reason `NATIVE_GRID_HEADING` is extracted: a pointer at a heading that has since been
@@ -57,33 +58,40 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * generator will follow, and the difference between a usable sheet and an unusable one is usually
  * one sentence.
  *
- * Rendered by `utils/templateEngine.ts`; the markers are documented there. Section 0 sits first
- * deliberately: attention weighting favours early tokens, and background, pixel density and "no
- * text" are the constraints that fail most often. Section 9 repeats them as a self-audit, which is
- * the one place redundancy earns its keep.
+ * Rendered by `utils/templateEngine.ts`; the markers are documented there. The CONTRACT section sits
+ * first deliberately, because attention weighting favours early tokens: it states what the delivered
+ * image must be as a whole — the count, the background, the pixel density and the ban on text —
+ * rather than what any one component must be. On a target that deliberates, the LAYOUT section's
+ * self-audit checks them again. That is the first of the repetitions this file makes on purpose, and
+ * each of the others below says what bought it, because a copy of a rule competes for the attention
+ * every rule stated once is given. A copy stays only where it does a job the others cannot, and a
+ * copy that does none is the diluting one.
  *
- * **Nothing here writes a label for a subject field, and nothing here names a body part.** Section
- * 1's sixteen lines take their labels from `[DEFINE:*_LABEL]`, which the compiler fills from the
- * category's own field definitions, because a label fixed in this file is a label written for one
- * category and read by all six: a tank's *Service Condition* reached the model as "Age / Vitality",
+ * **Nothing here writes a label for a subject field, and nothing here names a body part.** The
+ * SUBJECT section's sixteen lines take their labels from `[DEFINE:*_LABEL]`, which the compiler fills
+ * from the category's own field definitions, because a label fixed in this file is a label written
+ * for one category and read by all six: a tank's *Service Condition* reached the model as "Age / Vitality",
  * its turret as "Anatomy base", and its vision slit as "Head & sensory features" — every value
  * correct and every label from the category the sixteen keys were first designed for. The same
- * defect wore a different shape wherever the prose reached for a worked example, so section 0's
- * scale rule now takes `[DEFINE:SCALE_EXAMPLE_DESCRIPTION]` and the rig sections of 5 and 9 talk
- * about *segments* rather than limbs. **A new rule that wants a concrete example needs one that is
- * true of a building and a pistol**, or a per-category map in `constants/promptText/` to hold six.
+ * defect wore a different shape wherever the prose reached for a worked example, so the CONTRACT
+ * section's scale rule now takes `[DEFINE:SCALE_EXAMPLE_DESCRIPTION]`, and the RIG section and the
+ * LAYOUT section's rig checks talk about *segments* rather than limbs. **A new rule that wants a
+ * concrete example needs one that is true of a building and a pistol**, or a per-category map in
+ * `constants/promptText/` to hold six.
  *
- * **Nothing here names this sheet's assembled whole either, and that was the last of the fixed words
- * to go.** Sections 4, 8 and 9 each state the same failure — exploded parts drawn as one finished
- * thing — and all three said it in a figure's vocabulary on every category, so a terrain sheet was
- * told not to draw an assembled *figure* while the composed landscape it actually comes back as went
- * unnamed. The three take `[DEFINE:CATEGORY_ASSEMBLY_INSTRUCTION]`, `[DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]`
- * and `[DEFINE:CATEGORY_ASSEMBLY_AUDIT]` from the sheet's `SheetPlan.assemblyFailure`, because they name
- * the pieces and a category's sheets do not share them (issue #278); `CATEGORY_ASSEMBLY` holds the same
- * claim for the two negative channels. **They are three defines rather than one spliced three times**,
- * because an instruction, an exclusion and a check the reader performs are three different jobs — the
- * check in particular has to qualify every noun it uses, or it fails a sheet on a component section 4
- * required, which is the mistake `CATEGORY_AUDIT_TEXT` records having made.
+ * **Nothing here names this sheet's assembled whole either, and that was the last of the fixed
+ * words to go.** The INVENTORY, EXCLUSIONS and LAYOUT sections each state the same failure —
+ * exploded parts drawn as one finished thing — and all three said it in a figure's vocabulary on
+ * every category, so a terrain sheet was told not to draw an assembled *figure* while the composed
+ * landscape it actually comes back as went unnamed. The three take
+ * `[DEFINE:CATEGORY_ASSEMBLY_INSTRUCTION]`, `[DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]` and
+ * `[DEFINE:CATEGORY_ASSEMBLY_AUDIT]` from the sheet's `SheetPlan.assemblyFailure`, because they
+ * name the pieces and a category's sheets do not share them (issue #278); `CATEGORY_ASSEMBLY` holds
+ * the same claim for the two negative channels. **They are three defines rather than one spliced
+ * three times**, because an instruction, an exclusion and a check the reader performs are three
+ * different jobs — the check in particular has to qualify every noun it uses, or it fails a sheet
+ * on a component the INVENTORY section required, which is the mistake `CATEGORY_AUDIT_TEXT` records
+ * having made.
  *
  * **Neither of those two lists writes its own numerals**, because both are assembled conditionally
  * and a hand-numbered list cannot survive that: the layout section's rig and pixel-art checks appear
@@ -101,7 +109,10 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * That defect had already been met once, at the adherence report, and answered by writing its heading
  * twice with each copy behind a gate; that does not survive a second conditional section, and it left
  * the citations to be kept in step by hand regardless. **A section number is therefore never written
- * down anywhere in this file** — `promptTemplate.test.ts` fails on one that is.
+ * down anywhere in this file**, and that includes this documentation, which cites a section by its
+ * key: the RIG section is the sixth on a rig sheet and absent from every other, so from ASSEMBLY on
+ * no section has a number that is true of every prompt. `promptTemplate.test.ts` fails on a number in
+ * the template, and `tests/docblock-section-citations.test.ts` on one anywhere in this file.
  *
  * **A line carrying one of those markers runs past this project's 110 columns, and is left that
  * way.** The marker is a dozen characters in the source and one digit in the output, so the line
@@ -110,8 +121,9 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * tidy a file. Prettier does not reformat inside a template literal, so nothing forces the issue.
  *
  * **Three passages beyond that repeat something deliberately, and they divide by what they repeat.**
- * Section 3's chirality rules and the closing invariants repeat a *derived* fact rather than a rule;
- * section 8's closing paragraph repeats a rule, and the paragraph further down says what bought it.
+ * The CAMERA section's chirality rules and the closing invariants repeat a *derived* fact rather than
+ * a rule; the EXCLUSIONS section's closing paragraph repeats a rule, and the paragraph further down
+ * says what bought it.
  *
  * The derived fact is the leading side, and which side a yaw leads with is stated inside each
  * facing's own paragraph by `FACING_TEXT`, three sentences deep and mixed in with what the yaw
@@ -126,17 +138,17 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * and `utils/modelWrapperText/sol.ts` records why that guidance and the *lean prompt* guidance are
  * both true — they address the model reading this specification and the model rendering from it, and
  * the second of those never sees anything but what survived the hand-off. That is why the Sol
- * directive names this section, and section 3's one-sided-feature ledger, among what it may not
+ * directive names this section, and the CAMERA section's one-sided-feature ledger, among what it may not
  * shorten: a block it does not name is prose it is told to cut first.
  *
  * **That closing section carries the directional invariants and nothing else, and the omissions are
  * the decision.** It is gated on `MULTI_DIRECTION`, and it does not restate the count, the
- * background or the ban on text. Those three are section 0's opening items *and* checks of the
- * layout section's audit, so a third copy is the diluting one this file warns about
- * above — and they are not what the reported failure was. The chirality rules are: they sit three
- * subsections deep in section 3, they are the newest thing here, and there is nothing else between
- * them and `Generate the sheet now`. On a single-facing sheet there is no distance to close, because
- * the rules that survive there are section 3's own two paragraphs. The budget is what forced the
+ * background or the ban on text. Those three are the CONTRACT section's opening items *and* checks
+ * of the layout section's audit, so a third copy would do no job those two do not, which makes it
+ * the diluting kind described above — and they are not what the reported failure was. The chirality rules are: they sit three subsections
+ * deep in the CAMERA section, they are the newest thing here, and there is nothing else between them
+ * and `Generate the sheet now`. On a single-facing sheet there is no distance to close, because the
+ * rules that survive there are the CAMERA section's own two paragraphs. The budget is what forced the
  * question and it is worth recording: `presetCoverage.test.ts` holds a shipped preset to four fifths
  * of its target's documented ceiling, and the first draft of this section — five items, ungated —
  * spent the last of that headroom on a sheet with one facing, for lines that sheet did not need.
@@ -145,10 +157,10 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * them.** It points at the layout section's list instead, because the two are asking for different
  * things from the same checks — that list audits *before* delivery so the sheet can still be fixed,
  * and the report audits what was actually delivered so the *template* can be. Writing the list out
- * again there would be the diluting third copy `utils/modelWrapperText/sol.ts` describes, in the
- * section least able to afford it.
+ * again there would be a copy that does no job the pointer does not, the diluting kind described above,
+ * in the section least able to afford it.
  *
- * **The delivered canvas shape is stated in section 0 as well as in the layout section, and the
+ * **The delivered canvas shape is stated in the CONTRACT section as well as in the layout section, and the
  * placement is the whole of the change.** Measured across a run pack of 27 real GPT-5.6 Sol sheets,
  * twelve came back at 3:2 where the prompt asked for a wide 16:9. This document stated the ratio in
  * exactly one place — the layout section's arrangement sentence — which is inside no block
@@ -158,8 +170,8 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * figure in that pack lost at the level of the *file*: a reader who gets the wrong shape cannot
  * re-crop it, because the components were laid out for the shape that came back. So it now sits
  * with the count, the key colour and the text ban — the properties of the delivered image that
- * survive on 26 or 27 of those 27 sheets — and the self-audit checks it beside them. **Naming
- * section 0's numbered items is what carries it across the Sol hand-off**, which is why nothing was
+ * survive on 26 or 27 of those 27 sheets — and the self-audit checks it beside them. **Naming the
+ * CONTRACT section's numbered items is what carries it across the Sol hand-off**, which is why nothing was
  * added to that wrapper's list: it protects every one of them, so a contract item is protected by
  * being one. The layout sentence keeps the ratio as well, deliberately — all eight compositions in the
  * pack that carried that sentence delivered a 16:9 sheet, so it is the half that already worked.
@@ -175,55 +187,57 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * measure the template's wording against the ceiling rather than choose it for the sheet. That
  * cannot be the answer twice: the preset gave the margin back instead, and says so in its own file.
  *
- * **Section 0 reserves the key colour for the background, and until it did a pinned palette could
- * offer it to a component (#277).** The item fixing the background said what the field is and never
- * that a component may not be it, while the Quantise tab removes the field by distance wherever it
- * sits — so a component drawn in the key, or near enough to it, is cut away with the background. A
- * palette turned that from a risk into an instruction: the ZX Spectrum lists `#FF00FF`, and every
- * channel-depth ladder reaches all three coloured keys. The reservation is stated once, for every
- * sheet whose field is a colour, and it closes on *whatever colour anything below names* because
- * section 1, the identity lock and section 2 can all name one. The parts of section 2 that name
- * colours are then **derived** from the same answer rather than left to lose to it: `describePalette`
- * leaves out every entry `keyReaches` takes, and `outlineDescription` asks for a very dark grey where
- * the style says pure black and the field is pure black. The self-audit checks it beside the
- * background item. Both are gated on `KEY_COLOUR`, since a transparent field has no colour to
- * reserve, and together they still leave `Side-On Rail Gun Car` inside the Qwen share
- * `presetCoverage.test.ts` allows it.
+ * **The CONTRACT section reserves the key colour for the background, and until it did a pinned
+ * palette could offer it to a component (#277).** The item fixing the background said what the
+ * field is and never that a component may not be it, while the Quantise tab removes the field by
+ * distance wherever it sits — so a component drawn in the key, or near enough to it, is cut away
+ * with the background. A palette turned that from a risk into an instruction: the ZX Spectrum lists
+ * `#FF00FF`, and every channel-depth ladder reaches all three coloured keys. The reservation is
+ * stated once, for every sheet whose field is a colour, and it closes on *whatever colour anything
+ * below names* because the SUBJECT section, the identity lock and the STYLE section can all name
+ * one. The parts of the STYLE section that name colours are then **derived** from the same answer
+ * rather than left to lose to it: `describePalette` leaves out every entry `keyReaches` takes, and
+ * `outlineDescription` asks for a very dark grey where the style says pure black and the field is
+ * pure black. The self-audit checks it beside the background item. Both are gated on `KEY_COLOUR`,
+ * since a transparent field has no colour to reserve, and together they still leave `Side-On Rail
+ * Gun Car` inside the Qwen share `presetCoverage.test.ts` allows it.
  *
- * **A transparent field has its own failure, and section 0 says what it is.** The reservation above
- * protects a colour the keying pass will remove; the `[IF:KEY_COLOUR!=yes]` clause beside it protects
- * the *absence* of one, because "fully transparent alpha" is a phrase a generator can satisfy by
- * painting a picture of transparency. OpenAI name that outcome in their GPT Image 2.5 prompting
- * guide — "A drawn checkerboard is not transparency" — and give the check the self-audit's own
- * clause restates: "does the file contain an alpha channel rather than a painted background?". A
- * drawn field defeats the Quantise tab exactly as a component in the key colour does, so the two
- * clauses are the same guard on the two states the field can be in, and one of them is always
- * emitted. https://developers.openai.com/api/docs/guides/image-prompting
+ * **A transparent field has its own failure, and the CONTRACT section says what it is.** The
+ * reservation above protects a colour the keying pass will remove; the `[IF:KEY_COLOUR!=yes]`
+ * clause beside it protects the *absence* of one, because "fully transparent alpha" is a phrase a
+ * generator can satisfy by painting a picture of transparency. OpenAI name that outcome in their
+ * GPT Image 2.5 prompting guide — "A drawn checkerboard is not transparency" — and give the check
+ * the self-audit's own clause restates: "does the file contain an alpha channel rather than a
+ * painted background?". A drawn field defeats the Quantise tab exactly as a component in the key
+ * colour does, so the two clauses are the same guard on the two states the field can be in, and one
+ * of them is always emitted. https://developers.openai.com/api/docs/guides/image-prompting
  *
  * **Three places said "the key colour" where the field may have none, and two of them were reached
- * by adding that clause.** Section 0's palette item and section 2's `describePalette` rule both
- * excepted the background from the pinned palette by naming a colour it stays — which read loosely
- * on a transparent sheet and read as a contradiction once the clause above banned a painted field in
- * the same section. Both now branch on the same answer, so a sheet is never told in one breath to
- * deliver alpha and to keep a colour. The third is the reservation itself, which was already gated.
+ * by adding that clause.** The CONTRACT section's palette item and the STYLE section's
+ * `describePalette` rule both excepted the background from the pinned palette by naming a colour it
+ * stays — which read loosely on a transparent sheet and read as a contradiction once the clause
+ * above banned a painted field in the same section. Both now branch on the same answer, so a sheet
+ * is never told in one breath to deliver alpha and to keep a colour. The third is the reservation
+ * itself, which was already gated.
  *
- * **Section 3 names this subject's one-sided features, and section 9 stopped asking the model to
- * choose one.** The old bullet read "pick one feature the subject carries on one side and not the
- * other — its **chirality witness** — and trace that one feature through every view", and measured
- * across 27 real GPT-5.6 Sol sheets it fails twice over. It picks **one**, so a subject carrying two
+ * **The CAMERA section names this subject's one-sided features, and the LAYOUT section stopped asking
+ * the model to choose one.** The old bullet read "pick one feature the subject carries on one side and
+ * not the other — its **chirality witness** — and trace that one feature through every view", and
+ * measured across 27 real GPT-5.6 Sol sheets it fails twice over. It picks **one**, so a subject carrying two
  * left the second unconstrained: on `S1-cardinals` the holstered sidearm was drawn on the west torso
  * and pelvis and absent from the east ones, exactly as asked, while the head went on reflecting.
  * And a witness to a prohibition is a rule with the figure taken out of it — one composition named
  * the undercut unprompted and the delivered heads were still a reflection, so naming it is necessary
  * and is not sufficient. Every measurable opposite-turn pair in that pack is a reflection: 12 of 12.
  *
- * The compiler names them instead, per feature and per facing, from `utils/oneSidedFeatureLedger.ts`
- * — which is a derivation rather than a second statement of the leading side, exactly as the
- * leading-side ledger further down this section is. **The delegation survives as the other branch and that is not a
- * compatibility path**: the fields are unfiltered combo boxes, so a reader can describe a one-sided
- * feature in their own words, and the compiler can only enumerate what a pool declared. A subject it
- * cannot read still has to be checked, and asking for a witness is all that is left for it. Both
- * branches are gated on the one flag, so a prompt never carries both and never carries neither.
+ * The compiler names them instead, per feature and per facing, from
+ * `utils/oneSidedFeatureLedger.ts` — which is a derivation rather than a second statement of the
+ * leading side, exactly as the leading-side ledger further down this section is. **The delegation
+ * survives as the other branch and that is not a compatibility path**: the fields are unfiltered
+ * combo boxes, so a reader can describe a one-sided feature in their own words, and the compiler
+ * can only enumerate what a pool declared. A subject it cannot read still has to be checked, and
+ * asking for a witness is all that is left for it. Both branches are gated on the one flag, so a
+ * prompt never carries both and never carries neither.
  *
  * **The block sits outside `[IF:MULTI_DIRECTION]`, unlike the leading-side ledger beside it**, and
  * that is the case `S3-cutout-rig` bought: it draws one facing, has no opposite-turn pair at all,
@@ -238,24 +252,25 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * the one that moves a left-sided feature onto the right.
  *
  * **The block yields to the identity lock, which is the one route by which a side is already
- * settled.** Section 3's own default is conditional — it applies "where section 1 names such a
- * feature without saying which side carries it" — and section 7 says that where the lock fixes a
- * side "this sheet does not choose one". No pool value names a side, so the survey behind
- * `oneSidedOptions` cannot reach that case; the lock is free text and can. A first draft stated the
- * left flatly and produced one prompt whose section 7 said right, whose section 3 said left, and
- * whose section 9 audited against the left. The precedence sentence is gated on `IDENTITY_LOCK`, so
- * it costs nothing on the twelve sheets in thirteen that carry no lock.
+ * settled.** The CAMERA section's own default is conditional — it applies "where section
+ * [SEC:SUBJECT] names such a feature without saying which side carries it" — and the IDENTITY section
+ * says that where the lock fixes a side "this sheet does not choose one". No pool value names a side,
+ * so the survey behind `oneSidedOptions` cannot reach that case; the lock is free text and can. A
+ * first draft stated the left flatly and produced one prompt whose IDENTITY section said right, whose
+ * CAMERA section said left, and whose LAYOUT section audited against the left. The precedence
+ * sentence is gated on `IDENTITY_LOCK`, so it costs nothing on the twelve sheets in thirteen that
+ * carry no lock.
  *
  * **The native grid is stated in three places, and the split is what makes each of them necessary.**
- * Section 0's item requiring every component to be rendered at the delivered output resolution is
- * a rule about *resampling*, and as written it read as a ban on the one
- * enlargement pixel art is made of — so the carve-out belongs in the item it would otherwise
+ * The CONTRACT section's item requiring every component to be rendered at the delivered output
+ * resolution is a rule about *resampling*, and as written it read as a ban on the one enlargement
+ * pixel art is made of — so the carve-out belongs in the item it would otherwise
  * contradict, not only where the scale is stated. **Both the carve-out and the sentence scoping the
  * item to resampling sit inside the gate**, which is what keeps a prompt with no native grid word for
  * word what it was: the scoping is only load-bearing where something has to be carved out of it, and
  * ungated it cost every prompt the app composes some twenty tokens — enough, measured, to put the
- * tightest shipped preset past the share `presetCoverage.test.ts` allows it. Section 2 states the
- * grid and the figure, because
+ * tightest shipped preset past the share `presetCoverage.test.ts` allows it. The STYLE section states
+ * the grid and the figure, because
  * that is where the target component size is. The self-audit's line is the third and earns its place
  * by asking a different question: the other two say what to draw, and it asks what the delivered
  * sheet actually holds — which is precisely the check the reported failure walked past, a sheet
@@ -266,7 +281,7 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * pass in which to re-read the sheet gets the two instructions and no checklist, which is that gate's
  * own argument rather than a hole in this one.
  *
- * **Section 2's target-size line is stated twice, because the field names two different quantities.**
+ * **The STYLE section's target-size line is stated twice, because the field names two different quantities.**
  * On a sheet of whole deliverable units — a tile, a glyph, an icon cell, a frame — a component *is*
  * the thing the reader is pricing, so `- Target component size:` says what it means. A sheet whose
  * components are the parts one subject is cut into is the other case: a cut-out rig draws a head, a
@@ -277,14 +292,14 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * `32 × 48 px per frame cell` and `64 × 64 px per icon cell` respectively.
  * The gate is `ASSEMBLED_TARGET`, and it is the resolved *sheet plan's* answer rather than the rig
  * field's — a sheet of units may carry `CUTOUT_RIG` as a legitimate request while still stating a
- * size per unit, which is why `RIG_MODE` is the wrong flag here even though section 5 uses it.
+ * size per unit, which is why `RIG_MODE` is the wrong flag here even though the RIG section uses it.
  * `utils/componentTargetSize.ts` computes it from `SheetPlan.targetQuantity`, and is the same answer
  * for the readers on the app's side of the same field.
  *
  * **Both wordings are category-neutral, because the sheets that take the assembled one are not all
  * figures.** An OBJECT part library, an ITEM's grip and shaft and a BACKGROUND layer library all
  * state an assembled size, so the line says *the complete subject* rather than *the whole figure* —
- * the same generic noun section 1 is written in.
+ * the same generic noun the SUBJECT section is written in.
  *
  * **The pixel-discipline minimum names the grid too, and it is the one mention that is not gated.**
  * That bullet has to appear on every pixel-art sheet, grid or no grid, so gating it would delete the
@@ -297,32 +312,33 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * grid. That is why the unit is not written here beside the figure — a template with a unit of its
  * own is a second place that has to agree with the gate, and it did not.
  *
- * **Section 8 closes by restating section 0's exclusion precedence, and the distance between the two
- * is the argument for it.** The rule is stated where the precedence order is settled, which is the
- * far end of the document from the list that triggers it — and a sheet came back wearing a holstered
- * sidearm that section 1 had named and section 8 prohibited, with the model that drew it reporting
+ * **The EXCLUSIONS section closes by restating the CONTRACT section's exclusion precedence, and the
+ * distance between the two is the argument for it.** The rule is stated where the precedence order is
+ * settled, which is the far end of the document from the list that triggers it — and a sheet came
+ * back wearing a holstered sidearm that the SUBJECT section had named and the EXCLUSIONS section
+ * prohibited, with the model that drew it reporting
  * the pair as a conflict it had resolved rather than one already decided. Neither side of that
  * conflict is computable: `worn_details` and `exclusions` are two of the same sixteen free-text
  * fields, so ruling that `No weapons` overrules a holster but not a pauldron is a judgement about
  * English, and this app makes no outbound model call to make it with. What it can do is put the
  * answer beside the question, so a reader meets the ranking at the point it bites rather than being
- * expected to carry it eight sections.
+ * expected to carry it across most of the document.
  *
  * **The restatement carries the inventory carve-out with it, and that is not padding.** A version
- * that stopped at "already overruled" would have section 8 telling a reader to drop a component
- * section 4 requires — one prompt disagreeing with itself, which is the failure the repetition
- * exists to prevent rather than a second instance of it.
+ * that stopped at "already overruled" would have the EXCLUSIONS section telling a reader to drop a
+ * component the INVENTORY section requires — one prompt disagreeing with itself, which is the
+ * failure the repetition exists to prevent rather than a second instance of it.
  *
  * **The carve-out is stated as the boundary it is, not as a class of thing that is exempt**, and
  * that phrasing is the difference between a fix and a wider hole. A draft of this paragraph opened
  * the exception with "Components are the exception" — but every object drawn on this sheet *is* a
  * component, so read as far as the emphasis and no further, it exempted the whole image from the
- * ban it had just restated. Section 0's wording is what closes it: the ranking decides what a
- * component **shows**, not which components exist, so a torso whose worn detail is excluded is
- * drawn without the detail rather than left off the sheet. Both copies now carry that sentence, and
- * the copy in section 8 says "leave the element out **of the image** entirely" for the neighbouring
- * reason — the component map and the adherence report ask for text *beside* the image, and an
- * unqualified "leave it out" reaches them.
+ * ban it had just restated. The CONTRACT section's wording is what closes it: the ranking decides
+ * what a component **shows**, not which components exist, so a torso whose worn detail is excluded
+ * is drawn without the detail rather than left off the sheet. Both copies now carry that sentence,
+ * and the copy in the EXCLUSIONS section says "leave the element out **of the image** entirely" for
+ * the neighbouring reason — the component map and the adherence report ask for text *beside* the
+ * image, and an unqualified "leave it out" reaches them.
  *
  * `promptCompiler.test.ts` slices each section and asserts, under every category, that both copies
  * carry the ranking, the ban on a compromise, and that boundary — so a half cannot be dropped from
@@ -1238,7 +1254,7 @@ image is reported as unverified rather than as passed.
 
 ### The feedback block
 
-If every check holds, say so, and write nothing further.
+If every check holds, say so, and the report ends there.
 
 If any check is missed, then this specification failed to obtain what it asked for, and its wording
 is what needs to change. Close your reply with one fenced code block — three backticks, then the
@@ -1294,7 +1310,20 @@ image. All three hold of the finished sheet:
 [/IF]
 
 Generate the sheet now.
+[IF:EMIT_COMPONENT_MAP]
+[IF:EMIT_PROMPT_FEEDBACK!=yes]
+
+Then write the component map — after the image has been delivered, never in place of it.
+[/IF]
+[IF:EMIT_PROMPT_FEEDBACK]
+
+Then write the component map and then the adherence report, in that order — both after the image
+has been delivered, never in place of it.
+[/IF]
+[/IF]
+[IF:EMIT_COMPONENT_MAP!=yes]
 [IF:EMIT_PROMPT_FEEDBACK]
 
 Then write the adherence report — after the image has been delivered, never in place of it.
+[/IF]
 [/IF]`;

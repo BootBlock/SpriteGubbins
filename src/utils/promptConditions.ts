@@ -193,10 +193,11 @@ export function promptConditions(
     SERIES_ONE_CAPABILITY: seriesStatesOneCapability(batch) ? 'yes' : '',
     IDENTITY_LOCK: output.identityLock,
     SOCKETS: output.sockets,
+    // Each companion is read twice by the template: once for its own section, and once more by the
+    // closing line, which names every deliverable that is on, in the order they are written — the
+    // map before the report, because the report closes the reply and says nothing follows it — so
+    // the last thing the target reads is not "generate the sheet now" alone.
     EMIT_COMPONENT_MAP: emitComponentMap ? 'yes' : '',
-    // Read twice by the template: once for the report section itself, and once more by the closing
-    // line, which names the second deliverable so the last thing the target reads is not "generate
-    // the sheet now" alone.
     EMIT_PROMPT_FEEDBACK: emitPromptFeedback ? 'yes' : '',
     // The self-audit tells the reader to check the sheet before it is delivered. A
     // single-pass diffusion endpoint has no such step, so on those targets it is the most
