@@ -91,32 +91,35 @@ export function PromptActions({ promptText }: PromptActionsProps) {
         </ControlTooltip>
       )}
 
-      {/* Carries the row's `ml-auto` on its wrapper, so it and Copy Prompt sit together at the
-          right-hand end — the three presses it stands for finish with the copy beside it. */}
-      <CopyOpenNextButton promptText={promptText} />
+      {/* One flex item holding both copies, so the row's `ml-auto` pushes them to the right-hand end
+          together and a narrow panel wraps them as a pair — on the button's own wrapper it left Copy
+          Prompt alone at the start of the next line. */}
+      <span className="ml-auto flex items-center gap-2">
+        <CopyOpenNextButton promptText={promptText} />
 
-      <ControlTooltip hint="Copy Prompt" text={STUDIO_ACTION_TOOLTIPS.copyPrompt}>
-        <button
-          type="button"
-          onClick={() => {
-            void copyPrompt();
-          }}
-          // `action-tab`, not the chrome's indigo: this one belongs to the studio, and the header's
-          // Copy Prompt — the same action, reachable from every view — is the one that stays primary.
-          className="action-tab group relative overflow-hidden rounded-xl px-4 py-1.5 text-xs font-extrabold transition-all duration-390 hover:scale-[1.03] active:scale-[0.98]"
-        >
-          {/* The sheen is a child rather than a background layer on the button, so it can be clipped
-              to the rounded corners and slid across without disturbing the fill underneath. */}
-          <span
-            aria-hidden="true"
-            className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1365 group-hover:translate-x-full"
-          />
-          <span className="relative flex items-center gap-1.5">
-            <span aria-hidden="true">📋</span>
-            Copy Prompt
-          </span>
-        </button>
-      </ControlTooltip>
+        <ControlTooltip hint="Copy Prompt" text={STUDIO_ACTION_TOOLTIPS.copyPrompt}>
+          <button
+            type="button"
+            onClick={() => {
+              void copyPrompt();
+            }}
+            // `action-tab`, not the chrome's indigo: this one belongs to the studio, and the header's
+            // Copy Prompt — the same action, reachable from every view — is the one that stays primary.
+            className="action-tab group relative overflow-hidden rounded-xl px-4 py-1.5 text-xs font-extrabold transition-all duration-390 hover:scale-[1.03] active:scale-[0.98]"
+          >
+            {/* The sheen is a child rather than a background layer on the button, so it can be clipped
+                to the rounded corners and slid across without disturbing the fill underneath. */}
+            <span
+              aria-hidden="true"
+              className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1365 group-hover:translate-x-full"
+            />
+            <span className="relative flex items-center gap-1.5">
+              <span aria-hidden="true">📋</span>
+              Copy Prompt
+            </span>
+          </button>
+        </ControlTooltip>
+      </span>
     </div>
   );
 }

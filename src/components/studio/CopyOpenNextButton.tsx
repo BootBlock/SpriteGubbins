@@ -94,7 +94,7 @@ export function CopyOpenNextButton({ promptText }: CopyOpenNextButtonProps) {
   };
 
   return (
-    <ControlTooltip hint={label} text={guidance} className="relative ml-auto inline-flex">
+    <ControlTooltip hint={label} text={guidance}>
       <PromptActionButton
         icon="⏭"
         unavailable={isSpent}
