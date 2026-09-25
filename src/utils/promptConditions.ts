@@ -2,6 +2,7 @@ import { deliberates, returnsText, seesCanvasBeforeDelivery } from './targetCapa
 import { isPlanView, LETTERING_IS_A_COMPONENT, perComponentLimit } from '../constants/promptText/index.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
 import { seriesStatesOneCapability } from './seriesCapability.ts';
+import { viewCoverage } from './viewCoverage.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 import type { SheetFacts } from './promptFacts.ts';
@@ -46,6 +47,7 @@ export function promptConditions(
     clothingIsAComponent,
     oneSidedFeatures,
   } = facts;
+  const views = viewCoverage(coveredDirections);
 
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,
@@ -129,6 +131,13 @@ export function promptConditions(
     // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they
     // would be forty lines of instruction about a comparison the generator cannot make.
     MULTI_DIRECTION: coveredDirections.length > 1 ? 'yes' : '',
+    // Narrower again: which views the sheet's own yaws give it, so a check comparing the side view
+    // with the front, or the rear view with the front view, is stated only where both are drawn —
+    // and the check a sheet of other views needs is stated in its place. See `viewCoverage`.
+    SIDE_VIEW: views.sideView ? 'yes' : '',
+    FRONT_AND_REAR_VIEWS: views.frontAndRearViews ? 'yes' : '',
+    TURNED_AWAY_VIEWS: views.turnedAwayViews ? 'yes' : '',
+    DIAGONAL_VIEWS_ONLY: views.diagonalViewsOnly ? 'yes' : '',
     // Which of the two things a turn can be said to do. Below the vertical a yaw hides one set of
     // surfaces and reveals another, and section 3's occlusion rules and section 9's audit of them
     // both hold; at the vertical the same top surface faces the camera at every yaw, so the pair

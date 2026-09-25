@@ -830,10 +830,21 @@ rendered.
   subject is a different subject.
 
 Each of these is the easy way out of the rules above, and each is a defect: two views of one
-component facing effectively the same way · a “side” view that is the three-quarter view with
-altered details · a rear view that is the front view with its details moved · a view produced by
-mirroring another · a view produced by moving the camera · direction signalled by changing details
-while the orientation stays put.
+component facing effectively the same way ·
+[IF:SIDE_VIEW]
+a “side” view that is a three-quarter view with altered details ·
+[/IF]
+[IF:DIAGONAL_VIEWS_ONLY]
+a diagonal view drifted square to the front, a side or the rear ·
+[/IF]
+[IF:FRONT_AND_REAR_VIEWS]
+a rear view that is the front view with its details moved ·
+[/IF]
+[IF:TURNED_AWAY_VIEWS]
+a view turned away from the camera that is a view turned towards it with its details moved ·
+[/IF]
+a view produced by mirroring another · a view produced by moving the camera · direction signalled
+by changing details while the orientation stays put.
 
 ### What “primary assembly direction” means
 
@@ -1138,7 +1149,14 @@ Then, for every component the inventory asks for in more than one direction, tra
 each of its views and confirm:
 
 - The front axis points a visibly different way in each view.
-- The side view is a full quarter turn from the front, not a second three-quarter view.
+[IF:SIDE_VIEW]
+- Every side view is a full quarter turn from the front, not a three-quarter view.
+[/IF]
+[IF:DIAGONAL_VIEWS_ONLY]
+- Every view sits on a diagonal, 45° from the nearest front, side or rear yaw, and no two are less
+  than a full quarter turn apart. None has drifted square to the front, a side or the rear.
+[/IF]
+[IF:FRONT_AND_REAR_VIEWS]
 [IF:PLAN_VIEW!=yes]
 - The rear view hides the front surfaces the front view presented, and shows rear surfaces in their
   place.
@@ -1146,6 +1164,13 @@ each of its views and confirm:
 [IF:PLAN_VIEW]
 - The rear view is the same top surface turned end for end: what the front view put towards the
   bottom of the frame points towards the top, and nothing has been redrawn to tell the two apart.
+[/IF]
+[/IF]
+[IF:TURNED_AWAY_VIEWS]
+[IF:PLAN_VIEW!=yes]
+- Every view turned away from the camera hides the front surfaces the views turned towards it
+  presented, and shows rear surfaces in their place.
+[/IF]
 [/IF]
 [IF:ONE_SIDED_FEATURES]
 - Trace **every** feature section [SEC:CAMERA] lists as one-sided — all of them, not one — through every view of
