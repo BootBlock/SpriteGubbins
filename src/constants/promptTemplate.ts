@@ -302,7 +302,7 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
 export const PROMPT_TEMPLATE = `# MODULAR SPRITE-SHEET SPECIFICATION — [DEFINE:CATEGORY]
 
 You are producing a **reference sheet for game-asset extraction**: an exploded grid of isolated,
-reusable components that a tool will cut apart and reassemble. It is not an illustration, a scene,
+reusable components that will be cut apart and reassembled. It is not an illustration, a scene,
 or a character portrait. Every rule below serves extraction.
 
 ## [SECTION:CONTRACT]. NON-NEGOTIABLE OUTPUT CONTRACT
@@ -1004,8 +1004,16 @@ Arrange components in a clean exploded grid in [DEFINE:ASPECT_DESCRIPTION] forma
 uniformly spaced, in the reading order fixed by section [SEC:INVENTORY]. Nothing touches, overlaps, or is cropped
 by the image edge.
 [IF:DELIBERATES]
+[IF:SEES_CANVAS]
 
 Before delivering, verify:
+[/IF]
+[IF:SEES_CANVAS!=yes]
+
+Before the sheet is rendered, confirm that your plan for it secures each of these. The pixels cannot
+be checked until the image is already delivered, so this is the only point at which a miss can
+still be fixed.
+[/IF]
 
 [N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
 [N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
@@ -1105,8 +1113,14 @@ each of its views and confirm:
 - Every view is the same geometry at the same scale through the same unmoved camera, differing by
   rotation rather than by redesign.
 
+[IF:SEES_CANVAS]
 If two views of one component still face effectively the same way, **the sheet has failed**. Redraw
 that component at the object yaw section [SEC:CAMERA] gives it rather than delivering the sheet.
+[/IF]
+[IF:SEES_CANVAS!=yes]
+If two views of one component would still face effectively the same way, **the plan has failed**.
+Correct that component to the object yaw section [SEC:CAMERA] gives it before the sheet is rendered.
+[/IF]
 [/IF]
 [/IF]
 [IF:EMIT_COMPONENT_MAP]
@@ -1133,7 +1147,7 @@ states four things:
 - **pivot** — where this component turns or stands, as a fraction of its own cell: two numbers from
   0 to 1, across the cell and then down it, so 0.5 and 1 is the foot of the cell, centred.
 
-The map describes what you actually drew. If a component moved or was omitted, say so there rather
+The map describes the delivered image. If a component moved or was omitted, say so there rather
 than describing the ideal.
 [/IF]
 [IF:EMIT_PROMPT_FEEDBACK]
@@ -1142,14 +1156,21 @@ than describing the ideal.
 
 ## [SECTION:REPORT]. ADHERENCE REPORT
 
-After the sheet is delivered, and as text beside it, report on what you actually produced. Nothing
-in this section changes the image — write the report from the delivered pixels, never from the plan
-you drew them to.
+After the sheet is delivered, and as text beside it, report on the image as delivered. Nothing in
+this section changes the image — write the report from the delivered pixels, never from the plan
+they were made from.
 
 ### The audit
 
+[IF:SEES_CANVAS]
 Section [SEC:LAYOUT] still stands: fix what you can before delivering. This report is about the sheet you did
-deliver, so work section [SEC:LAYOUT]’s checks — and its directional audit, where the sheet has one — once more
+deliver.
+[/IF]
+[IF:SEES_CANVAS!=yes]
+Section [SEC:LAYOUT]’s checks were made against the plan, before the render. This report is about the sheet that
+came back, and it replaces nothing: never redraw or edit the image to answer it.
+[/IF]
+Work section [SEC:LAYOUT]’s checks — and its directional audit, where the sheet has one — once more
 against the finished image, and state for each whether it holds. Where one does not, say what the
 image contains instead, concretely: “three of the five directional views at roughly the same yaw”
 rather than “directional coverage could be improved”. A check you cannot settle by looking at the
@@ -1161,21 +1182,21 @@ If every check holds, say so, and write nothing further.
 
 If any check is missed, then this specification failed to obtain what it asked for, and its wording
 is what needs to change. Close your reply with one fenced code block — three backticks, then the
-word markdown — holding a brief addressed to a software engineer who maintains the tool that
+word markdown — holding a brief addressed to a software engineer who maintains the application that
 composed this specification. Put nothing in that block but the brief, and nothing after it.
 
-**What that tool is, and why it constrains what you write.** This specification was composed by
+**What that application is, and why it constrains what you write.** This specification was composed by
 Sprite Gubbins, a browser application that assembles sprite-sheet prompts across a large
 configurable range of subjects, categories, render styles, projections, direction sets and rig
 modes. What you received is one rendering of a template shared by all of them. Your brief will be
-used to change that template, so it reaches every prompt the tool composes — and not this sheet,
+used to change that template, so it reaches every prompt the application composes — and not this sheet,
 which nobody will regenerate from it. Four things follow:
 
 - **Write about the instruction, not the artwork.** “Redraw the third component’s rear view” cannot
   be acted on there. “Section [SEC:CONTRACT] fixes the component count but never says a component may not
   arrive with a neighbouring piece still attached, so two entries merged into one satisfy it” can.
-- **Write nothing specific to this subject.** The next prompt from this tool may be a building, a
-  pistol or a tileset, and a change that only makes sense for this one cannot be made.
+- **Write nothing specific to this subject.** The next prompt from this application may be a building,
+  a pistol or a tileset, and a change that only makes sense for this one cannot be made.
 - **Propose wording, not architecture.** Name the section, quote the sentence that let the miss
   through, and give the replacement or addition you would make. Keep it proportionate: this
   specification largely works, and a brief that restructures it cannot be used.

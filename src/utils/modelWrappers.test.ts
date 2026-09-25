@@ -355,7 +355,19 @@ describe('wrapForModel', () => {
     expect(prompt).not.toContain('Plan the grid and the per-component bounding boxes');
     // Section 0 and section 9 say these for themselves, and are what the wrapper used to point at.
     expect(prompt).toContain('Satisfy this section before any aesthetic consideration.');
-    expect(prompt).toContain('Before delivering, verify:');
+    expect(prompt).toContain('Component count is exactly');
+  });
+
+  it('asks Sol for exactly one image call, and puts the audit before it', () => {
+    // Nothing in a 33,716-character Sol prompt said the call was to be one call, and the audit it
+    // carries is only obeyable before the call: Sol sees the render when the reader does (#398).
+    const prompt = wrapperOnly(
+      generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' })),
+    );
+
+    expect(prompt).toContain('Make exactly one image-tool call');
+    expect(prompt).toContain('render the sheet rather than describe it');
+    expect(prompt).toContain('never a second call or an edit of the image afterwards');
   });
 
   it('gives the hand-off to Sol alone, since no other target has one', () => {

@@ -15,6 +15,7 @@ import {
   sheetSeriesFor,
 } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
+import { TARGET_MODELS } from '../constants/models.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { NATIVE_GRID_HEADING } from '../constants/promptTemplate.ts';
 import * as promptText from '../constants/promptText/index.ts';
@@ -1189,14 +1190,14 @@ describe('generatePrompt — the adherence report', () => {
   it('cites section 9 rather than restating its checks', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE));
 
-    expect(prompt).toContain('work section 9’s checks');
+    expect(prompt).toContain('Work section 9’s checks');
     // Section 9's own numbered list appears exactly once. A second copy of it inside the report is
     // the diluting third statement of the same rules that `modelWrapperText/sol.ts` warns against.
     expect(prompt.match(/Component count is exactly/g)).toHaveLength(1);
   });
 
   it('never emits the report onto a prompt whose section 9 has no checks to cite', () => {
-    // The implication the report's wording depends on: it says "work section 9’s checks", and
+    // The implication the report's wording depends on: it says "Work section 9’s checks", and
     // section 9 is a bare `## 9. LAYOUT` heading on a target that does not deliberate. Asserted
     // across the whole target list against the *compiled prompt*, because that is where the two
     // gates actually meet — `EMIT_PROMPT_FEEDBACK` and `DELIBERATES` are computed separately in the
@@ -1207,7 +1208,7 @@ describe('generatePrompt — the adherence report', () => {
       if (!prompt.includes('ADHERENCE REPORT')) continue;
 
       expect(prompt, target).toContain('## 9. LAYOUT AND SELF-AUDIT');
-      expect(prompt, target).toContain('Before delivering, verify:');
+      expect(prompt, target).toContain('Component count is exactly');
     }
   });
 
@@ -3079,16 +3080,12 @@ describe('countWords and estimateTokens', () => {
 
 /**
  * The self-audit is instruction addressed to a reader that can act on it — check the sheet against
- * the specification and redraw before delivering. A single-pass diffusion endpoint has no such step,
+ * the specification before it is delivered. A single-pass diffusion endpoint has no such step,
  * so on those targets the block is the most rule-list-shaped section in the template sitting where
  * attention is weakest. It is dropped for them and kept for the two that can run it.
  */
 describe('generatePrompt — the self-audit, per target', () => {
-  const AUDIT_MARKERS = [
-    'Before delivering, verify:',
-    'Component count is exactly',
-    'One camera, one scale and one light direction',
-  ];
+  const AUDIT_MARKERS = ['Component count is exactly', 'One camera, one scale and one light direction'];
 
   it('keeps the audit for the targets that work through the prompt', () => {
     // SEEDREAM is here because it is the case that breaks the shorthand: an *image* endpoint that
@@ -3195,10 +3192,56 @@ describe('generatePrompt — the self-audit, per target', () => {
     // — so "is an image generator" and "cannot run a verification pass" are different questions.
     // Getting this backwards would silently withhold the audit from a target that can act on it.
     const gemini = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GEMINI_FLASH_IMAGE' }));
-    const generic = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GENERIC' }));
+    const singlePass = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GPT_IMAGE' }));
 
-    expect(gemini).toContain('Before delivering, verify:');
-    expect(countWords(gemini)).toBe(countWords(generic));
+    for (const marker of AUDIT_MARKERS) expect(gemini, marker).toContain(marker);
+    expect(countWords(gemini)).toBeGreaterThan(countWords(singlePass));
+  });
+});
+
+/**
+ * Which audit a deliberating target is given: pixels checked and a failed view redrawn before
+ * delivery, or a plan checked before the render. The first is only obeyable by a target that sees
+ * its own canvas first. Sol hands the render to a tool and sees it when the reader does, so "redraw
+ * rather than delivering" and "fix what you can before delivering" told it to make a second image or
+ * edit the first (#398). The gate is `seesCanvasBeforeDelivery`, read off the table rather than
+ * listed here, so a target that changes its declaration is checked by the same loop.
+ */
+describe('generatePrompt — the self-audit checks what the target can see', () => {
+  const PIXEL_AUDIT = ['Before delivering, verify:', 'the sheet has failed', 'Redraw\nthat component'];
+  const PLAN_AUDIT = [
+    'Before the sheet is rendered, confirm that your plan for it secures each of these.',
+    'the plan has failed',
+    'before the sheet is rendered.',
+  ];
+  const capable = withOutput({ emitPromptFeedback: true, directions: 'EIGHT_COMPASS' });
+
+  it('gives each deliberating target the audit its declared sight of the canvas allows', () => {
+    for (const model of TARGET_MODELS) {
+      if (!model.capabilities.deliberates) continue;
+      const prompt = generatePrompt('CHARACTER', SUBJECT, { ...capable, targetModel: model.id });
+      const [kept, dropped] = model.capabilities.seesCanvasBeforeDelivery
+        ? [PIXEL_AUDIT, PLAN_AUDIT]
+        : [PLAN_AUDIT, PIXEL_AUDIT];
+      for (const marker of kept) expect(prompt, `${model.id}: ${marker}`).toContain(marker);
+      for (const marker of dropped) expect(prompt, `${model.id}: ${marker}`).not.toContain(marker);
+    }
+  });
+
+  it('never tells Sol to fix the sheet after it has rendered', () => {
+    const prompt = generatePrompt('CHARACTER', SUBJECT, { ...capable, targetModel: 'CHATGPT_5_6_SOL' });
+
+    expect(prompt).toContain('ADHERENCE REPORT');
+    expect(prompt).not.toContain('fix what you can before delivering');
+    expect(prompt).not.toMatch(/[Rr]edraw\s+that component/);
+    expect(prompt).toContain('never redraw or edit the image to answer it');
+  });
+
+  it('keeps the report’s pixel wording for a target that sees its canvas', () => {
+    const prompt = generatePrompt('CHARACTER', SUBJECT, { ...capable, targetModel: 'GEMINI_PRO_IMAGE' });
+
+    expect(prompt).toContain('fix what you can before delivering');
+    expect(prompt).not.toContain('never redraw or edit the image to answer it');
   });
 });
 

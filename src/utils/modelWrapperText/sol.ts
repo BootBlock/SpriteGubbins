@@ -189,6 +189,16 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * layout, clipping, spacing, missing content, and visual consistency" is what that section asks for,
  * and a verification pass is not a repeated statement of a rule.
  *
+ * **What the audit may not do on this target is look at pixels, and the one-call paragraph is what
+ * says so.** Sol sees nothing until the tool returns, and then the reader sees it too, so an audit
+ * that ends "redraw rather than delivering" can only be obeyed with a second render or an edit —
+ * two images, or one that no longer matches the composition the adherence pack scores. The template
+ * already gives this target the plan-before-render audit, gated on `seesCanvasBeforeDelivery` in
+ * `constants/models.ts`. What only this wrapper can state is the mapping between that audit and
+ * the hand-off: the plan it checks is the call, and there is one call. Nothing in a 33,716-character
+ * Sol prompt said "one" of the call before it. The same paragraph settles who "you" is in the body,
+ * which addresses whoever draws, while the directive's first sentence says Sol does not.
+ *
  * Sources: [model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
  * [image generation tool](https://developers.openai.com/api/docs/guides/tools-image-generation),
  * [image generation guide](https://developers.openai.com/api/docs/guides/image-generation),
@@ -230,7 +240,12 @@ You are not the model that draws this sheet: you will call an image tool, and a 
 renders whatever that call carries. So the call is where a sheet loses its component count, its
 background or its per-component directions. Whatever you send must still carry section ${citeSection(sections, 'CONTRACT')}, the object
 yaws in section ${citeSection(sections, 'CAMERA')} and the inventory in section ${citeSection(sections, 'INVENTORY')} as they are written here. If it has to be
-shortened, shorten the prose elsewhere — never those three.${sectionTwo}
+shortened, shorten the prose elsewhere — never those three.
+
+Make exactly one image-tool call, and make it: render the sheet rather than describe it. You see the
+image only when the reader does, so every check below is a check of what that call carries, made
+before you make it — never a second call or an edit of the image afterwards. Where the text below
+says to draw, it states what the image your call obtains must show.${sectionTwo}
 
 ${prompt}`;
 }
