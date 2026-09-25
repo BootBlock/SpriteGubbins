@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { OVER_BUDGET_EXPLANATION } from './componentBudget.ts';
 import { OUTPUT_TOOLTIPS } from './output/tooltips.ts';
 import { PALETTE_EXPORT_GUIDANCE } from './paletteExport.ts';
 import { PALETTE_EXPORT_TOOLTIPS } from './tooltips/paletteExport.ts';
@@ -14,12 +15,14 @@ import { STUDIO_ACTION_TOOLTIPS } from './tooltips/studio.ts';
  * equals the constant until the day it does not. So each constant is moved here to a figure no card
  * would type, and every card that states it must move with it and stop stating the figure it held.
  *
- * The moved figures only have to be distinct from the real ones and from each other: every module
- * that reads a constant sees the moved one, so the cards and the controls still agree with each
- * other, which is the claim under test.
+ * A moved figure has to differ from the real one and appear in no card already: the PNG card's
+ * “128 px across” would satisfy a ceiling moved to 128 whatever the card said about the ceiling.
+ * Every module that reads a constant sees the moved one, so the cards and the controls still agree
+ * with each other, which is the claim under test. The over-budget notice's paragraph is held to
+ * the same check, which is why it is kept in `componentBudget.ts` rather than in its markup.
  */
 const figures = vi.hoisted(() => ({
-  paletteEntries: { moved: 128, real: 0 },
+  paletteEntries: { moved: 173, real: 0 },
   componentCeiling: { moved: 57, real: 0 },
   noBudget: { moved: -1, real: 0 },
 }));
@@ -71,11 +74,14 @@ describe('the palette ceiling in guidance', () => {
 });
 
 describe('the component budget guidance', () => {
-  it('reads the practical ceiling from PRACTICAL_COMPONENT_CEILING', () => {
+  it.each([
+    ['componentBudget', OUTPUT_TOOLTIPS.componentBudget],
+    ['the over-budget notice', OVER_BUDGET_EXPLANATION],
+  ])('%s reads the practical ceiling from PRACTICAL_COMPONENT_CEILING', (_name, text) => {
     const { moved, real } = figures.componentCeiling;
 
-    expect(states(OUTPUT_TOOLTIPS.componentBudget, moved)).toBe(true);
-    expect(states(OUTPUT_TOOLTIPS.componentBudget, real)).toBe(false);
+    expect(states(text, moved)).toBe(true);
+    expect(states(text, real)).toBe(false);
   });
 
   it('reads the no-cap value from NO_COMPONENT_BUDGET', () => {

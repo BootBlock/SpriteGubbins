@@ -7,10 +7,10 @@ import { spellNumber } from '../../utils/numberWords.ts';
  *
  * **It is a series because the character set does not fit a generation, not because it has parts.**
  * Printable ASCII is 95 codepoints; one of them is the space, which is drawn as nothing, so 94
- * glyphs have to be delivered and `PRACTICAL_COMPONENT_CEILING` is 43. That is the arithmetic
+ * glyphs have to be delivered, more than twice `PRACTICAL_COMPONENT_CEILING`. That is the arithmetic
  * `SheetSeries` exists for. The split is along the boundaries an engine and a reader both already
  * recognise — capitals, lower case, digits with the punctuation a sentence needs, and the remaining
- * symbols — rather than at whatever position 43 falls on, because a sheet that stops in the middle of
+ * symbols — rather than wherever the ceiling falls, because a sheet that stops in the middle of
  * the alphabet is a sheet nobody can check by eye.
  *
  * **One mode, and the other three are declined.** A glyph is a flat mark on a baseline: it has no

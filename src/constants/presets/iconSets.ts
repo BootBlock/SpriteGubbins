@@ -8,10 +8,10 @@ import type { PresetArchetype } from '../../types/preset.ts';
  *
  * **The camera is what these four vary, and it is the one place this category is looser than
  * INTERFACE.** An icon depicts something, and the angle it is depicted at is a genuine art-direction
- * choice: a flat front-on ability glyph, an oblique chest, a three-quarter potion bottle and an
- * isometric map pin are all shipped icon styles. `categoryProjections.ts` leaves the whole list open
- * for that reason, so the library is what demonstrates that the choice exists at all — four icon
- * sets under one camera would have taught a reader that icons have none.
+ * choice: a flat front-on ability glyph, a three-quarter potion bottle and an isometric map pin are
+ * all shipped icon styles. `categoryProjections.ts` leaves the whole list open for that reason, so
+ * the library is what demonstrates that the choice exists at all — four icon sets under one camera
+ * would have taught a reader that icons have none.
  *
  * **The first two pin the two bans no other category needs**, and between them they say why. A
  * stack count, a cooldown and a keybind are drawn by the engine at runtime over the top of the

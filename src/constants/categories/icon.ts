@@ -31,10 +31,10 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * into it is an icon for one quantity.
  *
  * **The camera is left open, which is the one place this category is looser than INTERFACE.** A flat
- * front-on mark, a three-quarter potion bottle, an oblique chest and an isometric building pin are
- * all shipped icon styles, so the angle the depicted object is drawn at is a genuine art-direction
- * choice rather than a property of the deliverable. `categoryProjections.ts` therefore offers the
- * whole list, and only the facings are bound.
+ * front-on mark, a three-quarter potion bottle and an isometric building pin are all shipped icon
+ * styles, so the angle the depicted object is drawn at is a genuine art-direction choice rather than
+ * a property of the deliverable. `categoryProjections.ts` therefore offers the whole list, and only
+ * the facings are bound.
  */
 export const ICON: CategoryDefinition = {
   label: 'Icon / Symbol Set',

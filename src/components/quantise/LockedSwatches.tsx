@@ -11,7 +11,7 @@ interface LockedSwatchesProps {
 /**
  * The colours a lock is holding, as a strip of dots, with whatever will not fit counted.
  *
- * **Capped rather than complete.** A lock can hold up to `MAX_PALETTE_ENTRIES` colours — 256 — and a
+ * **Capped rather than complete.** A lock can hold up to `MAX_PALETTE_ENTRIES` colours, and a
  * strip of that many dots is not a palette anybody can read. The entries arrive most-used first, so the ones shown are the colours
  * the sheet is actually made of, and the remainder is stated as a number rather than dropped in
  * silence.

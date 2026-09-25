@@ -18,7 +18,7 @@ import { useImageFile } from './useImageFile.ts';
  * `useIdentityPaletteCapture` takes for the same reason.
  *
  * **An image over the ceiling is refused and held, not truncated.** A sheet dropped where a swatch
- * was meant is the likely way to get here, and quietly keeping 256 of its 4,000 colours would pin a
+ * was meant is the likely way to get here, and quietly keeping a palette’s worth of its thousands of colours would pin a
  * palette nobody chose. So the count is reported and the picture is kept just long enough to offer
  * the one thing that would make it a palette: reducing it, deliberately, through the same quantiser
  * the Quantise tab uses.
