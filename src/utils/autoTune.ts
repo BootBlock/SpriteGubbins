@@ -38,20 +38,20 @@ import { TUNE_STAGES } from './tuneStages.ts';
  * **The stop is a repeat of any earlier round's position, not only of the round before.** What the
  * stages descend on is not a scalar objective — the elbow ranks a pair of figures and its knee moves
  * with the candidate set — so a round can end somewhere it has been two rounds earlier and go round
- * that loop for ever. Measured over the corpus, five of the eight sheets stop at the third round and
- * the reference sheet takes six — `TUNE_ROUNDS` carries that table. A repeat of *any* position
+ * that loop for ever. Measured over the corpus, five of the eight sheets stop at the third round,
+ * two at the second and one at the fourth — `TUNE_ROUNDS` carries that table. A repeat of *any* position
  * already seen means every later round would retrace the same ground, which is what makes stopping
  * there a fact about the descent rather than a budget running out. `TUNE_ROUNDS` is what bounds the
  * case where none is found.
  *
  * **The third scorer the roadmap listed — how sharply the result sits on its lattice — is not here,
  * and the reason is that it cannot separate anything this function is choosing between.** Every
- * candidate is judged on its result magnified by the same grid, and a nearest-neighbour magnification
- * puts *all* of a result's change exactly on that lattice — which is the quantity
- * `GRID_ESTIMATION_THRESHOLD` scores, so it is 1 for every candidate however the dials moved. The
- * grid is settled before this runs, by measurement or by the reader, so the question a lattice score
- * asks has already been answered. `autoTune.test.ts` demonstrates the pair: candidates whose
- * fidelities are far apart put every one of their steps on the lattice alike.
+ * candidate is judged on its result painted back over the same mesh, and painting one colour over
+ * each cell puts *all* of a result's change exactly on that mesh's boundaries — the quantity a
+ * lattice score measures, so it is the same for every candidate however the dials moved. The grid is
+ * settled before this runs, by measurement or by the reader, and the mesh is measured once a crop, so
+ * the question a lattice score asks has already been answered. `autoTune.test.ts` demonstrates the
+ * pair: candidates whose fidelities are far apart put every one of their steps on the mesh alike.
  *
  * Pure, like everything else in this directory, which is what lets `autoTuneWorker.ts` run it on a
  * thread without a line of it changing.
@@ -106,12 +106,12 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
         // **And its dials go back where the reader had them, here rather than at the end.** Rounds
         // are what make this necessary at all: a stage can sweep under one reading and then be
         // skipped because a later round moved off it, which leaves positions chosen under a reading
-        // the sweep has abandoned — measured on `test_sprites/armour.png`, a line strength of 2 and
-        // an ink threshold of 56 both settled under `INK_WEIGHTED` and survived the descent's move
-        // to `K_CENTROID`. They reach no pixel of the result, because each skip predicate is exactly
-        // the pipeline's own gate; they reach the *tab*, where they are two sliders the reader never
-        // touched sitting somewhere new, ready to take effect the moment they change the control
-        // that was gating them.
+        // the sweep has abandoned — measured on `test_sprites/vehicles_and_props.png` at a grid of 5,
+        // the cleanup-pass count is swept while the fill cleanup is on and set aside once a later
+        // round turns the cleanup off. A dial left where that sweep put it reaches no pixel of the
+        // result, because each skip predicate is exactly the pipeline's own gate; it reaches the
+        // *tab*, where it is a slider the reader never touched sitting somewhere new, ready to take
+        // effect the moment they change the control that was gating it.
         //
         // **Inside the round rather than after the last one**, so the position the descent carries
         // is one it would report — which is what keeps the fixed point `visited` looks for a fixed

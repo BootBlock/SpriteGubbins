@@ -71,8 +71,9 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * The knee of that frontier is `DOMINANT`. Once the merge and the cleanup have folded the averaging
  * readings' extra colours away, a later round ranks a different frontier and its knee is
  * `K_CENTROID` — which is what a descent of more than one round is for. Those four figures are a
- * reading of the first stage alone at three crops, taken before the widening above; the reading
- * ladder is the one that change did not touch, so they still describe the positions it tries.
+ * reading of the first stage alone at three crops, the sample the sweep read before the widening
+ * above; the reading ladder is the one that change did not touch, so they describe the positions it
+ * tries today.
  *
  * **The averaging bias that guidance warns about is real on this sheet, and the sweep settles on the
  * averaging reading it favours most.** A resampled sheet has soft edges, and an average genuinely is
@@ -320,7 +321,7 @@ export const TUNE_STAGE_LABELS: Readonly<Record<TuneStageName, string>> = {
 export const AUTO_TUNE_GUIDANCE = {
   waiting:
     'A pixel scale has to be settled before the dials can be swept: every candidate is judged by re-drawing the result at that scale and comparing it with the artwork it came from, and there is nothing to compare against until the scale is known. Set a grid above, then come back.',
-  idle: 'The dials on this tab open at positions that suit some sheets and not others, and nothing on screen says which kind of sheet you have. This runs the pipeline over five busy crops of it, at a hundred or more combinations of the dials that decide how a cell is read, how its colours settle and how its contours are softened, and moves them to whichever came closest to the artwork for the fewest colours. It goes round the dials up to eight times, stopping as soon as a round retraces ground it has already covered, so each one is finally chosen against the others rather than against the positions they opened at.',
+  idle: 'The dials on this tab open at positions that suit some sheets and not others, and nothing on screen says which kind of sheet you have. This runs the pipeline over five busy crops of it, at up to a few hundred combinations of the dials that decide how a cell is read, how its colours settle and how its contours are softened, and moves them to whichever came closest to the artwork for the fewest colours. It goes round the dials up to eight times, stopping as soon as a round retraces ground it has already covered, so each one is finally chosen against the others rather than against the positions they opened at.',
   running:
     'Running the pipeline over five crops of the sheet, once for each candidate, and going round the dials until they stop moving. It can take a minute or two on a large sheet, and the preview beside it keeps working throughout — the sweep is on a thread of its own.',
   settled:
