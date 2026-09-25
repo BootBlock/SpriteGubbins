@@ -51,8 +51,12 @@ function copyConfirmation(category: SubjectCategory, subject: SheetSubject, outp
  * carries its own configuration as well as its own text, so the entry it logs restores to *that*
  * sheet — its facing and its place in the plan's series both — where an entry holding the batch's
  * configuration would come back as run one whatever prompt it showed.
+ *
+ * @returns whether the prompt reached the clipboard, so a caller with more to do after a copy —
+ * the preview's Copy, open & next, which opens a generator and steps on — does none of it when the
+ * copy failed.
  */
-export function useCopyPrompt(): (run?: SheetRun) => Promise<void> {
+export function useCopyPrompt(): (run?: SheetRun) => Promise<boolean> {
   const copyText = useClipboard();
   const addLog = useHistoryStore((state) => state.addLog);
 
@@ -63,7 +67,7 @@ export function useCopyPrompt(): (run?: SheetRun) => Promise<void> {
       const promptText = run?.promptText ?? generatePrompt(category, subject, output);
 
       const copied = await copyText(promptText, copyConfirmation(category, subject, output));
-      if (!copied) return;
+      if (!copied) return false;
 
       // The subject and output travel with the prompt, not just the text they produced: the compiled
       // prompt is a one-way rendering of them, so this is the only moment the studio state that made
@@ -76,6 +80,7 @@ export function useCopyPrompt(): (run?: SheetRun) => Promise<void> {
         subject,
         output,
       });
+      return true;
     },
     [copyText, addLog],
   );

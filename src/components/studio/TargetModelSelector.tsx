@@ -1,5 +1,6 @@
 import { TARGET_MODELS } from '../../constants/models.ts';
 import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
+import { TARGET_MODEL_ENTRIES } from '../../constants/targetModelEntries.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { SelectField } from '../common/SelectField.tsx';
 import { GeneratorSiteLink } from './GeneratorSiteLink.tsx';
@@ -16,15 +17,6 @@ const MODEL_CHOICES = TARGET_MODELS.map((model) => ({ value: model.id, label: mo
  * answer.
  */
 const MODEL_DESCRIPTIONS = new Map(TARGET_MODELS.map((model) => [model.id, model.description]));
-
-/**
- * The whole entry, keyed the same way, for the link button beside the control.
- *
- * A second `Map` rather than widening the one above, because the two are read for different things
- * and the description's fallback is not the link's: a missing description renders nothing, while a
- * missing entry has no button to render at all.
- */
-const MODEL_ENTRIES = new Map(TARGET_MODELS.map((model) => [model.id, model]));
 
 /**
  * Which generator the prompt is being written for.
@@ -50,7 +42,7 @@ const MODEL_ENTRIES = new Map(TARGET_MODELS.map((model) => [model.id, model]));
 export function TargetModelSelector() {
   const targetModel = useOutputStore((state) => state.output.targetModel);
   const setOutputField = useOutputStore((state) => state.setOutputField);
-  const entry = MODEL_ENTRIES.get(targetModel);
+  const entry = TARGET_MODEL_ENTRIES.get(targetModel);
 
   return (
     <section className="animate-view-fade-in glass-panel rounded-2xl border border-foundry-700 p-4 shadow-xl transition-colors duration-585 hover:border-tab/40">
