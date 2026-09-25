@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { channels, imageFrom } from '../test/images.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 import type { GridOffset, Rgba } from '../types/quantiser.ts';
-import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
+import { alignToGrid, downscaleNearest, upscaleOverMesh } from './gridAlignment.ts';
 import { regularMesh } from './gridMesh.ts';
 import { pixelOffset, readPixel } from './imageData.ts';
 
@@ -230,5 +230,36 @@ describe('downscaleNearest', () => {
         });
       }
     }
+  });
+});
+
+describe('upscaleOverMesh', () => {
+  it('paints a reduction back into the aligned image over a phased mesh', () => {
+    // The first cells are five and six pixels wide, so a magnification by the grid would put every
+    // cell after them one or two pixels off the pixels it was read from.
+    const mesh = regularMesh(20, 15, 4, { x: 1, y: 2 });
+    const aligned = alignToGrid(NOISY, mesh);
+
+    const painted = upscaleOverMesh(downscaleNearest(aligned, mesh), mesh, 20, 15);
+
+    expect(channels(painted)).toEqual(channels(aligned));
+  });
+
+  it('follows a mesh whose cells drift in width', () => {
+    // What `boundaryMesh` returns on a generated sheet: no fixed lattice holds every boundary.
+    const mesh = { x: [0, 3, 7, 12, 16], y: [0, 5, 9, 12] };
+    const aligned = alignToGrid(NOISY, mesh);
+    const reduced = downscaleNearest(aligned, mesh);
+
+    expect(channels(upscaleOverMesh(reduced, mesh, 20, 15))).toEqual(channels(aligned));
+    expect(channels(downscaleNearest(upscaleOverMesh(reduced, mesh, 20, 15), mesh))).toEqual(
+      channels(reduced),
+    );
+  });
+
+  it('refuses an image that is not one pixel per cell of the mesh', () => {
+    const mesh = regularMesh(20, 15, 4, CORNER);
+
+    expect(() => upscaleOverMesh(PIXEL_SOURCE, mesh, 20, 15)).toThrow();
   });
 });

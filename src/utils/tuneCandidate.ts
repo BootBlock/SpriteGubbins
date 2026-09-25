@@ -1,9 +1,8 @@
 import type { TuneReading, TunedDials } from '../types/autoTune.ts';
 import type { QuantisePrologue, QuantiseSettings } from '../types/quantiser.ts';
-import { cropImage } from './cropImage.ts';
+import { upscaleOverMesh } from './gridAlignment.ts';
 import { quantiseFromPrologue } from './quantiseImage.ts';
 import { meanSsim } from './ssim.ts';
-import { upscaleNearest } from './upscaleNearest.ts';
 
 /**
  * How one set of dial positions does across the crops: how faithfully it reproduces them, and what
@@ -15,7 +14,7 @@ import { upscaleNearest } from './upscaleNearest.ts';
  * **It is handed each crop's prologue rather than the crop**, which is one value doing both of the
  * jobs this function has. The keying, the hardening and the mesh are the same for every candidate —
  * none of their three settings is in {@link TunedDials} — so measuring them per candidate was
- * measuring each crop's one answer once for every position tried: 2,015 calls to answer five meshes,
+ * measuring each crop's one answer once for every position tried: 710 calls to answer five meshes,
  * over a sweep of `test_sprites/armour.png` at a grid of 6. The image they produce is *also* what a
  * candidate is
  * scored against, because a result has been keyed and hardened and a reference that had not been
@@ -23,10 +22,16 @@ import { upscaleNearest } from './upscaleNearest.ts';
  * two values built from the same three settings in two places. {@link QuantisePrologue} is the one
  * that remains, so the pair cannot come apart.
  *
- * **Fidelity is measured on the result re-upscaled by the grid**, which is what makes a downscale
- * comparable with the artwork it came from at all: the pipeline's output is one pixel per cell, and
- * the crop is one pixel per source pixel. Nearest neighbour, so the magnification invents no colour
- * and moves no edge — the comparison is against what the reader would see at 1:1 in the preview.
+ * **Fidelity is measured on the result painted back over the crop's own mesh**, which is what
+ * makes a downscale comparable with the artwork it came from at all: the pipeline's output is one
+ * pixel per cell, and the crop is one pixel per source pixel. Each output pixel stands for the mesh
+ * cell it was read from, so it goes back over exactly that cell — see `upscaleOverMesh`. Magnifying
+ * it by the grid instead put cell `i` at `i × grid`, which is where the mesh puts it only on a
+ * lattice that starts at the corner and never drifts. A crop whose lattice is phased, or a sheet
+ * whose pitch drifts, then scored every candidate against art a cell or more away from it: an exact
+ * sheet at a phase of 2 in a grid of 4, reduced with no loss, scored 0.19 rather than 1. The paint
+ * invents no colour and moves no edge, so the comparison is against what the reader would see at 1:1
+ * in the preview, and it is the same size as the crop by construction.
  *
  * **Averaged over the crops rather than taken from the best of them**, because the dials are being
  * chosen for the whole sheet: a position that is excellent on one window and poor on the other two
@@ -56,31 +61,21 @@ export function readCandidate(
     // that are true and neither is a reason to hide the pass from the score. A reader with the pass
     // on is going to *get* that fringe, so the two badges the panel reported were figures about a
     // sheet nobody was looking at. Measured on `test_sprites/armour.png` at a grid of 6 and a budget
-    // of 16, the sweep reports 16.0 → 12.8 colours with the control at `OFF` and 15.6 → 167.6 with it
-    // at `BOTH` — which is what a softened silhouette costs, since a coverage is an alpha and `SNAP`
-    // bounds the hues rather than the count. Ranking the candidates on what they actually produce is
-    // what puts badge and preview back in agreement, and the elbow is what stops the fringe being
-    // bought at any price: every coverage it writes is a colour the trade has to pay for.
+    // of 16, the sweep reports 16.0 → 11.8 colours with the control at `OFF` and 15.6 → 16.0 with it
+    // at `BOTH`, where it settles the pass at a strength of 10% over only the hardest, longest
+    // contours — a coverage is an alpha and `SNAP` bounds the hues rather than the count, so every
+    // one it writes is a colour the trade has to pay for. Ranking the candidates on what they
+    // actually produce is what puts badge and preview back in agreement, and the elbow is what stops
+    // the fringe being bought at any price.
     //
     // **`quantiseFromPrologue` rather than `quantiseImage`**, because the two fields read below are
     // the only ones this wants and the difference map is the one reading that costs a second walk
     // over the source to produce — see {@link QuantiseSheet}.
     const result = quantiseFromPrologue(prologue, { ...settings, ...dials });
-    const magnified = upscaleNearest(result.image, settings.grid);
-    // The mesh was measured on this crop, and may cut it into a whole number of cells that is not the
-    // crop's own edge over the grid — a drifting sheet is exactly what `boundaryMesh` exists for.
-    // So the two are trimmed to what they share rather than assumed equal, and the trim is a copy
-    // only where there is something to trim.
-    const width = Math.min(magnified.width, prologue.source.width);
-    const height = Math.min(magnified.height, prologue.source.height);
-    fidelity += meanSsim(trim(prologue.source, width, height), trim(magnified, width, height));
+    const { source, mesh } = prologue;
+    fidelity += meanSsim(source, upscaleOverMesh(result.image, mesh, source.width, source.height));
     colors += result.colors;
   }
 
   return { fidelity: fidelity / prologues.length, colors: colors / prologues.length };
-}
-
-/** The image itself where it is already this size, and its top-left rectangle where it is larger. */
-function trim(image: ImageData, width: number, height: number): ImageData {
-  return image.width === width && image.height === height ? image : cropImage(image, 0, 0, width, height);
 }

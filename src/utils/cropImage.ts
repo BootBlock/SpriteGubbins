@@ -9,9 +9,8 @@ import { createImage, pixelOffset } from './imageData.ts';
  * auto-tune sweep does exactly such a comparison, and a crop one row short would fail it as a
  * difference in the artwork.
  *
- * Beside `upscaleNearest` rather than inside either caller, because it is the same kind of thing:
- * a plain rearrangement of pixels that invents no colour, wanted by the crop chooser and by the
- * sweep that trims two images to a common rectangle.
+ * Beside `upscaleNearest` rather than inside its caller, because it is the same kind of thing: a
+ * plain rearrangement of pixels that invents no colour, wanted by the crop chooser.
  */
 export function cropImage(
   image: ImageData,

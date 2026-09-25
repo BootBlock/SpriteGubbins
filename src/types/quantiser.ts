@@ -1037,7 +1037,7 @@ export interface SpriteStrip {
  * So the split is a reading, not a knob: `quantiseFromPrologue` answers everything the transform
  * knows, and `quantiseImage` adds the one reading a caller has to ask for by asking for it. The
  * auto-tune sweep reads {@link image} and {@link colors} and nothing else, and over a sweep of
- * `test_sprites/armour.png` at a grid of 6 that map was built 2,015 times and dropped 2,015 times —
+ * `test_sprites/armour.png` at a grid of 6 that map was built 710 times and dropped 710 times —
  * so it takes the narrower answer. Every other caller wants the map and takes the whole result.
  */
 export interface QuantiseSheet {

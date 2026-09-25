@@ -28,7 +28,7 @@ interface AutoTuneControlsProps {
  * Where this sheet's dials want to be, found by running them.
  *
  * The one panel on this tab that answers a question instead of asking one. Every other control here
- * is a position for the reader to find; this reads five busy crops of their sheet at several hundred
+ * is a position for the reader to find; this reads five busy crops of their sheet at up to a few hundred
  * combinations and says which came closest to the artwork for the fewest colours.
  *
  * **Directly under the grid, and above every dial it moves.** It cannot run without a pixel scale —
@@ -160,9 +160,10 @@ export function AutoTuneControls({ image, settings }: AutoTuneControlsProps) {
  * **A stage can have both a count and a reason, and the line says both.** The descent goes round, so
  * a stage that swept under one reading and was set aside when a later round moved off it has spent
  * positions *and* has nothing to do now — see `TuneStageReport`. Showing only the reason left the
- * chip's total unaccountable: on the reference sheet at its opening dials the chip reads 403
- * positions while the lines beneath it added to 282, with the missing 121 in two stages that
- * reported a sentence instead.
+ * chip's total unaccountable: on `test_sprites/vehicles_and_props.png` at a grid of 5 and its
+ * opening dials the chip reads 134 positions while the lines beneath it added to 129 — one is the
+ * opening position itself, and the other four are the cleanup-pass stage's, which swept while the
+ * fill cleanup was on and reported a sentence once a later round turned the cleanup off.
  */
 function stageLine(stage: TuneStageReport): string {
   const label = `${TUNE_STAGE_LABELS[stage.stage]} · ${stage.settled}`;
