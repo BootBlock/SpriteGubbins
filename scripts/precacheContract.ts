@@ -1030,8 +1030,9 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2436 leaves **0.81 KiB**, the smallest whole figure over the build.
  *
- * **Raised from 2436 by half, to 3654, and no longer set just over the build.** Every raise above
- * was a margin of under a kilobyte, so ordinary work crossed it: a docblock the compiler kept, a
+ * **Raised from 2436 by half, to 3654, and no longer set just over the build.** The raises above
+ * left a few kilobytes at first and under one for most of the recent ones, so ordinary work crossed
+ * it: a docblock the compiler kept, a
  * guidance sentence, a check in a worker. Each crossing cost a detached baseline build and a note
  * here. On 2026-09-25 three branches crossed it, and two of them measured against the same `main`
  * and raised it to the same figure. The ceiling was stopping sub-kilobyte growth
