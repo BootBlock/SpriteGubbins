@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import type { SheetFacts } from '../types/quantiser.ts';
+import type { QuantiseResult, SheetFacts } from '../types/quantiser.ts';
 import { countColors } from '../utils/imageData.ts';
 import { measureSheetScale } from '../utils/pixelGrid.ts';
 import { quantiseImage } from '../utils/quantiseImage.ts';
@@ -65,8 +65,31 @@ declare const self: DedicatedWorkerGlobalScope;
 /** The sheet the tab last sent, or `null` before the first one arrives. */
 let sheet: ImageData | null = null;
 
-function post(reply: QuantiseReply): void {
-  self.postMessage(reply);
+function post(reply: QuantiseReply, transfer: Transferable[] = []): void {
+  self.postMessage(reply, transfer);
+}
+
+/**
+ * The buffers a result can hand over rather than copy: its pixels and its difference map.
+ *
+ * Together they are up to a hundred megabytes on the largest admitted sheet — 67 MB of result and
+ * 33.6 MB of map — and this thread drops both the moment the reply is posted. A clone would copy
+ * them for nothing and double the thread's peak memory for the length of the copy, which is the very
+ * failure the handler below is written to report. Transferred, they cross at no cost and are the
+ * tab's alone, which is what `sheetWriteWorker.ts` does with its file for the same reason.
+ *
+ * **Never the kept sheet's buffer**, whatever the pipeline returns. Transferring it would detach the
+ * one thing this thread keeps between messages, and every later transform would read an empty array
+ * instead of failing. The pipeline builds its result in a new buffer on every path
+ * `quantiseWorker.test.ts` runs, so in practice the pixels are transferred — but that is a fact about
+ * every pass in `quantiseImage` at once, which a new pass can stop being true of without touching
+ * this file. So it is checked here, where the cost of being
+ * wrong falls, and a result that did share the buffer is cloned as it always used to be.
+ */
+function transferOf(result: QuantiseResult, kept: ImageData): Transferable[] {
+  const pixels = result.image.data.buffer;
+  const transfer: Transferable[] = [result.difference.cells.buffer];
+  return pixels === kept.data.buffer ? transfer : [...transfer, pixels];
 }
 
 /** The scale reading and the source colour count — once per sheet, never per settings change. */
@@ -88,8 +111,18 @@ function unhandled(request: never): never {
 }
 
 self.addEventListener('message', (event: MessageEvent<QuantiseCall>) => {
-  const { id, request } = event.data;
+  answer(event.data);
+});
 
+/**
+ * Answer one call, and every path answers.
+ *
+ * Exported for its own test rather than only reachable through the listener above, the way
+ * `sheetWriteWorker.ts` and `autoTuneWorker.ts` export theirs. **Importing this module registers
+ * that listener**, wherever it is imported, so a test calls this rather than dispatching a message
+ * the listener would answer as well.
+ */
+export function answer({ id, request }: QuantiseCall): void {
   try {
     switch (request.kind) {
       case 'load': {
@@ -106,7 +139,8 @@ self.addEventListener('message', (event: MessageEvent<QuantiseCall>) => {
           post({ id, kind: 'failed', reason: 'No sheet has been loaded to quantise' });
           return;
         }
-        post({ id, kind: 'quantised', result: quantiseImage(sheet, request.settings) });
+        const result = quantiseImage(sheet, request.settings);
+        post({ id, kind: 'quantised', result }, transferOf(result, sheet));
         return;
       }
 
@@ -119,4 +153,4 @@ self.addEventListener('message', (event: MessageEvent<QuantiseCall>) => {
     // The tab shows this, so it has to read as a sentence.
     post({ id, kind: 'failed', reason: error instanceof Error ? error.message : String(error) });
   }
-});
+}
