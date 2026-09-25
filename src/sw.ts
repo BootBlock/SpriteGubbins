@@ -69,11 +69,12 @@ function fingerprint(entries: readonly PrecacheEntry[]): string {
 }
 
 /**
- * What every precache this app creates is named with, and so the only caches it may retire.
+ * What every cache this app creates is named with, and so the only caches it may delete.
  *
- * Cache Storage belongs to the origin, not to this worker's scope, and the GitHub Pages origin is
- * shared with every other project site on the account. A cache without this prefix is another
- * app's.
+ * Cache Storage belongs to the **origin**, not to this worker's scope, and the app deploys as a
+ * GitHub Pages project site: `bootblock.github.io` is shared with every other project site on the
+ * account, PWAs among them. A cache without this prefix is another app's, and deleting it would
+ * erase that app's offline shell.
  */
 const CACHE_PREFIX = 'sprite-gubbins-precache-';
 const CACHE = `${CACHE_PREFIX}${fingerprint(PRECACHE_ENTRIES)}`;
@@ -86,39 +87,44 @@ const LEDGER_URL = new URL('retired-precaches.json', sw.location.href).href;
 sw.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
-      const cache = await caches.open(CACHE);
-      // Resolved against this worker's own URL so every entry tracks the `/SpriteGubbins/`
-      // base path.
-      //
-      // `revision: null` is Workbox's marker for a URL that **already carries a content hash** —
-      // such an entry needs no separate revision, because a changed file arrives under a changed
-      // name. Those are immutable, so the HTTP cache may answer for them (`'default'`) — **every
-      // entry but the seven** that come from *stable* URLs and carry an MD5 `revision`:
-      // `index.html`, `404.html`, `coi-bootstrap.js`, `favicon.ico`, the icons and the
-      // webmanifest. Stated as that relationship rather than as a pair of counts, which is what
-      // stood here and which the build had left behind within four days (issue #267): the hashed
-      // total is a function of how rolldown splits the bundle, so it moves on most changes, while
-      // the seven are named above and do not. GitHub Pages sends `Cache-Control:
-      // max-age=600` on all of them, so an entry answered from the HTTP cache within ten minutes
-      // of a deploy precaches the **previous** build's shell beside this build's chunks — a shell
-      // naming an entry chunk that is in neither the precache nor on the host. That is a blank page
-      // no reload can clear, because `respond()` below answers every navigation from the precached
-      // shell.
-      //
-      // `'reload'` rather than `'no-store'`: both bypass the HTTP cache on the way out, and
-      // `'reload'` additionally writes the response back into it, so the page load that follows
-      // this install is served from cache rather than fetched a second time.
-      await cache.addAll(
-        PRECACHE_ENTRIES.map(
-          ({ url, revision }) =>
-            new Request(new URL(url, sw.location.href).href, {
-              cache: revision === null ? 'default' : 'reload',
-            }),
-        ),
-      );
+      await precache();
     })(),
   );
 });
+
+/** Fill this build's cache with every manifest entry, or write nothing: `addAll` is atomic. */
+async function precache(): Promise<void> {
+  const cache = await caches.open(CACHE);
+  // Resolved against this worker's own URL so every entry tracks the `/SpriteGubbins/`
+  // base path.
+  //
+  // `revision: null` is Workbox's marker for a URL that **already carries a content hash** —
+  // such an entry needs no separate revision, because a changed file arrives under a changed
+  // name. Those are immutable, so the HTTP cache may answer for them (`'default'`) — **every
+  // entry but the seven** that come from *stable* URLs and carry an MD5 `revision`:
+  // `index.html`, `404.html`, `coi-bootstrap.js`, `favicon.ico`, the icons and the
+  // webmanifest. Stated as that relationship rather than as a pair of counts, which is what
+  // stood here and which the build had left behind within four days (issue #267): the hashed
+  // total is a function of how rolldown splits the bundle, so it moves on most changes, while
+  // the seven are named above and do not. GitHub Pages sends `Cache-Control:
+  // max-age=600` on all of them, so an entry answered from the HTTP cache within ten minutes
+  // of a deploy precaches the **previous** build's shell beside this build's chunks — a shell
+  // naming an entry chunk that is in neither the precache nor on the host. That is a blank page
+  // no reload can clear, because `respond()` below answers every navigation from the precached
+  // shell.
+  //
+  // `'reload'` rather than `'no-store'`: both bypass the HTTP cache on the way out, and
+  // `'reload'` additionally writes the response back into it, so the page load that follows
+  // this fill is served from cache rather than fetched a second time.
+  await cache.addAll(
+    PRECACHE_ENTRIES.map(
+      ({ url, revision }) =>
+        new Request(new URL(url, sw.location.href).href, {
+          cache: revision === null ? 'default' : 'reload',
+        }),
+    ),
+  );
+}
 
 // No `skipWaiting()` in `install`: a new build waits until a reader starts it, because a reload
 // clears what is only on screen (issue #369, and `src/workers/registerAppUpdates.ts`). A first visit is not
@@ -178,11 +184,32 @@ async function prune(ledger: RetiredPrecache[]): Promise<RetiredPrecache[]> {
 sw.addEventListener('fetch', (event) => {
   // Only GETs are cacheable, and the app issues nothing else — it has no server to POST to.
   if (event.request.method !== 'GET') return;
-  event.respondWith(respond(event.request));
+  event.respondWith(respond(event));
   // A navigation is when a window closes or reloads off a superseded build, so it is when that
   // build's precache may have stopped being needed.
   if (event.request.mode === 'navigate') event.waitUntil(updateLedger(prune));
 });
+
+/** The refill in flight, so a burst of navigations that find the shell gone starts only one. */
+let refilling: Promise<void> | undefined;
+
+/**
+ * Precache this build again after something outside this worker deleted its cache.
+ *
+ * Another app on the shared origin may sweep every cache it does not own, or the user may clear
+ * site data, and `install` runs again only when a new `sw.js` ships. Without this the app would
+ * have no offline shell until its next release. A failed refill — offline, or the host already
+ * serving a later build whose chunks replace these — writes nothing, and the next navigation that
+ * finds the shell gone tries again.
+ */
+function refill(): Promise<void> {
+  refilling ??= precache()
+    .catch(() => undefined)
+    .finally(() => {
+      refilling = undefined;
+    });
+  return refilling;
+}
 
 /**
  * How every lookup in a precache matches: by URL, and by nothing else.
@@ -196,13 +223,17 @@ sw.addEventListener('fetch', (event) => {
  */
 const PRECACHE_MATCH = { ignoreSearch: true, ignoreVary: true } as const;
 
-async function respond(request: Request): Promise<Response> {
+async function respond(event: FetchEvent): Promise<Response> {
+  const { request } = event;
   const cache = await caches.open(CACHE);
 
-  // Navigations resolve to the precached shell (offline-first).
+  // Navigations resolve to the precached shell (offline-first). `install` put the shell there,
+  // so a miss means the cache was deleted from outside: this navigation goes to the network, and
+  // the refill heals the cache for the next one.
   if (request.mode === 'navigate') {
     const shell = await cache.match(INDEX_URL, PRECACHE_MATCH);
     if (shell) return withIsolationHeaders(shell, sw.location.origin);
+    event.waitUntil(refill());
   }
 
   const cached = (await cache.match(request, PRECACHE_MATCH)) ?? (await matchSuperseded(request));
@@ -211,10 +242,9 @@ async function respond(request: Request): Promise<Response> {
   try {
     return withIsolationHeaders(await fetch(request), sw.location.origin);
   } catch {
-    // Offline with nothing cached. This can only be a *subresource* — a navigation was already
-    // answered from the precached shell above, and had that shell been missing this lookup
-    // could not have found it either. Handing HTML to a script or image request would answer
-    // 200 with the wrong MIME type and hide the real cause, so fail cleanly instead.
+    // Offline with nothing cached. A navigation reaches here only when the shell itself is gone,
+    // so there is no shell to hand it either. Handing HTML to a script or image request would
+    // answer 200 with the wrong MIME type and hide the real cause, so fail cleanly instead.
     return Response.error();
   }
 }

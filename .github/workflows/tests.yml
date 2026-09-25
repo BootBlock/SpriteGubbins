@@ -65,22 +65,30 @@ concurrency:
 
 jobs:
   # This repository is PUBLIC, and a commit's contents are permanent from the moment they are
-  # pushed, so this scans the WHOLE tree rather than a commit range. `.githooks/pre-commit` scans
-  # only what a commit adds — deliberately, so a value that has always lived in a committed fixture
-  # is not re-flagged forever — but it runs on one developer's machine and `git commit --no-verify`
-  # skips it entirely. Diffing against the empty tree makes every tracked line count as "added", and
-  # every tracked binary file count as newly added, so anything credential-shaped that ever slipped
-  # past the hook is reported here. Same scanner as the hook (`scripts/secret-scan.ts`), so the two
-  # can never drift.
+  # pushed. `.githooks/pre-commit` scans only what a commit adds — deliberately, so a value that has
+  # always lived in a committed fixture is not re-flagged forever — but it runs on one developer's
+  # machine, and `git commit --no-verify` or a clone that never ran `npm install` skips it entirely.
+  # This job runs the same scanner (`scripts/secret-scan.ts`), so the two can never drift, in two
+  # passes, because each one reads something the other cannot.
   #
-  # What "anything" does and does not cover, because a gate is worth only what it actually reads.
-  # A file git calls binary contributes no lines to a diff at all, so it is fetched whole and its
-  # bytes are scanned — at one-, two- and four-byte spacings, at every offset, which reads ASCII,
-  # UTF-8, UTF-16 and UTF-32 in either endianness (issue #211). That reaches a credential stored as
-  # one byte per ASCII character: a UTF-16 source file, a `.pem`, a SQLite page, a PNG text chunk.
-  # It does not reach one inside a compressed or encoded stream — a zip, a gzip, a PNG `IDAT` —
-  # because those bytes are not present until something decompresses them, and nothing here does;
-  # nor one in an encoding laid out some other way, such as EBCDIC.
+  # The TREE pass diffs the empty tree against the tip, which makes every tracked line and every
+  # tracked binary file count as added. It reports anything credential-shaped the tip still holds,
+  # however long ago it arrived. It compares two trees and walks no commits, so it cannot see a
+  # value a commit added and a later commit deleted.
+  #
+  # The HISTORY pass is what sees that (issue #444). It scans each commit the ref introduces against
+  # its parents, so a value added in one commit and deleted in the next is reported at the commit
+  # that added it, before the branch can land. That needs the whole history, hence `fetch-depth: 0`:
+  # a depth-1 checkout holds the tip alone. Which commits it reads is set out on the step.
+  #
+  # What either pass does and does not read inside a file, because a gate is worth only what it
+  # actually reads. A file git calls binary contributes no lines to a diff at all, so it is fetched
+  # whole and its bytes are scanned — at one-, two- and four-byte spacings, at every offset, which
+  # reads ASCII, UTF-8, UTF-16 and UTF-32 in either endianness (issue #211). That reaches a
+  # credential stored as one byte per ASCII character: a UTF-16 source file, a `.pem`, a SQLite
+  # page, a PNG text chunk. It does not reach one inside a compressed or encoded stream — a zip, a
+  # gzip, a PNG `IDAT` — because those bytes are not present until something decompresses them, and
+  # nothing here does; nor one in an encoding laid out some other way, such as EBCDIC.
   #
   # Running it on every push to every branch is the change: the deploy ran this against the
   # commit it was about to publish, which is the last moment it can be asked, and by then the value
@@ -96,6 +104,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
+          # Every commit and every branch, so the history pass can read each commit it walks and
+          # can name `origin/main` as the point the walk stops.
+          fetch-depth: 0
 
       - name: Set up Node
         # No `cache: npm` — this job installs nothing. The scanner has no dependencies and reads
@@ -110,6 +121,34 @@ jobs:
         # hard-coding 4b825dc…, which is correct only for a SHA-1 repository. Nothing is written:
         # without `-w` the id is calculated, not stored.
         run: node scripts/secret-scan.ts --diff "$(git hash-object -t tree /dev/null)"
+
+      - name: Scan every commit this ref introduces
+        # Runs even when the tree pass failed, so one run reports both lists.
+        #
+        # On any branch but `main` the walk is `origin/main..HEAD`: every commit this ref holds
+        # that `main` does not. That is every commit the branch would bring to `main`, so a green
+        # verdict here answers for all of them, and it re-reads the commits of the branch's earlier
+        # pushes, which costs seconds and keeps each verdict whole. A deploy is called with the
+        # dispatch's event, so it takes this walk too, and on `main` or a release tag it is empty:
+        # those commits were walked on the branch that landed them.
+        #
+        # A push to `main` itself has no `origin/main` to stop at, because the checkout's
+        # `origin/main` is the pushed commit. It walks `before..HEAD`, the commits this push added
+        # to the branch. The ruleset admits only a commit that already passed these checks on a
+        # branch, so this walk is the backstop for a push that bypassed it. `before` is all zeros only when a
+        # push creates the branch, and git then refuses the range, so the step fails rather than
+        # reading nothing.
+        if: ${{ !cancelled() }}
+        env:
+          PUSH_TO_MAIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$PUSH_TO_MAIN" = true ]; then
+            range="$BEFORE..HEAD"
+          else
+            range="origin/main..HEAD"
+          fi
+          node scripts/secret-scan.ts --commits "$range"
 
   quality:
     name: Lint, format & type-check

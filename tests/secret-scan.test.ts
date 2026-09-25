@@ -4,11 +4,14 @@ import { describe, expect, it } from 'vitest';
 import {
   PLACEHOLDER,
   SECRET_PATTERNS,
+  addedAgainstEveryParent,
   binaryPaths,
   isSuspect,
   scanAddedLines,
   scanBytes,
+  suspectValues,
 } from '../scripts/secretScan.ts';
+import { shape } from './credentialShape.ts';
 
 /**
  * The secret scanner — the one automated check standing between a credential and a public,
@@ -32,23 +35,21 @@ import {
  * git calls binary, so a token in a UTF-16LE file passed both modes while the identical token in a
  * UTF-8 file was reported. Both halves of the answer are pure and are exercised below — what the
  * bytes say, and which files the runner has to go and fetch.
+ *
+ * #443 is a false negative of a third kind: shapes the scanner never knew. Every current OpenAI and
+ * Anthropic key, and every Hugging Face and Replicate token, passed as a bare value, as an unquoted
+ * `.env` line, in a Bearer header and inside a binary file. Each shape is exercised in each of those
+ * positions, and the `.env` form has a table of code lines it must still leave alone.
+ *
+ * `addedAgainstEveryParent` is #444's merge rule: the history pass scans each pushed commit, and a
+ * merge answers only for what none of its parents had. The runner's walk of the history itself is
+ * proven end to end in `secret-scan-commits.test.ts`.
  */
 
 /**
- * Assemble a credential-shaped value at run time.
- *
- * Nothing in this file may be credential-shaped **as written**. The scanner under test is what the
- * pre-commit hook runs over every staged diff and what the deploy workflow runs over the whole
- * tree, so a fixture spelled out in full would block the commit that introduced it and every
- * publish afterwards. Joining the pieces here keeps the shape out of the source line and puts it
- * back in the value, and `the files that describe credential shapes` below is what proves the
- * arrangement actually holds rather than being asserted.
+ * One fixture per shape the scanner knew before #443. `MODERN_KEYS` below holds the shapes #443
+ * added, and `ENV_LINE` the `.env` form. None is a real credential.
  */
-function shape(...pieces: string[]): string {
-  return pieces.join('');
-}
-
-/** One fixture per shape in `SECRET_PATTERNS`. None is a real credential. */
 const GITHUB_TOKEN = shape('ghp_', 'a'.repeat(40));
 const GITHUB_PAT = shape('github_pat_', 'b'.repeat(24));
 const OPENAI_KEY = shape('sk-', 'c'.repeat(24));
@@ -57,6 +58,41 @@ const SLACK_TOKEN = shape('xoxb-', '1'.repeat(12));
 const AWS_KEY = shape('AKIA', 'IOSFODNN7SELFTEST');
 const PRIVATE_KEY = shape('-----BEGIN RSA ', 'PRIVATE KEY-----');
 const KV_ASSIGNMENT = shape('password', ": '", 'hunter2hunter2', "'");
+
+/**
+ * A key body in the modern form. It carries `-` and `_`, which is what ended the legacy `sk-`
+ * pattern's match, so a fixture built on it is one the scanner before #443 reported as clean.
+ */
+const MODERN_BODY = shape('Ab1_', 'c'.repeat(30), '-T3Blbk', 'FJ_', 'd'.repeat(30), '-Zz9');
+
+/**
+ * #443's shapes: every current OpenAI and Anthropic prefix, and the Hugging Face and Replicate
+ * tokens, none of which the scanner knew. Keyed by what each one is, so a failure names the shape.
+ */
+const MODERN_KEYS: Record<string, string> = {
+  'OpenAI project key': shape('sk-', 'proj-', MODERN_BODY),
+  'OpenAI service-account key': shape('sk-', 'svcacct-', MODERN_BODY),
+  'OpenAI admin key': shape('sk-', 'admin-', MODERN_BODY),
+  'OpenAI key with no project': shape('sk-', 'None-', MODERN_BODY),
+  'Anthropic API key': shape('sk-', 'ant-', 'api03-', MODERN_BODY),
+  'Anthropic admin key': shape('sk-', 'ant-', 'admin01-', MODERN_BODY),
+  'Anthropic OAuth token': shape('sk-', 'ant-', 'oat01-', MODERN_BODY),
+  'Hugging Face token': shape('hf_', 'eFgH'.repeat(8), 'ij'),
+  'Replicate token': shape('r8_', 'KlMn'.repeat(9), 'o'),
+};
+
+/** An unquoted assignment in the `.env` form, which #443 added a pattern for. */
+const ENV_LINE = shape('TOKEN', '=', 'q7Rt2Lp9Wm4X');
+
+/**
+ * Every position #443's probe found a modern key undetected in. The bare line and the Bearer header
+ * have no key-like name beside the value, so only a pattern for the key's own shape can catch them.
+ */
+const POSITIONS: Record<string, (key: string) => string> = {
+  bare: (key) => key,
+  '.env': (key) => shape('OPENAI_API_KEY', '=', key),
+  Bearer: (key) => shape('curl -H "Authorization: ', 'Bearer ', key, '" https://example.com'),
+};
 
 /**
  * #194's probe, line for line. Entries 1, 4 and 6 are the controls the old scanner already caught;
@@ -101,6 +137,8 @@ describe('isSuspect', () => {
       `const f = '${AWS_KEY}';`,
       PRIVATE_KEY,
       `const g = { ${KV_ASSIGNMENT} };`,
+      ...Object.values(MODERN_KEYS).map((key) => `const h = '${key}';`),
+      ENV_LINE,
     ];
     expect(caught.filter((line) => !isSuspect(line))).toEqual([]);
   });
@@ -110,6 +148,69 @@ describe('isSuspect', () => {
     // reported three, because `<[^>]*>` matched `Map<string, string>`, `Array<string>`,
     // `Record<string, string>` and `<input …/>` and excused the whole line.
     expect(PROBE_LINES.filter((line) => !isSuspect(line))).toEqual([]);
+  });
+
+  it('catches every current OpenAI, Anthropic, Hugging Face and Replicate key in every position (#443)', () => {
+    const missed = Object.entries(MODERN_KEYS).flatMap(([name, key]) =>
+      Object.entries(POSITIONS)
+        .filter(([, place]) => !isSuspect(place(key)))
+        .map(([position]) => `${name}, ${position}`),
+    );
+    expect(missed).toEqual([]);
+  });
+
+  it('reports the whole of a modern key, not the fragment before its first hyphen', () => {
+    // The span is what the placeholder test judges and what the byte walk prints, so a match that
+    // stopped at the segment would leave the rest of the key unjudged.
+    for (const [name, key] of Object.entries(MODERN_KEYS)) {
+      expect(suspectValues(`const k = '${key}';`), name).toEqual([key]);
+    }
+  });
+
+  it('catches an unquoted value in the .env form, whatever the variable is called (#443)', () => {
+    const caught = [
+      ENV_LINE,
+      shape('export SERVICE_PASSWORD', '=', 'q7Rt2Lp9Wm4X'),
+      shape('  DATABASE_SECRET', '=', 'q7Rt2Lp9Wm4X'),
+      shape('CLIENT_SECRET', '=', 'q7Rt2Lp9Wm4X', ' # rotated monthly'),
+      shape('ACCESS_KEY', '=', 'q7Rt2Lp9Wm4X', '\r'),
+      // A CRLF line with a trailing comment: `.` stops short of the `\r`, so the comment must too.
+      shape('ACCESS_KEY', '=', 'q7Rt2Lp9Wm4X', ' # rotated monthly', '\r'),
+      shape('spring.datasource.password', '=', 'q7R#t2Lp9Wm4X'),
+      // The name's prefix is outside the matched span, so a placeholder word in it exempts nothing.
+      shape('EXAMPLE_API_KEY', '=', 'q7Rt2Lp9Wm4X'),
+    ];
+    expect(caught.filter((line) => !isSuspect(line))).toEqual([]);
+  });
+
+  it('leaves code that only names a credential alone', () => {
+    // The `.env` form is anchored to the start of the line and to its end, and its `=` touches both
+    // sides, so an assignment in code is not read as a value: a declaration, a spaced reassignment
+    // or parameter default, a JSX prop, a statement ending `;` or an interpolated reference.
+    const clean = [
+      shape('    apiKey', ' = ', 'config.apiKey'),
+      shape('token', ' = ', 'compute_token(input)'),
+      shape('  apiKey', ' = ', 'process.env.API_KEY,'),
+      shape('  token', '=', '{colourToken}'),
+      shape('  showPassword', '=', '{showPasswordField}'),
+      shape('const token', ' = ', 'buildToken(input);'),
+      shape('    apiKey', ' = ', 'config.apiKey;'),
+      shape('refreshToken', ' = ', 'response.refreshToken;'),
+      shape('export GH_TOKEN', '=', '$GITHUB_TOKEN'),
+      shape('OPENAI_API_KEY', '=', '${OPENAI_API_KEY}'),
+      shape('OPENAI_API_KEY', '='),
+      shape('OPENAI_API_KEY', '=', '<YOUR_API_KEY>'),
+      shape('OPENAI_API_KEY', '=', 'sk-', 'xxxxxxxxxxxx'),
+      shape('TOKEN', '=', 'q7Rt2Lp9Wm4X', ' and some prose'),
+      // A kebab-case name that contains `sk-` is not a key, however long its tail, and even when the
+      // segment after it is one of the prefixes a current key opens with.
+      shape("const className = 'task-card-header-with-a-long-suffix';"),
+      shape("const cls = 'disk-usage-monitor-component-heading';"),
+      shape("const cls = 'task-", "admin-dashboard-settings-panel';"),
+      shape('<div className="desk-', 'proj-overview-card-header-wide" />'),
+      shape("const cls = 'mask-", "none-overlay-for-the-sidebar-panel';"),
+    ];
+    expect(clean.filter((line) => isSuspect(line))).toEqual([]);
   });
 
   it('judges the matched value, not the rest of the line', () => {
@@ -326,6 +427,35 @@ describe('scanBytes', () => {
     expect(scanBytes(file)).toEqual([OPENAI_KEY]);
   });
 
+  it('reads every modern key out of a binary file, as bytes and as UTF-16LE (#443)', () => {
+    // The binary position of #443's probe. Each key sits bare and as a Bearer header, the two
+    // positions with no key-like name for the generic assignment to find.
+    for (const [name, key] of Object.entries(MODERN_KEYS)) {
+      for (const place of [POSITIONS['bare'], POSITIONS['Bearer']]) {
+        const text = place?.(key) ?? '';
+        const png = Buffer.concat([
+          Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00]),
+          Buffer.from(text, 'ascii'),
+          Buffer.from([0x00]),
+        ]);
+        expect(scanBytes(png), name).toEqual([key]);
+        expect(scanBytes(bytes(text, 'utf16le')), name).toEqual([key]);
+      }
+    }
+  });
+
+  it('reads an unquoted .env line out of a binary file', () => {
+    expect(scanBytes(bytes(ENV_LINE, 'utf16le'))).toEqual([ENV_LINE]);
+  });
+
+  it('reads a run as short as the shortest .env line, which sets the fourteen-byte floor', () => {
+    // `token`, an equals sign and eight is fourteen bytes, one short of every other shape. A floor
+    // of fifteen would drop this run before any pattern saw it.
+    const shortest = shape('token', '=', 'q7Rt2Lp9');
+    expect(shortest).toHaveLength(14);
+    expect(scanBytes(bytes(shortest, 'utf16le'))).toEqual([shortest]);
+  });
+
   it('judges a value the same way the line walk does, so a placeholder is let through', () => {
     // `suspectValues` is the one judgement both walks call. A second opinion about what a
     // placeholder is — reachable only through a binary file — is what having two of them would be.
@@ -363,7 +493,7 @@ describe('scanBytes', () => {
   it('finds nothing in the repository’s own reference sprite sheet', () => {
     // The false-positive half, on real compressed data rather than a fixture. Reading arbitrary
     // bytes at a spacing of two invents text that was never in the file, so the claim that the
-    // fifteen-character floor makes that harmless is checked against 1.7 MB of PNG.
+    // fourteen-character floor makes that harmless is checked against 1.7 MB of PNG.
     const sheet = readFileSync(resolve(process.cwd(), 'test_sprites/armour.png'));
     expect(scanBytes(sheet)).toEqual([]);
   });
@@ -398,12 +528,40 @@ describe('binaryPaths', () => {
   });
 });
 
+describe('addedAgainstEveryParent', () => {
+  const OWN = `const own = '${GITHUB_TOKEN}';`;
+  const BROUGHT_IN = `const side = '${OPENAI_KEY}';`;
+
+  it('takes the one list of a commit with one parent as it stands', () => {
+    expect(addedAgainstEveryParent([[OWN, BROUGHT_IN]])).toEqual([OWN, BROUGHT_IN]);
+  });
+
+  it('keeps what a merge adds against every parent, and drops what one parent already had', () => {
+    // Against the first parent the merge adds its own line and the side it brought in. Against the
+    // second, which is that side, it adds its own line alone.
+    expect(addedAgainstEveryParent([[OWN, BROUGHT_IN], [OWN]])).toEqual([OWN]);
+  });
+
+  it('holds an octopus merge to every parent, not only the first two', () => {
+    expect(addedAgainstEveryParent([[OWN, BROUGHT_IN], [OWN, BROUGHT_IN], [OWN]])).toEqual([OWN]);
+  });
+
+  it('reads no lists as nothing added', () => {
+    expect(addedAgainstEveryParent([])).toEqual([]);
+  });
+});
+
 describe('the files that describe credential shapes', () => {
   it('carry no credential-shaped line of their own', () => {
-    // These three are the files most likely to trip the scanner by accident, because credential
+    // These are the files most likely to trip the scanner by accident, because credential
     // shapes are their whole subject — and a fixture written out in full here would block every
     // commit and every publish from the moment it landed.
-    const files = ['tests/secret-scan.test.ts', 'scripts/secretScan.ts', 'scripts/secret-scan.ts'];
+    const files = [
+      'tests/secret-scan.test.ts',
+      'tests/secret-scan-commits.test.ts',
+      'scripts/secretScan.ts',
+      'scripts/secret-scan.ts',
+    ];
     for (const file of files) {
       const suspect = readFileSync(resolve(process.cwd(), file), 'utf8')
         .split('\n')
