@@ -191,18 +191,64 @@ describe('ProjectsTab', () => {
     expect(screen.getByText(/The Default project cannot be deleted/)).toBeInTheDocument();
   });
 
-  it('re-files a saved preset from its own row', async () => {
+  it('re-files a saved preset only when Move is pressed, after the keyboard has stepped past a project', async () => {
+    // #354. A closed native select fires `change` on every arrow key in Chromium on Windows and on
+    // every typed letter everywhere, and each `selectOptions` below is one of those. A move made on
+    // `change` sent the preset to Harbour on the first step and unmounted the row, so the second
+    // step went nowhere and focus fell to `<body>`.
     const user = userEvent.setup();
-    const moveCustomPreset = vi.fn().mockResolvedValue(undefined);
-    usePresetStore.setState({ customPresets: [preset(DEFAULT_PROJECT_ID)], moveCustomPreset });
+    const castle: Project = { ...HARBOUR, id: 'castle', name: 'Castle' };
+    useProjectStore.setState({ projects: [createDefaultProject(1_000), HARBOUR, castle] });
+    const moveCustomPreset = vi.fn((id: string, projectId: string) => {
+      usePresetStore.setState((state) => ({
+        customPresets: state.customPresets.map((saved) =>
+          saved.id === id ? { ...saved, projectId } : saved,
+        ),
+      }));
+      return Promise.resolve();
+    });
+    usePresetStore.setState({
+      customPresets: [
+        preset(DEFAULT_PROJECT_ID),
+        preset(DEFAULT_PROJECT_ID, { id: 'custom-2', name: 'Harbour Guard' }),
+      ],
+      moveCustomPreset,
+    });
 
     render(<ProjectsTab />);
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: 'Project for preset My Knight' }),
-      HARBOUR.id,
-    );
+    const select = screen.getByRole('combobox', { name: 'Project for preset My Knight' });
+    await user.selectOptions(select, HARBOUR.id);
+    await user.selectOptions(select, castle.id);
 
-    expect(moveCustomPreset).toHaveBeenCalledWith('custom-1', HARBOUR.id);
+    expect(moveCustomPreset).not.toHaveBeenCalled();
+    expect(select).toHaveValue(castle.id);
+    expect(select).toBeInTheDocument();
+
+    const move = screen.getByRole('button', { name: 'Move preset My Knight to Castle' });
+    move.focus();
+    await user.keyboard('{Enter}');
+
+    expect(moveCustomPreset).toHaveBeenCalledTimes(1);
+    expect(moveCustomPreset).toHaveBeenCalledWith('custom-1', castle.id);
+    expect(screen.queryByRole('heading', { name: 'My Knight' })).toBeNull();
+    // The row took its Move button with it, so the keyboard goes where the next Tab would have gone:
+    // the first tab stop of the row that now stands in its place, which is its dropdown's ⓘ.
+    expect(screen.getByRole('button', { name: 'Guidance: Project for preset Harbour Guard' })).toHaveFocus();
+  });
+
+  it('offers no Move button until a different project is chosen, and takes it away when the choice is undone', async () => {
+    const user = userEvent.setup();
+    usePresetStore.setState({ customPresets: [preset(DEFAULT_PROJECT_ID)] });
+
+    render(<ProjectsTab />);
+    const select = screen.getByRole('combobox', { name: 'Project for preset My Knight' });
+    expect(screen.queryByRole('button', { name: /^Move preset / })).toBeNull();
+
+    await user.selectOptions(select, HARBOUR.id);
+    expect(screen.getByRole('button', { name: 'Move preset My Knight to Harbour' })).toBeInTheDocument();
+
+    await user.selectOptions(select, DEFAULT_PROJECT_ID);
+    expect(screen.queryByRole('button', { name: /^Move preset / })).toBeNull();
   });
 
   it('names every control in a project after the save it acts on, so no two read alike', async () => {

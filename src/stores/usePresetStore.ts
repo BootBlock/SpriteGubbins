@@ -65,7 +65,7 @@ export interface PresetState {
    * It is also the *only* way to reach a description without touching the configuration — saving
    * over a preset by name writes the studio as it stands, which is a different intention entirely.
    *
-   * Re-filing is {@link moveCustomPreset} and not part of this, because it is one choice from a
+   * Re-filing is {@link moveCustomPreset} and not part of this, because it is a project chosen from a
    * dropdown rather than something typed: a reader moving a preset between projects is not editing
    * its name, and asking them to open a form to do it would be two steps for one decision.
    */
@@ -186,8 +186,8 @@ export const usePresetStore = create<PresetState>((set, get) => ({
 
   moveCustomPreset: async (id, projectId) => {
     const preset = get().customPresets.find((candidate) => candidate.id === id);
-    // Already there is not a failure and not a write: the dropdown reports the preset's current
-    // project as its selected value, so choosing it again is the reader confirming what they see.
+    // Already there is not a failure and not a write: a second press of Move that arrives after the
+    // first has landed is the reader asking for what is already true.
     if (!preset || preset.projectId === projectId) return;
 
     try {

@@ -211,3 +211,14 @@ export const SUBJECT_TYPE_ADDS_NO_COMPONENTS =
  */
 export const SAVED_WORK_SURVIVES_A_RELOAD =
   'Your prompt history, presets, projects and studio state are in this browser’s storage, and the app reads them back as it starts.';
+
+/**
+ * Why choosing a project on a saved row moves nothing, on the two rows that re-file a save.
+ *
+ * A closed native `<select>` commits a value on every arrow key and every typed letter, so a move
+ * made on `change` sent the save to the first project the keyboard passed over (issue #354). Both
+ * rows now wait for their Move button, and both say so in the same words because it is the same
+ * behaviour.
+ */
+export const MOVE_WAITS_FOR_THE_BUTTON =
+  'Nothing moves until you press **Move**, so you can step through the list with the arrow keys first.';

@@ -10,8 +10,8 @@ interface ProjectSelectFieldProps {
   readonly value: string;
   /**
    * The saved item this control re-files, as the words that follow `label` in its accessible name —
-   * see `SelectField`. The two rows pass one, because each is rendered once per save; the two save
-   * panels do not, because each is rendered once and `Save into` already tells it apart.
+   * see `SelectField`. `ProjectMoveField` passes one, because it is rendered once per save; the two
+   * save panels do not, because each is rendered once and `Save into` already tells it apart.
    */
   readonly nameQualifier?: string;
   readonly onChange: (projectId: string) => void;
@@ -20,8 +20,8 @@ interface ProjectSelectFieldProps {
 /**
  * The one control that chooses a project, wherever a project has to be chosen.
  *
- * Four call sites — the two save panels and the two move controls on a saved card or row — and one
- * component, because the options are the same list every time and a second implementation is where
+ * Three call sites — the two save panels and `ProjectMoveField`, which both kinds of saved row
+ * render — and one component, because the options are the same list every time and a second implementation is where
  * one of them would quietly stop offering a project the reader had just made. It reads the store
  * itself rather than being handed the list, for the reason every panel in this app reads its own
  * store: the alternative is threading the projects through the studio and the quantiser to reach a

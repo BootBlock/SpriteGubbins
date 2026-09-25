@@ -71,8 +71,8 @@ interface SelectFieldProps<T extends string | number> {
    * Words that follow `label` in the control's accessible name, and appear nowhere on screen — for a
    * select rendered once for each item in a list, where `label` alone gives every copy one name.
    *
-   * One of the thirty-two passes it: `ProjectSelectField`, which each saved-preset row renders to
-   * re-file its preset. Those were a select called “Project” per saved item, beside an ⓘ called
+   * One of the thirty-two passes it: `ProjectSelectField`, which `ProjectMoveField` renders on each
+   * saved row to choose where its save moves. Those were a select called “Project” per saved item, beside an ⓘ called
    * “Guidance: Project”, so a reader moving control to control met a run of identical names with
    * nothing saying which save each would move — while the buttons in the same rows already named
    * their preset.

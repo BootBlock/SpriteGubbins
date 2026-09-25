@@ -3,7 +3,7 @@ import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
 import type { QuantisePreset } from '../../types/quantisePreset.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
-import { ProjectSelectField } from '../projects/ProjectSelectField.tsx';
+import { ProjectMoveField } from '../projects/ProjectMoveField.tsx';
 
 interface QuantisePresetRowProps {
   readonly preset: QuantisePreset;
@@ -30,14 +30,16 @@ interface QuantisePresetRowProps {
  *
  * The same row is rendered in two places — the Quantise tab's own list of saved sets, and the
  * Projects view's panel for one project — which is why the dropdown is here rather than in either
- * of them. A set is re-filed the same way wherever it is seen.
+ * of them. A set is re-filed the same way wherever it is seen, and the same way a studio preset is:
+ * `ProjectMoveField` is shared with `ProjectPresetRow`, choosing with the dropdown and moving with
+ * a button, because a move on every arrow key sent a set to the first project it passed.
  *
  * Every control names the preset it acts on. Three rows of "Load" and "Delete" are three pairs of
  * identical accessible names, and a screen-reader user moving through them has nothing to tell one
  * from the next — so the visible label stays short and `aria-label` carries the name. The project
- * dropdown is held to the same rule through `nameQualifier`, which names the dropdown and its ⓘ
- * together. The dropdown's name opens with the visible `Project`, and the ⓘ's carries it straight
- * after `Guidance:`.
+ * dropdown and its Move button are held to the same rule through `subject`, which names the
+ * dropdown, its ⓘ and the button together. The dropdown's name opens with the visible `Project`,
+ * the ⓘ's carries it straight after `Guidance:`, and the button's opens with the visible `Move`.
  */
 export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
   const loadQuantisePreset = useQuantisePresetStore((state) => state.loadQuantisePreset);
@@ -120,14 +122,12 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
         )}
       </div>
 
-      <ProjectSelectField
-        label="Project"
+      <ProjectMoveField
+        projectId={preset.projectId}
+        subject={`the saved settings “${preset.name}”`}
         tooltip={PROJECT_ACTION_TOOLTIPS.moveQuantiseProject}
-        value={preset.projectId}
-        nameQualifier={`for the saved settings “${preset.name}”`}
-        onChange={(projectId) => {
-          void moveQuantisePreset(preset.id, projectId);
-        }}
+        moveTooltip={PROJECT_ACTION_TOOLTIPS.confirmMoveQuantise}
+        onMove={(projectId) => moveQuantisePreset(preset.id, projectId)}
       />
     </li>
   );

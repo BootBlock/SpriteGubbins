@@ -926,8 +926,23 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2429 leaves **0.78 KiB**, the smallest whole figure over the build. Merged with `main` at `d39af28`,
  * whose Sol wrapper change landed alongside it, the build reports **2428.25**, which leaves 0.75.
+ *
+ * **Raised from 2429 by the saved row's Move button** (issue #354). The project dropdown on a saved
+ * preset or set moved it on every `change`, which a closed native select fires on each arrow key, so
+ * a keyboard reader filed it under the first project they passed and lost their place with the row.
+ * The dropdown now chooses and a Move button commits. Measured against `main` at `0531d03`, rebuilt
+ * from the same lockfile, with the ceiling forced to zero in each tree so both figures are the ones
+ * `assertPrecacheContract` receives: **2428.25 KiB** on `main` and **2429.74** here, a delta of
+ * **1.49** that crossed a ceiling the base sat 0.75 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`. Comparing the two `dist/assets` listings summed by chunk name, 0.89 KiB lands in
+ * `QuantisePresetRow`, the chunk `ProjectMoveField` is bundled into; 0.38 net between
+ * `ProjectSelectField` and `useUIStore`, which the bundler re-split (5.30 out of one, 5.68 into the
+ * other) and which holds the four guidance cards; 0.11 in `quantiseDials`; 0.10 in
+ * `useConfirmInPlace`, where `keepFocusThrough` now sits; and 0.01 in `ProjectsTab`.
+ *
+ * 2430 leaves **0.26 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2429;
+export const PRECACHE_CEILING_KIB = 2430;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

@@ -1,3 +1,5 @@
+import { MOVE_WAITS_FOR_THE_BUTTON } from '../guidanceSentences.ts';
+
 /**
  * Guidance for the Projects view's controls, and for the project dropdowns the other two views
  * carry.
@@ -9,7 +11,8 @@
  * **The four dropdowns are here rather than beside the panels that render them**, which is the
  * exception to the rule that a setting's guidance sits with its own options. Their options are the
  * project list, which lives in this feature and nowhere else, and the four say four different
- * things about it: two decide where a new save goes and two re-file one that already exists.
+ * things about it: two decide where a new save goes and two choose where an existing one moves. The
+ * two Move buttons that commit those choices are here with them.
  */
 export const PROJECT_ACTION_TOOLTIPS = {
   newProjectName:
@@ -75,9 +78,17 @@ export const PROJECT_ACTION_TOOLTIPS = {
     'Choosing a project here does not narrow the saved sets listed below.',
 
   movePresetProject:
-    'Files this preset under a different project, right now. Its name, its description and its configuration are untouched, and nothing in the studio changes.\n\n' +
+    `Chooses the project this preset moves to. ${MOVE_WAITS_FOR_THE_BUTTON}\n\n` +
+    'The Move button appears under the dropdown once you choose a project other than the one the preset is in.',
+
+  confirmMovePreset:
+    'Files this preset under the project you chose, right now. Its name, its description and its configuration are untouched, and nothing in the studio changes.\n\n' +
     'It keeps the identity it was saved with, so this is safe even where the destination already has a preset of the same name.',
 
   moveQuantiseProject:
-    'Files this saved set of dial positions under a different project, right now. The dials are untouched and a set you have loaded stays loaded. Choosing the old project again undoes the move.',
+    `Chooses the project this saved set of dial positions moves to. ${MOVE_WAITS_FOR_THE_BUTTON}\n\n` +
+    'The Move button appears under the dropdown once you choose a project other than the one the set is in.',
+
+  confirmMoveQuantise:
+    'Files this saved set of dial positions under the project you chose, right now. The dials are untouched and a set you have loaded stays loaded. Moving it back to the old project undoes the move.',
 } as const;

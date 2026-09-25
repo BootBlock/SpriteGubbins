@@ -122,8 +122,8 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
 
   moveQuantisePreset: async (id, projectId) => {
     const preset = get().presets.find((candidate) => candidate.id === id);
-    // Already there is not a failure and not a write — the dropdown shows the set's current project
-    // as its selected value, so choosing it again is the reader confirming what they see.
+    // Already there is not a failure and not a write — a second press of Move that arrives after the
+    // first has landed is the reader asking for what is already true.
     if (!preset || preset.projectId === projectId) return;
 
     try {

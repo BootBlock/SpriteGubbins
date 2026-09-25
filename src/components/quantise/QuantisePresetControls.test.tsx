@@ -107,23 +107,42 @@ describe('QuantisePresetControls', () => {
     expect(screen.queryByRole('button', { name: 'Update' })).toBeNull();
   });
 
-  it('re-files a saved set from its own row, without touching what it holds', async () => {
-    const moveQuantisePreset = vi.fn().mockResolvedValue(undefined);
+  it('re-files a saved set only on Move, and hands the keyboard back to the dropdown it stays beside', async () => {
+    // #354. Each `selectOptions` is one `change`, which a closed native select fires on every arrow
+    // key in Chromium on Windows and on every typed letter everywhere — so a move made on `change`
+    // filed the set under the first project the keyboard passed over.
+    const moveQuantisePreset = vi.fn((id: string, projectId: string) => {
+      useQuantisePresetStore.setState((state) => ({
+        presets: state.presets.map((preset) => (preset.id === id ? { ...preset, projectId } : preset)),
+      }));
+      return Promise.resolve();
+    });
     useProjectStore.setState({
       projects: [
         createDefaultProject(0),
         { id: 'harbour', name: 'Harbour', description: '', createdAt: 0, updatedAt: 0 },
+        { id: 'castle', name: 'Castle', description: '', createdAt: 0, updatedAt: 0 },
       ],
     });
     useQuantisePresetStore.setState({ presets: [saved], moveQuantisePreset });
     render(<QuantisePresetControls />);
 
-    await userEvent.selectOptions(
-      screen.getByRole('combobox', { name: 'Project for the saved settings “Flat sheets”' }),
-      'harbour',
+    const select = screen.getByRole('combobox', { name: 'Project for the saved settings “Flat sheets”' });
+    await userEvent.selectOptions(select, 'harbour');
+    await userEvent.selectOptions(select, 'castle');
+    expect(moveQuantisePreset).not.toHaveBeenCalled();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Move the saved settings “Flat sheets” to Castle' }),
     );
 
-    expect(moveQuantisePreset).toHaveBeenCalledWith('quantise-1', 'harbour');
+    expect(moveQuantisePreset).toHaveBeenCalledTimes(1);
+    expect(moveQuantisePreset).toHaveBeenCalledWith('quantise-1', 'castle');
+    // This tab lists every project's sets, so the row stays and only its Move button goes. The
+    // dropdown beside it takes the keyboard, now showing where the set is.
+    expect(screen.queryByRole('button', { name: /^Move the saved settings / })).toBeNull();
+    expect(select).toHaveValue('castle');
+    expect(select).toHaveFocus();
   });
 
   it('empties both boxes once the settings were actually stored', async () => {
