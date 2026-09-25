@@ -14,6 +14,7 @@ import { despeckle } from './despeckle.ts';
 import { ditherImage } from './ditherImage.ts';
 import { ditherMatrix } from './ditherMatrix.ts';
 import { mergeColors } from './mergeColors.ts';
+import { mergeIsExempt } from './mergeIsExempt.ts';
 import { colorHistogram } from './imageData.ts';
 import { paletteEntriesFrom } from './paletteEntries.ts';
 import { quantisePrologue } from './quantisePrologue.ts';
@@ -386,41 +387,6 @@ function reduceColors(image: ImageData, reduction: ColorReduction): ImageData {
     case 'CHANNEL_DEPTH':
       return snapToChannelDepth(image, reduction.bitsPerChannel);
   }
-}
-
-/**
- * Whether the reduction's colours were *stated* rather than chosen from this sheet.
- *
- * The two that were — a palette pinned in the studio and a palette locked off an earlier result —
- * are the two the sheet-wide colour merge may not touch, for the reason given where it runs. The
- * other two chose their colours from this image, so folding two of them together takes nothing back
- * from anybody.
- */
-function statedPalette(reduction: ColorReduction | null): boolean {
-  return reduction?.kind === 'PALETTE' || reduction?.kind === 'LOCKED';
-}
-
-/**
- * Whether the sheet-wide colour merge is held back — asked of the settings alone, so a caller that
- * is not the pipeline can ask it too.
- *
- * **The merge does not run where the reader has *stated* which colours the sheet is made of**, a
- * pinned palette or one locked off an earlier sheet: those entries are an explicit statement that
- * two colours are distinct, and a cleanup dial must not quietly un-pin a pair of them. The exemption
- * lifts under a dither, because there the palette step has not run yet and no pixel is a palette
- * entry, so there is nothing of the reader's for a fold to edit.
- *
- * Exported because the auto-tune sweep has to know: a stage that swept the merge's ladder under a
- * stated palette would run fifteen candidates a round over one image, and would tell the reader it
- * had moved a dial that reached nothing. `TUNE_CELL_STAGES` asks this rather than restating it — a
- * second copy of the condition is a second opinion about when the pass runs.
- */
-export function mergeIsExempt(settings: QuantiseSettings): boolean {
-  // Asked of the dither itself rather than of the pipeline's `positional` local, which a caller
-  // asking this from outside does not have. The two part company only where a dither is set with no
-  // reduction in force, and there `statedPalette(settings.reduction)` is false anyway — a dither is
-  // only positional at all where a reduction is in force.
-  return ditherMatrix(settings.dither) === null && statedPalette(settings.reduction);
 }
 
 /**

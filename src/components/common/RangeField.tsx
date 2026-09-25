@@ -10,6 +10,15 @@ interface RangeFieldProps {
   readonly step: number;
   /** What the current value reads as beside the slider — `1.5` as `1.5×`, or `0` as `off`. */
   readonly format: (value: number) => string;
+  /**
+   * When set, the reason the dial reaches nothing — shown in place of nothing at all, as
+   * `NumberField` and `CheckboxField` both show theirs.
+   *
+   * Optional, for the reason `SelectField` gives for its own: one of the app's seventeen sliders has
+   * a setting that takes it over — the colour merge, which does not run under a stated palette — and
+   * the other sixteen passing a permanently-empty string would bury the one that does.
+   */
+  readonly disabledReason?: string;
   readonly onChange: (value: number) => void;
 }
 
@@ -44,32 +53,61 @@ interface RangeFieldProps {
  * opinion about a question already answered, and would have to invent an answer — snap, or refuse
  * to render — that the storage layer has settled.
  */
-export function RangeField({ label, tooltip, value, min, max, step, format, onChange }: RangeFieldProps) {
+export function RangeField({
+  label,
+  tooltip,
+  value,
+  min,
+  max,
+  step,
+  format,
+  disabledReason,
+  onChange,
+}: RangeFieldProps) {
   const inputId = useId();
+  const reasonId = useId();
+  const isDisabled = disabledReason !== undefined && disabledReason !== '';
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      {/* The Tooltip is a sibling of the label, never inside it, as every field primitive keeps
+    <div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {/* The Tooltip is a sibling of the label, never inside it, as every field primitive keeps
           it: nested, the revealed card joins the slider's accessible name and a click on the
           guidance text becomes label activation aimed at the input. */}
-      <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
-        <label htmlFor={inputId}>{label}</label>
-        <Tooltip text={tooltip} hint={label} />
-      </span>
-      <input
-        id={inputId}
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        aria-valuetext={format(value)}
-        onChange={(event) => {
-          onChange(Number(event.target.value));
-        }}
-        className="accent-accent w-56 max-w-full"
-      />
-      <span className="w-12 font-mono text-xs text-ink-faint">{format(value)}</span>
+        <span
+          className={`flex items-center gap-1.5 text-xs font-semibold ${isDisabled ? 'text-ink-faint' : 'text-ink-muted'}`}
+        >
+          <label htmlFor={inputId}>{label}</label>
+          <Tooltip text={tooltip} hint={label} />
+        </span>
+        <input
+          id={inputId}
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          aria-valuetext={format(value)}
+          // `aria-disabled` rather than `disabled`, as `CheckboxField` does and for the same reason:
+          // the slider keeps its place in the tab order, so a keyboard user reaches it and hears why
+          // it reaches nothing. `readOnly` does nothing on a range input, so the refusal is the
+          // handler's, and the controlled `value` puts the thumb back.
+          aria-disabled={isDisabled}
+          aria-describedby={isDisabled ? reasonId : undefined}
+          onChange={(event) => {
+            if (isDisabled) return;
+            onChange(Number(event.target.value));
+          }}
+          className="accent-accent w-56 max-w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+        />
+        <span className="w-12 font-mono text-xs text-ink-faint">{format(value)}</span>
+      </div>
+
+      {isDisabled && (
+        <p id={reasonId} className="mt-1 text-xs text-ink-faint">
+          {disabledReason}
+        </p>
+      )}
     </div>
   );
 }

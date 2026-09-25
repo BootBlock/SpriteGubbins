@@ -11,7 +11,7 @@ import { RangeField } from './RangeField.tsx';
  * turns the DOM's string back into a number, which is the one conversion between the control and the
  * pipeline.
  */
-function renderRange(value: number) {
+function renderRange(value: number, disabledReason = '') {
   const onChange = vi.fn();
   render(
     <RangeField
@@ -22,6 +22,7 @@ function renderRange(value: number) {
       max={2}
       step={0.25}
       format={(position) => (position === 0 ? 'off' : `${String(position)}×`)}
+      disabledReason={disabledReason}
       onChange={onChange}
     />,
   );
@@ -53,5 +54,26 @@ describe('RangeField', () => {
     fireEvent.change(slider, { target: { value: '0.75' } });
 
     expect(onChange).toHaveBeenCalledWith(0.75);
+  });
+
+  it('names why a dial reaches nothing, and refuses a move while it does', () => {
+    const reason = 'Off while the studio pins a palette.';
+    const { onChange, slider } = renderRange(1.5, reason);
+
+    // `aria-disabled` rather than `disabled`, so a keyboard user still reaches the slider and hears
+    // the reason read from its description.
+    expect(slider).toHaveAttribute('aria-disabled', 'true');
+    expect(slider).toHaveAccessibleDescription(reason);
+
+    fireEvent.change(slider, { target: { value: '0.75' } });
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('describes a live dial with nothing at all', () => {
+    const { slider } = renderRange(1.5, '');
+
+    expect(slider).toHaveAttribute('aria-disabled', 'false');
+    expect(slider).not.toHaveAttribute('aria-describedby');
   });
 });

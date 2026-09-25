@@ -2030,6 +2030,12 @@ export function estimatedScaleStatus(grid: PixelGrid, measurement: EstimatedMeas
   return `Estimated this sheet’s pixel scale as ${String(grid)} ${ESTIMATED_SCALE_READING[measurement].source}. It has not been applied — choose it, or type a scale, to quantise the sheet.`;
 }
 
+/**
+ * How the colour merge comes back under a stated palette, said in its card and in both reasons it
+ * gives for being withdrawn — one origin for one fact, so the three cannot drift apart.
+ */
+const MERGE_RUNS_UNDER_DITHER = 'It runs again under a dither, which applies the palette last.';
+
 /** Guidance shown against the quantiser's controls, keyed to the control it explains. */
 export const QUANTISE_TOOLTIPS = {
   grid:
@@ -2088,7 +2094,7 @@ export const QUANTISE_TOOLTIPS = {
     'Lower it to pull only toward truly black strokes; raise it when the artwork outlines in dark colours rather than black. Shading is protected separately, but once the sheet’s own shadows qualify, watch the preview. This control is shown only for `INK_WEIGHTED`.',
   colorMerge:
     'How far apart two colours may sit and still be folded into one across the whole sheet. Reduced fills often dither between near-identical entries; each colour folds into the most-used colour within the distance, so a panel of a dozen greens becomes one.\n\n' +
-    'It also makes the fill cleanup below far more effective. Entries of a palette pinned in the studio or locked from an earlier sheet are exempt, except under a dither, which applies the palette last.\n\n' +
+    `It also makes the fill cleanup below far more effective. While a palette is pinned in the studio or locked from an earlier sheet, the merge does not run at all, because folding two of its colours would edit the palette. ${MERGE_RUNS_UNDER_DITHER}\n\n` +
     'Off keeps every colour. Raise it until fills read as surfaces, and back off when real shading, or a dark outline on a dark fill, starts to fold.',
   fillCleanup:
     'How far apart two colours may sit and still be merged when a pixel disagrees with its neighbours. A speckled pixel snaps to its neighbourhood’s most common colour, but only when most of its neighbours agree and the colours are within this distance.\n\n' +
@@ -2199,4 +2205,17 @@ export const QUANTISE_TOOLTIPS = {
   downloadScale:
     'How many file pixels one drawn pixel is written as when you save. `1×` is the sheet’s own size, which is what an engine imports. Larger rungs write each pixel as a solid square, never resampled, for a copy you can see without magnifying.\n\n' +
     'It changes only the saved file. A rung whose file would outgrow the largest image this tab accepts is not offered.',
+} as const;
+
+/**
+ * Why the Colour merge slider reaches nothing, keyed by the stated palette that holds the merge back.
+ *
+ * Shown under the dial rather than only in its card, because the merge is off *entirely* under
+ * either — not only for the palette's own entries — and a slider that still moved would record an
+ * undo step for a change the preview never shows. `mergeIsExempt` decides when; these say why, and
+ * each names the dither because it is the one setting on this tab that lifts the hold.
+ */
+export const COLOR_MERGE_HELD_REASONS = {
+  PALETTE: `Off while the studio pins a palette: the merge would fold together colours you stated are distinct. ${MERGE_RUNS_UNDER_DITHER}`,
+  LOCKED: `Off while a palette is locked on this tab: the merge would edit the palette the rest of the series is mapped onto. ${MERGE_RUNS_UNDER_DITHER}`,
 } as const;

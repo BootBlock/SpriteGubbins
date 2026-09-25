@@ -981,8 +981,23 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * in `quantiseDials`, which holds the sheet plans. It is prompt text.
  *
  * 2433 leaves **0.87 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2433 by withdrawing the Colour merge slider where the merge does not run** (issue
+ * #429). Under a pinned or locked palette with no dither the pipeline skips the merge entirely, while
+ * the slider stayed live and its card said only the palette's entries were exempt. The slider now
+ * takes a stated reason from `mergeIsExempt`, which moved to a module of its own so the panel can ask
+ * it without bundling the pipeline, and `RangeField` gained the `disabledReason` the other field
+ * primitives carry. Measured against `main` at `a10c0cb`, rebuilt from the same lockfile, with the
+ * ceiling forced to zero in each tree so both figures are the ones `assertPrecacheContract`
+ * receives: **2432.81 KiB** on `main` and **2433.88** here, a delta of **1.07** that crossed a
+ * ceiling the base sat 0.19 under. No file was added to or removed from `PRECACHE_SHAPES`, and no
+ * chunk was renamed. Comparing the two `dist/assets` listings summed by chunk name, 0.71 KiB lands in
+ * `QuantiseTab`, where the panel, the slider and the guide are bundled, and 0.35 in `quantiseDials`,
+ * which holds the quantiser's guidance copy. It is component code and user-facing copy.
+ *
+ * 2434 leaves **0.12 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2433;
+export const PRECACHE_CEILING_KIB = 2434;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

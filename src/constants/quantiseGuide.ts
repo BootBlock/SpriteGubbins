@@ -103,13 +103,19 @@ export function targetCeilingAdvice(suggested: PixelGrid | null, target: TargetS
  * end of the pipeline and takes the two cleanup passes past it — so a paragraph telling a reader
  * those dials tidy what the policy produced would have the order backwards for exactly the sheets
  * where the order is worth knowing. See `quantiseImage`, which holds the rule.
+ *
+ * **Without a dither, a stated palette — pinned or locked — switches the sheet-wide merge off
+ * entirely**, not only for its own entries. `mergeIsExempt` is the rule, and the second sentence
+ * names it for both, so the paragraph agrees with the withdrawn Colour merge slider beside it.
  */
 export function colourAdvice(plan: ColorPlan, dithered: boolean): string {
   const cleanup = dithered
     ? 'The dither is that policy applied positionally rather than one colour at a time, so it runs after the cleanup dials on this tab rather than before them — which leaves those dials tidying what the reading made of the sheet rather than the pattern drawn from it.'
     : plan.reduction?.kind === 'LOCKED'
       ? 'The cleanup dials on this tab only tidy what that policy produced, and the sheet-wide merge is left off entirely, since folding two held colours together would edit the palette the rest of the series is mapped onto.'
-      : 'The cleanup dials on this tab only tidy what that policy produced, and never touch a pinned palette’s own entries.';
+      : plan.reduction?.kind === 'PALETTE'
+        ? 'The cleanup dials on this tab only tidy what that policy produced, and the sheet-wide merge is left off entirely, since folding two pinned colours together would undo the studio’s statement of which colours are distinct.'
+        : 'The cleanup dials on this tab only tidy what that policy produced.';
 
   if (plan.reduction?.kind === 'LOCKED') {
     return `Colour policy is the palette locked on this tab: ${plan.effect}. It supersedes the studio’s ${plan.studioSetting} setting for as long as it is held, which is what keeps a series of sheets in one set of colours — unlock it below to hand the decision back. ${cleanup}`;
