@@ -28,7 +28,7 @@ export const ITEM: CategoryDefinition = {
         'Ranged Weapon (Rifle/Bow)',
         'Magical Artefact / Orb',
         'Consumable Potion/Cell',
-        'Armor Piece (Helmet/Shield)',
+        'Armour Piece (Helmet/Shield)',
         'Keycard / Quest Item',
         'Energy Shield Unit',
         // Nine-slice frames and buttons are inventory-scale flat art with rarity-free rules, so they
@@ -52,7 +52,7 @@ export const ITEM: CategoryDefinition = {
       tooltip:
         'The prestige tier, shown in the art rather than as a label. Gold trim, rune glow and artefact energy let a player rank a drop at a glance, before reading a word of its description.',
       options: [
-        'Legendary / Artifact',
+        'Legendary / Artefact',
         'Epic Enchanted',
         'Standard Issue / Common',
         'Relic Of Lost Era',
@@ -73,7 +73,7 @@ export const ITEM: CategoryDefinition = {
         'Corroded / Ruined',
         'Overcharged Energy',
         'Ancient Sunken Relic',
-        'Freshly Synthesized',
+        'Freshly Synthesised',
         'Well-Oiled & Maintained',
         'Waterlogged & Swollen',
       ],

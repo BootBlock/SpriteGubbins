@@ -104,7 +104,7 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
       silhouette: 'Humped Carapace',
       face_head: 'Single Glowing Monocular Sensor',
       anatomy: 'Quadruped Beast',
-      clothing: 'Cybernetic Leg Armor',
+      clothing: 'Cybernetic Leg Armour',
       worn_details: 'Chitin Cracks',
       primary_colours: 'Rusty Iron & Moss',
       accent_colours: 'Magma Orange Glow #F97316',

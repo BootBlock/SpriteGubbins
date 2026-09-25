@@ -59,7 +59,7 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       'A prop that is genuinely rigged: the base never moves, the yoke yaws and the barrel pitches, over four cardinal runs. Squared caps and no overlap, because the joints hide behind armour collars.',
     category: 'OBJECT',
     subject: {
-      species: 'Defense Turret',
+      species: 'Defence Turret',
       gender: 'Overclocked / Active',
       age: 'Futuristic Sci-Fi',
       role: 'Hazard Obstacle',
