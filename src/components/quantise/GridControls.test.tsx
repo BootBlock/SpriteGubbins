@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { useSuggestedGrid } from '../../hooks/useSuggestedGrid.ts';
+import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import type { ColorPlan, SheetFacts, SheetReading } from '../../types/quantiser.ts';
+import { createImage } from '../../utils/imageData.ts';
 import { GridControls } from './GridControls.tsx';
 
 /**
@@ -28,19 +33,16 @@ const readWith = (scale: SheetFacts['scale']): SheetReading => ({
 const PENDING: SheetReading = { kind: 'pending' };
 
 function show(reading: SheetReading, grid: number | null, colorPlan: ColorPlan = COLOR_PLAN) {
-  render(
-    <GridControls
-      reading={reading}
-      target={null}
-      suggested={null}
-      grid={grid}
-      colorPlan={colorPlan}
-      onGridChange={() => undefined}
-    />,
-  );
+  render(<GridControls reading={reading} grid={grid} colorPlan={colorPlan} />);
 }
 
 describe('GridControls', () => {
+  beforeEach(() => {
+    useQuantiseStore.setState({ source: null, gridOverride: null });
+    useOutputStore.setState(useOutputStore.getInitialState());
+    useSubjectStore.setState(useSubjectStore.getInitialState());
+  });
+
   it('says an exact reading was measured, and explains nothing further', () => {
     // Nothing to act on: the scale is in the box, and the panel that keeps talking about a settled
     // answer is the one a reader learns to stop reading.
@@ -141,6 +143,31 @@ describe('GridControls', () => {
     // makes about the ink-weighted dials: a control that could change nothing is a lie on screen.
     show(readWith({ grid: 8, measurement: 'EXACT' }), 8);
     expect(screen.queryByLabelText('Dither')).toBeNull();
+  });
+
+  it('offers the studio’s target as a scale to try, and writes the one clicked to the store', () => {
+    // The panel reads the target from the studio's stores and writes the override straight to the
+    // quantiser's, so the row is only right if both of those are. An icon library states its size per
+    // component, which is what lets the studio's figure through at all — see `componentTargetSize`.
+    useSubjectStore.setState({ category: 'ICON' });
+    useOutputStore.getState().setOutputField('directionalMode', 'SINGLE_DIRECTION_POSE_LIBRARY');
+    useQuantiseStore.setState({ source: { name: 'sheet.png', image: createImage(256, 256) } });
+    useOutputStore.getState().setOutputField('spriteTargetSize', '16 × 16 px');
+    const suggested = renderHook(() => useSuggestedGrid()).result.current;
+    expect(suggested).not.toBeNull();
+    show(readWith(null), null);
+
+    expect(screen.getByText(/Components were asked for at/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /from the target size/ }));
+    expect(useQuantiseStore.getState().gridOverride).toBe(suggested);
+  });
+
+  it('clears the override when the box is emptied', () => {
+    useQuantiseStore.setState({ gridOverride: 6 });
+    show(readWith(null), 6);
+
+    fireEvent.change(screen.getByLabelText('Pixel grid'), { target: { value: '' } });
+    expect(useQuantiseStore.getState().gridOverride).toBeNull();
   });
 
   it('offers the dither once a budget is in force', () => {

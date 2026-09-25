@@ -1,16 +1,11 @@
 import { useRef, useState } from 'react';
 import { DEFAULT_DIFFERENCE_SCALE, DEFAULT_WIPE, PREVIEW_ZOOMS } from '../../constants/quantiser.ts';
-import { DEFAULT_SPRITE_CELL_CHOICE } from '../../constants/spriteCell.ts';
 import { useCanvasPaint } from '../../hooks/useCanvasPaint.ts';
 import { useDetachedWindow } from '../../hooks/useDetachedWindow.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
 import { useSecondPaneImage } from '../../hooks/useSecondPaneImage.ts';
 import { useSpriteAssignment } from '../../hooks/useSpriteAssignment.ts';
-import type { TargetSize } from '../../types/output.ts';
 import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
-import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
-import type { SheetFormat } from '../../types/sheetFormat.ts';
-import type { SpriteCellChoice } from '../../types/spriteCell.ts';
 import { ComparisonPane } from './ComparisonPane.tsx';
 import { ComparisonToolbar } from './ComparisonToolbar.tsx';
 import { DetachedNotice } from './DetachedNotice.tsx';
@@ -45,14 +40,6 @@ interface ImageComparisonProps {
   readonly grid: PixelGrid | null;
   /** `null` until a grid is settled, which is the one thing the transform cannot guess. */
   readonly quantised: Quantised | null;
-  /**
-   * The component size the studio's prompt states, or `null` where it states none.
-   *
-   * Passed through to the download's cell controls, which offer it as one of the two sources a fixed
-   * cell can be sized from — the studio already states the figure, and a second copy of it typed
-   * into this tab would be a second answer to what a component is meant to measure.
-   */
-  readonly target: TargetSize | null;
   /** Whether a newer result is on its way, which is what {@link quantised} may be lagging behind. */
   readonly busy: boolean;
 }
@@ -95,17 +82,11 @@ export function ImageComparison({
   scale,
   grid,
   quantised,
-  target,
   busy,
 }: ImageComparisonProps) {
+  // Local rather than in a store: each of these is a preference about how this panel presents a
+  // result. How the result *leaves* is not, and is kept in `useQuantiseDownloadStore` — see there.
   const [zoom, setZoom] = useState<number>(PREVIEW_ZOOMS[0]);
-  // Beside `zoom` rather than in the store, for the same reason `zoom` is: every one of these is a
-  // preference about how this panel presents a result, not part of what the result is.
-  const [downloadScale, setDownloadScale] = useState<number>(PREVIEW_ZOOMS[0]);
-  const [downloadFormat, setDownloadFormat] = useState<SheetFormat>(SHEET_FORMATS[0]);
-  // Beside the format it belongs to: a cell is a statement about the file the two describing formats
-  // write, not about the result, so it sits with them rather than among the dials in the store.
-  const [cellChoice, setCellChoice] = useState<SpriteCellChoice>(DEFAULT_SPRITE_CELL_CHOICE);
   const [mode, setMode] = useState<PreviewMode>('SIDE_BY_SIDE');
   const [differenceScale, setDifferenceScale] = useState<number>(DEFAULT_DIFFERENCE_SCALE);
   const [wipeAt, setWipeAt] = useState(DEFAULT_WIPE);
@@ -202,17 +183,10 @@ export function ImageComparison({
         onZoomChange={setZoom}
         differenceScale={differenceScale}
         onDifferenceScaleChange={setDifferenceScale}
-        downloadScale={downloadScale}
-        onDownloadScaleChange={setDownloadScale}
-        downloadFormat={downloadFormat}
-        onDownloadFormatChange={setDownloadFormat}
         sourceName={sourceName}
         resultImage={quantised?.result.image ?? null}
         sprites={quantised?.result.sprites ?? null}
         duplicates={quantised?.result.duplicates ?? []}
-        cellChoice={cellChoice}
-        onCellChoiceChange={setCellChoice}
-        target={target}
         isDetached={isDetached}
         onDetachToggle={() => {
           if (isDetached) detached.reattach();

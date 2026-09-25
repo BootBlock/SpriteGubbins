@@ -4,12 +4,12 @@ import { SHEET_FORMAT_FILES } from '../../constants/sheetFormats.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
 import { useSheetIdentity } from '../../hooks/useSheetIdentity.ts';
+import { useComponentTarget } from '../../hooks/useComponentTarget.ts';
 import { useSpriteAssignment } from '../../hooks/useSpriteAssignment.ts';
-import type { TargetSize } from '../../types/output.ts';
+import { useQuantiseDownloadStore } from '../../stores/useQuantiseDownloadStore.ts';
 import type { SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
-import type { SpriteCellChoice } from '../../types/spriteCell.ts';
 import { resolveSpriteCell } from '../../utils/spriteCell.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
@@ -17,12 +17,6 @@ import { Tooltip } from '../common/Tooltip.tsx';
 import { SpriteCellControls } from './SpriteCellControls.tsx';
 
 interface DownloadControlsProps {
-  /** How many file pixels one drawn pixel is written as when the sheet is saved. */
-  readonly downloadScale: number;
-  readonly onDownloadScaleChange: (scale: number) => void;
-  /** Which file the sheet leaves as. */
-  readonly downloadFormat: SheetFormat;
-  readonly onDownloadFormatChange: (format: SheetFormat) => void;
   /** The dropped file's name — what the download is named after. */
   readonly sourceName: string;
   /** `null` until a grid is settled, which is the only state the download can be refused in. */
@@ -42,11 +36,6 @@ interface DownloadControlsProps {
    * of the segmentation, so a sheet with nothing separable has nothing to group.
    */
   readonly duplicates: readonly SpriteDuplicateGroup[];
-  /** What the sprites are cut into — see `SpriteCellControls`, which is where it is set. */
-  readonly cellChoice: SpriteCellChoice;
-  readonly onCellChoiceChange: (choice: SpriteCellChoice) => void;
-  /** The component size the studio's prompt states, which is one of the cell's two sources. */
-  readonly target: TargetSize | null;
 }
 
 /**
@@ -61,20 +50,21 @@ interface DownloadControlsProps {
  * guidance differently: the pills sit under a label with an ⓘ beside it, as every value-holding
  * control in the app does, and the button hangs its own card off itself through `ControlTooltip`.
  * The button's card changes with the format, because what it would do is a different thing in each.
+ *
+ * **The settings are read from `useQuantiseDownloadStore`** rather than handed down, so they outlive
+ * the view — see the store for the trip to the studio that used to reset them.
  */
-export function DownloadControls({
-  downloadScale,
-  onDownloadScaleChange,
-  downloadFormat,
-  onDownloadFormatChange,
-  sourceName,
-  resultImage,
-  sprites,
-  duplicates,
-  cellChoice,
-  onCellChoiceChange,
-  target,
-}: DownloadControlsProps) {
+export function DownloadControls({ sourceName, resultImage, sprites, duplicates }: DownloadControlsProps) {
+  const downloadScale = useQuantiseDownloadStore((state) => state.downloadScale);
+  const setDownloadScale = useQuantiseDownloadStore((state) => state.setDownloadScale);
+  const downloadFormat = useQuantiseDownloadStore((state) => state.downloadFormat);
+  const setDownloadFormat = useQuantiseDownloadStore((state) => state.setDownloadFormat);
+  const cellChoice = useQuantiseDownloadStore((state) => state.cellChoice);
+  const setCellChoice = useQuantiseDownloadStore((state) => state.setCellChoice);
+  // The component size the studio's prompt states, which is one of the cell's two sources. Read here
+  // and handed to `SpriteCellControls`, because the press resolves the cell from it too, and the
+  // pills on screen and the file they describe must be working from one reading.
+  const target = useComponentTarget();
   const download = useImageDownload();
   // The studio's own answer about what this sheet is — the same reading `SheetIdentityControls` puts
   // on screen, through the one hook, so what the panel promises and what the file records cannot be
@@ -148,7 +138,7 @@ export function DownloadControls({
           values={available}
           value={effectiveScale}
           format={(level) => `${String(level)}×`}
-          onChange={onDownloadScaleChange}
+          onChange={setDownloadScale}
         />
       </div>
 
@@ -162,12 +152,12 @@ export function DownloadControls({
           values={SHEET_FORMATS}
           value={downloadFormat}
           format={(format) => SHEET_FORMAT_FILES[format].label}
-          onChange={onDownloadFormatChange}
+          onChange={setDownloadFormat}
         />
       </div>
 
       {cuts && (
-        <SpriteCellControls choice={cellChoice} onChange={onCellChoiceChange} target={target} boxes={boxes} />
+        <SpriteCellControls choice={cellChoice} onChange={setCellChoice} target={target} boxes={boxes} />
       )}
 
       <ControlTooltip

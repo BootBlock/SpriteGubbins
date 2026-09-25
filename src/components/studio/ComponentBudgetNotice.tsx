@@ -1,9 +1,6 @@
-import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
+import { useExpectedComponents } from '../../hooks/useExpectedComponents.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
-import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { exceedsComponentBudget } from '../../utils/componentBudget.ts';
-import { componentCountFor } from '../../utils/componentSet.ts';
 import { Badge } from '../common/Badge.tsx';
 
 /**
@@ -27,18 +24,10 @@ import { Badge } from '../common/Badge.tsx';
  * quiet case would otherwise pay twice over for a warning that is not on screen.
  */
 export function ComponentBudgetNotice() {
-  const directionalMode = useOutputStore((state) => state.output.directionalMode);
-  const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
-  const directions = useOutputStore((state) => state.output.directions);
   const componentBudget = useOutputStore((state) => state.output.componentBudget);
-  const rigContract = useOutputStore((state) => state.output.rigContract);
-  const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  // The other two subject fields the count reads — see `componentSet.ts`.
-  const subject = useSheetSubject();
-  const category = useSubjectStore((state) => state.category);
 
   // The same sum the prompt, the inventory heading and the atlas grid all state, read through the
-  // one function that owns it — a warning computed from a second arithmetic could fire against a
+  // one hook that owns it — a warning computed from a second arithmetic could fire against a
   // number the user is not being shown anywhere.
   //
   // Counted for the sheet on screen, not the whole series, which is why it is not the figure the
@@ -49,15 +38,7 @@ export function ComponentBudgetNotice() {
   // control above it is pointed at. `SheetSplitRun` asks the same question of every sheet of the
   // batch, so a series whose *other* sheet is the heavy one is caught without the user having to go
   // and select it.
-  const count = componentCountFor(
-    category,
-    subject,
-    directionalMode,
-    directions,
-    sheetIndex,
-    parseAdditionalAnatomy(additionalAnatomy),
-    rigContract,
-  );
+  const count = useExpectedComponents();
 
   return (
     <div aria-live="polite" aria-atomic="true">

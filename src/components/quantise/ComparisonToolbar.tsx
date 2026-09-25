@@ -6,10 +6,7 @@ import {
 import { DIFFERENCE_SCALES, PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/quantise.ts';
 import { PREVIEW_MODES } from '../../types/quantiser.ts';
-import type { TargetSize } from '../../types/output.ts';
 import type { PreviewMode, SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
-import type { SheetFormat } from '../../types/sheetFormat.ts';
-import type { SpriteCellChoice } from '../../types/spriteCell.ts';
 import { DownloadControls } from './DownloadControls.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
@@ -24,12 +21,6 @@ interface ComparisonToolbarProps {
   /** What counts as the top of the heatmap's ramp; shown only while the heatmap is. */
   readonly differenceScale: number;
   readonly onDifferenceScaleChange: (scale: number) => void;
-  /** How many file pixels one drawn pixel is written as when the sheet is saved. */
-  readonly downloadScale: number;
-  readonly onDownloadScaleChange: (scale: number) => void;
-  /** Which file the sheet leaves as. */
-  readonly downloadFormat: SheetFormat;
-  readonly onDownloadFormatChange: (format: SheetFormat) => void;
   /** The dropped file's name — what the download is named after. */
   readonly sourceName: string;
   /**
@@ -41,11 +32,6 @@ interface ComparisonToolbarProps {
   readonly sprites: SpriteSegmentation | null;
   /** The duplicate reading over those sprites, which a manifest turns into links between them. */
   readonly duplicates: readonly SpriteDuplicateGroup[];
-  /** What a pack's or a manifest's sprites are cut into — a bounding box, or a fixed cell. */
-  readonly cellChoice: SpriteCellChoice;
-  readonly onCellChoiceChange: (choice: SpriteCellChoice) => void;
-  /** The component size the studio's prompt states, which is one of the cell's two sources. */
-  readonly target: TargetSize | null;
   /** Whether this toolbar is currently being rendered into a window of the panel's own. */
   readonly isDetached: boolean;
   /** Send the panel to a window of its own, or bring it back — whichever it is not doing now. */
@@ -67,17 +53,10 @@ export function ComparisonToolbar({
   onZoomChange,
   differenceScale,
   onDifferenceScaleChange,
-  downloadScale,
-  onDownloadScaleChange,
-  downloadFormat,
-  onDownloadFormatChange,
   sourceName,
   resultImage,
   sprites,
   duplicates,
-  cellChoice,
-  onCellChoiceChange,
-  target,
   isDetached,
   onDetachToggle,
 }: ComparisonToolbarProps) {
@@ -140,17 +119,10 @@ export function ComparisonToolbar({
 
       <div className="flex flex-wrap items-center gap-3">
         <DownloadControls
-          downloadScale={downloadScale}
-          onDownloadScaleChange={onDownloadScaleChange}
-          downloadFormat={downloadFormat}
-          onDownloadFormatChange={onDownloadFormatChange}
           sourceName={sourceName}
           resultImage={resultImage}
           sprites={sprites}
           duplicates={duplicates}
-          cellChoice={cellChoice}
-          onCellChoiceChange={onCellChoiceChange}
-          target={target}
         />
 
         {/* Last in the row, and beside the download rather than among the pills on the left: those

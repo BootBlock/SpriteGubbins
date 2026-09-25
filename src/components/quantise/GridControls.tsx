@@ -5,7 +5,9 @@ import {
   QUANTISE_SCALE_GUIDANCE,
   QUANTISE_TOOLTIPS,
 } from '../../constants/quantiser.ts';
-import type { TargetSize } from '../../types/output.ts';
+import { useComponentTarget } from '../../hooks/useComponentTarget.ts';
+import { useSuggestedGrid } from '../../hooks/useSuggestedGrid.ts';
+import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { ColorPlan, PixelGrid, SheetReading, SheetScale } from '../../types/quantiser.ts';
 import { sheetReadingFacts } from '../../utils/sheetReadingFacts.ts';
 import { Tooltip } from '../common/Tooltip.tsx';
@@ -23,10 +25,6 @@ interface GridControlsProps {
    * is the state that tells a user the tab is broken.
    */
   readonly reading: SheetReading;
-  /** The studio's target component size, where it names one. */
-  readonly target: TargetSize | null;
-  /** The scale {@link target} implies for this sheet, or `null` where it implies none. */
-  readonly suggested: PixelGrid | null;
   /**
    * The grid actually in force — the user's, or an `EXACT` reading of the sheet behind it.
    *
@@ -44,8 +42,6 @@ interface GridControlsProps {
    * pinned palette left this readout still naming the colour budget it supersedes.
    */
   readonly colorPlan: ColorPlan;
-  /** `null` clears the override, handing the decision back to the sheet's own reading. */
-  readonly onGridChange: (grid: PixelGrid | null) => void;
 }
 
 /**
@@ -70,15 +66,16 @@ interface GridControlsProps {
  * the tab opens in whenever that reading was not an exact one, an **estimate included**: the
  * estimate is offered to click, so an empty box beside a badge naming a number is not a
  * contradiction but the distinction the panel exists to draw.
+ *
+ * The studio's target and the scale it implies are read here through their hooks, and the override is
+ * written straight to the store, rather than any of them being handed down from the tab: nothing
+ * between the two has any part in them.
  */
-export function GridControls({
-  reading,
-  target,
-  suggested,
-  grid,
-  colorPlan,
-  onGridChange,
-}: GridControlsProps) {
+export function GridControls({ reading, grid, colorPlan }: GridControlsProps) {
+  const target = useComponentTarget();
+  const suggested = useSuggestedGrid();
+  // `null` clears the override, handing the decision back to the sheet's own reading.
+  const setGridOverride = useQuantiseStore((state) => state.setGridOverride);
   const inputId = useId();
   const scale = sheetReadingFacts(reading)?.scale ?? null;
   const guidance = scaleGuidance(reading, scale, grid);
@@ -103,7 +100,7 @@ export function GridControls({
             onChange={(event) => {
               const entered = event.target.value.trim();
               if (entered === '') {
-                onGridChange(null);
+                setGridOverride(null);
                 return;
               }
               // A partial or out-of-range entry is ignored rather than committed, as every numeric
@@ -114,7 +111,7 @@ export function GridControls({
                 parsed >= MANUAL_GRID_RANGE.min &&
                 parsed <= MANUAL_GRID_RANGE.max
               ) {
-                onGridChange(parsed);
+                setGridOverride(parsed);
               }
             }}
             className="w-28 rounded-xl border border-foundry-600 bg-foundry-950 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors focus:border-accent"
@@ -146,7 +143,7 @@ export function GridControls({
 
       <DownscaleControls dithers={colorPlan.reduction !== null} />
 
-      <GridCandidates scale={scale} suggested={suggested} onChoose={onGridChange} />
+      <GridCandidates scale={scale} suggested={suggested} onChoose={setGridOverride} />
 
       {suggested !== null && target !== null && (
         // An upper bound, not a measurement: at any coarser scale the sheet could not seat the
