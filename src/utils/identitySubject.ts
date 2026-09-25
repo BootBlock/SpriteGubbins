@@ -1,6 +1,7 @@
 import { IDENTITY_SUBJECT_SEGMENTS, IDENTITY_VALUE_SEPARATOR } from '../constants/identityLock.ts';
-import type { SubjectDefinition } from '../types/subject.ts';
+import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import type { DigestSegment } from './identityDigest.ts';
+import { absentFieldsOf, declaresAbsence } from './sheetPlanAbsence.ts';
 
 /**
  * The prose an identity digest can state about the subject without the user retyping it.
@@ -16,17 +17,32 @@ import type { DigestSegment } from './identityDigest.ts';
  * a vertical row"), and the studio's vocabulary is a starting point for writing that, never a
  * substitute for it.
  *
- * Pure, and independent of the category: every category labels these sixteen keys differently but
- * carries the same keys, so a segment written against the keys is right in all of them. Which keys
- * each segment states — and why six of the sixteen state nothing — is `IDENTITY_SUBJECT_SEGMENTS`.
+ * Every category labels these sixteen keys differently but carries the same keys, so a segment
+ * written against the keys is right in all of them. Which keys each segment states — and why six of
+ * the sixteen state nothing — is `IDENTITY_SUBJECT_SEGMENTS`.
+ *
+ * **The category is asked for one thing: which values declare an absence.** A pool's
+ * `absentOption` — CREATURE's `NONE`, VEHICLE's `Bare Unclad Frame`, TERRAIN's `No Focal Feature` —
+ * is the subject saying it has none of what the field describes, which is the `exclusions` field's
+ * reason for staying out of a block headed "reproduce exactly". Stated here it read as a feature to
+ * reproduce (`Features: Triple Jaw Mandibles, NONE, Bioluminescent Veins`), so it is dropped exactly
+ * as a cleared field is, recognised by `declaresAbsence` so that this and the sheet plan that drops
+ * the declined entries are one reading of the same value.
  */
-export function identitySubjectSegments(subject: SubjectDefinition): readonly DigestSegment[] {
+export function identitySubjectSegments(
+  category: SubjectCategory,
+  subject: SubjectDefinition,
+): readonly DigestSegment[] {
+  const declined = absentFieldsOf(category).filter((key) => declaresAbsence(category, key, subject[key]));
+
   return IDENTITY_SUBJECT_SEGMENTS.map(({ label, keys }) => ({
     label,
     // A cleared field says "you decide" everywhere else in this app — the compiler drops its line
     // rather than emitting an empty one — so it contributes nothing here either, and a segment whose
-    // fields are all cleared comes back empty and is removed from the digest by `withSegments`.
+    // fields are all cleared or declined comes back empty and is removed from the digest by
+    // `withSegments`.
     value: keys
+      .filter((key) => !declined.some((declinedKey) => declinedKey === key))
       .map((key) => subject[key].trim())
       .filter((value) => value !== '')
       .join(IDENTITY_VALUE_SEPARATOR),
