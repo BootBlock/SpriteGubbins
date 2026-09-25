@@ -9,6 +9,7 @@ import { resolveCameraElevation } from '../promptText/index.ts';
 import { STYLE_REFERENCES, styleReferenceChoices, styleReferenceFor } from './index.ts';
 import { supportsStyleReference } from '../categoryStyleReferences.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
+import { OUTPUT_TOOLTIPS } from '../output/tooltips.ts';
 
 /**
  * The art style reference library's own contract.
@@ -126,6 +127,20 @@ describe('every art style reference', () => {
       facings,
       `${reference.name} states a facing scheme, which the direction set already decides — put it on the preset card instead`,
     ).toEqual([]);
+  });
+
+  it('keeps the control’s card from promising a facing scheme the prompt never carries', () => {
+    // The card says what a reference adds to the prompt, and the assertion above keeps facings out of
+    // every characteristic. A card promising "how many facings were drawn against how many the engine
+    // flipped" shipped regardless, so a reader choosing a look expected a direction scheme that no
+    // prompt states and no reference writes.
+    expect(OUTPUT_TOOLTIPS.styleReference).not.toMatch(FACING_VOCABULARY);
+  });
+
+  it.each(REFERENCES)('$name is offered under a label that promises no facing scheme', (reference) => {
+    // The same promise from the select itself: "Age of Empires II — 2:1 diamond, 5 facings" read as
+    // a reference that sets five facings, and choosing it leaves Directions Covered as it was.
+    expect(reference.label).not.toMatch(FACING_VOCABULARY);
   });
 
   it.each(REFERENCES)('$name never counts a machine’s hardware palette', (reference) => {

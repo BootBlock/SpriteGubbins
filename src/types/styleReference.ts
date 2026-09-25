@@ -13,11 +13,12 @@ import type {
  * A published game whose art direction this sheet is drawn to match.
  *
  * **A reference is a measurement, not an homage.** What it carries into the prompt is the geometry a
- * look is actually made of — the grid the art sits on, the size a figure is drawn at, how many ways
- * it turns, whether the contour is black or a darker shade of the fill, and where the light comes
- * from. Those are facts about the artwork, and they are what a generator can act on. "Draw it like
- * Stardew Valley" is not: it is an adjective, and this app's whole argument is that a generator
- * resolves an adjective however it likes and a number the same way every time.
+ * look is actually made of — the grid the art sits on, the size a figure is drawn at, whether the
+ * contour is black or a darker shade of the fill, and where the light comes from. Those are facts
+ * about the artwork, and they are what a generator can act on. "Draw it like Stardew Valley" is not:
+ * it is an adjective, and this app's whole argument is that a generator resolves an adjective however
+ * it likes and a number the same way every time. How many ways the figure turns is a fact too, and
+ * deliberately absent: the direction set states it, and a reference never writes that control.
  *
  * That is why {@link StyleReference.characteristics} reaches the prompt whether or not
  * {@link StyleReference.name} does — see `nameStyleReference` in `ImageOutputConfig`. Naming the game
@@ -28,7 +29,7 @@ import type {
  * what the silicon could put on a screen — every game on that machine obeyed them. A reference is one
  * team's answer *within* those limits, which is why a reference may name a profile in its own settings
  * and pin the palette that goes with it: `LINKS_AWAKENING` is the Game Boy plus a set of decisions
- * about tile size, facings and outline that Nintendo made and the hardware did not. Where a look ran
+ * about tile size and outline that Nintendo made and the hardware did not. Where a look ran
  * on no fixed machine the profile is `NONE`, and the reference carries the whole statement itself.
  */
 
@@ -138,8 +139,11 @@ export interface StyleReference {
    * it would arrive without anybody doing anything wrong.
    *
    * What is left is everything a look is made of that has no field to live in: the tile grid, the
-   * internal resolution the art was authored for, how many facings were drawn against how many the
-   * engine produced by mirroring, the convention behind a colour choice the palette can only list.
+   * internal resolution the art was authored for, the convention behind a colour choice the palette
+   * can only list. How many facings a game drew, and how many its engine mirrored, is *not* on that
+   * list, though no field holds it either: the direction set speaks for facings, so a count here would
+   * restate that control, and a mirrored side is what the sheet contract forbids. It goes on the
+   * preset card, which a person reads and a generator never does.
    * This is the same discipline `HardwareProfile.constraints` keeps — "there is no field for 8
    * sprites per scanline" — applied to a look instead of a machine.
    *
