@@ -1,4 +1,6 @@
 import type { JointEdge, RigContract, RigPoint, RigSize, RigSlot } from '../types/rigContract.ts';
+import { rigHierarchyProblems } from './rigHierarchyProblems.ts';
+import { rigSlotGeometryProblems } from './rigSlotGeometryProblems.ts';
 
 /**
  * Reading a rig contract, and saying why when it will not be read.
@@ -13,7 +15,9 @@ import type { JointEdge, RigContract, RigPoint, RigSize, RigSlot } from '../type
  * nothing makes every piece size a share of nothing — and a contract read *partly* would put the
  * missing pieces' absence in the one place nobody looks: an inventory that is simply shorter than
  * the rig. The prompt would then contract for twelve pieces of a fifteen-piece actor and say nothing
- * about it.
+ * about it. A piece whose numbers describe no figure — a joint below the base, a pivot outside its
+ * piece, a slot carried by itself — cannot be stated either, only misstated, so its geometry and the
+ * parent chain are refused as well (`rigSlotGeometryProblems`, `rigHierarchyProblems`).
  *
  * **A version it does not know is refused rather than read hopefully.** The writer states the
  * version because the file leaves its repository, and the whole value of that is a reader that stops
@@ -55,7 +59,7 @@ function text(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function slot(value: unknown, at: number, problems: string[]): RigSlot | null {
+function slot(value: unknown, at: number, frame: RigSize | null, problems: string[]): RigSlot | null {
   const where = `Slot ${String(at + 1)}`;
   if (!isRecord(value)) {
     problems.push(`${where} is not an object.`);
@@ -85,7 +89,7 @@ function slot(value: unknown, at: number, problems: string[]): RigSlot | null {
   if (pieceSize === null || pivot === null || rest === null || jointEdge === null) return null;
   if (slotId === '' || name === '') return null;
 
-  return {
+  const read: RigSlot = {
     slot_id: slotId,
     pack_piece_name: name,
     parent_slot: text(value['parent_slot']),
@@ -94,6 +98,8 @@ function slot(value: unknown, at: number, problems: string[]): RigSlot | null {
     joint_edge: jointEdge,
     rest_position_in_frame: rest,
   };
+  problems.push(...rigSlotGeometryProblems(read, where, frame));
+  return read;
 }
 
 function refused(problems: readonly string[]): RigContractReading {
@@ -133,7 +139,7 @@ export function parseRigContract(value: unknown): RigContractReading {
   } else {
     const taken = new Set<string>();
     declared.forEach((entry: unknown, at: number) => {
-      const read = slot(entry, at, problems);
+      const read = slot(entry, at, frame, problems);
       if (read === null) return;
       // Two slots answering to one pack name is the mis-mapping the name exists to prevent: the
       // sheet would draw the piece twice under one name and the importer would place one of them
@@ -145,6 +151,7 @@ export function parseRigContract(value: unknown): RigContractReading {
       taken.add(read.pack_piece_name);
       slots.push(read);
     });
+    problems.push(...rigHierarchyProblems(slots));
   }
 
   if (frame === null || problems.length > 0) return refused(problems);

@@ -10,9 +10,10 @@ import { UNSUNG_SAVIOUR_HUMANOID_RIG } from './unsungSaviourRig.ts';
  *
  * `unsungSaviourRig.ts` is a copy of a document another repository writes, and nothing here can
  * open the original — so the values themselves are unheld, and these checks are aimed at the ways a
- * copy goes wrong that do not need it: a document the app's own reader would refuse, a piece the
- * sheet never asks for, a joint end that disagrees with the pivot it is derived from, a parent
- * naming nothing, and a preset that quietly stops carrying any of it.
+ * copy goes wrong that do not need it: a document the app's own reader would refuse (which covers a
+ * joint end that disagrees with its pivot, and a parent chain with a loop or a second root), a piece
+ * the sheet never asks for, a parent naming nothing, and a preset that quietly stops carrying any of
+ * it.
  */
 describe('the shipped Unsung Saviour rig', () => {
   it('is a document this app’s own reader accepts, and reads back unchanged', () => {
@@ -55,33 +56,16 @@ describe('the shipped Unsung Saviour rig', () => {
     expect([...carried].sort()).toEqual([...asked].sort());
   });
 
-  it.each(UNSUNG_SAVIOUR_HUMANOID_RIG.slots)(
-    '$pack_piece_name puts its joint at the end its own pivot is at',
-    (slot) => {
-      // The writer derives `joint_edge` from the pivot — strictly less than half the height is the
-      // top edge, and a pivot dead centre counts as the bottom. Re-stating the rule here is not a
-      // second implementation of it, because nothing reads this: it is how two transcribed numbers
-      // and a transcribed word are held against each other, and it is what catches a row copied
-      // from the line above it. The prompt registers art against this edge, so a wrong one asks for
-      // the joint cap at the wrong end of the piece.
-      const expected = slot.piece_pivot.y * 2 < slot.piece_size.height ? 'top' : 'bottom';
-
-      expect(slot.joint_edge).toBe(expected);
-    },
-  );
-
-  it('hangs every piece off a piece it declares, from one root', () => {
-    // `parent_slot` is the one field the reader never checks — it takes whatever string is there —
-    // and section 5 names the parent in each piece's line, so a mistyped one silently drops the
-    // clause that says what carries the limb. One root, because a rig with two is two rigs.
+  it('hangs every piece off a piece it declares', () => {
+    // The reader refuses a loop and a second root, but takes a parent naming no declared slot, and
+    // section 5 then says nothing about that parent — so in this copy a mistyped one would silently
+    // drop the clause that says what carries the limb.
     const ids = new Set(UNSUNG_SAVIOUR_HUMANOID_RIG.slots.map((slot) => slot.slot_id));
     const orphans = UNSUNG_SAVIOUR_HUMANOID_RIG.slots.filter(
       (slot) => slot.parent_slot !== '' && !ids.has(slot.parent_slot),
     );
-    const roots = UNSUNG_SAVIOUR_HUMANOID_RIG.slots.filter((slot) => slot.parent_slot === '');
 
     expect(orphans.map((slot) => `${slot.slot_id} → ${slot.parent_slot}`)).toEqual([]);
-    expect(roots.map((slot) => slot.slot_id)).toEqual(['pelvis']);
   });
 
   it('is carried by the character preset and by no other', () => {
