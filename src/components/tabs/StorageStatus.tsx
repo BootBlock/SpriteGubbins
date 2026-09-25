@@ -36,9 +36,8 @@ type StorageState = keyof typeof STORAGE_LABELS;
  * fallback behave identically, so nothing on screen would tell them apart — and the fallback over a
  * store in memory for the same reason at higher stakes, since it behaves identically until a reload
  * empties it. The fourth is stated because the app does *not* behave identically there: every write
- * is refused. A database that silently
- * fails to open looks exactly like one
- * that opened. It did, for a while, and nothing on screen said so.
+ * is refused. A database that silently fails to open looks exactly like one that opened. It did,
+ * for a while, and nothing on screen said so.
  *
  * `getDatabase()` memoises its promise, so asking here does not start a second backend or a second
  * WASM module load; it joins the one the stores already began on boot.

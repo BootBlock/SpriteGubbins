@@ -68,7 +68,7 @@ describe('StorageStatus', () => {
     expect(screen.queryByText(/local storage/)).not.toBeInTheDocument();
   });
 
-  it('marks the two states that keep nothing for attention, and the two working ones not', async () => {
+  it('marks the two states that will not keep this tab’s work for attention, and the two working ones not', async () => {
     // The tone is the difference between "here is where your work is" and "your work is not here",
     // and it is the half a label alone cannot carry.
     const toneOf = async (kind: BackendKind, label: RegExp) => {

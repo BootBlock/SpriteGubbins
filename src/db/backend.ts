@@ -11,8 +11,8 @@ import type { AppSettings } from '../types/settings.ts';
  *
  * Three implementations satisfy it — SQLite over OPFS, a localStorage fallback for browsers or hosts
  * where OPFS is unavailable (over a store in memory where even localStorage cannot be read), and one
- * for a tab whose database another tab of the same origin holds open. Everything above this line is written against the interface, so no store or component ever
- * branches on which one it got. **The third is what keeps that true**: the alternative to a backend
+ * for a tab whose database another tab of the same origin holds open. Everything above this line is
+ * written against the interface, so no store or component ever branches on which one it got. **The third is what keeps that true**: the alternative to a backend
  * was a flag the stores would have had to read, and the write that forked a reader's library came
  * from a store deciding for itself what an empty collection meant. See {@link BackendKind}.
  *
