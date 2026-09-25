@@ -4,12 +4,14 @@ import { describe, expect, it } from 'vitest';
 import {
   PLACEHOLDER,
   SECRET_PATTERNS,
+  addedAgainstEveryParent,
   binaryPaths,
   isSuspect,
   scanAddedLines,
   scanBytes,
   suspectValues,
 } from '../scripts/secretScan.ts';
+import { shape } from './credentialShape.ts';
 
 /**
  * The secret scanner — the one automated check standing between a credential and a public,
@@ -38,21 +40,11 @@ import {
  * Anthropic key, and every Hugging Face and Replicate token, passed as a bare value, as an unquoted
  * `.env` line, in a Bearer header and inside a binary file. Each shape is exercised in each of those
  * positions, and the `.env` form has a table of code lines it must still leave alone.
- */
-
-/**
- * Assemble a credential-shaped value at run time.
  *
- * Nothing in this file may be credential-shaped **as written**. The scanner under test is what the
- * pre-commit hook runs over every staged diff and what the deploy workflow runs over the whole
- * tree, so a fixture spelled out in full would block the commit that introduced it and every
- * publish afterwards. Joining the pieces here keeps the shape out of the source line and puts it
- * back in the value, and `the files that describe credential shapes` below is what proves the
- * arrangement actually holds rather than being asserted.
+ * `addedAgainstEveryParent` is #444's merge rule: the history pass scans each pushed commit, and a
+ * merge answers only for what none of its parents had. The runner's walk of the history itself is
+ * proven end to end in `secret-scan-commits.test.ts`.
  */
-function shape(...pieces: string[]): string {
-  return pieces.join('');
-}
 
 /**
  * One fixture per shape the scanner knew before #443. `MODERN_KEYS` below holds the shapes #443
@@ -536,12 +528,40 @@ describe('binaryPaths', () => {
   });
 });
 
+describe('addedAgainstEveryParent', () => {
+  const OWN = `const own = '${GITHUB_TOKEN}';`;
+  const BROUGHT_IN = `const side = '${OPENAI_KEY}';`;
+
+  it('takes the one list of a commit with one parent as it stands', () => {
+    expect(addedAgainstEveryParent([[OWN, BROUGHT_IN]])).toEqual([OWN, BROUGHT_IN]);
+  });
+
+  it('keeps what a merge adds against every parent, and drops what one parent already had', () => {
+    // Against the first parent the merge adds its own line and the side it brought in. Against the
+    // second, which is that side, it adds its own line alone.
+    expect(addedAgainstEveryParent([[OWN, BROUGHT_IN], [OWN]])).toEqual([OWN]);
+  });
+
+  it('holds an octopus merge to every parent, not only the first two', () => {
+    expect(addedAgainstEveryParent([[OWN, BROUGHT_IN], [OWN, BROUGHT_IN], [OWN]])).toEqual([OWN]);
+  });
+
+  it('reads no lists as nothing added', () => {
+    expect(addedAgainstEveryParent([])).toEqual([]);
+  });
+});
+
 describe('the files that describe credential shapes', () => {
   it('carry no credential-shaped line of their own', () => {
-    // These three are the files most likely to trip the scanner by accident, because credential
+    // These are the files most likely to trip the scanner by accident, because credential
     // shapes are their whole subject — and a fixture written out in full here would block every
     // commit and every publish from the moment it landed.
-    const files = ['tests/secret-scan.test.ts', 'scripts/secretScan.ts', 'scripts/secret-scan.ts'];
+    const files = [
+      'tests/secret-scan.test.ts',
+      'tests/secret-scan-commits.test.ts',
+      'scripts/secretScan.ts',
+      'scripts/secret-scan.ts',
+    ];
     for (const file of files) {
       const suspect = readFileSync(resolve(process.cwd(), file), 'utf8')
         .split('\n')
