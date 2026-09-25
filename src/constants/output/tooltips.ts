@@ -84,7 +84,7 @@ export const OUTPUT_TOOLTIPS = {
 
   styleReference:
     'A published game whose art direction this sheet is drawn to match. Choosing one is a template: it sets the render style, surface detail, component size, outline, lighting, projection, camera elevation, target machine and colour together, and each stays yours to change afterwards.\n\n' +
-    'The prompt then carries what those controls have no room for: the tile grid the art sat on, the resolution it was authored at, and how many facings were drawn against how many the engine flipped. The game’s own name is a separate switch below.\n\n' +
+    'The prompt then carries what those controls have no room for: the tile grid the art sat on, the resolution it was authored at, and how its figures and colours were built. It leaves Directions Covered alone. The game’s own name is a separate switch below.\n\n' +
     'A look is offered only where your subject can be drawn under the camera it was rendered under, so an interface widget is shown only the flat front-on references.\n\n' +
     NONE_LEAVES_SETTINGS_ALONE,
   nameStyleReference:
