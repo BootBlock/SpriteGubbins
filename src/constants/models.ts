@@ -169,7 +169,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'CHATGPT_5_6_SOL',
     name: 'ChatGPT 5.6 Sol (OpenAI)',
     description:
-      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. ChatGPT Images 2.5 is what renders behind that call. OpenAI say that image surface is on all ChatGPT tiers, and that images with thinking is on Plus, Pro and Business with Enterprise and Edu to come — Sol itself is a paid-plan model either way. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
+      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names each part the call must carry unshortened. ChatGPT Images 2.5 is what renders behind that call. OpenAI say that image surface is on all ChatGPT tiers, and that images with thinking is on Plus, Pro and Business with Enterprise and Edu to come — Sol itself is a paid-plan model either way. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
     // ChatGPT's own image surface, which is where a person rather than an API client reaches this
     // model. OpenAI announce it as “ChatGPT Images 2.5” and the page is indexed under that name.
     // https://openai.com/index/introducing-chatgpt-images-2-5/

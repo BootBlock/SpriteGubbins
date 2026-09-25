@@ -152,12 +152,14 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * name the prose to cut first — and that included the closing `RENDER-CRITICAL INVARIANTS` section,
  * which `constants/promptTemplate.ts` says exists because the renderer "never sees anything but what
  * survived the hand-off", and section 3's ledger of the one-sided features this subject carries. Those
- * are the left-and-right rules for gear drawn on one flank, and the traced run above is the evidence
- * that an unnamed block is the one that gets compressed. Both are gated, so both entries are too: the
- * invariants on `sections.has('INVARIANTS')`, which is the walk that numbered the prompt, and the
- * ledger on `oneSidedFeatures`. The closing sentence counts nothing — "never anything in that list" —
- * because a count written beside a list whose length varies is a second statement of one fact.
- * Whether naming them changes what a delivered sheet holds is not measured (#327).
+ * are the left-and-right rules for gear drawn on one flank. In the traced run above the block that
+ * was lost was one the directive did not name, though the subject's-left rule survived unnamed in the
+ * same run, so naming these two rests on that one run rather than on a measurement of them, and
+ * whether it changes what a delivered sheet holds is not measured (#327). Both are gated, so both
+ * entries are too: the invariants on `sections.has('INVARIANTS')`, which is the walk that numbered the
+ * prompt, and the ledger on `oneSidedFeatures`. The closing sentence counts nothing — "never anything
+ * in that list" — because a count written beside a list whose length varies is a second statement of
+ * one fact.
  *
  * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
  * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
@@ -234,10 +236,10 @@ export function wrapForSol(
   // the list never names a block the prompt does not carry.
   const carried = [
     `- the numbered items of section ${citeSection(sections, 'CONTRACT')}`,
-    `- the object yaws in section ${citeSection(sections, 'CAMERA')}`,
     oneSidedFeatures
       ? `- the block in section ${citeSection(sections, 'CAMERA')} headed “${ONE_SIDED_FEATURES_HEADING}”`
       : '',
+    `- the object yaws in section ${citeSection(sections, 'CAMERA')}`,
     `- the inventory in section ${citeSection(sections, 'INVENTORY')}`,
     sections.has('INVARIANTS')
       ? `- the render-critical invariants in section ${citeSection(sections, 'INVARIANTS')}`

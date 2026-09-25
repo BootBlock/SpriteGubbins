@@ -243,8 +243,8 @@ describe('wrapForModel', () => {
     expect(prompt).toContain('You are not the model that draws this sheet');
     // Naming the parts is the point — a bare "do not summarise" gives it nothing to protect when it
     // does have to shorten something.
-    expect(prompt).toContain('- the numbered items of section 0\n- the object yaws in section 3\n');
-    expect(prompt).toContain('- the inventory in section 4\n');
+    expect(prompt).toContain('- the numbered items of section 0\n');
+    expect(prompt).toContain('- the object yaws in section 3\n- the inventory in section 4\n');
   });
 
   it('protects the chirality rules the template restates for the renderer', () => {
@@ -283,6 +283,7 @@ describe('wrapForModel', () => {
     );
 
     expect(single).not.toContain('render-critical invariants');
+    expect(single).not.toContain(ONE_SIDED_FEATURES_HEADING);
     expect(typed).not.toContain(ONE_SIDED_FEATURES_HEADING);
     expect(typed).toContain('render-critical invariants');
   });
@@ -473,10 +474,14 @@ describe('wrapForModel', () => {
     ]);
     const sol = wrapForSol('body', true, true, true, shifted);
 
+    expect(sol).toContain('- the numbered items of section 1\n- the block in section 4 headed');
     expect(sol).toContain(
-      '- the numbered items of section 1\n- the object yaws in section 4\n- the block in section 4',
+      [
+        '- the object yaws in section 4',
+        '- the inventory in section 5',
+        '- the render-critical invariants in section 11',
+      ].join('\n'),
     );
-    expect(sol).toContain('- the inventory in section 5\n- the render-critical invariants in section 11');
     expect(sol).toContain('What section 1 states under');
     expect(sol).toContain('Section 3 states figures as well');
     expect(wrapForSeedream('body', shifted)).toContain('precedence order stated in section 1');
