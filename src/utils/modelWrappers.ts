@@ -114,6 +114,13 @@ export function wrapForModel(
      */
     readonly rigGeometry: boolean;
     /**
+     * Whether section 3 emitted its one-sided-feature ledger, from `ONE_SIDED_FEATURES`.
+     *
+     * Read by Sol because the ledger is the per-feature statement of which flank each piece of gear
+     * sits on, and a block Sol is not told to protect is prose it is told to cut.
+     */
+    readonly oneSidedFeatures: boolean;
+    /**
      * Every section name this prompt carries and the number its heading landed on, from
      * `sectionNumbers`.
      *
@@ -130,7 +137,12 @@ export function wrapForModel(
     case 'CHATGPT_5_6_SOL':
       return wrapForSol(
         prompt,
-        { nativeGrid: options.nativeGrid, palette: options.palette, rigGeometry: options.rigGeometry },
+        {
+          nativeGrid: options.nativeGrid,
+          palette: options.palette,
+          rigGeometry: options.rigGeometry,
+          oneSidedFeatures: options.oneSidedFeatures,
+        },
         options.sectionNumbers,
       );
 

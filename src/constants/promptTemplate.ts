@@ -9,11 +9,11 @@
  * it too, so that its native-grid carve-out points at a block Sol forwards rather than at a section
  * number the image model never receives.
  *
- * It, `RIG_GEOMETRY_HEADING` and `SCOPE_AND_PRECEDENCE_HEADING` are the only headings extracted
- * this way, because they are the only ones another file names. A heading cited solely by the prose
- * around it stays written where it is read. All three sit above the template's own documentation
- * rather than between it and the constant, which would leave that long comment attached to a short
- * string.
+ * It, `RIG_GEOMETRY_HEADING`, `SCOPE_AND_PRECEDENCE_HEADING` and `ONE_SIDED_FEATURES_HEADING` are
+ * the only headings extracted this way, because they are the only ones another file names. A heading
+ * cited solely by the prose around it stays written where it is read. All four sit above the
+ * template's own documentation rather than between it and the constant, which would leave that long
+ * comment attached to a short string.
  */
 export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is delivered at';
 
@@ -39,6 +39,15 @@ export const RIG_GEOMETRY_HEADING = 'Piece geometry — the rig these pieces are
  * eight citations of sections it never receives (issue #403).
  */
 export const SCOPE_AND_PRECEDENCE_HEADING = 'Scope and precedence';
+
+/**
+ * The heading of section 3's ledger of the one-sided features this subject carries.
+ *
+ * `utils/modelWrapperText/sol.ts` names it among what Sol must forward to the image tool as written,
+ * for the reason `NATIVE_GRID_HEADING` is extracted: a pointer at a heading that has since been
+ * reworded reads as an instruction rather than as a fault.
+ */
+export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject carries';
 
 /**
  * The prompt, before substitution.
@@ -116,7 +125,9 @@ export const SCOPE_AND_PRECEDENCE_HEADING = 'Scope and precedence';
  * document: OpenAI's image guidance says outright to *repeat any requirement that must stay fixed*,
  * and `utils/modelWrapperText/sol.ts` records why that guidance and the *lean prompt* guidance are
  * both true — they address the model reading this specification and the model rendering from it, and
- * the second of those never sees anything but what survived the hand-off.
+ * the second of those never sees anything but what survived the hand-off. That is why the Sol
+ * directive names this section, and section 3's one-sided-feature ledger, among what it may not
+ * shorten: a block it does not name is prose it is told to cut first.
  *
  * **That closing section carries the directional invariants and nothing else, and the omissions are
  * the decision.** It is gated on `MULTI_DIRECTION`, and it does not restate the count, the
@@ -655,7 +666,7 @@ one-sided feature stays one-sided, and where a turn takes it out of view, lettin
 correct answer.
 [IF:ONE_SIDED_FEATURES]
 
-### The one-sided features this subject carries
+### ${ONE_SIDED_FEATURES_HEADING}
 
 Section [SEC:SUBJECT] names the following, and each is on the subject’s left by the rule above. This is not a
 summary of that rule but the answer it produces for this subject, so draw each one exactly as stated
