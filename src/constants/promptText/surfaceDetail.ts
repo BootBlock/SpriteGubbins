@@ -1,6 +1,6 @@
 import type { OutputConfig, SurfaceDetail } from '../../types/output.ts';
 import { RENDER_STYLE_TRAITS } from './renderStyleTraits.ts';
-import { resolvePaletteLimit } from './styleSettings.ts';
+import type { StyleSettings } from '../../types/renderStyleTraits.ts';
 
 /** How much internal detail the sheet carries, in the prose the prompt carries. */
 export const SURFACE_DETAIL_TEXT: Readonly<Record<SurfaceDetail, string>> = {
@@ -25,7 +25,8 @@ const PIXEL_TEXTURED_TEXT =
 const INSIDE_THE_LIMIT = ', still inside the palette limit';
 
 /**
- * The surface-detail line, given the configuration it sits in and whether a palette is pinned.
+ * The surface-detail line, given the configuration it sits in, the settings its render style
+ * resolved — `styleSettingsFor` — and whether a palette is pinned.
  *
  * **The limit clause is dropped where there is no limit.** It was fixed wording, so a sheet with no
  * pinned palette and an `UNRESTRICTED` budget read "still inside the palette limit" two lines above
@@ -33,13 +34,13 @@ const INSIDE_THE_LIMIT = ', still inside the palette limit';
  * the budget is the one the render style lets the sheet be drawn under, which the budget line states.
  */
 export function surfaceDetailDescription(
-  output: Pick<OutputConfig, 'surfaceDetail' | 'renderStyle' | 'paletteLimit'>,
+  { surfaceDetail, renderStyle }: Pick<OutputConfig, 'surfaceDetail' | 'renderStyle'>,
+  settings: StyleSettings,
   pinned: boolean,
 ): string {
-  const { surfaceDetail, renderStyle } = output;
   if (surfaceDetail !== 'TEXTURED') return SURFACE_DETAIL_TEXT[surfaceDetail];
   const base =
     RENDER_STYLE_TRAITS[renderStyle].contour === 'PIXEL' ? PIXEL_TEXTURED_TEXT : SURFACE_DETAIL_TEXT.TEXTURED;
-  const limited = pinned || resolvePaletteLimit(renderStyle, output.paletteLimit) !== 'UNRESTRICTED';
+  const limited = pinned || settings.paletteLimit !== 'UNRESTRICTED';
   return limited ? `${base}${INSIDE_THE_LIMIT}` : base;
 }

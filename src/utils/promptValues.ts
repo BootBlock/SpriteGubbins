@@ -132,7 +132,7 @@ export function promptValues(
     // Worded for the style, and for whether the sheet has a colour limit to stay inside: `TEXTURED`
     // said "still inside the palette limit" beside "no colour budget to hold to", and asked a pixel
     // sheet for the surface texturing its own pixel discipline forbids. See `surfaceDetailDescription`.
-    SURFACE_DETAIL_DESCRIPTION: surfaceDetailDescription(output, palette !== null),
+    SURFACE_DETAIL_DESCRIPTION: surfaceDetailDescription(output, styleSettings, palette !== null),
     // Takes the same answer the target-size line does, because the two are printed one after the
     // other and `CUSTOM` is the profile that defers to that line. Left as the flat lookup, it told
     // the generator to work to a component size where one is stated, directly above a line stating a

@@ -3081,7 +3081,7 @@ describe('generatePrompt — the machine and its palette', () => {
     );
 
     // The shared configuration is a pixel sheet, so both lines are the pixel contour's wording.
-    const black = promptText.OUTLINE_TEXT.PIXEL.PURE_BLACK_OUTLINE ?? '';
+    const black = promptText.outlineDescription(OUTPUT.renderStyle, 'PURE_BLACK_OUTLINE', null);
     expect(onBlack).toContain(
       `- Edge / outline treatment: ${promptText.OUTLINE_BESIDE_BLACK_KEY_TEXT.PIXEL}`,
     );

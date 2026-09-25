@@ -182,8 +182,9 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       ...DEFAULT_IMAGE_CONFIG,
       // An untextured pass whose only question is whether the volumes read. The style states the
       // surface itself — one material, no colour budget, no outline — so the three settings that
-      // would have said so are withdrawn, and a hard key light is what is left to read the volumes
-      // by. It is the one surface setting a clay pass keeps, and the reason it is set here.
+      // would have said so are withdrawn, and one fixed key light is what is left to read the
+      // volumes by. The style takes that light whatever is stored, and it is written here so the
+      // preset carries the lighting its prompt states.
       renderStyle: 'CLAY_RENDER',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       rigMode: 'CUTOUT_RIG',

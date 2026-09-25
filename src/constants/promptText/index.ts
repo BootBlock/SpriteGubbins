@@ -37,8 +37,6 @@ export {
   lightingModelsFor,
   outlinesFor,
   paletteLimitsFor,
-  resolveLighting,
-  resolveOutline,
   resolvePaletteLimit,
   styleSettingsFor,
 } from './styleSettings.ts';

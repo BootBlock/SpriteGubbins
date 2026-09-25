@@ -1,5 +1,6 @@
 import { OUTLINE_STYLES, PALETTE_LIMITS } from '../../types/output.ts';
 import type { RenderStyle } from '../../types/rendering.ts';
+import { spokenList } from '../../utils/spokenList.ts';
 import { lightingModelsFor, outlinesFor, paletteLimitsFor, validationPassFor } from '../promptText/index.ts';
 
 /**
@@ -12,11 +13,6 @@ import { lightingModelsFor, outlinesFor, paletteLimitsFor, validationPassFor } f
  * reads as a control that failed to render, which is the reason `SheetFields` names the sheet modes
  * an assembly base withholds.
  */
-
-/** Joins two or more names as a sentence lists them: “a”, “a and b”, “a, b and c”. */
-function listed(names: readonly string[]): string {
-  return names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names.at(-1) ?? ''}`;
-}
 
 /**
  * What the Render Style control says once the chosen style has withdrawn controls below it, or `''`
@@ -35,7 +31,7 @@ export function renderStyleWithdrawal(style: RenderStyle): string {
     const withdrawn = ['surface detail', 'the colour budget', 'the outline system'];
     if (lighting.length === 0) withdrawn.push('the lighting model');
     sentences.push(
-      `A validation pass: it states the surface itself, so ${listed(withdrawn)} withdraw, and the prompt carries what the pass withholds in their place.`,
+      `A validation pass: it states the surface itself, so ${spokenList(withdrawn)} withdraw, and the prompt carries what the pass withholds in their place.`,
     );
   }
   if (lighting.length === 1) {
@@ -58,7 +54,7 @@ export function outlineWithdrawal(style: RenderStyle): string {
   if (offered.length === 0) return '';
   const withheld = OUTLINE_STYLES.filter((outline) => !offered.includes(outline));
   if (withheld.length === 0) return '';
-  return `${style} names its own contour line, so this chooses the colour of that line, and ${listed(withheld)} ${withheld.length === 1 ? 'is' : 'are'} not offered.`;
+  return `${style} names its own contour line, so this chooses the colour of that line, and ${spokenList(withheld)} ${withheld.length === 1 ? 'is' : 'are'} not offered.`;
 }
 
 /**
@@ -70,5 +66,5 @@ export function outlineWithdrawal(style: RenderStyle): string {
 export function paletteLimitWithdrawal(style: RenderStyle): string {
   const withheld = PALETTE_LIMITS.filter((limit) => !paletteLimitsFor(style).includes(limit));
   if (withheld.length === 0) return '';
-  return `${style} names its colour range in its own description, so ${listed(withheld)} ${withheld.length === 1 ? 'is' : 'are'} not offered.`;
+  return `${style} names its colour range in its own description, so ${spokenList(withheld)} ${withheld.length === 1 ? 'is' : 'are'} not offered.`;
 }

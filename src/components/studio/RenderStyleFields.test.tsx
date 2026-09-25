@@ -89,8 +89,10 @@ describe('RenderStyleFields', () => {
  * `SILHOUETTE_ONLY` states one flat fill, so each is already the whole answer about the surface. The
  * compiler drops surface detail, the colour budget and the outline from section 2 behind them — and
  * the lighting model behind the silhouette, which has nowhere for a key light to land — so a control
- * left on screen would be offering a setting the prompt does not carry. Same three properties as the
- * budget above: it goes, the value survives, and the page says why.
+ * left on screen would be offering a setting the prompt does not carry. The clay pass withdraws the
+ * lighting control for a different reason: its prompt states one fixed key light, so the control
+ * would offer one option. Same three properties as the budget above: it goes, the value survives,
+ * and the page says why.
  */
 const SURFACE = 'Surface Detail Intensity';
 const OUTLINE = 'Outline System';

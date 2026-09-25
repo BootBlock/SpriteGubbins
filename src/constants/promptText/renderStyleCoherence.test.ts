@@ -99,8 +99,9 @@ const RULES: readonly Rule[] = [
 describe('section 2 of every stored style combination', () => {
   it('states no line that contradicts the style beside it', () => {
     const failures: string[] = [];
-    // How many compiled combinations each rule applied to. A rule whose phrase no style states any
-    // more would pass by never running, so each has to have been asked at least once.
+    // How many compiled combinations each rule compared a line on. A rule whose phrase no style
+    // states any more, or whose line is always dropped, would pass by never running, so each has to
+    // have compared at least once.
     const applied = new Map<string, number>();
 
     for (const renderStyle of RENDER_STYLES) {
@@ -127,8 +128,8 @@ describe('section 2 of every stored style combination', () => {
                   // A line the template dropped cannot contradict anything, except the lighting line a
                   // shaded style needs, which the rule's own `^$` names.
                   if (!rule.when.test(lines.style)) continue;
-                  applied.set(rule.name, (applied.get(rule.name) ?? 0) + 1);
                   if (stated === '' && !rule.forbids.test('')) continue;
+                  applied.set(rule.name, (applied.get(rule.name) ?? 0) + 1);
                   if (rule.forbids.test(stated)) {
                     failures.push(
                       `${rule.name}: ${renderStyle} ${outlineStyle} ${lightingModel} ${paletteLimit} ${surfaceDetail} ${backgroundKey} — “${stated}”`,
