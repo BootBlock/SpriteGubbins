@@ -7,7 +7,7 @@ import { LockedSwatches } from './LockedSwatches.tsx';
 /**
  * The cap, which is the only judgement this component makes.
  *
- * A lock taken with no colour budget in force can hold thousands of entries, and the failure worth
+ * A lock can hold up to 256 entries, four times what the strip shows, and the failure worth
  * pinning is the silent one: a strip that shows the first sixty-four and says nothing about the rest
  * reads as a palette of sixty-four.
  */

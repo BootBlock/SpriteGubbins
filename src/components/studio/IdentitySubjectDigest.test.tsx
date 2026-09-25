@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
@@ -101,7 +102,18 @@ describe('IdentitySubjectDigest', () => {
 
     expect(useOutputStore.getState().output.identityLock).toBe(DESCRIBED);
     expect(useUIStore.getState().toastMessage).toBe(
-      'The subject has none of those fields filled in — the identity lock is unchanged',
+      'The subject leaves every one of those fields empty or declared absent — the identity lock is unchanged',
     );
+  });
+
+  it('reads a declared absence against the category the subject is written for', () => {
+    // CREATURE's default opens with `clothing: NONE`, its pool's declared absence, so the first press
+    // on a fresh CREATURE is the one that must not state it as a feature to reproduce exactly.
+    useSubjectStore.setState({ category: 'CREATURE', subject: defaultSubjectFor('CREATURE') });
+    render(<IdentitySubjectDigest />);
+    press();
+
+    const features = /(?:^|; )Features: ([^;]*)/.exec(useOutputStore.getState().output.identityLock)?.[1];
+    expect(features?.split(', ')).toEqual(['Triple Jaw Mandibles', 'Bioluminescent Veins']);
   });
 });

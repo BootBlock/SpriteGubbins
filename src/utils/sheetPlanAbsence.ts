@@ -40,6 +40,21 @@ export function declaresAbsence(category: SubjectCategory, key: DeclinableFieldK
 }
 
 /**
+ * The fields this subject has declined on this category: each of {@link absentFieldsOf} whose value
+ * {@link declaresAbsence} recognises.
+ *
+ * The one reading of *which attributes the subject has said it has none of*, so that the sheet plan
+ * dropping the declined entries and the identity digest leaving the declined values unstated cannot
+ * come to disagree about the same subject.
+ */
+export function declinedFieldsOf(
+  category: SubjectCategory,
+  subject: SheetSubject,
+): readonly DeclinableFieldKey[] {
+  return absentFieldsOf(category).filter((key) => declaresAbsence(category, key, subject[key]));
+}
+
+/**
  * The plan as this subject actually draws it: the entries a subject declaring an absence has
  * declined, taken out.
  *
@@ -78,7 +93,7 @@ export function declaresAbsence(category: SubjectCategory, key: DeclinableFieldK
  * must not.
  */
 export function planAsDrawn(plan: SheetPlan, category: SubjectCategory, subject: SheetSubject): SheetPlan {
-  const declined = absentFieldsOf(category).filter((key) => declaresAbsence(category, key, subject[key]));
+  const declined = declinedFieldsOf(category, subject);
   if (declined.length === 0) return plan;
 
   const groups = plan.groups

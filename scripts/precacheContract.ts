@@ -896,22 +896,37 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2425 leaves **0.44 KiB**, the smallest whole figure over the build.
  *
- * **Raised from 2425 by the saved row's Move button** (issue #354). The project dropdown on a saved
+ * **Raised from 2425 by the palette lock's ceiling** (issue #341), which refuses a lock past
+ * `MAX_PALETTE_ENTRIES` colours and files the lock's entries on the OKLab lattice `mergeColors`
+ * already walked, now shared as `oklabLattice`. Measured against `main` at `f0535ad`, rebuilt from
+ * the same lockfile, with the ceiling forced to zero in each tree so both figures are the ones
+ * `assertPrecacheContract` receives: **2424.56 KiB** on `main` and **2426.33** here, a delta of
+ * **1.77** that crossed a ceiling the base sat 0.44 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets` listings, 0.63 KiB
+ * lands in each of `quantiseWorker` and `autoTuneWorker`, which both carry the pipeline and so each
+ * carry the lattice and the lock lookup; 0.53 in `QuantiseTab`, which is the notice that names the
+ * ceiling and the panel's check for it; and 0.03 in `useUIStore`, where the guidance cards are
+ * bundled, for the tooltip clause that lists it. A shared chunk moved 0.48 KiB out of `database` and
+ * 0.46 into `quantiseDials`, and `index` and `StudioTab` lost 0.03 between them.
+ *
+ * 2427 leaves **0.67 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2427 by the saved row's Move button** (issue #354). The project dropdown on a saved
  * preset or set moved it on every `change`, which a closed native select fires on each arrow key, so
  * a keyboard reader filed it under the first project they passed and lost their place with the row.
- * The dropdown now chooses and a Move button commits. Measured against `main` at `f0535ad`, rebuilt
+ * The dropdown now chooses and a Move button commits. Measured against `main` at `b48a5fa`, rebuilt
  * from the same lockfile, with the ceiling forced to zero in each tree so both figures are the ones
- * `assertPrecacheContract` receives: **2424.56 KiB** on `main` and **2426.04** here, a delta of
- * **1.48** that crossed a ceiling the base sat 0.44 under. No file was added to or removed from
+ * `assertPrecacheContract` receives: **2426.45 KiB** on `main` and **2427.94** here, a delta of
+ * **1.49** that crossed a ceiling the base sat 0.55 under. No file was added to or removed from
  * `PRECACHE_SHAPES`. Comparing the two `dist/assets` listings summed by chunk name, 0.89 KiB lands in
  * `QuantisePresetRow`, the chunk `ProjectMoveField` is bundled into; 0.38 net between
  * `ProjectSelectField` and `useUIStore`, which the bundler re-split (5.30 out of one, 5.68 into the
  * other) and which holds the four guidance cards; 0.11 in `quantiseDials`; 0.10 in
- * `useConfirmInPlace`, where `keepFocusThrough` now sits; and 0.01 in the rest.
+ * `useConfirmInPlace`, where `keepFocusThrough` now sits; and 0.01 in `ProjectsTab`.
  *
- * 2427 leaves **0.96 KiB**, the smallest whole figure over the build.
+ * 2428 leaves **0.06 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2427;
+export const PRECACHE_CEILING_KIB = 2428;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
