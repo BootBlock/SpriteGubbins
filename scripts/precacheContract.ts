@@ -1003,18 +1003,18 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * the slider stayed live and its card said only the palette's entries were exempt. The slider now
  * takes a stated reason from `mergeIsExempt`, which moved to a module of its own so the panel and
  * the guide can ask it without bundling the pipeline, and `RangeField` gained the `disabledReason`
- * the other field primitives carry. Measured against `main` at `88e0522`, rebuilt from the same
+ * the other field primitives carry. Measured against `main` at `5606d76`, rebuilt from the same
  * lockfile, with the ceiling forced to zero in each tree so both figures are the ones
- * `assertPrecacheContract` receives: **2433.46 KiB** on `main` and **2434.52** here, a delta of
- * **1.06** that crossed a ceiling the base sat 0.54 under. No file was added to or removed from
+ * `assertPrecacheContract` receives: **2433.99 KiB** on `main` and **2435.06** here, a delta of
+ * **1.07** that crossed a ceiling the base sat 0.01 under. No file was added to or removed from
  * `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets` listings summed by
  * chunk name, 0.71 KiB lands in `QuantiseTab`, where the panel, the slider and the guide are
  * bundled, and 0.35 in `quantiseDials`, which holds the quantiser's guidance copy. It is component
  * code and user-facing copy.
  *
- * 2435 leaves **0.48 KiB**, the smallest whole figure over the build.
+ * 2436 leaves **0.94 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2435;
+export const PRECACHE_CEILING_KIB = 2436;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
