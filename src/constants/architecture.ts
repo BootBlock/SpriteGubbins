@@ -46,7 +46,7 @@ export const ARCHITECTURE_SECTIONS: readonly ArchitectureSection[] = [
   },
   {
     heading: '9. Offline first',
-    body: 'The application shell, its styles and the SQLite WebAssembly binary are all precached, so the studio works with no network at all and can be installed as a standalone app. A new build takes over as soon as it has downloaded, reloading the page — safe here because everything you have typed is already in the local database rather than held in the page.',
+    body: 'The application shell, its styles and the SQLite WebAssembly binary are all precached, so the studio works with no network at all and can be installed as a standalone app. A new build waits until you start it from the notice under the header, because a reload clears what is only on screen, such as a sheet in the Quantise tab. Other open tabs keep the build they started with, and its files, until you reload them.',
   },
   {
     heading: '10. Design tokens and accessibility',

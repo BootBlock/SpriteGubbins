@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { TOAST_DURATION_MS, TOAST_EXIT_MS } from '../constants/ui.ts';
+import type { AppUpdate } from '../types/appUpdate.ts';
 import type { BeforeInstallPromptEvent } from '../types/pwa.ts';
 import type { AppTab, ToastTarget } from '../types/ui.ts';
 
 /**
- * The shell: which view is showing, what the toast says, which overlay is open, and whether the
- * browser has offered an install.
+ * The shell: which view is showing, what the toast says, which overlay is open, whether the browser
+ * has offered an install, and whether a newer build of the app is waiting.
  *
  * Everything here is chrome. No domain state lives in this store, which is why the studio can be
  * re-rendered by a category change without the header caring, and vice versa.
@@ -73,6 +74,8 @@ export interface UIState {
   readonly isSettingsModalOpen: boolean;
   /** The deferred `beforeinstallprompt` event, or `null` when the app can't offer an install. */
   readonly deferredPWAInstallPrompt: BeforeInstallPromptEvent | null;
+  /** Where this tab stands against the newest build, written by `src/workers/registerAppUpdates.ts`. */
+  readonly appUpdate: AppUpdate;
 
   setActiveTab(tab: AppTab): void;
   /**
@@ -145,6 +148,7 @@ export interface UIState {
   /** Open or close the settings dialog. Closes whichever other overlay was open. */
   toggleSettingsModal(): void;
   setInstallPrompt(prompt: BeforeInstallPromptEvent | null): void;
+  setAppUpdate(update: AppUpdate): void;
 }
 
 /**
@@ -205,6 +209,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   isToastLeaving: false,
   ...ALL_OVERLAYS_CLOSED,
   deferredPWAInstallPrompt: null,
+  appUpdate: 'current',
 
   setActiveTab: (activeTab) => {
     hasNavigated = true;
@@ -270,6 +275,10 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   setInstallPrompt: (deferredPWAInstallPrompt) => {
     set({ deferredPWAInstallPrompt });
+  },
+
+  setAppUpdate: (appUpdate) => {
+    set({ appUpdate });
   },
 }));
 

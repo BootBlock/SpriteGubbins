@@ -1,5 +1,8 @@
+import { SAVED_WORK_SURVIVES_A_RELOAD } from '../guidanceSentences.ts';
+
 /**
- * Guidance for the shell's own controls: the header's four actions, and the install offer.
+ * Guidance for the shell’s own controls: the header’s four actions, the install offer and the update
+ * notice.
  *
  * These are the controls reachable from every view, so each entry says what the control opens or
  * does, what it touches, and — for the three that touch nothing the generator ever sees — that it
@@ -32,7 +35,18 @@ export const CHROME_TOOLTIPS = {
 
   reloadApp:
     'Fetches the app again from the beginning. This view’s code is fetched separately from the rest of the app and could not be loaded, and a failed fetch is remembered for the session, so pressing the tab again will not help.\n\n' +
-    'Nothing you have saved is affected: your prompt history, presets and studio state are in this browser’s storage and are read back as the app starts.',
+    `Nothing you have saved is affected. ${SAVED_WORK_SURVIVES_A_RELOAD}`,
+
+  startUpdate:
+    `Starts the new version of Sprite Gubbins and reloads this tab onto it. ${SAVED_WORK_SURVIVES_A_RELOAD}\n\n` +
+    'What is only on screen is cleared: a sheet in the Quantise tab, with its palette lock and sprite names, and every undo history. Other tabs keep the version they are running until you reload them.',
+
+  reloadOntoUpdate:
+    `Reloads this tab onto the version another tab started. ${SAVED_WORK_SURVIVES_A_RELOAD}\n\n` +
+    'What is only on screen in this tab is cleared: a sheet in the Quantise tab, with its palette lock and sprite names, and every undo history. Until you reload, this tab goes on working on the version it started with.',
+
+  dismissUpdate:
+    'Takes this notice down, and this tab keeps the version it is running. The new version starts when you reload from this notice in any tab, or once every tab of Sprite Gubbins is closed and you open it again.',
 
   dismissInstall:
     'Takes this offer down for now without installing anything. Nothing is stored about the refusal, so the browser is free to offer again on a later visit, and the app is unchanged in the meantime.',

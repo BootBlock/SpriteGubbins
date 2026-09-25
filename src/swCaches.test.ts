@@ -45,8 +45,15 @@ describe('service worker activate', () => {
 
     await worker.dispatch('activate');
 
+    // With no window open to need it, the superseded build goes at once. The ledger that records
+    // superseded builds is the app's own: see `src/swLifecycle.test.ts`.
     expect([...worker.stores.keys()].sort()).toEqual(
-      [cache, 'other-app-shell-v3', 'workbox-precache-v2-https://bootblock.github.io/OtherApp/'].sort(),
+      [
+        cache,
+        'other-app-shell-v3',
+        'sprite-gubbins-retired-precaches',
+        'workbox-precache-v2-https://bootblock.github.io/OtherApp/',
+      ].sort(),
     );
   });
 });

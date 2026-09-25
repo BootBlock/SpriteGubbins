@@ -33,7 +33,7 @@ import { callSitesPassing, callSitesWrappingAttribute } from './jsxCallSites.ts'
  */
 
 /** Every `<ControlTooltip>` the app renders, counted through the `text` its props type requires. */
-const CALL_SITE_COUNT = 85;
+const CALL_SITE_COUNT = 87;
 
 /**
  * Where the wrapped control is written with `disabled`, by the file that renders each.

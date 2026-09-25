@@ -2,7 +2,7 @@
 
 > **Status:** 📘 REFERENCE — all five phases shipped: build system and PWA shell, design tokens, domain types and option pools, the prompt compiler, SQLite-on-OPFS persistence (in a worker — see the note on §2.4 below) with its localStorage fallback, the five Zustand stores, the full component tree and app assembly, and the verification pass. Kept here as the durable blueprint the implementation is held to, not as open work.
 >
-> Four places where the implementation knowingly departs from the text below, each verified in a real browser:
+> Five places where the implementation knowingly departs from the text below, each verified in a real browser:
 >
 > - **§2.4 / Task 1.3.4 — SQLite cannot run on the main thread.** The SAH-pool VFS needs `FileSystemFileHandle.prototype.createSyncAccessHandle`, which browsers expose only inside a worker, so the database lives in `src/db/sqliteWorker.ts` behind a message bridge rather than being opened in the page.
 > - **The atlas calculator has no power-of-two check**, wherever the text below asks for one — the
@@ -24,6 +24,7 @@
 >   waste is the one thing the metric tiles cannot state; the hover readout is replaced by a
 >   filled/empty count in the heading, which is text rather than a pointer-only affordance.
 > - **§2.4 — `prompt_history` carries two more columns than the DDL here lists** (`subject_json`, `output_json`). Without them the drawer's "one-click restore" in §4.4 cannot exist: the compiled prompt is a one-way rendering of the studio state, so the state has to be stored alongside it. A row whose stored payloads are missing or unreadable restores to its category's defaults rather than being dropped, because the prompt text is still worth keeping.
+> - **Task 1.3.2 — `registerType` is `'prompt'`, not `'autoUpdate'`** (issue #369). `autoUpdate` reloads every open tab the moment any tab installs a new build, and much of what a reader is doing is only on screen: the sheet in the Quantise tab, its palette lock and sprite names, and every undo history. A new build now waits until the reader starts it from a notice under the header, a tab that did not start it is told rather than reloaded, and the service worker keeps a superseded build's precache while a window that booted from it is still open.
 >
 > The app has since grown past this blueprint, and the places it has are recorded here so a reader is not left comparing the tree against a document that predates them. The first four came off [baseline-prompt-new.md](baseline-prompt-new.md) §10's follow-up list rather than the phases above, and that list is now closed; what comes after it is growth §10 never anticipated either:
 >

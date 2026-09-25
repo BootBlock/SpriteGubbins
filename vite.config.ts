@@ -129,13 +129,14 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      // `autoUpdate` (spec Task 1.3.2): the app holds no unsaved state a swap could lose —
-      // everything the user has typed is already in the local database — so taking the new
-      // build promptly costs nothing, and the isolation bootstrap needs the worker to activate
-      // rather than sit waiting behind a prompt.
-      registerType: 'autoUpdate',
-      // Registration happens in app code via the `virtual:pwa-register` module (main.tsx), so
-      // no registration snippet is injected into index.html.
+      // `prompt`, where spec Task 1.3.2 says `autoUpdate` (issue #369): much of what a reader is
+      // doing is only on screen — the sheet in the Quantise tab, its palette lock and sprite names,
+      // every undo history — and `autoUpdate` reloads every open tab the moment any of them installs
+      // a new build. So a new build waits until the reader starts it; see `src/workers/registerAppUpdates.ts`.
+      // The isolation bootstrap is not held up: a first visit has no earlier worker to wait behind.
+      registerType: 'prompt',
+      // Registration happens in app code via the `virtual:pwa-register` module, in
+      // src/workers/registerAppUpdates.ts, so no registration snippet is injected into index.html.
       injectRegister: null,
       injectManifest: {
         // SQLite's WASM binary is well over Workbox's 2 MiB default single-file cap, and the
