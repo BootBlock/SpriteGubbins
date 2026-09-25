@@ -18,8 +18,7 @@ const STORAGE_LABELS = {
   checking: 'Checking…',
   'sqlite-opfs': 'SQLite, in this browser’s private file system',
   localstorage: 'Your browser’s local storage',
-  memory:
-    'This tab’s memory only — your browser allows no storage, so closing or reloading it loses your work',
+  memory: 'This tab’s memory only — closing or reloading it loses your work',
   'held-elsewhere': 'Open in another tab — close it and reload to reach your library',
   unknown: 'Could not be determined',
 } as const satisfies Record<BackendKind | 'checking' | 'unknown', string>;
