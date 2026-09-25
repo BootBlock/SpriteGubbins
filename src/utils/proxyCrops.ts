@@ -20,10 +20,10 @@ export interface ProxyCrop {
  * answers all of those identically and would rank every candidate the same.
  *
  * Busyness is measured as the summed step between neighbouring pixels, right and down, in the same
- * OKLab the sweep's own score and every colour gate in this tab measure in — so a boundary between
- * two hues at one lightness counts as the detail it is, rather than reading as flat field. A
- * summed-area table answers every window in constant time, so the choice costs a handful of passes
- * over the sheet however many windows are considered.
+ * OKLab and coverage planes the sweep's own score reads — so a boundary between two hues at one
+ * lightness counts as the detail it is, rather than reading as flat field, and so does the edge of a
+ * sprite against a cleared background. A summed-area table answers every window in constant time,
+ * so the choice costs a handful of passes over the sheet however many windows are considered.
  *
  * **Every window starts and ends on a whole number of cells from the sheet's corner**, which is not
  * the same thing as the sheet's own lattice: a sheet's lattice may be phased, so its first boundary
@@ -92,8 +92,8 @@ export function proxyCrops(
 }
 
 /**
- * How far each pixel sits from the pixel right of it and the pixel below it, across all three OKLab
- * axes.
+ * How far each pixel sits from the pixel right of it and the pixel below it, across the three OKLab
+ * axes and coverage.
  *
  * The far column and the far row have no such neighbour and contribute nothing in that direction,
  * which is what a forward difference does at an edge — never a wrap, which would read the opposite
@@ -104,7 +104,7 @@ function stepPlane(image: ImageData): Float64Array {
   const planes = oklabPlanes(image);
   const steps = new Float64Array(width * height);
 
-  for (const plane of [planes.L, planes.a, planes.b]) {
+  for (const plane of [planes.L, planes.a, planes.b, planes.alpha]) {
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const here = plane[y * width + x] ?? 0;
