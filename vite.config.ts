@@ -135,8 +135,8 @@ export default defineConfig({
       // a new build. So a new build waits until the reader starts it; see `src/workers/registerAppUpdates.ts`.
       // The isolation bootstrap is not held up: a first visit has no earlier worker to wait behind.
       registerType: 'prompt',
-      // Registration happens in app code via the `virtual:pwa-register` module (main.tsx), so
-      // no registration snippet is injected into index.html.
+      // Registration happens in app code via the `virtual:pwa-register` module, in
+      // src/workers/registerAppUpdates.ts, so no registration snippet is injected into index.html.
       injectRegister: null,
       injectManifest: {
         // SQLite's WASM binary is well over Workbox's 2 MiB default single-file cap, and the

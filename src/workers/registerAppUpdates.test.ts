@@ -16,10 +16,11 @@ vi.mock('virtual:pwa-register', () => ({ registerSW }));
 /** A stand-in for `navigator.serviceWorker`: a controller that can be swapped, and a registration. */
 class FakeContainer extends EventTarget {
   controller: object | null = {};
+  active: object | null = {};
   waiting: { postMessage: ReturnType<typeof vi.fn> } | null = { postMessage: vi.fn() };
 
   getRegistration() {
-    return Promise.resolve({ waiting: this.waiting });
+    return Promise.resolve({ active: this.active, waiting: this.waiting });
   }
 
   /** A new worker takes control of this tab, as `skipWaiting()` in any tab makes it. */
@@ -78,7 +79,10 @@ describe('registerAppUpdates', () => {
   it('never lets the plugin reload the tab itself', async () => {
     (await load()).registerAppUpdates();
 
-    lastOptions().onNeedReload?.();
+    const { onNeedReload } = lastOptions();
+    // Passed at all is what matters: without it the plugin reloads every tab it has told.
+    expect(onNeedReload).toBeTypeOf('function');
+    onNeedReload?.();
 
     expect(reload).not.toHaveBeenCalled();
   });
@@ -88,15 +92,31 @@ describe('registerAppUpdates', () => {
 
     container.swapController();
 
-    expect(useUIStore.getState().appUpdate).toBe('elsewhere');
+    await vi.waitFor(() => {
+      expect(useUIStore.getState().appUpdate).toBe('elsewhere');
+    });
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('tells a hard-reloaded tab, which has no controller, that another tab moved on', async () => {
+    container.controller = null;
+    (await load()).registerAppUpdates();
+
+    container.swapController();
+
+    await vi.waitFor(() => {
+      expect(useUIStore.getState().appUpdate).toBe('elsewhere');
+    });
     expect(reload).not.toHaveBeenCalled();
   });
 
   it('leaves a first visit’s worker taking control to the isolation bootstrap', async () => {
     container.controller = null;
+    container.active = null;
     (await load()).registerAppUpdates();
 
     container.swapController();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(useUIStore.getState().appUpdate).toBe('current');
     expect(reload).not.toHaveBeenCalled();
@@ -113,6 +133,17 @@ describe('applyAppUpdate', () => {
     expect(container.waiting?.postMessage).toHaveBeenCalledWith(SKIP_WAITING_MESSAGE);
     expect(reload).not.toHaveBeenCalled();
 
+    container.swapController();
+
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('reloads a hard-reloaded tab, which has no controller, once the build it started takes over', async () => {
+    container.controller = null;
+    const { registerAppUpdates, applyAppUpdate } = await load();
+    registerAppUpdates();
+
+    await applyAppUpdate();
     container.swapController();
 
     expect(reload).toHaveBeenCalledOnce();

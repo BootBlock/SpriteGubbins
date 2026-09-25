@@ -29,15 +29,22 @@ export function registerAppUpdates(): void {
   });
   if (!('serviceWorker' in navigator)) return;
 
+  // Whether a build was already installed when this page loaded, which is what makes a worker
+  // taking control an update. On a first visit it is not, and `public/coi-bootstrap.js` reloads for
+  // it, once, to take up the isolation headers. The page's controller cannot answer this alone,
+  // because a hard reload leaves a page uncontrolled while a build is installed.
   const container = navigator.serviceWorker;
-  let controller = container.controller;
+  const hadBuild =
+    container.controller !== null ||
+    container.getRegistration().then((registration) => registration?.active != null);
   container.addEventListener('controllerchange', () => {
-    const previous = controller;
-    controller = container.controller;
-    // A first visit's worker claiming the page is no update: `public/coi-bootstrap.js` reloads
-    // for that one, once, to take up the isolation headers.
-    if (previous === null) return;
-    if (useUIStore.getState().appUpdate === 'starting') window.location.reload();
-    else setAppUpdate('elsewhere');
+    // Checked first: the swap this tab asked for reloads it, whether or not it was controlled.
+    if (useUIStore.getState().appUpdate === 'starting') {
+      window.location.reload();
+      return;
+    }
+    void Promise.resolve(hadBuild).then((updated) => {
+      if (updated) setAppUpdate('elsewhere');
+    });
   });
 }
