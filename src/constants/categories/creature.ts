@@ -1,6 +1,6 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
-  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
   HEX_CODE_PINS_THE_HUE,
   SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
@@ -197,9 +197,9 @@ export const CREATURE: CategoryDefinition = {
       key: 'anatomy',
       label: 'Anatomy Base',
       tooltip:
-        'The body plan the animal is drawn on, and what the generator is told to keep separable. Match it to the Creature Class, because a plan that fights the design produces parts nobody can assemble.\n\n' +
-        ASSEMBLY_BASE_ADDS_NO_COMPONENTS +
-        '\n\nLegs, segments or tentacles that need a sprite slot of their own go in Extra Appendages, the field that adds one.',
+        'The body plan the creature is drawn on, and the pieces it is cut into: `Serpentine Tailless` is a head over body segments, `Octopus Tentacled` a head and a mantle over tentacles, and `Amorphous — No Fixed Limbs` a mass that pushes out pseudopods. Match it to the Creature Class.\n\n' +
+        ASSEMBLY_BASE_CHOOSES_THE_SHEETS +
+        '\n\nA piece the body plan does not draw, such as a sting tail or a second pair of wings, goes in Extra Appendages, the field that adds a slot for it.',
       options: [
         'Quadruped Beast',
         'Hexapod Insect',

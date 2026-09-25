@@ -4,9 +4,10 @@ import type {
   ComponentKind,
   SheetPlan,
   SheetSeries,
+  ViewSheetPlan,
 } from '../../types/components.ts';
-import { spokenList } from '../../utils/spokenList.ts';
 import type { FacingTuple } from './directionalViews.ts';
+import { spokenList } from '../../utils/spokenList.ts';
 import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 import { fixed } from './modePlans.ts';
 import type { ModePlans } from './modePlans.ts';
@@ -103,6 +104,12 @@ export interface VehicleDivision {
     readonly positions: readonly [PartDrawing, PartDrawing];
   } | null;
   readonly implement?: TowedImplement;
+  /**
+   * Which end of each piece the directional views turn is its front, one clause a piece — what the
+   * views' `ViewSheetPlan.landmark` joins. Clauses rather than one sentence, so the towed division adds
+   * its implement's to the side-paired division's without writing theirs out a second time.
+   */
+  readonly landmarks: readonly [string, ...string[]];
 }
 
 /**
@@ -233,12 +240,13 @@ function directionalSheet(
   division: VehicleDivision,
   chunk: FacingTuple,
   chunks: readonly FacingTuple[],
-): SheetPlan {
+): ViewSheetPlan {
   const { access, drive, hull, implement, mount } = division;
 
   return {
     name: chunkName('Directional views', chunk, chunks),
     facings: chunk,
+    landmark: `${division.landmarks.join('; ')}.`,
     assembly: `the complete vehicle seen from each facing, reading as one machine turned rather than several drawings of it, with its ${drive.noun} and ${mount.noun} in matching positions across those views.`,
     targetQuantity: 'ASSEMBLED',
     // The drive and the mount are drawn once per facing in matching positions, which is the camera turning.

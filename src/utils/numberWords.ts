@@ -1,3 +1,5 @@
+import { capitalised } from './capitalised.ts';
+
 /**
  * A count as the word prose spells it with — `spellNumber(14)` is `fourteen`.
  *
@@ -66,8 +68,7 @@ export function spellNumber(count: number): string {
  * a title.
  */
 export function spellNumberCapitalised(count: number): string {
-  const word = spellNumber(count);
-  return word.charAt(0).toUpperCase() + word.slice(1);
+  return capitalised(spellNumber(count));
 }
 
 /** The word, or `undefined` where the count is not a whole number this can name. */

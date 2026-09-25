@@ -49,10 +49,9 @@ describe('the table itself', () => {
   it('leaves TERRAIN every camera, because a cliff face is a landform seen from the side', () => {
     // The category this table must *not* bind, and the one that looks bound:
     // `CATEGORY_DIRECTION_SETS` pins TERRAIN to `SINGLE_FRONT` because a tile has no front to turn
-    // away from, and the facings and the camera are separate questions. `LANDMARK_TEXT.TERRAIN` says
-    // a tile is read from above and then says a landform piece's front is “the exposed face the
-    // camera sees, the rock wall, the cut bank” — and `side-on-volcanic-cliff` is that sheet,
-    // shipped at `ORTHOGRAPHIC_SIDE`.
+    // away from, and the facings and the camera are separate questions. A tile is read from above,
+    // but a landform piece's front is the exposed face the camera sees — the rock wall, the cut bank —
+    // and `side-on-volcanic-cliff` is that sheet, shipped at `ORTHOGRAPHIC_SIDE`.
     expect(CATEGORY_PROJECTIONS.TERRAIN).toEqual(PROJECTIONS);
     expect(supportsProjection('TERRAIN', 'ORTHOGRAPHIC_SIDE')).toBe(true);
   });

@@ -23,8 +23,7 @@ import type { SubjectCategory } from '../types/subject.ts';
  * **Which categories this binds is the whole decision, and it is six.**
  *
  * - **INTERFACE and TERRAIN turn to nothing at all.** A widget is a flat rectangle read straight on;
- *   a tile is laid flat and read from above, and `LANDMARK_TEXT.TERRAIN` says a tile has no front in
- *   as many words, because that `Record` is exhaustive and it was the honest answer. Turning either
+ *   a tile is laid flat and read from above, so it has no front to turn away from. Turning either
  *   yields the drawing the sheet already holds, at an angle the subject does not have — so the set
  *   collapses to `SINGLE_FRONT` for both, which is the only one naming a facing they do have.
  * - **EFFECT keeps every set, and pinning it would delete a deliverable.** A radial burst has no

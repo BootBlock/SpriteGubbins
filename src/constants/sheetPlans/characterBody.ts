@@ -1,4 +1,5 @@
-import type { ComponentEntry, SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { ComponentEntry, SheetPlan, SheetSeries, ViewSheetPlan } from '../../types/components.ts';
+import { capitalised } from '../../utils/capitalised.ts';
 import { slugify } from '../../utils/slugify.ts';
 import { spokenList } from '../../utils/spokenList.ts';
 import { PRACTICAL_COMPONENT_CEILING } from '../promptText/inventory.ts';
@@ -86,12 +87,8 @@ export interface CharacterBody {
   readonly poses: readonly [string, ...string[]];
   /** The limbs, in the order the posed sheets draw them and a split series divides them. */
   readonly chains: readonly [LimbChain, ...LimbChain[]];
-  /**
-   * Which end of each trunk piece is its front, where the trunk is not the head, torso and pelvis
-   * CHARACTER's own landmark sentence names — see `SheetPlan.landmark`. The directional core carries it,
-   * as the one sheet whose pieces are turned.
-   */
-  readonly landmark?: string;
+  /** Which end of each trunk piece is its front — the directional core's `ViewSheetPlan.landmark`. */
+  readonly landmark: string;
 }
 
 /**
@@ -135,11 +132,6 @@ function sidesOf(chain: LimbChain): readonly Side[] {
 /** `left-arm`, `serpent-body` — a chain's identifier on one side, or a segment's component stem. */
 function sided(side: Side, stem: string): string {
   return side === null ? stem : `${side}-${stem}`;
-}
-
-/** `Left arm` from `left arm` — a sentence's first word, or a heading's. */
-function capitalised(words: string): string {
-  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 /** `Left arm`, `Serpent body` — a chain as a heading names it. */
@@ -357,12 +349,16 @@ function poseLibrary(body: CharacterBody): SheetSeries {
  * why the split is by yaw parity. Either way the entries, the count and section 3's yaw list are all
  * written from the same tuple, so they cannot disagree about which views the sheet owes.
  */
-function directionalCore(body: CharacterBody, chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
+function directionalCore(
+  body: CharacterBody,
+  chunk: FacingTuple,
+  chunks: readonly FacingTuple[],
+): ViewSheetPlan {
   return {
     ...FIGURE_SHEET,
     name: chunkName('Directional core', chunk, chunks),
     facings: chunk,
-    ...(body.landmark === undefined ? {} : { landmark: body.landmark }),
+    landmark: body.landmark,
     assembly: `${spokenList(body.trunk.map((piece) => `one ${piece.name}`))} per facing, reading as one body turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.`,
     // The trunk repeated across yaws — the camera turning, not the trunk moving.
     posing: 'UNSTATED',

@@ -32,7 +32,7 @@ const COMPUTED_DESCRIPTIONS = new Set(['DIRECTIONS_DESCRIPTION', 'MIRROR_PAIRS_D
  *
  * The second source a token may be filled from, and it is a *level* rather than an exemption: a fact
  * that varies between the sheets of one category cannot live in a `Record<SubjectCategory, string>`
- * at all, so section 0's scale example is answered on the plan beside `assembly`. Derived from the
+ * at all, so section 0's scale example and section 3's landmark are answered on the plan. Derived from the
  * token rather than listed, so a second fact moved down to the plan is covered the moment its field
  * is named after its token.
  */
@@ -55,8 +55,9 @@ describe('the template itself', () => {
     expect(new Set(tokens).size).toBeGreaterThan(0);
 
     const exported = new Set(Object.keys(promptText));
-    // Any sheet answers the question, since every plan carries every field of the interface; the
-    // default pairing is simply the one nothing else here has to be told about.
+    // The default pairing's first sheet is a sheet of views, so it carries every field either shape of
+    // `SheetPlan` has — a run carries no `landmark` — and it is the one nothing else here has to be
+    // told about.
     const plan = sheetPlanFor('CHARACTER', standardSubject(), DEFAULT_MODE_FOR.CHARACTER, 'FIVE_CLASSIC', 0);
     for (const token of new Set(tokens)) {
       if (COMPUTED_DESCRIPTIONS.has(token)) continue;
@@ -78,8 +79,11 @@ describe('the template itself', () => {
     // make on its own.
     //
     // A symmetric "each side answers at least one token" pair was written here first and half of it
-    // could not fail: sixteen of the seventeen tokens are map-filled, and no realistic edit takes
+    // could not fail: fifteen of the seventeen tokens are map-filled, and no realistic edit takes
     // that count to zero. The asymmetry is the fact worth stating.
+    //
+    // The landmark is the second, because a category's sheets of views stopped sharing their pieces
+    // once a base could choose them (issue #286). `promptValues` reads it off the plan.
     const tokens = new Set(
       [...PROMPT_TEMPLATE.matchAll(/\[DEFINE:([A-Z0-9_]+_DESCRIPTION)\]/g)].map((match) => match[1] ?? ''),
     );
@@ -88,7 +92,7 @@ describe('the template itself', () => {
       .filter((token) => !COMPUTED_DESCRIPTIONS.has(token))
       .filter((token) => Object.hasOwn(plan, planFieldFor(token)));
 
-    expect(planFilled).toEqual(['SCALE_EXAMPLE_DESCRIPTION']);
+    expect(planFilled).toEqual(['SCALE_EXAMPLE_DESCRIPTION', 'LANDMARK_DESCRIPTION']);
   });
 
   it('fills every _LABEL token from a subject field the categories define', () => {

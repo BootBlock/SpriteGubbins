@@ -13,6 +13,15 @@ import type { ModePlans } from './modePlans.ts';
  * and take this one's head, pelvis and poses wherever theirs are the same (issue #284).
  */
 
+/**
+ * The fronts of the head and torso every CHARACTER body has, as clauses of each body's landmark — see
+ * `ViewSheetPlan.landmark`. Written once, because a taur's and a serpent's trunks turn the same head
+ * and torso as the standard one.
+ */
+export const HEAD_LANDMARK =
+  'a head’s front is the face and its rear the back of the skull and the neck socket';
+export const TORSO_LANDMARK = 'a torso’s front is the chest and its rear the spine and shoulder blades';
+
 export const HEAD: TrunkPiece = {
   name: 'head',
   plural: 'Heads',
@@ -45,6 +54,8 @@ export const STANDARD_HUMANOID: CharacterBody = {
     'both a shallow and a deep crouch',
   ],
   chains: [ARM, LEG],
+  // No foot: a foot is the articulation run's, drawn to one facing, and the core never turns one.
+  landmark: `${HEAD_LANDMARK}; ${TORSO_LANDMARK}; a pelvis’s front is the abdomen and its rear the seat and the small of the back.`,
 };
 
 export const CHARACTER_STANDARD_PLANS: ModePlans = characterPlansFor(STANDARD_HUMANOID);

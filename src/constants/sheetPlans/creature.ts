@@ -1,9 +1,6 @@
-import type { ComponentEntry, SheetPlan, SheetSeries } from '../../types/components.ts';
-import type { FacingTuple } from './directionalViews.ts';
-import { chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
-import { FIGURE_ASSEMBLY_FAILURE } from './figureAssemblyFailure.ts';
-import { mirroredLimb } from './mirroredLimb.ts';
-import { RIG_PIECES_OUTRO } from './rigPieces.ts';
+import { creaturePlansFor } from './creatureBody.ts';
+import type { CreatureBody, LimbSegment } from './creatureBody.ts';
+import type { ModePlans } from './modePlans.ts';
 
 /**
  * What a CREATURE sheet asks for, per sheet mode.
@@ -18,9 +15,15 @@ import { RIG_PIECES_OUTRO } from './rigPieces.ts';
  *
  * Limbs are named fore/hind rather than numbered, so a subject with more than four states the extra
  * ones through its additional-anatomy field, where they are counted as their own components.
+ *
+ * **These are the sheets of a four-limbed animal**, and that is a claim about the base rather than about
+ * the category (issue #286). The bases whose bodies have no fore and hind limbs — a serpent, a worm, an
+ * octopus, a fish, a rooted growth and an amorphous mass — declare their own bodies in
+ * `creatureBodies.ts` and `creatureAmorphous.ts`, and `creatureBody.ts` builds every jointed body's
+ * sheets, this one's included.
  */
 
-/** The gaits a full set of a creature's components has to reach, shared by both modes that promise them. */
+/** The gaits a full set of a quadruped's components has to reach, shared by the sheets that promise them. */
 const CREATURE_GAITS =
   'a neutral standing stance; an alert stance; a lowered stalking crouch; a walking gait with opposing limbs; a running gait with full limb extension; and a rearing or lunging pose';
 
@@ -43,333 +46,122 @@ the inventory lists a tail as its own component. Every limb is a component count
 on this sheet or on another of this series, so a trunk piece that arrives wearing one has merged two
 components into one and breaks the count in section [SEC:CONTRACT].`;
 
-export const CREATURE_POSE_LIBRARY: SheetPlan = {
-  name: 'Pose library',
-  facings: 'run',
-  assembly: `${CREATURE_GAITS}.`,
-  targetQuantity: 'ASSEMBLED',
-  // Eight fore and nine hind variants a side: one limb segment per orientation it is drawn at.
-  posing: 'PER_POSITION',
-  scaleExample: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
-  // Not the "figure" CHARACTER keeps and `CATEGORY_ASSEMBLY` and `FIGURE_ASSEMBLY_FAILURE` share with
-  // it: those name a *failure* the two categories have in common, where this is naming the subject
-  // itself, and the word appears nowhere in this category's inventories.
-  scaleUnit: 'a full creature',
-  componentClass: 'creature anatomy',
-  assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
-  groups: [
-    {
-      heading: null,
-      entries: [
-        {
-          label: 'trunk',
-          parts: ['head', 'body', 'hindquarters'],
-          text: '1 head, 1 body, 1 hindquarters, in the primary direction',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-forelimb',
-          parts: [
-            'left-fore-upper-limb-1',
-            'left-fore-upper-limb-2',
-            'left-fore-upper-limb-3',
-            'left-fore-lower-limb-1',
-            'left-fore-lower-limb-2',
-            'left-fore-lower-limb-3',
-            'left-fore-foot-1',
-            'left-fore-foot-2',
-          ],
-          text: '8 left-forelimb articulation variants: upper limb ×3, lower limb ×3, foot or claw ×2',
-          count: 8,
-          kind: 'anatomy',
-        },
-        {
-          label: 'right-forelimb',
-          parts: [
-            'right-fore-upper-limb-1',
-            'right-fore-upper-limb-2',
-            'right-fore-upper-limb-3',
-            'right-fore-lower-limb-1',
-            'right-fore-lower-limb-2',
-            'right-fore-lower-limb-3',
-            'right-fore-foot-1',
-            'right-fore-foot-2',
-          ],
-          text: '8 right-forelimb articulation variants, redrawn for the right side',
-          mirrors: 'the left forelimb',
-          count: 8,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-hindlimb',
-          parts: [
-            'left-hind-upper-limb-1',
-            'left-hind-upper-limb-2',
-            'left-hind-upper-limb-3',
-            'left-hind-lower-limb-1',
-            'left-hind-lower-limb-2',
-            'left-hind-lower-limb-3',
-            'left-hind-foot-1',
-            'left-hind-foot-2',
-            'left-hind-foot-3',
-          ],
-          text: '9 left-hindlimb articulation variants: upper limb ×3, lower limb ×3, foot or claw ×3',
-          count: 9,
-          kind: 'anatomy',
-        },
-        {
-          label: 'right-hindlimb',
-          parts: [
-            'right-hind-upper-limb-1',
-            'right-hind-upper-limb-2',
-            'right-hind-upper-limb-3',
-            'right-hind-lower-limb-1',
-            'right-hind-lower-limb-2',
-            'right-hind-lower-limb-3',
-            'right-hind-foot-1',
-            'right-hind-foot-2',
-            'right-hind-foot-3',
-          ],
-          text: '9 right-hindlimb articulation variants, redrawn for the right side',
-          mirrors: 'the left hindlimb',
-          count: 9,
-          kind: 'anatomy',
-        },
-      ],
-      outro: TRUNK_TERMINATION,
-    },
+/** A forelimb's segments, which the right forelimb shares because it is the same limb redrawn. */
+const FORELIMB: readonly [LimbSegment, ...LimbSegment[]] = [
+  {
+    name: 'upper limb',
+    slug: 'upper-limb',
+    plural: 'Upper limbs',
+    pluralSlug: 'upper-limbs',
+    positions: [
+      { text: 'neutral lowered', slug: 'neutral' },
+      { text: 'forward-diagonal', slug: 'forward-diagonal' },
+      { text: 'raised', slug: 'raised' },
+    ],
+  },
+  {
+    name: 'lower limb',
+    slug: 'lower-limb',
+    plural: 'Lower limbs',
+    pluralSlug: 'lower-limbs',
+    positions: [
+      { text: 'extension-compatible', slug: 'extension' },
+      { text: 'moderate-flexion-compatible', slug: 'moderate-flexion' },
+      { text: 'strong-flexion-compatible', slug: 'strong-flexion' },
+    ],
+  },
+  {
+    name: 'foot or claw',
+    slug: 'foot',
+    plural: 'Feet or claws',
+    pluralSlug: 'feet',
+    positions: [
+      { text: 'relaxed', slug: 'relaxed' },
+      { text: 'spread/grip-ready', slug: 'spread' },
+    ],
+  },
+];
+
+/** A hindlimb's segments: a foot with a third position, for the push-off a forelimb never makes. */
+const HINDLIMB: readonly [LimbSegment, ...LimbSegment[]] = [
+  {
+    name: 'upper limb',
+    slug: 'upper-limb',
+    plural: 'Upper limbs',
+    pluralSlug: 'upper-limbs',
+    positions: [
+      { text: 'neutral vertical', slug: 'neutral' },
+      { text: 'forward', slug: 'forward' },
+      { text: 'backward', slug: 'backward' },
+    ],
+  },
+  {
+    name: 'lower limb',
+    slug: 'lower-limb',
+    plural: 'Lower limbs',
+    pluralSlug: 'lower-limbs',
+    positions: [
+      { text: 'extension-compatible', slug: 'extension' },
+      { text: 'moderate-flexion-compatible', slug: 'moderate-flexion' },
+      { text: 'strong-flexion-compatible', slug: 'strong-flexion' },
+    ],
+  },
+  {
+    name: 'foot or claw',
+    slug: 'foot',
+    plural: 'Feet or claws',
+    pluralSlug: 'feet',
+    positions: [
+      { text: 'flat planted', slug: 'planted' },
+      { text: 'forward-step', slug: 'forward-step' },
+      { text: 'rear-step/push-off', slug: 'push-off' },
+    ],
+  },
+];
+
+/** A four-limbed animal: a head, a body and hindquarters, and a forelimb and a hindlimb a side. */
+const QUADRUPED: CreatureBody = {
+  trunk: [
+    { name: 'head', slug: 'head', plural: 'Heads' },
+    { name: 'body', slug: 'body', plural: 'Bodies' },
+    { name: 'hindquarters', slug: 'hindquarters', plural: 'Hindquarters' },
   ],
-};
-
-/** One core sheet: the trunk, turned to this sheet's share of the chosen facings. */
-function creatureDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
-  return {
-    name: chunkName('Directional core', chunk, chunks),
-    facings: chunk,
-    assembly:
-      'one head, one body and one hindquarters per facing, reading as one animal turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.',
-    targetQuantity: 'ASSEMBLED',
-    // One head, one body and one hindquarters, repeated across yaws — the camera turning, not the trunk.
-    posing: 'UNSTATED',
-    scaleExample: 'a head drawn beside the body it joins is in proportion to it',
-    scaleUnit: 'a full creature',
-    componentClass: 'creature anatomy',
-    assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
-    groups: [
-      {
-        heading: null,
-        intro: `One view of **one** head, **one** body and **one** hindquarters per facing: the same piece of
-geometry drawn at each object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies,
-or views facing the same way are all failures of this entry, however well drawn.`,
-        entries: [
-          viewsOf('Heads', 'anatomy', chunk),
-          viewsOf('Bodies', 'anatomy', chunk),
-          viewsOf('Hindquarters', 'anatomy', chunk),
-        ],
-        outro: TRUNK_TERMINATION,
-      },
-    ],
-  };
-}
-
-/**
- * The left forelimb, as the three entries the right forelimb's single line counts.
- *
- * Hoisted for the reason the character spelling records: `mirroredLimb` sums it, so the total the
- * mirrored sentence states comes from here rather than being written out beside it.
- */
-const LEFT_FORELIMB_ENTRIES: readonly ComponentEntry[] = [
-  {
-    label: 'left-fore-upper-limbs',
-    parts: [
-      'left-fore-upper-limb-neutral',
-      'left-fore-upper-limb-forward-diagonal',
-      'left-fore-upper-limb-raised',
-    ],
-    text: 'Upper limbs: neutral lowered, forward-diagonal, raised',
-    count: 3,
-    kind: 'anatomy',
-  },
-  {
-    label: 'left-fore-lower-limbs',
-    parts: [
-      'left-fore-lower-limb-extension',
-      'left-fore-lower-limb-moderate-flexion',
-      'left-fore-lower-limb-strong-flexion',
-    ],
-    text: 'Lower limbs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
-    count: 3,
-    kind: 'anatomy',
-  },
-  {
-    label: 'left-fore-feet',
-    parts: ['left-fore-foot-relaxed', 'left-fore-foot-spread'],
-    text: 'Feet or claws: relaxed, spread/grip-ready',
-    count: 2,
-    kind: 'anatomy',
-  },
-];
-
-/** The left hindlimb, as the three entries the right hindlimb's single line counts. */
-const LEFT_HINDLIMB_ENTRIES: readonly ComponentEntry[] = [
-  {
-    label: 'left-hind-upper-limbs',
-    parts: ['left-hind-upper-limb-neutral', 'left-hind-upper-limb-forward', 'left-hind-upper-limb-backward'],
-    text: 'Upper limbs: neutral vertical, forward, backward',
-    count: 3,
-    kind: 'anatomy',
-  },
-  {
-    label: 'left-hind-lower-limbs',
-    parts: [
-      'left-hind-lower-limb-extension',
-      'left-hind-lower-limb-moderate-flexion',
-      'left-hind-lower-limb-strong-flexion',
-    ],
-    text: 'Lower limbs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
-    count: 3,
-    kind: 'anatomy',
-  },
-  {
-    label: 'left-hind-feet',
-    parts: ['left-hind-foot-planted', 'left-hind-foot-forward-step', 'left-hind-foot-push-off'],
-    text: 'Feet or claws: flat planted, forward-step, rear-step/push-off',
-    count: 3,
-    kind: 'anatomy',
-  },
-];
-
-/** The limbs, one facing per generation — the creature spelling of the character articulation run. */
-export const CREATURE_ARTICULATION: SheetPlan = {
-  name: 'Articulation',
-  facings: 'run',
-  assembly: `the limbs of ${CREATURE_GAITS} — each fitted to the trunk drawn on the directional core sheets, one facing per sheet.`,
-  targetQuantity: 'ASSEMBLED',
-  // The creature spelling of the character articulation run, and posed for the same reason.
-  posing: 'PER_POSITION',
-  // A claw rather than the pose library's `foot or claw`, because this sheet writes `Feet or
-  // claws` and the singular `foot` appears nowhere on it.
-  scaleExample: 'a claw drawn beside an upper limb is in proportion to it',
-  scaleUnit: 'a full creature',
-  componentClass: 'creature anatomy',
-  assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
-  groups: [
-    { heading: 'Left forelimb', entries: LEFT_FORELIMB_ENTRIES },
+  limbs: [
+    { label: 'left-forelimb', stem: 'left-fore', heading: 'Left forelimb', segments: FORELIMB },
     {
+      label: 'right-forelimb',
+      stem: 'right-fore',
       heading: 'Right forelimb',
-      entries: [
-        mirroredLimb({
-          label: 'right-forelimb',
-          mirrors: 'the left forelimb',
-          of: LEFT_FORELIMB_ENTRIES,
-          parts: [
-            'right-fore-upper-limb-neutral',
-            'right-fore-upper-limb-forward-diagonal',
-            'right-fore-upper-limb-raised',
-            'right-fore-lower-limb-extension',
-            'right-fore-lower-limb-moderate-flexion',
-            'right-fore-lower-limb-strong-flexion',
-            'right-fore-foot-relaxed',
-            'right-fore-foot-spread',
-          ],
-        }),
-      ],
+      segments: FORELIMB,
+      mirrors: 'the left forelimb',
     },
-    { heading: 'Left hindlimb', entries: LEFT_HINDLIMB_ENTRIES },
+    { label: 'left-hindlimb', stem: 'left-hind', heading: 'Left hindlimb', segments: HINDLIMB },
     {
+      label: 'right-hindlimb',
+      stem: 'right-hind',
       heading: 'Right hindlimb',
-      entries: [
-        mirroredLimb({
-          label: 'right-hindlimb',
-          mirrors: 'the left hindlimb',
-          of: LEFT_HINDLIMB_ENTRIES,
-          parts: [
-            'right-hind-upper-limb-neutral',
-            'right-hind-upper-limb-forward',
-            'right-hind-upper-limb-backward',
-            'right-hind-lower-limb-extension',
-            'right-hind-lower-limb-moderate-flexion',
-            'right-hind-lower-limb-strong-flexion',
-            'right-hind-foot-planted',
-            'right-hind-foot-forward-step',
-            'right-hind-foot-push-off',
-          ],
-        }),
-      ],
+      segments: HINDLIMB,
+      mirrors: 'the left hindlimb',
     },
   ],
+  limbNoun: 'limbs',
+  motionNoun: 'gait',
+  motions: CREATURE_GAITS,
+  termination: TRUNK_TERMINATION,
+  // The nouns are this body's own — a body and a hindquarters, never a torso and a pelvis. The sentence
+  // was drafted from CHARACTER's and kept its vocabulary, so section 3 named two pieces the inventory in
+  // section 4 does not list, and the landmark rule reached the generator in words it had nothing to
+  // attach them to.
+  landmark:
+    'a head’s front is the jaws, beak, muzzle or mandibles and its rear the back of the skull and the neck socket; a body’s front is the chest and forward shoulder girdle and its rear the dorsal ridge and the join to the hindquarters; a hindquarters’ front is the join to the body and its rear the hind or tail end.',
+  scale: {
+    pieces: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
+    trunk: 'a head drawn beside the body it joins is in proportion to it',
+    // A claw rather than the pose library's `foot or claw`, because this sheet writes `Feet or
+    // claws` and the singular `foot` appears nowhere on it.
+    limbs: 'a claw drawn beside an upper limb is in proportion to it',
+  },
 };
 
-/** The directional pairing: the core sheet or sheets for the chosen facings, then the limbs. */
-export function creatureDirectionalVariants(facings: FacingTuple): SheetSeries {
-  const chunks = coreFacingChunks(facings);
-  const [first, ...rest] = chunks;
-  return [
-    creatureDirectionalCore(first, chunks),
-    ...rest.map((chunk) => creatureDirectionalCore(chunk, chunks)),
-    CREATURE_ARTICULATION,
-  ];
-}
-
-export const CREATURE_CUTOUT_RIG: SheetPlan = {
-  name: 'Rig pieces',
-  facings: 'run',
-  assembly:
-    'any gait the rig produces by rotating the pieces about their pivots. The artwork commits to none of them, which is why every piece is drawn unposed.',
-  targetQuantity: 'ASSEMBLED',
-  // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
-  posing: 'AT_REST',
-  scaleExample: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
-  scaleUnit: 'a full creature',
-  componentClass: 'creature anatomy',
-  assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
-  groups: [
-    {
-      heading: null,
-      intro: 'One direction’s worth of rig pieces, each drawn once in rest orientation:',
-      entries: [
-        {
-          label: 'trunk',
-          parts: ['head', 'body', 'hindquarters'],
-          text: 'Head ×1, body ×1, hindquarters ×1',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-forelimb',
-          parts: ['left-fore-upper-limb', 'left-fore-lower-limb', 'left-fore-foot'],
-          text: 'Left forelimb: upper limb, lower limb, foot or claw',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'right-forelimb',
-          parts: ['right-fore-upper-limb', 'right-fore-lower-limb', 'right-fore-foot'],
-          text: 'Right forelimb: upper limb, lower limb, foot or claw',
-          mirrors: 'the left forelimb',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-hindlimb',
-          parts: ['left-hind-upper-limb', 'left-hind-lower-limb', 'left-hind-foot'],
-          text: 'Left hindlimb: upper limb, lower limb, foot or claw',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'right-hindlimb',
-          parts: ['right-hind-upper-limb', 'right-hind-lower-limb', 'right-hind-foot'],
-          text: 'Right hindlimb: upper limb, lower limb, foot or claw',
-          mirrors: 'the left hindlimb',
-          count: 3,
-          kind: 'anatomy',
-        },
-      ],
-      outro: `${TRUNK_TERMINATION}
-
-${RIG_PIECES_OUTRO}`,
-    },
-  ],
-};
+/** The three sheets a four-limbed creature is drawn on, which is what the category falls back to. */
+export const CREATURE_STANDARD_PLANS: ModePlans = creaturePlansFor(QUADRUPED);

@@ -1,5 +1,4 @@
-import { HEAD_LANDMARK, TORSO_LANDMARK } from '../promptText/landmarks.ts';
-import { HEAD, PELVIS, STANDARD_HUMANOID, TORSO } from './character.ts';
+import { HEAD, HEAD_LANDMARK, PELVIS, STANDARD_HUMANOID, TORSO, TORSO_LANDMARK } from './character.ts';
 import { characterPlansFor } from './characterBody.ts';
 import {
   ARM,
@@ -40,6 +39,7 @@ import type { ModePlans } from './modePlans.ts';
  * run each take two sheets: the arms and wings on one, the legs on the other.
  */
 export const CHARACTER_WINGED_PLANS: ModePlans = characterPlansFor({
+  ...STANDARD_HUMANOID,
   trunk: [
     HEAD,
     {

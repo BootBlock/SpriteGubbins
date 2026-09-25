@@ -12,7 +12,6 @@ import {
   describeStyleReference,
   isPlanView,
   JOINT_CAP_TEXT,
-  LANDMARK_TEXT,
   LIGHTING_TEXT,
   minFeatureSize,
   outlineDescription,
@@ -224,9 +223,9 @@ export function promptValues(
     // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: the template's own
     // `[IF:MIRROR_PAIRS]` decides whether a token remains to be filled.
     MIRROR_PAIRS_DESCRIPTION: describeMirrorPairs(coveredMirrorPairs),
-    // The sheet's own where its pieces are not the ones the category's sentence names — a taur's
-    // directional core turns a lower body, which that sentence gives no front.
-    LANDMARK_DESCRIPTION: plan.landmark ?? LANDMARK_TEXT[category],
+    // The sheet's own, because it names the pieces the sheet turns (issue #286). A run states none: the
+    // block this fills is gated on `MULTI_DIRECTION`, which a sheet drawn to one facing never sets.
+    LANDMARK_DESCRIPTION: plan.facings === 'run' ? '' : plan.landmark,
     // Spelled through the same function as the directions line two bullets above it, because on a
     // single-facing sheet the two are the *same facing* and printed one after the other — the raw
     // value gave `Directions required: Front` and `Primary assembly direction: front`, which reads

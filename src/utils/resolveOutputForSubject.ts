@@ -2,7 +2,7 @@ import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
 import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { resolveCameraElevation } from '../constants/promptText/index.ts';
-import { resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import { plansFor, resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 
@@ -21,20 +21,22 @@ import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
  * changes the plans, which is what leaves a reader's sheet index alone when they retype a value that
  * draws the same sheets.
  *
- * **`from` is the category the configuration was composed under**, and it is the one thing here that
+ * **`from` is the subject the configuration was composed under**, and it is the one thing here that
  * cannot be read off the arguments. Every other claim is judged against a table that says which
- * subjects can honour it; a contract is judged only by whether this is still the kind of subject it
- * was loaded for, and that question needs both ends. Both callers know the answer — `outputFollowing`
- * passes the category it was already handed, because a base change stays inside one.
+ * subjects can honour it; a contract is judged only by whether this is still the body it was loaded
+ * for, and that question needs both ends. The body is the plan table, because a contract replaces the
+ * inventory those plans draw: a category switch always changes the table, and so does a base that
+ * draws a body of its own (issue #286) — a quadruped's skeleton loaded under `Quadruped Beast` is not a
+ * claim about an octopus, however well the octopus's sheets would take a rig.
  *
  * **That makes the contract rule a fact about a CHANGE, and the boundary is worth stating.** A
  * session row, a history entry, a saved preset and an imported pack each restore a configuration
  * without passing through here, deliberately: a position on the stack is a studio that existed and is
  * replayed rather than recomputed. So a row written *before* this rule existed can still carry a
  * humanoid contract under a creature, and come back that way. It cannot be caught at the parse
- * boundary either — a `RigContract` names a skeleton and not a category, so nothing there can tell a
- * stranded humanoid from a legitimate creature rig. The durable fix is to store the category a
- * contract was loaded for beside it, at which point this rule holds on every path and needs no
+ * boundary either — a `RigContract` names a skeleton and not a body, so nothing there can tell a
+ * stranded humanoid from a legitimate creature rig. The durable fix is to store the category and base
+ * a contract was loaded for beside it, at which point this rule holds on every path and needs no
  * `from` at all; that is a change to the shape `ImageOutputConfig` persists, and it is not made here.
  *
  * Returns the configuration it was handed, unchanged and by identity, where the subject can honour
@@ -52,7 +54,7 @@ export function resolveOutputForSubject(
   category: SubjectCategory,
   subject: SheetSubject,
   output: OutputConfig,
-  from: SubjectCategory,
+  from: { readonly category: SubjectCategory; readonly subject: SheetSubject },
 ): OutputConfig {
   // The sheet mode does not survive a change of subject unchanged: the modes are category-scoped and
   // then narrowed by the base, and a stale one is how a character came to be described by a tileset's
@@ -110,12 +112,13 @@ export function resolveOutputForSubject(
   // a contract replaces the inventory outright and fifteen pieces is fifteen pieces to every counter
   // this app has.
   //
-  // So it survives exactly two things: staying in the category it was loaded under, and a rig still
-  // cut out. It is dropped rather than re-resolved because no table here could judge it — this app
+  // So it survives exactly two things: staying on the plans it was loaded under, and a rig still cut
+  // out. It is dropped rather than re-resolved because no table here could judge it — this app
   // cannot tell a humanoid contract from a creature's, and both are valid documents. A reader who
   // wants theirs on the new subject loads it again, which is the one act that says which subject it
   // is for.
-  const rigContract = from === category && rigMode === 'CUTOUT_RIG' ? output.rigContract : null;
+  const samePlans = plansFor(from.category, from.subject) === plansFor(category, subject);
+  const rigContract = samePlans && rigMode === 'CUTOUT_RIG' ? output.rigContract : null;
 
   // The sheet of the series goes back to the first whether or not the mode survives, because the
   // series is keyed on the *pairing* and the base: a subject the mode still supports can have a

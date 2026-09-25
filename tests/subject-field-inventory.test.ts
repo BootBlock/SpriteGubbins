@@ -288,11 +288,13 @@ describe('the assembly base and the inventory it chooses', () => {
     // shape a moved table or a renamed pool would take.
     expect(SUBJECT_CATEGORIES.filter(drawsItsOwnPieces)).toEqual([
       'CHARACTER',
+      'CREATURE',
       'OBJECT',
       'VEHICLE',
       'PORTRAIT',
     ]);
     expect(SUBJECT_CATEGORIES.filter(narrowsSheetContents)).toEqual([
+      'CREATURE',
       'OBJECT',
       'ITEM',
       'BUILDING',

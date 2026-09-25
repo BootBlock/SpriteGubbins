@@ -9,6 +9,14 @@ import {
   CHARACTER_TAUR_PLANS,
   CHARACTER_WINGED_PLANS,
 } from './characterBodies.ts';
+import { CREATURE_AMORPHOUS_PLANS } from './creatureAmorphous.ts';
+import {
+  CREATURE_FINNED_PLANS,
+  CREATURE_OCTOPUS_PLANS,
+  CREATURE_ROOTED_PLANS,
+  CREATURE_SERPENTINE_PLANS,
+  CREATURE_WORM_PLANS,
+} from './creatureBodies.ts';
 import { INTERFACE_NINE_SLICE, INTERFACE_STATE_LIBRARY } from './interface.ts';
 import { ITEM_PART_LIBRARY } from './item.ts';
 import { fixed } from './modePlans.ts';
@@ -118,6 +126,17 @@ export const CATEGORY_ASSEMBLY_BASES: Readonly<
     'Four-Armed Humanoid': CHARACTER_FOUR_ARMED_PLANS,
     'Serpent Lower Body': CHARACTER_SERPENT_PLANS,
     'Digitigrade Beastfolk Legs': CHARACTER_DIGITIGRADE_PLANS,
+  },
+  // Six of the twelve, each a body with no fore and hind limbs (issue #286). The six undeclared values
+  // are limbed, and the standard sheets are true of `Quadruped Beast` alone: the other five draw legs,
+  // heads or wings those sheets do not, which is issue #285.
+  CREATURE: {
+    'Serpentine Tailless': CREATURE_SERPENTINE_PLANS,
+    'Octopus Tentacled': CREATURE_OCTOPUS_PLANS,
+    'Rooted Stationary Growth': CREATURE_ROOTED_PLANS,
+    'Amorphous — No Fixed Limbs': CREATURE_AMORPHOUS_PLANS,
+    'Burrowing Segmented Worm': CREATURE_WORM_PLANS,
+    'Finned Aquatic Body': CREATURE_FINNED_PLANS,
   },
   INTERFACE: {
     'Single Fixed-Size Piece': STATE_LIBRARY_ONLY,

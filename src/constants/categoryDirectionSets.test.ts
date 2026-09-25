@@ -33,7 +33,7 @@ describe('the table itself', () => {
 
   it('binds exactly the six categories whose subject has no front', () => {
     // INTERFACE is a flat widget read straight on; a TERRAIN tile is laid flat and read from above,
-    // and `LANDMARK_TEXT.TERRAIN` says it has no front in as many words. An ICON is a mark drawn
+    // so it has no front to turn away from. An ICON is a mark drawn
     // into a cell; a BACKGROUND band is a plane the player never reaches; and a PORTRAIT's turn is
     // the sitter's own pose inside a frame the camera never leaves. A FONT glyph is the tightest of
     // the six: it is a mark on a baseline read from one side only, and a letter delivered at any

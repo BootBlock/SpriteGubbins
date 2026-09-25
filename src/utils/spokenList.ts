@@ -1,9 +1,8 @@
 /**
- * `A`, `A and B`, `A, B and C` — a list as a sentence says it, with no serial comma.
+ * `A`, `A and B`, `A, B and C` — items as a sentence lists them, with no serial comma.
  *
- * One copy for the three modules that say a list: the hardware section names the palette entries it
- * withholds, a vehicle's part library names the positions its moving parts are drawn in, and a
- * character's sheets name the trunk pieces and limbs they draw. The first two wrote it out apiece.
+ * One copy, because the prompt lists things in four places — a sheet's positions, a trunk's pieces,
+ * the colours near a background key — and each had written the same two lines of its own.
  */
 export function spokenList(items: readonly string[]): string {
   const last = items.at(-1) ?? '';

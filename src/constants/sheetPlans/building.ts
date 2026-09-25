@@ -1,4 +1,4 @@
-import type { AssemblyFailure, SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { AssemblyFailure, SheetPlan, SheetSeries, ViewSheetPlan } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 
@@ -198,15 +198,20 @@ beside any other without a step in the course lines.`,
   ],
 };
 
+/** Which end of a building is its front — see `ViewSheetPlan.landmark`. */
+const BUILDING_LANDMARK =
+  'the front is the entrance façade — the door, the main frontage, the side a visitor approaches; the rear is the back wall and its service side.';
+
 /**
  * The directional views, steered by the chosen facings — four pieces per view, so one sheet holds
  * up to five facings and the eight-compass set splits into a cardinal and a diagonal sheet, exactly
  * as `objectDirectionalVariants` does.
  */
-function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
+function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): ViewSheetPlan {
   return {
     name: chunkName('Directional views', chunk, chunks),
     facings: chunk,
+    landmark: BUILDING_LANDMARK,
     assembly:
       'the complete structure seen from each facing, with its module courses aligning across those views.',
     targetQuantity: 'COMPONENT',

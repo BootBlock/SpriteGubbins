@@ -1,4 +1,4 @@
-import type { AssemblyFailure, SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { AssemblyFailure, SheetPlan, SheetSeries, ViewSheetPlan } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 
@@ -93,15 +93,20 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
   ],
 };
 
+/** Which end of an item is its front — see `ViewSheetPlan.landmark`. */
+const ITEM_LANDMARK =
+  'the front is the working or presenting end — the blade, the muzzle, the face of the dial, the opening; the rear is the butt, the grip end, or the closed back.';
+
 /**
  * The directional views, steered by the chosen facings — four pieces per view, so one sheet holds
  * up to five facings and the eight-compass set splits into a cardinal and a diagonal sheet, exactly
  * as `objectDirectionalVariants` does.
  */
-function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
+function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): ViewSheetPlan {
   return {
     name: chunkName('Directional views', chunk, chunks),
     facings: chunk,
+    landmark: ITEM_LANDMARK,
     assembly:
       'the complete item seen from each facing, reading as one object turned rather than several drawings of it.',
     targetQuantity: 'ASSEMBLED',
