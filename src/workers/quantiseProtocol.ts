@@ -14,15 +14,19 @@ import type { QuantiseResult, QuantiseSettings, SheetFacts } from '../types/quan
  *
  * Everything crossing the boundary is structured-cloneable. `ImageData` is, which is what lets the
  * sheet and the result travel as themselves rather than as a width, a height and a loose array that
- * has to be reassembled — the clone costs a few tens of milliseconds on the largest sheet the app
- * admits, against the seconds the transform itself takes.
+ * has to be reassembled. **The sheet is cloned and the result is transferred**, because each side
+ * keeps a different one: the tab still shows the sheet it sent, so it pays a copy of a few tens of
+ * milliseconds on the largest sheet the app admits, while the worker drops a result the moment it
+ * posts it, so it hands the buffers over rather than copying them — see `transferOf` in
+ * `quantiseWorker.ts`.
  *
  * A reply carries a second array besides the pixels: `QuantiseResult.difference`, one `Uint16` per
  * pixel of the result. At a grid of 1 on the largest admitted sheet that is 33.6 MB against the
  * result's own 67 MB, so a reply is half again as large as it was and stays that size in the answer
- * store for as long as the result is on screen. It is paid on every transform rather than when the
- * difference mode is opened, because a map fetched separately could describe an older result than
- * the one beside it — see `DifferenceMap`.
+ * store for as long as the result is on screen. It is transferred with the pixels, so it costs the
+ * crossing nothing. It is paid on every transform rather than when the difference mode is opened,
+ * because a map fetched separately could describe an older result than the one beside it — see
+ * `DifferenceMap`.
  */
 export type QuantiseRequest =
   /** Adopt a sheet. Answered with {@link SheetFacts} — the two measurements that outlive any setting. */

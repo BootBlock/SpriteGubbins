@@ -779,9 +779,9 @@ export interface QuantisePrologue {
  *
  * **Fixed point, at {@link DIFFERENCE_PRECISION} steps to the unit**, because this is per *pixel*
  * of a result that reaches 16.8 million of them at a grid of 1, where the four bytes a float wants
- * are another sixty-seven megabytes to allocate and to clone back. Two bytes hold the whole range a
- * distance across four 0–255 axes can occupy with room to spare, at a resolution far below the
- * finest rung the scale offers.
+ * are another sixty-seven megabytes to allocate and to keep in the answer store for as long as the
+ * result is on screen. Two bytes hold the whole range a distance across four 0–255 axes can occupy
+ * with room to spare, at a resolution far below the finest rung the scale offers.
  */
 export interface DifferenceMap {
   /** The result's own dimensions — one cell here for one pixel there. */
