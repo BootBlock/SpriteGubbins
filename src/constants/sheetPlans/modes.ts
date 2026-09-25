@@ -5,7 +5,7 @@ import { CATEGORY_ASSEMBLY_BASES } from './assemblyBases.ts';
 import { fixed } from './modePlans.ts';
 import type { ModePlans } from './modePlans.ts';
 import { buildingDirectionalVariants, BUILDING_MODULE_LIBRARY, BUILDING_TILESET } from './building.ts';
-import { characterDirectionalVariants, CHARACTER_CUTOUT_RIG, CHARACTER_POSE_LIBRARY } from './character.ts';
+import { CHARACTER_STANDARD_PLANS } from './character.ts';
 import { CREATURE_STANDARD_PLANS } from './creature.ts';
 import { EFFECT_FRAME_SEQUENCE } from './effect.ts';
 import { INTERFACE_NINE_SLICE, INTERFACE_STATE_LIBRARY } from './interface.ts';
@@ -60,11 +60,9 @@ import { FONT_CAPITALS, FONT_DIGITS_AND_PUNCTUATION, FONT_LOWER_CASE, FONT_SYMBO
  * (issue #283).
  */
 export const CATEGORY_SHEET_PLANS: Readonly<Record<SubjectCategory, ModePlans>> = {
-  CHARACTER: {
-    SINGLE_DIRECTION_POSE_LIBRARY: fixed(CHARACTER_POSE_LIBRARY),
-    CORE_DIRECTIONAL_VARIANTS: characterDirectionalVariants,
-    CUTOUT_RIG_SINGLE_DIRECTION: fixed(CHARACTER_CUTOUT_RIG),
-  },
+  // Built from a body, as the bases that differ from it are: `sheetPlans/characterBody.ts` draws every
+  // CHARACTER sheet from a trunk and the limb chains hung on it (issue #284).
+  CHARACTER: CHARACTER_STANDARD_PLANS,
   CREATURE: CREATURE_STANDARD_PLANS,
   OBJECT: {
     SINGLE_DIRECTION_POSE_LIBRARY: fixed(OBJECT_PART_LIBRARY),

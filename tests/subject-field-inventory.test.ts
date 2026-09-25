@@ -287,6 +287,7 @@ describe('the assembly base and the inventory it chooses', () => {
     // a hedge — and `it.each` above passes on helpers that answer `false` for everything, which is the
     // shape a moved table or a renamed pool would take.
     expect(SUBJECT_CATEGORIES.filter(drawsItsOwnPieces)).toEqual([
+      'CHARACTER',
       'CREATURE',
       'OBJECT',
       'VEHICLE',

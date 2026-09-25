@@ -1,6 +1,14 @@
 import type { SubjectCategory } from '../../types/subject.ts';
 import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.ts';
 import { buildingDirectionalVariants, BUILDING_MODULE_LIBRARY, BUILDING_TILESET } from './building.ts';
+import {
+  CHARACTER_DIGITIGRADE_PLANS,
+  CHARACTER_FOUR_ARMED_PLANS,
+  CHARACTER_SERPENT_PLANS,
+  CHARACTER_TAILED_PLANS,
+  CHARACTER_TAUR_PLANS,
+  CHARACTER_WINGED_PLANS,
+} from './characterBodies.ts';
 import { CREATURE_AMORPHOUS_PLANS } from './creatureAmorphous.ts';
 import {
   CREATURE_ARACHNID_PLANS,
@@ -113,6 +121,18 @@ export const CATEGORY_ASSEMBLY_BASES: Readonly<
     // A roof and an entrance, which the tile set does not draw.
     'Tower With Detachable Roof': BUILDING_MODULES_AND_VIEWS,
     'Wall Section With Gate': BUILDING_MODULES_AND_VIEWS,
+  },
+  // Six bodies for seven values: a taur's lower body and a centaur's are one four-legged body, drawn
+  // by one table. The three undeclared values — a chibi, a prosthetic limb and a half-beast form — are
+  // the standard pieces drawn differently, which `characterBodies.ts` records (issue #284).
+  CHARACTER: {
+    'Humanoid With Wings': CHARACTER_WINGED_PLANS,
+    'Tailed Humanoid': CHARACTER_TAILED_PLANS,
+    'Quadruped Taur': CHARACTER_TAUR_PLANS,
+    'Centaur Lower Body': CHARACTER_TAUR_PLANS,
+    'Four-Armed Humanoid': CHARACTER_FOUR_ARMED_PLANS,
+    'Serpent Lower Body': CHARACTER_SERPENT_PLANS,
+    'Digitigrade Beastfolk Legs': CHARACTER_DIGITIGRADE_PLANS,
   },
   // Every value but `Quadruped Beast`, whose body the standard sheets are. Six have no fore and hind
   // limbs (issue #286); the other six walk on legs, heads, hands or wings the four-limbed sheets do not

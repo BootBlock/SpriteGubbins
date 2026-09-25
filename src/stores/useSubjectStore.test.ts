@@ -280,10 +280,21 @@ describe('useSubjectStore', () => {
     });
 
     it('leaves the sheet index alone for a value that draws the same sheets', () => {
-      // The combo box writes every keystroke, and CHARACTER declares no base, so retyping the field
-      // must not send a reader working through an articulation sheet back to the directional core.
+      // The combo box writes every keystroke, and a half-beast form is drawn by the standard humanoid's
+      // sheets, so retyping the field must not send a reader working through an articulation sheet
+      // back to the directional core.
       useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 } });
-      useSubjectStore.getState().setField('anatomy', 'Tailed Humanoid');
+      useSubjectStore.getState().setField('anatomy', 'Hybrid Half-Beast Form');
+
+      expect(useOutputStore.getState().output.sheetIndex).toBe(1);
+    });
+
+    it('leaves the sheet index alone between two declared bases that draw one body', () => {
+      // A taur's lower body and a centaur's are one four-legged body, drawn by one table.
+      useSubjectStore.getState().setField('anatomy', 'Quadruped Taur');
+      useOutputStore.setState({ output: { ...useOutputStore.getState().output, sheetIndex: 1 } });
+
+      useSubjectStore.getState().setField('anatomy', 'Centaur Lower Body');
 
       expect(useOutputStore.getState().output.sheetIndex).toBe(1);
     });

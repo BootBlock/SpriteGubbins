@@ -267,9 +267,20 @@ describe('the plan table itself', () => {
     ];
 
     expect(posed).toEqual([
-      // The limb variants of both figure categories, on both of the modes that draw them.
+      // The limb variants of both figure categories, on both of the modes that draw them — and the
+      // two halves of each where a winged, taur or four-armed body's variants are past one generation.
       'CHARACTER / Pose library',
       'CHARACTER / Articulation',
+      'CHARACTER / Pose library — trunk, arms and wings',
+      'CHARACTER / Pose library — legs',
+      'CHARACTER / Articulation — arms and wings',
+      'CHARACTER / Articulation — legs',
+      'CHARACTER / Pose library — trunk, forelegs and hind legs',
+      'CHARACTER / Pose library — arms and tail',
+      'CHARACTER / Articulation — forelegs and hind legs',
+      'CHARACTER / Articulation — arms and tail',
+      'CHARACTER / Pose library — trunk, arms and second arms',
+      'CHARACTER / Articulation — arms and second arms',
       'CREATURE / Pose library',
       'CREATURE / Articulation',
       // Six legs and eight, each drawn in every position, are past one sheet, so the insect's and the

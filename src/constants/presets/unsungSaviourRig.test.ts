@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseRigContract, RIG_CONTRACT_FORMAT, RIG_CONTRACT_VERSION } from '../../utils/parseRigContract.ts';
-import { CHARACTER_CUTOUT_RIG } from '../sheetPlans/character.ts';
+import { sheetSeriesFor } from '../sheetPlans/index.ts';
 import { UNSUNG_SAVIOUR_PRESETS } from './unsungSaviour.ts';
 import { UNSUNG_SAVIOUR_HUMANOID_RIG } from './unsungSaviourRig.ts';
 
@@ -39,9 +39,17 @@ describe('the shipped Unsung Saviour rig', () => {
     // compiled prompt can report: a contract missing `left-hand` simply produces a fourteen-piece
     // sheet that looks deliberate. This is the one cross-check the repository can make, because both
     // lists are here — and a mismatch means the copy and the app disagree about what a humanoid is.
-    const asked = CHARACTER_CUTOUT_RIG.groups
-      .flatMap((group) => group.entries)
-      .flatMap((entry) => entry.parts);
+    // The rig sheet of the preset that carries the contract, read for that preset's own base, so the
+    // check follows the body its *Anatomy Base* draws rather than assuming the standard one.
+    const preset = UNSUNG_SAVIOUR_PRESETS.find((candidate) => candidate.id === 'us-character-rig');
+    if (preset === undefined) throw new Error('The character rig preset is missing.');
+    const [rig] = sheetSeriesFor(
+      preset.category,
+      preset.subject,
+      'CUTOUT_RIG_SINGLE_DIRECTION',
+      preset.output.directions,
+    );
+    const asked = rig.groups.flatMap((group) => group.entries).flatMap((entry) => entry.parts);
     const carried = UNSUNG_SAVIOUR_HUMANOID_RIG.slots.map((slot) => slot.pack_piece_name);
 
     expect([...carried].sort()).toEqual([...asked].sort());
