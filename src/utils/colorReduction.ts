@@ -1,5 +1,7 @@
 import { PALETTE_COLOR_COUNTS } from '../constants/quantiser.ts';
+import { resolvePaletteLimit } from '../constants/promptText/index.ts';
 import type { PaletteLimit } from '../types/output.ts';
+import type { RenderStyle } from '../types/rendering.ts';
 import type { ColorPlan, LockedPalette } from '../types/quantiser.ts';
 import { channelLevels } from './channelLevels.ts';
 import { fixedPaletteColors } from './paletteEntries.ts';
@@ -40,12 +42,14 @@ import type { PinnedPaletteSource } from './pinnedPalette.ts';
 /**
  * The studio's colour fields, taken together.
  *
- * One argument rather than three because they are one decision: the budget, the palette pinned over
- * it, and — where that palette is the reader's own — the colours it is made of. A caller holding an
- * `OutputConfig` passes it whole.
+ * One argument rather than four because they are one decision: the budget, the render style that
+ * decides which budgets the sheet can be drawn under, the palette pinned over it, and — where that
+ * palette is the reader's own — the colours it is made of. A caller holding an `OutputConfig` passes
+ * it whole.
  */
 export interface StudioColorSettings extends PinnedPaletteSource {
   readonly paletteLimit: PaletteLimit;
+  readonly renderStyle: RenderStyle;
 }
 
 export function colorPlanFor(
@@ -82,8 +86,12 @@ export function colorPlanFor(
  * any other way would be a second reading of the same two settings, which is the failure the whole
  * of `colorPlanFor` exists to prevent.
  */
-function studioPlan({ paletteLimit: limit, ...source }: StudioColorSettings): ColorPlan {
+function studioPlan({ paletteLimit: stored, renderStyle, ...source }: StudioColorSettings): ColorPlan {
   const pinned = pinnedPalette(source);
+  // The budget the prompt states, which is the stored one only where the style can be drawn under
+  // it: `RETRO_PIXEL_ART` names "a small palette", so a stored `UNRESTRICTED` is asked for — and so
+  // reduced to — the budget that style falls back to rather than left alone (issue #406).
+  const limit = resolvePaletteLimit(renderStyle, stored);
 
   if (pinned === null) {
     const maxColors = PALETTE_COLOR_COUNTS[limit];

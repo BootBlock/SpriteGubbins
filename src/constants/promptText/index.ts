@@ -30,18 +30,22 @@ export {
   RENDER_STYLE_TEXT,
   RESOLUTION_PROFILE_TEXT,
   resolutionProfileDescription,
-  SURFACE_DETAIL_TEXT,
 } from './renderStyle.ts';
+export { SURFACE_DETAIL_TEXT, surfaceDetailDescription } from './surfaceDetail.ts';
+export { RENDER_STYLE_TRAITS } from './renderStyleTraits.ts';
+export {
+  lightingModelsFor,
+  outlinesFor,
+  paletteLimitsFor,
+  resolvePaletteLimit,
+  styleSettingsFor,
+} from './styleSettings.ts';
 export { RENDER_STYLE_SURFACE } from './renderStyleSurface.ts';
 export { smallScaleDiscipline } from './smallScale.ts';
 export { VALIDATION_PASS_TEXT, validationPassFor } from './validationPass.ts';
-export {
-  LIGHTING_TEXT,
-  OUTLINE_BESIDE_BLACK_KEY_TEXT,
-  OUTLINE_TEXT,
-  outlineDescription,
-  PALETTE_TEXT,
-} from './palette.ts';
+export { PALETTE_TEXT } from './palette.ts';
+export { OUTLINE_BESIDE_BLACK_KEY_TEXT, OUTLINE_TEXT, outlineDescription } from './outline.ts';
+export { LIGHTING_TEXT, lightingDescription } from './lighting.ts';
 export { describeHardware, describePalette, perComponentLimit } from './hardware.ts';
 export { describeStyleReference } from './styleReference.ts';
 export { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS, describeDirections, PROJECTION_TEXT } from './camera.ts';

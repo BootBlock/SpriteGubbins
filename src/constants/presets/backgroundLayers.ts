@@ -195,7 +195,7 @@ export const BACKGROUND_LAYER_PRESETS: readonly PresetArchetype[] = [
       rigMode: 'NONE',
       paletteLimit: 'RESTRAINED_64_COLOR',
       surfaceDetail: 'DETAILED_PRODUCTION',
-      lightingModel: 'FLAT_NEUTRAL_ALBEDO',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       backgroundKey: 'TRANSPARENT',
       aspectRatio: 'TALL_9_16',

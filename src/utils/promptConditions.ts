@@ -39,6 +39,7 @@ export function promptConditions(
     keyColor,
     reference,
     validationPass,
+    styleSettings,
     sizing,
     anatomyFacings,
     additionalAnatomyLine,
@@ -84,7 +85,8 @@ export function promptConditions(
     // A second, narrower flag, because only one of the two passes takes the light with it. A clay
     // render is lit — the key light is what makes its volumes readable, which is the whole of what
     // it is run to check — while a flat fill of one colour has no surface for a light to fall on.
-    LIGHTING_STATED: validationPass?.withholdsLight === true ? '' : 'yes',
+    // Asked of the style's shading, which is where `RENDER_STYLE_TRAITS` records that difference.
+    LIGHTING_STATED: styleSettings.lighting === null ? '' : 'yes',
     // Whether the target component size names a native pixel grid this sheet delivers enlarged.
     // Gates three places at once: the carve-out in section 0's resampling rule, the block in
     // section 2 that states the grid and the multiple, and the self-audit's check on what the

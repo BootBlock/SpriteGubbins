@@ -116,6 +116,7 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'CEL_SHADED',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       aspectRatio: 'WIDE_16_9',
       targetModel: 'GEMINI_PRO_IMAGE',

@@ -65,7 +65,7 @@ function loadTab(key: BackgroundKeying | null) {
     // The studio's own colour setting, resolved the way the tab resolves it — so the answer filed
     // here is an answer to the question the button will rebuild, and the staleness guard passes.
     reduction: colorPlanFor(
-      studioColors(output.palette, output.paletteLimit),
+      studioColors(output.palette, output.paletteLimit, null, output.renderStyle),
       null,
       QUANTISE_DEFAULT_DIALS.paletteSnap,
     ).reduction,

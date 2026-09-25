@@ -169,6 +169,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'RENDERED_3D',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
       paletteLimit: 'UNRESTRICTED',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',

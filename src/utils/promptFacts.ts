@@ -5,7 +5,12 @@ import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
 import type { HardwareProfile } from '../types/hardware.ts';
 import type { Palette } from '../types/palette.ts';
-import { resolveCameraElevation, validationPassFor } from '../constants/promptText/index.ts';
+import {
+  resolveCameraElevation,
+  styleSettingsFor,
+  validationPassFor,
+} from '../constants/promptText/index.ts';
+import type { StyleSettings } from '../types/renderStyleTraits.ts';
 import { resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { oneSidedFeatures } from './oneSidedFeatures.ts';
@@ -69,6 +74,15 @@ export interface SheetFacts {
   readonly keyColor: Rgba | null;
   readonly reference: StyleReference | null;
   readonly validationPass: ReturnType<typeof validationPassFor>;
+  /**
+   * The outline, lighting and colour budget as the render style lets the sheet be drawn with them.
+   *
+   * A fact because two phases read it: `promptConditions` drops the lighting line where the style has
+   * no surface to light, and `promptValues` words the outline, the lighting, the budget and the
+   * surface detail. A phase reading the stored fields instead would print "No outline" beside a
+   * style that names its own contour (issue #406).
+   */
+  readonly styleSettings: StyleSettings;
   readonly componentCount: number;
   /** The rig this sheet is drawn against, or `null` — see the derivation for why it is a fact. */
   readonly rig: RigContract | null;
@@ -311,6 +325,7 @@ export function sheetFacts(
     keyColor: BACKGROUND_KEY_COLORS[output.backgroundKey],
     reference,
     validationPass,
+    styleSettings: styleSettingsFor(output),
     componentCount,
     rig,
     sizing,

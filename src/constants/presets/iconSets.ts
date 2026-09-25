@@ -103,7 +103,9 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
     },
     output: {
       ...DEFAULT_IMAGE_CONFIG,
-      renderStyle: 'CEL_SHADED',
+      // Flat vector shapes rather than cel shading: an unlit glyph with no outline is what the card
+      // describes, and cel shading names shadow steps and an ink contour of its own.
+      renderStyle: 'VECTOR_FLAT',
       projection: 'ORTHOGRAPHIC_FRONT',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_FRONT,
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',

@@ -93,6 +93,7 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'RENDERED_3D',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
       // The studio's own default camera, which is the one most action games put the field under —
       // and the one a ground-level nova has to agree with or it will not sit flat on the floor.
       projection: 'THREE_QUARTER_TOPDOWN',

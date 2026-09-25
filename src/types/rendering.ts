@@ -38,20 +38,11 @@ export type RenderStyle = (typeof RENDER_STYLES)[number];
  * untextured material and `SILHOUETTE_ONLY` states one flat fill, and each of those is already the
  * whole answer about the surface.
  *
- * The two halves are held together here because they are read in four places — the compiler's
- * conditionals, the prose section 2 carries, the studio controls that withdraw, and the digest that
- * reports what is left — and a pass whose prose and whose gate disagreed would print a paragraph
- * about a line still on the page, or drop a line nothing replaced.
+ * Whether a pass also withholds the light is not recorded here. It is a question about shading, which
+ * every style answers, and `RenderStyleTraits.shading` answers it for all ten: a clay render is lit
+ * because its volumes are read by the light, and a silhouette has no surface for a light to land on.
  */
 export interface ValidationPass {
-  /**
-   * Whether the pass withholds the light as well as the surface.
-   *
-   * The narrower of the two axes, and the reason this is a record of objects rather than a list of
-   * style names: a clay render is *lit*, and the light is exactly what makes its volumes readable,
-   * while a flat fill of one colour has nowhere for a key light to land.
-   */
-  readonly withholdsLight: boolean;
   /** What section 2 states in place of the lines the pass supersedes. */
   readonly text: string;
 }

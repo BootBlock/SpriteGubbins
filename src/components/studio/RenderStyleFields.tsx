@@ -1,13 +1,22 @@
 import {
   LIGHTING_MODEL_CHOICES,
   OUTLINE_STYLE_CHOICES,
+  outlineWithdrawal,
   OUTPUT_TOOLTIPS,
   PALETTE_LIMIT_CHOICES,
+  paletteLimitWithdrawal,
   RENDER_STYLE_CHOICES,
+  renderStyleWithdrawal,
   RESOLUTION_PROFILE_CHOICES,
   SURFACE_DETAIL_CHOICES,
 } from '../../constants/output/index.ts';
-import { validationPassFor } from '../../constants/promptText/index.ts';
+import {
+  lightingModelsFor,
+  outlinesFor,
+  paletteLimitsFor,
+  styleSettingsFor,
+  validationPassFor,
+} from '../../constants/promptText/index.ts';
 import { resolveMode, sheetPlanFor } from '../../constants/sheetPlans/index.ts';
 import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
@@ -16,31 +25,9 @@ import { statesAssembledSize } from '../../utils/componentTargetSize.ts';
 import { pinnedPalette } from '../../utils/pinnedPalette.ts';
 import { resolveResolutionProfile } from '../../utils/resolveResolutionProfile.ts';
 import { sheetRigContract } from '../../utils/sheetRigContract.ts';
-import type { ValidationPass } from '../../types/rendering.ts';
 import { SelectField } from '../common/SelectField.tsx';
 import { TextField } from '../common/TextField.tsx';
 import { PaletteField } from './PaletteField.tsx';
-
-/**
- * What the Render Style control says about itself once a validation pass is chosen.
- *
- * The counterpart of `PaletteField`'s own sentence, and there for the same reason: three controls
- * leave the panel at once — four for the silhouette — and a disappearance the page never accounts
- * for reads as a bug rather than as a rule. It describes the state the configuration is now in
- * rather than explaining what the setting is, which is `OUTPUT_TOOLTIPS.renderStyle`'s job behind
- * the ⓘ this control already carries.
- *
- * The list is assembled from the same `withholdsLight` the lighting control is withdrawn on, so the
- * sentence cannot name a control that is still there or miss one that has gone.
- */
-function supersession(pass: ValidationPass | null): string {
-  if (pass === null) return '';
-
-  const withdrawn = ['surface detail', 'the colour budget', 'the outline system'];
-  if (pass.withholdsLight) withdrawn.push('the lighting model');
-
-  return `A validation pass: it states the surface itself, so ${withdrawn.slice(0, -1).join(', ')} and ${withdrawn.at(-1) ?? ''} withdraw, and the prompt carries what the pass withholds in their place.`;
-}
 
 /**
  * How the sheet is drawn.
@@ -68,9 +55,10 @@ function supersession(pass: ValidationPass | null): string {
  * validation passes rather than finished looks. `CLAY_RENDER` and `SILHOUETTE_ONLY` state the
  * surface themselves — one untextured material, one flat fill — so surface detail, the colour budget
  * and the outline system describe a surface the sheet is not drawing, and the compiler drops all
- * three from section 2. The silhouette takes the lighting model with them: a flat fill has nowhere
- * for a key light to land. Left on screen they would be three or four settings the prompt no longer
- * carries, which is exactly the failure the colour budget's own withdrawal above answers.
+ * three from section 2. The lighting model goes with them on both: a flat fill has nowhere for a key
+ * light to land, and a clay model is read by one fixed key light, which leaves the control one option.
+ * Left on screen they would be four settings the prompt no longer carries, which is exactly the
+ * failure the colour budget's own withdrawal above answers.
  *
  * Hiding it does not discard it. `paletteLimit` is untouched in the store while the palette is
  * pinned, and none of the four is touched while a pass is chosen, so the values the user chose are
@@ -84,6 +72,13 @@ function supersession(pass: ValidationPass | null): string {
  * which is a statement about one sheet rather than about the project's colour policy, and the
  * quantiser goes on reducing whatever image it is handed to the budget the user set. So the budget
  * is reached by leaving the pass, exactly as it is reached by clearing the palette.
+ *
+ * **The finished styles withdraw options as well as controls** (issue #406). A style whose own line
+ * names its contour offers no `OUTLINE_LESS_ALBEDO`, `RETRO_PIXEL_ART`'s "small palette" offers no
+ * budget without a count, and a style whose shading falls from a directional light offers the key
+ * light alone — one option, so that control withdraws as a pass's do. Each list is the one the
+ * compiler resolves against, each select shows the value the prompt states rather than the stored
+ * one, and the stored value is kept for the next style that offers it, as a pass keeps its four.
  */
 export function RenderStyleFields() {
   const output = useOutputStore((state) => state.output);
@@ -94,6 +89,10 @@ export function RenderStyleFields() {
   const subject = useSheetSubject();
 
   const pass = validationPassFor(output.renderStyle);
+  const settings = styleSettingsFor(output);
+  const outlines = outlinesFor(output.renderStyle);
+  const lightingModels = lightingModelsFor(output.renderStyle);
+  const paletteLimits = paletteLimitsFor(output.renderStyle);
   const assembled = statesAssembledSize(
     category,
     subject,
@@ -123,7 +122,7 @@ export function RenderStyleFields() {
         tooltip={OUTPUT_TOOLTIPS.renderStyle}
         value={output.renderStyle}
         choices={RENDER_STYLE_CHOICES}
-        description={supersession(pass)}
+        description={renderStyleWithdrawal(output.renderStyle)}
         onChange={(value) => {
           setOutputField('renderStyle', value);
         }}
@@ -192,32 +191,36 @@ export function RenderStyleFields() {
         <SelectField
           label="Palette Limit"
           tooltip={OUTPUT_TOOLTIPS.paletteLimit}
-          value={output.paletteLimit}
-          choices={PALETTE_LIMIT_CHOICES}
+          value={settings.paletteLimit}
+          choices={PALETTE_LIMIT_CHOICES.filter((choice) => paletteLimits.includes(choice.value))}
+          description={paletteLimitWithdrawal(output.renderStyle)}
           onChange={(value) => {
             setOutputField('paletteLimit', value);
           }}
         />
       )}
 
-      {pass === null && (
+      {settings.outline !== null && (
         <SelectField
           label="Outline System"
           tooltip={OUTPUT_TOOLTIPS.outlineStyle}
-          value={output.outlineStyle}
-          choices={OUTLINE_STYLE_CHOICES}
+          value={settings.outline}
+          choices={OUTLINE_STYLE_CHOICES.filter((choice) => outlines.includes(choice.value))}
+          description={outlineWithdrawal(output.renderStyle)}
           onChange={(value) => {
             setOutputField('outlineStyle', value);
           }}
         />
       )}
 
-      {!pass?.withholdsLight && (
+      {/* Withdrawn where the style offers one model or none: a select with one option is a control
+          with nothing to do, and the Render Style control says which model the prompt states. */}
+      {settings.lighting !== null && lightingModels.length > 1 && (
         <SelectField
           label="Lighting & Shading Model"
           tooltip={OUTPUT_TOOLTIPS.lightingModel}
-          value={output.lightingModel}
-          choices={LIGHTING_MODEL_CHOICES}
+          value={settings.lighting}
+          choices={LIGHTING_MODEL_CHOICES.filter((choice) => lightingModels.includes(choice.value))}
           onChange={(value) => {
             setOutputField('lightingModel', value);
           }}

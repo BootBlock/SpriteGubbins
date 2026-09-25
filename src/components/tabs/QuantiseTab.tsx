@@ -58,6 +58,8 @@ import { QuantiseWorkspace } from '../quantise/QuantiseWorkspace.tsx';
  */
 export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
+  // The style decides which budgets the sheet can be drawn under — see `resolvePaletteLimit`.
+  const renderStyle = useOutputStore((state) => state.output.renderStyle);
   const palette = useOutputStore((state) => state.output.palette);
   const customPalette = useOutputStore((state) => state.output.customPalette);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
@@ -117,8 +119,8 @@ export function QuantiseTab() {
   // A palette locked off an earlier result supersedes both studio settings while it is held, and
   // this is where that rule is applied — one branch, as the pinned-over-budget rule already is.
   const colorPlan = useMemo(
-    () => colorPlanFor({ palette, customPalette, paletteLimit }, lockedPalette, paletteSnap),
-    [palette, customPalette, paletteLimit, lockedPalette, paletteSnap],
+    () => colorPlanFor({ palette, customPalette, paletteLimit, renderStyle }, lockedPalette, paletteSnap),
+    [palette, customPalette, paletteLimit, renderStyle, lockedPalette, paletteSnap],
   );
 
   const { reading, grid, settings, quantised, busy, error } = useQuantiseWork(

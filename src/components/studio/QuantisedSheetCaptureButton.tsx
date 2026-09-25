@@ -51,6 +51,8 @@ export function QuantisedSheetCaptureButton() {
   const palette = useOutputStore((state) => state.output.palette);
   const customPalette = useOutputStore((state) => state.output.customPalette);
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
+  // The style decides which budgets the sheet can be drawn under — see `resolvePaletteLimit`.
+  const renderStyle = useOutputStore((state) => state.output.renderStyle);
   const capture = useIdentityPaletteCapture();
 
   const studioKey = BACKGROUND_KEY_COLORS[backgroundKey];
@@ -66,8 +68,11 @@ export function QuantisedSheetCaptureButton() {
         settled: succeeded,
         failed: attempt?.kind === 'failed',
         keying: keyingInForce(keyingEnabled, studioKey, keyTolerance),
-        reduction: colorPlanFor({ palette, customPalette, paletteLimit }, lockedPalette, paletteSnap)
-          .reduction,
+        reduction: colorPlanFor(
+          { palette, customPalette, paletteLimit, renderStyle },
+          lockedPalette,
+          paletteSnap,
+        ).reduction,
         studioKey,
       }),
     [
@@ -82,6 +87,7 @@ export function QuantisedSheetCaptureButton() {
       palette,
       customPalette,
       paletteLimit,
+      renderStyle,
       lockedPalette,
       paletteSnap,
     ],

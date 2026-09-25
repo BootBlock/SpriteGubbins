@@ -1,5 +1,5 @@
 import type { RenderStyle } from '../../types/rendering.ts';
-import type { ResolutionProfile, StatedTargetSize, SurfaceDetail } from '../../types/output.ts';
+import type { ResolutionProfile, StatedTargetSize } from '../../types/output.ts';
 import type { RigContract } from '../../types/rigContract.ts';
 
 /**
@@ -23,13 +23,6 @@ export const RENDER_STYLE_TEXT: Readonly<Record<RenderStyle, string>> = {
     'Untextured single-material form study. Useful for validating silhouette and volume before committing to colour',
   SILHOUETTE_ONLY:
     'Solid single-colour silhouettes. A readability pass — does the shape read at target size with no internal detail?',
-};
-
-export const SURFACE_DETAIL_TEXT: Readonly<Record<SurfaceDetail, string>> = {
-  MINIMAL: 'Minimal — base colour blocking and essential joints only',
-  CLEAN_PRODUCTION: 'Clean production — major panels and folds, nothing finer',
-  DETAILED_PRODUCTION: 'Detailed production — seams and material divisions resolved',
-  TEXTURED: 'Textured — controlled surface texturing, still inside the palette limit',
 };
 
 /** The two profiles that state their scale as a *share* of a cell in the grid rather than in pixels. */
