@@ -197,12 +197,14 @@ export const CREATURE: CategoryDefinition = {
       key: 'anatomy',
       label: 'Anatomy Base',
       tooltip:
-        'The body plan the creature is drawn on, and the pieces it is cut into: `Serpentine Tailless` is a head over body segments, `Octopus Tentacled` a head and a mantle over tentacles, and `Amorphous — No Fixed Limbs` a mass that pushes out pseudopods. Match it to the Creature Class.\n\n' +
+        'The body plan the creature is drawn on, and the pieces it is cut into: `Hexapod Insect` walks on six legs and `Eight-Legged Arachnid` on eight, `Serpentine Tailless` is a head over body segments, and `Multi-Headed Hydra Stems` draws one neck and one head that every neck is built from.\n\n' +
+        'Choose the base that matches the Creature Class, such as `Eight-Legged Arachnid` for an `Arachnid Swarmer`.\n\n' +
         ASSEMBLY_BASE_CHOOSES_THE_SHEETS +
         '\n\nA piece the body plan does not draw, such as a sting tail or a second pair of wings, goes in Extra Appendages, the field that adds a slot for it.',
       options: [
         'Quadruped Beast',
         'Hexapod Insect',
+        'Eight-Legged Arachnid',
         'Serpentine Tailless',
         'Bipedal Beast',
         'Octopus Tentacled',
@@ -335,7 +337,7 @@ export const CREATURE: CategoryDefinition = {
         'Negative rules that keep human features, gear and scene dressing off a monster sheet. Name riders and floor shadows: each attaches something to the creature that cannot be cut away once it is drawn.',
       options: [
         'No human clothing, no weapons',
-        'No wings, no extra eyes',
+        'No extra wings, no extra eyes',
         'No saddles, no mechanical parts',
         'No rider, no floor shadows',
         'No background text',

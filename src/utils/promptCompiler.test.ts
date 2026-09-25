@@ -3620,7 +3620,9 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
     // never reached would make the whole assertion pass for the wrong reason.
     expect(sawComponentMapExample, 'the sweep never reached the component map’s JSON example').toBe(true);
     expect([...offenders], `the prompt writes a straight quote:\n${[...offenders].join('\n')}`).toEqual([]);
-  });
+    // The sweep above grows with every declared assembly base, as the term sweep's does, and takes the
+    // same allowance: twelve CREATURE bodies passed the default five seconds under a full run.
+  }, 30_000);
 });
 
 /**

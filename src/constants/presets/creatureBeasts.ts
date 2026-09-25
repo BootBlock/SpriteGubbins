@@ -119,7 +119,7 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
     id: 'topdown-swarm-beetle',
     name: 'Top-Down Swarm Beetle',
     description:
-      'An armoured insectoid seen straight down, as four sheets one per cardinal facing. The twin-stick and roguelike camera, where the top of a carapace is the whole design.',
+      'An armoured insectoid seen straight down, as a twin-stick or roguelike camera sees it, so the top of the carapace is the whole design. Its six legs take two sheets for each of the four cardinal facings.',
     category: 'CREATURE',
     subject: {
       species: 'Chitinous Insectoid',
@@ -145,9 +145,12 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       // the top of a carapace is the whole design.
       projection: 'PURE_TOPDOWN',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.PURE_TOPDOWN,
+      // `Hexapod Insect` draws every one of its six legs in every position, which is past one sheet, so
+      // this pose library is two: the trunk with the front and middle legs, 35 components before the
+      // blade arms and 37 after, then the hind legs alone at 16 (issue #285).
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
-      // Four sheets, one per cardinal facing: a top-down swarm turns on the compass rather than
-      // presenting a front, a side and a back.
+      // Run once per cardinal facing, so eight sheets in all: a top-down swarm turns on the compass
+      // rather than presenting a front, a side and a back.
       directions: 'FOUR_CARDINAL',
       primaryDirection: 'south',
       resolutionProfile: 'MID_RESOLUTION',

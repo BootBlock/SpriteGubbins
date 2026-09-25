@@ -1,4 +1,4 @@
-import { capitalised } from '../../utils/capitalised.ts';
+import { bodySegment, CURVES } from './bodySegment.ts';
 import { creaturePlansFor } from './creatureBody.ts';
 import type { CreatureBody, LimbSegment } from './creatureBody.ts';
 import type { ModePlans } from './modePlans.ts';
@@ -19,35 +19,6 @@ import type { PartDrawing } from './partDrawing.ts';
  * them. `Amorphous — No Fixed Limbs` is not here: nothing on it turns about a pivot, so it has no rig and
  * no segments to draw in positions, and `creatureAmorphous.ts` draws it.
  */
-
-/**
- * How a segment of a body that bends along its length is drawn: once for each curve it has to sit in.
- *
- * **Named for the curve it fits, never drawn curved**, as a limb's are named for the flexion they
- * suit: section 5 has every articulated part a rigid component and forbids a pre-bent segment, so a
- * `curved` segment would be ordered in section 4 and forbidden in section 5 of one prompt. The body
- * bends by turning rigid segments about their joins.
- */
-const CURVES: readonly [PartDrawing, ...PartDrawing[]] = [
-  { text: 'extension-compatible', slug: 'extension' },
-  { text: 'moderate-curve-compatible', slug: 'moderate-curve' },
-  { text: 'tight-coil-compatible', slug: 'tight-coil' },
-];
-
-/** A body segment of a creature with no limbs, drawn in the given positions. */
-function bodySegment(
-  name: string,
-  slug: string,
-  positions: readonly [PartDrawing, ...PartDrawing[]],
-): LimbSegment {
-  return {
-    name,
-    slug,
-    plural: `${capitalised(name)}s`,
-    pluralSlug: `${slug}s`,
-    positions,
-  };
-}
 
 /**
  * A snake, a wyrm, an eel-bodied hydra: a head over a chain of body segments that bend, and nothing

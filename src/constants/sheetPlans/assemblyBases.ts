@@ -3,12 +3,19 @@ import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.
 import { buildingDirectionalVariants, BUILDING_MODULE_LIBRARY, BUILDING_TILESET } from './building.ts';
 import { CREATURE_AMORPHOUS_PLANS } from './creatureAmorphous.ts';
 import {
+  CREATURE_ARACHNID_PLANS,
+  CREATURE_CENTIPEDE_PLANS,
+  CREATURE_HEXAPOD_PLANS,
+} from './creatureArthropods.ts';
+import { CREATURE_AVIAN_PLANS, CREATURE_BIPEDAL_BEAST_PLANS } from './creatureBipeds.ts';
+import {
   CREATURE_FINNED_PLANS,
   CREATURE_OCTOPUS_PLANS,
   CREATURE_ROOTED_PLANS,
   CREATURE_SERPENTINE_PLANS,
   CREATURE_WORM_PLANS,
 } from './creatureBodies.ts';
+import { CREATURE_HYDRA_PLANS } from './creatureHydra.ts';
 import { INTERFACE_NINE_SLICE, INTERFACE_STATE_LIBRARY } from './interface.ts';
 import { ITEM_PART_LIBRARY } from './item.ts';
 import { fixed } from './modePlans.ts';
@@ -107,16 +114,22 @@ export const CATEGORY_ASSEMBLY_BASES: Readonly<
     'Tower With Detachable Roof': BUILDING_MODULES_AND_VIEWS,
     'Wall Section With Gate': BUILDING_MODULES_AND_VIEWS,
   },
-  // Six of the twelve, each a body with no fore and hind limbs (issue #286). The six undeclared values
-  // are limbed, and the standard sheets are true of `Quadruped Beast` alone: the other five draw legs,
-  // heads or wings those sheets do not, which is issue #285.
+  // Every value but `Quadruped Beast`, whose body the standard sheets are. Six have no fore and hind
+  // limbs (issue #286); the other six walk on legs, heads, hands or wings the four-limbed sheets do not
+  // draw (issue #285).
   CREATURE: {
+    'Hexapod Insect': CREATURE_HEXAPOD_PLANS,
+    'Eight-Legged Arachnid': CREATURE_ARACHNID_PLANS,
     'Serpentine Tailless': CREATURE_SERPENTINE_PLANS,
+    'Bipedal Beast': CREATURE_BIPEDAL_BEAST_PLANS,
     'Octopus Tentacled': CREATURE_OCTOPUS_PLANS,
+    'Centipede Multi-Segment': CREATURE_CENTIPEDE_PLANS,
+    'Winged Biped — Avian': CREATURE_AVIAN_PLANS,
     'Rooted Stationary Growth': CREATURE_ROOTED_PLANS,
     'Amorphous — No Fixed Limbs': CREATURE_AMORPHOUS_PLANS,
     'Burrowing Segmented Worm': CREATURE_WORM_PLANS,
     'Finned Aquatic Body': CREATURE_FINNED_PLANS,
+    'Multi-Headed Hydra Stems': CREATURE_HYDRA_PLANS,
   },
   INTERFACE: {
     'Single Fixed-Size Piece': STATE_LIBRARY_ONLY,

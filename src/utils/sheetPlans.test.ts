@@ -272,9 +272,22 @@ describe('the plan table itself', () => {
       'CHARACTER / Articulation',
       'CREATURE / Pose library',
       'CREATURE / Articulation',
+      // Six legs and eight, each drawn in every position, are past one sheet, so the insect's and the
+      // arachnid's limb sheets split by the legs drawn together (issue #285).
+      'CREATURE / Pose library — trunk, front and middle legs',
+      'CREATURE / Pose library — hind legs',
+      'CREATURE / Articulation — front and middle legs',
+      'CREATURE / Articulation — hind legs',
+      'CREATURE / Pose library — trunk, front and second legs',
+      'CREATURE / Pose library — third and hind legs',
+      'CREATURE / Articulation — front and second legs',
+      'CREATURE / Articulation — third and hind legs',
       // A creature with no fixed limbs: its mass once per shape and a pseudopod once per reach, on the
       // run sheet that stands where the articulation sheet stands for a jointed body (issue #286).
       'CREATURE / Shapes',
+      // The hydra's necks beside a quadruped's trunk and limbs, whose pose library alone splits.
+      'CREATURE / Pose library — trunk, necks and forelimbs',
+      'CREATURE / Pose library — hindlimbs',
       // A hatch closed, part-open and fully open; a rigid object whole at rest and active; a working
       // end in two states; an entrance module closed and open; a mount stowed, traversed and elevated.
       // Only two of these four categories articulate — `CATEGORY_RIG_MODES` gives ITEM and BUILDING

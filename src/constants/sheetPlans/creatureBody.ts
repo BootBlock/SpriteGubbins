@@ -4,6 +4,8 @@ import { spokenList } from '../../utils/spokenList.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 import { FIGURE_ASSEMBLY_FAILURE } from './figureAssemblyFailure.ts';
+import { limbSheetName, limbSheets } from './limbSheets.ts';
+import type { LimbSheet } from './limbSheets.ts';
 import { mirroredLimb } from './mirroredLimb.ts';
 import { fixed } from './modePlans.ts';
 import type { ModePlans } from './modePlans.ts';
@@ -31,10 +33,15 @@ import { RIG_PIECES_OUTRO } from './rigPieces.ts';
  * lines, the directional core's intro and its assembly promise all list the trunk the entries draw. The
  * sentences that describe the body rather than list it — the motions, where each piece ends, and the
  * scale examples — are the body's own, beside the pieces they describe.
+ *
+ * **A body can be larger than a sheet** (issue #285). An insect's six legs and a spider's eight, each
+ * drawn in every position, are past `PRACTICAL_COMPONENT_CEILING`, so the pose library and the
+ * articulation sheet are each a run of as many sheets as `limbSheets` deals the limbs onto. The rig
+ * draws each segment once and stays one sheet.
  */
 
 /** A rigid piece of the trunk: drawn once on the pose library and the rig, once per facing on the core. */
-interface TrunkPiece {
+export interface TrunkPiece {
   /** `head`, `hindquarters`, `root mass` — what the trunk lines call it. */
   readonly name: string;
   /** `head`, `root-mass` — the component's own name. */
@@ -77,6 +84,12 @@ interface Limb {
    * absent on a limb drawn in its own right. See `ComponentEntry.mirrors`.
    */
   readonly mirrors?: string;
+  /**
+   * `front and middle legs` — which limbs this one is drawn with where the body's limbs fill more than
+   * one sheet, and what those sheets' names call them. A limb and the limb mirroring it share one. Only
+   * a body whose limbs split names it, and `limbSheets` throws where such a body leaves one out.
+   */
+  readonly set?: string;
 }
 
 /** How one *Anatomy Base* divides the creature it names. */
@@ -132,7 +145,7 @@ function segmentEntries(limb: Limb): readonly ComponentEntry[] {
 
 /** The pose library's line for one limb: its variants numbered, one per position a segment takes. */
 function variantEntry(limb: Limb): ComponentEntry {
-  const count = limb.segments.reduce((sum, segment) => sum + segment.positions.length, 0);
+  const count = positionCount(limb);
   const counts = limb.segments.map((segment) => `${segment.name} ×${segment.positions.length}`).join(', ');
   return {
     label: limb.label,
@@ -169,34 +182,64 @@ function rigEntry(limb: Limb): ComponentEntry {
   };
 }
 
-/** One direction's worth of a body's pieces, with every limb segment drawn once per position. */
-function poseLibrary(body: CreatureBody): SheetPlan {
+/** How many components one limb adds to a sheet drawing each of its segments once per position. */
+function positionCount(limb: Limb): number {
+  return limb.segments.reduce((sum, segment) => sum + segment.positions.length, 0);
+}
+
+/**
+ * One direction's worth of a body's pieces, with every limb segment drawn once per position — on one
+ * sheet, or on as many as `limbSheets` deals the limbs onto, the first of them carrying the trunk.
+ *
+ * **Only the first sheet states where each piece ends**, as only the directional core does in the other
+ * pairing: the termination is written about the trunk, and the sheets after it draw limbs for a trunk
+ * the first one drew — which is also why their scale example is the articulation sheet's, naming limb
+ * segments alone.
+ */
+function poseLibrary(body: CreatureBody): SheetSeries {
   const trunk = body.trunk.map((piece) => `1 ${piece.name}`).join(', ');
-  return {
-    name: 'Pose library',
+  const [first, ...rest] = limbSheets(body.limbs, positionCount, body.trunk.length);
+  const split = rest.length > 0;
+  const sheet = (fields: Pick<SheetPlan, 'name' | 'assembly' | 'scaleExample' | 'groups'>): SheetPlan => ({
+    ...fields,
     facings: 'run',
-    assembly: `${body.motions}.`,
     targetQuantity: 'ASSEMBLED',
     // One limb segment per orientation it is drawn at, which is what the numbered variants are.
     posing: 'PER_POSITION',
-    scaleExample: body.scale.pieces,
     // Not the "figure" CHARACTER keeps and `CATEGORY_ASSEMBLY` and `FIGURE_ASSEMBLY_FAILURE` share with
     // it: those name a *failure* the two categories have in common, where this is naming the subject
     // itself, and the word appears nowhere in this category's inventories.
     scaleUnit: 'a full creature',
     componentClass: 'creature anatomy',
     assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
-    groups: [
-      {
-        heading: null,
-        entries: [
-          trunkEntry(body.trunk, `${trunk}, in the primary direction`),
-          ...body.limbs.map(variantEntry),
-        ],
-        outro: body.termination,
-      },
-    ],
-  };
+  });
+  return [
+    sheet({
+      name: limbSheetName('Pose library', first, split, true),
+      assembly: split
+        ? `${body.motions} — together with the ${body.limbNoun} drawn on this series’ other pose library sheets.`
+        : `${body.motions}.`,
+      scaleExample: body.scale.pieces,
+      groups: [
+        {
+          heading: null,
+          entries: [
+            trunkEntry(body.trunk, `${trunk}, in the primary direction`),
+            ...first.limbs.map(variantEntry),
+          ],
+          outro: body.termination,
+        },
+      ],
+    }),
+    ...rest.map((share) =>
+      sheet({
+        name: limbSheetName('Pose library', share, split, false),
+        assembly: `the ${body.limbNoun} of ${body.motions} — each fitted to the pieces drawn on the first pose library sheet.`,
+        scaleExample: body.scale.limbs,
+        groups: [{ heading: null, entries: share.limbs.map(variantEntry) }],
+      }),
+    ),
+  ];
 }
 
 /** One core sheet: the trunk, turned to this sheet's share of the chosen facings. */
@@ -232,10 +275,19 @@ or views facing the same way are all failures of this entry, however well drawn.
   };
 }
 
-/** The limbs, one facing per generation — the creature spelling of the character articulation run. */
-function articulation(body: CreatureBody): SheetPlan {
+/**
+ * The limbs, one facing per generation — the creature spelling of the character articulation run — on
+ * as many sheets as `limbSheets` deals them onto.
+ */
+function articulation(body: CreatureBody): readonly SheetPlan[] {
+  const shares = limbSheets(body.limbs, positionCount, 0);
+  return shares.map((share) => articulationSheet(body, share, shares.length > 1));
+}
+
+/** One articulation sheet: every limb of its share, each segment named once per position it takes. */
+function articulationSheet(body: CreatureBody, share: LimbSheet<Limb>, split: boolean): SheetPlan {
   return {
-    name: 'Articulation',
+    name: limbSheetName('Articulation', share, split, false),
     facings: 'run',
     assembly: `the ${body.limbNoun} of ${body.motions} — each fitted to the pieces drawn on the directional core sheets, one facing per sheet.`,
     targetQuantity: 'ASSEMBLED',
@@ -245,7 +297,7 @@ function articulation(body: CreatureBody): SheetPlan {
     scaleUnit: 'a full creature',
     componentClass: 'creature anatomy',
     assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
-    groups: body.limbs.map((limb) => ({
+    groups: share.limbs.map((limb) => ({
       heading: limb.heading,
       ...(limb.intro === undefined ? {} : { intro: limb.intro }),
       entries:
@@ -308,14 +360,14 @@ export function creaturePlansFor(body: CreatureBody): ModePlans {
   const library = poseLibrary(body);
   const limbs = articulation(body);
   return {
-    SINGLE_DIRECTION_POSE_LIBRARY: fixed(library),
+    SINGLE_DIRECTION_POSE_LIBRARY: fixed(...library),
     CORE_DIRECTIONAL_VARIANTS: (facings): SheetSeries => {
       const chunks = coreFacingChunks(facings);
       const [first, ...rest] = chunks;
       return [
         directionalCore(body, first, chunks),
         ...rest.map((chunk) => directionalCore(body, chunk, chunks)),
-        limbs,
+        ...limbs,
       ];
     },
     CUTOUT_RIG_SINGLE_DIRECTION: fixed(cutoutRig(body)),
