@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { DEFAULT_PRESET } from '../../constants/presets/index.ts';
 import { DEFAULT_PROJECT_ID, createDefaultProject } from '../../constants/projects.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../../constants/quantiseDials.ts';
+import { movePresetRefusal, moveQuantiseRefusal } from '../../constants/tooltips/index.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
@@ -250,6 +251,33 @@ describe('ProjectsTab', () => {
 
     await user.selectOptions(select, DEFAULT_PROJECT_ID);
     expect(screen.queryByRole('button', { name: /^Move preset / })).toBeNull();
+  });
+
+  it('says why a save cannot move to a project that already has its name, in place of the Move button', async () => {
+    // Issue #454: two saves with one name in one project leave a save and a rename there acting on
+    // whichever the list shows first, so the row does not offer the move the store refuses.
+    const user = userEvent.setup();
+    usePresetStore.setState({
+      customPresets: [preset(DEFAULT_PROJECT_ID), preset(HARBOUR.id, { id: 'custom-2', name: 'my knight' })],
+    });
+    useQuantisePresetStore.setState({
+      presets: [dials(DEFAULT_PROJECT_ID), dials(HARBOUR.id, { id: 'quantise-2' })],
+    });
+
+    render(<ProjectsTab />);
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Project for preset My Knight' }),
+      HARBOUR.id,
+    );
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Project for the saved settings “Flat sheets”' }),
+      HARBOUR.id,
+    );
+
+    expect(screen.queryByRole('button', { name: /^Move / })).toBeNull();
+    const notes = screen.getAllByRole('status').map((note) => note.textContent);
+    expect(notes).toContain(movePresetRefusal('Harbour', 'My Knight'));
+    expect(notes).toContain(moveQuantiseRefusal('Harbour', 'Flat sheets'));
   });
 
   it('names every control in a project after the save it acts on, so no two read alike', async () => {

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { keepFocusThrough } from '../../hooks/keepFocusThrough.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
+import type { Project } from '../../types/project.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { ProjectSelectField } from './ProjectSelectField.tsx';
 import { Button } from '../common/Button.tsx';
@@ -20,6 +21,11 @@ interface ProjectMoveFieldProps {
   readonly moveTooltip: string;
   /** The store's move. Awaited, so the keyboard's next place is chosen from the page as it ends up. */
   readonly onMove: (projectId: string) => Promise<void>;
+  /**
+   * Why the save cannot move to `destination`, or `null` where it can. The store refuses the same
+   * move by the same rule, so this is the reader being told before the press rather than after.
+   */
+  readonly refusalFor: (destination: Project) => string | null;
 }
 
 /**
@@ -38,6 +44,11 @@ interface ProjectMoveFieldProps {
  * all, so it is read as none rather than corrected in an effect, and choosing the save's own project
  * again is how a reader takes a choice back.
  *
+ * **A project that already has the save's name gets a note instead of the button** (issue #454).
+ * A name is unique inside one project, because saving and renaming pick their target by name, so
+ * the move is refused. The note is a live region that stays mounted, so the reason is announced as
+ * the choice is made rather than found by looking for a button that is not there.
+ *
  * **Where the keyboard goes after the move** is `keepFocusThrough`'s answer. Where the row survives —
  * the Quantise tab lists every project's sets — the button has gone and the dropdown takes the focus,
  * now showing where the save is. Where it does not, the keyboard moves on to where the next Tab
@@ -50,6 +61,7 @@ export function ProjectMoveField({
   tooltip,
   moveTooltip,
   onMove,
+  refusalFor,
 }: ProjectMoveFieldProps) {
   const projects = useProjectStore((state) => state.projects);
   const [draft, setDraft] = useState<string | null>(null);
@@ -57,6 +69,7 @@ export function ProjectMoveField({
   const moveRef = useRef<HTMLButtonElement>(null);
 
   const destination = projects.find((project) => project.id === draft && project.id !== projectId);
+  const refusal = destination === undefined ? null : refusalFor(destination);
 
   const move = (to: string) => {
     void keepFocusThrough({
@@ -80,7 +93,11 @@ export function ProjectMoveField({
         onChange={setDraft}
       />
 
-      {destination !== undefined && (
+      <p role="status" className="text-xs leading-relaxed text-ink-muted empty:hidden">
+        {refusal}
+      </p>
+
+      {destination !== undefined && refusal === null && (
         <ControlTooltip hint={`Move to ${destination.name}`} text={moveTooltip}>
           <Button
             variant="secondary"

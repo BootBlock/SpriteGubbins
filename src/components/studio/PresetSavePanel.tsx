@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import { PRESET_ACTION_TOOLTIPS, PROJECT_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
-import { findByName } from '../../utils/findByName.ts';
+import { findByNameIn } from '../../utils/findByNameIn.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 import { ProjectSelectField } from '../projects/ProjectSelectField.tsx';
@@ -85,10 +85,7 @@ export function PresetSavePanel() {
    * and what they can see is what will be stored.
    */
   const followTarget = (nextName: string, nextProject: string) => {
-    const adopted = findByName(
-      customPresets.filter((preset) => preset.projectId === nextProject),
-      nextName,
-    );
+    const adopted = findByNameIn(customPresets, nextProject, nextName);
     if (adopted === undefined) {
       setFollowedId(null);
       return;
@@ -103,10 +100,7 @@ export function PresetSavePanel() {
   // unique inside one project and not across the library. So the button cannot promise one thing
   // and the store do another, and saying "Update" before the press is what makes a confirm
   // unnecessary.
-  const overwrites = findByName(
-    customPresets.filter((preset) => preset.projectId === target),
-    presetName,
-  );
+  const overwrites = findByNameIn(customPresets, target, presetName);
 
   return (
     <section className="glass-panel rounded-2xl border border-foundry-700 p-5 shadow-xl">

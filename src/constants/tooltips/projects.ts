@@ -79,16 +79,35 @@ export const PROJECT_ACTION_TOOLTIPS = {
 
   movePresetProject:
     `Chooses the project this preset moves to. ${MOVE_WAITS_FOR_THE_BUTTON}\n\n` +
-    'The Move button appears under the dropdown once you choose a project other than the one the preset is in.',
+    'The Move button appears under the dropdown once you choose a project other than the one the preset is in. A project that already has a preset of this name cannot take it, because a save or a rename there could not tell the two apart, so a note replaces the button.',
 
   confirmMovePreset:
     'Files this preset under the project you chose, right now. Its name, its description and its configuration are untouched, and nothing in the studio changes.\n\n' +
-    'It keeps the identity it was saved with, so this is safe even where the destination already has a preset of the same name.',
+    'It keeps the identity it was saved with, so nothing that refers to it is disturbed.',
 
   moveQuantiseProject:
     `Chooses the project this saved set of dial positions moves to. ${MOVE_WAITS_FOR_THE_BUTTON}\n\n` +
-    'The Move button appears under the dropdown once you choose a project other than the one the set is in.',
+    'The Move button appears under the dropdown once you choose a project other than the one the set is in. A project that already has a set of this name cannot take it, because a save there could not tell the two apart, so a note replaces the button.',
 
   confirmMoveQuantise:
     'Files this saved set of dial positions under the project you chose, right now. The dials are untouched and a set you have loaded stays loaded. Moving it back to the old project undoes the move.',
 } as const;
+
+/**
+ * What the move control says in place of its Move button when the chosen project already has a
+ * preset of this one's name (issue #454).
+ *
+ * Plain text under the dropdown rather than a card, and a function because it names the project
+ * and the preset. The way out is a rename, which Edit offers on either preset's row.
+ */
+export function movePresetRefusal(projectName: string, presetName: string): string {
+  return `${projectName} already has a preset named “${presetName}”. Rename one of the two with its Edit button, and then you can move this one there.`;
+}
+
+/**
+ * The quantiser's version of {@link movePresetRefusal}. A saved set has no rename, so the way out
+ * is to delete one of the two, or to load this one and save it again under a new name.
+ */
+export function moveQuantiseRefusal(projectName: string, setName: string): string {
+  return `${projectName} already has saved settings named “${setName}”. Delete one of the two, or load these and save them under a new name, before you move them there.`;
+}

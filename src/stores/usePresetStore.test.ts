@@ -495,12 +495,11 @@ describe('moveCustomPreset', () => {
     expect(useUIStore.getState().toastMessage).toBe('Moved “Mine”');
   });
 
-  it('lets a preset land beside one of the same name, rather than folding the two together', async () => {
-    // The opposite of what saving does, and deliberately: a name decides an update when it is being
-    // *typed*, and a move is not a save. Folding them would destroy whichever the reader did not
-    // have in mind, and neither of them asked for it.
+  it('refuses to move a preset into a project that already has its name, and writes nothing', async () => {
+    // Issue #454. Folding the two would destroy whichever the reader did not have in mind, and
+    // letting both in left Save and Edit details there acting on whichever the list showed first.
     await usePresetStore.getState().saveCustomPreset('Hero', 'Theirs', HARBOUR);
-    await usePresetStore.getState().saveCustomPreset('Hero', 'Mine', DEFAULT_PROJECT_ID);
+    await usePresetStore.getState().saveCustomPreset('hero', 'Mine', DEFAULT_PROJECT_ID);
     const mine = usePresetStore
       .getState()
       .customPresets.find((preset) => preset.projectId === DEFAULT_PROJECT_ID);
@@ -509,8 +508,11 @@ describe('moveCustomPreset', () => {
     await usePresetStore.getState().moveCustomPreset(mine.id, HARBOUR);
 
     const stored = await backend.listPresets();
-    expect(stored).toHaveLength(2);
-    expect(stored.every((preset) => preset.projectId === HARBOUR)).toBe(true);
+    expect(stored.find((preset) => preset.id === mine.id)?.projectId).toBe(DEFAULT_PROJECT_ID);
+    expect(usePresetStore.getState().customPresets.find((preset) => preset.id === mine.id)?.projectId).toBe(
+      DEFAULT_PROJECT_ID,
+    );
+    expect(useUIStore.getState().toastMessage).toBe('A preset named “hero” is already in that project');
   });
 
   it('says nothing and writes nothing when the preset is already there', async () => {

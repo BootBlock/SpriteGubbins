@@ -4,7 +4,7 @@ import { QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { PROJECT_ACTION_TOOLTIPS, QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
-import { findByName } from '../../utils/findByName.ts';
+import { findByNameIn } from '../../utils/findByNameIn.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { TextField } from '../common/TextField.tsx';
@@ -60,10 +60,7 @@ export function QuantisePresetControls() {
   // Derived during render, by the rule the store saves by — which is scoped to the project, since a
   // name is unique inside one and not across the collection. So the button cannot promise one thing
   // and the store do another, and saying "Update" before the press makes a confirmation unnecessary.
-  const overwrites = findByName(
-    presets.filter((preset) => preset.projectId === target),
-    name,
-  );
+  const overwrites = findByNameIn(presets, target, name);
 
   const save = async () => {
     setIsSaving(true);

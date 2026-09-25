@@ -17,6 +17,7 @@ import { STUDIO_HISTORY_GUIDANCE } from '../studioHistory.ts';
 import { APP_TAB_CHOICES } from '../ui.ts';
 import { RESULT_PREVIEW_MODES_UNAVAILABLE } from '../previewModes.ts';
 import { presetCollectionGuidance } from './presets.ts';
+import { movePresetRefusal, moveQuantiseRefusal } from './projects.ts';
 
 /**
  * Every module under `src/constants/`, so the guidance sets can be *found* rather than listed.
@@ -115,6 +116,9 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ...APP_TAB_CHOICES.map((tab) => [`APP_TAB_CHOICES.${tab.id}`, tab.guidance] as const),
   ...ACCENT_HUES.map((hue) => [`accentSwatchGuidance(${hue})`, accentSwatchGuidance(hue)] as const),
   ['presetCollectionGuidance', presetCollectionGuidance('Humanoid Character')],
+  // The move control's note in place of its button, where the chosen project already has the name.
+  ['movePresetRefusal', movePresetRefusal('Harbour Game', 'Hero')],
+  ['moveQuantiseRefusal', moveQuantiseRefusal('Harbour Game', 'Flat sheets')],
   // Two of `AUTO_TUNE_GUIDANCE`'s five, and the split is the rule this suite is named for: what
   // counts is the surface, not the filing. `idle` says what pressing Auto does and `waiting` says
   // why it is unavailable — both are the control's own explanation rendered under it rather than
@@ -227,6 +231,8 @@ const PLAIN_SURFACES = [
   'SHEET_IDENTITY_GUIDANCE.',
   'PALETTE_EXPORT_GUIDANCE.',
   'RESULT_PREVIEW_MODES_UNAVAILABLE',
+  'movePresetRefusal',
+  'moveQuantiseRefusal',
 ] as const;
 
 /** Whether an entry is rendered as plain text rather than as a card. */

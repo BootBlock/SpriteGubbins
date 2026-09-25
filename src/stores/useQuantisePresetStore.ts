@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { getDatabase } from '../db/database.ts';
 import { storageFailure } from '../db/storageFailure.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
-import { findByName } from '../utils/findByName.ts';
+import { findByNameIn } from '../utils/findByNameIn.ts';
 import { currentQuantiseDials } from './currentQuantiseDials.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
 import { useUIStore } from './useUIStore.ts';
@@ -55,9 +55,10 @@ export interface QuantisePresetState {
   /**
    * File one set under a different project, leaving its dials and its name alone.
    *
-   * The studio's library has the same action for the same reason, and the same non-rule about
-   * names: a set landing beside one that shares its name is two different readings of two sheets,
-   * and merging them would destroy one.
+   * The studio's library has the same action for the same reason, and the same refusal: a project
+   * that already holds a set of that name does not take this one (issue #454). Merging the two would
+   * destroy one reading, and letting both in would leave a save acting on whichever the list showed
+   * first. `ProjectMoveField` says so before the press.
    */
   moveQuantisePreset(id: string, projectId: string): Promise<void>;
   deleteQuantisePreset(id: string): Promise<void>;
@@ -85,10 +86,7 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
     if (!trimmed) return false;
 
     // Inside the project being saved into, so one project's names cannot reach another's.
-    const existing = findByName(
-      get().presets.filter((preset) => preset.projectId === projectId),
-      trimmed,
-    );
+    const existing = findByNameIn(get().presets, projectId, trimmed);
 
     const preset: QuantisePreset = {
       id: existing?.id ?? `quantise-${crypto.randomUUID()}`,
@@ -125,6 +123,11 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
     // Already there is not a failure and not a write — a second press of Move that arrives after the
     // first has landed is the reader asking for what is already true.
     if (!preset || preset.projectId === projectId) return;
+
+    if (findByNameIn(get().presets, projectId, preset.name) !== undefined) {
+      useUIStore.getState().showToast(`Saved settings named “${preset.name}” are already in that project`);
+      return;
+    }
 
     try {
       const database = await getDatabase();

@@ -3,7 +3,7 @@ import { getDatabase } from '../db/database.ts';
 import { storageFailure } from '../db/storageFailure.ts';
 import type { CustomArchetype, PresetArchetype } from '../types/preset.ts';
 import { toImageConfig } from '../utils/imageConfig.ts';
-import { findByName } from '../utils/findByName.ts';
+import { findByNameIn } from '../utils/findByNameIn.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
 import { useUIStore } from './useUIStore.ts';
@@ -71,13 +71,15 @@ export interface PresetState {
    */
   updateCustomPresetDetails(id: string, name: string, description: string): Promise<boolean>;
   /**
-   * File one preset under a different project, leaving everything else about it alone.
+   * File one preset under a different project, leaving everything else about it alone. The preset
+   * keeps its id, so nothing that refers to it is disturbed.
    *
-   * The preset keeps its id, so nothing that refers to it is disturbed — and it may land in a
-   * project that already holds a preset of the same name, which is deliberately *not* refused: the
-   * two are different configurations that happen to share a label, and folding one into the other
-   * would destroy whichever the reader did not have in mind. Saving is where a name decides an
-   * update; moving is not saving.
+   * **Refused where that project already holds a preset of the same name** (issue #454), by the
+   * rule a rename is refused by. Folding the two into one would destroy whichever configuration the
+   * reader did not have in mind, and letting both in would leave two presets a save and a rename
+   * could not tell apart: each picks its target by name, so both would act on whichever the list
+   * showed first. `ProjectMoveField` says so before the press, so a refusal here is the guard for a
+   * list that changed under it.
    */
   moveCustomPreset(id: string, projectId: string): Promise<void>;
   deleteCustomPreset(id: string): Promise<void>;
@@ -115,7 +117,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     // Reusing the id is the whole mechanism: `savePreset` is an upsert by id on both backends.
     // Only custom presets are candidates — a built-in is never stored, so nothing can overwrite it —
     // and only those in the project being saved into, so one project's names cannot reach another's.
-    const existing = findByName(presetsIn(get().customPresets, projectId), trimmed);
+    const existing = findByNameIn(get().customPresets, projectId, trimmed);
     const preset: CustomArchetype = {
       id: existing?.id ?? `custom-${crypto.randomUUID()}`,
       projectId,
@@ -164,7 +166,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     // configuration the user did not have in mind. A preset matches itself, so fixing your own
     // capitalisation is not a collision — and the comparison is inside this preset's own project,
     // by the rule saving follows.
-    const clash = findByName(presetsIn(get().customPresets, preset.projectId), trimmed);
+    const clash = findByNameIn(get().customPresets, preset.projectId, trimmed);
     if (clash !== undefined && clash.id !== id) {
       useUIStore.getState().showToast(`A preset named “${clash.name}” already exists here`);
       return false;
@@ -190,6 +192,11 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     // first has landed is the reader asking for what is already true.
     if (!preset || preset.projectId === projectId) return;
 
+    if (findByNameIn(get().customPresets, projectId, preset.name) !== undefined) {
+      useUIStore.getState().showToast(`A preset named “${preset.name}” is already in that project`);
+      return;
+    }
+
     try {
       const database = await getDatabase();
       await database.savePreset({ ...preset, projectId });
@@ -211,14 +218,3 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     }
   },
 }));
-
-/**
- * The presets filed under one project — the set a name is unique within.
- *
- * A function rather than an inline filter at each of the two call sites, because the two are one
- * rule: the name a save updates and the name an edit is refused for have to be decided over the
- * same collection, or a rename could produce the duplicate a save is careful never to make.
- */
-function presetsIn(presets: readonly CustomArchetype[], projectId: string): readonly CustomArchetype[] {
-  return presets.filter((preset) => preset.projectId === projectId);
-}

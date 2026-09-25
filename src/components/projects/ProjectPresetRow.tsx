@@ -1,8 +1,13 @@
 import { useRef, useState } from 'react';
-import { PRESET_ACTION_TOOLTIPS, PROJECT_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import {
+  PRESET_ACTION_TOOLTIPS,
+  PROJECT_ACTION_TOOLTIPS,
+  movePresetRefusal,
+} from '../../constants/tooltips/index.ts';
 import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import type { CustomArchetype } from '../../types/preset.ts';
+import { findByNameIn } from '../../utils/findByNameIn.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { PresetCardSpecs } from '../tabs/PresetCardSpecs.tsx';
@@ -40,6 +45,7 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
   const loadPreset = usePresetStore((state) => state.loadPreset);
   const deleteCustomPreset = usePresetStore((state) => state.deleteCustomPreset);
   const moveCustomPreset = usePresetStore((state) => state.moveCustomPreset);
+  const customPresets = usePresetStore((state) => state.customPresets);
 
   const [isEditing, setIsEditing] = useState(false);
   const { isConfirming, attachAsk, attachCancel, ask, cancel, confirm } = useConfirmInPlace();
@@ -85,6 +91,12 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
         tooltip={PROJECT_ACTION_TOOLTIPS.movePresetProject}
         moveTooltip={PROJECT_ACTION_TOOLTIPS.confirmMovePreset}
         onMove={(projectId) => moveCustomPreset(preset.id, projectId)}
+        // The store's own rule, asked before the press, so the row never offers a move it refuses.
+        refusalFor={(destination) =>
+          findByNameIn(customPresets, destination.id, preset.name) === undefined
+            ? null
+            : movePresetRefusal(destination.name, preset.name)
+        }
       />
 
       {isConfirming ? (
