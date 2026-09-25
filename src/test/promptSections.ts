@@ -1,3 +1,5 @@
+import { SCOPE_AND_PRECEDENCE_HEADING } from '../constants/promptTemplate.ts';
+
 /**
  * One numbered section of a compiled prompt, sliced out by its heading's title.
  *
@@ -22,4 +24,18 @@
 export function sectionOf(prompt: string, title: string): string {
   const pattern = String.raw`^## \d+\. ${title}$[\s\S]*?(?=\n## |(?![\s\S]))`;
   return new RegExp(pattern, 'm').exec(prompt)?.[0] ?? '';
+}
+
+/**
+ * Section 0's numbered items: from its heading down to the subheading that `SCOPE_AND_PRECEDENCE_HEADING`
+ * names, which is the part of the section that Sol forwards to the image tool as written.
+ *
+ * Throws rather than returning `''` when either end is missing, because an empty slice would satisfy
+ * every `not.toContain` a caller asserts against it.
+ */
+export function renderContractOf(prompt: string): string {
+  const start = /^## \d+\. NON-NEGOTIABLE OUTPUT CONTRACT$/m.exec(prompt)?.index ?? -1;
+  const end = prompt.indexOf(`\n### ${SCOPE_AND_PRECEDENCE_HEADING}\n`);
+  if (start < 0 || end < start) throw new Error('section 0 should carry its scope-and-precedence heading.');
+  return prompt.slice(start, end);
 }

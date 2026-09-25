@@ -2490,7 +2490,7 @@ same grid. What is uniform across the sheet is the pixel, not the cell.
 
 **R9. Sol was told to forward all of §0, and most of §0 was not for the model it forwards to.** The
 Sol directive required §0 "as they are written here". On the default Sol prompt (CHARACTER, eight
-directions; 5,083 words) §0 was 639 words, about 91% of the ~700-word hand-off `sol.ts` records
+directions) §0 was 639 words, about 91% of the ~700-word hand-off `sol.ts` records
 observing. It cited other sections eight times, which point at nothing in a hand-off that carries
 only what Sol composed, and it carried R4's tripwire, gated on `RETURNS_TEXT` precisely because an
 image endpoint cannot say anything back — which the directive then ordered sent to one. Sol either
@@ -2503,7 +2503,8 @@ the palette item "the palette this specification fixes", and the native-grid car
 block Sol is told to forward by its heading. Below it are the series note, the tripwire, the
 precedence order, the validation-pass rank and the exclusion ranking, all addressed to the reader.
 The directive protects "the numbered items of section 0" and tells Sol that the block under the
-subheading is its own to settle rather than to send on.
+subheading is its own to act on, and to leave out of the call. “Act on” rather than “settle”,
+because the tripwire under it tells Sol to report a malformed specification, never to resolve it.
 
 **The multi-facing clause moved the other way, into the items**, as their last entry and without its
 two citations of §3. It is the one paragraph of the old §0 that describes the image rather than the

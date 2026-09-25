@@ -16,7 +16,7 @@ import {
 } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
-import { NATIVE_GRID_HEADING, SCOPE_AND_PRECEDENCE_HEADING } from '../constants/promptTemplate.ts';
+import { NATIVE_GRID_HEADING } from '../constants/promptTemplate.ts';
 import * as promptText from '../constants/promptText/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../constants/promptText/index.ts';
 import { PROJECTIONS } from '../types/rendering.ts';
@@ -36,7 +36,7 @@ import {
 } from '../types/output.ts';
 import type { AspectRatio, OutputConfig } from '../types/output.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
-import { sectionOf } from '../test/promptSections.ts';
+import { renderContractOf, sectionOf } from '../test/promptSections.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
@@ -803,21 +803,19 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
 describe('generatePrompt — section 0’s render contract, as the image model receives it', () => {
   /**
    * Every gate that adds a numbered item or a paragraph to section 0, each switched on once. The
-   * pixel-art sheet with a parseable custom size is the one that emits the native grid.
+   * pixel-art sheet with a parseable custom size is the one that emits the native grid, and a clay
+   * render is a validation pass.
    */
   const VARIANTS = [
     {},
     { palette: 'NES' },
     { renderStyle: 'PIXEL_ART', resolutionProfile: 'CUSTOM', spriteTargetSize: '16 × 32 px' },
+    { renderStyle: 'CLAY_RENDER' },
     { directionalMode: 'CORE_DIRECTIONAL_VARIANTS' },
   ] as const satisfies readonly Partial<OutputConfig>[];
 
-  /** Section 0 from its heading down to the subheading, which is what Sol forwards as written. */
   function numberedItems(prompt: string): string {
-    const start = prompt.indexOf('## 0. NON-NEGOTIABLE OUTPUT CONTRACT');
-    const end = prompt.indexOf(`### ${SCOPE_AND_PRECEDENCE_HEADING}`);
-    if (start < 0 || end < start) throw new Error('section 0 should carry its scope-and-precedence heading.');
-    return prompt.slice(start, end).replaceAll(/\s+/g, ' ');
+    return renderContractOf(prompt).replaceAll(/\s+/g, ' ');
   }
 
   it('cites no section by number in the items, and keeps every rule for the reader below them', () => {
@@ -841,6 +839,7 @@ describe('generatePrompt — section 0’s render contract, as the image model r
             ['series', '** The other sheets are generated separately'],
             ['tripwire', 'Say so rather than resolving'],
             ['precedence', 'Where two instructions pull against each other'],
+            ['validation pass', 'This sheet’s render style is a validation pass'],
             ['exclusions', 'outranks every attribute that asks for the same visible element'],
           ] as const) {
             expect(items, `${where}: ${gate}`).not.toContain(text);
@@ -868,6 +867,7 @@ describe('generatePrompt — section 0’s render contract, as the image model r
         'series',
         'tripwire',
         'turns',
+        'validation pass',
       ].sort(),
     );
   });
@@ -1959,12 +1959,7 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     // It is a numbered item rather than a paragraph after them, because the numbered items are the
     // part of section 0 Sol forwards to the image tool, and this is the clause the renderer needs.
     const prompt = generatePrompt('CHARACTER', SUBJECT, CORE);
-    const contract = prompt
-      .slice(
-        prompt.indexOf('## 0. NON-NEGOTIABLE OUTPUT CONTRACT'),
-        prompt.indexOf(`### ${SCOPE_AND_PRECEDENCE_HEADING}`),
-      )
-      .replaceAll(/\s+/g, ' ');
+    const contract = renderContractOf(prompt).replaceAll(/\s+/g, ' ');
 
     expect(contract).toMatch(
       /\d+\. A component the inventory lists in more than one direction is one component/,

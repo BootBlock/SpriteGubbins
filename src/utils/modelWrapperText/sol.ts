@@ -36,9 +36,8 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * already records in the other direction. The instruction now names only the hand-off itself,
  * which is certain on both paths, and says what any call must still carry.
  *
- * **The must-carry list is the whole of what this wrapper does, and it is known to work on the call
- * it names.** A
- * sheet generated on chatgpt.com was traced back to the arguments Sol actually passed to the image
+ * **The must-carry list is what this wrapper does, beside one sentence that keeps section 0's
+ * reader rules with Sol, and the list is known to work on the call it names.** A sheet generated on chatgpt.com was traced back to the arguments Sol actually passed to the image
  * tool, and they were Sol's own ~700-word composition rather than the ~40,000-character
  * specification it was given. The three things this wrapper names all arrived intact — the exact
  * component count, the key colour and the ban on text and shadows from section 0; all five object
@@ -141,7 +140,8 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * because an image endpoint cannot carry it out, and the directive then ordered it forwarded to one.
  * So the template now puts those paragraphs under the heading `SCOPE_AND_PRECEDENCE_HEADING` names,
  * the numbered items above it cite no section by number, and this directive protects the items and
- * hands the rest to Sol. Whether that changes what a delivered sheet holds is not measured (#403).
+ * tells Sol to act on the rest itself. It says "act on", not "settle", because the tripwire tells
+ * Sol to report a malformed specification rather than resolve it. Whether that changes what a delivered sheet holds is not measured (#403).
  *
  * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
  * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
@@ -244,7 +244,7 @@ of section ${citeSection(sections, 'CONTRACT')}, the object yaws in section ${ci
 here. If it has to be shortened, shorten the prose elsewhere — never those three.
 
 What section ${citeSection(sections, 'CONTRACT')} states under “${SCOPE_AND_PRECEDENCE_HEADING}” is addressed to you, not to the image model:
-settle it before you make the call rather than sending it on.${sectionTwo}
+act on it yourself before you make the call, and leave it out of what you send.${sectionTwo}
 
 ${prompt}`;
 }
