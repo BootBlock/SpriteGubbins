@@ -24,9 +24,9 @@ import { parseSettings } from './settingsParser.ts';
  * cast into a shape it doesn't have and left to explode somewhere unrelated.
  *
  * **Like `configParsers.ts`, this is not a compatibility layer.** Nothing here reads a shape because
- * some earlier build of the app wrote it: the SQLite worker drops a table whose columns are not
- * exactly the schema's before a row is ever read (see `TABLE_COLUMNS` in `schema.ts`), and whatever
- * does arrive, from either backend, is held to the current shape and nothing else.
+ * some earlier build of the app wrote it: the SQLite worker discards a database whose schema is not
+ * the one the DDL declares before a row is ever read (see `discardIncompatibleDatabase.ts`), and
+ * whatever does arrive, from either backend, is held to the current shape and nothing else.
  *
  * The narrowing primitives are in `readers.ts` and the two payload parsers in `configParsers.ts`;
  * this file is only the row shapes. The entries of an imported **pack** are `importedRows.ts`,
@@ -38,7 +38,7 @@ import { parseSettings } from './settingsParser.ts';
  *
  * The two payload columns are the exception, and are *repaired* rather than required, on the ground
  * every check in this file stands on: storage is untrusted. On SQLite both columns are always there
- * — they are `NOT NULL`, and the worker drops a table whose columns are not exactly the DDL's — so
+ * — they are `NOT NULL`, and the worker discards a database whose schema is not the DDL's — so
  * what reaches this parser is a payload that does not read: a value that is not text, or text that
  * is not JSON. The localStorage fallback's rows are hand-editable JSON, where either key can also be
  * missing outright. Defaulting them costs that entry its one-click restore — it comes back as the
@@ -114,8 +114,8 @@ export function parseProjectRow(row: unknown): Project | null {
  * Parse a `custom_presets` row, including its two JSON payload columns.
  *
  * The project id is **required**, not repaired to the Default project. A row is only reachable here
- * because the table's columns matched the DDL exactly — the worker drops a table whose shape has
- * drifted — so a row without one is storage that has been hand-edited, and quietly re-filing it
+ * because the table's columns matched the DDL exactly — the worker discards a database whose shape
+ * has drifted — so a row without one is storage that has been hand-edited, and quietly re-filing it
  * would move somebody's preset into a project they never chose. A pack file is the opposite case
  * and does repair it: see {@link parseImportedPreset}.
  */
