@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { TARGET_MODELS } from '../constants/models.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
-import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
+import {
+  deliberates,
+  returnsText,
+  seesCanvasBeforeDelivery,
+  supportsPromptFeedback,
+} from './targetCapabilities.ts';
 
 /**
  * These decide what a target is *sent*, so getting one wrong is silent: the prompt still reads
@@ -57,6 +62,7 @@ describe('the capability table', () => {
       expect(typeof deliberates(target), target).toBe('boolean');
       expect(typeof returnsText(target), target).toBe('boolean');
       expect(typeof supportsPromptFeedback(target), target).toBe('boolean');
+      expect(typeof seesCanvasBeforeDelivery(target), target).toBe('boolean');
     }
   });
 });
@@ -69,9 +75,40 @@ describe('deliberates', () => {
   });
 
   it('is false for every single-pass image endpoint', () => {
-    // Section 9's self-audit asks the reader to check the sheet and redraw before delivering.
+    // Section 9's self-audit asks the reader to check the sheet before it is delivered.
     // These generate in one pass, so that names a step they do not have.
     for (const target of SINGLE_PASS) expect(deliberates(target), target).toBe(false);
+  });
+});
+
+/**
+ * The targets that render, look at what they rendered, and can render again before the reader sees
+ * anything. Google state it of both Gemini image models: "The model generates up to two interim
+ * images to test composition and logic. The last image within Thinking is also the final rendered
+ * image."
+ */
+const SEES_CANVAS = ['GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const;
+
+describe('seesCanvasBeforeDelivery', () => {
+  it('is true only for the targets documented to render interim images', () => {
+    for (const model of TARGET_MODELS) {
+      const expected = (SEES_CANVAS as readonly string[]).includes(model.id);
+      expect(seesCanvasBeforeDelivery(model.id), model.id).toBe(expected);
+    }
+  });
+
+  it('is false for Sol, whose first sight of the image is the reader’s', () => {
+    // Sol hands the render to a tool and sees it only once it is delivered, so an audit telling it
+    // to redraw rather than deliver can be obeyed only with a second image or an edit (#398).
+    expect(seesCanvasBeforeDelivery('CHATGPT_5_6_SOL')).toBe(false);
+  });
+
+  it('never claims sight of a canvas for a target with no pass in which to use it', () => {
+    for (const model of TARGET_MODELS) {
+      if (model.capabilities.seesCanvasBeforeDelivery) {
+        expect(model.capabilities.deliberates, model.id).toBe(true);
+      }
+    }
   });
 });
 

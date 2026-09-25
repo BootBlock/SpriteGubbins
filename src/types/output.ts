@@ -190,10 +190,25 @@ export interface TargetCapabilities {
    * Works *through* the prompt as a procedure — planning, and checking what it produced against
    * what it was asked for — rather than conditioning on it as a single description.
    *
-   * False for every diffusion endpoint. They generate in one pass, so "before delivering, verify…"
-   * and "redraw that component rather than delivering the sheet" name a step they do not have.
+   * False for every diffusion endpoint. They generate in one pass, so a self-audit names a step
+   * they do not have, and the prompt carries none.
    */
   readonly deliberates: boolean;
+  /**
+   * Sees its own rendered image before the reader does, so it can check pixels and draw again
+   * before anything is delivered.
+   *
+   * It decides *what* the self-audit checks, where `deliberates` decides whether there is one. A
+   * target that sees its canvas is told "before delivering, verify" and to redraw a failed
+   * component. One that does not is told to check its plan before the render and never to redraw
+   * or edit afterwards — because for a model that hands the render to a tool, the first moment it
+   * can see the pixels is the moment they are already in front of the reader, and the only way to
+   * obey "redraw rather than deliver" is a second image or an edit of the first.
+   *
+   * False wherever nobody documents it, including every single-pass endpoint: "check the plan
+   * before the render" is true of any target, and "redraw before delivering" is not.
+   */
+  readonly seesCanvasBeforeDelivery: boolean;
   /** Returns text alongside the image, which is what a companion component map needs. */
   readonly emitsText: boolean;
   /** What the vendor publishes about prompt length, including that they publish nothing. */
@@ -520,9 +535,9 @@ export interface OutputConfig extends ImageOutputConfig {
    * — to write back about the *prompt* rather than the picture.
    *
    * The second half is what distinguishes it from the self-audit the template already carries for a
-   * reasoning target. That audit exists to fix the sheet before delivery; this asks what the
-   * specification failed to say clearly enough to make the miss impossible, addressed to whoever
-   * maintains the template. Needs both capabilities — a pass in which to re-read, and a channel to
+   * reasoning target. That audit exists to fix the sheet, or the plan for it, before delivery; this
+   * asks what the specification failed to say clearly enough to make the miss impossible, addressed
+   * to whoever maintains the template. Needs both capabilities — a pass in which to re-read, and a channel to
    * answer through — so it is gated on `supportsPromptFeedback` rather than on either alone.
    */
   readonly emitPromptFeedback: boolean;

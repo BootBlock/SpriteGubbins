@@ -60,6 +60,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
     capabilities: {
       deliberates: true,
+      // Nobody to cite, because no model is named — and a reader pasting this into a chat model
+      // that hands its render to a tool cannot obey "redraw before delivering" without a second
+      // image. Checking the plan before the render is true of any target that deliberates.
+      seesCanvasBeforeDelivery: false,
       emitsText: true,
       // The one entry with nobody to cite. It names no model, so there is no vendor page to hold a
       // figure and no product a figure would be about — which is a different answer from Midjourney
@@ -176,6 +180,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     generatorSite: { kind: 'PUBLIC', url: 'https://chatgpt.com/images' },
     capabilities: {
       deliberates: true,
+      // It sees nothing until the image tool returns, and by then the image is in front of the
+      // reader, so "redraw rather than deliver" can only mean a second render or an edit of the
+      // first — two images, or one that no longer matches the composition it was written to.
+      seesCanvasBeforeDelivery: false,
       emitsText: true,
       // The *input* ceiling, not the 1,050,000 context window: the window is input plus the
       // 128,000 output tokens reserved against it, and what this field is measured against is the
@@ -234,6 +242,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
     capabilities: {
       deliberates: true,
+      // "The model generates up to two interim images to test composition and logic. The last image
+      // within Thinking is also the final rendered image." So it draws, looks and draws again before
+      // anything is delivered. https://ai.google.dev/gemini-api/docs/image-generation
+      seesCanvasBeforeDelivery: true,
       emitsText: true,
       // "Input token limit: 131,072", and Outputs "Image and Text" — which is what earns the
       // component map. https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image
@@ -261,6 +273,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
     capabilities: {
       deliberates: true,
+      // The same interim images as Nano Banana 2, from the same page.
+      // https://ai.google.dev/gemini-api/docs/image-generation
+      seesCanvasBeforeDelivery: true,
       emitsText: true,
       // https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image
       promptBudget: {
@@ -308,6 +323,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     generatorSite: { kind: 'PUBLIC', url: 'https://dreamina.capcut.com/ai-tool/generate/?type=image' },
     capabilities: {
       deliberates: true,
+      // What is reported of it is a plan made before the render — "plans the layout first, then
+      // renders" — and nothing about looking at the result, so its audit is of the plan.
+      seesCanvasBeforeDelivery: false,
       emitsText: false,
       // **Guidance, and it is published — which is why it is no longer silence.** ByteDance state
       // it on the `prompt` parameter itself: “Use no more than 300 Chinese characters or 600 English
@@ -376,6 +394,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     generatorSite: { kind: 'PUBLIC', url: 'https://chat.qwen.ai/' },
     capabilities: {
       deliberates: false,
+      seesCanvasBeforeDelivery: false,
       emitsText: false,
       // "Supports input of up to 4.5k tokens", on Alibaba's model page for `qwen-image-3.0-pro`. The
       // figure was first taken from launch coverage and cited to an API reference that did not carry
@@ -432,6 +451,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     generatorSite: { kind: 'PUBLIC', url: 'https://www.midjourney.com/imagine' },
     capabilities: {
       deliberates: false,
+      seesCanvasBeforeDelivery: false,
       emitsText: false,
       promptBudget: {
         kind: 'UNPUBLISHED',
@@ -454,6 +474,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
     capabilities: {
       deliberates: false,
+      seesCanvasBeforeDelivery: false,
       emitsText: false,
       // **Both halves of the note below are the front end's, because there is no vendor page to
       // cite.** Stability publish weights rather than a prompt syntax, which is the whole finding
@@ -562,6 +583,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
     capabilities: {
       deliberates: false,
+      seesCanvasBeforeDelivery: false,
       emitsText: false,
       promptBudget: {
         kind: 'CEILING',
@@ -614,6 +636,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     generatorSite: { kind: 'PUBLIC', url: 'https://playground.bfl.ai/' },
     capabilities: {
       deliberates: false,
+      seesCanvasBeforeDelivery: false,
       emitsText: false,
       promptBudget: {
         kind: 'CEILING',
@@ -697,6 +720,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
     capabilities: {
       deliberates: false,
+      seesCanvasBeforeDelivery: false,
       emitsText: false,
       // "The maximum length is 32000 characters for the GPT image models." Recorded in characters
       // because that is the unit OpenAI states it in, and taken from OpenAI's own published OpenAPI

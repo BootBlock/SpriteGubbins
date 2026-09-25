@@ -1,4 +1,4 @@
-import { deliberates, returnsText } from './targetCapabilities.ts';
+import { deliberates, returnsText, seesCanvasBeforeDelivery } from './targetCapabilities.ts';
 import { isPlanView, LETTERING_IS_A_COMPONENT, perComponentLimit } from '../constants/promptText/index.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
 import { seriesStatesOneCapability } from './seriesCapability.ts';
@@ -187,11 +187,16 @@ export function promptConditions(
     // line, which names the second deliverable so the last thing the target reads is not "generate
     // the sheet now" alone.
     EMIT_PROMPT_FEEDBACK: emitPromptFeedback ? 'yes' : '',
-    // The self-audit tells the reader to check the sheet and redraw before delivering. A
+    // The self-audit tells the reader to check the sheet before it is delivered. A
     // single-pass diffusion endpoint has no such step, so on those targets it is the most
     // rule-list-shaped block in the template sitting where attention is weakest. Same reasoning as
     // MULTI_DIRECTION above, applied to what the *target* can do rather than what the sheet holds.
     DELIBERATES: deliberates(output.targetModel) ? 'yes' : '',
+    // Which audit a deliberating target gets: pixels checked before delivery and a failed component
+    // redrawn, or a plan checked before the render and the render delivered as it comes back. A
+    // target that hands its render to a tool can obey "redraw rather than deliver" only with a
+    // second image, so the gate is the target's declared sight of its canvas, not `deliberates`.
+    SEES_CANVAS: seesCanvasBeforeDelivery(output.targetModel) ? 'yes' : '',
     // Section 0's category tripwire ends "say so rather than resolving it", which names a channel a
     // pure image endpoint does not have. It is the same argument as DELIBERATES above, applied to
     // the other capability: an instruction that cannot be carried out spends tokens in the
