@@ -15,12 +15,21 @@ import type { Direction } from '../types/rendering.ts';
  * directly overhead a yaw hides nothing, so both the per-facing clauses and the paragraph closing
  * the block state the in-plane turn instead.
  *
- * Pure, like everything in `utils/`: a function of the covered facings and the elevation, and
- * nothing else.
+ * **The batch's facings are its third, and they decide one sentence.** A single-facing sheet warns
+ * that another sheet of its series is the same subject at a different yaw, because that is the
+ * sheet a generator is tempted to answer by mirroring this one. The warning is stated only where
+ * such a sheet exists: an icon or a terrain tile is one sheet, and a series drawn to one facing
+ * throughout (`SINGLE_FRONT` with an articulation sheet) is several sheets at the same yaw, and the
+ * sentence described a sheet neither has. Compared by yaw rather than by name, because `front` and
+ * `south` are two names for one yaw.
+ *
+ * Pure, like everything in `utils/`: a function of the covered facings, the elevation and the
+ * batch's facings, and nothing else.
  */
 export function directionalRotation(
   covered: readonly [Direction, ...Direction[]],
   cameraElevation: number,
+  batchFacings: readonly Direction[],
 ): string {
   const lines = covered.map((direction) => describeYaw(direction, cameraElevation)).join('\n');
   const plan = isPlanView(cameraElevation);
@@ -35,16 +44,21 @@ towards the bottom of the frame`
     : 'Yaw is measured from the component facing the camera';
 
   // One facing is not a directional set, so the rules about *disagreeing* views do not apply — but
-  // the sheet is still one run of a series that shares an identity lock, and the next run differs
-  // from it by object yaw alone. Saying so is what stops run two being run one, mirrored.
+  // where the batch draws the subject at another yaw, that sheet differs from this one by object yaw
+  // alone. Saying so is what stops it being this sheet, mirrored.
   if (covered.length === 1) {
+    const [only] = covered;
+    const turnsElsewhere = batchFacings.some((facing) => OBJECT_YAW[facing] !== OBJECT_YAW[only]);
+    const elsewhere = turnsElsewhere
+      ? ` Another sheet in this series is the same
+subject at a *different* object yaw beneath this same unmoved camera — never this sheet mirrored,
+and never a redesign.`
+      : '';
     return `This sheet covers one object yaw, and every component on it is drawn at that same orientation:
 
 ${lines}
 
-${datum}. Another sheet in this series is the same
-subject at a *different* object yaw beneath this same unmoved camera — never this sheet mirrored,
-and never a redesign.`;
+${datum}.${elsewhere}`;
   }
 
   // What the figures are *not*: a screen angle to measure off the finished image. Under a plan view
