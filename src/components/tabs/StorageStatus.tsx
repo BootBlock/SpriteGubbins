@@ -4,35 +4,40 @@ import { getDatabase } from '../../db/database.ts';
 import { Badge } from '../common/Badge.tsx';
 
 /**
- * What the three settled states, and the two unsettled ones, are called.
+ * What the four settled states, and the two unsettled ones, are called.
  *
- * Two of the three are not faults: the localStorage one is a specified behaviour for browsers where
+ * Two of the four are not faults: the localStorage one is a specified behaviour for browsers where
  * OPFS is unavailable, so both it and SQLite read as plain statements of fact rather than a pass and
- * a warning. **The third is a fault, and is the only label here that tells the reader to do
- * something.** A tab whose database is open in another tab of this app can read nothing and store
- * nothing, and it is the one state where saying where the data lives is not enough — this is where
- * the reader finds out why their library looks empty, so it has to name the cause and the fix.
+ * a warning. **The other two are the labels that tell the reader something they must act on.** A
+ * store in memory works and keeps nothing past a reload, so its label says the work goes with the
+ * tab. A tab whose database is open in another tab of this app can read nothing and store nothing,
+ * and it is the one state where saying where the data lives is not enough — this is where the reader
+ * finds out why their library looks empty, so it has to name the cause and the fix.
  */
 const STORAGE_LABELS = {
   checking: 'Checking…',
   'sqlite-opfs': 'SQLite, in this browser’s private file system',
   localstorage: 'Your browser’s local storage',
+  memory:
+    'This tab’s memory only — your browser allows no storage, so closing or reloading it loses your work',
   'held-elsewhere': 'Open in another tab — close it and reload to reach your library',
   unknown: 'Could not be determined',
 } as const satisfies Record<BackendKind | 'checking' | 'unknown', string>;
 
-/** The states worth a reader's attention: one that failed, and one that is holding them out. */
-const NEEDS_ATTENTION: readonly StorageState[] = ['unknown', 'held-elsewhere'];
+/** The states worth a reader's attention: one that failed, one that keeps nothing, and one holding them out. */
+const NEEDS_ATTENTION: readonly StorageState[] = ['unknown', 'memory', 'held-elsewhere'];
 
 type StorageState = keyof typeof STORAGE_LABELS;
 
 /**
  * Which backend this browser actually got.
  *
- * The section above it describes what can happen; this says which of the three is in front of you.
+ * The section above it describes what can happen; this says which of the four is in front of you.
  * Two of them are worth stating because the difference is otherwise invisible — SQLite and the
- * fallback behave identically, so nothing on screen would tell them apart — and the third because
- * the app does *not* behave identically there: every write is refused. A database that silently
+ * fallback behave identically, so nothing on screen would tell them apart — and the fallback over a
+ * store in memory for the same reason at higher stakes, since it behaves identically until a reload
+ * empties it. The fourth is stated because the app does *not* behave identically there: every write
+ * is refused. A database that silently
  * fails to open looks exactly like one
  * that opened. It did, for a while, and nothing on screen said so.
  *

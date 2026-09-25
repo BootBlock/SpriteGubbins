@@ -12,7 +12,7 @@ import { StorageStatus } from './StorageStatus.tsx';
  *
  * The header pairs the general claim with the specific one: the sections below describe where a
  * reader's work is kept and the one case in which this tab cannot reach it, and `StorageStatus`
- * says which of the three backends is in front of them right now.
+ * says which of the four is in front of them right now.
  */
 export function SpecTab() {
   return (

@@ -10,15 +10,36 @@ export interface WebStorageLike {
   setItem(key: string, value: string): void;
 }
 
-/** A `WebStorageLike` backed by a Map — used when the platform offers no usable storage. */
+/**
+ * The stores {@link createMemoryStorage} has made, so a backend can tell one from the platform's.
+ *
+ * A registry rather than a property on the store, because the platform's `localStorage` answers
+ * `'kind' in storage` for any key a page has written, and a flag read off it could be forged by the
+ * reader's own data. Weak, so a discarded store is not kept alive by being remembered.
+ */
+const memoryStores = new WeakSet<WebStorageLike>();
+
+/**
+ * A `WebStorageLike` backed by a Map — used when the platform offers no storage it can read.
+ *
+ * Nothing written here survives a reload, which is why {@link isMemoryStorage} exists: a backend on
+ * this store must say so rather than report the browser's local storage.
+ */
 export function createMemoryStorage(): WebStorageLike {
   const entries = new Map<string, string>();
-  return {
+  const storage: WebStorageLike = {
     getItem: (key) => entries.get(key) ?? null,
     setItem: (key, value) => {
       entries.set(key, value);
     },
   };
+  memoryStores.add(storage);
+  return storage;
+}
+
+/** Whether `storage` is one {@link createMemoryStorage} made, and so lasts only as long as the page. */
+export function isMemoryStorage(storage: WebStorageLike): boolean {
+  return memoryStores.has(storage);
 }
 
 /**
@@ -26,22 +47,26 @@ export function createMemoryStorage(): WebStorageLike {
  *
  * `localStorage` is absent or hostile more often than it looks: it does not exist at all in a
  * plain Node test environment or inside a worker, and in Safari's private mode merely *touching*
- * it can throw. So this probes with a real write rather than trusting a `typeof` check, and
- * degrades to an in-memory store — data then lasts the session rather than the app breaking on
- * a browser that has already refused twice (no OPFS, no localStorage).
+ * it can throw. So this probes with a real read rather than trusting a `typeof` check, and
+ * degrades to an in-memory store only when it cannot read — data then lasts the session rather than
+ * the app breaking on a browser that has already refused twice (no OPFS, no localStorage).
+ *
+ * **A read, not a write**, which is the whole of the probe's job. A store at its quota refuses every
+ * write and still reads, and a write probe answered that store with an empty one in memory: the
+ * reader's library stayed in `localStorage`, unread, while the session saved into a Map that went at
+ * the next reload. A refused write is already a per-operation rejection — the backend's `write` and
+ * `writeHistoryRows` turn it into one, and the stores report it — so it is no reason to stop reading.
  */
 export function resolveWebStorage(): WebStorageLike {
   try {
     const candidate = globalThis.localStorage;
     // A property access alone can throw, and a stubbed global may lack the methods entirely.
     if (typeof candidate?.getItem === 'function' && typeof candidate.setItem === 'function') {
-      const probe = '__sprite_gubbins_probe__';
-      candidate.setItem(probe, probe);
-      candidate.removeItem(probe);
+      candidate.getItem('__sprite_gubbins_probe__');
       return candidate;
     }
   } catch {
-    // Fall through — storage exists but refuses writes (private mode, exhausted quota).
+    // Fall through — storage exists but refuses to be read (a disabled store, a hostile host).
   }
   return createMemoryStorage();
 }

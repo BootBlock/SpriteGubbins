@@ -14,7 +14,7 @@ import { parseJson } from './readers.ts';
 import { writeHistoryRows } from './historyEviction.ts';
 import { parseSession } from './sessionParser.ts';
 import { parseSettings } from './settingsParser.ts';
-import { resolveWebStorage, storageRefusal, type WebStorageLike } from './webStorage.ts';
+import { isMemoryStorage, resolveWebStorage, storageRefusal, type WebStorageLike } from './webStorage.ts';
 
 /**
  * The fallback used when SQLite/OPFS is unavailable — a private browsing session, a browser
@@ -40,7 +40,12 @@ import { resolveWebStorage, storageRefusal, type WebStorageLike } from './webSto
  * shape, and says why the count alone wedged the store.
  */
 export class LocalStorageBackend implements PersistenceBackend {
-  readonly kind = 'localstorage' as const;
+  /**
+   * `memory` where the store is one `createMemoryStorage` made, since nothing written there survives
+   * a reload and the storage status must not say otherwise. Read off the store rather than passed
+   * beside it, so no caller can pair a store with a kind that is not its own.
+   */
+  readonly kind: 'localstorage' | 'memory';
 
   private readonly storage: WebStorageLike;
 
@@ -51,6 +56,7 @@ export class LocalStorageBackend implements PersistenceBackend {
    */
   constructor(storage: WebStorageLike = resolveWebStorage()) {
     this.storage = storage;
+    this.kind = isMemoryStorage(storage) ? 'memory' : 'localstorage';
   }
 
   /**

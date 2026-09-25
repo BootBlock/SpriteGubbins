@@ -10,8 +10,8 @@ import type { AppSettings } from '../types/settings.ts';
  * What the rest of the app is allowed to ask of storage.
  *
  * Three implementations satisfy it — SQLite over OPFS, a localStorage fallback for browsers or hosts
- * where OPFS is unavailable, and one for a tab whose database another tab of the same origin holds
- * open. Everything above this line is written against the interface, so no store or component ever
+ * where OPFS is unavailable (over a store in memory where even localStorage cannot be read), and one
+ * for a tab whose database another tab of the same origin holds open. Everything above this line is written against the interface, so no store or component ever
  * branches on which one it got. **The third is what keeps that true**: the alternative to a backend
  * was a flag the stores would have had to read, and the write that forked a reader's library came
  * from a store deciding for itself what an empty collection meant. See {@link BackendKind}.
@@ -109,14 +109,17 @@ export interface PersistenceBackend {
 }
 
 /**
- * The three implementations, and why the third is not a failure of the second.
+ * Where this tab's work goes, and why the last two are not failures of the second.
  *
- * `sqlite-opfs` and `localstorage` are both places the reader's work genuinely lives.
+ * `sqlite-opfs` and `localstorage` are both places the reader's work genuinely lives. `memory` is
+ * the fallback backend over a store that lasts only as long as the page, because this browser would
+ * not let `localStorage` be read at all — it works, keeps nothing past a reload, and reports itself
+ * so the Architecture tab does not claim the browser's storage holds work it never will.
  * `held-elsewhere` is not a place at all: it is this tab reporting that the database exists, holds
  * the work, and is open in another tab of the same origin — see `heldElsewhereBackend.ts`. Treating
  * that as a reason to reach for `localstorage` is what gave a reader two libraries.
  */
-export const BACKEND_KINDS = ['sqlite-opfs', 'localstorage', 'held-elsewhere'] as const;
+export const BACKEND_KINDS = ['sqlite-opfs', 'localstorage', 'memory', 'held-elsewhere'] as const;
 export type BackendKind = (typeof BACKEND_KINDS)[number];
 
 /** How many history entries to keep. Old prompts are cheap, but not free, and nobody scrolls past this. */
