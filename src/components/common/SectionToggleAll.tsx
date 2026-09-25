@@ -3,6 +3,7 @@ import { useSectionStore } from '../../stores/useSectionStore.ts';
 import type { SectionDefinition } from '../../types/ui.ts';
 import { sectionElementId } from '../../utils/sectionElementId.ts';
 import { ControlTooltip } from './ControlTooltip.tsx';
+import { Button } from './Button.tsx';
 
 interface SectionToggleAllProps {
   readonly sections: readonly SectionDefinition[];
@@ -65,8 +66,9 @@ export function SectionToggleAll({ sections, panelLabel }: SectionToggleAllProps
       text={STUDIO_ACTION_TOOLTIPS.expandAll}
       className="relative inline-flex shrink-0"
     >
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="sm"
         aria-expanded={allOpen}
         aria-controls={controlledIds.join(' ')}
         // The visible text is the start of the accessible name rather than being replaced by it, so a
@@ -79,14 +81,9 @@ export function SectionToggleAll({ sections, panelLabel }: SectionToggleAllProps
             !allOpen,
           );
         }}
-        // The app's established secondary button — `PresetDetailsForm`'s Cancel, `HistoryFooter`'s
-        // export, the quantiser's scale candidates — with the quantiser's resting fill. The fill is
-        // not decoration: unfilled, a bordered run of sentence-case text is a weak affordance, and the
-        // border alone carries too little contrast against the panel to be what identifies a control.
-        className="rounded-lg border border-foundry-600 bg-foundry-700 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-600 hover:text-ink"
       >
         {action} all
-      </button>
+      </Button>
     </ControlTooltip>
   );
 }

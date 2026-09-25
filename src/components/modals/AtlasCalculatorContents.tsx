@@ -30,6 +30,7 @@ import { AtlasGridPreview } from './AtlasGridPreview.tsx';
 import { AtlasMemoryBudget } from './AtlasMemoryBudget.tsx';
 import { AtlasMeasuredSprites } from './AtlasMeasuredSprites.tsx';
 import { AtlasMetricGrid } from './AtlasMetricGrid.tsx';
+import { Button } from '../common/Button.tsx';
 
 /**
  * Planning the texture the finished components will be packed into.
@@ -164,24 +165,21 @@ export function AtlasCalculatorContents() {
           text={DIALOG_TOOLTIPS.copyAtlasSpec}
           className="relative flex flex-1"
         >
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="lg"
             onClick={() => {
               void copyText(engineSpec, 'Atlas engine spec copied');
             }}
-            className="w-full rounded-xl border border-foundry-600 bg-foundry-950 py-2.5 text-xs font-bold text-accent-soft shadow-md transition-colors hover:bg-foundry-700"
+            className="w-full"
           >
             <span aria-hidden="true">📋</span> Copy Atlas Engine Spec (JSON)
-          </button>
+          </Button>
         </ControlTooltip>
         <ControlTooltip hint="Done" text={DIALOG_TOOLTIPS.done}>
-          <button
-            type="button"
-            onClick={toggleAtlasModal}
-            className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-foundry-950 shadow-lg transition-colors hover:bg-accent"
-          >
+          <Button variant="primary" size="lg" onClick={toggleAtlasModal}>
             Done
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
     </>

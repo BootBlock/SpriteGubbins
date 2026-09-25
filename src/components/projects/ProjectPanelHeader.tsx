@@ -6,6 +6,7 @@ import { useProjectStore } from '../../stores/useProjectStore.ts';
 import type { Project } from '../../types/project.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { ProjectDetailsForm } from './ProjectDetailsForm.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface ProjectPanelHeaderProps {
   readonly project: Project;
@@ -69,8 +70,9 @@ export function ProjectPanelHeader({ project, savedCount }: ProjectPanelHeaderPr
             hint={`Delete “${project.name}”`}
             text={PROJECT_ACTION_TOOLTIPS.confirmDeleteProject}
           >
-            <button
-              type="button"
+            <Button
+              variant="destructive"
+              size="sm"
               // The store reports its own failure with a toast and resolves, so there is nothing
               // here to handle. It is awaited all the same: until the write lands, the panel still
               // belongs to this project, and where the keyboard goes next is read off the page as it
@@ -78,56 +80,55 @@ export function ProjectPanelHeader({ project, savedCount }: ProjectPanelHeaderPr
               onClick={() => {
                 void confirm(() => deleteProject(project.id));
               }}
-              className="rounded-lg bg-rose px-3 py-1 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90"
             >
               Delete “{project.name}”
-            </button>
+            </Button>
           </ControlTooltip>
           <ControlTooltip hint="Cancel" text={PROJECT_ACTION_TOOLTIPS.cancelDeleteProject}>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               ref={attachCancel}
-              type="button"
               aria-label={`Cancel — keep the project ${project.name}`}
               onClick={cancel}
-              className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
             >
               Cancel
-            </button>
+            </Button>
           </ControlTooltip>
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
           <ControlTooltip hint="Edit details" text={PROJECT_ACTION_TOOLTIPS.editProjectDetails}>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               ref={editButtonRef}
-              type="button"
               aria-label={`Edit the name and description of the project ${project.name}`}
               onClick={() => {
                 setIsEditing(true);
               }}
-              className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700 hover:text-ink"
             >
               Edit
-            </button>
+            </Button>
           </ControlTooltip>
 
           {refusal !== null ? (
             <p className="text-xs text-ink-faint">{refusal}</p>
           ) : (
             <ControlTooltip hint="Delete project" text={PROJECT_ACTION_TOOLTIPS.deleteProject}>
-              <button
+              <Button
+                variant="danger"
+                size="sm"
                 ref={attachAsk}
-                type="button"
                 aria-label={`Delete project ${project.name}`}
                 onClick={() => {
                   // The editor would otherwise sit above a confirm asking to delete what it edits.
                   setIsEditing(false);
                   ask();
                 }}
-                className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-rose transition-colors hover:border-rose/50 hover:bg-foundry-700"
               >
                 Delete project
-              </button>
+              </Button>
             </ControlTooltip>
           )}
         </div>

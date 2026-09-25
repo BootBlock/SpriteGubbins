@@ -5,6 +5,7 @@ import { isShippedRigContract } from '../../utils/isShippedRigContract.ts';
 import { parseRigContract } from '../../utils/parseRigContract.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { FilePickerField } from '../common/FilePickerField.tsx';
+import { Button } from '../common/Button.tsx';
 
 /**
  * Loading the engine's own rig, so the prompt states the geometry rather than guessing at it.
@@ -85,16 +86,16 @@ export function RigContractField({ appliesToSheet }: RigContractFieldProps) {
               'This is the copy its preset ships, not a file you loaded — export the rig again if it has moved since.'}
           </p>
           <ControlTooltip hint="Remove" text={STUDIO_ACTION_TOOLTIPS.removeRigContract}>
-            <button
-              type="button"
-              className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-rose transition-colors hover:border-rose/50 hover:bg-foundry-700"
+            <Button
+              variant="danger"
+              size="sm"
               onClick={() => {
                 setOutputField('rigContract', null);
                 setProblems([]);
               }}
             >
               Remove
-            </button>
+            </Button>
           </ControlTooltip>
         </div>
       )}

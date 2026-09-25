@@ -8,6 +8,7 @@ import { sameSurroundings } from '../../utils/quantiseSettings.ts';
 import { tuneOffThread } from '../../workers/autoTuneSession.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface AutoTuneControlsProps {
   /** The sheet as it was dropped, which is what the sweep reads its crops out of. */
@@ -107,8 +108,9 @@ export function AutoTuneControls({ image, settings }: AutoTuneControlsProps) {
           hint="Auto"
           text={QUANTISE_ACTION_TOOLTIPS.autoTune}
         >
-          <button
-            type="button"
+          <Button
+            variant="view"
+            size="md"
             disabled={unavailable}
             onClick={() => {
               if (image === null || settings === null) return;
@@ -119,10 +121,9 @@ export function AutoTuneControls({ image, settings }: AutoTuneControlsProps) {
                 if (found !== null) autoTuned(found.dials);
               });
             }}
-            className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
           >
             <span aria-hidden="true">✧</span> {tuning ? 'Tuning…' : 'Auto'}
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
 

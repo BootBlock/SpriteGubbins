@@ -5,6 +5,7 @@ import { useProjectStore } from '../../stores/useProjectStore.ts';
 import type { Project } from '../../types/project.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface ProjectDetailsFormProps {
   readonly project: Project;
@@ -102,22 +103,14 @@ export function ProjectDetailsForm({ project, onClose }: ProjectDetailsFormProps
 
       <div className="flex justify-end gap-2">
         <ControlTooltip hint="Save" text={PROJECT_ACTION_TOOLTIPS.confirmProjectDetails}>
-          <button
-            type="submit"
-            disabled={isSaving || draftName.trim() === ''}
-            className="action-tab rounded-lg px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed"
-          >
+          <Button variant="view" size="sm" type="submit" disabled={isSaving || draftName.trim() === ''}>
             {isSaving ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
         </ControlTooltip>
         <ControlTooltip hint="Cancel" text={PROJECT_ACTION_TOOLTIPS.cancelProjectDetails}>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
-          >
+          <Button variant="secondary" size="sm" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
     </form>

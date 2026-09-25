@@ -4,6 +4,7 @@ import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
 import type { PromptHistoryLog } from '../../types/history.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 /** Model display names, keyed by id, so an entry can name the generator it was written for. */
 const MODEL_NAMES = new Map(TARGET_MODELS.map((model) => [model.id, model.name]));
@@ -80,9 +81,10 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
               isConfirming ? HISTORY_ACTION_TOOLTIPS.confirmDeleteEntry : HISTORY_ACTION_TOOLTIPS.deleteEntry
             }
           >
-            <button
+            <Button
+              variant={isConfirming ? 'destructive' : 'danger'}
+              size="sm"
               ref={attachAsk}
-              type="button"
               aria-label={isConfirming ? `Delete? Confirm deleting ${entry}` : `Delete ${entry}`}
               onClick={() => {
                 if (!isConfirming) {
@@ -91,52 +93,42 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
                 }
                 void confirm(() => onDelete(log));
               }}
-              className={
-                isConfirming
-                  ? 'rounded-lg bg-rose px-2.5 py-1 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90'
-                  : 'rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-xs font-semibold text-rose transition-colors hover:bg-foundry-700'
-              }
             >
               {isConfirming ? 'Delete?' : <span aria-hidden="true">🗑</span>}
-            </button>
+            </Button>
           </ControlTooltip>
 
           {isConfirming && (
             <ControlTooltip hint="Cancel" text={HISTORY_ACTION_TOOLTIPS.cancelDeleteEntry}>
-              <button
-                type="button"
-                aria-label={`Cancel — keep ${entry}`}
-                onClick={cancel}
-                className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
-              >
+              <Button variant="secondary" size="sm" aria-label={`Cancel — keep ${entry}`} onClick={cancel}>
                 Cancel
-              </button>
+              </Button>
             </ControlTooltip>
           )}
 
           <ControlTooltip hint="Copy prompt" text={HISTORY_ACTION_TOOLTIPS.copyEntry}>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               aria-label={`Copy prompt — ${entry}`}
               onClick={() => {
                 onCopy(log);
               }}
-              className="rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
             >
               Copy prompt
-            </button>
+            </Button>
           </ControlTooltip>
           <ControlTooltip hint="Restore" text={HISTORY_ACTION_TOOLTIPS.restoreEntry}>
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="sm"
               aria-label={`Restore ${entry} into the studio`}
               onClick={() => {
                 onRestore(log);
               }}
-              className="rounded-lg bg-accent-strong px-2.5 py-1 text-xs font-semibold text-foundry-950 transition-colors hover:bg-accent"
             >
               Restore
-            </button>
+            </Button>
           </ControlTooltip>
         </div>
       </div>

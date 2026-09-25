@@ -6,6 +6,7 @@ import {
   describeReplaceAction,
 } from '../../utils/packImportSummary.ts';
 import { ControlTooltip } from './ControlTooltip.tsx';
+import { Button } from './Button.tsx';
 
 /**
  * Everything the question needs. Bundled as one interface rather than spread over
@@ -78,26 +79,26 @@ export function PackImportConfirm({
       </p>
 
       <ControlTooltip hint="Replace" text={confirmGuidance}>
-        <button
-          type="button"
+        <Button
+          variant="destructive"
+          size="sm"
           aria-label={describeReplaceAction(incoming, noun)}
           onClick={onConfirm}
-          className="rounded-lg bg-rose px-3 py-1 text-xs font-bold text-foundry-950 transition-opacity duration-390 hover:opacity-90"
         >
           Replace
-        </button>
+        </Button>
       </ControlTooltip>
 
       <ControlTooltip hint="Cancel" text={cancelGuidance}>
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           ref={cancelRef}
-          type="button"
           aria-label={describeCancelAction(replacing, noun)}
           onClick={onCancel}
-          className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors duration-390 hover:bg-foundry-700 hover:text-ink"
         >
           Cancel
-        </button>
+        </Button>
       </ControlTooltip>
     </div>
   );

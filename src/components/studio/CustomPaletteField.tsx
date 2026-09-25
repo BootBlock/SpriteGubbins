@@ -10,6 +10,7 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { FilePickerField } from '../common/FilePickerField.tsx';
 import { TextAreaField } from '../common/TextAreaField.tsx';
 import { TextField } from '../common/TextField.tsx';
+import { Button } from '../common/Button.tsx';
 
 /** How many lines of a pasted list the box shows before it scrolls. */
 const PASTE_ROWS = 4;
@@ -92,16 +93,16 @@ export function CustomPaletteField() {
               them.
             </p>
             <ControlTooltip hint="Remove" text={STUDIO_ACTION_TOOLTIPS.removeCustomPalette}>
-              <button
-                type="button"
-                className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-rose transition-colors hover:border-rose/50 hover:bg-foundry-700"
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={() => {
                   setPasted('');
                   clear();
                 }}
               >
                 Remove
-              </button>
+              </Button>
             </ControlTooltip>
           </div>
         </>
@@ -131,13 +132,9 @@ export function CustomPaletteField() {
               if those are the colours you meant.
             </p>
             <ControlTooltip hint="Reduce" text={STUDIO_ACTION_TOOLTIPS.reduceCustomPalette}>
-              <button
-                type="button"
-                className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink transition-colors hover:border-accent/50 hover:bg-foundry-700"
-                onClick={reduceOversized}
-              >
+              <Button variant="secondary" size="sm" onClick={reduceOversized}>
                 Reduce to {MAX_PALETTE_ENTRIES}
-              </button>
+              </Button>
             </ControlTooltip>
           </div>
         )}

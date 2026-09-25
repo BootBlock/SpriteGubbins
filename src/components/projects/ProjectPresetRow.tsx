@@ -8,6 +8,7 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { PresetCardSpecs } from '../tabs/PresetCardSpecs.tsx';
 import { PresetDetailsForm } from './PresetDetailsForm.tsx';
 import { ProjectMoveField } from './ProjectMoveField.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface ProjectPresetRowProps {
   readonly preset: CustomArchetype;
@@ -89,74 +90,74 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
       {isConfirming ? (
         <div className="flex flex-wrap gap-2">
           <ControlTooltip hint={`Delete “${preset.name}”`} text={PRESET_ACTION_TOOLTIPS.confirmDeletePreset}>
-            <button
-              type="button"
+            <Button
+              variant="destructive"
+              size="sm"
               // The store reports its own failure with a toast and resolves, so there is nothing
               // here to handle. It is awaited all the same: until the write lands the row is still
               // on screen, and where the keyboard goes next is read off the page as it is after.
               onClick={() => {
                 void confirm(() => deleteCustomPreset(preset.id));
               }}
-              className="rounded-lg bg-rose px-3 py-1 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90"
             >
               Delete “{preset.name}”
-            </button>
+            </Button>
           </ControlTooltip>
           <ControlTooltip hint="Cancel" text={PRESET_ACTION_TOOLTIPS.cancelDeletePreset}>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               ref={attachCancel}
-              type="button"
               aria-label={`Cancel — keep the preset ${preset.name}`}
               onClick={cancel}
-              className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
             >
               Cancel
-            </button>
+            </Button>
           </ControlTooltip>
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           <ControlTooltip hint="Load preset" text={PRESET_ACTION_TOOLTIPS.loadPreset}>
-            <button
-              type="button"
+            <Button
+              variant="view"
+              size="sm"
               aria-label={`Load preset ${preset.name} into the studio`}
               onClick={() => {
                 loadPreset(preset);
               }}
-              className="action-tab rounded-lg px-3 py-1 text-xs font-semibold transition-all active:scale-[0.98]"
             >
               Load preset
-            </button>
+            </Button>
           </ControlTooltip>
 
           <ControlTooltip hint="Edit details" text={PRESET_ACTION_TOOLTIPS.editPresetDetails}>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               ref={editButtonRef}
-              type="button"
               aria-label={`Edit details for preset ${preset.name}`}
               onClick={() => {
                 setIsEditing(true);
               }}
-              className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700 hover:text-ink"
             >
               Edit
-            </button>
+            </Button>
           </ControlTooltip>
 
           <ControlTooltip hint="Delete" text={PRESET_ACTION_TOOLTIPS.deletePreset}>
-            <button
+            <Button
+              variant="danger"
+              size="sm"
               ref={attachAsk}
-              type="button"
               aria-label={`Delete preset ${preset.name}`}
               onClick={() => {
                 // The editor would otherwise sit above a confirm asking to delete what it edits.
                 setIsEditing(false);
                 ask();
               }}
-              className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-rose transition-colors hover:border-rose/50 hover:bg-foundry-700"
             >
               Delete
-            </button>
+            </Button>
           </ControlTooltip>
         </div>
       )}

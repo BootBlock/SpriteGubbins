@@ -3,6 +3,7 @@ import { keepFocusThrough } from '../../hooks/keepFocusThrough.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { ProjectSelectField } from './ProjectSelectField.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface ProjectMoveFieldProps {
   /** The project the save is filed under now. */
@@ -81,17 +82,17 @@ export function ProjectMoveField({
 
       {destination !== undefined && (
         <ControlTooltip hint={`Move to ${destination.name}`} text={moveTooltip}>
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             ref={moveRef}
-            type="button"
             aria-label={`Move ${subject} to ${destination.name}`}
             onClick={() => {
               move(destination.id);
             }}
-            className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors duration-390 hover:bg-foundry-700 hover:text-ink"
           >
             Move
-          </button>
+          </Button>
         </ControlTooltip>
       )}
     </div>

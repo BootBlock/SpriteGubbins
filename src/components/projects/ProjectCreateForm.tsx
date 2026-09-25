@@ -4,6 +4,7 @@ import { PROJECT_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { TextField } from '../common/TextField.tsx';
+import { Button } from '../common/Button.tsx';
 
 /**
  * Making a project.
@@ -72,16 +73,16 @@ export function ProjectCreateForm() {
         </div>
 
         <ControlTooltip hint="Add project" text={PROJECT_ACTION_TOOLTIPS.createProject}>
-          <button
-            type="button"
+          <Button
+            variant="view"
+            size="md"
             disabled={isCreating || name.trim() === ''}
             onClick={() => {
               void create();
             }}
-            className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed"
           >
             {isCreating ? 'Adding…' : 'Add project'}
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
     </section>

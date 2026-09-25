@@ -2,6 +2,7 @@ import { CHROME_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { applyAppUpdate } from '../../workers/applyAppUpdate.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 /** What the notice says, and what its primary action does, for each state that shows it. */
 const NOTICES = {
@@ -47,24 +48,20 @@ export function AppUpdateBanner() {
 
           <div className="flex items-center gap-2">
             <ControlTooltip hint="Reload" text={NOTICES[update].tooltip}>
-              <button
-                type="button"
-                onClick={() => void NOTICES[update].act()}
-                className="rounded-xl bg-accent-strong px-4 py-1.5 text-xs font-bold text-foundry-950 shadow-md transition-colors hover:bg-accent"
-              >
+              <Button variant="primary" size="md" onClick={() => void NOTICES[update].act()}>
                 Reload
-              </button>
+              </Button>
             </ControlTooltip>
             <ControlTooltip hint="Not now" text={CHROME_TOOLTIPS.dismissUpdate}>
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={() => {
                   setAppUpdate('current');
                 }}
-                className="rounded-xl border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
               >
                 Not now
-              </button>
+              </Button>
             </ControlTooltip>
           </div>
         </div>

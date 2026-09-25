@@ -15,6 +15,7 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 import { SpriteCellControls } from './SpriteCellControls.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface DownloadControlsProps {
   /** The dropped file's name — what the download is named after. */
@@ -164,9 +165,10 @@ export function DownloadControls({ sourceName, resultImage, sprites, duplicates 
         hint={`Download ${SHEET_FORMAT_FILES[downloadFormat].label}`}
         text={DOWNLOAD_GUIDANCE[downloadFormat]}
       >
-        <button
+        <Button
+          variant="view"
+          size="md"
           ref={button}
-          type="button"
           disabled={unavailable}
           onClick={() => {
             if (resultImage === null) return;
@@ -196,11 +198,10 @@ export function DownloadControls({ sourceName, resultImage, sprites, duplicates 
               sheet: identity.sheet,
             });
           }}
-          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
         >
           <span aria-hidden="true">⬇</span>{' '}
           {download.saving ? 'Writing…' : `Download ${SHEET_FORMAT_FILES[downloadFormat].label}`}
-        </button>
+        </Button>
       </ControlTooltip>
     </div>
   );

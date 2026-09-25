@@ -8,6 +8,7 @@ import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { RangeField } from '../common/RangeField.tsx';
 import { LockedSwatches } from './LockedSwatches.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface PaletteLockControlsProps {
   /**
@@ -120,25 +121,16 @@ export function PaletteLockControls({
           hint={lock === null ? 'Lock this palette' : 'Re-lock from this sheet'}
           text={lock === null ? QUANTISE_ACTION_TOOLTIPS.lockPalette : QUANTISE_ACTION_TOOLTIPS.relockPalette}
         >
-          <button
-            type="button"
-            disabled={!takeable}
-            onClick={take}
-            className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
-          >
+          <Button variant="view" size="md" disabled={!takeable} onClick={take}>
             {lock === null ? 'Lock this palette' : 'Re-lock from this sheet'}
-          </button>
+          </Button>
         </ControlTooltip>
 
         {lock !== null && (
           <ControlTooltip hint="Unlock" text={QUANTISE_ACTION_TOOLTIPS.unlockPalette}>
-            <button
-              type="button"
-              onClick={unlockPalette}
-              className="rounded-lg border border-foundry-600 bg-foundry-700 px-3.5 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-390 hover:bg-foundry-600 hover:text-ink active:scale-[0.98]"
-            >
+            <Button variant="secondary" size="md" onClick={unlockPalette}>
               Unlock
-            </button>
+            </Button>
           </ControlTooltip>
         )}
       </div>
