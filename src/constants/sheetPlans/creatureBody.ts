@@ -102,16 +102,25 @@ export interface CreatureBody {
   readonly motionNoun: string;
   /** Every motion a full set of the components has to reach, as section 5 lists them. */
   readonly motions: string;
-  /** Where each piece ends — closes the inventory of every sheet but the articulation run. */
+  /**
+   * Where each piece ends — closes the inventory of every sheet that draws the trunk: the first pose
+   * library sheet, each directional core and the rig.
+   */
   readonly termination: string;
   /** Which end of each trunk piece is its front — the directional core's `ViewSheetPlan.landmark`. */
   readonly landmark: string;
   readonly scale: {
-    /** The pose library's and the rig's example, which names pieces both of those sheets draw. */
+    /**
+     * The first pose library sheet's and the rig's example, which names pieces both of those sheets
+     * draw — a trunk piece and a segment of the first limbs the pose library deals.
+     */
     readonly pieces: string;
     /** The directional core's, which names trunk pieces alone. */
     readonly trunk: string;
-    /** The articulation sheet's, which names limb segments alone. */
+    /**
+     * The example of every sheet that draws limbs alone — each articulation sheet, and each pose library
+     * sheet after the first — so it names segments every one of those sheets draws.
+     */
     readonly limbs: string;
   };
 }
@@ -191,6 +200,10 @@ function positionCount(limb: Limb): number {
  * One direction's worth of a body's pieces, with every limb segment drawn once per position — on one
  * sheet, or on as many as `limbSheets` deals the limbs onto, the first of them carrying the trunk.
  *
+ * **A split sheet's assembly names the sets it and its neighbours draw**, never the body's whole
+ * `limbNoun`: a hydra's first sheet draws its necks and forelimbs, so "the necks and limbs drawn on the
+ * other sheets" would send the generator looking for necks on a sheet of hindlimbs.
+ *
  * **Only the first sheet states where each piece ends**, as only the directional core does in the other
  * pairing: the termination is written about the trunk, and the sheets after it draw limbs for a trunk
  * the first one drew — which is also why their scale example is the articulation sheet's, naming limb
@@ -217,7 +230,7 @@ function poseLibrary(body: CreatureBody): SheetSeries {
     sheet({
       name: limbSheetName('Pose library', first, split, true),
       assembly: split
-        ? `${body.motions} — together with the ${body.limbNoun} drawn on this series’ other pose library sheets.`
+        ? `${body.motions} — together with the ${spokenList(rest.flatMap((share) => share.sets))} drawn on this series’ other pose library sheets.`
         : `${body.motions}.`,
       scaleExample: body.scale.pieces,
       groups: [
@@ -234,7 +247,7 @@ function poseLibrary(body: CreatureBody): SheetSeries {
     ...rest.map((share) =>
       sheet({
         name: limbSheetName('Pose library', share, split, false),
-        assembly: `the ${body.limbNoun} of ${body.motions} — each fitted to the pieces drawn on the first pose library sheet.`,
+        assembly: `the ${spokenList(share.sets)} of ${body.motions} — each fitted to the pieces drawn on the first pose library sheet.`,
         scaleExample: body.scale.limbs,
         groups: [{ heading: null, entries: share.limbs.map(variantEntry) }],
       }),
@@ -289,7 +302,7 @@ function articulationSheet(body: CreatureBody, share: LimbSheet<Limb>, split: bo
   return {
     name: limbSheetName('Articulation', share, split, false),
     facings: 'run',
-    assembly: `the ${body.limbNoun} of ${body.motions} — each fitted to the pieces drawn on the directional core sheets, one facing per sheet.`,
+    assembly: `the ${split ? spokenList(share.sets) : body.limbNoun} of ${body.motions} — each fitted to the pieces drawn on the directional core sheets, one facing per sheet.`,
     targetQuantity: 'ASSEMBLED',
     // The creature spelling of the character articulation run, and posed for the same reason.
     posing: 'PER_POSITION',

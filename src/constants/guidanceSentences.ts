@@ -144,7 +144,7 @@ export const ABSENT_OPTION_DROPS_THE_PIECES =
  * `Amorphous — No Fixed Limbs` still ordered four limbs, and OBJECT said `Single Rigid Object` emits
  * one piece where it compiled to 30, 14 and 7 across its three modes. The OBJECT card is true now,
  * because that base draws its own sheets, and so is a CREATURE card naming what its bases are cut into,
- * because its limbless bases draw theirs (issue #286); the CHARACTER claim stays false until that
+ * because every base but the quadruped draws its own (issues #285 and #286); the CHARACTER claim stays false until that
  * category declares bases, which is why its card carries this sentence.
  * `tests/subject-field-inventory.test.ts` holds every card to the declarations behind it.
  *

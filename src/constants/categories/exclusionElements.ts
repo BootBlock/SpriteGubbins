@@ -63,9 +63,9 @@ export interface ExcludedElement {
  * Eight, and each one is a pairing some category can make with itself. Four of them were made:
  * `weapon` twice (the studio's own default subject, and the Cybernetic Attack Drone's cannons),
  * `cape` on the Sci-Fi Void Marine's cloak, and `facial feature` on the Isometric Cut-Out Rig's
- * single eye. A tenth, `backing`, went when ICON's own pool stopped naming one: its two layered
- * bases described a shared plate and a motif over it that the symbol set never drew, so they were
- * removed (issue #292) and no configuration can ask for a backing any more. A `wing` went when
+ * single eye. Two more have gone. `backing` went when ICON's own pool stopped naming one: its two
+ * layered bases described a shared plate and a motif over it that the symbol set never drew, so they
+ * were removed (issue #292) and no configuration can ask for a backing any more. `wing` went when
  * CREATURE began drawing wings of its own: `Winged Biped — Avian` orders two, so the ban became
  * `No extra wings`, which bans an addition as `No extra eyes` does (issue #285).
  *

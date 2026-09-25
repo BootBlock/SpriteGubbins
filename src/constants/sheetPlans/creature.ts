@@ -1,4 +1,4 @@
-import { BEAST_LANDMARK, BEAST_TERMINATION, BEAST_TRUNK, FORELIMB, HINDLIMB } from './beastBody.ts';
+import { BEAST_TERMINATION, BEAST_TRUNK, FORELIMB, HINDLIMB } from './beastBody.ts';
 import { creaturePlansFor } from './creatureBody.ts';
 import type { CreatureBody } from './creatureBody.ts';
 import type { ModePlans } from './modePlans.ts';
@@ -12,7 +12,8 @@ import type { ModePlans } from './modePlans.ts';
  * rather than arm and leg, body and hindquarters rather than torso and pelvis. That distinction is
  * the point. A creature sheet asking for "hands" invites a generator to draw a humanoid hand on a
  * beast, which is the humanoid-only assumption these plans exist to stop reaching a non-humanoid
- * subject.
+ * subject. The one creature limb that does grasp, the bipedal beast's forelimb, ends in a *clawed* hand
+ * for the same reason: the qualifier keeps the hand a beast's (issue #285).
  *
  * Limbs are named fore/hind rather than numbered, so a subject with more than four states the extra
  * ones through its additional-anatomy field, where they are counted as their own components.
@@ -54,7 +55,12 @@ const QUADRUPED: CreatureBody = {
   motionNoun: 'gait',
   motions: CREATURE_GAITS,
   termination: BEAST_TERMINATION,
-  landmark: BEAST_LANDMARK,
+  // The nouns are this body's own — a body and a hindquarters, never a torso and a pelvis. The sentence
+  // was drafted from CHARACTER's and kept its vocabulary, so section 3 named two pieces the inventory in
+  // section 4 does not list, and the landmark rule reached the generator in words it had nothing to
+  // attach them to.
+  landmark:
+    'a head’s front is the jaws, beak, muzzle or mandibles and its rear the back of the skull and the neck socket; a body’s front is the chest and forward shoulder girdle and its rear the dorsal ridge and the join to the hindquarters; a hindquarters’ front is the join to the body and its rear the hind or tail end.',
   scale: {
     pieces: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
     trunk: 'a head drawn beside the body it joins is in proportion to it',

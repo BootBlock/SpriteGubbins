@@ -23,10 +23,10 @@ export interface LimbSheet<T extends Packable> {
  * would take motions away from the rig; drawing one leg for all of them would lose the difference
  * between a front leg and a hind one. A series is what `SheetSeries` exists for, so the body splits.
  *
- * **A set is never parted.** Consecutive limbs naming the same set go onto one sheet together. A set
- * holds at least a left limb and the right one mirroring it, because a mirrored limb's line reads "the
- * same eight variants as the left front leg", and a sheet cannot redraw a side it was not given; it can
- * hold more, which is how a body chooses its split. The sheets fill in the order the body lists its
+ * **A set is never parted.** Consecutive limbs naming the same set go onto one sheet together. A
+ * mirrored limb shares the set of the limb it mirrors, because its line reads "the same eight variants
+ * as the left front leg", and a sheet cannot redraw a side it was not given. A set can hold one limb,
+ * as a hydra's neck does, or several pairs, which is how a body chooses its split. The sheets fill in the order the body lists its
  * limbs, each taking every set that still fits, and the first starts `reserved` components in, for the
  * trunk the pose library draws beside them.
  *

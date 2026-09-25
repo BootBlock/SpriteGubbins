@@ -9,7 +9,8 @@ import type { PartDrawing } from './partDrawing.ts';
  * A leaf of its own because three bodies share them: the quadruped stands on both pairs, the hydra
  * carries the same trunk and four limbs under its necks, and the bipedal beast rises onto its
  * hindlimbs while its forelimb ends in a hand of its own. The quadruped and the bipedal beast also share
- * where each trunk piece ends and which end of it leads, because an upright stance changes neither.
+ * where each trunk piece ends, because standing upright moves no join. Which end of each piece leads
+ * does change, so the bipedal beast states its own landmark.
  */
 
 /** A head, a body and a hindquarters — the creature spelling of a head, a torso and a pelvis. */
@@ -37,15 +38,6 @@ ends at the body join and the two hindlimb hip joins, and carries **no limbs** �
 the inventory lists a tail as its own component. Every limb is a component counted in its own right,
 on this sheet or on another of this series, so a trunk piece that arrives wearing one has merged two
 components into one and breaks the count in section [SEC:CONTRACT].`;
-
-/**
- * Which end of each trunk piece leads. The nouns are this body's own — a body and a hindquarters,
- * never a torso and a pelvis. The sentence was drafted from CHARACTER's and kept its vocabulary, so
- * section 3 named two pieces the inventory in section 4 does not list, and the landmark rule reached
- * the generator in words it had nothing to attach them to.
- */
-export const BEAST_LANDMARK =
-  'a head’s front is the jaws, beak, muzzle or mandibles and its rear the back of the skull and the neck socket; a body’s front is the chest and forward shoulder girdle and its rear the dorsal ridge and the join to the hindquarters; a hindquarters’ front is the join to the body and its rear the hind or tail end.';
 
 /**
  * How far the lower limb bends: named for the flexion each drawing suits, never drawn bent, for the

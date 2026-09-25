@@ -173,7 +173,7 @@ and no body behind it. Each body segment ends at the join to the segment before 
 segment after it, and carries a pair of leg sockets and **no legs**. The body is assembled from the
 fore segment, as many mid segments as its length needs, the hind segment and the tail end, which closes
 the body. The leg pieces serve every leg on their side — each body segment takes one leg a side, all
-assembled from the same pieces — so the inventory lists them once a side rather than once per leg.
+assembled from the same pieces — so this series draws them once a side rather than once per leg.
 Each join is a clean, capped socket, never a stump trailing into the next piece. Every segment and
 every leg piece is a component counted in its own right, on this sheet or on another of this series,
 so a segment that arrives wearing a leg has merged two components into one and breaks the count in

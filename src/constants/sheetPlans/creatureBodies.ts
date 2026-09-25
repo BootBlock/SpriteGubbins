@@ -146,7 +146,7 @@ parts faded or hidden. A mantle ends at the join to the head, with nothing else 
 the mantle join and at a ring of eight tentacle sockets beneath it, and carries **no tentacles**: each
 socket is a clean, capped join, never a stump trailing into a tentacle. The tentacle pieces serve all
 eight tentacles — every tentacle is assembled from the same root segments, middle segments and tips,
-fitted to each socket in turn — so the inventory lists them once rather than once per tentacle. Every
+fitted to each socket in turn — so this series draws them once rather than once per tentacle. Every
 tentacle piece is a component counted in its own right, on this sheet or on another of this series,
 so a head that arrives wearing one has merged two components into one and breaks the count in section
 [SEC:CONTRACT].`,

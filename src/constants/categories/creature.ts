@@ -197,7 +197,7 @@ export const CREATURE: CategoryDefinition = {
       key: 'anatomy',
       label: 'Anatomy Base',
       tooltip:
-        'The body plan the creature is drawn on, and the pieces it is cut into: `Hexapod Insect` walks on six legs and `Eight-Legged Arachnid` on eight, `Serpentine Tailless` is a head over body segments, and `Multi-Headed Hydra Stems` draws one neck and one head that every neck is built from.\n\n' +
+        'The body plan the creature is drawn on, and the pieces it is cut into: `Hexapod Insect` walks on six legs and `Eight-Legged Arachnid` on eight, `Serpentine Tailless` is a head over body segments, and `Multi-Headed Hydra Stems` draws one set of neck and head pieces that every neck is built from.\n\n' +
         'Choose the base that matches the Creature Class, such as `Eight-Legged Arachnid` for an `Arachnid Swarmer`.\n\n' +
         ASSEMBLY_BASE_CHOOSES_THE_SHEETS +
         '\n\nA piece the body plan does not draw, such as a sting tail or a second pair of wings, goes in Extra Appendages, the field that adds a slot for it.',

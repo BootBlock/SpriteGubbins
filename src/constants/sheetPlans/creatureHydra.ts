@@ -69,7 +69,7 @@ const HYDRA: CreatureBody = {
   termination: `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
 parts faded or hidden. A head ends at the join to the upper neck, with no neck behind it. The head and
 neck pieces serve every head — each neck is assembled from the same pieces and carries the same head,
-one to each neck socket — so the inventory lists them once rather than once per head. A body ends at
+one to each neck socket — so this series draws one neck and one head rather than one per head. A body ends at
 the row of neck sockets across its shoulders, the two forelimb shoulder joins and the join to the
 hindquarters, and carries **no necks, no heads and no limbs**: each join is a clean, capped socket,
 never a stump trailing into a neck or a limb. A hindquarters ends at the body join and the two

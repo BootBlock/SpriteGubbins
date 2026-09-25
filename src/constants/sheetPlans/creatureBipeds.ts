@@ -1,5 +1,4 @@
 import {
-  BEAST_LANDMARK,
   BEAST_TERMINATION,
   BEAST_TRUNK,
   FORELIMB_ABOVE_THE_END,
@@ -57,7 +56,10 @@ const BIPEDAL_BEAST: CreatureBody = {
   motions:
     'a neutral upright stance on the hindlimbs; an alert stance; a hunched stalking crouch; a two-legged walking gait; a two-legged run with full hindlimb extension; and a raking or grappling strike with the forelimbs',
   termination: BEAST_TERMINATION,
-  landmark: BEAST_LANDMARK,
+  // Its own rather than the quadruped's, which puts the hindquarters behind the body: upright, they are
+  // below it, so each piece's front is the side the face looks towards.
+  landmark:
+    'a head’s front is the jaws, beak or muzzle and its rear the back of the skull and the neck socket; a body’s front is the chest and its rear the back and shoulder blades; a hindquarters’ front is the belly and groin and its rear the rump or tail root.',
   scale: {
     pieces: 'a clawed hand drawn beside the body it belongs to is in proportion to it',
     trunk: 'a head drawn beside the body it joins is in proportion to it',

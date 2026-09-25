@@ -15,7 +15,7 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * does, which is why the articulation sheet of a directional pairing lists no appendages beside the
  * limbs it exists for.
  *
- * That makes the pose library the mode with almost nothing left over — 37 of the 43 components one
+ * That makes a quadruped's pose library the mode with almost nothing left over — 37 of the 43 components one
  * generation reliably delivers, before a single appendage is declared — while the core opens at
  * three pieces per facing and has headroom to sell.
  *
@@ -102,8 +102,8 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       // core opens at three pieces per facing and the drone above spends that headroom on four
       // wings, so a declared piece here would have fitted several times over.
       //
-      // Worth knowing before copying this preset: a tail is **not** implied. `TRUNK_TERMINATION` in
-      // `sheetPlans/creature.ts` has a hindquarters carry "no tail, unless the inventory lists a tail
+      // Worth knowing before copying this preset: a tail is **not** implied. `BEAST_TERMINATION` in
+      // `sheetPlans/beastBody.ts` has a hindquarters carry "no tail, unless the inventory lists a tail
       // as its own component", so a wolf that should have one has to name it here — at one drawing
       // per facing, like every other appendage.
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
