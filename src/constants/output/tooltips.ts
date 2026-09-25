@@ -1,29 +1,22 @@
+import { NO_COMPONENT_BUDGET } from '../componentBudget.ts';
 import { NONE_LEAVES_SETTINGS_ALONE } from '../guidanceSentences.ts';
-import { lightingModelsFor, paletteLimitsFor, RENDER_STYLE_TRAITS } from '../promptText/index.ts';
+import { PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
 import { shareRange } from '../promptText/renderStyle.ts';
 import { PALETTE_COLOR_COUNTS } from '../quantiser.ts';
-import { PALETTE_LIMITS } from '../../types/output.ts';
-import { RENDER_STYLES } from '../../types/rendering.ts';
 import type { RenderStyle } from '../../types/rendering.ts';
 import { spokenList } from '../../utils/spokenList.ts';
+import {
+  NARROW_BUDGET_LIMITS,
+  NARROW_BUDGET_STYLES,
+  ONE_LIGHT,
+  ONE_LIGHT_STYLES,
+  OWN_CONTOUR_STYLES,
+} from './narrowingStyles.ts';
 
 /** Identifiers in backticks, as a sentence lists them. */
 function coded(names: readonly string[]): string {
   return spokenList(names.map((name) => `\`${name}\``));
 }
-
-/**
- * The styles that narrow each control, read from the record that narrows it rather than listed by
- * hand, so a style whose traits change takes the cards with it (issue #406).
- */
-const OWN_CONTOUR_STYLES = RENDER_STYLES.filter((style) => RENDER_STYLE_TRAITS[style].contour === 'OWN_LINE');
-const ONE_LIGHT_STYLES = RENDER_STYLES.filter((style) => lightingModelsFor(style).length === 1);
-const NARROW_BUDGET_STYLES = RENDER_STYLES.filter(
-  (style) => paletteLimitsFor(style).length < PALETTE_LIMITS.length,
-);
-
-/** The one lighting model the one-light styles take, or `''` if none does. */
-const ONE_LIGHT = ONE_LIGHT_STYLES[0] === undefined ? '' : (lightingModelsFor(ONE_LIGHT_STYLES[0])[0] ?? '');
 
 /** `offers` or `offer`, for a list of styles. */
 function verb(styles: readonly RenderStyle[], singular: string, plural: string): string {
@@ -71,7 +64,7 @@ export const OUTPUT_TOOLTIPS = {
   paletteLimit:
     'The total colour budget across the whole sheet, which keeps every component looking like one set. The prompt states it, but **do not expect the returned sheet to be inside it**: a generated image usually arrives carrying tens or hundreds of thousands of colours.\n\n' +
     `The Quantise tab is where the budget comes true. It reduces a returned sheet to ${String(PALETTE_COLOR_COUNTS.STRICT_32_COLOR)} colours chosen from that sheet under \`STRICT_32_COLOR\`, ${String(PALETTE_COLOR_COUNTS.RESTRAINED_64_COLOR)} under \`RESTRAINED_64_COLOR\` and ${String(PALETTE_COLOR_COUNTS.EXPANDED_ALBEDO)} under \`EXPANDED_ALBEDO\`, and leaves an \`UNRESTRICTED\` sheet’s colours as they arrived.\n\n` +
-    `\`STRICT_32_COLOR\` and \`RESTRAINED_64_COLOR\` suit pixel work. ${coded(NARROW_BUDGET_STYLES)} ${verb(NARROW_BUDGET_STYLES, 'offers', 'offer')} only ${coded(NARROW_BUDGET_STYLES[0] === undefined ? [] : paletteLimitsFor(NARROW_BUDGET_STYLES[0]))}. Painted, cel-shaded and 3D styles usually want \`UNRESTRICTED\`, because a hard colour count fights the blending they depend on.`,
+    `\`STRICT_32_COLOR\` and \`RESTRAINED_64_COLOR\` suit pixel work. ${coded(NARROW_BUDGET_STYLES)} ${verb(NARROW_BUDGET_STYLES, 'offers', 'offer')} only ${coded(NARROW_BUDGET_LIMITS)}. Painted, cel-shaded and 3D styles usually want \`UNRESTRICTED\`, because a hard colour count fights the blending they depend on.`,
   outlineStyle:
     'How a component’s boundary is drawn where it meets the background. A pixel style draws it one pixel wide, and most others as a thin line.\n\n' +
     '- `DARK_LOCAL_CONTOUR`, a darker shade of each local colour, keeps parts separable without flattening them.\n' +
@@ -88,7 +81,7 @@ export const OUTPUT_TOOLTIPS = {
     '- `TALL_9_16` suits one tall figure with its variants stacked.\n' +
     '- `SQUARE_1_1` is the safest choice on targets that quietly re-frame anything else.',
   componentBudget:
-    'The most components you want one generation asked for. Around forty is what current models deliver before they start merging or dropping pieces. Set `0` for no cap.\n\n' +
+    `The most components you want one generation asked for. It starts at ${String(PRACTICAL_COMPONENT_CEILING)}, about as many as current models deliver before they start merging or dropping pieces. Set \`${String(NO_COMPONENT_BUDGET)}\` for no cap.\n\n` +
     'Going over it is reported against this sheet, and on each row of the split drawer where a batch’s sheets differ in weight. It never changes the prompt: the sheet is not trimmed behind your back.',
   targetModel:
     'Which generator the prompt is written for. It changes the shape of the output as well as its wording: a reasoning contract, command-line flags, a separate negative-prompt block or a directive prefix are added or dropped to match what the target reads.\n\n' +

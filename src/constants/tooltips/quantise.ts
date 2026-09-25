@@ -32,13 +32,13 @@ export const QUANTISE_ACTION_TOOLTIPS = {
     '- Each piece the Sprites panel resolved is one frame, in reading order. A sprite you left out has no frame, and two you joined share one.\n' +
     '- Each row of pieces is tagged as its own run.\n' +
     '- Frames are centred across, but each sprite keeps its height, so a bob or a crouch carries through.\n' +
-    '- Where the colours fit, the document is indexed with the palette as its own, so a palette swap works. Past 256 colours it is RGB, and the confirmation says which.\n\n' +
+    `- Where the colours fit, the document is indexed with the palette as its own, so a palette swap works. Past ${String(MAX_PALETTE_ENTRIES)} colours it is RGB, and the confirmation says which.\n\n` +
     WRITE_UNAVAILABLE_UNTIL_SETTLED +
     ' In a batch, the document’s name adds the sheet’s facing, or its number where no facing tells it apart.',
 
   downloadPNG:
     'Saves the quantised sheet as a PNG at the Save At magnification, whatever the preview shows. At 1× it is the sheet’s true size, one file pixel per drawn pixel, which is what an engine wants: a 1024 px sheet read at a grid of 8 is 128 px across.\n\n' +
-    'Where the colours fit, it is an indexed PNG carrying its palette, which a game pipeline or palette-swap shader can read. That is 255 colours for a keyed sheet and 256 for an opaque one; past that it is an ordinary PNG, and the confirmation says which. A keyed background stays transparent.\n\n' +
+    `Where the colours fit, it is an indexed PNG carrying its palette, which a game pipeline or palette-swap shader can read. That is ${String(MAX_PALETTE_ENTRIES - 1)} colours for a keyed sheet and ${String(MAX_PALETTE_ENTRIES)} for an opaque one; past that it is an ordinary PNG, and the confirmation says which. A keyed background stays transparent.\n\n` +
     WRITE_UNAVAILABLE_UNTIL_SETTLED +
     ' The name follows the file you dropped, adding the sheet’s facing or number in a batch.',
 

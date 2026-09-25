@@ -5,7 +5,7 @@ import { PALETTE_FILE_TYPES } from './paletteFiles.ts';
  * files the chooser offers to read one out of.
  *
  * Its ceiling is not here: a custom palette may hold as many colours as a palette can be *stated*
- * in, which is `MAX_PALETTE_ENTRIES` — the same 256 the swatch download is bounded by, and the
+ * in, which is `MAX_PALETTE_ENTRIES` — the same ceiling the swatch download is bounded by, and the
  * figure past which `encodePng` stops writing a palette at all. A second ceiling written here would
  * be a second answer to one question.
  */

@@ -47,8 +47,8 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   the category switch and a degenerate batch has to be asked for deliberately.
  *
  * **The seven unbound categories take `DIRECTION_SETS` entire** rather than restating it, so a set
- * added to the union reaches every subject that can be turned to it in one edit — and the two that
- * are bound stay bound.
+ * added to the union reaches every subject that can be turned to it in one edit — and the bound
+ * categories stay bound.
  *
  * **The first entry of each list is load-bearing**: it is what {@link resolveDirectionSet} degrades a
  * stored set the category does not offer to, the same way `DEFAULT_MODE_FOR` answers for a mode. It

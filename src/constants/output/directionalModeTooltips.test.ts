@@ -16,8 +16,8 @@ import { OUTPUT_TOOLTIPS } from './tooltips.ts';
  * written without one — the deleted text described a tile field in exactly that way — so the first
  * check is narrower than “no option is explained here”, and says so rather than claiming the
  * stronger guarantee. **The ceiling is what catches the rest**, and 600 is where the two figures it
- * sits between leave it: the entry is 496 characters, so it has room to be reworded, and the
- * shortest of the four accounts is 366, so folding any one of them back in lands at 862 or more
+ * sits between leave it: the entry sits well below it, so it has room to be reworded, and the
+ * shortest of the four accounts is longer than the gap, so folding any one of them back in passes it
  * however it is phrased. It bounds this entry alone — several others in the record are longer, each
  * for its own reason, and none of them carries a list of options underneath it.
  *

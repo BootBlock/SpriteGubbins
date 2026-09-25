@@ -1,4 +1,5 @@
 import { REDO_KEYBOARD_SHORTCUTS } from '../guidanceSentences.ts';
+import { MAX_PALETTE_ENTRIES } from '../../utils/pngPalette.ts';
 
 /**
  * Guidance for the studio's actions — the controls that *do* something rather than hold a value.
@@ -98,7 +99,7 @@ export const STUDIO_ACTION_TOOLTIPS = {
     'The colours are pinned in the order the file lists them. A picture holding more colours than a palette can carry is refused rather than trimmed, and you are offered the reduction instead.',
 
   reduceCustomPalette:
-    'Reduces the picture you just dropped to 256 colours and pins those, using the same reducer as the Quantise tab.\n\n' +
+    `Reduces the picture you just dropped to ${String(MAX_PALETTE_ENTRIES)} colours and pins those, using the same reducer as the Quantise tab.\n\n` +
     'Every colour it keeps is already in the picture, chosen by how much of the image each covers, so the result measures that picture rather than being a palette somebody authored. Use it when you dropped a sheet rather than a swatch.',
 
   removeCustomPalette:

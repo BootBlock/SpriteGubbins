@@ -37,10 +37,10 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   have. A backdrop is a plane standing at a distance, seen face on — it has no top surface for
  *   `PURE_TOPDOWN`, no ground plane for the axonometric pair to lay out, and no thickness for
  *   `OBLIQUE_45`. **ICON is the one that looks bound and is not**, for the reason TERRAIN is not: a
- *   flat front-on mark, a three-quarter potion bottle, an oblique chest and an isometric map pin are
- *   all shipped icon styles, so the angle the depicted object is drawn at is a genuine art-direction
- *   choice rather than a property of the deliverable. The cell is what an icon set has in common,
- *   and the cell is not a camera.
+ *   flat front-on mark, a three-quarter potion bottle and an isometric map pin are all shipped icon
+ *   styles, so the angle the depicted object is drawn at is a genuine art-direction choice rather
+ *   than a property of the deliverable. The cell is what an icon set has in common, and the cell is
+ *   not a camera.
  * - **FONT is the fourth, and it is ICON's near miss resolved the other way.** A glyph is a mark on
  *   a baseline with no object behind it, so there is nothing to be drawn at an angle: an engine
  *   renders text by blitting the sprite as it was drawn, and a letter delivered under any camera but
@@ -66,7 +66,7 @@ import type { SubjectCategory } from '../types/subject.ts';
  *
  * **The nine unbound categories take `PROJECTIONS` entire** rather than restating it, so a
  * projection added to the union reaches every subject that can be drawn under it in one edit — and
- * the one that is bound stays bound.
+ * the bound categories stay bound.
  *
  * **The first entry of each list is load-bearing**: it is what {@link resolveProjection} degrades a
  * stored projection the category cannot honour to, the same way `CATEGORY_DIRECTION_SETS` answers
