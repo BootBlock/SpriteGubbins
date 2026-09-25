@@ -2,6 +2,7 @@ import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { CHROME_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { ControlTooltip } from './ControlTooltip.tsx';
+import { Button } from './Button.tsx';
 
 interface ErrorBoundaryProps {
   /** What the reader was waiting for, so the notice can say which part of the app failed. */
@@ -59,15 +60,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           text={CHROME_TOOLTIPS.reloadApp}
           className="relative mt-4 inline-flex"
         >
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="lg"
             onClick={() => {
               window.location.reload();
             }}
-            className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-foundry-950 shadow-lg transition-colors hover:bg-accent"
           >
             Reload the app
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
     );

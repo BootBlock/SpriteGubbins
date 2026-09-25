@@ -11,6 +11,7 @@ import { gridInForce } from '../../utils/gridInForce.ts';
 import { keyingInForce } from '../../utils/keyingInForce.ts';
 import { quantisedSheetCapture } from '../../utils/quantisedSheetCapture.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 /**
  * The second way into the identity lock: the sheet the Quantise tab is already holding.
@@ -99,16 +100,16 @@ export function QuantisedSheetCaptureButton() {
           : `${STUDIO_ACTION_TOOLTIPS.readPaletteFromQuantise}${GUIDANCE_PARAGRAPH_BREAK}${offer.reason}`
       }
     >
-      <button
-        type="button"
+      <Button
+        variant="view"
+        size="md"
         disabled={offer.kind !== 'READY'}
         onClick={() => {
           if (offer.kind === 'READY') capture(offer.sheet);
         }}
-        className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
       >
         Use the quantised sheet
-      </button>
+      </Button>
     </ControlTooltip>
   );
 }

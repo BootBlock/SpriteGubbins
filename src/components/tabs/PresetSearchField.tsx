@@ -2,6 +2,7 @@ import { useId, useRef } from 'react';
 import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface PresetSearchFieldProps {
   readonly value: string;
@@ -91,8 +92,9 @@ export function PresetSearchField({ value, onChange, matchCount, isNarrowed }: P
             text={PRESET_ACTION_TOOLTIPS.clearSearch}
             className="absolute top-1/2 right-1.5 inline-flex -translate-y-1/2"
           >
-            <button
-              type="button"
+            <Button
+              variant="quiet"
+              size="icon"
               onClick={() => {
                 // Focused *before* the state change, not after: clearing the box unmounts this button,
                 // so a focus call afterwards would be aimed at an element React has already removed and
@@ -103,10 +105,9 @@ export function PresetSearchField({ value, onChange, matchCount, isNarrowed }: P
                 onChange('');
               }}
               aria-label="Clear the preset search"
-              className="rounded-lg px-1.5 py-1 text-2xs font-semibold text-ink-faint transition-colors hover:bg-foundry-700 hover:text-ink"
             >
               <span aria-hidden="true">✕</span>
-            </button>
+            </Button>
           </ControlTooltip>
         )}
       </div>

@@ -3,6 +3,7 @@ import { useDownload } from '../../hooks/useDownload.ts';
 import { ControlTooltip } from './ControlTooltip.tsx';
 import { PackImportConfirm } from './PackImportConfirm.tsx';
 import type { PackImportConfirmProps } from './PackImportConfirm.tsx';
+import { Button } from './Button.tsx';
 
 interface JsonPackTransferProps {
   /** The filename the exported pack arrives as, extension included. */
@@ -96,16 +97,16 @@ export function JsonPackTransfer({
       {pendingImport === null ? (
         <>
           <ControlTooltip hint="Export JSON" text={exportGuidance}>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="md"
               disabled={isTransferring || !canExport}
               onClick={() => {
                 download(filename, exportPack(), 'application/json');
               }}
-              className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint"
             >
               <span aria-hidden="true">📤</span> Export JSON
-            </button>
+            </Button>
           </ControlTooltip>
 
           {/*
@@ -116,17 +117,17 @@ export function JsonPackTransfer({
             re-implement the global `:focus-visible` rule that `index.css` already owns.
           */}
           <ControlTooltip hint="Import JSON" text={importGuidance}>
-            <button
+            <Button
+              variant="secondary"
+              size="md"
               ref={importButtonRef}
-              type="button"
               disabled={isTransferring}
               onClick={() => {
                 fileInputRef.current?.click();
               }}
-              className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint"
             >
               <span aria-hidden="true">📥</span> Import JSON
-            </button>
+            </Button>
           </ControlTooltip>
         </>
       ) : (

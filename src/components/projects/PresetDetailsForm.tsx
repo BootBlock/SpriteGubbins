@@ -4,6 +4,7 @@ import { usePresetStore } from '../../stores/usePresetStore.ts';
 import type { CustomArchetype } from '../../types/preset.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface PresetDetailsFormProps {
   readonly preset: CustomArchetype;
@@ -118,24 +119,25 @@ export function PresetDetailsForm({ preset, onClose }: PresetDetailsFormProps) {
 
       <div className="flex justify-end gap-2">
         <ControlTooltip hint="Save" text={PRESET_ACTION_TOOLTIPS.confirmDetails}>
-          <button
+          <Button
+            variant="view"
+            size="sm"
             type="submit"
             disabled={isSaving || draftName.trim() === ''}
             aria-label={`${isSaving ? 'Saving…' : 'Save'} — the details for ${preset.name}`}
-            className="action-tab rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
           >
             {isSaving ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
         </ControlTooltip>
         <ControlTooltip hint="Cancel" text={PRESET_ACTION_TOOLTIPS.cancelDetails}>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             aria-label={`Cancel — leave the details for ${preset.name} unchanged`}
             onClick={onClose}
-            className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
           >
             Cancel
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
     </form>

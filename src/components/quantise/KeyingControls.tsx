@@ -12,6 +12,7 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { ColorSwatch } from '../common/ColorSwatch.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface KeyingControlsProps {
   /**
@@ -114,15 +115,15 @@ export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingCont
       {!isKeying && offered && (
         <div className="mt-4">
           <ControlTooltip hint="Key the background" text={QUANTISE_ACTION_TOOLTIPS.keyTheBackground}>
-            <button
-              type="button"
+            <Button
+              variant="view"
+              size="md"
               onClick={() => {
                 setKeyingEnabled(true);
               }}
-              className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
             >
               Key the background
-            </button>
+            </Button>
           </ControlTooltip>
           <p className="mt-3 text-xs leading-relaxed text-ink-muted">{KEY_OFFER_NOTICE}</p>
         </div>

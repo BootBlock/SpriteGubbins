@@ -1,6 +1,7 @@
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { FilePickerField } from '../common/FilePickerField.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface ImageDropZoneProps {
   readonly acceptFile: (file: File | null | undefined) => void;
@@ -52,17 +53,13 @@ export function ImageDropZone({ acceptFile, currentName, onClear }: ImageDropZon
         />
 
         {currentName !== null && (
-          // `rose` because it discards, and outlined rather than filled because what it discards is
-          // one tab's working state — nothing saved, nothing that cannot be dropped in again. The
-          // filled treatment belongs to an action that deletes something the user would miss.
+          // `danger` because it discards, and not the filled `destructive` because what it discards
+          // is one tab's working state — nothing saved, nothing that cannot be dropped in again. The
+          // fill belongs to an action that deletes something the user would miss.
           <ControlTooltip hint="Clear" text={QUANTISE_ACTION_TOOLTIPS.clearImage}>
-            <button
-              type="button"
-              onClick={onClear}
-              className="rounded-lg border border-rose/40 bg-rose/10 px-3 py-1.5 text-xs font-semibold text-rose transition-all hover:border-rose hover:bg-rose/20 active:scale-[0.98]"
-            >
+            <Button variant="danger" size="md" onClick={onClear}>
               <span aria-hidden="true">✕</span> Clear
-            </button>
+            </Button>
           </ControlTooltip>
         )}
       </div>

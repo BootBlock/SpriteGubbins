@@ -6,6 +6,7 @@ import type { PresetArchetype } from '../../types/preset.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { PresetCardSpecs } from './PresetCardSpecs.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface PresetCardProps {
   readonly preset: PresetArchetype;
@@ -31,8 +32,8 @@ interface PresetCardProps {
  * Nothing below had to change for either: the card's edge, its hover bloom, its title and its load
  * button all reach for `*-tab` utilities, and those resolve against whichever element last set the
  * property. Assigning it here rather than passing a colour down is what keeps a card's decoration
- * out of its props — and it is why the button needs no prop either: `action-tab` picks up the
- * card's stop, not the presets view's.
+ * out of its props — and it is why the button needs no colour prop either: the `view` variant's
+ * `action-tab` picks up the card's stop, not the presets view's.
  */
 export function PresetCard({ preset, index }: PresetCardProps) {
   const loadPreset = usePresetStore((state) => state.loadPreset);
@@ -80,8 +81,9 @@ export function PresetCard({ preset, index }: PresetCardProps) {
           text={PRESET_ACTION_TOOLTIPS.loadPreset}
           className="relative flex flex-1"
         >
-          <button
-            type="button"
+          <Button
+            variant="view"
+            size="md"
             // The card's title is two elements above this button, which is enough for a reader who
             // sees the card and nothing at all for one who meets the control on its own — a Tab
             // through this library is twenty-three consecutive stops otherwise, every one of them
@@ -91,7 +93,7 @@ export function PresetCard({ preset, index }: PresetCardProps) {
             onClick={() => {
               loadPreset(preset);
             }}
-            className="action-tab group/load flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
+            className="group/load flex w-full items-center justify-center gap-1.5"
           >
             {/* Named group: the card is already a `group`, and an unnamed one here would follow the
                 card's hover rather than this button's. */}
@@ -102,7 +104,7 @@ export function PresetCard({ preset, index }: PresetCardProps) {
               ⚡
             </span>
             Load preset
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
     </li>

@@ -4,6 +4,7 @@ import { usePaletteDownload } from '../../hooks/usePaletteDownload.ts';
 import { PALETTE_FILE_FORMATS } from '../../types/paletteFile.ts';
 import type { PaletteFileFormat, SettledPalette } from '../../types/paletteFile.ts';
 import { ControlTooltip } from './ControlTooltip.tsx';
+import { Button } from './Button.tsx';
 
 interface PaletteDownloadProps {
   /** The colours to write, and the name the file is called after. */
@@ -56,16 +57,16 @@ export function PaletteDownload({ palette, subject }: PaletteDownloadProps) {
     <div className="flex flex-wrap items-center gap-1.5">
       {offered.map((format) => (
         <ControlTooltip key={format} hint={PALETTE_FILE_TYPES[format].label} text={FORMAT_GUIDANCE[format]}>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             aria-label={`Download ${subject} as ${PALETTE_FILE_TYPES[format].phrase}`}
             onClick={() => {
               download(palette, format);
             }}
-            className="rounded-lg border border-foundry-600 bg-foundry-700 px-3 py-1 text-xs font-semibold text-ink-muted transition-all hover:bg-foundry-600 hover:text-ink active:scale-[0.98]"
           >
             <span aria-hidden="true">⬇</span> {PALETTE_FILE_TYPES[format].label}
-          </button>
+          </Button>
         </ControlTooltip>
       ))}
     </div>

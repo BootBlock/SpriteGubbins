@@ -1,6 +1,7 @@
 import { useUndoShortcut } from '../../hooks/useUndoShortcut.ts';
 import { Badge } from './Badge.tsx';
 import { ControlTooltip } from './ControlTooltip.tsx';
+import { Button } from './Button.tsx';
 
 /**
  * The panel two tabs put over an undo stack: how far back it reaches, and the two steps.
@@ -58,15 +59,15 @@ export function HistoryControls({
         )}
 
         <ControlTooltip className="relative ml-auto inline-flex" hint="Undo" text={undoTooltip}>
-          <button type="button" disabled={stepsBack === 0} onClick={undo} className={STEP_BUTTON}>
+          <Button variant="secondary" size="md" disabled={stepsBack === 0} onClick={undo}>
             Undo
-          </button>
+          </Button>
         </ControlTooltip>
 
         <ControlTooltip hint="Redo" text={redoTooltip}>
-          <button type="button" disabled={!canRedo} onClick={redo} className={STEP_BUTTON}>
+          <Button variant="secondary" size="md" disabled={!canRedo} onClick={redo}>
             Redo
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
 
@@ -74,13 +75,3 @@ export function HistoryControls({
     </section>
   );
 }
-
-/**
- * The two buttons' styling, written once because they are one control in two directions.
- *
- * The disabled state names a token rather than reaching for an opacity, and it puts the hover back
- * where it started: a disabled button still matches `:hover`, so without the last two the greyed
- * Redo would light up under the pointer as though it were about to do something.
- */
-const STEP_BUTTON =
-  'rounded-lg border border-foundry-600 bg-foundry-700 px-3.5 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-390 hover:bg-foundry-600 hover:text-ink active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-foundry-700 disabled:hover:text-ink-faint';

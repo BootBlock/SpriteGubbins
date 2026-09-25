@@ -123,3 +123,38 @@ export function callSitesWrappingAttribute(tag: string, attribute: string): Call
 
   return found.sort((left, right) => siteName(left).localeCompare(siteName(right)));
 }
+
+/** Every `<tag>` the app renders, sorted, one entry per call site. */
+export function callSitesOf(tag: string): CallSite[] {
+  return elementsNamed(tag)
+    .map(({ site }) => site)
+    .sort((left, right) => siteName(left).localeCompare(siteName(right)));
+}
+
+/**
+ * The literal text each `<tag>` passes in `attribute`, one entry per call site that passes it.
+ *
+ * Every string and template piece inside the value is read, whether written bare or inside a
+ * conditional, so a class hidden in one branch of a ternary is still found. What an identifier holds
+ * is not: a call site that passes a constant is answered by the constant's own literal, wherever the
+ * walk meets it.
+ */
+export function literalTextPassed(tag: string, attribute: string): { site: CallSite; text: string }[] {
+  const found: { site: CallSite; text: string }[] = [];
+
+  for (const { site, node } of elementsNamed(tag)) {
+    const opening = ts.isJsxElement(node) ? node.openingElement : node;
+    for (const property of opening.attributes.properties) {
+      if (!ts.isJsxAttribute(property) || property.name.getText() !== attribute) continue;
+      const pieces: string[] = [];
+      const collect = (value: ts.Node): void => {
+        if (ts.isStringLiteralLike(value) || ts.isTemplateLiteralToken(value)) pieces.push(value.text);
+        ts.forEachChild(value, collect);
+      };
+      if (property.initializer !== undefined) collect(property.initializer);
+      found.push({ site, text: pieces.join(' ') });
+    }
+  }
+
+  return found;
+}

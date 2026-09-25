@@ -11,6 +11,7 @@ import { DownloadControls } from './DownloadControls.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface ComparisonToolbarProps {
   /** The layout in force, which is not always the one asked for — see `ImageComparison`. */
@@ -136,14 +137,10 @@ export function ComparisonToolbar({
             isDetached ? QUANTISE_ACTION_TOOLTIPS.reattachPreview : QUANTISE_ACTION_TOOLTIPS.detachPreview
           }
         >
-          <button
-            type="button"
-            onClick={onDetachToggle}
-            className="rounded-lg border border-foundry-600 bg-foundry-700 px-3.5 py-1.5 text-xs font-semibold text-ink transition-all duration-390 hover:bg-foundry-600 active:scale-[0.98]"
-          >
+          <Button variant="secondary" size="md" onClick={onDetachToggle}>
             <span aria-hidden="true">{isDetached ? '⤡' : '⤢'}</span>{' '}
             {isDetached ? 'Return to the page' : 'Detach preview'}
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
     </div>

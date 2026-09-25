@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/quantise.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface DetachedNoticeProps {
   readonly onReturn: () => void;
@@ -37,14 +38,9 @@ export function DetachedNotice({ onReturn }: DetachedNoticeProps) {
         page as they always did. Closing that window, or leaving this tab, brings them back here.
       </p>
       <ControlTooltip hint="Bring the preview back" text={QUANTISE_ACTION_TOOLTIPS.reattachPreview}>
-        <button
-          ref={button}
-          type="button"
-          onClick={onReturn}
-          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
-        >
+        <Button variant="view" size="md" ref={button} onClick={onReturn}>
           <span aria-hidden="true">⤢</span> Bring the preview back
-        </button>
+        </Button>
       </ControlTooltip>
     </section>
   );

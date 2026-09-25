@@ -5,19 +5,7 @@ import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { sheetBatch } from '../../utils/sheetBatch.ts';
 import { ControlTooltip } from './ControlTooltip.tsx';
-
-/**
- * The two step buttons, so the pair stays matched — they sit side by side, and a difference between
- * them reads as a mistake rather than as emphasis. The disabled case is the batch's two ends, which
- * are reached often enough that it is a state rather than an edge.
- *
- * Its disabled treatment is the app's, not a second one: `text-ink-faint` with the hover suppressed,
- * as `HistoryFooter` spells it. An `opacity-50` layered on top of
- * that ink would composite to roughly 2.4:1 against `foundry-950` — a third of the contrast every
- * other disabled control in the app is rendered at, and on the state a user *starts* every batch in.
- */
-const STEP_BUTTON =
-  'rounded-lg border border-foundry-600 bg-foundry-950 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors duration-390 hover:border-tab/50 hover:bg-foundry-700 hover:text-ink disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:border-foundry-600 disabled:hover:bg-foundry-950';
+import { Button } from './Button.tsx';
 
 /**
  * The way from the sheet the studio is composing to the one before or after it in the same batch.
@@ -59,32 +47,32 @@ export function SheetStepButtons() {
   return (
     <>
       <ControlTooltip hint="Previous sheet" text={STUDIO_ACTION_TOOLTIPS.previousSheet}>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={previous === undefined}
           onClick={() => {
             if (previous !== undefined) setOutputConfig(previous.output);
           }}
-          className={STEP_BUTTON}
         >
           {/* Decorative, so hidden — the word beside it carries the whole meaning, and an
               unhidden glyph is read out as "left arrow" in the middle of the label. Every other
               glyph-bearing button in the app hides its icon the same way. */}
           <span aria-hidden="true">←</span> Previous
-        </button>
+        </Button>
       </ControlTooltip>
 
       <ControlTooltip hint="Next sheet" text={STUDIO_ACTION_TOOLTIPS.nextSheet}>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={next === undefined}
           onClick={() => {
             if (next !== undefined) setOutputConfig(next.output);
           }}
-          className={STEP_BUTTON}
         >
           Next sheet <span aria-hidden="true">→</span>
-        </button>
+        </Button>
       </ControlTooltip>
     </>
   );

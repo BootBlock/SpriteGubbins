@@ -11,6 +11,7 @@ import type { SheetRun } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { DepthOrderNote } from './DepthOrderNote.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface SheetSplitRunProps {
   readonly run: SheetRun;
@@ -158,16 +159,16 @@ export function SheetSplitRun({
 
       <div className="flex flex-wrap items-center gap-3">
         <ControlTooltip hint="Copy this sheet" text={DIALOG_TOOLTIPS.copySheetPrompt}>
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="md"
             aria-label={`Copy this sheet ${position}`}
             onClick={() => {
               onCopy(run);
             }}
-            className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-extrabold text-foundry-950 shadow-md transition-colors hover:bg-accent"
           >
             Copy this sheet
-          </button>
+          </Button>
         </ControlTooltip>
 
         {/* Gold on the figure as well as the chip, so the warning names the number it is about —

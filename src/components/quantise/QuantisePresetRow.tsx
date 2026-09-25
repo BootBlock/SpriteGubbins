@@ -4,6 +4,7 @@ import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
 import type { QuantisePreset } from '../../types/quantisePreset.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { ProjectMoveField } from '../projects/ProjectMoveField.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface QuantisePresetRowProps {
   readonly preset: QuantisePreset;
@@ -65,8 +66,9 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
               hint={`Delete “${preset.name}”`}
               text={QUANTISE_ACTION_TOOLTIPS.confirmDeleteQuantisePreset}
             >
-              <button
-                type="button"
+              <Button
+                variant="destructive"
+                size="sm"
                 aria-label={`Delete the saved settings “${preset.name}”, for good`}
                 // The store reports its own failure with a toast and resolves, so there is nothing
                 // here to handle. It is awaited all the same: until the write lands the row is still
@@ -74,49 +76,48 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
                 onClick={() => {
                   void confirm(() => deleteQuantisePreset(preset.id));
                 }}
-                className="rounded-lg bg-rose px-3 py-1 text-xs font-bold text-foundry-950 transition-opacity duration-390 hover:opacity-90"
               >
                 Delete
-              </button>
+              </Button>
             </ControlTooltip>
 
             <ControlTooltip hint="Cancel" text={QUANTISE_ACTION_TOOLTIPS.cancelDeleteQuantisePreset}>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 ref={attachCancel}
-                type="button"
                 aria-label={`Keep the saved settings “${preset.name}”`}
                 onClick={cancel}
-                className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors duration-390 hover:bg-foundry-700 hover:text-ink"
               >
                 Cancel
-              </button>
+              </Button>
             </ControlTooltip>
           </>
         ) : (
           <>
             <ControlTooltip hint="Load" text={QUANTISE_ACTION_TOOLTIPS.loadQuantisePreset}>
-              <button
-                type="button"
+              <Button
+                variant="view"
+                size="sm"
                 aria-label={`Load the saved settings “${preset.name}”`}
                 onClick={() => {
                   loadQuantisePreset(preset);
                 }}
-                className="action-tab rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
               >
                 Load
-              </button>
+              </Button>
             </ControlTooltip>
 
             <ControlTooltip hint="Delete" text={QUANTISE_ACTION_TOOLTIPS.deleteQuantisePreset}>
-              <button
+              <Button
+                variant="danger"
+                size="sm"
                 ref={attachAsk}
-                type="button"
                 aria-label={`Delete the saved settings “${preset.name}”`}
                 onClick={ask}
-                className="rounded-lg border border-foundry-600 bg-foundry-700 px-3 py-1 text-xs font-semibold text-ink-muted transition-all duration-390 hover:bg-rose/20 hover:text-rose active:scale-[0.98]"
               >
                 Delete
-              </button>
+              </Button>
             </ControlTooltip>
           </>
         )}
