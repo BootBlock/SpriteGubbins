@@ -312,7 +312,7 @@ function offMeshShare(image: ImageData, mesh: GridMesh): number {
   const planes = oklabPlanes(image);
   let total = 0;
   let off = 0;
-  for (const plane of [planes.L, planes.a, planes.b]) {
+  for (const plane of [planes.L, planes.a, planes.b, planes.alpha]) {
     for (let y = 0; y < image.height; y += 1) {
       for (let x = 1; x < image.width; x += 1) {
         const step = Math.abs((plane[y * image.width + x] ?? 0) - (plane[y * image.width + x - 1] ?? 0));

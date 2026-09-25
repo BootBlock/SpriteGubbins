@@ -44,10 +44,10 @@ import { pixelDistanceOf } from './pixelDistance.ts';
  *
  * Pure, and bounded in what it allocates: three rows of the image in scaled OKLab, whatever the
  * sheet's height. The reading never looks further than one row either side, and the whole-image
- * alternative is not cheap — `oklabPlanes` holds three `Float64Array`s of one entry per pixel, which
- * at this tab's 4096 × 4096 ceiling is four hundred megabytes. That is also why this converts rather
- * than calling it: those planes fold coverage into the colour, taking a cleared pixel towards black,
- * and the reading here has to keep the two apart.
+ * alternative is not cheap — `oklabPlanes` holds four `Float64Array`s of one entry per pixel, which
+ * at this tab's 4096 × 4096 ceiling is over five hundred megabytes. That is also why this converts
+ * rather than calling it: those planes take a translucent pixel's colour toward a neutral grey by as
+ * much as it is uncovered, and the reading here wants the pixel's own colour at its whole vote.
  */
 export function blendWeightedHistogram(image: ImageData): ReadonlyMap<number, number> {
   const { width, height, data } = image;

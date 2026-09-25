@@ -33,17 +33,17 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * **Measured on the reference sheet** (`test_sprites/armour.png`, 1254², a grid of 6, no keying, no
  * colour budget, every dial at its opening position), by running `autoTune` over it directly: five
  * crops of 240 px and **142 positions over three rounds**, the three anti-aliasing stages skipping
- * because the tab opens that control off, ending at a likeness of **0.7428 for 113 colours** where
- * the opening position it started from scored 0.7209 for 960. An eighth of the colours for two
- * hundredths *more* likeness, which is the elbow finding a knee that is better on both counts than
+ * because the tab opens that control off, ending at a likeness of **0.8071 for 113 colours** where
+ * the opening position it started from scored 0.7907 for 960. An eighth of the colours for nearly
+ * two hundredths *more* likeness, which is the elbow finding a knee that is better on both counts than
  * where the reader began. The position it settles on is `K_CENTROID` with the merge at 6, the
  * cleanup at 16 and two cleanup passes; the table under {@link TUNE_ROUNDS} carries the other seven
  * sheets, and every one of them settles on `K_CENTROID` too.
  *
  * **What the widening bought, measured rather than assumed.** The narrower sweep this replaced — 35
  * positions, one round, three crops — settled this sheet on `DOMINANT` with the merge at 12 and the
- * cleanup at 48. Scored on the same five crops the widened sweep reads, that position is **0.7115 for
- * 54 colours** against the **0.7428 for 113** above: the two are a genuine trade rather than one
+ * cleanup at 48. Scored on the same five crops the widened sweep reads, that position is **0.7836 for
+ * 54 colours** against the **0.8071 for 113** above: the two are a genuine trade rather than one
  * strictly beating the other, and it is a trade the narrow sweep could not offer at all, because the
  * reading stage's first round chooses `DOMINANT` (see below) and only a later round, taken against a
  * merge and a cleanup already swept, moves it to `K_CENTROID`. Both figures are on the same sample,
@@ -55,8 +55,16 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * a shortest run of 12 and a strength of **10%** — the top of the first two ladders and the bottom of
  * the third, so the pass softens only the hardest, longest contours and by the least the ladder
  * offers. That is pixel-art practice's one standing rule about anti-aliasing, to use as little of it
- * as the shape needs, arrived at by measurement. It reaches 0.7426 for 117 colours from a baseline of
- * 0.7218 for 1058.
+ * as the shape needs, arrived at by measurement. It reaches 0.8069 for 117 colours from a baseline of
+ * 0.7913 for 1058.
+ *
+ * **Every likeness above counts coverage as a fourth channel** — see `meanSsim`. On an unkeyed sheet
+ * with the anti-aliasing off every pixel is opaque, so that channel scores 1 throughout and the
+ * sweep settles every corpus sheet on the dials, rounds and positions it did before coverage was
+ * scored. Keyed at the default tolerance against each sheet's corner colour, the eight settle on
+ * the same dials too, and three descents end sooner: `cyborg_monk.png` at 95 positions rather than
+ * 142, `ui_elements1.png` at 87 rather than 181, and the reference sheet at `BOTH` at 226 rather
+ * than 376, where the shortest run settles at 12 rather than 10.
  *
  * **The count of positions is what a change to any ladder here has to be judged by**, not a wall
  * clock — the same code over the same sheet takes several times longer on one host than another, so
@@ -66,8 +74,8 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * **The reading stage's first round chooses the *cheapest* of the three readings on that sheet
  * rather than the most faithful, and that is the elbow doing what it says rather than a defect.** Of
  * the fifteen positions the reading stage tries, `K_CENTROID` at expansion 0 reproduces the crops
- * most closely at 0.7356 and `INK_WEIGHTED` at expansion 0 comes next at 0.7258, both spending 1208
- * colours; `DOMINANT` at expansion 0 is the least faithful of the three at 0.7074 and spends 1030.
+ * most closely at 0.8017 and `INK_WEIGHTED` at expansion 0 comes next at 0.7944, both spending 1208
+ * colours; `DOMINANT` at expansion 0 is the least faithful of the three at 0.7806 and spends 1030.
  * The knee of that frontier is `DOMINANT`. Once the merge and the cleanup have folded the averaging
  * readings' extra colours away, a later round ranks a different frontier and its knee is
  * `K_CENTROID` — which is what a descent of more than one round is for. Those four figures are a
@@ -81,10 +89,10 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * `DOMINANT` on likeness above, on a sheet whose contours were softened on the way back from the
  * generator. On `test_sprites/cyborg_healer.png` (a grid of 4, and again a grid the run was given
  * rather than one the sheet reads at) `K_CENTROID` at expansion 0 beats the other averaging reading
- * on **both** counts — 0.7228 for 1416 colours against `INK_WEIGHTED`'s 0.7153 for 1435 — and the
- * first round's elbow settles on `DOMINANT`, at 0.7029 for 1298, because it is cheaper than either.
+ * on **both** counts — 0.7921 for 1416 colours against `INK_WEIGHTED`'s 0.7865 for 1435 — and the
+ * first round's elbow settles on `DOMINANT`, at 0.7772 for 1298, because it is cheaper than either.
  * Those six figures are a reading of the first stage **at three crops**, like the four above them;
- * at five they are 0.7270 for 1427, 0.7168 for 1445 and 0.7074 for 1321, which moves no part of the
+ * at five they are 0.7953 for 1427, 0.7876 for 1445 and 0.7805 for 1321, which moves no part of the
  * argument. The whole sweep then settles every corpus sheet on `K_CENTROID`, which is the warning
  * stated at its sharpest: a sheet that lives on its contours gets the reading that softens them
  * unless the reader asks for `INK_WEIGHTED` — which is what `AUTO_TUNE_GUIDANCE.settled` tells them
@@ -325,7 +333,7 @@ export const AUTO_TUNE_GUIDANCE = {
   running:
     'Running the pipeline over five crops of the sheet, once for each candidate, and going round the dials until they stop moving. It can take a minute or two on a large sheet, and the preview beside it keeps working throughout — the sweep is on a thread of its own.',
   settled:
-    'The dials named below have moved; every other dial on this tab is exactly where you left it. One undo puts them all back. The likeness figure is structural similarity against the crops, where 1 is the artwork reproduced exactly, and the colour figure is what the result spent to get there — the sweep chose the position where one more colour started buying least, so a higher figure was available and was not worth its cost. The anti-aliasing pass is swept as you pointed it: where you left that control off it stays off, and where you turned it on the sweep found how much softening was worth its colours. One bias is worth knowing before you accept the reading it chose: on a sheet whose edges came back softened, an average genuinely sits closer to a soft edge than a hard one does, so likeness leans toward K_CENTROID even where the artwork lives on its contours. If yours does, try INK_WEIGHTED against what the sweep picked and judge the two in the preview.',
+    'The dials named below have moved; every other dial on this tab is exactly where you left it. One undo puts them all back. The likeness figure is structural similarity of colour and coverage against the crops, where 1 is the artwork reproduced exactly, and the colour figure is what the result spent to get there — the sweep chose the position where one more colour started buying least, so a higher figure was available and was not worth its cost. The anti-aliasing pass is swept as you pointed it: where you left that control off it stays off, and where you turned it on the sweep found how much softening was worth its colours. One bias is worth knowing before you accept the reading it chose: on a sheet whose edges came back softened, an average genuinely sits closer to a soft edge than a hard one does, so likeness leans toward K_CENTROID even where the artwork lives on its contours. If yours does, try INK_WEIGHTED against what the sweep picked and judge the two in the preview.',
   failed:
     'The sweep produced nothing this time. The dials are untouched, so nothing about the sheet on screen has changed, and pressing Auto again is safe.',
 } as const;
