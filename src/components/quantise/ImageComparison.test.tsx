@@ -302,7 +302,7 @@ describe('ImageComparison', () => {
     // `quantised` is built fresh by `useQuantiseWork` on every render, so an effect keyed on that
     // wrapper repainted both canvases whenever anything in the tab re-rendered — two `putImageData`
     // calls of up to 67 megabytes each, on the main thread, for a keystroke that changed no pixel.
-    // Counting `getContext` counts paints, because `paint` reaches for one every time it draws.
+    // Counting `getContext` counts paints, because `useCanvasPaint` reaches for one every time it draws.
     const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
     const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
     const quantised = { result: resultFor(8), grid: 8 };
@@ -329,6 +329,49 @@ describe('ImageComparison', () => {
     // A genuinely different result, which is the only thing there is anything to redraw for.
     rerender(panel({ result: resultFor(4), grid: 4 }, false));
     expect(context.mock.calls.length).toBeGreaterThan(onMount);
+
+    context.mockRestore();
+  });
+
+  it('leaves the sheet’s canvas alone when only the second picture changes (#381)', () => {
+    // The sheet is fixed while it is loaded, but the second pane's image is new on every result,
+    // difference-scale press and layout change. One effect over both canvases redrew the sheet each
+    // time — a full-size `putImageData` on the main thread for pixels that had not moved. Counting
+    // `getContext` calls made *on the sheet's canvas* counts its paints, as the test above does.
+    const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    const panel = (grid: number) => (
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={{ grid, measurement: 'EXACT' }}
+        grid={grid}
+        quantised={{ result: resultFor(grid, 32, { x: 0, y: 0 }, 20), grid }}
+        busy={false}
+      />
+    );
+    const { rerender } = render(panel(8));
+    const sheet = screen.getByRole('img', { name: 'The sheet as it arrived' });
+    const sheetPaints = () => context.mock.contexts.filter((canvas) => canvas === sheet).length;
+    const allPaints = () => context.mock.calls.length;
+    expect(sheetPaints()).toBe(1);
+
+    // A new result.
+    let before = allPaints();
+    rerender(panel(4));
+    expect(allPaints()).toBeGreaterThan(before);
+    // A new difference scale, which repaints the heatmap and nothing else.
+    choose('Difference');
+    before = allPaints();
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Difference scale' })).getByRole('button', { name: '4' }),
+    );
+    expect(allPaints()).toBeGreaterThan(before);
+
+    // The sheet's canvas survived both — the pair and the heatmap share its tree — unpainted since.
+    expect(screen.getByRole('img', { name: 'The sheet as it arrived' })).toBe(sheet);
+    expect(sheetPaints()).toBe(1);
 
     context.mockRestore();
   });

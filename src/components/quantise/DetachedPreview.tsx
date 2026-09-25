@@ -21,7 +21,7 @@ interface DetachedPreviewProps {
  * the layout, the wipe position, the linked pan — stays in `ImageComparison`, which never unmounts;
  * only the elements are built somewhere else. The pane stack was already written for that, because
  * choosing a preview layout replaces both scrollports and both canvases anyway: `useLinkedPanes` and
- * the paint effect take the *elements* rather than refs to them, so a fresh pair in a fresh document
+ * `useCanvasPaint` take the *elements* rather than refs to them, so a fresh pair in a fresh document
  * is a case they already handle. React builds the nodes with the portal container's own
  * `ownerDocument`, so the canvases belong to the detached window rather than to this one.
  *
