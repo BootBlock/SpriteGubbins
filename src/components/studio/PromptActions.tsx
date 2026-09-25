@@ -8,22 +8,8 @@ import { useUIStore } from '../../stores/useUIStore.ts';
 import { promptFileName } from '../../utils/promptFileName.ts';
 import { sheetRunCount } from '../../utils/sheetBatch.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
-
-/**
- * Geometry and motion for the three secondary actions, so the set stays matched.
- *
- * One string rather than one per button: they sit side by side, so a difference between any two of
- * them reads as a mistake rather than as emphasis.
- *
- * The hover border is the view's colour, matching the chrome's own secondary pair and the primary
- * beside them: every button inside a panel now answers to `--color-tab`, and one of the four still
- * lighting up indigo would read as belonging to something else.
- */
-const PROMPT_ACTION =
-  'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-950 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-390 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 hover:text-ink active:translate-y-0';
-
-/** The glyph inside one of those, lifting with it — which is why each button is a `group`. */
-const PROMPT_ACTION_ICON = 'inline-block transition-transform duration-585 group-hover:scale-125';
+import { CopyOpenNextButton } from './CopyOpenNextButton.tsx';
+import { PromptActionButton } from './PromptActionButton.tsx';
 
 interface PromptActionsProps {
   /**
@@ -34,13 +20,14 @@ interface PromptActionsProps {
 }
 
 /**
- * The four ways to take the prompt away: as JSON, as a file, as a set of per-facing sheets, or
- * straight to the clipboard.
+ * The ways to take the prompt away: as JSON, as a file, as a set of per-facing sheets, straight to
+ * the clipboard, or to the clipboard and the generator with the studio stepped on to the next sheet.
  *
  * Its own component because the preview panel is the *prompt* — the rail, the counts and the text —
- * and this is a toolbar with four handlers and its own filename rule. Everything but the compiled
- * text is read from the stores here rather than threaded down, so adding an action is a change to
- * this file alone.
+ * and this is a toolbar with its own handlers and its own filename rule. Everything but the compiled
+ * text is read from the stores rather than threaded down. The combined action is a component of its
+ * own, `CopyOpenNextButton`, because it keeps state about its last press, and it takes the compiled
+ * text as a prop for the reason this component does.
  */
 export function PromptActions({ promptText }: PromptActionsProps) {
   const category = useSubjectStore((state) => state.category);
@@ -59,36 +46,29 @@ export function PromptActions({ promptText }: PromptActionsProps) {
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
       <ControlTooltip hint="Copy JSON" text={STUDIO_ACTION_TOOLTIPS.copyJSON}>
-        <button
-          type="button"
+        <PromptActionButton
+          icon="{ }"
+          iconClassName="font-mono"
           onClick={() => {
             void copyText(
               JSON.stringify({ category, subject, output }, null, 2),
               'JSON specification copied',
             );
           }}
-          className={PROMPT_ACTION}
         >
-          <span aria-hidden="true" className={`${PROMPT_ACTION_ICON} font-mono`}>
-            {'{ }'}
-          </span>
           Copy JSON
-        </button>
+        </PromptActionButton>
       </ControlTooltip>
 
       <ControlTooltip hint="Download .md" text={STUDIO_ACTION_TOOLTIPS.downloadMarkdown}>
-        <button
-          type="button"
+        <PromptActionButton
+          icon="💾"
           onClick={() => {
             download(promptFileName(subject.species), promptText, 'text/markdown');
           }}
-          className={PROMPT_ACTION}
         >
-          <span aria-hidden="true" className={PROMPT_ACTION_ICON}>
-            💾
-          </span>
           Download .md
-        </button>
+        </PromptActionButton>
       </ControlTooltip>
 
       {/* Offered only when the configuration genuinely is more than one sheet, counting both axes it
@@ -99,49 +79,47 @@ export function PromptActions({ promptText }: PromptActionsProps) {
           hint={`Split into ${String(runCount)} sheets`}
           text={STUDIO_ACTION_TOOLTIPS.splitIntoSheets}
         >
-          <button
-            type="button"
+          <PromptActionButton
+            icon="🧩"
             onClick={toggleSplitModal}
-            // Alone among the four in coming and going with the configuration, so it arrives rather
+            // Alone among the five in coming and going with the configuration, so it arrives rather
             // than simply being there — which is what tells the user it is new.
-            className={`${PROMPT_ACTION} animate-pop-in`}
+            className="animate-pop-in"
           >
-            <span aria-hidden="true" className={PROMPT_ACTION_ICON}>
-              🧩
-            </span>
             Split into {runCount} sheets
-          </button>
+          </PromptActionButton>
         </ControlTooltip>
       )}
 
-      {/* `ml-auto` belongs to the wrapper, which is the flex item in this row now — on the button it
-          would be measured against the wrapper's own box and push nothing. */}
-      <ControlTooltip
-        hint="Copy Prompt"
-        text={STUDIO_ACTION_TOOLTIPS.copyPrompt}
-        className="relative ml-auto inline-flex"
-      >
-        <button
-          type="button"
-          onClick={() => {
-            void copyPrompt();
-          }}
-          // `action-tab`, not the chrome's indigo: this one belongs to the studio, and the header's
-          // Copy Prompt — the same action, reachable from every view — is the one that stays primary.
-          className="action-tab group relative overflow-hidden rounded-xl px-4 py-1.5 text-xs font-extrabold transition-all duration-390 hover:scale-[1.03] active:scale-[0.98]"
-        >
-          {/* The sheen is a child rather than a background layer on the button, so it can be clipped
-              to the rounded corners and slid across without disturbing the fill underneath. */}
-          <span
-            aria-hidden="true"
-            className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1365 group-hover:translate-x-full"
-          />
-          <span className="relative flex items-center gap-1.5">
-            <span aria-hidden="true">📋</span>
-            Copy Prompt
-          </span>
-        </button>
-      </ControlTooltip>
+      {/* One flex item holding both copies, so the row's `ml-auto` pushes them to the right-hand end
+          together and a narrow panel wraps them as a pair — on the button's own wrapper it left Copy
+          Prompt alone at the start of the next line. */}
+      <span className="ml-auto flex items-center gap-2">
+        <CopyOpenNextButton promptText={promptText} />
+
+        <ControlTooltip hint="Copy Prompt" text={STUDIO_ACTION_TOOLTIPS.copyPrompt}>
+          <button
+            type="button"
+            onClick={() => {
+              void copyPrompt();
+            }}
+            // `action-tab`, not the chrome's indigo: this one belongs to the studio, and the header's
+            // Copy Prompt — the same action, reachable from every view — is the one that stays primary.
+            className="action-tab group relative overflow-hidden rounded-xl px-4 py-1.5 text-xs font-extrabold transition-all duration-390 hover:scale-[1.03] active:scale-[0.98]"
+          >
+            {/* The sheen is a child rather than a background layer on the button, so it can be clipped
+                to the rounded corners and slid across without disturbing the fill underneath. */}
+            <span
+              aria-hidden="true"
+              className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1365 group-hover:translate-x-full"
+            />
+            <span className="relative flex items-center gap-1.5">
+              <span aria-hidden="true">📋</span>
+              Copy Prompt
+            </span>
+          </button>
+        </ControlTooltip>
+      </span>
     </div>
   );
 }

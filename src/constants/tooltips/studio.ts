@@ -61,6 +61,14 @@ export const STUDIO_ACTION_TOOLTIPS = {
     'Compiles this configuration and puts the finished prompt on the clipboard, ready for whichever generator the Target Model names.\n\n' +
     'The prompt and the studio state behind it go into the history, so you can restore the setup after you have moved on. The header carries the same action for when the foot of the form is a long way down.',
 
+  copyOpenNext:
+    'Copies this sheet’s prompt as Copy Prompt does, opens the chosen generator’s image page in a new tab, and moves the studio on to the next sheet. Its label names the steps it takes here: on the last sheet, or for a configuration of one sheet, it does not move. If the copy fails, nothing opens and nothing moves.',
+
+  copyOpenNextNoSite: 'The chosen target has no generator page, so it opens nothing.',
+
+  copyOpenNextSpent:
+    'You have just taken this prompt with it, so it waits until the prompt changes or you step to another sheet. Copy Prompt still copies it if you mean to.',
+
   describeSubject:
     'Writes what the panels above say about the subject into the identity lock, as labelled lines. It replaces only its own lines and leaves your prose and the palette line alone, so you can press it again after changing a field.\n\n' +
     'Treat the result as a first draft. What holds a series together is concrete, countable detail taken off the sheet you accepted, and this can only restate the terms you chose from a list.',
