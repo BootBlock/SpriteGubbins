@@ -41,14 +41,15 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * already records in the other direction. The instruction now names only the hand-off itself,
  * which is certain on both paths, and says what any call must still carry.
  *
- * **The must-carry list is what this wrapper does, beside one sentence that keeps section 0's
- * reader rules with Sol, and the list is known to work on the call it names.** A sheet generated on chatgpt.com was traced back to the arguments Sol actually passed to the image
- * tool, and they were Sol's own ~700-word composition rather than the ~40,000-character
- * specification it was given. The three things this wrapper names all arrived intact — the exact
- * component count, the key colour and the ban on text and shadows from section 0; all five object
- * yaws *with their degrees*, the fixed camera and the subject's-left rule from section 3; the
- * inventory in reading order with its named terminations from section 4. **What went missing was
- * section 2's native-grid block, which this wrapper did not name**, and the sheet came back with no
+ * **The must-carry list is what this wrapper does, beside one sentence that keeps the CONTRACT
+ * section's reader rules with Sol, and the list is known to work on the call it names.** A sheet
+ * generated on chatgpt.com was traced back to the arguments Sol actually passed to the image tool, and
+ * they were Sol's own ~700-word composition rather than the ~40,000-character specification it was
+ * given. The three things this wrapper then named all arrived intact — the exact component count, the
+ * key colour and the ban on text and shadows from the CONTRACT section; all five object yaws *with
+ * their degrees*, the fixed camera and the subject's-left rule from the CAMERA section; the inventory
+ * in reading order with its named terminations from the INVENTORY section. **What went missing was
+ * the STYLE section's native-grid block, which this wrapper did not name**, and the sheet came back with no
  * native pixel grid in it at all. That is as close to a controlled result as this can get: same run,
  * four blocks of the same specification, and the one omission is the one that failed.
  *
@@ -65,8 +66,8 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * paragraph above used to end "the mechanism is established in both directions" with nothing scoping
  * it, which reads as a claim about what comes back — and it was a *composition* test, which read the
  * arguments Sol wrote rather than the image a GPT Image model drew from them. Three GPT-5.6 Sol runs
- * of a BUILDING scenario whose directive named this block by heading all miss the grid. Section 2
- * asked those runs for a 16 × 24 native grid delivered 5× or more by a whole number, so a component
+ * of a BUILDING scenario whose directive named this block by heading all miss the grid. The STYLE
+ * section asked those runs for a 16 × 24 native grid delivered 5× or more by a whole number, so a component
  * 16 native pixels wide permits at most 15 interior colour transitions; counting strong transitions
  * along every row through the middle 60% of a representative panel gives a median of 69 and a maximum
  * of 116 on run A, 41 and 60 on run B, and 41 and 73 on run C. Resampling on the way out of a
@@ -118,8 +119,8 @@ import type { SectionNumbers } from '../templateEngine.ts';
  *
  * **The palette is named on the same evidence and the hardware profile is not**, and the difference
  * is worth recording because it is the line between a measurement and an inference. The same run
- * compressed section 2's colour *budget* into "Use a restrained 32-64 colour palette total" — so a
- * shortened rendering of section 2's colour material is observed, and a pinned palette survives one
+ * compressed the STYLE section's colour *budget* into "Use a restrained 32-64 colour palette total" —
+ * so a shortened rendering of that section's colour material is observed, and a pinned palette survives one
  * no better than the grid did. The target hardware block states figures too and would presumably go
  * the same way, but that sheet pinned no hardware profile, so nothing about it was measured. Naming
  * it here would be the symmetry this file is not allowed to argue from. A run that pins one and
@@ -130,42 +131,45 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * `CHANNEL_DEPTH` one emits a ladder instead — "red, green and blue each take one of 32 levels — 0,
  * 8, 16, … 255" — because the alternative is a prompt carrying 32,768 entries. Ten of the nineteen
  * pinned palettes are that second kind, so an entry reading *the palette's exact colours* would, on
- * more than half of them, point at a list section 2 does not carry. That is precisely the fault the
+ * more than half of them, point at a list the STYLE section does not carry. That is precisely the fault the
  * gating below exists to prevent, arrived at from the other direction: not naming a block that is
  * absent, but naming the wrong thing inside one that is present. Every figure in either form is
  * worth the same protection, so the entry protects the block's values rather than describing their
  * shape.
  *
  * **Under a rig contract the native-grid block is protected with the figures it points at, because
- * it holds none of its own.** On that sheet it says "The piece sizes in section 5 are a native pixel
- * grid" and states only the multiple, and the sizes, joints and pivots are the fifteen lines of
- * section 5's piece-geometry block. Protecting the pointer and not what it points at would forward
+ * it holds none of its own.** On that sheet it says "The piece sizes in section [SEC:RIG] are a native
+ * pixel grid" and states only the multiple, and the sizes, joints and pivots are the fifteen lines of
+ * the RIG section's piece-geometry block. Protecting the pointer and not what it points at would forward
  * "6× or more" of a grid Sol was free to paraphrase away. This is not the symmetry the hardware
  * paragraph refuses: it is the measured block's own figures, moved to another section by the
  * contract. That those lines are lost at the call is plausible rather than observed, since no Sol
  * run of a rig-contract sheet has been traced (#397). The list therefore names a section per entry,
- * and its lead-in no longer says every figure it protects is in section 2.
+ * and its lead-in no longer says every figure it protects is in the STYLE section.
  *
- * **Section 0 is protected by its numbered items, not whole, and what is left of it is Sol's to
- * settle.** The directive used to require all of section 0 "as they are written here". Measured on
- * the default Sol prompt (CHARACTER, eight directions) that section was 639 words, about 91% of the
- * ~700-word hand-off observed above, and most of it was not addressed to the renderer: eight
- * citations of sections the renderer never receives, the precedence rules, and the category tripwire
- * ending "Say so rather than resolving it". `promptConditions` gates that tripwire on `RETURNS_TEXT`
- * because an image endpoint cannot carry it out, and the directive then ordered it forwarded to one.
- * So the template now puts those paragraphs under the heading `SCOPE_AND_PRECEDENCE_HEADING` names,
- * the numbered items above it cite no section by number, and this directive protects the items and
- * tells Sol to act on the rest itself. It says "act on", not "settle", because the tripwire tells
- * Sol to report a malformed specification rather than resolve it. Whether that changes what a delivered sheet holds is not measured (#403).
+ * **The CONTRACT section is protected by its numbered items, not whole, and what is left of it is
+ * Sol's to settle.** The directive used to require all of that section "as they are written here".
+ * Measured on the default Sol prompt (CHARACTER, eight directions) that section was 639 words,
+ * about 91% of the ~700-word hand-off observed above, and most of it was not addressed to the
+ * renderer: eight citations of sections the renderer never receives, the precedence rules, and the
+ * category tripwire ending "Say so rather than resolving it". `promptConditions` gates that
+ * tripwire on `RETURNS_TEXT` because an image endpoint cannot carry it out, and the directive then
+ * ordered it forwarded to one. So the template now puts those paragraphs under the heading
+ * `SCOPE_AND_PRECEDENCE_HEADING` names, the numbered items above it cite no section by number, and
+ * this directive protects the items and tells Sol to act on the rest itself. It says "act on", not
+ * "settle", because the tripwire tells Sol to report a malformed specification rather than resolve
+ * it. Whether that changes what a delivered sheet holds is not measured (#403).
  *
  * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
  * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
- * citations out by hand — `section 0`, `section 2`, `section 3` and `section 4`. The numbers were
- * right, and nothing held them there: a section inserted before the inventory re-points every
+ * citations out by hand as numerals, for the CONTRACT, STYLE, CAMERA and INVENTORY sections. The
+ * numbers were right, and nothing held them there: a section inserted before the inventory re-points every
  * citation in the prompt body and leaves these four behind, in the wrapper whose whole job is naming
  * the blocks that may not be shortened. `sections` comes from `sectionNumbers`, the walk
  * `applySectionNumbers` numbers the headings by, so the two move together — see `citeSection` for
- * what that does and does not reach.
+ * what that does and does not reach. This documentation cites a section by its key for the same
+ * reason, since the self-audit's section is numbered 9 on a rig sheet and 8 on every other, and
+ * `tests/docblock-section-citations.test.ts` fails on a numeral here.
  *
  * **`SolFigureBlocks` is passed rather than worked out here**, for the reason every other wrapper's
  * arguments are: this file holds text and knows nothing about render styles, resolution profiles,
@@ -175,18 +179,18 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * positional booleans the rest of this directory uses, because three booleans in a row is a call
  * site that reads the same with any two of them swapped.
  *
- * **Everything else this wrapper used to say is gone.** It previously opened "High reasoning effort"
- * and then pointed at section 0 as a done-condition and section 9 as a verification pass. Reasoning
- * effort is a request parameter rather than something prose sets, and the two pointers restate
- * headings the template already carries — section 0 is titled NON-NEGOTIABLE OUTPUT CONTRACT and
- * opens "Satisfy this section before any aesthetic consideration", and section 9 opens with its own
- * checklist. OpenAI's own guidance for this model family is that such lines are not free:
- * it says to remove "repeated statements of the same rule" and "process instructions for behavior
- * the model already performs reliably", and warns that "GPT-5-class models follow prompt contracts
- * closely, so conflicting rules can create more instability than missing detail". A target-specific
- * wrapper that repeats the template is therefore a cost here, not a reinforcement. **Naming a block
- * is not repeating it** — the addition below quotes no rule, it says which rules may not be
- * shortened.
+ * **Everything else this wrapper used to say is gone.** It previously opened "High reasoning
+ * effort" and then pointed at the CONTRACT section as a done-condition and the LAYOUT section as a
+ * verification pass. Reasoning effort is a request parameter rather than something prose sets, and
+ * the two pointers restate what the template already carries — the CONTRACT section is titled
+ * NON-NEGOTIABLE OUTPUT CONTRACT and opens "Satisfy this section before any aesthetic
+ * consideration", and the LAYOUT section carries its own checklist. OpenAI's own guidance for this
+ * model family is that such lines are not free: it says to remove "repeated statements of the same
+ * rule" and "process instructions for behavior the model already performs reliably", and warns that
+ * "GPT-5-class models follow prompt contracts closely, so conflicting rules can create more
+ * instability than missing detail". A target-specific wrapper that repeats the template is
+ * therefore a cost here, not a reinforcement. **Naming a block is not repeating it** — the addition
+ * below quotes no rule, it says which rules may not be shortened.
  *
  * **The measurement behind that is quoted with its scope, because the scope is load-bearing.** The
  * sentence is "*In a sample of internal coding-agent eval runs*, configurations with leaner system
@@ -194,14 +198,14 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * cost by 33–67%" — coding agents, not image briefs. Dropping the qualifier would turn a bounded
  * finding into a licence.
  *
- * **And the licence it would have granted is one OpenAI's *image* guidance withholds outright.** For
- * an image prompt they say "**Repeat any requirement that must stay fixed**" — the exact opposite
- * instruction, for the exact repetition it was tempting to cut. There is no contradiction, because
- * the two are addressed to two different readers: the lean guidance to the model *reading this
- * specification*, and the repetition guidance to the model *rendering from it*. That is what settles
- * the question this file was left holding open — the exclusions restate section 0's on
- * purpose, and they stay. A future pass that cuts them citing the GPT-5.6 guidance would be applying
- * a text model's rules to the image model's half of the hand-off.
+ * **And the licence it would have granted is one OpenAI's *image* guidance withholds outright.**
+ * For an image prompt they say "**Repeat any requirement that must stay fixed**" — the exact
+ * opposite instruction, for the exact repetition it was tempting to cut. There is no contradiction,
+ * because the two are addressed to two different readers: the lean guidance to the model *reading
+ * this specification*, and the repetition guidance to the model *rendering from it*. That is what
+ * settles the question this file was left holding open — the exclusions restate the CONTRACT
+ * section's on purpose, and they stay. A future pass that cuts them citing the GPT-5.6 guidance
+ * would be applying a text model's rules to the image model's half of the hand-off.
  *
  * **OpenAI publish a page headed "GPT Image 2.5 prompting guide", and it says the same thing for the
  * API half.** It tells an author to "Separate changes from constraints", to "list the details to
@@ -224,7 +228,7 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * **The one-call paragraph is what only this wrapper can say about that audit.** It maps the audit
  * onto the hand-off — the plan it checks is the call, and there is one call — which nothing in a
  * default Sol prompt said before: in 33,716 characters of one, with the map and the report on,
- * "one image", "single image" and "one call" never appeared. It names section 9 rather than "every
+ * "one image", "single image" and "one call" never appeared. It names the LAYOUT section rather than "every
  * check below", because the adherence report below it checks the delivered pixels after the call,
  * and a sentence scoping every check to before the call would tell Sol to answer that from its
  * plan. The same paragraph settles who "you" is in the body, which addresses whoever draws, while
