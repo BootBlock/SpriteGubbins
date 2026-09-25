@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { RENDER_STYLES } from '../../types/rendering.ts';
 import { RENDER_STYLE_TEXT } from './renderStyle.ts';
 import { RENDER_STYLE_SURFACE } from './renderStyleSurface.ts';
+import { RENDER_STYLE_TRAITS } from './renderStyleTraits.ts';
 import { validationPassFor } from './validationPass.ts';
 
 /**
@@ -86,11 +87,12 @@ describe('RENDER_STYLE_SURFACE', () => {
     // every wrapper was negating anti-aliasing and smooth gradients against all three.
     //
     // The clay render is the one whose softness its own line does not say in as many words, so it is
-    // read from the half of the pass that does: a validation pass that keeps the light is one whose
-    // volumes are read through shading, and shading across a form is a smooth gradient.
+    // read from the style's traits: a validation pass that keeps a shading is one whose volumes are
+    // read through it, and shading across a form is a smooth gradient.
     const soft = RENDER_STYLES.filter(
       (style) =>
-        /soft|blended/i.test(RENDER_STYLE_TEXT[style]) || validationPassFor(style)?.withholdsLight === false,
+        /soft|blended/i.test(RENDER_STYLE_TEXT[style]) ||
+        (validationPassFor(style) !== null && RENDER_STYLE_TRAITS[style].shading !== null),
     );
     // Named as well as derived, because a rewording that shrank this set to one style would leave a
     // loop over it passing while saying nothing.

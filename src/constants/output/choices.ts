@@ -102,14 +102,14 @@ export const PALETTE_LIMIT_CHOICES: readonly OutputChoice<PaletteLimit>[] = [
 ];
 
 export const OUTLINE_STYLE_CHOICES: readonly OutputChoice<OutlineStyle>[] = [
-  { value: 'DARK_LOCAL_CONTOUR', label: 'DARK_LOCAL_CONTOUR (1px darker fill — standard)' },
-  { value: 'PURE_BLACK_OUTLINE', label: 'PURE_BLACK_OUTLINE (crisp 1px black)' },
+  { value: 'DARK_LOCAL_CONTOUR', label: 'DARK_LOCAL_CONTOUR (darker local shade — standard)' },
+  { value: 'PURE_BLACK_OUTLINE', label: 'PURE_BLACK_OUTLINE (crisp black)' },
   { value: 'OUTLINE_LESS_ALBEDO', label: 'OUTLINE_LESS_ALBEDO (value and hue contrast only)' },
 ];
 
 export const LIGHTING_MODEL_CHOICES: readonly OutputChoice<LightingModel>[] = [
   { value: 'FLAT_NEUTRAL_ALBEDO', label: 'FLAT_NEUTRAL_ALBEDO (engine-lit — standard)' },
-  { value: 'ISOMETRIC_TOP_LEFT', label: 'ISOMETRIC_TOP_LEFT (fixed 45° key, hard shadows)' },
+  { value: 'ISOMETRIC_TOP_LEFT', label: 'ISOMETRIC_TOP_LEFT (fixed 45° top-left key light)' },
   { value: 'UNLIT_EMISSIVE_BAKED', label: 'UNLIT_EMISSIVE_BAKED (flat unlit diffuse)' },
 ];
 

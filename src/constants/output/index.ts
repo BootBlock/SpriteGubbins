@@ -28,4 +28,9 @@ export { projectionChoices } from './projectionChoices.ts';
 export { rigModeChoices } from './rigModeChoices.ts';
 export { sheetChoices } from './sheetChoices.ts';
 export { OUTPUT_TOOLTIPS } from './tooltips.ts';
+export {
+  outlineWithdrawal,
+  paletteLimitWithdrawal,
+  renderStyleWithdrawal,
+} from './renderStyleWithdrawals.ts';
 export { DEFAULT_IMAGE_CONFIG, DEFAULT_OUTPUT_CONFIG } from './defaults.ts';

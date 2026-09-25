@@ -2,17 +2,27 @@ import { describe, expect, it } from 'vitest';
 import { standardSubject } from '../../test/sheetSubject.ts';
 import type { ResolutionProfile } from '../../types/output.ts';
 import { componentTargetSize } from '../../utils/componentTargetSize.ts';
-import { parseTargetSize } from '../../utils/targetSize.ts';
 import { smallScaleDiscipline } from './smallScale.ts';
 
 /**
- * The bullets for a field a reader would have typed.
+ * The bullets for a field a reader would have typed, on a tileset whose components are the tiles.
  *
- * The size arrives parsed, because that is how the compiler hands it over — through
- * `componentTargetSize`. The prose stays written out here so each case still reads as the field.
+ * The size arrives through `componentTargetSize`, because that is how the compiler hands it over —
+ * which is also where the profile is read. The prose stays written out here so each case still
+ * reads as the field.
  */
 function bulletsFor(profile: ResolutionProfile, spriteTargetSize: string): string {
-  return smallScaleDiscipline(profile, parseTargetSize(spriteTargetSize));
+  return smallScaleDiscipline(
+    componentTargetSize(
+      'TERRAIN',
+      standardSubject(),
+      'TILESET_MODULAR',
+      'SINGLE_FRONT',
+      0,
+      profile,
+      spriteTargetSize,
+    ),
+  );
 }
 
 describe('smallScaleDiscipline', () => {
@@ -59,8 +69,8 @@ describe('smallScaleDiscipline', () => {
 
   it('answers nothing for the profiles that are a scale of their own', () => {
     // Only `CUSTOM` consults the free-text size — the other three profiles state their own figure,
-    // and the coarsest of them is well past sprite scale. A size left in the field cannot move them,
-    // exactly as it cannot move `minFeatureSize`.
+    // and the coarsest of them is well past sprite scale. `targetSizeField` withholds the size under
+    // them, so a size left in the field never arrives.
     expect(bulletsFor('RETRO_16_BIT', '16 × 16 px')).toBe('');
     expect(bulletsFor('HIGH_RESOLUTION', '16 × 16 px')).toBe('');
     expect(bulletsFor('MID_RESOLUTION', '16 × 16 px')).toBe('');
@@ -81,10 +91,11 @@ describe('smallScaleDiscipline', () => {
       'CUTOUT_RIG_SINGLE_DIRECTION',
       'SINGLE_FRONT',
       0,
+      'CUSTOM',
       '24 × 24 px assembled',
     );
     expect(assembled).toBeNull();
-    expect(smallScaleDiscipline('CUSTOM', assembled)).toBe('');
+    expect(smallScaleDiscipline(assembled)).toBe('');
     // The same words on a tileset, whose components *are* the thing priced, still fire — so the
     // withdrawal is about the sheet rather than about the size being small.
     expect(
@@ -94,6 +105,7 @@ describe('smallScaleDiscipline', () => {
         'TILESET_MODULAR',
         'SINGLE_FRONT',
         0,
+        'CUSTOM',
         '24 × 24 px assembled',
       ),
     ).not.toBeNull();

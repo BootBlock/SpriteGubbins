@@ -10,7 +10,11 @@ import { contradictionsIn } from '../categories/exclusionElements.ts';
 import { letteringAskedFor } from '../categories/letteringMarks.ts';
 import { modesAgreeingWith } from '../categories/modeBoundOptions.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
-import { LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING, resolveCameraElevation } from '../promptText/index.ts';
+import {
+  lightingDescription,
+  PRACTICAL_COMPONENT_CEILING,
+  resolveCameraElevation,
+} from '../promptText/index.ts';
 import { PRESETS } from './index.ts';
 
 /**
@@ -326,7 +330,9 @@ describe('the Unsung Saviour presets', () => {
     // Load-bearing: the engine lights actors with CanvasModulate and Light2D and draws its own
     // shadows, so baked directional lighting would fight both.
     expect(characterRig.output.lightingModel).toBe('FLAT_NEUTRAL_ALBEDO');
-    expect(promptFor(characterRig)).toContain(LIGHTING_TEXT.FLAT_NEUTRAL_ALBEDO);
+    expect(promptFor(characterRig)).toContain(
+      lightingDescription(characterRig.output.renderStyle, 'FLAT_NEUTRAL_ALBEDO'),
+    );
   });
 
   it('gives the creature rig no sockets, because enemies do not wear player gear', () => {

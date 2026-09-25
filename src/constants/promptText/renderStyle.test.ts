@@ -8,6 +8,7 @@ import type { SubjectCategory } from '../../types/subject.ts';
 import { statedTargetSize } from '../../utils/componentTargetSize.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { OUTPUT_TOOLTIPS } from '../output/tooltips.ts';
+import { PRESETS } from '../presets/index.ts';
 import { minFeatureSize, resolutionProfileDescription, shareRange } from './renderStyle.ts';
 
 /** The three profiles that *are* a scale, and so state a range. `CUSTOM` is not one. */
@@ -118,6 +119,7 @@ describe('minFeatureSize', () => {
       'CUTOUT_RIG_SINGLE_DIRECTION',
       'SINGLE_FRONT',
       0,
+      'CUSTOM',
       '480 × 960 px assembled',
     );
     expect(assembled).toEqual({ quantity: 'ASSEMBLED', size: { width: 480, height: 960 } });
@@ -126,18 +128,27 @@ describe('minFeatureSize', () => {
     expect(figure('CUSTOM', '480 × 960 px')).toBe('3 × 3');
     expect(minFeatureSize('CUSTOM', assembled, false, null)).toBe('1 × 1 delivered pixels');
 
-    // And the three shipped rig presets that carry CUSTOM keep the floor they always had — each
-    // sits on the finest rung by its assembled edge, so this restores rather than changes them.
-    for (const size of ['64 × 96 px assembled', '56 × 88 px assembled', '64 × 80 px assembled']) {
+    // And every shipped rig preset stating a size keeps the floor it always had — each sits on the finest rung by
+    // its assembled edge, so this restores rather than changes them. Read off `PRESETS` rather than
+    // listed, because every preset stating a size carries `CUSTOM` and a list here goes stale.
+    const rigPresets = PRESETS.filter(
+      (preset) =>
+        preset.output.directionalMode === 'CUTOUT_RIG_SINGLE_DIRECTION' &&
+        preset.output.spriteTargetSize !== '',
+    );
+    expect(rigPresets.length).toBeGreaterThan(0);
+    for (const preset of rigPresets) {
       const rig = statedTargetSize(
-        'CHARACTER',
-        standardSubject(),
-        'CUTOUT_RIG_SINGLE_DIRECTION',
-        'SINGLE_FRONT',
+        preset.category,
+        preset.subject,
+        preset.output.directionalMode,
+        preset.output.directions,
         0,
-        size,
+        preset.output.resolutionProfile,
+        preset.output.spriteTargetSize,
       );
-      expect(minFeatureSize('CUSTOM', rig, false, null)).toBe('1 × 1 delivered pixels');
+      expect(rig?.quantity, preset.name).toBe('ASSEMBLED');
+      expect(minFeatureSize('CUSTOM', rig, false, null), preset.name).toBe('1 × 1 delivered pixels');
     }
   });
 

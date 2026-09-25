@@ -34,8 +34,14 @@ const CONTRACT: RigContract = {
 
 const SUBJECT = standardSubject();
 
+/** A rig sheet under `CUSTOM`, the one profile that reads a typed size. */
 function output(over: Partial<OutputConfig> = {}): OutputConfig {
-  return { ...DEFAULT_OUTPUT_CONFIG, directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', ...over };
+  return {
+    ...DEFAULT_OUTPUT_CONFIG,
+    directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+    resolutionProfile: 'CUSTOM',
+    ...over,
+  };
 }
 
 function rigPlan(config: OutputConfig) {
@@ -51,6 +57,31 @@ describe('sheetSizing', () => {
 
     expect(answer.text).toBe('48 × 96 px assembled (2 metres at 48 px per metre)');
     expect(answer.stated?.size).toEqual({ width: 48, height: 96 });
+  });
+
+  it('states no size under a profile that states a scale of its own', () => {
+    // Issue #405: a share of the cell or a retro height printed one line above a pixel size was two
+    // scales for one sheet. The typed words stay in the store, and nothing reads them.
+    for (const resolutionProfile of ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const) {
+      const config = output({ resolutionProfile, spriteTargetSize: '16 × 16 px per tile' });
+      const answer = sheetSizing('CHARACTER', SUBJECT, config, rigPlan(config), null, 3);
+
+      expect(answer.profile, resolutionProfile).toBe(resolutionProfile);
+      expect(answer.text, resolutionProfile).toBe('');
+      expect(answer.stated, resolutionProfile).toBeNull();
+      expect(answer.nativeScale, resolutionProfile).toBeNull();
+    }
+  });
+
+  it('resolves the profile to CUSTOM wherever a rig applies, since the rig states the size', () => {
+    const config = output({ resolutionProfile: 'HIGH_RESOLUTION' });
+    const answer = sheetSizing('CHARACTER', SUBJECT, config, rigPlan(config), CONTRACT, 3);
+
+    expect(answer.profile).toBe('CUSTOM');
+    expect(answer.text).toBe('48 × 96 px');
+    expect(sheetSizing('CHARACTER', SUBJECT, config, rigPlan(config), null, 3).profile).toBe(
+      'HIGH_RESOLUTION',
+    );
   });
 
   it('takes the frame from the rig, over whatever was typed', () => {

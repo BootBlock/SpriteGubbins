@@ -12,6 +12,7 @@ import {
 } from '../src/types/output.ts';
 import { BACKGROUND_KEYS } from '../src/types/rendering.ts';
 import { JOINT_CAP_STYLES, OVERLAP_MARGINS, RIG_MODES } from '../src/types/rigging.ts';
+import { targetSizeField } from '../src/utils/targetSizeField.ts';
 import { nativeGridScale } from '../src/utils/nativeGridScale.ts';
 import { generatePrompt } from '../src/utils/promptCompiler.ts';
 import { deliberates, returnsText } from '../src/utils/targetCapabilities.ts';
@@ -232,9 +233,10 @@ describe('§2 of the baseline-prompt document names the parameters the compiler 
       `the artwork is drawn on, and ${asProse(sections.map((number) => `§${String(number)}`))} state the whole-number scale`,
     );
     expect(why).toContain('On a pixel-art sheet under `CUSTOM`');
-    expect(nativeGridScale('PIXEL_ART', 'CUSTOM', target, 'WIDE_16_9', 12, null)).not.toBeNull();
-    expect(nativeGridScale('RETRO_PIXEL_ART', 'CUSTOM', target, 'WIDE_16_9', 12, null)).not.toBeNull();
-    expect(nativeGridScale('PAINTED_2D', 'CUSTOM', target, 'WIDE_16_9', 12, null)).toBeNull();
-    expect(nativeGridScale('PIXEL_ART', 'HIGH_RESOLUTION', target, 'WIDE_16_9', 12, null)).toBeNull();
+    expect(why).toContain('read only under `CUSTOM`');
+    expect(nativeGridScale('PIXEL_ART', target, 'WIDE_16_9', 12, null)).not.toBeNull();
+    expect(nativeGridScale('RETRO_PIXEL_ART', target, 'WIDE_16_9', 12, null)).not.toBeNull();
+    expect(nativeGridScale('PAINTED_2D', target, 'WIDE_16_9', 12, null)).toBeNull();
+    expect(targetSizeField('HIGH_RESOLUTION', '16 × 32 px')).toBe('');
   });
 });

@@ -47,7 +47,10 @@ const US_SHARED: ImageOutputConfig = {
   renderStyle: 'PIXEL_ART',
   projection: 'THREE_QUARTER_TOPDOWN',
   cameraElevation: 30,
-  resolutionProfile: 'HIGH_RESOLUTION',
+  // `CUSTOM` because all three state the game's size, and `CUSTOM` is the one profile that reads a
+  // stated size: a share of the cell beside “48 × 48 px per tile” was a second scale, 2.7 to 3.5 times
+  // the tile on a 4 × 4 Sol sheet. The character preset's rig would resolve it to `CUSTOM` anyway.
+  resolutionProfile: 'CUSTOM',
   paletteLimit: 'RESTRAINED_64_COLOR',
   outlineStyle: 'DARK_LOCAL_CONTOUR',
   // Load-bearing. The engine lights actors with `CanvasModulate` and `Light2D` and draws its own

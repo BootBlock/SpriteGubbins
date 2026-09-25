@@ -1172,12 +1172,10 @@ describe('generatePrompt — a render style that withholds the surface', () => {
     // taking the key light away would leave the volumes this pass is run to judge invisible — while
     // every lighting option describes light on a surface, and a flat fill of one colour has none.
     for (const style of PASSES) {
-      const pass = promptText.validationPassFor(style);
-      if (pass === null) throw new Error(`${style} should be a validation pass.`);
-
       const prompt = withStyle(style);
-      if (pass.withholdsLight) expect(prompt, style).not.toContain(LIGHTING);
-      else expect(prompt, style).toContain(LIGHTING);
+      if (promptText.RENDER_STYLE_TRAITS[style].shading === null) {
+        expect(prompt, style).not.toContain(LIGHTING);
+      } else expect(prompt, style).toContain(LIGHTING);
     }
     // Pinned rather than left to the derivation above, because "no pass states the light" would
     // satisfy the loop while losing the distinction it is written to hold.
@@ -2385,6 +2383,7 @@ describe('generatePrompt — technical settings in prose', () => {
       withOutput({
         directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
         rigMode: 'CUTOUT_RIG',
+        resolutionProfile: 'CUSTOM',
         spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
       }),
     );
@@ -2403,6 +2402,7 @@ describe('generatePrompt — technical settings in prose', () => {
       defaultSubjectFor('ICON'),
       withOutput({
         directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+        resolutionProfile: 'CUSTOM',
         spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
       }),
     );
@@ -2416,6 +2416,7 @@ describe('generatePrompt — technical settings in prose', () => {
       SUBJECT,
       withOutput({
         directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+        resolutionProfile: 'CUSTOM',
         spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
       }),
     );
@@ -3082,9 +3083,13 @@ describe('generatePrompt — the machine and its palette', () => {
       withOutput({ outlineStyle: 'PURE_BLACK_OUTLINE', backgroundKey: 'MAGENTA_FF00FF' }),
     );
 
-    expect(onBlack).toContain(`- Edge / outline treatment: ${promptText.OUTLINE_BESIDE_BLACK_KEY_TEXT}`);
-    expect(onBlack).not.toContain(promptText.OUTLINE_TEXT.PURE_BLACK_OUTLINE);
-    expect(onMagenta).toContain(`- Edge / outline treatment: ${promptText.OUTLINE_TEXT.PURE_BLACK_OUTLINE}`);
+    // The shared configuration is a pixel sheet, so both lines are the pixel contour's wording.
+    const black = promptText.outlineDescription(OUTPUT.renderStyle, 'PURE_BLACK_OUTLINE', null);
+    expect(onBlack).toContain(
+      `- Edge / outline treatment: ${promptText.OUTLINE_BESIDE_BLACK_KEY_TEXT.PIXEL}`,
+    );
+    expect(onBlack).not.toContain(black);
+    expect(onMagenta).toContain(`- Edge / outline treatment: ${black}`);
   });
 
   it('adds the colour clause to the contract and the audit, only where a palette is pinned', () => {
@@ -3547,7 +3552,7 @@ describe('generatePrompt — a term the prompt uses is a term the prompt defines
   const GATED_TERMS = [{ term: /native pixel/, definedBy: `### ${NATIVE_GRID_HEADING}` }] as const;
 
   /**
-   * The sizes that reach each side of `nativeGridScale`'s four conditions.
+   * The sizes that reach each side of the conditions that give a sheet a native grid.
    *
    * `''` and the prose one never parse; `16 × 32 px` is small enough to enlarge and `512 × 512 px`
    * is large enough that there is nothing left to enlarge — so `CUSTOM` appears in this sweep on

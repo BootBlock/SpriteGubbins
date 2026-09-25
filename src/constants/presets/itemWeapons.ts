@@ -9,7 +9,8 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * An item is the smallest thing this app draws, and that is what makes the settings matter: an icon
  * seen at 32 px is its silhouette and nothing else. So all four state a per-cell pixel size outright —
  * an inventory grid has a cell size and no resolution profile can express one, because a profile states
- * a share of a cell in the sheet's own grid rather than an absolute size — and all four exclude the hand, the stand
+ * a share of a cell in the sheet's own grid rather than an absolute size, so all four take `CUSTOM`,
+ * the one profile that reads a stated size — and all four exclude the hand, the stand
  * and the glow trail,
  * each of which extends past the item's own bounds and breaks the alignment the cell exists to keep.
  */
@@ -44,6 +45,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
       surfaceDetail: 'DETAILED_PRODUCTION',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
       spriteTargetSize: '64 × 64 px per icon cell',
       aspectRatio: 'SQUARE_1_1',
       targetModel: 'GENERIC',
@@ -88,6 +90,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       backgroundKey: 'TRANSPARENT',
       rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
       // Wider than it is tall, unlike the rest: a rifle drawn side-on in a square cell is a rifle with
       // most of the cell above and below it empty.
       spriteTargetSize: '128 × 64 px per icon cell',
@@ -123,7 +126,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
       ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'HAND_DRAWN_INK',
       surfaceDetail: 'TEXTURED',
-      resolutionProfile: 'MID_RESOLUTION',
+      resolutionProfile: 'CUSTOM',
       paletteLimit: 'STRICT_32_COLOR',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       lightingModel: 'UNLIT_EMISSIVE_BAKED',
@@ -163,7 +166,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'RETRO_PIXEL_ART',
-      resolutionProfile: 'RETRO_16_BIT',
+      resolutionProfile: 'CUSTOM',
       paletteLimit: 'STRICT_32_COLOR',
       surfaceDetail: 'MINIMAL',
       outlineStyle: 'PURE_BLACK_OUTLINE',

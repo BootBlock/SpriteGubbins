@@ -205,6 +205,7 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       paletteLimit: 'EXPANDED_ALBEDO',
       surfaceDetail: 'TEXTURED',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
+      resolutionProfile: 'CUSTOM',
       spriteTargetSize: '96 × 96 px assembled',
       aspectRatio: 'ULTRAWIDE_21_9',
       targetModel: 'GENERIC',

@@ -60,9 +60,9 @@ const RIG_SHEET: OutputConfig = {
   directions: 'EIGHT_COMPASS',
   rigMode: 'CUTOUT_RIG',
   renderStyle: 'PIXEL_ART',
-  // The shipped rig preset's own profile, and the one that used to leave the prompt with no native
-  // grid at all — see `nativeGridScale`.
-  resolutionProfile: 'HIGH_RESOLUTION',
+  // The one profile that reads a typed size, so the sheet without a contract states the size typed
+  // below. The case with a stock profile stored is its own test.
+  resolutionProfile: 'CUSTOM',
   spriteTargetSize: '64 × 128 px assembled (typed by hand)',
 };
 
@@ -98,9 +98,9 @@ describe('a compiled prompt with a rig contract loaded', () => {
   });
 
   it('presents a native pixel grid where a typed size could not', () => {
-    // `HIGH_RESOLUTION` states its own scale, so a *typed* size is refused a native-grid block —
-    // the field is prose and only the reader knows which quantity it names. A contract states the
-    // frame, every piece and how many there are, so nothing is being inferred.
+    // A typed size on a rig sheet names the assembly, so it is refused a native-grid block — the
+    // field is prose and only the reader knows which quantity it names. A contract states the frame,
+    // every piece and how many there are, so nothing is being inferred.
     const withRig = generatePrompt('CHARACTER', SUBJECT, { ...RIG_SHEET, rigContract: CONTRACT });
     const without = generatePrompt('CHARACTER', SUBJECT, RIG_SHEET);
 
@@ -154,6 +154,23 @@ describe('a compiled prompt with a rig contract loaded', () => {
 
     expect(prompt).toContain('The piece sizes in section');
     expect(prompt).not.toContain('The target component size above is a native pixel grid');
+  });
+
+  it('states one scale where a stock profile is stored, because the contract is the scale', () => {
+    // Issue #405: the shipped rig preset once carried `HIGH_RESOLUTION`, and the prompt printed that
+    // profile's share of the cell beside the rig's frame and a native grid derived from its pieces —
+    // three scales one line apart. A contract resolves the profile to `CUSTOM` on its own sheet, so
+    // the share line gives way to the one that works to the stated assembly.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, {
+      ...RIG_SHEET,
+      resolutionProfile: 'HIGH_RESOLUTION',
+      rigContract: CONTRACT,
+    });
+
+    expect(prompt).not.toContain('of its cell height');
+    expect(prompt).toContain('Custom — work to the target assembled size stated below');
+    expect(prompt).toContain('48 × 96 px');
+    expect(prompt).toContain('native pixel grid');
   });
 
   it('states the feature floor against the smallest piece, in the grid’s own unit', () => {

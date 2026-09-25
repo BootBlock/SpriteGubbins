@@ -152,6 +152,7 @@ describe('GridControls', () => {
     useSubjectStore.setState({ category: 'ICON' });
     useOutputStore.getState().setOutputField('directionalMode', 'SINGLE_DIRECTION_POSE_LIBRARY');
     useQuantiseStore.setState({ source: { name: 'sheet.png', image: createImage(256, 256) } });
+    useOutputStore.getState().setOutputField('resolutionProfile', 'CUSTOM');
     useOutputStore.getState().setOutputField('spriteTargetSize', '16 × 16 px');
     const suggested = renderHook(() => useSuggestedGrid()).result.current;
     expect(suggested).not.toBeNull();

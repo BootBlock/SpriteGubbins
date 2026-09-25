@@ -86,6 +86,7 @@ describe('SpriteControls', () => {
     // states its size per component, which is what lets the figure through at all.
     useSubjectStore.setState({ category: 'ICON' });
     useOutputStore.getState().setOutputField('directionalMode', 'SINGLE_DIRECTION_POSE_LIBRARY');
+    useOutputStore.getState().setOutputField('resolutionProfile', 'CUSTOM');
     useOutputStore.getState().setOutputField('spriteTargetSize', '2 × 2 px');
     show();
 

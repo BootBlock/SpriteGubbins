@@ -1,8 +1,9 @@
 import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
-import type { DirectionalMode, StatedTargetSize, TargetSize } from '../types/output.ts';
+import type { DirectionalMode, ResolutionProfile, StatedTargetSize, TargetSize } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { parseTargetSize } from './targetSize.ts';
+import { targetSizeField } from './targetSizeField.ts';
 
 /**
  * Which quantity `spriteTargetSize` states, and the per-component size where it states one.
@@ -23,10 +24,10 @@ import { parseTargetSize } from './targetSize.ts';
  * atlas calculator checked a texture cell against a 48 × 96 component on a sheet whose components
  * are pieces of one.
  *
- * The other two — the pixel-discipline floor and the sprite-scale bullets — are gated on the
- * `CUSTOM` resolution profile, which three of the eleven rig presets carry, so they were live there
- * too. The gate decides which profile states a scale of its own and has nothing to say about which
- * quantity the size names.
+ * The other two — the pixel-discipline floor and the sprite-scale bullets — read the size only
+ * under the `CUSTOM` resolution profile, as every reader does, and every rig preset carrying a
+ * size carries `CUSTOM`, so they were live there too. The profile decides whether the sheet states a
+ * size at all and has nothing to say about which quantity the size names.
  *
  * **The sheet plan declares the answer, so a second field would be a sixth thing that can
  * disagree.** `SheetPlan.targetQuantity` is where it is written down, one plan at a time, and every
@@ -63,7 +64,8 @@ export function statesAssembledSize(
 }
 
 /**
- * The size in the field with the quantity it is a size of, or `null` where the field states none.
+ * The size in the field with the quantity it is a size of, or `null` where the field states none —
+ * which includes every profile but `CUSTOM`, per `targetSizeField`.
  *
  * The full answer, for the two readers that have something to say about an assembly rather than
  * nothing: `minFeatureSize`, whose floor must not be keyed off a figure no component has, and the
@@ -76,9 +78,10 @@ export function statedTargetSize(
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
+  profile: ResolutionProfile,
   spriteTargetSize: string,
 ): StatedTargetSize | null {
-  const size = parseTargetSize(spriteTargetSize);
+  const size = parseTargetSize(targetSizeField(profile, spriteTargetSize));
   if (size === null) return null;
   // The plan's own value, not a ternary rebuilding it from the boolean above — that would be the
   // enumeration written a second time, and the two spellings could then disagree.
@@ -88,11 +91,12 @@ export function statedTargetSize(
 /**
  * The size of **one component**, or `null` where this configuration states no such thing.
  *
- * `null` covers both ways there is none: a field holding no `W × H` pair at all, and a field whose
- * pair names the assembled subject. Both are the same answer to the question these callers are
- * asking — *how big is a component meant to be* — and every one of them already handles it, because
- * an empty field has always been a possibility. The Sprites panel renders no comparison clause, the
- * grid candidate is not offered, and the native-grid enlargement is not derived.
+ * `null` covers every way there is none: a profile other than `CUSTOM`, a field holding no `W × H`
+ * pair at all, and a field whose pair names the assembled subject. All three are the same answer to
+ * the question these callers are asking — *how big is a component meant to be* — and every one of
+ * them already handles it, because an empty field has always been a possibility. The Sprites panel
+ * renders no comparison clause, the grid candidate is not offered, and the native-grid enlargement
+ * is not derived.
  *
  * **It deliberately does not guess a per-piece size from the assembled one.** Which piece is what
  * fraction of a figure belongs to the rig the art is authored against, and this function is handed
@@ -106,8 +110,9 @@ export function componentTargetSize(
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
+  profile: ResolutionProfile,
   spriteTargetSize: string,
 ): TargetSize | null {
-  const stated = statedTargetSize(category, subject, mode, directions, sheetIndex, spriteTargetSize);
+  const stated = statedTargetSize(category, subject, mode, directions, sheetIndex, profile, spriteTargetSize);
   return stated === null || stated.quantity === 'ASSEMBLED' ? null : stated.size;
 }

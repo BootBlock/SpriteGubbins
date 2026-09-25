@@ -1,6 +1,34 @@
 import { NONE_LEAVES_SETTINGS_ALONE } from '../guidanceSentences.ts';
+import { lightingModelsFor, paletteLimitsFor, RENDER_STYLE_TRAITS } from '../promptText/index.ts';
 import { shareRange } from '../promptText/renderStyle.ts';
 import { PALETTE_COLOR_COUNTS } from '../quantiser.ts';
+import { PALETTE_LIMITS } from '../../types/output.ts';
+import { RENDER_STYLES } from '../../types/rendering.ts';
+import type { RenderStyle } from '../../types/rendering.ts';
+import { spokenList } from '../../utils/spokenList.ts';
+
+/** Identifiers in backticks, as a sentence lists them. */
+function coded(names: readonly string[]): string {
+  return spokenList(names.map((name) => `\`${name}\``));
+}
+
+/**
+ * The styles that narrow each control, read from the record that narrows it rather than listed by
+ * hand, so a style whose traits change takes the cards with it (issue #406).
+ */
+const OWN_CONTOUR_STYLES = RENDER_STYLES.filter((style) => RENDER_STYLE_TRAITS[style].contour === 'OWN_LINE');
+const ONE_LIGHT_STYLES = RENDER_STYLES.filter((style) => lightingModelsFor(style).length === 1);
+const NARROW_BUDGET_STYLES = RENDER_STYLES.filter(
+  (style) => paletteLimitsFor(style).length < PALETTE_LIMITS.length,
+);
+
+/** The one lighting model the one-light styles take, or `''` if none does. */
+const ONE_LIGHT = ONE_LIGHT_STYLES[0] === undefined ? '' : (lightingModelsFor(ONE_LIGHT_STYLES[0])[0] ?? '');
+
+/** `offers` or `offer`, for a list of styles. */
+function verb(styles: readonly RenderStyle[], singular: string, plural: string): string {
+  return styles.length === 1 ? singular : plural;
+}
 
 /**
  * Guidance shown against each control, keyed to the control it explains.
@@ -32,26 +60,28 @@ export const OUTPUT_TOOLTIPS = {
     '- `CLEAN_PRODUCTION` is the usual choice.\n' +
     '- `TEXTURED` is for large pieces that will be seen close up.',
   resolutionProfile:
-    'The scale the sheet is drawn at, given as a share of the sheet’s own component grid rather than in pixels, so it holds whatever canvas the generator returns. It is independent of render style.\n\n' +
+    'The scale the sheet is drawn at, as a share of the sheet’s own component grid rather than in pixels, so it holds whatever canvas the generator returns.\n\n' +
     `The largest component fills ${shareRange('HIGH_RESOLUTION')} of its cell height at high resolution and ${shareRange('MID_RESOLUTION')} at mid, and every other component is drawn to that scale, so a hand stays smaller than its torso. Each sheet fills its own grid, so a sheet of twelve components draws them larger than a sheet of thirty-four.\n\n` +
     '- `RETRO_16_BIT` states a height in pixels instead.\n' +
-    '- `CUSTOM` is for an exact component size, or for pieces on different sheets that must come out at one size. State the size in Target Component Size.',
+    '- `CUSTOM` states an exact size instead, in Target Component Size, which no other profile offers. Use it for a pixel grid, or for pieces on different sheets that must come out at one size.\n\n' +
+    'A loaded rig contract sets `CUSTOM` on the sheet it describes, because the rig states every piece’s size.',
   // The figures are the quantiser's, not the prompt's: the prompt states a range, value bands or no
   // budget at all, and the tab reduces to one fixed count per budget, so they are read from the table
   // that tab reads rather than typed out.
   paletteLimit:
     'The total colour budget across the whole sheet, which keeps every component looking like one set. The prompt states it, but **do not expect the returned sheet to be inside it**: a generated image usually arrives carrying tens or hundreds of thousands of colours.\n\n' +
     `The Quantise tab is where the budget comes true. It reduces a returned sheet to ${String(PALETTE_COLOR_COUNTS.STRICT_32_COLOR)} colours chosen from that sheet under \`STRICT_32_COLOR\`, ${String(PALETTE_COLOR_COUNTS.RESTRAINED_64_COLOR)} under \`RESTRAINED_64_COLOR\` and ${String(PALETTE_COLOR_COUNTS.EXPANDED_ALBEDO)} under \`EXPANDED_ALBEDO\`, and leaves an \`UNRESTRICTED\` sheet’s colours as they arrived.\n\n` +
-    '`STRICT_32_COLOR` and `RESTRAINED_64_COLOR` suit pixel work. Painted, cel-shaded and 3D styles usually want `UNRESTRICTED`, because a hard colour count fights the blending they depend on.',
+    `\`STRICT_32_COLOR\` and \`RESTRAINED_64_COLOR\` suit pixel work. ${coded(NARROW_BUDGET_STYLES)} ${verb(NARROW_BUDGET_STYLES, 'offers', 'offer')} only ${coded(NARROW_BUDGET_STYLES[0] === undefined ? [] : paletteLimitsFor(NARROW_BUDGET_STYLES[0]))}. Painted, cel-shaded and 3D styles usually want \`UNRESTRICTED\`, because a hard colour count fights the blending they depend on.`,
   outlineStyle:
-    'How a component’s boundary is drawn where it meets the background.\n\n' +
-    '- `DARK_LOCAL_CONTOUR`, a 1px darker shade of each local colour, keeps parts separable without flattening them.\n' +
+    'How a component’s boundary is drawn where it meets the background. A pixel style draws it one pixel wide, and most others as a thin line.\n\n' +
+    '- `DARK_LOCAL_CONTOUR`, a darker shade of each local colour, keeps parts separable without flattening them.\n' +
     '- `PURE_BLACK_OUTLINE` gives the harder retro read.\n' +
     '- `OUTLINE_LESS_ALBEDO` relies on value and hue contrast alone, which needs a busy scene to sit against.\n\n' +
-    'Below about 32 px a 1px contour takes a serious share of the pixels, so the darker local shade or no outline usually reads better than pure black. On a `PURE_BLACK` background the black outline is asked for as a very dark grey, so it is not keyed out with the field.',
+    `${coded(OWN_CONTOUR_STYLES)} ${verb(OWN_CONTOUR_STYLES, 'draws its', 'draw their')} own contour line, so this sets its colour and \`OUTLINE_LESS_ALBEDO\` is not offered. Below about 32 px a pixel contour takes a serious share of the pixels, so a darker shade or none reads better. On a \`PURE_BLACK\` background a black outline is asked for as a very dark grey.`,
   lightingModel:
-    'The key light angle and shadow treatment baked into the sprite. `FLAT_NEUTRAL_ALBEDO` is what a game engine wants, because the engine lights the sprite itself and a baked highlight would fight its own.\n\n' +
-    'Choose a fixed key only when the scene lighting is fixed too, as it is in a locked isometric view.',
+    'The key light and shadow treatment baked into the sprite. `FLAT_NEUTRAL_ALBEDO` is what a game engine wants, because the engine lights the sprite itself and a baked highlight would fight its own.\n\n' +
+    'Choose a fixed key only when the scene lighting is fixed too, as it is in a locked isometric view. Its shadow follows the style: hard bands on a pixel sheet, soft graded shadow on a painted one.\n\n' +
+    `${coded(ONE_LIGHT_STYLES)} ${verb(ONE_LIGHT_STYLES, 'shades', 'shade')} from a directional light, so ${verb(ONE_LIGHT_STYLES, 'it takes', 'they take')} \`${ONE_LIGHT}\` and this control is withdrawn.`,
   aspectRatio:
     'The shape of the sheet canvas, passed to the generator so it lays the component grid out inside the frame instead of cropping it.\n\n' +
     '- `WIDE_16_9` fits the usual wide grid.\n' +
@@ -94,7 +124,8 @@ export const OUTPUT_TOOLTIPS = {
   renderStyle:
     'The drawing technique the whole sheet is executed in. `PIXEL_ART` and `RETRO_PIXEL_ART` get the pixel-discipline rules (deliberate clusters, no anti-aliasing, no microtexture); every other style gets surface-consistency rules instead.\n\n' +
     '`CLAY_RENDER` and `SILHOUETTE_ONLY` are validation passes: run one to check volume or readability before committing to a finished style.\n\n' +
-    'Each states its own surface, so it withdraws Surface Detail Intensity, Palette Limit and Outline System, and `SILHOUETTE_ONLY` withdraws Lighting & Shading Model too. Nothing you set there is lost: it comes back with the next finished style.',
+    'Each states its own surface, so it withdraws Surface Detail Intensity, Palette Limit, Outline System and Lighting & Shading Model: a silhouette has nothing to light, and a clay study takes one fixed key light.\n\n' +
+    'A style that names its own contour, shading or palette offers only the settings that agree with it. Nothing you set is lost: it comes back with the next style that offers it.',
   projection:
     'How the camera projects the subject. The prompt names exactly one projection, because a mixed request such as “3/4 top-down dimetric/isometric” is resolved differently every run. Match the engine.\n\n' +
     '- `DIMETRIC_2_1` for a 2:1 diamond grid, which is what most engines and artists mean by “isometric”.\n' +
@@ -119,10 +150,10 @@ export const OUTPUT_TOOLTIPS = {
     'Pick `TRANSPARENT` only if the target really returns alpha; most return a flat matte whatever you ask for. On that choice the prompt asks for the file’s own alpha channel and rules out a drawn checkerboard, a grid of grey squares and that flat matte.\n\n' +
     'Any other choice is reserved for the background: the prompt keeps that colour, and any shade near enough to be keyed out with it, off every component and out of a pinned palette’s colours.',
   spriteTargetSize:
-    'Sets an exact pixel size for one component, such as “48 × 96 px”. Leave it empty and the prompt omits the line.\n\n' +
+    'Sets an exact pixel size for one component, such as “48 × 96 px”. Leave it empty and the prompt omits the line. Only the `CUSTOM` resolution profile offers it.\n\n' +
     'On a sheet of parts that assemble into one subject — a cut-out rig, a pose library, an articulation sheet, an item’s part library — the label reads Target Assembled Size, the size describes the whole assembled subject, and the per-component readings below do not apply.\n\n' +
-    'Under the `CUSTOM` profile it sets the smallest feature allowed, and 32 px or under on the shorter edge adds sprite-scale rules. On a pixel-art sheet under that profile it is read as the native grid, and the prompt asks for hard pixel edges at a whole-number scale above 1:1.\n\n' +
-    'A loaded rig contract overrides this field on the sheet it describes, and what you type here returns when you remove it.',
+    'It sets the smallest feature allowed, and 32 px or under on the shorter edge adds sprite-scale rules. On a pixel-art sheet it is read as the native grid, and the prompt asks for hard pixel edges at a whole-number scale above 1:1.\n\n' +
+    'A loaded rig contract states the size on the sheet it describes, so the field withdraws there. What you type returns when you remove it.',
 
   rigMode:
     'What the components are for once they leave the sheet. Only the categories whose components have joints offer a choice.\n\n' +

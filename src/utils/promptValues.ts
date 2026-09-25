@@ -12,7 +12,7 @@ import {
   describeStyleReference,
   isPlanView,
   JOINT_CAP_TEXT,
-  LIGHTING_TEXT,
+  lightingDescription,
   minFeatureSize,
   outlineDescription,
   OVERLAP_MARGIN_TEXT,
@@ -21,7 +21,7 @@ import {
   RENDER_STYLE_TEXT,
   resolutionProfileDescription,
   smallScaleDiscipline,
-  SURFACE_DETAIL_TEXT,
+  surfaceDetailDescription,
   VALIDATION_PASS_TEXT,
 } from '../constants/promptText/index.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -70,10 +70,11 @@ export function promptValues(
     hardware,
     palette,
     keyColor,
+    styleSettings,
     reference,
     componentCount,
     rig,
-    sizing: { stated, text: statedText, component, nativeScale },
+    sizing: { profile, stated, text: statedText, component, nativeScale },
     anatomyFacings,
     additionalAnatomyLine,
     oneSidedFeatures,
@@ -128,7 +129,10 @@ export function promptValues(
     SCALE_EXAMPLE_DESCRIPTION: plan.scaleExample,
 
     RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
-    SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
+    // Worded for the style, and for whether the sheet has a colour limit to stay inside: `TEXTURED`
+    // said "still inside the palette limit" beside "no colour budget to hold to", and asked a pixel
+    // sheet for the surface texturing its own pixel discipline forbids. See `surfaceDetailDescription`.
+    SURFACE_DETAIL_DESCRIPTION: surfaceDetailDescription(output, styleSettings, palette !== null),
     // Takes the same answer the target-size line does, because the two are printed one after the
     // other and `CUSTOM` is the profile that defers to that line. Left as the flat lookup, it told
     // the generator to work to a component size where one is stated, directly above a line stating a
@@ -148,7 +152,7 @@ export function promptValues(
     // component's own cell on every sheet, because a share of the sheet height was decided by the
     // component count or by the layout on every plan that carried one — see `SHARE_RANGE`.
     RESOLUTION_PROFILE_DESCRIPTION: resolutionProfileDescription(
-      output.resolutionProfile,
+      profile,
       stated?.quantity === 'ASSEMBLED',
       plan.scaleUnit,
     ),
@@ -159,18 +163,24 @@ export function promptValues(
     // stated *native* unconditionally for as long as the two were separate, so every pixel-art
     // prompt on a stock profile — the default among them — measured against a unit it never
     // defined.
-    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, stated, nativeScale !== null, rig),
+    MIN_FEATURE_SIZE: minFeatureSize(profile, stated, nativeScale !== null, rig),
     // Sprite-scale bullets join the pixel discipline only when the stated component is small
     // enough that silhouette carries the identity; `''` is what drops the optional line.
-    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, component),
+    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(component),
     // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
     // the value is still supplied because `substitute` throws on a token it has no value for, and
     // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.
-    PALETTE_DESCRIPTION: PALETTE_TEXT[output.paletteLimit],
+    //
+    // The budget, the outline and the lighting are the ones the render style lets the sheet be drawn
+    // with — `styleSettings` — and each line is worded in the style's own terms, so a painted sheet's
+    // key light casts graded shadow and a cel sheet's outline colours the ink contour its style line
+    // names (issue #406). `''` where the style withdraws the line, which the template has already
+    // dropped by then.
+    PALETTE_DESCRIPTION: PALETTE_TEXT[styleSettings.paletteLimit],
     // A function of the key as well as the style, because section 0 reserves the key colour and a
     // pure black contour on a pure black field would be the one line in section 2 asking for it.
-    OUTLINE_DESCRIPTION: outlineDescription(output.outlineStyle, keyColor),
-    LIGHTING_DESCRIPTION: LIGHTING_TEXT[output.lightingModel],
+    OUTLINE_DESCRIPTION: outlineDescription(output.renderStyle, styleSettings.outline, keyColor),
+    LIGHTING_DESCRIPTION: lightingDescription(output.renderStyle, styleSettings.lighting),
     // Supplied for every style, as `PALETTE_DESCRIPTION` is, and `''` for the eight that describe a
     // finished surface — the template's own `[IF:VALIDATION_PASS]` is what decides whether the token
     // is still there to be filled.

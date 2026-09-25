@@ -18,6 +18,12 @@ import { useSheetSubject } from './useSheetSubject.ts';
  * place: a loaded rig contract does state a size per piece, but the pieces differ, and one number is
  * exactly what these readers cannot be given honestly.
  *
+ * **`null` under every profile but `CUSTOM` as well** (issue #405), because `targetSizeField` reads
+ * the field only there: a stock profile states a scale of its own, and a panel measuring against a
+ * size the prompt does not carry would check the art against a figure nobody asked for. The stored
+ * profile is read rather than the one a rig resolves to — see `resolveResolutionProfile` for why
+ * the two give the same answer here.
+ *
  * A hook rather than a prop handed down from the tab, for the reason `useSheetIdentity` is one: on the
  * Quantise tab its readers are the guide, the grid panel, the Sprites panel and the download's cell
  * controls, which sit up to five components below `QuantiseTab`, and nothing between them has any
@@ -31,10 +37,20 @@ export function useComponentTarget(): TargetSize | null {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const directions = useOutputStore((state) => state.output.directions);
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
+  const resolutionProfile = useOutputStore((state) => state.output.resolutionProfile);
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
 
   return useMemo(
-    () => componentTargetSize(category, subject, directionalMode, directions, sheetIndex, spriteTargetSize),
-    [category, subject, directionalMode, directions, sheetIndex, spriteTargetSize],
+    () =>
+      componentTargetSize(
+        category,
+        subject,
+        directionalMode,
+        directions,
+        sheetIndex,
+        resolutionProfile,
+        spriteTargetSize,
+      ),
+    [category, subject, directionalMode, directions, sheetIndex, resolutionProfile, spriteTargetSize],
   );
 }

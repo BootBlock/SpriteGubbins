@@ -142,6 +142,7 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'CEL_SHADED',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
       projection: 'ORTHOGRAPHIC_SIDE',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_SIDE,
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',

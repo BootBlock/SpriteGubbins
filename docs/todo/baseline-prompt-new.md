@@ -229,7 +229,7 @@ a cut-out rig for a top-down game needs — could not be requested at all.
 | `BACKGROUND_KEY` | `MAGENTA_FF00FF` · `PURE_WHITE` · `PURE_BLACK` · `TRANSPARENT` | White is a poor extraction default (§8.6) |
 | `COMPONENT_BUDGET` | integer | Lets the app cap or split a request beyond what a model can deliver (§8.4) |
 | `IDENTITY_LOCK` | free text | Carries an identity digest into follow-up sheets (§5) |
-| `SPRITE_TARGET_SIZE` | free text, e.g. `48 × 96 px` | An explicit pixel target, which the profile names only vaguely. On a pixel-art sheet under `CUSTOM` it is the **native grid** the artwork is drawn on, and §0, §2 and §9 state the whole-number scale the sheet delivers that grid at — see R7 |
+| `SPRITE_TARGET_SIZE` | free text, e.g. `48 × 96 px` | An explicit pixel target, read only under `CUSTOM`, because the other three profiles state a scale of their own and a size beside one was a second answer (issue #405). A loaded rig contract resolves the profile to `CUSTOM` on the sheet it describes. On a pixel-art sheet under `CUSTOM` it is the **native grid** the artwork is drawn on, and §0, §2 and §9 state the whole-number scale the sheet delivers that grid at — see R7 |
 
 ### `HARDWARE_PROFILE` and `PALETTE` — **NEW**, added after this document shipped
 
@@ -1385,7 +1385,7 @@ change. Nothing else here is theme-dependent.
 | `RENDER_STYLE` | `PIXEL_ART` | High-resolution pixel art, drawn 1:1 |
 | `PROJECTION` | `THREE_QUARTER_TOPDOWN` | The ALTTP read the game is targeting |
 | `CAMERA_ELEVATION` | `30` | The grounded figure for that style |
-| `RESOLUTION_PROFILE` | `HIGH_RESOLUTION` | |
+| `RESOLUTION_PROFILE` | `CUSTOM` | All three state the game's size, and `CUSTOM` is the one profile that reads one. A share of the cell beside `48 × 48 px per tile` was a second scale (issue #405) |
 | `PALETTE_LIMIT` | `RESTRAINED_64_COLOR` | The plan requires a locked, restricted palette |
 | `OUTLINE_STYLE` | `DARK_LOCAL_CONTOUR` | |
 | `LIGHTING_MODEL` | `FLAT_NEUTRAL_ALBEDO` | **Load-bearing.** The engine lights actors via `CanvasModulate` and `Light2D`, and draws its own shadows. Baked directional lighting would fight both |

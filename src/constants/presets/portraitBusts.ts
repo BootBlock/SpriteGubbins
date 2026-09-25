@@ -109,7 +109,7 @@ export const PORTRAIT_BUST_PRESETS: readonly PresetArchetype[] = [
       rigMode: 'NONE',
       paletteLimit: 'UNRESTRICTED',
       surfaceDetail: 'CLEAN_PRODUCTION',
-      lightingModel: 'FLAT_NEUTRAL_ALBEDO',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       backgroundKey: 'TRANSPARENT',
       aspectRatio: 'TALL_9_16',
@@ -165,7 +165,7 @@ export const PORTRAIT_BUST_PRESETS: readonly PresetArchetype[] = [
     id: 'sci-fi-full-body-cutscene-bust',
     name: 'Sci-Fi Full Body Cutscene Figure',
     description:
-      'A full standing figure for a cutscene overlay, lit as though from the screen it stands in front of. The crop reaches the feet, so the extra limbs a generator adds are what the audit looks for.',
+      'A full standing figure for a cutscene overlay, as a clay study under one fixed key light. The crop reaches the feet, so the extra limbs a generator adds are what the audit looks for.',
     category: 'PORTRAIT',
     subject: {
       species: 'Construct, Android & Automaton',
@@ -196,7 +196,7 @@ export const PORTRAIT_BUST_PRESETS: readonly PresetArchetype[] = [
       rigMode: 'NONE',
       paletteLimit: 'RESTRAINED_64_COLOR',
       surfaceDetail: 'DETAILED_PRODUCTION',
-      lightingModel: 'UNLIT_EMISSIVE_BAKED',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       backgroundKey: 'TRANSPARENT',
       aspectRatio: 'TALL_9_16',

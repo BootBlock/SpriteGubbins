@@ -14,9 +14,9 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * Every one states its tile size outright, because a tile that does not match the engine's grid is not
  * a stylistic miss, it is unusable — and no resolution profile can say it, since a profile states a
  * share of a cell in the sheet's own grid rather than an absolute size, and the engine's grid is
- * absolute. The two
- * whose look is not itself a scale take `CUSTOM` as
- * well, so for those the stated number is the only thing describing how big the art is.
+ * absolute. So every one takes `CUSTOM`, the one profile that reads a stated size, and the stated
+ * number is the only thing describing how big the art is — a retro look is a palette and an outline,
+ * not a second scale beside the tile's.
  */
 export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
   {
@@ -133,7 +133,7 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
       directionalMode: 'TILESET_MODULAR',
       directions: 'SINGLE_FRONT',
       renderStyle: 'RETRO_PIXEL_ART',
-      resolutionProfile: 'RETRO_16_BIT',
+      resolutionProfile: 'CUSTOM',
       paletteLimit: 'STRICT_32_COLOR',
       surfaceDetail: 'MINIMAL',
       outlineStyle: 'PURE_BLACK_OUTLINE',
@@ -178,6 +178,7 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
       // field brighter than itself and the glow's outer falloff goes with the background.
       backgroundKey: 'PURE_BLACK',
       rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
       spriteTargetSize: '48 × 48 px per tile',
       aspectRatio: 'ULTRAWIDE_21_9',
       targetModel: 'FLUX_API',

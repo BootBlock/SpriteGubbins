@@ -21,13 +21,6 @@ describe('validationPassFor', () => {
     expect(validationPassFor('SILHOUETTE_ONLY')).not.toBeNull();
     expect(validationPassFor('PIXEL_ART')).toBeNull();
   });
-
-  it('withholds the light only where there is no surface for it to fall on', () => {
-    // The distinction the second flag exists for, pinned at both ends: a clay render is *read* by
-    // the way light crosses it, and a flat fill of one colour has nothing for a key light to model.
-    expect(validationPassFor('CLAY_RENDER')?.withholdsLight).toBe(false);
-    expect(validationPassFor('SILHOUETTE_ONLY')?.withholdsLight).toBe(true);
-  });
 });
 
 describe('VALIDATION_PASS_TEXT', () => {

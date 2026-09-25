@@ -17,26 +17,28 @@ interface SelectFieldProps<T extends string | number> {
    * once what the list is missing — shown under the control and wired as its accessible description.
    *
    * Orthogonal to `tooltip`, which explains the field and reads the same whatever is chosen. Six of
-   * the seven call sites are selects whose options differ from each other in a way no single
+   * the nine call sites are selects whose options differ from each other in a way no single
    * sentence can cover — the palette, the render style, the art style reference, the system profile,
    * the target generator and the sheet contents. Each of those has a table behind it holding a
    * different account of what some of its options mean, and this is where the row for the chosen one
    * is read out.
    *
-   * **The seventh is the rig mode, and it reads the other way.** Its options need no per-option
-   * account, but its *list* narrows: sheet contents that deliver a sheet drawing each moving part
-   * once per position it takes do not offer the cut-out rig, because that rig's first rule is that
-   * no piece commits to a position. An option that disappears with no explanation reads as a control
-   * that failed to render, so the sentence naming the sheet that withdrew it goes here — where a
-   * screen reader announces it with the control, rather than in a paragraph beside it.
+   * **The other three read the other way: the rig mode, the colour budget and the outline system.**
+   * Their options need no per-option account, but their *lists* narrow. Sheet contents that deliver a
+   * sheet drawing each moving part once per position it takes do not offer the cut-out rig, because
+   * that rig's first rule is that no piece commits to a position; and a render style whose own line
+   * names a small palette or its own contour does not offer a budget or an outline that contradicts
+   * it. An option that disappears with no explanation reads as a control that failed to render, so
+   * the sentence naming what withdrew it goes here — where a screen reader announces it with the
+   * control, rather than in a paragraph beside it.
    *
-   * Optional because the other twenty-four have nothing of either kind to say, and twenty-four
-   * call sites passing a permanently-empty string would bury the seven that do — while empty *is*
-   * still accepted from those seven, as `CheckboxField`'s reason is, so a caller resolving the text
+   * Optional because the other twenty-three have nothing of either kind to say, and twenty-three
+   * call sites passing a permanently-empty string would bury the nine that do — while empty *is*
+   * still accepted from those nine, as `CheckboxField`'s reason is, so a caller resolving the text
    * out of its table can hand over what it found rather than choosing between a prop and no prop.
-   * Five of the seven need that in earnest — four whose tables are keyed on something the select can
-   * hold and the table has no row for, and the rig mode, whose sentence applies to some sheets and
-   * not others — and the other two never take it up: the target generator's is a guard over a miss
+   * Seven of the nine need that in earnest — four whose tables are keyed on something the select can
+   * hold and the table has no row for, and the three narrowing lists, whose sentences apply to some
+   * sheets or styles and not others — and the other two never take it up: the target generator's is a guard over a miss
    * its own call site records as unreachable, and the sheet contents' table has a row for every mode
    * a category can offer, because both are keyed on the same closed union.
    */
@@ -45,12 +47,12 @@ interface SelectFieldProps<T extends string | number> {
    * When set, the reason the value is not yours to choose — shown in place of nothing at all, as
    * `NumberField` and `CheckboxField` both show theirs.
    *
-   * Optional here where those two require it, for the reason `description` is: one of the app's
-   * thirty-two selects — the rig mode — has a setting above it that takes its value over, and the other
-   * thirty-one passing a permanently-empty string would bury the one that does. It is the same
-   * select that carries the seventh `description`, and the two say different things: this one is the
-   * sheet taking the choice over, that one the sheet withdrawing an option from a choice the reader
-   * still has.
+   * Optional here where those two require it, for the reason `description` is: two of the app's
+   * thirty-two selects — the rig mode and the resolution profile — have a setting that takes their
+   * value over, and the other thirty passing a permanently-empty string would bury the two that do.
+   * The rig mode also carries its narrowing `description`, and the two say different things: this
+   * one is the sheet taking the choice over, that one the sheet withdrawing an option from a choice
+   * the reader still has.
    */
   readonly disabledReason?: string;
   /**

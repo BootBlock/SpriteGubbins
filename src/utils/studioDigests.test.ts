@@ -123,7 +123,11 @@ describe('sheetDigest', () => {
 describe('renderStyleDigest', () => {
   it('covers all seven controls when they are all set', () => {
     // With no palette pinned, which is what leaves the colour budget as the group's colour setting.
-    const output = withOutput({ spriteTargetSize: '48 × 96 px', palette: 'FREE' });
+    const output = withOutput({
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '48 × 96 px',
+      palette: 'FREE',
+    });
     const digest = renderStyleDigest('CHARACTER', standardSubject(), output);
     for (const value of [
       output.renderStyle,
@@ -136,6 +140,17 @@ describe('renderStyleDigest', () => {
     ]) {
       expect(digest).toContain(value);
     }
+  });
+
+  it('omits a typed size under a profile that states its own scale, as the compiler does', () => {
+    const digest = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
+      withOutput({ resolutionProfile: 'HIGH_RESOLUTION', spriteTargetSize: '48 × 96 px', palette: 'FREE' }),
+    );
+
+    expect(digest).toContain('HIGH_RESOLUTION');
+    expect(digest).not.toContain('48 × 96 px');
   });
 
   it('omits the target size when it has none — the compiler omits its line too', () => {
@@ -200,11 +215,12 @@ describe('renderStyleDigest', () => {
     expect(digest).not.toContain('CUSTOM');
   });
 
-  it('drops the three settings a validation pass supersedes, and keeps the light a clay pass uses', () => {
+  it('drops the three settings a validation pass supersedes, and names the light a clay pass is drawn under', () => {
     // `RenderStyleFields` withdraws those three controls on the same lookup, so a header naming them
     // would report a configuration the open group no longer offers — and, worse, one the prompt no
-    // longer carries. The lighting model stays: a clay render is read by the way light falls across
-    // it, which is the one surface setting this pass keeps.
+    // longer carries. The light stays in the header: a clay render is read by one fixed key light,
+    // which its prompt states whatever the store holds, so the header names that light rather than
+    // the flat albedo stored here.
     const digest = renderStyleDigest(
       'CHARACTER',
       standardSubject(),
@@ -213,15 +229,43 @@ describe('renderStyleDigest', () => {
         surfaceDetail: 'TEXTURED',
         paletteLimit: 'STRICT_32_COLOR',
         outlineStyle: 'PURE_BLACK_OUTLINE',
-        lightingModel: 'ISOMETRIC_TOP_LEFT',
+        lightingModel: 'FLAT_NEUTRAL_ALBEDO',
       }),
     );
 
     expect(digest).toContain('CLAY_RENDER');
     expect(digest).toContain('ISOMETRIC_TOP_LEFT');
+    expect(digest).not.toContain('FLAT_NEUTRAL_ALBEDO');
     expect(digest).not.toContain('TEXTURED');
     expect(digest).not.toContain('STRICT_32_COLOR');
     expect(digest).not.toContain('PURE_BLACK_OUTLINE');
+  });
+
+  it('names the outline, light and budget a finished style is drawn with, not the stored ones', () => {
+    // The header reports what the prompt states (issue #406). A cel sheet names its own ink contour
+    // and takes the key light alone, and retro pixel art names a small palette, so each stored value
+    // below is one the style cannot be drawn with.
+    const cel = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
+      withOutput({
+        renderStyle: 'CEL_SHADED',
+        outlineStyle: 'OUTLINE_LESS_ALBEDO',
+        lightingModel: 'FLAT_NEUTRAL_ALBEDO',
+      }),
+    );
+    expect(cel).toContain('DARK_LOCAL_CONTOUR');
+    expect(cel).toContain('ISOMETRIC_TOP_LEFT');
+    expect(cel).not.toContain('OUTLINE_LESS_ALBEDO');
+    expect(cel).not.toContain('FLAT_NEUTRAL_ALBEDO');
+
+    const retro = renderStyleDigest(
+      'CHARACTER',
+      standardSubject(),
+      withOutput({ renderStyle: 'RETRO_PIXEL_ART', palette: 'FREE', paletteLimit: 'UNRESTRICTED' }),
+    );
+    expect(retro).toContain('RESTRAINED_64_COLOR');
+    expect(retro).not.toContain('UNRESTRICTED');
   });
 
   it('takes the light too where the pass leaves nowhere for it to land', () => {

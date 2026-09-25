@@ -21,12 +21,23 @@ describe('useComponentTarget', () => {
     // An icon library states its size per icon, so the field reaches the reader as typed.
     useSubjectStore.setState({ category: 'ICON' });
     useOutputStore.getState().setOutputField('directionalMode', 'SINGLE_DIRECTION_POSE_LIBRARY');
+    // The one profile that reads a typed size.
+    useOutputStore.getState().setOutputField('resolutionProfile', 'CUSTOM');
   });
 
   it('reads the size the studio states for one component', () => {
     useOutputStore.getState().setOutputField('spriteTargetSize', '24 × 40 px');
 
     expect(target()).toStrictEqual({ width: 24, height: 40 });
+  });
+
+  it('states nothing under a profile that states a scale of its own', () => {
+    // Issue #405: the prompt carries no size there, so no panel may measure against one.
+    useOutputStore.getState().setOutputField('spriteTargetSize', '24 × 40 px');
+    for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const) {
+      useOutputStore.getState().setOutputField('resolutionProfile', profile);
+      expect(target(), profile).toBeNull();
+    }
   });
 
   it('states nothing while the field names no size', () => {

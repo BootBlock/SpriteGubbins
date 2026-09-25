@@ -1,5 +1,9 @@
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
-import { resolveCameraElevation, validationPassFor } from '../constants/promptText/index.ts';
+import {
+  resolveCameraElevation,
+  styleSettingsFor,
+  validationPassFor,
+} from '../constants/promptText/index.ts';
 import type { ValidationPass } from '../types/rendering.ts';
 import { resolveMode, resolveRigMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -128,11 +132,12 @@ export function sheetDigest(category: SubjectCategory, subject: SheetSubject, ou
  * the sheet — the compiled prompt drops the budget line and the quantiser ignores the count. A
  * validation pass withdraws the budget without replacing it, and still leaves a pinned palette
  * standing: one material or one fill takes its colour from the list like anything else does, so the
- * two supersessions stack rather than collide.
+ * two supersessions stack rather than collide. The budget named is the one the render style lets
+ * the sheet be drawn under, which is the one the prompt states.
  */
 function colourDigest(output: OutputConfig, pass: ValidationPass | null): string {
   const pinned = pinnedPalette(output);
-  if (pinned === null) return pass === null ? output.paletteLimit : '';
+  if (pinned === null) return pass === null ? styleSettingsFor(output).paletteLimit : '';
 
   // A machine is named by its stored identifier, as every other setting in this header is. The
   // reader's own palette has none worth showing — `CUSTOM` names the control rather than the
@@ -153,9 +158,11 @@ function colourDigest(output: OutputConfig, pass: ValidationPass | null): string
  * Naming a superseded setting would put a value in the header that has no effect on anything — the
  * same reasoning as `companionDigest`, which omits a deliverable its target cannot return. Two
  * things supersede here rather than one: a pinned palette takes the colour budget, and a validation
- * pass takes the surface detail, the budget and the outline outright, plus the lighting where the
- * pass is the silhouette. `RenderStyleFields` withdraws exactly those controls on the same two
- * lookups, so the header reports the controls the panel is showing.
+ * pass takes the surface detail, the budget and the outline outright. The outline, the lighting and
+ * the budget it names are the ones the render style lets the sheet be drawn with — `styleSettingsFor`
+ * — so a silhouette names no lighting, and a cel style names the key light its prompt states even
+ * where the panel withdraws the one-option lighting control. `RenderStyleFields` reads the same
+ * lookups, so the header and the panel cannot disagree.
  */
 export function renderStyleDigest(
   category: SubjectCategory,
@@ -163,8 +170,13 @@ export function renderStyleDigest(
   output: OutputConfig,
 ): string {
   const pass = validationPassFor(output.renderStyle);
-  // The size the sheet actually states, which is the rig's frame wherever a contract applies — the
-  // same answer `promptFacts` reaches, through the same module. A header naming the field the
+  // The outline and the lighting the render style lets the sheet be drawn with, which is what the
+  // prompt states and what the panel's controls show: a cel style reports the key light it is drawn
+  // under rather than the flat albedo a stored value may still name.
+  const settings = styleSettingsFor(output);
+  // The profile and the size the sheet actually states, which are `CUSTOM` and the rig's frame
+  // wherever a contract applies, and no size under a profile that states its own scale — the same
+  // answer `promptFacts` reaches, through the same module. A header naming the field the
   // contract supersedes would put a value in front of the reader that changes nothing, which is
   // what this module refuses to do for a machine's colours and a validation pass already.
   const plan = sheetPlanFor(
@@ -174,16 +186,16 @@ export function renderStyleDigest(
     output.directions,
     output.sheetIndex,
   );
-  const stated = sheetTargetSize(category, subject, output, plan, sheetRigContract(plan, output));
+  const sizing = sheetTargetSize(category, subject, output, plan, sheetRigContract(plan, output));
 
   return join([
     output.renderStyle,
     pass === null ? output.surfaceDetail : '',
-    output.resolutionProfile,
-    stated.text,
+    sizing.profile,
+    sizing.text,
     colourDigest(output, pass),
-    pass === null ? output.outlineStyle : '',
-    pass?.withholdsLight === true ? '' : output.lightingModel,
+    settings.outline ?? '',
+    settings.lighting ?? '',
   ]);
 }
 

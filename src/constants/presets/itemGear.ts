@@ -7,8 +7,9 @@ import type { PresetArchetype } from '../../types/preset.ts';
  *
  * These are the presets that answer "how do I get an inventory icon out of this app". All four state a
  * per-cell pixel size, because an inventory grid has a cell size and no resolution profile can express
- * one — and the two that leave the app's default three-quarter angle say so through the projection
- * rather than by describing the view in prose.
+ * one, so all four take `CUSTOM`, the one profile that reads a stated size — and the two that leave
+ * the app's default three-quarter angle say so through the projection rather than by describing the
+ * view in prose.
  */
 export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
   {
@@ -92,6 +93,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
       // the rim keys cleanly and the *fill* picks up a magenta cast through the transparency.
       backgroundKey: 'PURE_WHITE',
       rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
       spriteTargetSize: '64 × 64 px per icon cell',
       aspectRatio: 'SQUARE_1_1',
       targetModel: 'MIDJOURNEY',
@@ -129,12 +131,14 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'CEL_SHADED',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       // Pinned rather than inherited, because the arithmetic above counts these facings and this
       // sheet has only three components of room — a default that moved would take it over silently.
       directions: 'FIVE_CLASSIC',
       rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
       spriteTargetSize: '96 × 96 px per icon cell',
       aspectRatio: 'WIDE_16_9',
       targetModel: 'CHATGPT_5_6_SOL',
@@ -177,7 +181,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
       paletteLimit: 'EXPANDED_ALBEDO',
       surfaceDetail: 'DETAILED_PRODUCTION',
       lightingModel: 'UNLIT_EMISSIVE_BAKED',
-      resolutionProfile: 'MID_RESOLUTION',
+      resolutionProfile: 'CUSTOM',
       spriteTargetSize: '64 × 64 px per icon cell',
       backgroundKey: 'PURE_BLACK',
       rigMode: 'NONE',

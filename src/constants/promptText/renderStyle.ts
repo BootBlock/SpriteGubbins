@@ -1,5 +1,5 @@
 import type { RenderStyle } from '../../types/rendering.ts';
-import type { ResolutionProfile, StatedTargetSize, SurfaceDetail } from '../../types/output.ts';
+import type { ResolutionProfile, StatedTargetSize } from '../../types/output.ts';
 import type { RigContract } from '../../types/rigContract.ts';
 
 /**
@@ -23,13 +23,6 @@ export const RENDER_STYLE_TEXT: Readonly<Record<RenderStyle, string>> = {
     'Untextured single-material form study. Useful for validating silhouette and volume before committing to colour',
   SILHOUETTE_ONLY:
     'Solid single-colour silhouettes. A readability pass — does the shape read at target size with no internal detail?',
-};
-
-export const SURFACE_DETAIL_TEXT: Readonly<Record<SurfaceDetail, string>> = {
-  MINIMAL: 'Minimal — base colour blocking and essential joints only',
-  CLEAN_PRODUCTION: 'Clean production — major panels and folds, nothing finer',
-  DETAILED_PRODUCTION: 'Detailed production — seams and material divisions resolved',
-  TEXTURED: 'Textured — controlled surface texturing, still inside the palette limit',
 };
 
 /** The two profiles that state their scale as a *share* of a cell in the grid rather than in pixels. */
@@ -281,9 +274,9 @@ const UNSTATED_MIN_FEATURE = '2 × 2';
  * is somewhere below that subject's — and the rungs below get *coarser* as the edge grows. Two
  * wrong answers are therefore available and they fail differently. Keying the rung off the assembly
  * returns a floor at least as coarse as the truth, which forbids detail a small piece legitimately
- * needs; falling to {@link UNSTATED_MIN_FEATURE} did the same thing on the three shipped rig presets
- * that carry `CUSTOM`, each of which sits on the finest rung by its assembled edge and was being told
- * `2 × 2` instead.
+ * needs; falling to {@link UNSTATED_MIN_FEATURE} did the same thing on the shipped rig presets that
+ * carried `CUSTOM` then, each of which sits on the finest rung by its assembled edge and was being
+ * told `2 × 2` instead.
  *
  * The finest rung is the only answer that cannot forbid something real. Where it is wrong it is
  * merely permissive, and a floor that permits is inert rather than incorrect — which is the trade a
@@ -311,14 +304,13 @@ function minFeatureFigure(
   stated: StatedTargetSize | null,
   rig: RigContract | null,
 ): string {
-  // **A loaded rig outranks the profile**, which is the one case where it should. Every other
-  // branch here is reasoning from a size somebody typed, and three of the four profiles answer
-  // without one at all — but a contract states the real size of every real piece, so the rung can
-  // be keyed off the smallest of them rather than off the assembly, a stock figure, or the
-  // permissive floor {@link ASSEMBLED_MIN_FEATURE} takes when the quantity is unavailable. Left to
-  // the profile, a `HIGH_RESOLUTION` rig sheet was told `3 × 3` against an 8 × 22 px arm — a floor
-  // covering more than a third of the piece's width, which is the contradiction the rungs exist to
-  // avoid.
+  // **A loaded rig outranks the stated size.** Every other branch here is reasoning from a size
+  // somebody typed, and three of the four profiles answer without one at all — but a contract states
+  // the real size of every real piece, so the rung can be keyed off the smallest of them rather than
+  // off the assembly, a stock figure, or the permissive floor {@link ASSEMBLED_MIN_FEATURE} takes
+  // when the quantity is unavailable. A rig resolves the profile to `CUSTOM` (see
+  // `resolveResolutionProfile`), so without this branch its sheet would take that permissive floor;
+  // before that resolution, a `HIGH_RESOLUTION` rig sheet was told `3 × 3` against an 8 × 22 px arm.
   if (rig !== null) return rungFor(smallestPieceEdge(rig));
   if (profile !== 'CUSTOM') return PROFILE_MIN_FEATURE[profile];
   if (stated === null) return UNSTATED_MIN_FEATURE;
@@ -347,8 +339,9 @@ function smallestPieceEdge(rig: RigContract): number {
  *
  * The unit is the whole reason this is one function and not two values the template pairs up. The
  * bullet used to say *native pixels* unconditionally, while the block defining a native pixel is
- * gated on `NATIVE_GRID` — a different and much narrower condition, since `nativeGridScale`
- * additionally wants the `CUSTOM` profile, a size that parses and an enlargement of at least 2. So
+ * gated on `NATIVE_GRID` — a different and much narrower condition, since that also wants a size read
+ * under the `CUSTOM` profile (see `targetSizeField`), one that parses and an enlargement of at least
+ * 2. So
  * every pixel-art prompt on a stock profile — the default configuration among them, which is the
  * first prompt the app ever shows anybody — stated a measurement in a unit the document never
  * established. A generator reading *3 × 3 native pixels* with no grid stated has to guess
