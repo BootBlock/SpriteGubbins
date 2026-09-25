@@ -1,3 +1,4 @@
+import { capitalised } from '../../utils/capitalised.ts';
 import { creaturePlansFor } from './creatureBody.ts';
 import type { CreatureBody, LimbSegment } from './creatureBody.ts';
 import type { ModePlans } from './modePlans.ts';
@@ -19,11 +20,18 @@ import type { PartDrawing } from './partDrawing.ts';
  * no segments to draw in positions, and `creatureAmorphous.ts` draws it.
  */
 
-/** How a segment of a body that bends along its length is drawn: straight, and at two curvatures. */
+/**
+ * How a segment of a body that bends along its length is drawn: once for each curve it has to sit in.
+ *
+ * **Named for the curve it fits, never drawn curved**, as a limb's are named for the flexion they
+ * suit: section 5 has every articulated part a rigid component and forbids a pre-bent segment, so a
+ * `curved` segment would be ordered in section 4 and forbidden in section 5 of one prompt. The body
+ * bends by turning rigid segments about their joins.
+ */
 const CURVES: readonly [PartDrawing, ...PartDrawing[]] = [
-  { text: 'straight', slug: 'straight' },
-  { text: 'curved', slug: 'curved' },
-  { text: 'tightly coiled', slug: 'coiled' },
+  { text: 'extension-compatible', slug: 'extension' },
+  { text: 'moderate-curve-compatible', slug: 'moderate-curve' },
+  { text: 'tight-coil-compatible', slug: 'tight-coil' },
 ];
 
 /** A body segment of a creature with no limbs, drawn in the given positions. */
@@ -35,7 +43,7 @@ function bodySegment(
   return {
     name,
     slug,
-    plural: `${name.charAt(0).toUpperCase()}${name.slice(1)}s`,
+    plural: `${capitalised(name)}s`,
     pluralSlug: `${slug}s`,
     positions,
   };
@@ -81,7 +89,12 @@ merged two components into one and breaks the count in section [SEC:CONTRACT].`,
   },
 };
 
-/** How a worm's segment is drawn: stretched thin, at rest, and bunched thick, which is how it crawls. */
+/**
+ * How a worm's segment is drawn: stretched thin, at rest, and bunched thick, which is how it crawls.
+ *
+ * A change of length and girth rather than a bend, so each is a rigid drawing of its own — as a foot
+ * is drawn relaxed and spread — and section 5's rule against a pre-bent segment is not in question.
+ */
 const PERISTALSIS: readonly [PartDrawing, ...PartDrawing[]] = [
   { text: 'stretched', slug: 'stretched' },
   { text: 'relaxed', slug: 'relaxed' },
@@ -253,11 +266,14 @@ count in section [SEC:CONTRACT].`,
   },
 };
 
-/** How a stalk section is drawn: upright, and bowed and bent as the growth sways and strikes. */
+/**
+ * How a stalk section is drawn: once for each lean it has to sit in as the growth sways and strikes —
+ * named for the lean it suits and never drawn bent, for the reason {@link CURVES} gives.
+ */
 const SWAYS: readonly [PartDrawing, ...PartDrawing[]] = [
-  { text: 'upright', slug: 'upright' },
-  { text: 'bowed', slug: 'bowed' },
-  { text: 'sharply bent', slug: 'bent' },
+  { text: 'upright-compatible', slug: 'upright' },
+  { text: 'moderate-sway-compatible', slug: 'moderate-sway' },
+  { text: 'strong-sway-compatible', slug: 'strong-sway' },
 ];
 
 /**

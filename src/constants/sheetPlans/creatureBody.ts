@@ -1,4 +1,6 @@
 import type { ComponentEntry, SheetPlan, SheetSeries, ViewSheetPlan } from '../../types/components.ts';
+import { capitalised } from '../../utils/capitalised.ts';
+import { spokenList } from '../../utils/spokenList.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 import { FIGURE_ASSEMBLY_FAILURE } from './figureAssemblyFailure.ts';
@@ -32,7 +34,7 @@ import { RIG_PIECES_OUTRO } from './rigPieces.ts';
  */
 
 /** A rigid piece of the trunk: drawn once on the pose library and the rig, once per facing on the core. */
-export interface TrunkPiece {
+interface TrunkPiece {
   /** `head`, `hindquarters`, `root mass` — what the trunk lines call it. */
   readonly name: string;
   /** `head`, `root-mass` — the component's own name. */
@@ -56,7 +58,7 @@ export interface LimbSegment {
 }
 
 /** One chain of segments fitted to the trunk — a forelimb, a tentacle, a stalk, a tail. */
-export interface Limb {
+interface Limb {
   /** `left-forelimb` — the pose library's and the rig's entry label. */
   readonly label: string;
   /** `left-fore` — the stem every component of this limb is named from. */
@@ -103,9 +105,7 @@ export interface CreatureBody {
 
 /** `one head, one body and one hindquarters` — the trunk as a count, with `one` spelt as given. */
 function trunkList(trunk: readonly TrunkPiece[], one: string): string {
-  const names = trunk.map((piece) => `${one} ${piece.name}`);
-  const last = names.pop() ?? '';
-  return names.length === 0 ? last : `${names.join(', ')} and ${last}`;
+  return spokenList(trunk.map((piece) => `${one} ${piece.name}`));
 }
 
 /** The pose library's and the rig's trunk line: every trunk piece once, in the primary direction. */
@@ -295,10 +295,6 @@ ${RIG_PIECES_OUTRO}`,
       },
     ],
   };
-}
-
-function capitalised(text: string): string {
-  return `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 }
 
 /**

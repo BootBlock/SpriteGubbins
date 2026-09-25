@@ -490,7 +490,7 @@ interface SheetPlanFields {
    *
    * **What a sheet draws is a property of the sheet**, so the example is answered here beside
    * {@link SheetPlan.assembly}, which is the same kind of statement for the same reason. `utils/sheetPlans.test.ts` grounds each one in its own plan's
-   * entries, as `promptText/landmarks.test.ts` grounds the landmark sentence in the category's.
+   * entries, as `sheetPlans/landmarks.test.ts` grounds a sheet of views' landmark in its own.
    *
    * **Two shapes, and which one a sheet takes is decided by whether its components are pieces of
    * each other.** Most name the smallest and the largest piece the sheet draws — a fitting against
@@ -583,7 +583,7 @@ interface SheetPlanFields {
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */
-export interface RunSheetPlan extends SheetPlanFields {
+interface RunSheetPlan extends SheetPlanFields {
   readonly facings: 'run';
 }
 

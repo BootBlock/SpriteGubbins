@@ -9,8 +9,8 @@ import type { PartDrawing } from './partDrawing.ts';
 /**
  * The sheets of `Amorphous — No Fixed Limbs`, a creature that turns about no pivot (issue #286).
  *
- * **What the base says is that nothing on it is fixed**, and the standard sheets ordered four limbs in
- * fifteen positions and a hindquarters. An ooze, a living cloud and a shoggoth have a mass that changes
+ * **What the base says is that nothing on it is fixed**, and the standard sheets ordered a
+ * hindquarters and four limbs in thirty-four variants. An ooze, a living cloud and a shoggoth have a mass that changes
  * shape and reaches out of itself where it needs to, so the pieces are those two: the mass drawn in each
  * shape it takes, and the pseudopods it pushes out, drawn apart so that the engine can lay one over the
  * mass anywhere along its edge.

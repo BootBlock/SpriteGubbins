@@ -1,4 +1,5 @@
 import type { Direction, DirectionSet, Projection } from '../../types/rendering.ts';
+import { capitalised } from '../../utils/capitalised.ts';
 
 /**
  * The elevation each projection implies, in degrees above the horizon — the three flat projections
@@ -118,6 +119,5 @@ export const DIRECTION_LISTS: Readonly<Record<DirectionSet, readonly [Direction,
  * single-direction modes and has to describe what it actually asked for.
  */
 export function describeDirections(directions: readonly Direction[]): string {
-  const joined = directions.join(', ');
-  return joined.charAt(0).toUpperCase() + joined.slice(1);
+  return capitalised(directions.join(', '));
 }

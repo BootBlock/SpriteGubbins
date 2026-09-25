@@ -5,6 +5,7 @@ import { channelLevels, channelSpaceSize } from '../../utils/channelLevels.ts';
 import { fromHex, toHex } from '../../utils/imageData.ts';
 import { keyReaches } from '../../utils/keyReach.ts';
 import { spellNumber } from '../../utils/numberWords.ts';
+import { spokenList } from '../../utils/spokenList.ts';
 
 /**
  * The two blocks a targeted machine adds to section 2 of the prompt.
@@ -175,12 +176,6 @@ function withheldSentence(withheld: readonly string[], key: Rgba): string {
   }
   if (near.length === 0) return `${opening} it is the background key section [SEC:CONTRACT] fixes.`;
   return `${opening} ${keyHex} is the background key section [SEC:CONTRACT] fixes and ${spokenList(near)} ${near.length === 1 ? 'is' : 'are'} near enough to it to be taken for it.`;
-}
-
-/** `A`, `A and B`, `A, B and C`. */
-function spokenList(items: readonly string[]): string {
-  const last = items.at(-1) ?? '';
-  return items.length < 2 ? last : `${items.slice(0, -1).join(', ')} and ${last}`;
 }
 
 /**

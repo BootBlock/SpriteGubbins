@@ -7,6 +7,7 @@ import type {
   ViewSheetPlan,
 } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
+import { spokenList } from '../../utils/spokenList.ts';
 import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 import { fixed } from './modePlans.ts';
 import type { ModePlans } from './modePlans.ts';
@@ -156,9 +157,7 @@ function onceEntry(label: string, name: string, kind: ComponentKind): ComponentE
 
 /** `at rest and at mid-travel`, `stowed, traversed and elevated` — a promise's list of positions. */
 function joined(drawings: readonly PartDrawing[]): string {
-  const texts = drawings.map((drawing) => drawing.text);
-  const last = texts.pop() ?? '';
-  return texts.length === 0 ? last : `${texts.join(', ')} and ${last}`;
+  return spokenList(drawings.map((drawing) => drawing.text));
 }
 
 /** What the part library promises its states assemble into, named from the entries that draw them. */

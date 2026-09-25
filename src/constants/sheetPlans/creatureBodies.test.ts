@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DIRECTIONAL_MODES } from '../../types/output.ts';
 import { defaultSubjectFor } from '../categories/index.ts';
 import { DIRECTION_LISTS } from '../promptText/camera.ts';
+import { planProseFor } from '../../test/categoryProse.ts';
 import { CATEGORY_ASSEMBLY_BASES } from './assemblyBases.ts';
 import { plansFor } from './modes.ts';
 
@@ -12,7 +13,7 @@ import { plansFor } from './modes.ts';
  * a body, a hindquarters and a left and right forelimb and hindlimb, so `Serpentine Tailless` stated a
  * limbless animal over four limbs, `Octopus Tentacled` eight tentacles over none, `Finned Aquatic Body`
  * fins over feet, `Rooted Stationary Growth` a stalk over legs, and `Amorphous — No Fixed Limbs` no
- * fixed limb over fifteen limb segments.
+ * fixed limb over thirty-four limb variants.
  *
  * **A record rather than a derivation, for the reason `vehicleDivision.test.ts` keeps one.** Whether a
  * sheet draws the body its base names is a judgement about words — `Tentacle` answers `Octopus
@@ -75,7 +76,7 @@ const AUDIT: readonly BaseAudit[] = [
   },
 ];
 
-/** Everything a reader choosing this base is sent: each sheet's name, promise, prose and inventory. */
+/** Everything a reader choosing this base is sent, in every sheet's own words — see `planProseFor`. */
 function drawnTextOf(base: string): string {
   const subject = { ...defaultSubjectFor('CREATURE'), anatomy: base };
   const plans = plansFor('CREATURE', subject);
@@ -84,16 +85,7 @@ function drawnTextOf(base: string): string {
     if (seriesFor === undefined) return [];
     return Object.values(DIRECTION_LISTS).flatMap((facings) => seriesFor(facings));
   })
-    .flatMap((plan) => [
-      plan.name,
-      plan.assembly,
-      ...plan.groups.flatMap((group) => [
-        group.heading ?? '',
-        group.intro ?? '',
-        group.outro ?? '',
-        ...group.entries.map((entry) => entry.text),
-      ]),
-    ])
+    .map(planProseFor)
     .join('\n')
     .toLowerCase();
 }
