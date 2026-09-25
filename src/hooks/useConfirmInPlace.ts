@@ -1,55 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefCallback } from 'react';
-import { flushSync } from 'react-dom';
-
-/** What a browser might let the keyboard land on, before asking whether it currently would. */
-const TAB_STOPS = 'a[href], button, input, select, textarea, summary, [tabindex]';
-
-/**
- * Whether an element is still in the document and would still take focus if it were offered.
- *
- * **A negative `tabIndex` is excluded here rather than in the selector**, and the property is the
- * better instrument either way: it reports the *resolved* value, so it catches a `<button>` taken
- * out of the tab order as well as a `<div>` put into it, where an attribute selector sees only the
- * second. `ComboBox`'s chevron is the first of those — a real button the keyboard is meant to skip,
- * and handing it the focus would leave the reader somewhere their next Tab cannot return them to.
- */
-function isUsable(element: Element): element is HTMLElement {
-  if (!(element instanceof HTMLElement) || !element.isConnected || element.hidden) return false;
-  if (element.tabIndex < 0) return false;
-  if ('disabled' in element && element.disabled === true) return false;
-  return element.closest('[inert]') === null;
-}
-
-/** The tab stops on either side of the block a confirmation is about to take with it. */
-interface Surroundings {
-  readonly after: readonly HTMLElement[];
-  readonly before: readonly HTMLElement[];
-}
-
-/**
- * Where the next Tab would have gone, recorded while the control that answers it is still there.
- *
- * The unit that disappears is the anchor's own list row where it has one, and the anchor itself
- * where it does not — a row's delete takes the whole `<li>`, while the history drawer's *Clear
- * history* takes only the pair of buttons it swapped in. Everything inside that unit is dropped from
- * both lists, because it is exactly what will not be there to receive the focus.
- *
- * Scoped to the open `<dialog>` when there is one: a modal dialog makes the rest of the document
- * inert, so a tab stop outside it is not somewhere the keyboard can go.
- */
-function surroundingTabStops(anchor: HTMLElement): Surroundings | null {
-  const unit = anchor.closest('li') ?? anchor;
-  const scope = anchor.closest('dialog') ?? anchor.ownerDocument.body;
-  const order = [...scope.querySelectorAll<HTMLElement>(TAB_STOPS)];
-  const at = order.indexOf(anchor);
-  if (at === -1) return null;
-  const outside = (element: HTMLElement) => !unit.contains(element);
-  return {
-    after: order.slice(at + 1).filter(outside),
-    before: order.slice(0, at).filter(outside).reverse(),
-  };
-}
+import { isUsableTabStop } from './isUsableTabStop.ts';
+import { keepFocusThrough } from './keepFocusThrough.ts';
 
 /** A two-press confirmation, and the three places it can leave the keyboard with nowhere to be. */
 export interface ConfirmInPlace {
@@ -77,8 +29,8 @@ export interface ConfirmInPlace {
   /**
    * Runs the destructive act and then puts the keyboard somewhere that still exists.
    *
-   * The act is awaited, so pass the store call itself rather than a `void`-ed one — see the note on
-   * the hook about why the answer has to have landed before the destination is chosen.
+   * The act is awaited, so pass the store call itself rather than a `void`-ed one — see
+   * `keepFocusThrough` about why the answer has to have landed before the destination is chosen.
    */
   readonly confirm: (act: () => void | Promise<void>) => Promise<void>;
 }
@@ -103,7 +55,7 @@ export interface ConfirmInPlace {
  *
  * **Those six are cited, not superseded, and two of them are worth saying why about.**
  * `PackImportConfirm` and `JsonPackTransfer` are the arriving and leaving halves of this same
- * choreography, and the code below is theirs — but they are a *staged import* rather than a row's
+ * choreography, and the code here is theirs — but they are a *staged import* rather than a row's
  * two-press question: the state that decides whether the confirmation is showing is a pending import
  * held in a store, and it is read by two sibling components rather than one. This hook owns
  * `isConfirming` itself, which is what the five call sites need and what those two cannot use.
@@ -122,15 +74,9 @@ export interface ConfirmInPlace {
  *
  * **Confirming**, the ask button may not come back at all — the row it was in has gone — or may come
  * back unusable, which is the history drawer's *Clear history* returning `disabled` the moment the
- * collection it counts is empty. So the destination is **where the next Tab would have gone**: the
- * first tab stop after the departed block that is still usable, and failing that the nearest one
- * before it. Those two lists are captured before the act runs, while the block is still there to
- * measure; which of them is usable is asked afterwards, when the page has settled.
- *
- * **The act is awaited and the commit is flushed for that reason.** A store write that has been
- * started but not finished leaves the page one render short of the truth — the last history row is
- * still on screen and the footer's two buttons are both still enabled — so a destination chosen then
- * is a control that is about to be disabled, and Chromium drops focus to `<body>` the moment it is.
+ * collection it counts is empty. So the keyboard goes to **where the next Tab would have gone**,
+ * which `keepFocusThrough` works out: it is shared with `ProjectMoveField`, whose Move button takes
+ * its row out of a filtered list in exactly this way.
  */
 export function useConfirmInPlace(): ConfirmInPlace {
   const [isConfirming, setIsConfirming] = useState(false);
@@ -161,7 +107,7 @@ export function useConfirmInPlace(): ConfirmInPlace {
   useEffect(() => {
     if (!isReturningToAsk.current) return;
     const ask = askRef.current;
-    if (ask === null || !isUsable(ask)) return;
+    if (ask === null || !isUsableTabStop(ask)) return;
     isReturningToAsk.current = false;
     ask.focus();
   });
@@ -176,26 +122,16 @@ export function useConfirmInPlace(): ConfirmInPlace {
   }
 
   async function confirm(act: () => void | Promise<void>): Promise<void> {
-    // The Cancel button where the confirmation swapped the row out, and the ask button where it
-    // asked on the button itself — either way, the control the press was aimed at.
-    const anchor = cancelRef.current ?? askRef.current;
-    const around = anchor === null ? null : surroundingTabStops(anchor);
-    await act();
-    // **Flushed here rather than answered by an effect**, and that is not an optimisation. Three of
-    // the five call sites are a list row, and the act destroys the row — so this component is one of
-    // the things that has gone, and no effect of its own will ever run again. Flushing commits the
-    // store's removal together with this state change, which is what lets the destination below be
-    // chosen from the page as it actually is: the row gone, and the collection-wide controls already
-    // `disabled` where emptying the collection is what disables them.
-    flushSync(() => {
-      setIsConfirming(false);
+    await keepFocusThrough({
+      // The Cancel button where the confirmation swapped the row out, and the ask button where it
+      // asked on the button itself — either way, the control the press was aimed at.
+      anchor: cancelRef.current ?? askRef.current,
+      act,
+      settle: () => {
+        setIsConfirming(false);
+      },
+      home: () => askRef.current,
     });
-    const ask = askRef.current;
-    const destination =
-      (ask !== null && isUsable(ask) ? ask : null) ??
-      around?.after.find(isUsable) ??
-      around?.before.find(isUsable);
-    destination?.focus();
   }
 
   return { isConfirming, attachAsk, attachCancel, ask, cancel, confirm };

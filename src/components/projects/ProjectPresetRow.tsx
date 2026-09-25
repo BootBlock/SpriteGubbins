@@ -7,7 +7,7 @@ import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { PresetCardSpecs } from '../tabs/PresetCardSpecs.tsx';
 import { PresetDetailsForm } from './PresetDetailsForm.tsx';
-import { ProjectSelectField } from './ProjectSelectField.tsx';
+import { ProjectMoveField } from './ProjectMoveField.tsx';
 
 interface ProjectPresetRowProps {
   readonly preset: CustomArchetype;
@@ -77,15 +77,13 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
 
       <PresetCardSpecs category={preset.category} subject={preset.subject} output={preset.output} />
 
-      <ProjectSelectField
-        label="Project"
-        tooltip={PROJECT_ACTION_TOOLTIPS.movePresetProject}
-        value={preset.projectId}
+      <ProjectMoveField
+        projectId={preset.projectId}
         // Worded as the row's buttons are, so the dropdown reads as one of them in a list of controls.
-        nameQualifier={`for preset ${preset.name}`}
-        onChange={(projectId) => {
-          void moveCustomPreset(preset.id, projectId);
-        }}
+        subject={`preset ${preset.name}`}
+        tooltip={PROJECT_ACTION_TOOLTIPS.movePresetProject}
+        moveTooltip={PROJECT_ACTION_TOOLTIPS.confirmMovePreset}
+        onMove={(projectId) => moveCustomPreset(preset.id, projectId)}
       />
 
       {isConfirming ? (
