@@ -997,8 +997,20 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * guidance. It is code a worker runs.
  *
  * 2434 leaves **0.54 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2434 by the quantiser's thread transferring its result** (issue #318). It posted
+ * every result as a structured clone, copying up to 100 MB of pixels and difference map it dropped
+ * straight afterwards, so it now hands both buffers over — and checks, before it does, that the
+ * pixels are not the sheet it keeps. Measured against `main` at `5606d76`, rebuilt from the same
+ * lockfile, with the ceiling forced to zero in each tree so both figures are the ones
+ * `assertPrecacheContract` receives: **2433.99 KiB** on `main` and **2434.13** here, a delta of
+ * **0.14** that crossed a ceiling the base sat 0.01 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets` listings summed by
+ * chunk name, all 147 bytes land in `quantiseWorker`. It is code a worker runs.
+ *
+ * 2435 leaves **0.87 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2434;
+export const PRECACHE_CEILING_KIB = 2435;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
