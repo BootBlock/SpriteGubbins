@@ -9,12 +9,23 @@
  * it too, so that its native-grid carve-out points at a block Sol forwards rather than at a section
  * number the image model never receives.
  *
- * It and `SCOPE_AND_PRECEDENCE_HEADING` are the only headings extracted this way, because they are
- * the only ones another file names. A heading cited solely by the prose around it stays written
- * where it is read. Both sit above the template's own documentation rather than between it and the
- * constant, which would leave that long comment attached to a short string.
+ * It, `RIG_GEOMETRY_HEADING` and `SCOPE_AND_PRECEDENCE_HEADING` are the only headings extracted
+ * this way, because they are the only ones another file names. A heading cited solely by the prose
+ * around it stays written where it is read. All three sit above the template's own documentation
+ * rather than between it and the constant, which would leave that long comment attached to a short
+ * string.
  */
 export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is delivered at';
+
+/**
+ * The heading of section 5's piece-geometry block, which states every size the native grid counts
+ * in when a rig contract is loaded.
+ *
+ * On that sheet the native-grid block states no size of its own: it points at this block, so
+ * `utils/modelWrapperText/sol.ts` tells Sol to forward both, and names this one by the same constant
+ * for the reason the one above gives (issue #397).
+ */
+export const RIG_GEOMETRY_HEADING = 'Piece geometry — the rig these pieces are drawn for';
 
 /**
  * The heading that divides section 0 into what the image must be and how to read everything else.
@@ -851,7 +862,7 @@ along its own long axis, and every articulation left at its neutral angle. Never
 segment — flexion comes from the rig rotating separate rigid segments.
 [IF:RIG_CONTRACT]
 
-### Piece geometry — the rig these pieces are drawn for
+### ${RIG_GEOMETRY_HEADING}
 [DEFINE:RIG_PIECE_GEOMETRY]
 
 These sizes are the engine’s, not a preference: the pieces are assembled by a rig that places each
