@@ -12,18 +12,18 @@ import { mergeIsExempt } from './mergeIsExempt.ts';
 
 const white: Rgba = { r: 255, g: 255, b: 255, a: 255 };
 
-const REDUCTIONS: readonly (ColorReduction | null)[] = [
-  null,
-  { kind: 'MAX_COLORS', maxColors: 16 },
-  { kind: 'CHANNEL_DEPTH', bitsPerChannel: 4 },
-  { kind: 'PALETTE', entries: [white] },
-  { kind: 'LOCKED', entries: [white], snap: 21 },
+/** Each reduction, and whether its colours were stated by the reader — the answer, written down. */
+const REDUCTIONS: readonly (readonly [ColorReduction | null, boolean])[] = [
+  [null, false],
+  [{ kind: 'MAX_COLORS', maxColors: 16 }, false],
+  [{ kind: 'CHANNEL_DEPTH', bitsPerChannel: 4 }, false],
+  [{ kind: 'PALETTE', entries: [white] }, true],
+  [{ kind: 'LOCKED', entries: [white], snap: 21 }, true],
 ];
 
 describe('mergeIsExempt', () => {
   it('holds the merge back under a pinned or a locked palette with no dither, and nowhere else', () => {
-    for (const reduction of REDUCTIONS) {
-      const stated = reduction?.kind === 'PALETTE' || reduction?.kind === 'LOCKED';
+    for (const [reduction, stated] of REDUCTIONS) {
       for (const dither of DITHER_PATTERNS) {
         expect(mergeIsExempt({ reduction, dither }), `${reduction?.kind ?? 'none'} / ${dither}`).toBe(
           stated && dither === 'NONE',

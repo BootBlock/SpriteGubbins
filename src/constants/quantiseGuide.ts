@@ -1,5 +1,6 @@
 import type { TargetSize } from '../types/output.ts';
-import type { ColorPlan, PixelGrid } from '../types/quantiser.ts';
+import type { ColorPlan, DitherPattern, PixelGrid } from '../types/quantiser.ts';
+import { mergeIsExempt } from '../utils/mergeIsExempt.ts';
 
 /**
  * The guide panel's copy: what quantising is, and how to find a scale by eye when no reading
@@ -98,24 +99,28 @@ export function targetCeilingAdvice(suggested: PixelGrid | null, target: TargetS
  * the studio's" while the pipeline maps the sheet onto a held palette is the same contradiction
  * this function was written from the plan to avoid.
  *
- * **`dithered` is the one thing the plan cannot say**, and it changes the second sentence rather
+ * **The dither is the one thing the plan cannot say**, and a positional one changes the second sentence rather
  * than the first: the policy is whatever the plan names either way, but a dither moves it to the
  * end of the pipeline and takes the two cleanup passes past it — so a paragraph telling a reader
  * those dials tidy what the policy produced would have the order backwards for exactly the sheets
  * where the order is worth knowing. See `quantiseImage`, which holds the rule.
  *
  * **Without a dither, a stated palette — pinned or locked — switches the sheet-wide merge off
- * entirely**, not only for its own entries. `mergeIsExempt` is the rule, and the second sentence
- * names it for both, so the paragraph agrees with the withdrawn Colour merge slider beside it.
+ * entirely**, not only for its own entries. The paragraph asks `mergeIsExempt` rather than
+ * restating it, so it agrees with the pipeline and with the withdrawn Colour merge slider beside it,
+ * and names the palette only to say why.
  */
-export function colourAdvice(plan: ColorPlan, dithered: boolean): string {
+export function colourAdvice(plan: ColorPlan, dither: DitherPattern): string {
+  // A dither is positional only against a palette to dither toward: with no reduction in force the
+  // pipeline has no palette step to move, and `quantiseImage` reads the dither not at all.
+  const dithered = dither !== 'NONE' && plan.reduction !== null;
   const cleanup = dithered
     ? 'The dither is that policy applied positionally rather than one colour at a time, so it runs after the cleanup dials on this tab rather than before them — which leaves those dials tidying what the reading made of the sheet rather than the pattern drawn from it.'
-    : plan.reduction?.kind === 'LOCKED'
-      ? 'The cleanup dials on this tab only tidy what that policy produced, and the sheet-wide merge is left off entirely, since folding two held colours together would edit the palette the rest of the series is mapped onto.'
-      : plan.reduction?.kind === 'PALETTE'
-        ? 'The cleanup dials on this tab only tidy what that policy produced, and the sheet-wide merge is left off entirely, since folding two pinned colours together would undo the studio’s statement of which colours are distinct.'
-        : 'The cleanup dials on this tab only tidy what that policy produced.';
+    : !mergeIsExempt({ reduction: plan.reduction, dither })
+      ? 'The cleanup dials on this tab only tidy what that policy produced.'
+      : plan.reduction?.kind === 'LOCKED'
+        ? 'The cleanup dials on this tab only tidy what that policy produced, and the sheet-wide merge is left off entirely, since folding two held colours together would edit the palette the rest of the series is mapped onto.'
+        : 'The cleanup dials on this tab only tidy what that policy produced, and the sheet-wide merge is left off entirely, since folding two pinned colours together would undo the studio’s statement of which colours are distinct.';
 
   if (plan.reduction?.kind === 'LOCKED') {
     return `Colour policy is the palette locked on this tab: ${plan.effect}. It supersedes the studio’s ${plan.studioSetting} setting for as long as it is held, which is what keeps a series of sheets in one set of colours — unlock it below to hand the decision back. ${cleanup}`;

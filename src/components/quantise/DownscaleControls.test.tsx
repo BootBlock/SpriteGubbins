@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { COLOR_MERGE_HELD_REASONS } from '../../constants/quantiser.ts';
+import { COLOR_MERGE_HELD_REASONS, COLOR_MERGE_RANGE } from '../../constants/quantiser.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { ColorReduction, Rgba } from '../../types/quantiser.ts';
 import { DownscaleControls } from './DownscaleControls.tsx';
@@ -30,17 +30,18 @@ describe('DownscaleControls', () => {
   it.each([
     ['pinned', PINNED, COLOR_MERGE_HELD_REASONS.PALETTE],
     ['locked', LOCKED, COLOR_MERGE_HELD_REASONS.LOCKED],
-  ])('withdraws the merge under a %s palette with no dither, and says why', async (_, reduction, reason) => {
+  ])('withdraws the merge under a %s palette with no dither, and says why', (_, reduction, reason) => {
     render(<DownscaleControls reduction={reduction} />);
     const before = useQuantiseStore.getState().colorMerge;
-    const user = userEvent.setup();
 
     expect(mergeSlider()).toHaveAttribute('aria-disabled', 'true');
     expect(mergeSlider()).toHaveAccessibleDescription(reason);
 
-    mergeSlider().focus();
-    await user.keyboard('{ArrowRight}');
+    // A change event rather than a key: user-event moves no range input on an arrow key, so a
+    // keyboard step here would pass whether or not the move was refused.
+    fireEvent.change(mergeSlider(), { target: { value: String(COLOR_MERGE_RANGE.max) } });
 
+    expect(before).not.toBe(COLOR_MERGE_RANGE.max);
     expect(useQuantiseStore.getState().colorMerge).toBe(before);
   });
 

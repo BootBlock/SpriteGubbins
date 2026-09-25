@@ -14,9 +14,9 @@ interface RangeFieldProps {
    * When set, the reason the dial reaches nothing — shown in place of nothing at all, as
    * `NumberField` and `CheckboxField` both show theirs.
    *
-   * Optional, for the reason `SelectField` gives for its own: one of the app's seventeen sliders has
-   * a setting that takes it over — the colour merge, which does not run under a stated palette — and
-   * the other sixteen passing a permanently-empty string would bury the one that does.
+   * Optional, for the reason `SelectField` gives for its own: one of the app's sixteen range fields
+   * has a setting that takes it over — the colour merge, which does not run under a stated palette —
+   * and the other fifteen passing a permanently-empty string would bury the one that does.
    */
   readonly disabledReason?: string;
   readonly onChange: (value: number) => void;

@@ -173,7 +173,7 @@ export function QuantiseTab() {
           suggested={suggested}
           grid={grid}
           colorPlan={colorPlan}
-          dithered={dither !== 'NONE' && colorPlan.reduction !== null}
+          dither={dither}
         />
 
         <ImageDropZone acceptFile={acceptFile} currentName={source?.name ?? null} onClear={clear} />

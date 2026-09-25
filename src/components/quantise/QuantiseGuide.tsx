@@ -7,7 +7,7 @@ import {
   targetCeilingAdvice,
 } from '../../constants/quantiseGuide.ts';
 import type { TargetSize } from '../../types/output.ts';
-import type { ColorPlan, PixelGrid, SheetReading } from '../../types/quantiser.ts';
+import type { ColorPlan, DitherPattern, PixelGrid, SheetReading } from '../../types/quantiser.ts';
 import { sheetReadingFacts } from '../../utils/sheetReadingFacts.ts';
 
 interface QuantiseGuideProps {
@@ -39,12 +39,13 @@ interface QuantiseGuideProps {
   /** What the studio decided about colour, as the pipeline was handed it. */
   readonly colorPlan: ColorPlan;
   /**
-   * Whether a dither is in force, which the plan alone cannot say.
+   * The dither pattern chosen on this tab, which the plan alone cannot say.
    *
-   * It changes where in the pipeline that plan is applied rather than what it is, and the paragraph
-   * below says so — see `colourAdvice`.
+   * It changes where in the pipeline that plan is applied rather than what it is, and whether the
+   * sheet-wide merge runs under a stated palette, and the paragraph below says both — see
+   * `colourAdvice`, which decides from the pattern rather than from a flag derived from it here.
    */
-  readonly dithered: boolean;
+  readonly dither: DitherPattern;
 }
 
 /**
@@ -70,7 +71,7 @@ export function QuantiseGuide({
   suggested,
   grid,
   colorPlan,
-  dithered,
+  dither,
 }: QuantiseGuideProps) {
   const state = hasSheet ? adviceFor(reading, grid) : null;
   // The ceiling is procedure input, so it accompanies the procedure — and only while a number still
@@ -124,7 +125,7 @@ export function QuantiseGuide({
       </ol>
 
       <p className="mt-4 max-w-3xl text-xs leading-relaxed text-ink-faint">
-        {colourAdvice(colorPlan, dithered)}
+        {colourAdvice(colorPlan, dither)}
       </p>
     </section>
   );
