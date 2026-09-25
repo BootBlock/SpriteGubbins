@@ -8,7 +8,7 @@ import {
   LETTERING_IS_A_COMPONENT,
   RENDER_STYLE_SURFACE,
 } from '../constants/promptText/index.ts';
-import { NATIVE_GRID_HEADING } from '../constants/promptTemplate.ts';
+import { NATIVE_GRID_HEADING, SCOPE_AND_PRECEDENCE_HEADING } from '../constants/promptTemplate.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { RENDER_STYLES } from '../types/rendering.ts';
@@ -17,6 +17,7 @@ import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 import { wrapForSeedream, wrapForSol } from './modelWrapperText/index.ts';
 import { generatePrompt } from './promptCompiler.ts';
+import { sectionOf } from '../test/promptSections.ts';
 
 /**
  * The wrappers differ in *kind*, not in wording — a reasoning contract, command flags, a negative
@@ -238,7 +239,24 @@ describe('wrapForModel', () => {
     expect(prompt).toContain('You are not the model that draws this sheet');
     // Naming the three parts is the point — a bare "do not summarise" gives it nothing to protect
     // when it does have to shorten something.
-    expect(prompt).toContain('section 0, the object\nyaws in section 3 and the inventory in section 4');
+    expect(prompt).toContain(
+      'the numbered items\nof section 0, the object yaws in section 3 and the inventory in section 4',
+    );
+  });
+
+  it('forwards section 0’s numbered items and keeps the rules addressed to Sol back', () => {
+    // Issue #403: the directive once required all of section 0 as written, which ordered the
+    // category tripwire — "Say so rather than resolving it" — forwarded to an image endpoint that
+    // cannot reply. The items are what the renderer needs; the block under the subheading is Sol's.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
+    const contract = sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT');
+
+    expect(wrapperOnly(prompt)).toContain(`under “${SCOPE_AND_PRECEDENCE_HEADING}” is addressed to you`);
+    expect(wrapperOnly(prompt)).not.toMatch(/carry section \d/);
+    // The heading the directive quotes is one section 0 carries, with the tripwire beneath it.
+    const heading = contract.indexOf(`### ${SCOPE_AND_PRECEDENCE_HEADING}`);
+    expect(heading).toBeGreaterThan(0);
+    expect(contract.indexOf('Say so rather than resolving')).toBeGreaterThan(heading);
   });
 
   it('adds section 2’s native grid to what Sol may not shorten, under its own heading', () => {
@@ -403,7 +421,8 @@ describe('wrapForModel', () => {
       expect(wrapperOnly(prompt), title).toContain(sentence(headingNumber(prompt, title)));
     };
 
-    cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `must still carry section ${n},`);
+    cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `\nof section ${n}, the object yaws`);
+    cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `What section ${n} states under`);
     cites(sol, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `yaws in section ${n} `);
     cites(sol, 'COMPONENT INVENTORY', (n) => `the inventory in section ${n} `);
     cites(sol, 'RENDER STYLE', (n) => `Section ${n} states figures as well`);
@@ -427,9 +446,10 @@ describe('wrapForModel', () => {
     ]);
 
     expect(wrapForSol('body', true, true, shifted)).toContain(
-      'still carry section 1, the object\nyaws in section 4 and the inventory in section 5',
+      'of section 1, the object yaws in section 4 and the inventory in section 5',
     );
     expect(wrapForSol('body', true, true, shifted)).toContain('the self-audit in section 8');
+    expect(wrapForSol('body', true, true, shifted)).toContain('What section 1 states under');
     expect(wrapForSol('body', true, true, shifted)).toContain('Section 3 states figures as well');
     expect(wrapForSeedream('body', shifted)).toContain('precedence order stated in section 1');
   });

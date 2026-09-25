@@ -924,7 +924,8 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * wrappers are bundled, and 0.02 comes back out of `quantiseDials`. It is almost all prompt text:
  * the second wording is a whole branch of the template that every target now ships.
  *
- * 2429 leaves **0.78 KiB**, the smallest whole figure over the build.
+ * 2429 leaves **0.78 KiB**, the smallest whole figure over the build. Merged with `main` at `d39af28`,
+ * whose Sol wrapper change landed alongside it, the build reports **2428.25**, which leaves 0.75.
  */
 export const PRECACHE_CEILING_KIB = 2429;
 

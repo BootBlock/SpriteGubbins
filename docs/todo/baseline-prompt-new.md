@@ -349,9 +349,9 @@ Satisfy this section before any aesthetic consideration.
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
 [/IF]
 [IF:LETTERING_IS_A_COMPONENT]
-[N]. The components section [SEC:INVENTORY] lists are characters, and they are the **only** lettering
-   this image carries. No watermark, signature, caption, legend, index number or codepoint anywhere
-   in it, and nothing written beside a component to name it — grid position is the only identity a
+[N]. The components the inventory lists are characters, and they are the **only** lettering this
+   image carries. No watermark, signature, caption, legend, index number or codepoint anywhere in
+   it, and nothing written beside a component to name it — grid position is the only identity a
    component has, exactly as it is on every other sheet. No two components are drawn touching or set
    side by side as a word, a name or a specimen line.
 [/IF]
@@ -363,16 +363,17 @@ Satisfy this section before any aesthetic consideration.
 [IF:NATIVE_GRID]
    What that forbids is **resampling** — any resize that invents intermediate values, softens a
    boundary or leaves a pixel edge blurred. A native pixel grid presented at a whole-number multiple
-   does none of that, and is what this sheet asks for: section [SEC:STYLE] states the grid and the multiple,
-   and every edge in the delivered image is an edge that was drawn on that grid.
+   does none of that, and is what this sheet asks for: the block headed “The native grid, and the scale it is delivered at”
+   states the grid and the multiple, and every edge in the delivered image is an edge that was drawn
+   on that grid.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
 [/IF]
 [IF:PALETTE]
-[N]. Every colour on every component comes from the palette section [SEC:STYLE] fixes, and no colour outside
-   it appears anywhere on them. The background field is the exception.
+[N]. Every colour on every component comes from the palette this specification fixes, and no colour
+   outside it appears anywhere on them. The background field is the exception.
 [IF:KEY_COLOUR]
    It stays the key colour named above.
 [/IF]
@@ -380,6 +381,13 @@ Satisfy this section before any aesthetic consideration.
    It stays fully transparent, and takes no colour from the palette.
 [/IF]
 [/IF]
+[IF:MULTI_DIRECTION]
+[N]. A component the inventory lists in more than one direction is one component, drawn once per
+   direction: each drawing is that same geometry turned to its own object yaw — never one view
+   repeated, never a mirrored copy, never the same view with its details moved.
+[/IF]
+
+### Scope and precedence
 [IF:SERIES]
 
 **This is sheet [DEFINE:SERIES_POSITION] of [DEFINE:SERIES_TOTAL] of one deliverable, and the count
@@ -397,14 +405,6 @@ building, floor tiles on a character — this specification is malformed. Say so
 it: drawing what the inventory asks for is how a sheet ends up being the wrong subject entirely.
 **That settles before the precedence order below is reached** — a category disagreement is a fault
 to report, never a conflict to rank.
-[/IF]
-[IF:MULTI_DIRECTION]
-
-**A component the inventory lists in more than one direction is one component, drawn once per
-direction.** Each of those drawings is that same geometry turned to the object yaw section [SEC:CAMERA] gives
-it — never one view repeated, never a mirrored copy, never the same view with its details moved.
-Section [SEC:CAMERA] states how far each turn goes and what it must show; this is the contract that the turns
-happen at all, and it is the clause a directional sheet misses most often.
 [/IF]
 
 **Where two instructions pull against each other**, satisfy them in this order: the component count
@@ -2542,6 +2542,32 @@ because the target names a typical whole figure rather than a hard per-component
 drawn beside a torso is in proportion to it, per §0's one-scale rule. The new block says the same:
 the grid is what a *whole subject* is drawn on, with every smaller piece in proportion to it on that
 same grid. What is uniform across the sheet is the pixel, not the cell.
+
+**R9. Sol was told to forward all of §0, and most of §0 was not for the model it forwards to.** The
+Sol directive required §0 "as they are written here". On the default Sol prompt (CHARACTER, eight
+directions) §0 was 639 words, about 91% of the ~700-word hand-off `sol.ts` records
+observing. It cited other sections eight times, which point at nothing in a hand-off that carries
+only what Sol composed, and it carried R4's tripwire, gated on `RETURNS_TEXT` precisely because an
+image endpoint cannot say anything back — which the directive then ordered sent to one. Sol either
+spent its composition on rules the renderer cannot use or disobeyed "as written"
+([issue #403](https://github.com/BootBlock/SpriteGubbins/issues/403)).
+
+§0 now divides at a `### Scope and precedence` subheading. Above it are the numbered items, which
+describe the delivered image and cite no section by number: the lettering item says "the inventory",
+the palette item "the palette this specification fixes", and the native-grid carve-out names the
+block Sol is told to forward by its heading. Below it are the series note, the tripwire, the
+precedence order, the validation-pass rank and the exclusion ranking, all addressed to the reader.
+The directive protects "the numbered items of section 0" and tells Sol that the block under the
+subheading is its own to act on, and to leave out of the call. “Act on” rather than “settle”,
+because the tripwire under it tells Sol to report a malformed specification, never to resolve it.
+
+**The multi-facing clause moved the other way, into the items**, as their last entry and without its
+two citations of §3. It is the one paragraph of the old §0 that describes the image rather than the
+reading of the document, and the one Sol most needs to forward. **A subheading rather than a new
+section**, because a new §1 would renumber every section after it, and hundreds of comments,
+tests and records across the repository cite those numbers by hand. `promptCompiler.test.ts` sweeps
+category × target × gate and fails on any `section N` in the items or any reader rule above the
+subheading. Whether the change moves what a delivered Sol sheet holds is not measured.
 
 ---
 

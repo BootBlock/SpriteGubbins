@@ -5,14 +5,29 @@
  * tool word for word, and a hand-typed copy of the heading in the wrapper would go stale the first
  * time this one is reworded — silently, since a pointer at a heading that no longer exists reads as
  * an instruction rather than as a fault. One constant, substituted into the template below, is what
- * makes the two the same string rather than two strings a test has to keep level.
+ * makes the two the same string rather than two strings a test has to keep level. Section 0 names
+ * it too, so that its native-grid carve-out points at a block Sol forwards rather than at a section
+ * number the image model never receives.
  *
- * It is the only heading extracted this way, because it is the only one another file names. A
- * heading cited solely by the prose around it stays written where it is read. It sits above the
- * template's own documentation rather than between it and the constant, which would leave that
- * hundred-and-fifty-line comment attached to this three-word string.
+ * It and `SCOPE_AND_PRECEDENCE_HEADING` are the only headings extracted this way, because they are
+ * the only ones another file names. A heading cited solely by the prose around it stays written
+ * where it is read. Both sit above the template's own documentation rather than between it and the
+ * constant, which would leave that long comment attached to a short string.
  */
 export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is delivered at';
+
+/**
+ * The heading that divides section 0 into what the image must be and how to read everything else.
+ *
+ * Above it are the numbered items, which describe the delivered image and cite no other section, so
+ * they stay true wherever they travel. Below it are the series note, the category tripwire and the
+ * precedence rules, which are addressed to the model reading this specification. On most targets
+ * that is the model that draws, and the heading costs nothing. On ChatGPT 5.6 Sol it is not:
+ * `utils/modelWrapperText/sol.ts` tells Sol to forward the numbered items as written and to settle
+ * this block itself, so the image tool is never sent a tripwire that asks it to reply in text, or
+ * eight citations of sections it never receives (issue #403).
+ */
+export const SCOPE_AND_PRECEDENCE_HEADING = 'Scope and precedence';
 
 /**
  * The prompt, before substitution.
@@ -122,9 +137,9 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * re-crop it, because the components were laid out for the shape that came back. So it now sits
  * with the count, the key colour and the text ban — the properties of the delivered image that
  * survive on 26 or 27 of those 27 sheets — and the self-audit checks it beside them. **Naming
- * section 0 is what carries it across the Sol hand-off**, which is why nothing was added to that
- * wrapper's list: it already protects the whole section, so a contract item is protected by being
- * one. The layout sentence keeps the ratio as well, deliberately — all eight compositions in the
+ * section 0's numbered items is what carries it across the Sol hand-off**, which is why nothing was
+ * added to that wrapper's list: it protects every one of them, so a contract item is protected by
+ * being one. The layout sentence keeps the ratio as well, deliberately — all eight compositions in the
  * pack that carried that sentence delivered a 16:9 sheet, so it is the half that already worked.
  * **What none of this establishes is what Sol returns now**, which needs a re-run of the pack and
  * cannot be settled from here.
@@ -327,9 +342,9 @@ Satisfy this section before any aesthetic consideration.
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
 [/IF]
 [IF:LETTERING_IS_A_COMPONENT]
-[N]. The components section [SEC:INVENTORY] lists are characters, and they are the **only** lettering
-   this image carries. No watermark, signature, caption, legend, index number or codepoint anywhere
-   in it, and nothing written beside a component to name it — grid position is the only identity a
+[N]. The components the inventory lists are characters, and they are the **only** lettering this
+   image carries. No watermark, signature, caption, legend, index number or codepoint anywhere in
+   it, and nothing written beside a component to name it — grid position is the only identity a
    component has, exactly as it is on every other sheet. No two components are drawn touching or set
    side by side as a word, a name or a specimen line.
 [/IF]
@@ -341,16 +356,17 @@ Satisfy this section before any aesthetic consideration.
 [IF:NATIVE_GRID]
    What that forbids is **resampling** — any resize that invents intermediate values, softens a
    boundary or leaves a pixel edge blurred. A native pixel grid presented at a whole-number multiple
-   does none of that, and is what this sheet asks for: section [SEC:STYLE] states the grid and the multiple,
-   and every edge in the delivered image is an edge that was drawn on that grid.
+   does none of that, and is what this sheet asks for: the block headed “${NATIVE_GRID_HEADING}”
+   states the grid and the multiple, and every edge in the delivered image is an edge that was drawn
+   on that grid.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
 [/IF]
 [IF:PALETTE]
-[N]. Every colour on every component comes from the palette section [SEC:STYLE] fixes, and no colour outside
-   it appears anywhere on them. The background field is the exception.
+[N]. Every colour on every component comes from the palette this specification fixes, and no colour
+   outside it appears anywhere on them. The background field is the exception.
 [IF:KEY_COLOUR]
    It stays the key colour named above.
 [/IF]
@@ -358,6 +374,13 @@ Satisfy this section before any aesthetic consideration.
    It stays fully transparent, and takes no colour from the palette.
 [/IF]
 [/IF]
+[IF:MULTI_DIRECTION]
+[N]. A component the inventory lists in more than one direction is one component, drawn once per
+   direction: each drawing is that same geometry turned to its own object yaw — never one view
+   repeated, never a mirrored copy, never the same view with its details moved.
+[/IF]
+
+### ${SCOPE_AND_PRECEDENCE_HEADING}
 [IF:SERIES]
 
 **This is sheet [DEFINE:SERIES_POSITION] of [DEFINE:SERIES_TOTAL] of one deliverable, and the count
@@ -375,14 +398,6 @@ building, floor tiles on a character — this specification is malformed. Say so
 it: drawing what the inventory asks for is how a sheet ends up being the wrong subject entirely.
 **That settles before the precedence order below is reached** — a category disagreement is a fault
 to report, never a conflict to rank.
-[/IF]
-[IF:MULTI_DIRECTION]
-
-**A component the inventory lists in more than one direction is one component, drawn once per
-direction.** Each of those drawings is that same geometry turned to the object yaw section [SEC:CAMERA] gives
-it — never one view repeated, never a mirrored copy, never the same view with its details moved.
-Section [SEC:CAMERA] states how far each turn goes and what it must show; this is the contract that the turns
-happen at all, and it is the clause a directional sheet misses most often.
 [/IF]
 
 **Where two instructions pull against each other**, satisfy them in this order: the component count
