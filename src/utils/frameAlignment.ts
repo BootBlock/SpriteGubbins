@@ -33,11 +33,12 @@ import { spriteStrips } from './spriteStrips.ts';
  * each need to know which of the marked moves the writer had quietly declined. `snapFrames` applies
  * exactly what this marks and refuses nothing of its own.
  *
- * The room a move needs is the box it vacates *and* the box it arrives at, kept clear of every other
- * sprite on the sheet and of every move already accepted — {@link reachesAny} is the shared rule, and
- * the same one the duplicate fold is refused by. On a real sheet it never bites: frames sit in a
- * gutter and a drift is a pixel or two. On a sheet with no gutter it is what stops the pass carrying
- * one frame into the next.
+ * The room a move needs is the box it vacates *and* the box it arrives at, kept further than the
+ * sprite gap from every other sprite on the sheet and from every move already accepted — nearer, and
+ * the next segmentation would merge the neighbour into the moved frame. {@link reachesAny} is the
+ * shared rule, and the same one the duplicate fold is refused by. On a real sheet it never bites:
+ * frames sit in a gutter and a drift is a pixel or two. On a sheet with no gutter it is what stops
+ * the pass carrying one frame into the next.
  *
  * **The figures describe the sheet as it stands now, before any move.** That is the only state in
  * which they mean anything — a frame that has just been put on its slot has a drift of zero whatever
@@ -52,6 +53,8 @@ export function sheetStrips(
   boxes: readonly SpriteBox[],
   /** How far a frame may sit from its slot and be left alone, or `null` to move nothing. */
   snapAbove: number | null,
+  /** The sprite gap `boxes` were merged within, which a move must stay further than. */
+  gap: number,
 ): readonly SpriteStrip[] {
   /** The regions already spoken for, which each later move must keep clear of. */
   const claimed: SpriteBox[] = [];
@@ -76,7 +79,7 @@ export function sheetStrips(
     const frames = row.map((box, index): AlignedFrame => {
       const drift = drifts[index] ?? ORIGIN;
       const measured = shifts[index] ?? ORIGIN;
-      const snapped = admits(snapAbove, drift) && makesRoom(image, box, drift, boxes, claimed);
+      const snapped = admits(snapAbove, drift) && makesRoom(image, box, drift, boxes, claimed, gap);
       return {
         box,
         drift,
@@ -117,6 +120,7 @@ function makesRoom(
   drift: PixelShift,
   boxes: readonly SpriteBox[],
   claimed: SpriteBox[],
+  gap: number,
 ): boolean {
   const left = Math.min(box.left, box.left - drift.x);
   const top = Math.min(box.top, box.top - drift.y);
@@ -133,7 +137,7 @@ function makesRoom(
   // `box` excludes the frame's own entry by **object identity**, which holds because `spriteStrips`
   // copies the row array and not the boxes in it — see the note there, which is the other end of
   // this. Excluding it by value would need a comparison this has no reason to invent.
-  if (reachesAny(region, boxes, box) || reachesAny(region, claimed, null)) return false;
+  if (reachesAny(region, boxes, box, gap) || reachesAny(region, claimed, null, gap)) return false;
 
   claimed.push(region);
   return true;

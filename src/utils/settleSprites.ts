@@ -101,7 +101,9 @@ export function settleSprites(reduced: ImageData, settings: QuantiseSettings): S
   // neighbour to be redrawn — see `snapDuplicates`. Reporting either as a fold would have the panel
   // announcing an edit that did not happen, and would pay a second segmentation for it.
   const fold =
-    settings.duplicateSnap && duplicates.length > 0 ? snapDuplicates(settled, duplicates, boxes) : null;
+    settings.duplicateSnap && duplicates.length > 0
+      ? snapDuplicates(settled, duplicates, boxes, settings.spriteGap)
+      : null;
   const snapped = fold !== null && fold.folded > 0;
   const folded = fold !== null && snapped ? fold.image : settled;
   const foldedSprites = snapped ? spriteSegments(folded, settings.spriteGap) : settledSprites;
@@ -127,6 +129,7 @@ export function settleSprites(reduced: ImageData, settings: QuantiseSettings): S
           // `null` is the one thing that means "move nothing" — a tolerance of 0 still moves every
           // frame that is off its slot, which is the strictest position rather than an off one.
           settings.frameAlignment === 'SNAP' ? settings.frameDriftTolerance : null,
+          settings.spriteGap,
         );
   // `snapFrames` reports how many frames it carried, and `realigned` is that count as a question —
   // the shape the fold above takes rather than the settle's, which asks by identity. The reason for

@@ -19,10 +19,12 @@ import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.
  *
  * **A member whose region would reach anything else on the sheet is left exactly as it was.** That
  * region can be larger than the box it replaces, so it can cross into a neighbour — and overwriting
- * a sprite nobody asked about is the one outcome a fold must never produce. The condition is the
- * segmentation's own: the region has to keep at least one clear pixel between itself and every other
- * sprite's box, and every accepted region before it, which is exactly the separation those boxes
- * already had. Anything closer is skipped, so the sheet keeps a repeat rather than losing a
+ * a sprite nobody asked about is the one outcome a fold must never produce. Nor may it land close
+ * enough for the next segmentation to merge a neighbour into the member, which would change the
+ * sprite count as surely. The condition is therefore the segmentation's own merge rule: the region
+ * has to sit further than `gap` from every other sprite's box, and from every accepted region before
+ * it — the separation the segmentation already found between those boxes, since it would otherwise
+ * have merged them. Anything closer is skipped, so the sheet keeps a repeat rather than losing a
  * neighbour. On a real sheet it does not arise — sprites sit in a gutter, and a canonical is at most
  * a pixel or two larger than the member it is folding.
  *
@@ -44,6 +46,8 @@ export function snapDuplicates(
   groups: readonly SpriteDuplicateGroup[],
   /** Every sprite on the sheet, as `spriteSegments` found them — what a write region must clear. */
   boxes: readonly SpriteBox[],
+  /** The sprite gap `boxes` were merged within, which a write region must stay further than. */
+  gap: number,
 ): { image: ImageData; folded: number } {
   const data = new Uint8ClampedArray(image.data);
   /** The regions already written, which a later one must keep clear of for the same reason. */
@@ -60,7 +64,7 @@ export function snapDuplicates(
         pixels: 0,
       };
       if (region.left + region.width > image.width || region.top + region.height > image.height) continue;
-      if (reachesAny(region, boxes, member.box) || reachesAny(region, written, null)) continue;
+      if (reachesAny(region, boxes, member.box, gap) || reachesAny(region, written, null, gap)) continue;
 
       for (let row = 0; row < region.height; row += 1) {
         const to = pixelOffset(image.width, region.left, region.top + row);

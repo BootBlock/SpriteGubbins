@@ -47,9 +47,12 @@ function blockWith(width: number, height: number, color: Rgba, spot: Rgba, count
   return cells;
 }
 
+/** The sprite gap most cases segment at: eight-connectivity alone, with no merge beyond it. */
+const TOUCHING = 0;
+
 /** The boxes the segmentation finds, which is what the snap is meant to be handed. */
-function boxesOf(image: ImageData): readonly SpriteBox[] {
-  const found = spriteSegments(image, 0);
+function boxesOf(image: ImageData, gap = TOUCHING): readonly SpriteBox[] {
+  const found = spriteSegments(image, gap);
   if (found.kind !== 'SEGMENTED') throw new Error(`Expected SEGMENTED, got ${found.kind}`);
   return found.boxes;
 }
@@ -78,10 +81,10 @@ function cellsOf(image: ImageData, box: SpriteBox): Rgba[] {
   return cells;
 }
 
-/** The whole pass over a sheet, at the tolerance given — segment, read, fold. */
-function fold(image: ImageData, tolerance: number) {
-  const boxes = boxesOf(image);
-  return { boxes, ...snapDuplicates(image, duplicateSprites(image, boxes, tolerance), boxes) };
+/** The whole pass over a sheet, at the tolerance and gap given — segment, read, fold. */
+function fold(image: ImageData, tolerance: number, gap = TOUCHING) {
+  const boxes = boxesOf(image, gap);
+  return { boxes, ...snapDuplicates(image, duplicateSprites(image, boxes, tolerance), boxes, gap) };
 }
 
 describe('snapDuplicates', () => {
@@ -176,6 +179,26 @@ describe('snapDuplicates', () => {
 
     expect(folded).toBe(0);
     expect(snapped.data).toEqual(image.data);
+  });
+
+  it('leaves a member alone rather than growing it to within the sprite gap of a neighbour', () => {
+    // The member is a row shorter than the canonical, and a third sprite sits two clear rows below
+    // it — further than a gap of 1, so the segmentation counts three. Taking the canonical's
+    // silhouette would leave one clear row, which the gap merge folds, and the third sprite would be
+    // absorbed into the member. The fold stands down instead. Twenty cells to a side for the reason
+    // the wider-member case above gives: it is what makes the pair a pair at a tolerance of 24.
+    const image = sheetOf(80, 30, [
+      { left: 2, top: 2, cells: block(20, 21, INK) },
+      { left: 30, top: 2, cells: block(20, 20, INK) },
+      { left: 28, top: 24, cells: block(24, 4, FAR) },
+    ]);
+    expect(boxesOf(image, 1)).toHaveLength(3);
+
+    const { image: snapped, folded } = fold(image, 24, 1);
+
+    expect(folded).toBe(0);
+    expect(snapped.data).toEqual(image.data);
+    expect(fold(image, 24, TOUCHING).folded).toBe(1);
   });
 
   it('leaves the segmentation finding the same boxes where every extent already matched', () => {

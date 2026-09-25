@@ -167,3 +167,57 @@ describe('settleSprites — the sprite gap', () => {
     expect(channels(two.image)).toEqual(channels(driftedRow()));
   });
 });
+
+/**
+ * A canonical a row taller than its repeat, with a third sprite two clear rows below the repeat.
+ *
+ * At the narrow gap the three are three sprites, and twenty cells to a side is what makes the first
+ * two one drawing at the fold's tolerance. Folding the repeat would grow it a row, to within the gap
+ * of the third sprite, so the fold has to stand down.
+ */
+function tallerCanonical(): ImageData {
+  return imageFrom(80, 30, (x, y) => {
+    if (x >= 2 && x < 22 && y >= 2 && y < 23) return FILL;
+    if (x >= 30 && x < 50 && y >= 2 && y < 22) return FILL;
+    if (x >= 28 && x < 52 && y >= 24 && y < 28) return EDGE;
+    return CLEAR;
+  });
+}
+
+/**
+ * A row of five frames whose third sits a row high, with a sliver two clear rows below that frame.
+ *
+ * Carrying the frame down onto its slot would leave one clear row between it and the sliver, which
+ * the narrow gap merges — so the move has to be refused.
+ */
+function frameOverSliver(): ImageData {
+  return imageFrom(120, 20, (x, y) => {
+    const frame = (left: number, top: number) => x >= left && x < left + 6 && y >= top && y < top + 6;
+    if ([10, 30, 70, 90].some((left) => frame(left, 4)) || frame(50, 3)) return FILL;
+    return x === 53 && y >= 11 && y < 15 ? EDGE : CLEAR;
+  });
+}
+
+/** How many sprites a settled sheet reports, or `0` where it did not segment. */
+function spriteCount(sheet: ReturnType<typeof settleSprites>): number {
+  return sheet.sprites.kind === 'SEGMENTED' ? sheet.sprites.boxes.length : 0;
+}
+
+/**
+ * A snap tidies the sprites it acts on and never changes how many there are. The count names every
+ * piece, and cuts the pack, the manifest and the `.aseprite` file, so a pass that merged a neighbour
+ * into the sprite it edited would shift all four.
+ */
+describe('settleSprites — a snap keeps the sprite count', () => {
+  it.each([
+    ['the duplicate fold', tallerCanonical, { duplicateSnap: true }],
+    ['the frame alignment', frameOverSliver, { frameAlignment: 'SNAP' as const }],
+  ])('%s leaves a neighbour within the gap of its write alone', (_route, sheet, snap) => {
+    const read = settleSprites(sheet(), READING_ONLY);
+    const snapped = settleSprites(sheet(), { ...READING_ONLY, ...snap });
+
+    expect(spriteCount(read)).toBeGreaterThan(0);
+    expect(spriteCount(snapped)).toBe(spriteCount(read));
+    expect(channels(snapped.image)).toEqual(channels(sheet()));
+  });
+});
