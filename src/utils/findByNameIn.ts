@@ -11,8 +11,8 @@ import { findByName } from './findByName.ts';
  * share a project left every later save and rename acting on whichever the list showed first, so
  * the three have to agree on the set as well as on the comparison, which is `findByName`'s.
  *
- * **A library-pack import does not ask it yet**: `parseLibraryPack` de-duplicates ids, not names,
- * so a pack can still file two records with one name in one project (issue #459).
+ * **A library-pack import applies the same rule** without asking this: it has no library to look
+ * in yet, so `uniqueNamesWithin` renames a later repeat in the file instead (issue #459).
  */
 export function findByNameIn<T extends { readonly name: string; readonly projectId: string }>(
   records: readonly T[],

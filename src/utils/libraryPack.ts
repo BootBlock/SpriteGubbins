@@ -1,4 +1,4 @@
-import { DEFAULT_PROJECT_ID, createDefaultProject } from '../constants/projects.ts';
+import { DEFAULT_PROJECT_ID, PROJECT_NAME_MAX_LENGTH, createDefaultProject } from '../constants/projects.ts';
 import { PRESETS } from '../constants/presets/index.ts';
 import { parseJson, isRecord } from '../db/readers.ts';
 import {
@@ -7,6 +7,7 @@ import {
   parseImportedQuantisePreset,
 } from '../db/importedRows.ts';
 import { firstOfEachId } from './firstOfEachId.ts';
+import { uniqueNamesWithin } from './uniqueNamesWithin.ts';
 import type { LibraryPack } from '../types/libraryPack.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
@@ -63,7 +64,10 @@ function entriesAt(value: Record<string, unknown>, key: string): unknown[] {
  *
  * Entries that cannot be vouched for are dropped rather than repaired into nonsense, which is the
  * rule `db/rows.ts` applies to storage, and a repeated id keeps its first entry — see
- * {@link firstOfEachId}.
+ * {@link firstOfEachId}. **A repeated name keeps both entries**: a later project, or a later save
+ * in one project, with a name an earlier one holds is renamed "Hero (2)" — see
+ * {@link uniqueNamesWithin}, which says why that is renamed rather than dropped. It runs after the
+ * re-filing below, because two saves from different missing projects meet only under Default.
  *
  * **Every preset comes out naming a project that is in the pack.** A file may name a project it
  * does not carry — hand-written, edited, or assembled from two exports — and a preset filed under
@@ -99,7 +103,7 @@ export function parseLibraryPack(text: string, now: number): LibraryPack | null 
       .filter((preset): preset is QuantisePreset => preset !== null),
   );
 
-  return withEveryProjectPresent({ projects, presets, quantisePresets }, now);
+  return withUniqueNames(withEveryProjectPresent({ projects, presets, quantisePresets }, now));
 }
 
 /**
@@ -126,6 +130,20 @@ function withEveryProjectPresent(pack: LibraryPack, now: number): LibraryPack {
     projects: needsDefault ? [...pack.projects, createDefaultProject(now)] : pack.projects,
     presets,
     quantisePresets,
+  };
+}
+
+/**
+ * The pack with the app's name rules applied: a project's name is unique in the library, and a
+ * save's name inside its project, separately for each of the two saved collections. The projects
+ * share one scope, and a renamed project still fits the dropdown's limit.
+ */
+function withUniqueNames(pack: LibraryPack): LibraryPack {
+  const byProject = (entry: { readonly projectId: string }) => entry.projectId;
+  return {
+    projects: uniqueNamesWithin(pack.projects, () => '', PROJECT_NAME_MAX_LENGTH),
+    presets: uniqueNamesWithin(pack.presets, byProject),
+    quantisePresets: uniqueNamesWithin(pack.quantisePresets, byProject),
   };
 }
 

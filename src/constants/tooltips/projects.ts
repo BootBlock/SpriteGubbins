@@ -60,7 +60,7 @@ export const PROJECT_ACTION_TOOLTIPS = {
 
   importLibrary:
     'Reads a library pack this app exported and offers to put its contents in place of yours. It says how many things the file carries and how many of yours would go, and nothing is removed until you agree.\n\n' +
-    'Built-in archetypes in the file are skipped, and a preset naming a project the file does not carry is filed under Default rather than lost.',
+    'Built-in archetypes in the file are skipped, and a preset naming a project the file does not carry is filed under Default rather than lost. Where two projects, or two saves in one project, share a name, both arrive and the later is renamed, for example “Hero (2)”.',
 
   confirmImportLibrary:
     'Replaces your projects and everything saved in them with the file’s. **All of it goes from this browser’s storage and there is no undo**, so cancel and export first if any of it is worth keeping.\n\n' +

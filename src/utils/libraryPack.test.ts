@@ -145,6 +145,92 @@ describe('parseLibraryPack', () => {
     expect(pack?.projects.map((project) => project.id).sort()).toEqual([DEFAULT_PROJECT_ID, 'harbour']);
   });
 
+  it('renames a later save that repeats a name in its project, in both collections', () => {
+    // A hand-edited pack, two exports joined, or an export from before moves refused a clash
+    // (issue #459): Save and Edit details pick their target by name, so the two must differ.
+    const pack = parse({
+      projects: [HARBOUR],
+      presets: [
+        { ...preset(HARBOUR.id, 'a'), name: 'Hero' },
+        { ...preset(HARBOUR.id, 'b'), name: 'hero' },
+      ],
+      quantisePresets: [
+        { ...dials(HARBOUR.id, 'c'), name: 'Crisp' },
+        { ...dials(HARBOUR.id, 'd'), name: 'Crisp' },
+      ],
+    });
+
+    expect(pack?.presets.map((entry) => entry.name)).toEqual(['Hero', 'hero (2)']);
+    expect(pack?.quantisePresets.map((entry) => entry.name)).toEqual(['Crisp', 'Crisp (2)']);
+    // Renamed, not dropped, so the confirmation's count is the file's.
+    expect(pack === null ? 0 : libraryPackSize(pack)).toBe(5);
+  });
+
+  it('renames saves that meet only once re-filed under Default', () => {
+    const pack = parse({
+      projects: [HARBOUR],
+      presets: [
+        { ...preset('lost-one', 'a'), name: 'Hero' },
+        { ...preset('lost-two', 'b'), name: 'Hero' },
+        { ...preset(HARBOUR.id, 'c'), name: 'Hero' },
+      ],
+      quantisePresets: [
+        { ...dials(DEFAULT_PROJECT_ID, 'd'), name: 'Crisp' },
+        { ...dials('lost-one', 'e'), name: 'Crisp' },
+      ],
+    });
+
+    expect(pack?.presets.map((entry) => [entry.projectId, entry.name])).toEqual([
+      [DEFAULT_PROJECT_ID, 'Hero'],
+      [DEFAULT_PROJECT_ID, 'Hero (2)'],
+      // Another project's "Hero" is a different save and keeps its name.
+      [HARBOUR.id, 'Hero'],
+    ]);
+    expect(pack?.quantisePresets.map((entry) => entry.name)).toEqual(['Crisp', 'Crisp (2)']);
+  });
+
+  it('lets a preset and a set of dials share a name, since each collection is its own', () => {
+    const pack = parse({
+      projects: [HARBOUR],
+      presets: [{ ...preset(HARBOUR.id), name: 'Hero' }],
+      quantisePresets: [{ ...dials(HARBOUR.id), name: 'Hero' }],
+    });
+
+    expect(pack?.presets[0]?.name).toBe('Hero');
+    expect(pack?.quantisePresets[0]?.name).toBe('Hero');
+  });
+
+  it('renames a later project that repeats a name, the added Default included', () => {
+    const pack = parse({
+      projects: [
+        HARBOUR,
+        { ...HARBOUR, id: 'harbour-copy' },
+        { ...HARBOUR, id: 'mine', name: DEFAULT_PROJECT_NAME },
+      ],
+      presets: [preset('never-exported')],
+    });
+
+    expect(pack?.projects.map((project) => project.name)).toEqual([
+      'Harbour',
+      'Harbour (2)',
+      DEFAULT_PROJECT_NAME,
+      `${DEFAULT_PROJECT_NAME} (2)`,
+    ]);
+  });
+
+  it('keeps a renamed project inside the dropdown’s limit', () => {
+    const long = 'x'.repeat(PROJECT_NAME_MAX_LENGTH);
+    const pack = parse({
+      projects: [
+        { ...HARBOUR, name: long },
+        { ...HARBOUR, id: 'copy', name: long },
+      ],
+    });
+
+    expect(pack?.projects[1]?.name).toHaveLength(PROJECT_NAME_MAX_LENGTH);
+    expect(pack?.projects[1]?.name.endsWith(' (2)')).toBe(true);
+  });
+
   it('stamps the given instant on a project whose timestamps the file omits', () => {
     const pack = parse({ projects: [{ id: 'harbour', name: 'Harbour' }] });
 
