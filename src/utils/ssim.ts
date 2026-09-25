@@ -4,7 +4,7 @@ import { oklabPlanes } from './oklabPlanes.ts';
 /**
  * How alike two images are, structurally — the structural similarity index of Wang, Bovik, Sheikh
  * and Simoncelli, *Image Quality Assessment: From Error Visibility to Structural Similarity* (IEEE
- * Transactions on Image Processing, 2004), measured on each OKLab axis and averaged.
+ * Transactions on Image Processing, 2004), measured on each OKLab axis and on coverage, and averaged.
  *
  * **Why a structural measure rather than a per-pixel one.** The auto-tune sweep compares a
  * candidate's result against the artwork it was read from, and a mean squared error answers that
@@ -23,6 +23,16 @@ import { oklabPlanes } from './oklabPlanes.ts';
  * a point of likeness, because the hue it threw away was invisible to the thing judging it. OKLab is
  * the space every other colour gate in the app measures in, so the score and the dials it ranks
  * speak the same units; see `oklabPlanes`, which also says why the chroma axes are offset.
+ *
+ * **Coverage is a fourth channel, because on a keyed sheet it is half of what the art is.** The
+ * colour channels read a cleared pixel as one fixed neutral, so on their own they cannot tell a
+ * contour that was deleted to transparency from one redrawn in grey, and the reading stage, the
+ * sprite-edge cleanup and the silhouette anti-aliasing all trade exactly that: they move pixels
+ * across the edge between drawn and cleared, or give the edge a fringe of partial alpha. `alpha` is
+ * in the colour planes' own units, 0 to 255, so the stabilising constants below are the same fraction
+ * of it, and it is averaged in on the same footing as the other three. On a sheet where every pixel
+ * of both images is opaque it is a flat window everywhere and scores 1, so there it lifts every
+ * candidate by the same share and changes no ranking.
  *
  * **The window is a uniform 8 × 8, not the paper's 11 × 11 Gaussian, and the reason is cost.** With
  * a uniform window every quantity below is a rectangle sum, so five summed-area tables answer every
@@ -46,21 +56,22 @@ export function meanSsim(a: ImageData, b: ImageData): number {
   const left = oklabPlanes(a);
   const right = oklabPlanes(b);
 
-  // Averaged rather than weighted, because the three axes are already commensurate: `oklab.ts`
-  // scales them so a step means the same distance on each, which is the property every colour dial
-  // in this tab is calibrated against.
+  // Averaged rather than weighted, because the four channels are already commensurate: `oklab.ts`
+  // scales the three colour axes so a step means the same distance on each, which is the property
+  // every colour dial in this tab is calibrated against, and coverage is read on the same 0–255 range.
   return (
     (channelSsim(left.L, right.L, a.width, a.height) +
       channelSsim(left.a, right.a, a.width, a.height) +
-      channelSsim(left.b, right.b, a.width, a.height)) /
-    3
+      channelSsim(left.b, right.b, a.width, a.height) +
+      channelSsim(left.alpha, right.alpha, a.width, a.height)) /
+    4
   );
 }
 
 /** The square window every quantity is measured over — see the note on the Gaussian above. */
 const SSIM_WINDOW = 8;
 
-/** The range the two stabilising constants are a fraction of, which all three axes share. */
+/** The range the two stabilising constants are a fraction of, which all four channels share. */
 const DYNAMIC_RANGE = 255;
 
 /**
