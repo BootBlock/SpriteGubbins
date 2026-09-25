@@ -107,14 +107,13 @@ describe('IdentitySubjectDigest', () => {
   });
 
   it('reads a declared absence against the category the subject is written for', () => {
-    // CREATURE's default opens with `clothing: NONE`, its pool's declared absence, and the first
-    // press on it used to state that as a feature to reproduce exactly.
+    // CREATURE's default opens with `clothing: NONE`, its pool's declared absence, so the first press
+    // on a fresh CREATURE is the one that must not state it as a feature to reproduce exactly.
     useSubjectStore.setState({ category: 'CREATURE', subject: defaultSubjectFor('CREATURE') });
     render(<IdentitySubjectDigest />);
     press();
 
-    const lock = useOutputStore.getState().output.identityLock;
-    expect(lock).toContain('Features: ');
-    expect(lock.split(/; |, /)).not.toContain('NONE');
+    const features = /(?:^|; )Features: ([^;]*)/.exec(useOutputStore.getState().output.identityLock)?.[1];
+    expect(features?.split(', ')).toEqual(['Triple Jaw Mandibles', 'Bioluminescent Veins']);
   });
 });

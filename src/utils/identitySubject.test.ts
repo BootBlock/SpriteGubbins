@@ -122,7 +122,7 @@ describe('a declared absence', () => {
     const withoutIt = identitySubjectSegments(category, { ...CYBORG, [key]: '' });
 
     expect(identitySubjectSegments(category, answered)).toEqual(withoutIt);
-    expect(withoutIt.map((segment) => segment.value).join()).not.toContain(absent);
+    expect(withoutIt.find((segment) => segment.label === 'Features')?.value).not.toBe('');
   });
 
   it('keeps CREATURE’s shipped default from reproducing its own NONE', () => {

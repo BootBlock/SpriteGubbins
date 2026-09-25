@@ -1,7 +1,7 @@
 import { IDENTITY_SUBJECT_SEGMENTS, IDENTITY_VALUE_SEPARATOR } from '../constants/identityLock.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import type { DigestSegment } from './identityDigest.ts';
-import { absentFieldsOf, declaresAbsence } from './sheetPlanAbsence.ts';
+import { declinedFieldsOf } from './sheetPlanAbsence.ts';
 
 /**
  * The prose an identity digest can state about the subject without the user retyping it.
@@ -26,14 +26,14 @@ import { absentFieldsOf, declaresAbsence } from './sheetPlanAbsence.ts';
  * is the subject saying it has none of what the field describes, which is the `exclusions` field's
  * reason for staying out of a block headed "reproduce exactly". Stated here it read as a feature to
  * reproduce (`Features: Triple Jaw Mandibles, NONE, Bioluminescent Veins`), so it is dropped exactly
- * as a cleared field is, recognised by `declaresAbsence` so that this and the sheet plan that drops
- * the declined entries are one reading of the same value.
+ * as a cleared field is. Which fields are declined is `declinedFieldsOf`, the reading the sheet plan
+ * drops its declined entries by, so the two cannot disagree about one subject.
  */
 export function identitySubjectSegments(
   category: SubjectCategory,
   subject: SubjectDefinition,
 ): readonly DigestSegment[] {
-  const declined = absentFieldsOf(category).filter((key) => declaresAbsence(category, key, subject[key]));
+  const declined = declinedFieldsOf(category, subject);
 
   return IDENTITY_SUBJECT_SEGMENTS.map(({ label, keys }) => ({
     label,
