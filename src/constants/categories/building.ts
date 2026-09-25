@@ -29,7 +29,7 @@ export const BUILDING: CategoryDefinition = {
         'Blacksmith Forge',
         'Cybernetics Clinic',
         'Ancient Temple Gate',
-        'Defense Bunker',
+        'Defence Bunker',
         'Sci-Fi Landing Pad',
         'Tavern Inn',
         'Alchemist Lab',
@@ -94,7 +94,7 @@ export const BUILDING: CategoryDefinition = {
         'What the player comes here to do. It drives the visible affordances, such as a vendor counter, a turret mount or a crafting sign, so the building advertises its function from across the level.',
       options: [
         'Vendor / Shop Kiosk',
-        'Defense Tower Structure',
+        'Defence Tower Structure',
         'Player Housing / Base',
         'Spawn Point',
         'Crafting Facility',

@@ -13,7 +13,7 @@ import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
  * would be a second answer to "is this a call site", and the one that went stale would answer
  * *almost* right, which is the failure mode the docblock below describes.
  *
- * **Parsed with the compiler, for the reason `interface-punctuation.test.ts` parses.** A JSX opening
+ * **Parsed with the compiler, for the reason `authoredStrings.ts` parses.** A JSX opening
  * tag cannot be delimited by hand: its attribute values are arbitrary expressions, so the `>` that
  * closes the tag is indistinguishable from the `>` of a nested element, a comparison or an arrow —
  * and a scanner that balances brackets and skips string literals still runs to the end of the file

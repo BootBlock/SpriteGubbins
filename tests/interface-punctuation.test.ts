@@ -1,7 +1,5 @@
-import { relative, sep } from 'node:path';
-import * as ts from 'typescript';
 import { describe, expect, it } from 'vitest';
-import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
+import { AUTHORED_SOURCES, authoredStrings } from './authoredStrings.ts';
 
 /**
  * Every string the app writes is set with typographic marks, and this is where the *interface* half
@@ -23,13 +21,6 @@ import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
  * `Error` message is therefore held to the rule like anything else. Each exclusion is counted, and a
  * count of zero fails: one that stops suppressing anything has quietly become a hole.
  */
-const SOURCES = scannableSources().filter((path) => {
-  if (!/\.tsx?$/.test(path)) return false;
-  if (/\.test\.tsx?$/.test(path)) return false;
-  // `src/test/` is the harness the suites are built from — doubles, fixtures and decoders. Nothing
-  // in it renders, which is the same ground the colocated `*.test.ts` files stand on.
-  return !relative(process.cwd(), path).split(sep).includes('test');
-});
 
 /**
  * The floor under the walk, split by extension because one number cannot hold both.
@@ -62,18 +53,6 @@ function isJsonDocument(line: string): boolean {
   }
 }
 
-/**
- * The marks a `.tsx` file can spell as an HTML entity, which JSX decodes on the way to the reader.
- *
- * Two components already write `&rsquo;` and `&ldquo;` in JSX text, so the straight counterparts are
- * the next thing somebody types — and a scan reading the source characters alone would never see
- * them. They are put back into the marks they stand for, which is what the reader gets.
- */
-const HTML_MARKS: readonly (readonly [RegExp, string])[] = [
-  [/&(?:apos|#0*39|#x0*27);/gi, "'"],
-  [/&(?:quot|#0*34|#x0*22);/gi, '"'],
-];
-
 /** How often each exclusion actually suppressed a straight mark, so none of them can go vacuous. */
 interface Tally {
   sql: number;
@@ -90,105 +69,40 @@ interface Offence {
   readonly line: string;
 }
 
-/** The two exclusions decided by where a string is authored rather than by what it says. */
-type Silence = 'sql' | 'class';
-
 /**
- * Why the marks beneath this node are syntax, or `null` where they are punctuation.
+ * Every straight mark one file writes into a string the reader reaches.
  *
- * Both answers are about the *authoring position*, which is what lets them be decided without
- * guessing at prose. A statement bound to a `*_SQL` name is parsed by SQLite, whose string delimiter
- * is the straight apostrophe and whose quoted identifier takes the straight double quote. A class
- * string is read by Tailwind, which spells an arbitrary value with straight quotes inside brackets —
- * matched by where the string is bound rather than by that bracket syntax, because a run of `[…]` is
- * also how an array prints, and a rule loose enough to blank one would excuse a straight-quoted array
- * in a sentence.
- *
- * The SQL exclusion is counted like the others, so it fails once no statement needs a quote, and it
- * is then deleted rather than kept for later. Rewording SQL to dodge this suite is not the answer.
+ * A mark under a `Silence` is syntax: SQLite's string delimiter is the straight apostrophe and its
+ * quoted identifier the straight double quote, and Tailwind spells an arbitrary value with straight
+ * quotes inside brackets. The SQL exclusion is counted like the others, so it fails once no statement
+ * needs a quote, and it is then deleted rather than kept for later. Rewording SQL to dodge this suite
+ * is not the answer.
  */
-function silencedBy(node: ts.Node): Silence | null {
-  if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
-    if (node.name.text.endsWith('_SQL')) return 'sql';
-    if (/_CLASS(ES)?$/.test(node.name.text)) return 'class';
-  }
-  if (ts.isJsxAttribute(node) && ts.isIdentifier(node.name) && node.name.text === 'className') {
-    return 'class';
-  }
-  return null;
-}
-
-/** The text of a node that carries authored characters, or `null` for everything else. */
-function authoredText(node: ts.Node): string | null {
-  if (ts.isJsxText(node)) return node.text;
-  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
-  if (ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) return node.text;
-  return null;
-}
-
-/**
- * The offset the node's own text begins at.
- *
- * `getStart` skips leading trivia, which for a JSX text node is the indentation and the newlines
- * that are *part of* `node.text` — so anchoring there and then counting lines within the text
- * reports an offence several lines below where it was written. A JSX text node has no delimiter to
- * step over, so its full start is its text's start.
- */
-function textStart(node: ts.Node, tree: ts.SourceFile): number {
-  return ts.isJsxText(node) ? node.pos : node.getStart(tree);
-}
-
-/** Every straight mark one file writes into a string the reader reaches. */
 function offencesIn(path: string, tally: Tally): Offence[] {
-  const source = sourceText(path);
-  const file = relative(process.cwd(), path).split(sep).join('/');
-  const component = path.endsWith('.tsx');
-  tally[component ? 'components' : 'modules'] += 1;
-  const tree = ts.createSourceFile(
-    path,
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    component ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
-  );
+  tally[path.endsWith('.tsx') ? 'components' : 'modules'] += 1;
   const offences: Offence[] = [];
 
-  const visit = (node: ts.Node, silence: Silence | null): void => {
-    const reason = silence ?? silencedBy(node);
-    const text = authoredText(node);
-
-    if (text !== null) {
-      tally.strings += 1;
-      const start = tree.getLineAndCharacterOfPosition(textStart(node, tree)).line + 1;
-      const decoded = component
-        ? HTML_MARKS.reduce((carried, [entity, mark]) => carried.replace(entity, mark), text)
-        : text;
-      for (const [offset, raw] of decoded.split('\n').entries()) {
-        const line = raw.trim();
-        if (!/['"]/.test(line)) continue;
-        if (reason !== null) {
-          tally[reason] += 1;
-          continue;
-        }
-        if (isJsonDocument(line)) {
-          tally.json += 1;
-          continue;
-        }
-        offences.push({ where: `${file}:${String(start + offset)}`, line });
+  for (const { file, line: start, text, silence } of authoredStrings(path)) {
+    tally.strings += 1;
+    for (const [offset, raw] of text.split('\n').entries()) {
+      const line = raw.trim();
+      if (!/['"]/.test(line)) continue;
+      if (silence !== null) {
+        tally[silence] += 1;
+        continue;
       }
+      if (isJsonDocument(line)) {
+        tally.json += 1;
+        continue;
+      }
+      offences.push({ where: `${file}:${String(start + offset)}`, line });
     }
-
-    ts.forEachChild(node, (child) => {
-      visit(child, reason);
-    });
-  };
-
-  visit(tree, null);
+  }
   return offences;
 }
 
 const TALLY: Tally = { sql: 0, class: 0, json: 0, modules: 0, components: 0, strings: 0 };
-const OFFENCES = SOURCES.flatMap((path) => offencesIn(path, TALLY));
+const OFFENCES = AUTHORED_SOURCES.flatMap((path) => offencesIn(path, TALLY));
 
 describe('the punctuation the interface ships with', () => {
   it.each([

@@ -288,7 +288,7 @@ export const CHARACTER: CategoryDefinition = {
         'Reinforced Exo-Pads',
         'Ceremonial Silk & Gold',
         'Nano-Weave Bodysuit',
-        'Spiked Bone Armor',
+        'Spiked Bone Armour',
         'Industrial Hazard Suit',
         'Patched Wool & Oilskin',
         'Deep-Sea Pressure Suit',

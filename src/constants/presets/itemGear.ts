@@ -21,7 +21,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
     subject: {
       species: 'Keycard / Quest Item',
       gender: 'Standard Issue / Common',
-      age: 'Freshly Synthesized',
+      age: 'Freshly Synthesised',
       role: 'Quest Essential Key',
       setting: 'Cyberpunk Plasma Tech',
       build: 'Pocket-Sized Device',
@@ -106,7 +106,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
       'A cel-shaded shield with four hanging pieces that each move independently of the face. Each is redrawn at all five facings — twenty drawings before the shield is counted, and one piece more would not come back whole.',
     category: 'ITEM',
     subject: {
-      species: 'Armor Piece (Helmet/Shield)',
+      species: 'Armour Piece (Helmet/Shield)',
       gender: 'Mythic God-Tier',
       age: 'Battle-Scarred Veteran',
       role: 'Defensive Barrier Shield',
