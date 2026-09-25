@@ -275,6 +275,18 @@ export interface ComponentGroup {
   /** Prose before the bullets, where the group needs framing rather than just listing. */
   readonly intro?: string;
   readonly entries: readonly ComponentEntry[];
+  /**
+   * Where each piece of this group ends, in the subject's own words, straight after the bullets.
+   *
+   * **Section 4's boundary paragraph gives way to it** (issue #402). The paragraph states the rule in
+   * general terms — a piece stops at its join — and a trunk group states the same rule by naming the
+   * joins, which is what a generator can check a drawing against. Printed together they were one rule
+   * stated twice within ten lines, inside the inventory Sol forwards verbatim, and the general one was
+   * false on a directional core: it justified the rule by "entries the count lists separately" above
+   * an inventory that is the trunk alone. So a group carries it here rather than in {@link outro},
+   * and the compiler reads its presence to decide which of the two statements the sheet gets.
+   */
+  readonly ends?: string;
   /** Prose after the bullets — a constraint that applies to the group as a whole. */
   readonly outro?: string;
 }
@@ -330,6 +342,28 @@ export type SheetFacings = 'run' | readonly [Direction, ...Direction[]];
  * `utils/componentTargetSize.ts` is the seam every reader comes through, and it reads this.
  */
 export type TargetQuantity = 'COMPONENT' | 'ASSEMBLED';
+
+/**
+ * Whether each component of a sheet is a piece that ends where it meets another, or a whole drawing.
+ *
+ * **It decides which separation rule the prompt states** (issue #402). Section 4's boundary paragraph
+ * tells the generator that every entry is "a severed part", never the whole subject, and that it stops
+ * at its join; section 0's first item and section 9's joins check say the same. That is the rule for a
+ * figure's trunk and limbs, an object's housing and hatch, a tile that butts against the next — and it
+ * contradicts a sheet whose entries are the subject itself: a rigid object "drawn whole … never cut
+ * into parts", an effect's frames, a portrait's expressions, an icon set, a font's glyphs. A `WHOLE`
+ * sheet is told instead that each entry is one complete drawing, apart from every other.
+ *
+ * **Declared rather than derived.** {@link TargetQuantity} comes close and is a different question: a
+ * nine-slice's corners are `COMPONENT`-priced pieces that end at their joins, and a rigid object's
+ * views are `COMPONENT`-priced whole drawings. {@link SheetPlan.componentClass} states the answer in
+ * prose, which the compiler cannot read.
+ */
+export type ComponentExtent =
+  /** A piece of one assembled whole — a part, a segment, a tile, a band — that stops at its joins. */
+  | 'PIECE'
+  /** A complete drawing in its own right — the subject in one state or view, a frame, a glyph, an icon. */
+  | 'WHOLE';
 
 /**
  * In what position this sheet's inventory draws each part that moves.
@@ -429,7 +463,9 @@ export interface AssemblyFailure {
   /**
    * Section 9's check, filling `[DEFINE:CATEGORY_ASSEMBLY_AUDIT]` — a lower-case clause completing
    * "Every component stops at its own joins — no entry arrives with a neighbouring piece attached, and
-   * …", so it carries no capital and no closing full stop.
+   * …" on a sheet of pieces, and "Every component is one complete drawing, apart from every other, and
+   * …" on a sheet of whole drawings (see {@link ComponentExtent}), so it carries no capital and no
+   * closing full stop.
    *
    * **Its nouns are qualified**, for the reason recorded on `CATEGORY_AUDIT_TEXT`: this is the one form
    * the reader applies to the delivered sheet component by component, so a bare noun that a component
@@ -468,6 +504,11 @@ interface SheetPlanFields {
    * `'COMPONENT'`.
    */
   readonly targetQuantity: TargetQuantity;
+  /**
+   * Whether this sheet's components are pieces that end at their joins or whole drawings — see
+   * {@link ComponentExtent}.
+   */
+  readonly extent: ComponentExtent;
   /**
    * In what position this sheet draws each part that moves — see {@link InventoryPosing}.
    *

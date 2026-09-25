@@ -27,6 +27,7 @@ export const BUILDING_TILESET: SheetPlan = {
   assembly:
     'a continuous floor field, a straight wall run, and both outer and inner corners, with no visible join where tiles meet.',
   targetQuantity: 'COMPONENT',
+  extent: 'PIECE',
   // Every tile is a different tile: the floor variants differ in scatter, and the corners in which corner they turn.
   posing: 'UNSTATED',
   // Neither piece the module library pairs is on a tile set, so the pair is drawn from the two
@@ -137,6 +138,7 @@ export const BUILDING_MODULE_LIBRARY: SheetPlan = {
   // module width and a longer façade is the same bay repeated, so what they assemble into has no
   // size to state. The shipped street preset prices one of them — `96 × 128 px per bay`.
   targetQuantity: 'COMPONENT',
+  extent: 'PIECE',
   // The entrance module is drawn closed and open, which is one part at the two positions it takes.
   posing: 'PER_POSITION',
   scaleExample: 'an awning drawn beside the wall bay it hangs on is in proportion to it',
@@ -215,6 +217,7 @@ function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTup
     assembly:
       'the complete structure seen from each facing, with its module courses aligning across those views.',
     targetQuantity: 'COMPONENT',
+    extent: 'PIECE',
     // A yaw is the camera turning rather than the bay moving, so the repeated entries are views.
     posing: 'UNSTATED',
     // The façade fittings stay on the module library, so the awning that sheet pairs has no entry

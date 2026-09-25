@@ -23,7 +23,8 @@ export const BEAST_TRUNK: readonly [TrunkPiece, ...TrunkPiece[]] = [
 /**
  * Where each trunk piece ends — the creature spelling of the character plans' own paragraph, and
  * there for the same reason: a generator's prior for "body" is a body *with legs*, so trunk sheets
- * come back wearing limbs the inventory never listed unless the joins are named.
+ * come back wearing limbs the inventory never listed unless the joins are named. It is the trunk
+ * group's `ends`, in place of section 4's generic boundary paragraph, as the character's is.
  *
  * Its closing sentence is about the series rather than about this sheet's own list, for the reason
  * the character spelling records: the directional core's inventory is heads, bodies and

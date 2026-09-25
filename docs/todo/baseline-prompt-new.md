@@ -330,10 +330,18 @@ or a character portrait. Every rule below serves extraction.
 ## [SECTION:CONTRACT]. NON-NEGOTIABLE OUTPUT CONTRACT
 
 Satisfy this section before any aesthetic consideration.
+[IF:COMPONENTS_ARE_WHOLE!=yes]
 
 [N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
    overlapping — and none carrying another: a component that arrives with a neighbouring piece
    still attached to it is two entries merged, not one component.
+[/IF]
+[IF:COMPONENTS_ARE_WHOLE]
+
+[N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
+   overlapping — and each one complete drawing of its own: two entries drawn as one picture are two
+   entries merged, not one component.
+[/IF]
 [N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
@@ -825,6 +833,7 @@ Draw every entry in full, and one separate visible component for each item it na
 marked **×N** names N of them, an entry naming or referring to several facings names one drawing at
 each, and an entry carrying both names N separate components at each of those facings. Do not merge
 entries, substitute duplicates, add filler, or omit entries. [DEFINE:CATEGORY_ASSEMBLY_INSTRUCTION]
+[IF:BOUNDARY_PARAGRAPH]
 
 ### A component ends at its own boundary
 
@@ -834,8 +843,9 @@ nothing another entry names and nothing the assembled subject would attach to it
 meets a neighbouring piece in the assembled subject, this drawing **stops at that join**, finished
 with a clean edge or socket, and the neighbouring piece appears nowhere on it — not attached, not
 sketched in, not trailing off the cell. Drawing a listed part together with the parts it connects
-to is the single most common failure of sheets like this: it merges entries the count in section [SEC:CONTRACT]
-lists separately, and it makes the cut-out part unusable.
+to is the single most common failure of sheets like this: it merges components that are counted
+separately, and it makes the cut-out part unusable.
+[/IF]
 
 ### Placement is the only identity map
 
@@ -1062,8 +1072,14 @@ still be fixed.
    index number or codepoint beside any of them.
 [/IF]
 [N]. Components appear in the exact order the inventory lists them.
+[IF:COMPONENTS_ARE_WHOLE!=yes]
 [N]. Every component stops at its own joins — no entry arrives with a neighbouring piece attached,
    and [DEFINE:CATEGORY_ASSEMBLY_AUDIT].
+[/IF]
+[IF:COMPONENTS_ARE_WHOLE]
+[N]. Every component is one complete drawing, apart from every other, and
+   [DEFINE:CATEGORY_ASSEMBLY_AUDIT].
+[/IF]
 [N]. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
 [N]. [DEFINE:CATEGORY_AUDIT]

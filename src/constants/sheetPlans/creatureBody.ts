@@ -103,8 +103,9 @@ export interface CreatureBody {
   /** Every motion a full set of the components has to reach, as section 5 lists them. */
   readonly motions: string;
   /**
-   * Where each piece ends — closes the inventory of every sheet that draws the trunk: the first pose
-   * library sheet, each directional core and the rig.
+   * Where each piece ends — the `ends` of the trunk group on every sheet that draws the trunk: the
+   * first pose library sheet, each directional core and the rig. It stands in for section 4's generic
+   * boundary paragraph there, so it opens with the rule itself before naming the joins.
    */
   readonly termination: string;
   /** Which end of each trunk piece is its front — the directional core's `ViewSheetPlan.landmark`. */
@@ -217,6 +218,7 @@ function poseLibrary(body: CreatureBody): SheetSeries {
     ...fields,
     facings: 'run',
     targetQuantity: 'ASSEMBLED',
+    extent: 'PIECE',
     // One limb segment per orientation it is drawn at, which is what the numbered variants are.
     posing: 'PER_POSITION',
     // Not the "figure" CHARACTER keeps and `CATEGORY_ASSEMBLY` and `FIGURE_ASSEMBLY_FAILURE` share with
@@ -240,7 +242,7 @@ function poseLibrary(body: CreatureBody): SheetSeries {
             trunkEntry(body.trunk, `${trunk}, in the primary direction`),
             ...first.limbs.map(variantEntry),
           ],
-          outro: body.termination,
+          ends: body.termination,
         },
       ],
     }),
@@ -269,6 +271,7 @@ function directionalCore(
     // than "animal", which a rooted growth is not.
     assembly: `${trunkList(body.trunk, 'one')} per facing, reading as one creature turned rather than several drawings of it — the pieces the articulation sheets fit their ${body.limbNoun} to.`,
     targetQuantity: 'ASSEMBLED',
+    extent: 'PIECE',
     // The trunk repeated across yaws — the camera turning, not the trunk.
     posing: 'UNSTATED',
     scaleExample: body.scale.trunk,
@@ -282,7 +285,7 @@ function directionalCore(
 geometry drawn at each object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies,
 or views facing the same way are all failures of this entry, however well drawn.`,
         entries: body.trunk.map((piece) => viewsOf(piece.plural, 'anatomy', chunk)),
-        outro: body.termination,
+        ends: body.termination,
       },
     ],
   };
@@ -304,6 +307,7 @@ function articulationSheet(body: CreatureBody, share: LimbSheet<Limb>, split: bo
     facings: 'run',
     assembly: `the ${split ? spokenList(share.sets) : body.limbNoun} of ${body.motions} — each fitted to the pieces drawn on the directional core sheets, one facing per sheet.`,
     targetQuantity: 'ASSEMBLED',
+    extent: 'PIECE',
     // The creature spelling of the character articulation run, and posed for the same reason.
     posing: 'PER_POSITION',
     scaleExample: body.scale.limbs,
@@ -335,6 +339,7 @@ function cutoutRig(body: CreatureBody): SheetPlan {
     facings: 'run',
     assembly: `any ${body.motionNoun} the rig produces by rotating the pieces about their pivots. The artwork commits to none of them, which is why every piece is drawn unposed.`,
     targetQuantity: 'ASSEMBLED',
+    extent: 'PIECE',
     // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
     posing: 'AT_REST',
     scaleExample: body.scale.pieces,
@@ -354,9 +359,8 @@ function cutoutRig(body: CreatureBody): SheetPlan {
           ),
           ...body.limbs.map(rigEntry),
         ],
-        outro: `${body.termination}
-
-${RIG_PIECES_OUTRO}`,
+        ends: body.termination,
+        outro: RIG_PIECES_OUTRO,
       },
     ],
   };

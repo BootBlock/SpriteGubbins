@@ -215,6 +215,7 @@ function renderGroup(group: ComponentGroup): string {
   if (group.heading !== null) parts.push(`#### ${group.heading} — ${String(groupTotal(group))}`);
   if (group.intro !== undefined) parts.push(group.intro);
   parts.push(group.entries.map((entry) => `- ${entry.text}.`).join('\n'));
+  if (group.ends !== undefined) parts.push(group.ends);
   if (group.outro !== undefined) parts.push(group.outro);
   return parts.join('\n\n');
 }

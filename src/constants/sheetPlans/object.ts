@@ -47,6 +47,7 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
   assembly:
     'the complete object in its resting state, and in each state its moving parts allow — opened, activated, or mid-travel — without redrawing any part that does not move.',
   targetQuantity: 'ASSEMBLED',
+  extent: 'PIECE',
   // The hatch is drawn closed, part-open and fully open, and the subassembly at three points of its travel.
   posing: 'PER_POSITION',
   scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
@@ -134,6 +135,7 @@ function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple
     assembly:
       'the complete object seen from each facing, with its moving parts in matching positions across those views.',
     targetQuantity: 'ASSEMBLED',
+    extent: 'PIECE',
     // The moving parts are drawn once per facing in matching positions, which is the camera turning.
     posing: 'UNSTATED',
     scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
@@ -184,6 +186,7 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
   assembly:
     'any state the rig produces by rotating the object’s moving parts about their pivots. The artwork commits to none of them, which is why every piece is drawn in its rest position.',
   targetQuantity: 'ASSEMBLED',
+  extent: 'PIECE',
   // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
   posing: 'AT_REST',
   scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
@@ -277,6 +280,7 @@ export const OBJECT_RIGID_STATES: SheetPlan = {
   assembly:
     'one object shown at rest and active, both drawn to the same footprint and registration, so either can replace the other in place without the object shifting.',
   targetQuantity: 'COMPONENT',
+  extent: 'WHOLE',
   // The one object, drawn once for each state it takes.
   posing: 'PER_POSITION',
   scaleExample:
@@ -311,6 +315,7 @@ function objectRigidViewSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
     assembly:
       'one object seen from each facing, every view registered to the same footprint, so the engine can swap one for the next as the object turns without it shifting.',
     targetQuantity: 'COMPONENT',
+    extent: 'WHOLE',
     // The one object at each yaw, which is the camera turning rather than anything on it moving.
     posing: 'UNSTATED',
     scaleExample: 'one view of the object and the view beside it are the same object drawn at the same scale',

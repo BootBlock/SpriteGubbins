@@ -1636,11 +1636,11 @@ describe('the trunk-termination paragraph is true on every sheet that carries it
     { category: 'CREATURE', mode: 'CUTOUT_RIG_SINGLE_DIRECTION', sheet: 'Rig pieces' },
   ] as const;
 
-  /** Every outro on that sheet which is the paragraph, so a moved one fails rather than being skipped. */
+  /** Every group's `ends` on that sheet which is the paragraph, so a moved one fails rather than being skipped. */
   function terminationParagraphs(category: SubjectCategory, mode: DirectionalMode, sheet: string): string[] {
     return sheetNamed(category, mode, sheet)
-      .groups.map((group) => group.outro ?? '')
-      .filter((outro) => outro.includes('is a severed, isolated piece'));
+      .groups.map((group) => group.ends ?? '')
+      .filter((ends) => ends.includes('is a severed, isolated piece'));
   }
 
   it.each(TRUNK_SHEETS)('is emitted on $category’s $sheet sheet', ({ category, mode, sheet }) => {

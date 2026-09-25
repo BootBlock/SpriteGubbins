@@ -122,6 +122,7 @@ export const PORTRAIT_FEATURE_CUT: SheetPlan = {
   assembly:
     'one head and the features a conversation moves, composited at runtime — every piece drawn to the same crop and the same registration as the head, so any brow, any eye and any mouth can be laid on it together without the face shifting on the screen.',
   targetQuantity: 'COMPONENT',
+  extent: 'PIECE',
   // A brow, an eye and a mouth each appear once per shape the feeling puts them in.
   posing: 'PER_POSITION',
   // The one PORTRAIT sheet that holds a genuine pair: a mouth piece has to fit the space the head

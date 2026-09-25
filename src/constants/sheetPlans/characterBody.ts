@@ -96,9 +96,10 @@ export interface CharacterBody {
  *
  * Stated as its own paragraph because nothing else in the prompt says it and its absence is the
  * reported failure: a generator's prior for "torso" is a torso *with arms*, so trunk sheets came back
- * wearing limbs the inventory never listed. Section 4's generic boundary rule states the principle;
- * this names the joins in the body's own vocabulary, which is what a generator can check a drawing
- * against.
+ * wearing limbs the inventory never listed. It names the joins in the body's own vocabulary, which is
+ * what a generator can check a drawing against — and so it is the group's `ends`, and section 4's
+ * generic boundary paragraph, which states the same rule in general terms, gives way to it rather
+ * than printing it a second time ten lines further on (issue #402).
  *
  * **The closing sentence is about the series, not about this sheet's own list.** It once read "has
  * merged entries the inventory lists separately", which is true on the pose library and the rig — both
@@ -280,6 +281,7 @@ function limbsOf(chains: ChainSheet, split: boolean): string {
 /** The shape every CHARACTER sheet shares, whatever it draws. */
 const FIGURE_SHEET = {
   targetQuantity: 'ASSEMBLED',
+  extent: 'PIECE',
   scaleUnit: 'a full figure',
   componentClass: 'character anatomy',
   assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
@@ -317,7 +319,7 @@ function poseLibrary(body: CharacterBody): SheetSeries {
           },
           ...chainEntries(first),
         ],
-        outro: trunkTermination(body),
+        ends: trunkTermination(body),
       },
     ],
   };
@@ -370,7 +372,7 @@ function directionalCore(
 drawn at each object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies, or views
 facing the same way are all failures of this entry, however well drawn.`,
         entries: body.trunk.map((piece) => viewsOf(piece.plural, 'anatomy', chunk)),
-        outro: trunkTermination(body),
+        ends: trunkTermination(body),
       },
     ],
   };
@@ -440,9 +442,8 @@ function cutoutRig(body: CharacterBody): SheetPlan {
           },
           ...body.chains.flatMap((chain) => sidesOf(chain).map((side) => rigEntry(chain, side))),
         ],
-        outro: `${trunkTermination(body)}
-
-${RIG_PIECES_OUTRO}`,
+        ends: trunkTermination(body),
+        outro: RIG_PIECES_OUTRO,
       },
     ],
   };

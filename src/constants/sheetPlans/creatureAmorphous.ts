@@ -67,6 +67,7 @@ const PSEUDOPODS: ComponentEntry = {
 /** The fields every sheet of this body shares. */
 const SHARED = {
   targetQuantity: 'ASSEMBLED',
+  extent: 'PIECE',
   scaleUnit: 'a full creature',
   componentClass: 'creature anatomy',
   assemblyFailure: FIGURE_ASSEMBLY_FAILURE,
@@ -84,7 +85,7 @@ const AMORPHOUS_POSE_LIBRARY: SheetPlan = {
     {
       heading: null,
       entries: [massEntry([{ text: 'settled', slug: 'settled' }, ...MASS_SHAPES]), PSEUDOPODS],
-      outro: AMORPHOUS_TERMINATION,
+      ends: AMORPHOUS_TERMINATION,
     },
   ],
 };
@@ -111,7 +112,7 @@ function amorphousCore(chunk: FacingTuple, chunks: readonly FacingTuple[]): View
 object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies, or views facing the
 same way are all failures of this entry, however well drawn.`,
         entries: [viewsOf('Body masses', 'anatomy', chunk)],
-        outro: AMORPHOUS_TERMINATION,
+        ends: AMORPHOUS_TERMINATION,
       },
     ],
   };
@@ -125,7 +126,7 @@ const AMORPHOUS_SHAPES: SheetPlan = {
   assembly: `the shapes and pseudopods of ${AMORPHOUS_MOTIONS} — each drawn to the mass on the directional core sheets, one facing per sheet.`,
   posing: 'PER_POSITION',
   scaleExample: 'a pseudopod drawn beside a body mass is in proportion to it',
-  groups: [{ heading: null, entries: [massEntry(MASS_SHAPES), PSEUDOPODS], outro: AMORPHOUS_TERMINATION }],
+  groups: [{ heading: null, entries: [massEntry(MASS_SHAPES), PSEUDOPODS], ends: AMORPHOUS_TERMINATION }],
 };
 
 /** The directional pairing: the core sheet or sheets for the chosen facings, then the shapes. */

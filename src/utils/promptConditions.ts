@@ -62,6 +62,17 @@ export function promptConditions(
     // so it is right while the field is empty too — which is what this gate needs, since the
     // `[OPTIONAL:…]` inside it is what decides whether there is a line at all.
     ASSEMBLED_TARGET: plan.targetQuantity === 'ASSEMBLED' ? 'yes' : '',
+    // Which separation rule sections 0 and 9 state (issue #402). A piece is "carrying another" when
+    // it arrives with its neighbour attached, and that is no rule for a sheet whose entries are the
+    // subject itself — a rigid object's states, an effect's frames, a font's glyphs. Those are told
+    // instead that each entry is one complete drawing. See `ComponentExtent`.
+    COMPONENTS_ARE_WHOLE: plan.extent === 'WHOLE' ? 'yes' : '',
+    // Whether section 4's generic paragraph is this sheet's one statement of where a piece ends. A
+    // sheet of whole drawings has no joins to end at, and a group carrying `ends` names its joins in
+    // the subject's own words — so printing the paragraph as well would state one rule twice, ten
+    // lines apart, inside the inventory Sol forwards verbatim.
+    BOUNDARY_PARAGRAPH:
+      plan.extent === 'PIECE' && plan.groups.every((group) => group.ends === undefined) ? 'yes' : '',
     // Gates four places at once: the precedence clause in section 0, the three surface lines and the
     // surface-discipline block in section 2 — negated — and the paragraph that replaces them. One
     // flag, because a style either states the surface itself or leaves those settings to state it.
