@@ -998,21 +998,34 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2434 leaves **0.54 KiB**, the smallest whole figure over the build.
  *
- * **Raised from 2434 by withdrawing the Colour merge slider where the merge does not run** (issue
+ * **Raised from 2434 by the auto-tune likeness scoring coverage** (issue #310). The score read a
+ * cleared pixel as opaque black, so deleting a dark outline to transparency cost it nothing; its
+ * planes now carry coverage as a fourth channel and read a cleared pixel as a neutral grey, and the
+ * guidance sentence that says what the likeness figure measures names coverage. Measured against
+ * `main` at `5606d76`, rebuilt from the same lockfile, with the ceiling forced to zero in each tree
+ * so both figures are the ones `assertPrecacheContract` receives: **2433.99 KiB** on `main` and
+ * **2434.12** here, a delta of **0.13** that crossed a ceiling the base sat 0.01 under. No file was
+ * added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two
+ * `dist/assets` listings summed by chunk name, 108 bytes land in `autoTuneWorker`, which runs the
+ * score, and 23 in `QuantiseTab`, which holds the guidance. It is code a worker runs.
+ *
+ * 2435 leaves **0.88 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2435 by withdrawing the Colour merge slider where the merge does not run** (issue
  * #429). Under a pinned or locked palette with no dither the pipeline skips the merge entirely, while
  * the slider stayed live and its card said only the palette's entries were exempt. The slider now
  * takes a stated reason from `mergeIsExempt`, which moved to a module of its own so the panel and
  * the guide can ask it without bundling the pipeline, and `RangeField` gained the `disabledReason`
- * the other field primitives carry. Measured against `main` at `5606d76`, rebuilt from the same
+ * the other field primitives carry. Measured against `main` at `47ed5bb`, rebuilt from the same
  * lockfile, with the ceiling forced to zero in each tree so both figures are the ones
- * `assertPrecacheContract` receives: **2433.99 KiB** on `main` and **2435.06** here, a delta of
- * **1.07** that crossed a ceiling the base sat 0.01 under. No file was added to or removed from
+ * `assertPrecacheContract` receives: **2434.12 KiB** on `main` and **2435.19** here, a delta of
+ * **1.07** that crossed a ceiling the base sat 0.88 under. No file was added to or removed from
  * `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets` listings summed by
  * chunk name, 0.71 KiB lands in `QuantiseTab`, where the panel, the slider and the guide are
  * bundled, and 0.35 in `quantiseDials`, which holds the quantiser's guidance copy. It is component
  * code and user-facing copy.
  *
- * 2436 leaves **0.94 KiB**, the smallest whole figure over the build.
+ * 2436 leaves **0.81 KiB**, the smallest whole figure over the build.
  */
 export const PRECACHE_CEILING_KIB = 2436;
 

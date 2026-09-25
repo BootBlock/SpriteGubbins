@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { imageFrom, soften } from '../test/images.ts';
+import { oklabToSrgb, srgbToOklab } from './oklab.ts';
 import { oklabPlanes } from './oklabPlanes.ts';
 import { meanSsim } from './ssim.ts';
 
@@ -18,8 +19,9 @@ function directSsim(a: ImageData, b: ImageData, window = 8): number {
   return (
     (directChannel(left.L, right.L, a.width, a.height, window) +
       directChannel(left.a, right.a, a.width, a.height, window) +
-      directChannel(left.b, right.b, a.width, a.height, window)) /
-    3
+      directChannel(left.b, right.b, a.width, a.height, window) +
+      directChannel(left.alpha, right.alpha, a.width, a.height, window)) /
+    4
   );
 }
 
@@ -62,6 +64,11 @@ function directChannel(
   return windows === 0 ? 1 : total / windows;
 }
 
+/** What the three colour channels scored, out of an index taken between two opaque images. */
+function colourShare(index: number): number {
+  return (4 * index - 1) / 3;
+}
+
 /** The art blended `share` of the way toward a flat mid grey. */
 function towardFlat(image: ImageData, share: number): ImageData {
   return imageFrom(image.width, image.height, (x, y) => {
@@ -73,6 +80,15 @@ function towardFlat(image: ImageData, share: number): ImageData {
       b: mix(image.data[at + 2] ?? 0),
       a: 255,
     };
+  });
+}
+
+/** The image with every pixel of its darkest colour cleared to transparency, keeping what was under it. */
+function outlineCleared(image: ImageData): ImageData {
+  return imageFrom(image.width, image.height, (x, y) => {
+    const at = (y * image.width + x) * 4;
+    const pixel = { r: image.data[at] ?? 0, g: image.data[at + 1] ?? 0, b: image.data[at + 2] ?? 0 };
+    return { ...pixel, a: pixel.r + pixel.g + pixel.b < 60 ? 0 : (image.data[at + 3] ?? 0) };
   });
 }
 
@@ -105,8 +121,9 @@ describe('meanSsim', () => {
 
   it('agrees with the same index summed directly, window by window', () => {
     // The cross-check the integral tables are worth having: they agree to ten decimals on artwork,
-    // on a degraded copy of it, and on a copy with no structure left at all.
-    for (const other of [ART, soften(ART), towardFlat(ART, 1)]) {
+    // on a degraded copy of it, on a copy with no structure left at all, and on one with its contour
+    // cleared, which is the case the coverage channel is there for.
+    for (const other of [ART, soften(ART), towardFlat(ART, 1), outlineCleared(ART)]) {
       expect(meanSsim(ART, other)).toBeCloseTo(directSsim(ART, other), 10);
     }
   });
@@ -116,10 +133,28 @@ describe('meanSsim', () => {
 
     expect(ladder).toEqual([...ladder].sort((a, b) => b - a));
     expect(ladder[0]).toBeCloseTo(1, 12);
-    // Half the index gone by the time nothing of the artwork is left. Stated as a share of where the
-    // ladder starts rather than as an absolute figure, because what a flat grey scores against a
-    // particular sheet is a property of that sheet's colours rather than of the index.
-    expect(ladder[4]).toBeLessThan((ladder[0] ?? 1) / 2);
+    // Half of what the colour channels can lose is gone by the time nothing of the artwork is left.
+    // Every rung is opaque, so coverage scores 1 throughout and a quarter of the index is out of
+    // reach; `colourShare` takes it back out. Stated as a share of where the ladder starts rather
+    // than as an absolute figure, because what a flat grey scores against a particular sheet is a
+    // property of that sheet's colours rather than of the index.
+    expect(colourShare(ladder[4] ?? 1)).toBeLessThan(colourShare(ladder[0] ?? 1) / 2);
+  });
+
+  it('lifts every comparison of two opaque images by the same share, so it reorders none of them', () => {
+    // The promise that lets the coverage channel in without moving a sweep over an opaque sheet:
+    // where both images are opaque everywhere, coverage is a flat 1 and the index is the three colour
+    // channels' mean carried into the top three quarters of the range.
+    for (const other of [ART, soften(ART), towardFlat(ART, 0.5), towardFlat(ART, 1)]) {
+      const left = oklabPlanes(ART);
+      const right = oklabPlanes(other);
+      const colour =
+        (directChannel(left.L, right.L, ART.width, ART.height, 8) +
+          directChannel(left.a, right.a, ART.width, ART.height, 8) +
+          directChannel(left.b, right.b, ART.width, ART.height, 8)) /
+        3;
+      expect(meanSsim(ART, other)).toBeCloseTo((3 * colour + 1) / 4, 10);
+    }
   });
 
   it('is symmetric in its two arguments', () => {
@@ -173,6 +208,48 @@ describe('meanSsim', () => {
     const black = imageFrom(16, 16, () => ({ r: 0, g: 0, b: 0, a: 0 }));
 
     expect(meanSsim(magenta, black)).toBeCloseTo(1, 12);
+  });
+
+  it('scores a sprite well below 1 against itself with its outline cleared to transparency', () => {
+    // The defect this replaced. With a cleared pixel read as unlit, deleting a black contour to
+    // transparency left every plane where it was and scored 0.9999999999998 — so the reading stage,
+    // the sprite-edge cleanup and the silhouette anti-aliasing could trade a dark edge for coverage,
+    // or the reverse, for nothing.
+    const sprite = imageFrom(32, 32, (x, y) => {
+      const inset = Math.min(x, y, 31 - x, 31 - y);
+      if (inset < 6) return { r: 255, g: 0, b: 255, a: 0 };
+      if (inset < 8) return { r: 0, g: 0, b: 0, a: 255 };
+      return { r: 200, g: 40, b: 40, a: 255 };
+    });
+    const cleared = imageFrom(32, 32, (x, y) => {
+      const at = (y * 32 + x) * 4;
+      const outline = (sprite.data[at] ?? 0) === 0 && (sprite.data[at + 3] ?? 0) === 255;
+      return outline
+        ? { r: 0, g: 0, b: 0, a: 0 }
+        : {
+            r: sprite.data[at] ?? 0,
+            g: sprite.data[at + 1] ?? 0,
+            b: sprite.data[at + 2] ?? 0,
+            a: sprite.data[at + 3] ?? 0,
+          };
+    });
+
+    expect(meanSsim(sprite, cleared)).toBeLessThan(0.8);
+  });
+
+  it('tells a half-covered colour from the darker opaque one it used to read as', () => {
+    // A half-alpha red was read as a darker red: its planes were the opaque red's scaled by its
+    // opacity, which is the same point in OKLab as this opaque colour. So a fringe of partial
+    // coverage, which is what silhouette anti-aliasing writes, read as a darkening of the art.
+    const red = srgbToOklab(200, 40, 40);
+    const share = 128 / 255;
+    const darker = oklabToSrgb({ L: red.L * share, a: red.a * share, b: red.b * share });
+    const patch = (inside: { r: number; g: number; b: number; a: number }) =>
+      imageFrom(16, 16, (x, y) =>
+        x >= 4 && x < 12 && y >= 4 && y < 12 ? inside : { r: 200, g: 40, b: 40, a: 255 },
+      );
+
+    expect(meanSsim(patch({ r: 200, g: 40, b: 40, a: 128 }), patch(darker))).toBeLessThan(0.9);
   });
 
   it('measures an image smaller than one window rather than refusing it', () => {
