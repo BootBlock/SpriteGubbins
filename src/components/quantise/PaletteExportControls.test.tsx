@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PALETTE_EXPORT_GUIDANCE } from '../../constants/paletteExport.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
+import { namesOmittingLabels } from '../../test/namesOmittingLabels.ts';
+import { repeatedControlNames } from '../../test/repeatedControlNames.ts';
 import type { Rgba } from '../../types/quantiser.ts';
 import { PaletteExportControls } from './PaletteExportControls.tsx';
 
@@ -38,7 +40,9 @@ describe('PaletteExportControls', () => {
 
     expect(screen.getByText('2 entries in this sheet')).toBeVisible();
     expect(
-      screen.getByRole('button', { name: 'Download the colours of this sheet as a swatch PNG' }),
+      screen.getByRole('button', {
+        name: 'Swatch PNG — download the colours of this sheet as a picture of its colours',
+      }),
     ).toBeVisible();
     expect(screen.getByText(PALETTE_EXPORT_GUIDANCE.available)).toBeVisible();
   });
@@ -54,7 +58,7 @@ describe('PaletteExportControls', () => {
 
     expect(screen.getByText('1 entry held from cyborg_monk.png')).toBeVisible();
     expect(
-      screen.getByRole('button', { name: 'Download the locked palette as a GIMP palette' }),
+      screen.getByRole('button', { name: '.gpl — download the locked palette as a GIMP palette' }),
     ).toBeVisible();
   });
 
@@ -67,6 +71,8 @@ describe('PaletteExportControls', () => {
     show([GREEN, RED]);
 
     expect(screen.getAllByRole('button')).toHaveLength(6);
+    expect(repeatedControlNames()).toStrictEqual([]);
+    expect(namesOmittingLabels()).toStrictEqual([]);
     expect(screen.getByText('2 entries in this sheet')).toBeVisible();
     expect(screen.getByText('1 entry held from armour.png')).toBeVisible();
   });
