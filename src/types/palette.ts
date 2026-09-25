@@ -16,7 +16,7 @@
  *
  * Two kinds because the machines genuinely have two. A Game Boy, a C64 or a PICO-8 has a *list*:
  * someone chose those colours and no arithmetic produces them. A Mega Drive, a SNES or a Master
- * System has a *colour space*: every combination of a few bits per channel, which is 512 or 32,768
+ * System has a *colour space*: every combination of a few bits per channel, which is 64 to 262,144
  * entries — a list nobody would read and no prompt should carry.
  *
  * `bitsPerChannel` is the whole definition of the second kind. Each channel takes one of

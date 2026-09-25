@@ -2,8 +2,12 @@ import { relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 import { ARCHITECTURE_SECTIONS } from '../src/constants/architecture.ts';
+import { HARDWARE_PROFILES } from '../src/constants/hardware/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
+import { PALETTES } from '../src/constants/palettes/index.ts';
+import type { HardwareProfileId } from '../src/types/hardware.ts';
 import { SUBJECT_FIELD_KEYS } from '../src/types/subject.ts';
+import { channelSpaceSize } from '../src/utils/channelLevels.ts';
 import { spellNumber } from '../src/utils/numberWords.ts';
 
 /**
@@ -16,10 +20,13 @@ import { spellNumber } from '../src/utils/numberWords.ts';
  * neither growth had any reason to open this file. A correction pass had already been made once, in
  * August 2026, and it rewrote the very sentence that carried the twenty-five.
  *
- * So the fix is not a third correction. Both numbers are counts of something the tree already
+ * So the fix is not a third correction. Every figure is a count of something the tree already
  * knows, and this is what reads them back: adding a store or an output setting fails here, naming
- * the sentence whose figure it moved. The tab beside it does the same thing for the version number,
- * in `src/components/tabs/AboutSection.test.tsx`, and for the same reason.
+ * the sentence whose figure it moved. The machine section is pinned the same way, after it called
+ * all eighteen systems real — PICO-8 is a fantasy console — claimed a per-scanline sprite limit for
+ * every machine where seven state one, and named two channel depths where the palettes shipped
+ * five. The tab beside it does the same thing for the version number, in
+ * `src/components/tabs/AboutSection.test.tsx`, and for the same reason.
  *
  * **It pins the figures, not the wording.** A sentence rewritten around the same true count still
  * has to keep the phrase these assertions look for, which is deliberate: the phrase is short, and
@@ -33,8 +40,9 @@ import { spellNumber } from '../src/utils/numberWords.ts';
  * plans stopped writing their counts out by hand they needed the same thing, and a helper two test
  * files and seven plan files all want belongs in `src/utils/` — so the tables moved there and this
  * reads them. The two spelled identically over 1–99, which is the whole range either asks for: the
- * three call sites below count stores, subject fields and output settings, none of which can be
- * zero without the assertion around it being meaningless.
+ * call sites below count stores, subject fields, output settings, machines and the machines that
+ * state a scanline limit, none of which can be zero without the assertion around it being
+ * meaningless.
  *
  * `spellNumber` refuses zero where the retired copy named it, and that is the right direction for a
  * count of things a file walk found: a section claiming “zero independent Zustand stores” is a
@@ -78,6 +86,15 @@ function zustandStores(): string[] {
     .sort();
 }
 
+/**
+ * The machines whose constraints were chosen rather than imposed, by id.
+ *
+ * A `HardwareProfile` records no such fact — nothing the app does differs for a fantasy console —
+ * so this is the one hand-kept list the file has. A new machine moves the total and fails until
+ * the prose is updated, and an author adding a fantasy console adds it here as they do.
+ */
+const FANTASY_CONSOLES: ReadonlySet<HardwareProfileId> = new Set(['PICO_8']);
+
 /** Whichever section states `phrase`, or `undefined` where none of them does. */
 function sectionStating(phrase: string): string | undefined {
   return ARCHITECTURE_SECTIONS.find((section) => section.body.includes(phrase))?.heading;
@@ -101,6 +118,50 @@ describe('the figures the Architecture tab states', () => {
     expect(
       sectionStating(phrase),
       `No Architecture section says “${phrase}”. SUBJECT_FIELD_KEYS has ${SUBJECT_FIELD_KEYS.length} entries and OutputConfig has ${settings.length}.`,
+    ).toBeDefined();
+  });
+
+  it('counts the machines, and names the fantasy consoles among them', () => {
+    const machines = Object.values(HARDWARE_PROFILES).filter((profile) => profile !== null);
+    const fantasy = machines.filter((profile) => FANTASY_CONSOLES.has(profile.id));
+    const real = `${spellNumber(machines.length)} systems — ${spellNumber(machines.length - fantasy.length)} real machines`;
+    const named = `${spellNumber(fantasy.length)} fantasy console${fantasy.length === 1 ? '' : 's'}, ${fantasy.map((profile) => profile.name).join(', ')}`;
+
+    expect(fantasy, 'A fantasy console listed here has no hardware profile.').toHaveLength(
+      FANTASY_CONSOLES.size,
+    );
+    expect(
+      sectionStating(real),
+      `No Architecture section says “${real}”. HARDWARE_PROFILES has ${machines.length} machines.`,
+    ).toBeDefined();
+    expect(sectionStating(named), `The section that says “${real}” does not say “${named}”.`).toBe(
+      sectionStating(real),
+    );
+  });
+
+  it('counts the machines whose constraints state a per-scanline sprite limit', () => {
+    const machines = Object.values(HARDWARE_PROFILES).filter((profile) => profile !== null);
+    const limited = machines.filter((profile) =>
+      profile.constraints.some((line) => line.includes('scanline')),
+    );
+    const phrase = `for ${spellNumber(limited.length)} of the consoles, how many sprites may cross one scanline`;
+
+    expect(
+      sectionStating(phrase),
+      `No Architecture section says “${phrase}”. These machines state one: ${limited.map((profile) => profile.id).join(', ')}.`,
+    ).toBeDefined();
+  });
+
+  it('states the range of colours the channel-depth palettes span', () => {
+    const sizes = Object.values(PALETTES).flatMap((palette) =>
+      palette?.space.kind === 'CHANNEL_DEPTH' ? [channelSpaceSize(palette.space.bitsPerChannel)] : [],
+    );
+    const count = (n: number): string => n.toLocaleString('en-GB');
+    const phrase = `from ${count(Math.min(...sizes))} to ${count(Math.max(...sizes))} colours`;
+
+    expect(
+      sectionStating(phrase),
+      `No Architecture section says “${phrase}”. The channel-depth palettes hold ${sizes.map(count).join(', ')} colours.`,
     ).toBeDefined();
   });
 });

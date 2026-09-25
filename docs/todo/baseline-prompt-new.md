@@ -262,8 +262,9 @@ An **art direction reference** is the third of that family and works the same wa
 machine is what the silicon allowed, a reference is what one team did within it. It writes a wider
 settings package — the profile's seven plus the projection, the camera elevation, the machine and,
 where it pins no palette, the colour budget — and then emits the facts none of those fields can
-hold: the tile grid, the resolution the art was authored at, how many facings were drawn against how
-many the engine mirrored.
+hold: the tile grid, the resolution the art was authored at, the convention behind a colour choice.
+It never states facings, which the direction set speaks for; a preset card records a game's own
+facing scheme, and that card is never prompt text.
 
 **Its characteristics may never restate a setting**, which is the rule that keeps the block safe to
 edit against. A reference is a template, so the settings it wrote are the user's the moment it is
