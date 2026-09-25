@@ -43,6 +43,7 @@ import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetFacts } from './promptFacts.ts';
 import { countWords, estimateTokens } from './promptMetrics.ts';
+import { sheetBatch } from './sheetBatch.ts';
 import { sheetDirections } from './sheetDirections.ts';
 import { sheetRuns } from './sheetRuns.ts';
 import { styleReferencePatch } from './styleReferencePatch.ts';
@@ -1975,6 +1976,31 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(rig).toContain('never this sheet mirrored');
     expect(rig).not.toContain('### Directional audit');
     expect(rig).not.toContain('### Rotation, not redesign');
+  });
+
+  it('names another yaw on a single-facing sheet only where its batch draws one', () => {
+    // The sentence used to be unconditional, so the icon, terrain and font defaults all described a
+    // sheet of their series at a different yaw that no batch of theirs contains. Asked of every
+    // single-facing sheet every category's default batch holds, under every direction set it offers.
+    for (const category of SUBJECT_CATEGORIES) {
+      const subject = defaultSubjectFor(category);
+      for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+        const { sheets } = sheetBatch(category, subject, withOutput({ directions }));
+        for (const sheet of sheets) {
+          const [only, ...others] = sheet.covered;
+          if (others.length > 0) continue;
+          const yaw = promptText.OBJECT_YAW[only];
+          const elsewhere = sheets.some((other) =>
+            other.covered.some((facing) => promptText.OBJECT_YAW[facing] !== yaw),
+          );
+
+          expect(
+            generatePrompt(category, subject, sheet.output).includes('never this sheet mirrored'),
+            `${category} ${directions} ${sheet.plan.name} ${only}`,
+          ).toBe(elsewhere);
+        }
+      }
+    }
   });
 
   it('makes the inventory demand one geometry rather than several designs', () => {
