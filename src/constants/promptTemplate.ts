@@ -64,7 +64,8 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * rather than what any one component must be. On a target that deliberates, the LAYOUT section's
  * self-audit checks them again. That is the first of the repetitions this file makes on purpose, and
  * each of the others below says what bought it, because a copy of a rule competes for the attention
- * every rule stated once is given, and a third copy is the diluting one this file declines.
+ * every rule stated once is given. A copy stays only where it does a job the others cannot, and a
+ * copy that does none is the diluting one.
  *
  * **Nothing here writes a label for a subject field, and nothing here names a body part.** The
  * SUBJECT section's sixteen lines take their labels from `[DEFINE:*_LABEL]`, which the compiler fills
@@ -143,8 +144,8 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * **That closing section carries the directional invariants and nothing else, and the omissions are
  * the decision.** It is gated on `MULTI_DIRECTION`, and it does not restate the count, the
  * background or the ban on text. Those three are the CONTRACT section's opening items *and* checks
- * of the layout section's audit, so a third copy is the diluting one this file declines above — and
- * they are not what the reported failure was. The chirality rules are: they sit three subsections
+ * of the layout section's audit, so a third copy would do no job those two do not, which makes it
+ * the diluting kind described above — and they are not what the reported failure was. The chirality rules are: they sit three subsections
  * deep in the CAMERA section, they are the newest thing here, and there is nothing else between them
  * and `Generate the sheet now`. On a single-facing sheet there is no distance to close, because the
  * rules that survive there are the CAMERA section's own two paragraphs. The budget is what forced the
@@ -156,8 +157,8 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * them.** It points at the layout section's list instead, because the two are asking for different
  * things from the same checks — that list audits *before* delivery so the sheet can still be fixed,
  * and the report audits what was actually delivered so the *template* can be. Writing the list out
- * again there would be the diluting third copy this file declines above, in the section least able
- * to afford it.
+ * again there would be a copy that does no job the pointer does not, the diluting kind described above,
+ * in the section least able to afford it.
  *
  * **The delivered canvas shape is stated in the CONTRACT section as well as in the layout section, and the
  * placement is the whole of the change.** Measured across a run pack of 27 real GPT-5.6 Sol sheets,

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
  * `promptTemplate.test.ts` holds the template to citing by key, and `prompt-citations.test.ts` the
  * prose it interpolates, and both deliberately read values rather than source, so a comment is never
  * a finding there. That left the two files that explain the numbering free to break it: their
- * docblocks cited some forty sections by numeral, each true only on the sheets that numeral happened
+ * docblocks cited some seventy sections by numeral, each true only on the sheets that numeral happened
  * to fit. The RIG section is emitted only on a rig sheet, so every section from ASSEMBLY on carries a
  * different number on the other sheets — the template's own docblock called the exclusions section 8
  * and the self-audit section 9 while an ICON prompt numbered them 7 and 8, beside a sentence saying a
@@ -23,12 +23,12 @@ const FILES = ['src/constants/promptTemplate.ts', 'src/utils/modelWrapperText/so
 const HAND_WRITTEN = /\bsections? \d/giu;
 
 /**
- * The file with each line break and the comment gutter after it collapsed to one space, so a
- * citation wrapped as `section` at the end of one line and its numeral at the start of the next is
- * still one match.
+ * The file with each line break and the comment gutter after it — a docblock's ` * ` or a line
+ * comment's `// ` — collapsed to one space, so a citation wrapped as `section` at the end of one
+ * line and its numeral at the start of the next is still one match.
  */
 function proseOf(path: string): string {
-  return readFileSync(path, 'utf8').replaceAll(/\s*\r?\n\s*(?:\*(?!\/)\s*)?/gu, ' ');
+  return readFileSync(path, 'utf8').replaceAll(/\s*\r?\n\s*(?:(?:\*(?!\/)|\/\/)\s*)?/gu, ' ');
 }
 
 describe('docblock section citations', () => {
