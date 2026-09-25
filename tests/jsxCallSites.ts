@@ -7,10 +7,11 @@ import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
  *
  * Two suites re-count a primitive's call sites because its docblock argues a design decision by
  * counting them — three of `SelectField`'s optional props, and `ControlTooltip`'s two paragraphs about
- * how many glyphs an ⓘ apiece would add and how many of its wrapped controls can be disabled. Both
- * ask the same question of the same tree, so they ask it through one walk: a second copy would be a
- * second answer to "is this a call site", and the one that went stale would answer *almost* right,
- * which is the failure mode the docblock below describes.
+ * how many glyphs an ⓘ apiece would add and how many of its wrapped controls can be disabled — and a
+ * third, `button-primitive.test.ts`, asks where a hand-styled `<button>` remains and what class text
+ * each `Button` is passed. They ask of the same tree, so they ask through one walk: a second copy
+ * would be a second answer to "is this a call site", and the one that went stale would answer
+ * *almost* right, which is the failure mode the docblock below describes.
  *
  * **Parsed with the compiler, for the reason `interface-punctuation.test.ts` parses.** A JSX opening
  * tag cannot be delimited by hand: its attribute values are arbitrary expressions, so the `>` that
@@ -134,25 +135,59 @@ export function callSitesOf(tag: string): CallSite[] {
 /**
  * The literal text each `<tag>` passes in `attribute`, one entry per call site that passes it.
  *
- * Every string and template piece inside the value is read, whether written bare or inside a
- * conditional, so a class hidden in one branch of a ternary is still found. What an identifier holds
- * is not: a call site that passes a constant is answered by the constant's own literal, wherever the
- * walk meets it.
+ * The value is read through the shapes a class list is written in — a string, a template's pieces,
+ * both branches of a ternary, the right of an `&&`, both sides of `||` and `??` — so a class hidden
+ * in one branch is still found. Anything else (an identifier, a call, a member access, a spread of
+ * props that could carry the attribute) is a value the walk cannot see into, and the entry says so
+ * through `unread` rather than returning the literals around it as though they were the whole value.
  */
-export function literalTextPassed(tag: string, attribute: string): { site: CallSite; text: string }[] {
-  const found: { site: CallSite; text: string }[] = [];
+export function literalTextPassed(
+  tag: string,
+  attribute: string,
+): { site: CallSite; text: string; unread: boolean }[] {
+  const found: { site: CallSite; text: string; unread: boolean }[] = [];
 
   for (const { site, node } of elementsNamed(tag)) {
     const opening = ts.isJsxElement(node) ? node.openingElement : node;
     for (const property of opening.attributes.properties) {
-      if (!ts.isJsxAttribute(property) || property.name.getText() !== attribute) continue;
+      if (ts.isJsxSpreadAttribute(property)) {
+        found.push({ site, text: '', unread: true });
+        continue;
+      }
+      if (property.name.getText() !== attribute || property.initializer === undefined) continue;
       const pieces: string[] = [];
-      const collect = (value: ts.Node): void => {
-        if (ts.isStringLiteralLike(value) || ts.isTemplateLiteralToken(value)) pieces.push(value.text);
-        ts.forEachChild(value, collect);
+      let unread = false;
+      const collect = (value: ts.Expression): void => {
+        if (ts.isStringLiteralLike(value)) pieces.push(value.text);
+        else if (ts.isParenthesizedExpression(value)) collect(value.expression);
+        else if (ts.isConditionalExpression(value)) {
+          collect(value.whenTrue);
+          collect(value.whenFalse);
+        } else if (ts.isTemplateExpression(value)) {
+          pieces.push(value.head.text);
+          for (const span of value.templateSpans) {
+            collect(span.expression);
+            pieces.push(span.literal.text);
+          }
+        } else if (
+          ts.isBinaryExpression(value) &&
+          value.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+        ) {
+          collect(value.right);
+        } else if (
+          ts.isBinaryExpression(value) &&
+          [ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken].includes(value.operatorToken.kind)
+        ) {
+          collect(value.left);
+          collect(value.right);
+        } else unread = true;
       };
-      if (property.initializer !== undefined) collect(property.initializer);
-      found.push({ site, text: pieces.join(' ') });
+      const initializer = property.initializer;
+      if (ts.isStringLiteral(initializer)) collect(initializer);
+      else if (ts.isJsxExpression(initializer) && initializer.expression !== undefined) {
+        collect(initializer.expression);
+      } else unread = true;
+      found.push({ site, text: pieces.join(' '), unread });
     }
   }
 

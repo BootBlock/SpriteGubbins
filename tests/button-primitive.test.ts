@@ -17,7 +17,8 @@ import { callSitesOf, literalTextPassed, siteName } from './jsxCallSites.ts';
  *
  * **A `Button`'s `className` places it and never paints it.** A call site that passes a fill, an
  * edge, padding, a radius, a weight or a text size is a restyled button by another route, so the
- * literal class text of every call site is read and held to that.
+ * class text of every call site is read and held to that — and a call site whose `className` the walk
+ * cannot read, a constant or a spread of props, fails rather than passing unread.
  */
 
 /** A `<button>` that is not a `Button`, and why. */
@@ -105,12 +106,13 @@ describe('the button primitive', () => {
   });
 
   it('never lets a call site paint a Button through its className', () => {
-    const painted = literalTextPassed('Button', 'className').flatMap(({ site, text }) =>
-      text
+    const painted = literalTextPassed('Button', 'className').flatMap(({ site, text, unread }) => [
+      ...(unread ? [`${siteName(site)} passes a className the sweep cannot read`] : []),
+      ...text
         .split(/\s+/)
         .filter((word) => PAINTING.test(word.slice(word.lastIndexOf(':') + 1)))
         .map((word) => `${siteName(site)} passes ${word}`),
-    );
+    ]);
 
     expect(painted).toStrictEqual([]);
   });

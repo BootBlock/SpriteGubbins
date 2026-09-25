@@ -28,14 +28,18 @@ const BASE = 'transition-all active:scale-[0.98] disabled:cursor-not-allowed dis
 
 /**
  * A solid-filled variant while disabled: the fill gives way to a control's ground, so the ink can
- * return. A string of its own, because the enabled state beside it is a role fill that no ink tone
- * may sit on, and `tests/design-tokens.test.ts` reads each class string as one state.
+ * return. A quoted string of its own, as is each enabled state it joins: that state is a role fill
+ * no ink tone may sit on, and `tests/design-tokens.test.ts` sweeps every quoted class string as one
+ * state, so a template literal holding both would hide the fill from it.
  */
 const DISABLED_OFF_THE_FILL = 'disabled:bg-foundry-700 disabled:text-ink-faint disabled:shadow-none';
 
 /** Text on a solid role fill takes `foundry-950`: no ink tone reaches 4.5:1 on one. */
 const VARIANT_CLASSES: Readonly<Record<ButtonVariant, string>> = {
-  primary: `bg-accent-strong font-bold text-foundry-950 shadow-md hover:bg-accent ${DISABLED_OFF_THE_FILL}`,
+  primary: [
+    'bg-accent-strong font-bold text-foundry-950 shadow-md hover:bg-accent',
+    DISABLED_OFF_THE_FILL,
+  ].join(' '),
   // The utility owns the fill, edge, shadow and the disabled treatment; see `index.css`.
   view: 'action-tab font-semibold',
   // The resting fill is not decoration: unfilled, a bordered run of sentence-case text is a weak
@@ -44,7 +48,10 @@ const VARIANT_CLASSES: Readonly<Record<ButtonVariant, string>> = {
     'border border-foundry-600 bg-foundry-700 font-semibold text-ink-muted hover:bg-foundry-600 hover:text-ink disabled:text-ink-faint disabled:hover:bg-foundry-700 disabled:hover:text-ink-faint',
   danger:
     'border border-foundry-600 bg-foundry-700 font-semibold text-rose hover:border-rose/50 hover:bg-foundry-600 disabled:text-ink-faint disabled:hover:border-foundry-600 disabled:hover:bg-foundry-700',
-  destructive: `bg-rose font-bold text-foundry-950 hover:opacity-90 disabled:hover:opacity-100 ${DISABLED_OFF_THE_FILL}`,
+  destructive: [
+    'bg-rose font-bold text-foundry-950 hover:opacity-90 disabled:hover:opacity-100',
+    DISABLED_OFF_THE_FILL,
+  ].join(' '),
   quiet:
     'font-semibold text-ink-faint hover:bg-foundry-700 hover:text-ink disabled:hover:bg-transparent disabled:hover:text-ink-faint',
 };

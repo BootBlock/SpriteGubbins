@@ -1581,9 +1581,11 @@ describe('a role colour used as a ground', () => {
     }
 
     // A regex that stopped matching — a fill respelled, an attribute order the tag scan misreads —
-    // would empty the sweep and pass it having read no ground at all. Nineteen exist as this is
-    // written; the floor is well under that so a button added or removed is not a failure.
-    expect(grounds).toBeGreaterThan(10);
+    // would empty the sweep and pass it having read no ground at all. Eleven exist as this is
+    // written, fewer than before `Button` gathered the buttons' fills into its own class strings,
+    // which the second sweep below reads; the floor is well under that so a button added or
+    // removed is not a failure.
+    expect(grounds).toBeGreaterThan(5);
     expect(offenders).toStrictEqual([]);
   });
 
@@ -1611,7 +1613,7 @@ describe('a role colour used as a ground', () => {
       }
     }
 
-    // Twenty as this is written, for the same reason the floor above exists.
+    // Sixteen as this is written, for the same reason the floor above exists.
     expect(strings).toBeGreaterThan(10);
     expect(offenders).toStrictEqual([]);
   });
