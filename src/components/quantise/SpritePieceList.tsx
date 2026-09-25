@@ -6,6 +6,7 @@ import { samePin } from '../../utils/spritePin.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SpritePieceRow } from './SpritePieceRow.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface SpritePieceListProps {
   /** What the sheet's sprites came to, as `useSpriteAssignment` resolved it. */
@@ -77,13 +78,9 @@ export function SpritePieceList({ assignment, inventory }: SpritePieceListProps)
           than no button: it invites a press and reports nothing when it lands. */}
       {edited && (
         <ControlTooltip hint="Clear the choices" text={QUANTISE_ACTION_TOOLTIPS.clearAssignments}>
-          <button
-            type="button"
-            onClick={forget}
-            className="action-tab rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
-          >
+          <Button variant="view" size="md" onClick={forget}>
             Clear the choices
-          </button>
+          </Button>
         </ControlTooltip>
       )}
     </div>

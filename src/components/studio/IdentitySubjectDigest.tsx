@@ -7,6 +7,7 @@ import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { withSegments } from '../../utils/identityDigest.ts';
 import { identitySubjectSegments } from '../../utils/identitySubject.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 /**
  * Writes what the studio already knows about the subject into the identity lock above it.
@@ -57,13 +58,9 @@ export function IdentitySubjectDigest() {
   return (
     <section className="rounded-xl border border-foundry-600 bg-foundry-800/60 p-3">
       <ControlTooltip hint="Describe the subject" text={STUDIO_ACTION_TOOLTIPS.describeSubject}>
-        <button
-          type="button"
-          onClick={handleClick}
-          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
-        >
+        <Button variant="view" size="md" onClick={handleClick}>
           Describe the subject
-        </button>
+        </Button>
       </ControlTooltip>
 
       {/* The labels are read from the constant rather than written out again: they are what the

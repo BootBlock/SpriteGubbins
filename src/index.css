@@ -1446,8 +1446,9 @@
    * The shadow lives here rather than at the call sites so the bloom can be the view's colour — which
    * a `shadow-*` utility cannot express — and because a utility owning `box-shadow` must own both
    * states or Tailwind's would compose with one of them. No call site wearing this carries a
-   * `shadow-*`, exactly as with `glass-float`. Call sites still bring their own geometry, type and
-   * motion: these buttons are deliberately different sizes, and only their colour is shared.
+   * `shadow-*`, exactly as with `glass-float`. Geometry, type and motion are not this utility's:
+   * `Button`'s `view` variant takes them from its sizes, and the two that wear it directly — Generate
+   * in `PromptActions` and `FilePickerField`'s chooser — bring their own. Only the colour is shared.
    *
    * **The `file:` variant carries the declarations below and drops the two nested state rules.**
    * `FilePickerField` is the one call site that styles a `::file-selector-button` rather than a

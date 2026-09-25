@@ -10,6 +10,7 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { TextField } from '../common/TextField.tsx';
 import { ProjectSelectField } from '../projects/ProjectSelectField.tsx';
 import { QuantisePresetList } from './QuantisePresetList.tsx';
+import { Button } from '../common/Button.tsx';
 
 /**
  * Saving the tab's dials under a name, and the collection of names already saved.
@@ -127,16 +128,16 @@ export function QuantisePresetControls() {
           hint={overwrites ? 'Update' : 'Save'}
           text={QUANTISE_ACTION_TOOLTIPS.saveQuantisePreset}
         >
-          <button
-            type="button"
+          <Button
+            variant="view"
+            size="md"
             disabled={isSaving || name.trim() === '' || target === ''}
             onClick={() => {
               void save();
             }}
-            className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
           >
             {isSaving ? 'Saving…' : overwrites ? 'Update' : 'Save'}
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
 

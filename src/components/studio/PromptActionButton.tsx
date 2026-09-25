@@ -9,10 +9,10 @@ import type { ReactNode } from 'react';
  * The hover border is the view's colour, matching the chrome's own secondary pair and the primary
  * beside them: every button inside a panel answers to `--color-tab`, and one of them still lighting
  * up indigo would read as belonging to something else. The unavailable state is the app's disabled
- * treatment, as `SheetStepButtons` spells it — `text-ink-faint` with the hover colours put back
- * where they started — plus the hover lift this set has and that pair does not, all keyed to
- * `aria-disabled` rather than to `disabled`, for the reason {@link PromptActionButtonProps.unavailable}
- * gives.
+ * treatment, as `Button`'s `secondary` variant spells it — `text-ink-faint` with the hover colours
+ * put back where they started — plus the hover lift this set has and that variant does not, all
+ * keyed to `aria-disabled` rather than to `disabled`, for the reason
+ * {@link PromptActionButtonProps.unavailable} gives.
  */
 const PROMPT_ACTION =
   'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-950 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-390 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 hover:text-ink active:translate-y-0 aria-disabled:cursor-not-allowed aria-disabled:text-ink-faint aria-disabled:hover:translate-y-0 aria-disabled:hover:border-foundry-600 aria-disabled:hover:bg-foundry-950 aria-disabled:hover:text-ink-faint';

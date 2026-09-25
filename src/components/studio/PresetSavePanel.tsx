@@ -6,6 +6,7 @@ import { findByName } from '../../utils/findByName.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 import { ProjectSelectField } from '../projects/ProjectSelectField.tsx';
+import { Button } from '../common/Button.tsx';
 
 /**
  * Putting the studio's current configuration into a project.
@@ -173,8 +174,9 @@ export function PresetSavePanel() {
         </div>
 
         <ControlTooltip hint={overwrites ? 'Update' : 'Save'} text={PRESET_ACTION_TOOLTIPS.savePreset}>
-          <button
-            type="button"
+          <Button
+            variant="view"
+            size="md"
             disabled={isSaving || presetName.trim() === '' || target === ''}
             onClick={async () => {
               setIsSaving(true);
@@ -192,10 +194,9 @@ export function PresetSavePanel() {
                 setIsSaving(false);
               }
             }}
-            className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed"
           >
             {isSaving ? 'Saving…' : overwrites ? 'Update' : 'Save'}
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
     </section>

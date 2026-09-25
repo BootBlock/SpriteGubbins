@@ -1,6 +1,7 @@
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { PixelGrid, SheetScale } from '../../types/quantiser.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 interface GridCandidatesProps {
   /** What the sheet itself was read as, exactly or as an estimate, or `null` for neither. */
@@ -9,9 +10,6 @@ interface GridCandidatesProps {
   readonly suggested: PixelGrid | null;
   readonly onChoose: (grid: PixelGrid) => void;
 }
-
-const CANDIDATE_CLASS =
-  'rounded-lg border border-foundry-600 bg-foundry-700 px-2.5 py-1 font-mono text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-600 hover:text-ink';
 
 /**
  * The scales worth trying first, each labelled with where it came from.
@@ -40,28 +38,30 @@ export function GridCandidates({ scale, suggested, onChoose }: GridCandidatesPro
           hint={scale.measurement === 'EXACT' ? 'Measured scale' : 'Estimated scale'}
           text={QUANTISE_ACTION_TOOLTIPS.candidateFromSheet}
         >
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => {
               onChoose(scale.grid);
             }}
-            className={CANDIDATE_CLASS}
+            className="font-mono"
           >
             {scale.grid}× {scale.measurement === 'EXACT' ? 'measured' : 'estimated'}
-          </button>
+          </Button>
         </ControlTooltip>
       )}
       {suggested !== null && (
         <ControlTooltip hint="Scale from the target size" text={QUANTISE_ACTION_TOOLTIPS.candidateFromTarget}>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => {
               onChoose(suggested);
             }}
-            className={CANDIDATE_CLASS}
+            className="font-mono"
           >
             {suggested}× from the target size
-          </button>
+          </Button>
         </ControlTooltip>
       )}
     </div>

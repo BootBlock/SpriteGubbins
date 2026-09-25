@@ -3,6 +3,7 @@ import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
 import { useDownload } from '../../hooks/useDownload.ts';
 import { useHistoryStore } from '../../stores/useHistoryStore.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 /** The filename an exported history arrives as, alongside the preset pack's. */
 const HISTORY_FILENAME = 'sprite-gubbins-history.json';
@@ -51,16 +52,16 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
           it sits beside the action that destroys it.
         */}
         <ControlTooltip hint="Export history" text={HISTORY_ACTION_TOOLTIPS.exportHistory}>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="md"
             disabled={isEmpty}
             onClick={() => {
               download(HISTORY_FILENAME, exportHistoryJSON(), 'application/json');
             }}
-            className="rounded-lg border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-transparent"
           >
             <span aria-hidden="true">📤</span> Export history (JSON)
-          </button>
+          </Button>
         </ControlTooltip>
 
         {/* Two presses to clear. The history is the only thing in this app the user cannot rebuild
@@ -68,38 +69,27 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
         {isConfirming ? (
           <span className="flex items-center gap-2">
             <ControlTooltip hint="Delete everything" text={HISTORY_ACTION_TOOLTIPS.confirmClearHistory}>
-              <button
-                type="button"
+              <Button
+                variant="destructive"
+                size="md"
                 onClick={() => {
                   void confirm(clearHistory);
                 }}
-                className="rounded-lg bg-rose px-3 py-1.5 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90"
               >
                 Delete everything
-              </button>
+              </Button>
             </ControlTooltip>
             <ControlTooltip hint="Cancel" text={HISTORY_ACTION_TOOLTIPS.cancelClearHistory}>
-              <button
-                ref={attachCancel}
-                type="button"
-                onClick={cancel}
-                className="rounded-lg border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
-              >
+              <Button variant="secondary" size="md" ref={attachCancel} onClick={cancel}>
                 Cancel
-              </button>
+              </Button>
             </ControlTooltip>
           </span>
         ) : (
           <ControlTooltip hint="Clear history" text={HISTORY_ACTION_TOOLTIPS.clearHistory}>
-            <button
-              ref={attachAsk}
-              type="button"
-              disabled={isEmpty}
-              onClick={ask}
-              className="rounded-lg border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-rose transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-transparent"
-            >
+            <Button variant="danger" size="md" ref={attachAsk} disabled={isEmpty} onClick={ask}>
               Clear history
-            </button>
+            </Button>
           </ControlTooltip>
         )}
       </div>

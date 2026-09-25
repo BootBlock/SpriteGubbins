@@ -2,6 +2,7 @@ import { CHROME_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useShowToast } from '../../hooks/useShowToast.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 /**
  * The offer to install the app, shown only when the browser has actually made one.
@@ -32,8 +33,9 @@ export function PWAInstallBanner() {
 
       <div className="flex items-center gap-2">
         <ControlTooltip hint="Install" text={CHROME_TOOLTIPS.installApp}>
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="md"
             onClick={async () => {
               setInstallPrompt(null);
               try {
@@ -46,21 +48,20 @@ export function PWAInstallBanner() {
                 showToast('The browser would not open its install dialogue');
               }
             }}
-            className="rounded-xl bg-accent-strong px-4 py-1.5 text-xs font-bold text-foundry-950 shadow-md transition-colors hover:bg-accent"
           >
             Install
-          </button>
+          </Button>
         </ControlTooltip>
         <ControlTooltip hint="Not now" text={CHROME_TOOLTIPS.dismissInstall}>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="md"
             onClick={() => {
               setInstallPrompt(null);
             }}
-            className="rounded-xl border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
           >
             Not now
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useShowToast } from '../../hooks/useShowToast.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Button } from '../common/Button.tsx';
 
 /**
  * The two acts in the Subject Definition header that replace all sixteen answers in one press.
@@ -18,8 +19,8 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
  * all.
  *
  * **Only Randomise takes the gold.** It is the act a reader comes to this header to perform, and a
- * second loud button beside it would leave neither of them saying so — so Reset takes the app's
- * established secondary style, which is what `SectionToggleAll` beside it already wears.
+ * second loud button beside it would leave neither of them saying so — so Reset is a `secondary`
+ * `Button`, as `SectionToggleAll` beside it is.
  */
 export function SubjectActions() {
   const category = useSubjectStore((state) => state.category);
@@ -36,8 +37,9 @@ export function SubjectActions() {
         text={STUDIO_ACTION_TOOLTIPS.reset}
         className="relative inline-flex shrink-0"
       >
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           // The visible word is the start of the accessible name rather than being replaced by it,
           // so a voice-control user asking for “reset” still matches what they can read.
           aria-label={`Reset ${categoryLabel} properties to their defaults`}
@@ -45,10 +47,9 @@ export function SubjectActions() {
             resetSubject();
             showToast(`Reset ${categoryLabel} properties to their defaults`);
           }}
-          className="rounded-lg border border-foundry-600 bg-foundry-700 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-600 hover:text-ink"
         >
           Reset
-        </button>
+        </Button>
       </ControlTooltip>
 
       {/* An unnamed `group`, so the die below turns from a pointer on this button alone. The panel

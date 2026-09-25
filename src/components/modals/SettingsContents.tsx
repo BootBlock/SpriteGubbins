@@ -7,6 +7,7 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 import { SettingsAccentField } from './SettingsAccentField.tsx';
 import { SettingsMotionField } from './SettingsMotionField.tsx';
+import { Button } from '../common/Button.tsx';
 
 /**
  * The preferences that belong to the application rather than to a prompt.
@@ -66,24 +67,21 @@ export function SettingsContents() {
           text={DIALOG_TOOLTIPS.resetSettings}
           className="relative flex flex-1"
         >
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="lg"
             onClick={() => {
               void updateSettings(DEFAULT_SETTINGS);
             }}
-            className="w-full rounded-xl border border-foundry-600 bg-foundry-950 py-2.5 text-xs font-bold text-ink-muted shadow-md transition-colors duration-390 hover:bg-foundry-700 hover:text-ink"
+            className="w-full"
           >
             Reset to defaults
-          </button>
+          </Button>
         </ControlTooltip>
         <ControlTooltip hint="Done" text={DIALOG_TOOLTIPS.done}>
-          <button
-            type="button"
-            onClick={toggleSettingsModal}
-            className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-foundry-950 shadow-lg transition-colors duration-390 hover:bg-accent"
-          >
+          <Button variant="primary" size="lg" onClick={toggleSettingsModal}>
             Done
-          </button>
+          </Button>
         </ControlTooltip>
       </div>
     </>
