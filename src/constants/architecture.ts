@@ -18,7 +18,7 @@ export const ARCHITECTURE_SECTIONS: readonly ArchitectureSection[] = [
   },
   {
     heading: '2. Modular front end',
-    body: 'Vite bundles a React 19 application written in strict TypeScript. State lives in sixteen independent Zustand stores, one per concern, and each component subscribes to the ones it actually reads — so the studio’s subject and output are held apart from the sheet the Quantise tab is working on, and a change in one store reaches no view that does not read it. The interface store and the settings store are separate on purpose: one is what is happening now and is meant to be forgotten when the tab closes, the other is what you decided once and expect to find again.',
+    body: 'Vite bundles a React 19 application written in strict TypeScript. State lives in seventeen independent Zustand stores, one per concern, and each component subscribes to the ones it actually reads — so the studio’s subject and output are held apart from the sheet the Quantise tab is working on, and a change in one store reaches no view that does not read it. The interface store and the settings store are separate on purpose: one is what is happening now and is meant to be forgotten when the tab closes, the other is what you decided once and expect to find again.',
   },
   {
     heading: '3. The prompt compiler',

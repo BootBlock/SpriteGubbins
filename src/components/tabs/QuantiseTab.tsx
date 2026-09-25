@@ -1,23 +1,19 @@
 import { useMemo } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { KEY_OFFER_BORDER_SHARE } from '../../constants/keyOffer.ts';
+import { useComponentTarget } from '../../hooks/useComponentTarget.ts';
 import { useImageDrop } from '../../hooks/useImageDrop.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useImagePaste } from '../../hooks/useImagePaste.ts';
 import { useQuantiseTuning } from '../../hooks/useQuantiseTuning.ts';
 import { useQuantiseWork } from '../../hooks/useQuantiseWork.ts';
-import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
+import { useSuggestedGrid } from '../../hooks/useSuggestedGrid.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
-import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { borderKeyShare } from '../../utils/borderKeyShare.ts';
 import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { keyingInForce } from '../../utils/keyingInForce.ts';
 import { statusOf } from '../../utils/quantiseStatus.ts';
-import { componentCountFor } from '../../utils/componentSet.ts';
-import { componentTargetSize } from '../../utils/componentTargetSize.ts';
-import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
 import { ImageDropVeil } from '../quantise/ImageDropVeil.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
@@ -56,23 +52,15 @@ import { QuantiseWorkspace } from '../quantise/QuantiseWorkspace.tsx';
  * `useQuantiseWork`, and the measurements behind that decision in `src/workers/quantiseWorker.ts`.
  * Neither the thread nor its answers belong to this component, which is what lets the user go to the
  * studio to change the colour budget and come back to the sheet they left rather than to a pipeline
- * starting again from nothing. What the tab keeps here is the two studio-derived candidates, which
- * are arithmetic on a handful of numbers rather than passes over sixteen megapixels.
+ * starting again from nothing. The studio-derived candidates — the target size, the component count
+ * and the scale they imply — are not the tab's either: each panel that shows one reads it through its
+ * own hook, so none of them is handed down through components that have no use for it.
  */
 export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   const palette = useOutputStore((state) => state.output.palette);
   const customPalette = useOutputStore((state) => state.output.customPalette);
-  const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
-  const directionalMode = useOutputStore((state) => state.output.directionalMode);
-  const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
-  const directions = useOutputStore((state) => state.output.directions);
-  const rigContract = useOutputStore((state) => state.output.rigContract);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
-  const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  // The other subject fields the count and the target size read — see `componentSet.ts`.
-  const subject = useSheetSubject();
-  const category = useSubjectStore((state) => state.category);
   // In a store rather than here, because the workflow crosses tabs: the colour budget, the target
   // size and the background key are studio settings, and `App` unmounts this view when the user goes
   // to change one.
@@ -87,7 +75,6 @@ export function QuantiseTab() {
   // `useQuantiseTuning`, which says why that identity is load-bearing.
   const tuning = useQuantiseTuning();
   const setSource = useQuantiseStore((state) => state.setSource);
-  const setGridOverride = useQuantiseStore((state) => state.setGridOverride);
   const clear = useQuantiseStore((state) => state.clear);
 
   const acceptFile = useImageFile(setSource);
@@ -142,42 +129,10 @@ export function QuantiseTab() {
     tuning,
   );
 
-  // The studio's own target size, read as a second candidate. Deliberately **not** folded into
-  // `grid`: it is an upper bound derived from how many components the sheet has to seat, not a
-  // measurement of this image, so it is offered to click and never silently preferred.
-  //
-  // Read through `componentTargetSize` rather than parsed here, because both things downstream of it
-  // are per-component and a sheet of parts states the assembled subject instead. Fed the raw field
-  // there, the grid candidate seats fifteen cells of a whole character rather than of a torso, and
-  // the Sprites panel compares the largest piece against a size no piece on the sheet has — so its
-  // *within the target* carries whatever slack separates a torso from a whole body, which is a
-  // number nothing here knows. `null` withdraws both, rather than putting a figure in their place:
-  // a loaded rig contract does state a size per piece, but the pieces differ, and one number is
-  // exactly what this pair of readers cannot be given honestly.
-  const target = useMemo(
-    () => componentTargetSize(category, subject, directionalMode, directions, sheetIndex, spriteTargetSize),
-    [category, subject, directionalMode, directions, sheetIndex, spriteTargetSize],
-  );
-  // How many components this sheet's own prompt contracts for — the figure the sprite panel holds
-  // the segmentation against, and the ceiling the grid suggestion seats. One derivation for both,
-  // because two would be two answers to "what did the prompt ask for" on one screen.
-  const expected = useMemo(
-    () =>
-      componentCountFor(
-        category,
-        subject,
-        directionalMode,
-        directions,
-        sheetIndex,
-        parseAdditionalAnatomy(additionalAnatomy),
-        rigContract,
-      ),
-    [category, subject, directionalMode, directions, sheetIndex, additionalAnatomy, rigContract],
-  );
-  const suggested = useMemo(
-    () => (source === null || target === null ? null : targetSizeGrid(source.image, target, expected)),
-    [source, target, expected],
-  );
+  // For the guide alone, which is this component's own child: every other reader of the two calls
+  // the same hooks where it stands. See `useComponentTarget` and `useSuggestedGrid`.
+  const target = useComponentTarget();
+  const suggested = useSuggestedGrid();
 
   return (
     /*
@@ -233,10 +188,6 @@ export function QuantiseTab() {
             keying={keying}
             keyOffered={keyOffered}
             colorPlan={colorPlan}
-            target={target}
-            suggested={suggested}
-            expected={expected}
-            setGridOverride={setGridOverride}
           />
         )}
       </div>

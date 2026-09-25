@@ -1,4 +1,3 @@
-import type { TargetSize } from '../../types/output.ts';
 import type {
   BackgroundKeying,
   ColorPlan,
@@ -22,10 +21,6 @@ interface QuantiseWorkspaceProps {
   readonly keying: BackgroundKeying | null;
   readonly keyOffered: boolean;
   readonly colorPlan: ColorPlan;
-  readonly target: TargetSize | null;
-  readonly suggested: PixelGrid | null;
-  readonly expected: number;
-  readonly setGridOverride: (grid: PixelGrid | null) => void;
 }
 
 /**
@@ -54,10 +49,6 @@ export function QuantiseWorkspace({
   keying,
   keyOffered,
   colorPlan,
-  target,
-  suggested,
-  expected,
-  setGridOverride,
 }: QuantiseWorkspaceProps) {
   return (
     <div className="grid grid-cols-1 items-start gap-6 quantise:grid-cols-12">
@@ -73,10 +64,6 @@ export function QuantiseWorkspace({
           keying={keying}
           keyOffered={keyOffered}
           colorPlan={colorPlan}
-          target={target}
-          suggested={suggested}
-          expected={expected}
-          setGridOverride={setGridOverride}
         />
       </div>
 
@@ -109,7 +96,6 @@ export function QuantiseWorkspace({
           scale={facts?.scale ?? null}
           grid={grid}
           quantised={quantised}
-          target={target}
           busy={busy}
         />
       </div>

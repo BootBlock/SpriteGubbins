@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { FakeSheetWriteWorker } from '../../test/fakeSheetWriteWorker.ts';
 import { flatDifference } from '../../test/images.ts';
+import { useQuantiseDownloadStore } from '../../stores/useQuantiseDownloadStore.ts';
 import { useSheetWriteStore } from '../../stores/useSheetWriteStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { createImage } from '../../utils/imageData.ts';
@@ -28,6 +29,7 @@ class NoopResizeObserver {
 
 beforeEach(() => {
   vi.stubGlobal('ResizeObserver', NoopResizeObserver);
+  useQuantiseDownloadStore.setState(useQuantiseDownloadStore.getInitialState());
 });
 
 afterEach(() => {
@@ -88,7 +90,6 @@ function show(
       scale={scale}
       grid={inForce}
       quantised={grid === null ? null : { result: resultFor(grid, colors, { x: 0, y: 0 }, distance), grid }}
-      target={null}
       busy={busy}
     />,
   );
@@ -131,7 +132,6 @@ describe('ImageComparison', () => {
         scale={null}
         grid={8}
         quantised={{ result: resultFor(8, 32, { x: 3, y: 3 }), grid: 8 }}
-        target={null}
         busy={false}
       />,
     );
@@ -272,7 +272,6 @@ describe('ImageComparison', () => {
         scale={{ grid: 8, measurement: 'EXACT' }}
         grid={8}
         quantised={{ result: resultFor(8), grid: 8 }}
-        target={null}
         busy={busy}
       />
     );
@@ -315,7 +314,6 @@ describe('ImageComparison', () => {
         scale={{ grid: shown.grid, measurement: 'EXACT' }}
         grid={shown.grid}
         quantised={shown}
-        target={null}
         busy={busy}
       />
     );
@@ -350,6 +348,48 @@ describe('ImageComparison', () => {
  * is findable at all; and the difference mode says what the reduction *cost*, which is the reading
  * two separate reports of a working dial "doing nothing" turned out to need.
  */
+describe('ImageComparison’s download settings', () => {
+  /** The pill pressed in one of the toolbar's rows, by the row's accessible name. */
+  function pressedIn(row: string): string | null {
+    const group = screen.getByRole('group', { name: row });
+    return (
+      within(group)
+        .getAllByRole('button')
+        .find((button) => button.getAttribute('aria-pressed') === 'true')?.textContent ?? null
+    );
+  }
+
+  function press(row: string, pill: string) {
+    fireEvent.click(within(screen.getByRole('group', { name: row })).getByRole('button', { name: pill }));
+  }
+
+  it('keeps the format and the cut across a trip away from the tab', () => {
+    // `App` mounts only the active view, so a trip to the studio unmounts this panel. The settings
+    // were the panel's own state, and the reader came back to a PNG and the bounding-box cut halfway
+    // through the rig workflow the cell exists for.
+    const { unmount } = render(
+      <ImageComparison
+        sourceName="sheet.png"
+        source={createImage(SOURCE_SIDE, SOURCE_SIDE)}
+        sourceColors={200}
+        scale={null}
+        grid={8}
+        quantised={{ result: resultFor(8), grid: 8 }}
+        busy={false}
+      />,
+    );
+    press('Download magnification', '2×');
+    press('Download format', 'Sprite pack');
+    press('Sprite cut', 'Fixed');
+    unmount();
+
+    show(8);
+    expect(pressedIn('Download magnification')).toBe('2×');
+    expect(pressedIn('Download format')).toBe('Sprite pack');
+    expect(pressedIn('Sprite cut')).toBe('Fixed');
+  });
+});
+
 describe('ImageComparison’s preview modes', () => {
   it('opens on the pair, which is the reading that needs no explaining', () => {
     show(8);
@@ -493,7 +533,6 @@ describe('ImageComparison’s preview modes', () => {
         scale={null}
         grid={8}
         quantised={{ result: { ...result, strips: [], sprites: { kind: 'SOLID' } }, grid: 8 }}
-        target={null}
         busy={false}
       />,
     );
@@ -535,7 +574,6 @@ describe('ImageComparison’s preview modes', () => {
           },
           grid: 8,
         }}
-        target={null}
         busy={false}
       />,
     );
@@ -568,7 +606,6 @@ describe('ImageComparison’s preview modes', () => {
           },
           grid: 8,
         }}
-        target={null}
         busy={false}
       />,
     );
@@ -623,7 +660,6 @@ describe('ImageComparison’s preview modes', () => {
         scale={null}
         grid={quantised?.grid ?? null}
         quantised={quantised}
-        target={null}
         busy={false}
       />
     );
@@ -653,7 +689,6 @@ describe('ImageComparison’s preview modes', () => {
         scale={null}
         grid={quantised?.grid ?? null}
         quantised={quantised}
-        target={null}
         busy={false}
       />
     );
@@ -858,7 +893,6 @@ describe('ImageComparison, detached — where its notifications land', () => {
           scale={null}
           grid={8}
           quantised={{ result: resultFor(8), grid: 8 }}
-          target={null}
           busy={false}
         />
         <Toast />

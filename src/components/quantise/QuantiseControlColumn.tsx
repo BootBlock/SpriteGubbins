@@ -1,4 +1,3 @@
-import type { TargetSize } from '../../types/output.ts';
 import type {
   BackgroundKeying,
   ColorPlan,
@@ -33,10 +32,6 @@ interface QuantiseControlColumnProps {
   readonly keying: BackgroundKeying | null;
   readonly keyOffered: boolean;
   readonly colorPlan: ColorPlan;
-  readonly target: TargetSize | null;
-  readonly suggested: PixelGrid | null;
-  readonly expected: number;
-  readonly setGridOverride: (grid: PixelGrid | null) => void;
 }
 
 /**
@@ -48,9 +43,11 @@ interface QuantiseControlColumnProps {
  * segmentation, then the anti-aliasing that must run last, and the preset panel below all of them
  * because its subject is the reader's way of working rather than this sheet.
  *
- * Every panel is handed an answer rather than deriving one. Two readings of one setting can disagree
- * — and did — so the keying, the colour plan and the segmentation each reach the panel that reports
- * them from the same place the pipeline was given them.
+ * Every panel is handed what the pipeline was handed rather than deriving it again. Two readings of
+ * one setting can disagree — and did — so the keying, the colour plan and the segmentation each reach
+ * the panel that reports them from the same place the pipeline was given them. What the pipeline is
+ * *not* given — the studio's target size, the component count and the scale they imply — each panel
+ * reads through its own hook, since those derivations are pure and every call of one agrees.
  */
 export function QuantiseControlColumn({
   source,
@@ -63,10 +60,6 @@ export function QuantiseControlColumn({
   keying,
   keyOffered,
   colorPlan,
-  target,
-  suggested,
-  expected,
-  setGridOverride,
 }: QuantiseControlColumnProps) {
   return (
     <>
@@ -84,14 +77,7 @@ export function QuantiseControlColumn({
         dials on screen for a step to be about. */}
       <DialHistoryControls />
 
-      <GridControls
-        facts={facts}
-        target={target}
-        suggested={suggested}
-        grid={grid}
-        colorPlan={colorPlan}
-        onGridChange={setGridOverride}
-      />
+      <GridControls facts={facts} grid={grid} colorPlan={colorPlan} />
       {/* Under the grid it depends on and above every dial it moves — see `AutoTuneControls`,
         which says why both halves of that placement matter. */}
       <AutoTuneControls image={source.image} settings={settings} />
@@ -129,12 +115,7 @@ export function QuantiseControlColumn({
         its buttons move the *studio* — so it sits with the readings rather than among the
         passes above it. */}
       <SheetIdentityControls />
-      <SpriteControls
-        sprites={quantised?.result.sprites ?? null}
-        target={target}
-        expected={expected}
-        busy={busy}
-      />
+      <SpriteControls sprites={quantised?.result.sprites ?? null} busy={busy} />
       {/* Directly under the sprite panel, because it is a reading *of* that reading: an axis is
         scored inside a sprite's own bounds, so what this panel can say is decided by what the
         one above found. It is inside the same sheet guard for the same reason as the rest. */}
