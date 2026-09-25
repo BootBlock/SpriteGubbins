@@ -941,8 +941,21 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * `useConfirmInPlace`, where `keepFocusThrough` now sits; and 0.01 in `ProjectsTab`.
  *
  * 2430 leaves **0.26 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2430 by the Sol hand-off protecting the chirality rules** (issue #327). The Sol
+ * directive named three blocks and ended "never those three", so the closing render-critical
+ * invariants and section 3's one-sided-feature ledger were the prose it told Sol to cut first. It
+ * now lists what must be forwarded as written, with a gated entry for each of those two blocks.
+ * Measured against `main` at `501ef4b`, rebuilt from the same lockfile, with the ceiling forced to
+ * zero in each tree so both figures are the ones `assertPrecacheContract` receives: **2429.95 KiB**
+ * on `main` and **2430.30** here, a delta of **0.35** that crossed a ceiling the base sat 0.05
+ * under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ * Comparing the two `dist/assets` listings summed by chunk name, all 359 bytes land in `index`,
+ * where the template and the wrappers are bundled. It is prompt text and the gate that picks it.
+ *
+ * 2431 leaves **0.70 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2430;
+export const PRECACHE_CEILING_KIB = 2431;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
