@@ -954,8 +954,21 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * where the template and the wrappers are bundled. It is prompt text and the gate that picks it.
  *
  * 2431 leaves **0.70 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2431 by the closing lines naming every companion deliverable** (issue #400). They
+ * named the adherence report alone, so a prompt with the component map on either ended on "Generate
+ * the sheet now." or asked for the report without the map, and nothing ordered the map before a
+ * report that allows nothing after it. The closing lines now take one wording per combination.
+ * Measured against `main` at `7cbd6f1`, rebuilt from the same lockfile, with the ceiling forced to
+ * zero in each tree so both figures are the ones `assertPrecacheContract` receives: **2430.86 KiB**
+ * on `main` and **2431.22** here, a delta of **0.36** that crossed a ceiling the base sat 0.14
+ * under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ * Comparing the two `dist/assets` listings summed by chunk name, all 368 bytes land in `index`,
+ * where the template is bundled. It is prompt text.
+ *
+ * 2432 leaves **0.78 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2431;
+export const PRECACHE_CEILING_KIB = 2432;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
