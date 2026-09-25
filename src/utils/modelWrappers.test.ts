@@ -359,8 +359,10 @@ describe('wrapForModel', () => {
   });
 
   it('asks Sol for exactly one image call, and puts the audit before it', () => {
-    // Nothing in a 33,716-character Sol prompt said the call was to be one call, and the audit it
-    // carries is only obeyable before the call: Sol sees the render when the reader does (#398).
+    // Nothing in a default Sol prompt said the call was to be one call, and the audit it carries is
+    // only obeyable before the call: Sol sees the render when the reader does (#398). The sentence
+    // names section 9 rather than every check below it, because the adherence report checks the
+    // delivered pixels after the call and must not be told to answer from the plan.
     const prompt = wrapperOnly(
       generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' })),
     );
@@ -368,6 +370,8 @@ describe('wrapForModel', () => {
     expect(prompt).toContain('Make exactly one image-tool call');
     expect(prompt).toContain('render the sheet rather than describe it');
     expect(prompt).toContain('never a second call or an edit of the image afterwards');
+    expect(prompt).toContain('the self-audit in section 9 is a check of what that call carries');
+    expect(prompt).not.toContain('every check below');
   });
 
   it('gives the hand-off to Sol alone, since no other target has one', () => {
@@ -419,11 +423,13 @@ describe('wrapForModel', () => {
       ['STYLE', 3],
       ['CAMERA', 4],
       ['INVENTORY', 5],
+      ['LAYOUT', 8],
     ]);
 
     expect(wrapForSol('body', true, true, shifted)).toContain(
       'still carry section 1, the object\nyaws in section 4 and the inventory in section 5',
     );
+    expect(wrapForSol('body', true, true, shifted)).toContain('the self-audit in section 8');
     expect(wrapForSol('body', true, true, shifted)).toContain('Section 3 states figures as well');
     expect(wrapForSeedream('body', shifted)).toContain('precedence order stated in section 1');
   });

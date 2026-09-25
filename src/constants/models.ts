@@ -60,9 +60,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
     capabilities: {
       deliberates: true,
-      // Nobody to cite, and the models this entry names — ChatGPT, Claude, Gemini — mostly draw by
-      // calling a tool whose image they first see when the reader does. Checking the plan before the
-      // render is true of every one of them, and redrawing before delivery is not.
+      // Nobody to cite, because no model is named — and a reader pasting this into a chat model
+      // that hands its render to a tool cannot obey "redraw before delivering" without a second
+      // image. Checking the plan before the render is true of any target that deliberates.
       seesCanvasBeforeDelivery: false,
       emitsText: true,
       // The one entry with nobody to cite. It names no model, so there is no vendor page to hold a
@@ -182,7 +182,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: true,
       // It sees nothing until the image tool returns, and by then the image is in front of the
       // reader, so "redraw rather than deliver" can only mean a second render or an edit of the
-      // first — two images, or one that no longer matches the composition its adherence is scored on.
+      // first — two images, or one that no longer matches the composition it was written to.
       seesCanvasBeforeDelivery: false,
       emitsText: true,
       // The *input* ceiling, not the 1,050,000 context window: the window is input plus the

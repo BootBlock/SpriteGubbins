@@ -535,9 +535,9 @@ export interface OutputConfig extends ImageOutputConfig {
    * — to write back about the *prompt* rather than the picture.
    *
    * The second half is what distinguishes it from the self-audit the template already carries for a
-   * reasoning target. That audit exists to fix the sheet before delivery; this asks what the
-   * specification failed to say clearly enough to make the miss impossible, addressed to whoever
-   * maintains the template. Needs both capabilities — a pass in which to re-read, and a channel to
+   * reasoning target. That audit exists to fix the sheet, or the plan for it, before delivery; this
+   * asks what the specification failed to say clearly enough to make the miss impossible, addressed
+   * to whoever maintains the template. Needs both capabilities — a pass in which to re-read, and a channel to
    * answer through — so it is gated on `supportsPromptFeedback` rather than on either alone.
    */
   readonly emitPromptFeedback: boolean;

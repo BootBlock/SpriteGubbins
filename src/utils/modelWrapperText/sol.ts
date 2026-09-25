@@ -153,8 +153,8 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * and then pointed at section 0 as a done-condition and section 9 as a verification pass. Reasoning
  * effort is a request parameter rather than something prose sets, and the two pointers restate
  * headings the template already carries — section 0 is titled NON-NEGOTIABLE OUTPUT CONTRACT and
- * opens "Satisfy this section before any aesthetic consideration", and section 9 opens "Before
- * delivering, verify". OpenAI's own guidance for this model family is that such lines are not free:
+ * opens "Satisfy this section before any aesthetic consideration", and section 9 opens with its own
+ * checklist. OpenAI's own guidance for this model family is that such lines are not free:
  * it says to remove "repeated statements of the same rule" and "process instructions for behavior
  * the model already performs reliably", and warns that "GPT-5-class models follow prompt contracts
  * closely, so conflicting rules can create more instability than missing detail". A target-specific
@@ -185,19 +185,24 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * pages rather than one, and they agree.
  * https://developers.openai.com/api/docs/guides/image-prompting
  *
- * The same guidance is why the self-audit stays: "Render the artifact before finalizing. Inspect
- * layout, clipping, spacing, missing content, and visual consistency" is what that section asks for,
- * and a verification pass is not a repeated statement of a rule.
+ * The same guidance is why the self-audit stays, and it is also why the audit on this target checks
+ * a plan rather than pixels. That guidance says "Render the artifact before finalizing. Inspect
+ * layout, clipping, spacing, missing content, and visual consistency" — a verification pass, which
+ * is not a repeated statement of a rule. But on this target rendering *is* delivering: Sol sees
+ * nothing until the tool returns, and the reader sees it then too, so an audit ending "redraw
+ * rather than delivering" could only be obeyed with a second render or an edit of the first — two
+ * images, or one that no longer matches the composition it was written to. So the template gives
+ * this target the plan-before-render audit, gated on `seesCanvasBeforeDelivery` in
+ * `constants/models.ts`, and the verification pass happens where Sol can still act: on the call.
  *
- * **What the audit may not do on this target is look at pixels, and the one-call paragraph is what
- * says so.** Sol sees nothing until the tool returns, and then the reader sees it too, so an audit
- * that ends "redraw rather than delivering" can only be obeyed with a second render or an edit —
- * two images, or one that no longer matches the composition the adherence pack scores. The template
- * already gives this target the plan-before-render audit, gated on `seesCanvasBeforeDelivery` in
- * `constants/models.ts`. What only this wrapper can state is the mapping between that audit and
- * the hand-off: the plan it checks is the call, and there is one call. Nothing in a 33,716-character
- * Sol prompt said "one" of the call before it. The same paragraph settles who "you" is in the body,
- * which addresses whoever draws, while the directive's first sentence says Sol does not.
+ * **The one-call paragraph is what only this wrapper can say about that audit.** It maps the audit
+ * onto the hand-off — the plan it checks is the call, and there is one call — which nothing in a
+ * default Sol prompt said before: in 33,716 characters of one, with the map and the report on,
+ * "one image", "single image" and "one call" never appeared. It names section 9 rather than "every
+ * check below", because the adherence report below it checks the delivered pixels after the call,
+ * and a sentence scoping every check to before the call would tell Sol to answer that from its
+ * plan. The same paragraph settles who "you" is in the body, which addresses whoever draws, while
+ * the directive's first sentence says Sol does not.
  *
  * Sources: [model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
  * [image generation tool](https://developers.openai.com/api/docs/guides/tools-image-generation),
@@ -243,9 +248,9 @@ yaws in section ${citeSection(sections, 'CAMERA')} and the inventory in section 
 shortened, shorten the prose elsewhere — never those three.
 
 Make exactly one image-tool call, and make it: render the sheet rather than describe it. You see the
-image only when the reader does, so every check below is a check of what that call carries, made
-before you make it — never a second call or an edit of the image afterwards. Where the text below
-says to draw, it states what the image your call obtains must show.${sectionTwo}
+image only when the reader does, so the self-audit in section ${citeSection(sections, 'LAYOUT')} is a check of what that call carries,
+made before you make it — never a second call or an edit of the image afterwards. Where the text
+below says to draw, it states what the image your call obtains must show.${sectionTwo}
 
 ${prompt}`;
 }

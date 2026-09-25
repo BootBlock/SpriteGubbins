@@ -3079,10 +3079,11 @@ describe('countWords and estimateTokens', () => {
 });
 
 /**
- * The self-audit is instruction addressed to a reader that can act on it — check the sheet against
- * the specification before it is delivered. A single-pass diffusion endpoint has no such step,
- * so on those targets the block is the most rule-list-shaped section in the template sitting where
- * attention is weakest. It is dropped for them and kept for the two that can run it.
+ * The self-audit is instruction addressed to a reader that can act on it — check the sheet, or the
+ * plan for it, against the specification before it is delivered. A single-pass diffusion endpoint
+ * has no such step, so on those targets the block is the most rule-list-shaped section in the
+ * template sitting where attention is weakest. It is dropped for them and kept for every target that
+ * deliberates.
  */
 describe('generatePrompt — the self-audit, per target', () => {
   const AUDIT_MARKERS = ['Component count is exactly', 'One camera, one scale and one light direction'];
@@ -3191,11 +3192,19 @@ describe('generatePrompt — the self-audit, per target', () => {
     // "thinking models that use a reasoning process for complex prompts", which cannot be disabled
     // — so "is an image generator" and "cannot run a verification pass" are different questions.
     // Getting this backwards would silently withhold the audit from a target that can act on it.
-    const gemini = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GEMINI_FLASH_IMAGE' }));
-    const singlePass = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GPT_IMAGE' }));
+    //
+    // Compared with GENERIC check by check rather than word for word, because the two differ on
+    // purpose in the sentences around the checklist: Gemini sees its interim images and is told to
+    // verify and redraw, where GENERIC checks its plan before the render. The checks themselves —
+    // every numbered item and every directional bullet — are the same list on both.
+    const options = withOutput({ directions: 'EIGHT_COMPASS' });
+    const checks = (targetModel: 'GEMINI_FLASH_IMAGE' | 'GENERIC') =>
+      sectionOf(generatePrompt('CHARACTER', SUBJECT, { ...options, targetModel }), 'LAYOUT AND SELF-AUDIT')
+        .split('\n')
+        .filter((line) => /^(\d+\. |- )/.test(line));
 
-    for (const marker of AUDIT_MARKERS) expect(gemini, marker).toContain(marker);
-    expect(countWords(gemini)).toBeGreaterThan(countWords(singlePass));
+    expect(checks('GEMINI_FLASH_IMAGE').length).toBeGreaterThan(10);
+    expect(checks('GEMINI_FLASH_IMAGE')).toEqual(checks('GENERIC'));
   });
 });
 
@@ -3208,11 +3217,19 @@ describe('generatePrompt — the self-audit, per target', () => {
  * listed here, so a target that changes its declaration is checked by the same loop.
  */
 describe('generatePrompt — the self-audit checks what the target can see', () => {
-  const PIXEL_AUDIT = ['Before delivering, verify:', 'the sheet has failed', 'Redraw\nthat component'];
+  // The last entry of each is section 3's failed-rotation sentence, which states the same rule as
+  // section 9's closing paragraph two sections earlier and so has to take the same side of the gate.
+  const PIXEL_AUDIT = [
+    'Before delivering, verify:',
+    'the sheet has failed',
+    'Redraw\nthat component',
+    'that pair has failed** and must be redrawn.',
+  ];
   const PLAN_AUDIT = [
     'Before the sheet is rendered, confirm that your plan for it secures each of these.',
     'the plan has failed',
     'before the sheet is rendered.',
+    'that pair has failed**, and it is corrected before the sheet is\nrendered.',
   ];
   const capable = withOutput({ emitPromptFeedback: true, directions: 'EIGHT_COMPASS' });
 

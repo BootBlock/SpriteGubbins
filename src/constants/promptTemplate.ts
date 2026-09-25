@@ -706,8 +706,15 @@ subject.
 Every directional component has a **front axis** and a **rear axis** — the ends that would lead and
 trail if it moved forward. For this subject: [DEFINE:LANDMARK_DESCRIPTION]
 
+[IF:SEES_CANVAS]
 Those landmarks turn with the component. **If a component’s front axis still points roughly the same
 way on screen in two of its views, that pair has failed** and must be redrawn.
+[/IF]
+[IF:SEES_CANVAS!=yes]
+Those landmarks turn with the component. **If a component’s front axis would point roughly the same
+way on screen in two of its views, that pair has failed**, and it is corrected before the sheet is
+rendered.
+[/IF]
 
 ### Silhouette and rotation carry the direction
 

@@ -728,8 +728,15 @@ subject.
 Every directional component has a **front axis** and a **rear axis** — the ends that would lead and
 trail if it moved forward. For this subject: [DEFINE:LANDMARK_DESCRIPTION]
 
+[IF:SEES_CANVAS]
 Those landmarks turn with the component. **If a component’s front axis still points roughly the same
 way on screen in two of its views, that pair has failed** and must be redrawn.
+[/IF]
+[IF:SEES_CANVAS!=yes]
+Those landmarks turn with the component. **If a component’s front axis would point roughly the same
+way on screen in two of its views, that pair has failed**, and it is corrected before the sheet is
+rendered.
+[/IF]
 
 ### Silhouette and rotation carry the direction
 
@@ -1729,6 +1736,33 @@ text with the image — as, since the corrections above, are both Gemini image t
 > "does this specification's redundancy cost it a sheet", and the answer is that redundancy was never
 > a single question — it depends which side of the hand-off a given restatement is for. Cutting §8 on
 > the strength of the GPT-5.6 guidance would apply a text model's rules to the image model's half.
+
+> **Corrected after shipping — §9 told Sol to look at pixels it cannot see, and nothing said "one
+> call"** ([issue #398](https://github.com/BootBlock/SpriteGubbins/issues/398)). The paragraph above
+> keeps §9 on this target by quoting "Render the artifact before finalizing. Inspect layout…", and
+> §9 obliged: "Before delivering, verify", then "Redraw that component … rather than delivering the
+> sheet", with the adherence report adding "fix what you can before delivering". On this target
+> rendering *is* delivering — Sol sees the image when the reader does — so the only way to obey was
+> a second render or an edit of the first. Across a 33,716-character default Sol prompt with the map
+> and report on, "one image", "single image" and "one call" never appeared.
+>
+> **The audit now checks what the target can see, gated on a declared capability rather than on
+> `deliberates`.** `seesCanvasBeforeDelivery` is true for the two Gemini image models alone, on
+> Google's "The model generates up to two interim images to test composition and logic. The last
+> image within Thinking is also the final rendered image"; they keep the wording above. Sol, Seedream
+> and `GENERIC` are told to confirm that their plan secures each check before the sheet is rendered,
+> §3's and §9's failed-rotation sentences say the plan is corrected before the render, and the report
+> says never to redraw or edit the image to answer it. The wrapper gains one paragraph: make exactly
+> one image-tool call and render rather than describe; the self-audit in §9 checks what that call
+> carries; and "draw" in the body names what the call's image must show, which settles the body
+> addressing Sol as the drawer after the directive's first line says it is not. §9 still stays here
+> for the reason the paragraph above gives — it is a verification pass — and it now runs at the one
+> point Sol can still act on it.
+>
+> **"Tool" now means the image tool alone in a Sol prompt.** The opening no longer says "a tool will
+> cut apart and reassemble", and the report calls Sprite Gubbins "the application" rather than "the
+> tool that composed this specification". The component map and the report describe "the delivered
+> image" rather than "what you actually drew".
 
 ### Documented prompt ceilings
 
