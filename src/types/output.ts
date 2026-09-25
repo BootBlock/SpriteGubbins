@@ -384,7 +384,8 @@ export interface ImageOutputConfig {
    *
    * Choosing one in the studio writes the settings package it implies — see `HardwareProfile` — and
    * then stays, because the machine's *name* is what the compiled prompt carries. What it emits is
-   * geometry alone: the display, the tile grid, the sprite sizes. Colour is `palette`'s, which is
+   * geometry alone: the display, and the tile grid, sprite sizes and sprite count where the machine
+   * had them. Colour is `palette`'s, which is
    * why the two can be set independently without the prompt contradicting itself.
    */
   readonly hardwareProfile: HardwareProfileId;

@@ -7,12 +7,15 @@ import { SYMMETRY_GUIDANCE } from './spriteSymmetry.ts';
  * The floor is the reader's own setting, so a share stated in prose is true at one floor and false
  * at another: the refusal once said "a sprite in the high eighties has drifted", which it shows
  * only when nothing reached the floor, and at a floor of 89 or below a high-eighties sprite snaps.
- * The badges and the axis list already state every figure, so the prose has no figure to add.
+ * Its "one near half" was the same mistake at the floor's lowest setting of 50. The badges and the
+ * axis list already state every figure, so the prose has no figure to add.
+ *
+ * A fraction word is refused as well as a number, because a share is as often spelt "half" as "50".
  */
 describe('SYMMETRY_GUIDANCE', () => {
   it('names no share, count or figure', () => {
     const figure =
-      /\d|\b(ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)\b|\b(tens|teens|twenties|thirties|forties|fifties|sixties|seventies|eighties|nineties)\b|per ?cent/i;
+      /\d|\b(ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)\b|\b(tens|teens|twenties|thirties|forties|fifties|sixties|seventies|eighties|nineties)\b|\b(half|quarters?|thirds?|fifths?|tenths?)\b|per ?cent/i;
 
     for (const [state, paragraph] of Object.entries(SYMMETRY_GUIDANCE)) {
       expect(
