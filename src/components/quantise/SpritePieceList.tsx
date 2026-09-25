@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { SPRITE_ASSIGNMENT_GUIDANCE } from '../../constants/spriteAssignment.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
@@ -20,8 +21,8 @@ interface SpritePieceListProps {
  *
  * **The panel half of the feature; the preview's labels are the other.** Both read one
  * `SpriteAssignment` from `useSpriteAssignment`, so what a chip says on the artwork and what a row
- * says in the list cannot be two answers. Clicking a sprite on the preview selects it, and the row
- * for it scrolls itself into view — see `SpritePieceRow`, which is where that happens.
+ * says in the list cannot be two answers. Clicking a sprite on the preview selects it, and the list
+ * scrolls the row for it into view.
  *
  * **It lists sprites, not pieces**, and that is the distinction the whole panel turns on. A piece is
  * what the download writes and can be two sprites joined; a sprite is what the reader can see a ring
@@ -34,8 +35,30 @@ interface SpritePieceListProps {
  */
 export function SpritePieceList({ assignment, inventory }: SpritePieceListProps) {
   const selected = useSpriteAssignmentStore((state) => state.selected);
+  const reveal = useSpriteAssignmentStore((state) => state.reveal);
+  const revealed = useSpriteAssignmentStore((state) => state.revealed);
   const forget = useSpriteAssignmentStore((state) => state.forget);
   const edited = useSpriteAssignmentStore((state) => state.edits.length > 0);
+  const owed = useRef<HTMLDivElement>(null);
+
+  // Selection is made in the *other* column — the reader clicks a sprite on the preview — so the row
+  // it names may be well outside the panel's scrolled view. Scrolling it into view is what makes the
+  // two halves one control surface rather than two lists that happen to agree.
+  //
+  // **On the click's request, never on `selected`**, which still names a row when the list mounts
+  // again under a result that landed after a dial move — see `SpriteAssignmentState.reveal`. The
+  // request is settled here, by the list, even where no row holds its sprite: a click made while a
+  // result was on its way names a box that result may have re-cut, and a request left standing
+  // would scroll the page the next time a dial brought that box back.
+  //
+  // `nearest` rather than `center`, so a row already on screen does not jump under the reader; and
+  // no focus is taken, because the click that caused this was in another column and moving focus
+  // away from it would strand a keyboard user who had merely tabbed to the preview.
+  useEffect(() => {
+    if (reveal === null) return;
+    owed.current?.scrollIntoView({ block: 'nearest' });
+    revealed();
+  }, [reveal, revealed]);
 
   return (
     <div className="mt-4 space-y-3">
@@ -68,6 +91,7 @@ export function SpritePieceList({ assignment, inventory }: SpritePieceListProps)
               at === index ? [] : [{ ordinal: at + 1, sprite: other }],
             )}
             selected={selected !== null && samePin(selected, sprite.pin)}
+            ref={reveal !== null && samePin(reveal, sprite.pin) ? owed : null}
           />
         ))}
       </div>

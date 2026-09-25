@@ -23,11 +23,11 @@ function boxAt(left: number): SpriteBox {
   return { left, top: 0, width: 4, height: 4, pixels: 16 };
 }
 
-/** A sheet that came apart into `count` sprites, laid out along one row. */
-function segmented(count: number): SpriteSegmentation {
+/** A sheet that came apart into `count` sprites, laid out along one row from column `from`. */
+function segmented(count: number, from = 0): SpriteSegmentation {
   return {
     kind: 'SEGMENTED',
-    boxes: Array.from({ length: count }, (_, index) => boxAt(index * 8)),
+    boxes: Array.from({ length: count }, (_, index) => boxAt(from + index * 8)),
     specks: 0,
   };
 }
@@ -125,6 +125,9 @@ describe('SpriteControls', () => {
       useSpriteAssignmentStore.getState().select(spritePin(boxAt(8)));
     });
     expect(scroll).toHaveBeenCalledTimes(1);
+    // The row the click named, and no other.
+    expect(scroll.mock.contexts[0]).toContainElement(screen.getByRole('combobox', { name: 'Sprite 2' }));
+    expect(scroll.mock.contexts[0]).not.toContainElement(screen.getByRole('combobox', { name: 'Sprite 1' }));
 
     for (let cycle = 0; cycle < 3; cycle += 1) {
       rerender(<SpriteControls sprites={sprites} busy />);
@@ -133,5 +136,26 @@ describe('SpriteControls', () => {
 
     expect(scroll).toHaveBeenCalledTimes(1);
     expect(useSpriteAssignmentStore.getState().selected).not.toBeNull();
+  });
+
+  it('drops a click made while a result was on its way, once the result that lands has re-cut it', () => {
+    // The preview keeps the previous result's chips while the next is computed, so a reader can
+    // select a box the incoming result no longer has. A request left standing for it would scroll
+    // the page the next time a dial brought that box back, answering no click at all.
+    const before = segmented(asked());
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const { rerender } = render(<SpriteControls sprites={before} busy />);
+
+    act(() => {
+      useSpriteAssignmentStore.getState().select(spritePin(boxAt(8)));
+    });
+    // The same sprites one column over, so no box keeps the pin that was clicked.
+    rerender(<SpriteControls sprites={segmented(asked(), 1)} busy={false} />);
+
+    expect(useSpriteAssignmentStore.getState().reveal).toBeNull();
+    rerender(<SpriteControls sprites={before} busy />);
+    rerender(<SpriteControls sprites={before} busy={false} />);
+
+    expect(scroll).not.toHaveBeenCalled();
   });
 });
