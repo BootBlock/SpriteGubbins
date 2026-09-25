@@ -2,8 +2,11 @@ import { relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 import { ARCHITECTURE_SECTIONS } from '../src/constants/architecture.ts';
+import { HARDWARE_PROFILES } from '../src/constants/hardware/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
+import { PALETTES } from '../src/constants/palettes/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../src/types/subject.ts';
+import { channelSpaceSize } from '../src/utils/channelLevels.ts';
 import { spellNumber } from '../src/utils/numberWords.ts';
 
 /**
@@ -18,7 +21,9 @@ import { spellNumber } from '../src/utils/numberWords.ts';
  *
  * So the fix is not a third correction. Both numbers are counts of something the tree already
  * knows, and this is what reads them back: adding a store or an output setting fails here, naming
- * the sentence whose figure it moved. The tab beside it does the same thing for the version number,
+ * the sentence whose figure it moved. The machines and the channel-depth palettes are pinned the
+ * same way, after the machine section called all eighteen systems real — PICO-8 is a fantasy
+ * console — and named two channel depths where the palettes shipped five. The tab beside it does the same thing for the version number,
  * in `src/components/tabs/AboutSection.test.tsx`, and for the same reason.
  *
  * **It pins the figures, not the wording.** A sentence rewritten around the same true count still
@@ -101,6 +106,35 @@ describe('the figures the Architecture tab states', () => {
     expect(
       sectionStating(phrase),
       `No Architecture section says “${phrase}”. SUBJECT_FIELD_KEYS has ${SUBJECT_FIELD_KEYS.length} entries and OutputConfig has ${settings.length}.`,
+    ).toBeDefined();
+  });
+
+  it('counts the machines, of which one is a fantasy console', () => {
+    const machines = Object.values(HARDWARE_PROFILES).filter((profile) => profile !== null);
+    // PICO-8 is the one machine whose constraints were chosen rather than imposed (hardware/pc.ts).
+    const fantasy = machines.filter((profile) => profile.id === 'PICO_8');
+    const phrase = `${spellNumber(machines.length)} systems — ${spellNumber(machines.length - fantasy.length)} real machines`;
+
+    expect(fantasy).toHaveLength(1);
+    expect(
+      sectionStating(phrase),
+      `No Architecture section says “${phrase}”. HARDWARE_PROFILES has ${machines.length} machines.`,
+    ).toBeDefined();
+    expect(sectionStating(phrase), 'The machine section no longer names PICO-8 as the fantasy console.').toBe(
+      sectionStating('one fantasy console, PICO-8'),
+    );
+  });
+
+  it('states the range of colours the channel-depth palettes span', () => {
+    const sizes = Object.values(PALETTES).flatMap((palette) =>
+      palette?.space.kind === 'CHANNEL_DEPTH' ? [channelSpaceSize(palette.space.bitsPerChannel)] : [],
+    );
+    const count = (n: number): string => n.toLocaleString('en-GB');
+    const phrase = `from ${count(Math.min(...sizes))} to ${count(Math.max(...sizes))} colours`;
+
+    expect(
+      sectionStating(phrase),
+      `No Architecture section says “${phrase}”. The channel-depth palettes hold ${sizes.map(count).join(', ')} colours.`,
     ).toBeDefined();
   });
 });
