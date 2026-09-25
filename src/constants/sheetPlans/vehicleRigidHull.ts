@@ -1,4 +1,4 @@
-import type { AssemblyFailure, SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { AssemblyFailure, SheetPlan, SheetSeries, ViewSheetPlan } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 import { fixed } from './modePlans.ts';
@@ -82,10 +82,13 @@ const VEHICLE_RIGID_STATES: SheetPlan = {
 };
 
 /** One sheet of a rigid hull's views: the whole vehicle at each of this sheet's facings. */
-function rigidViewSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
+function rigidViewSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): ViewSheetPlan {
   return {
     name: chunkName('Vehicle views', chunk, chunks),
     facings: chunk,
+    // The side-paired division's hull clause, said of the one piece these views draw: the vehicle.
+    landmark:
+      'a vehicle’s front is the nose, prow or bow — the end that leads in travel and the end the driving position looks out of — and its rear is the engine deck, tail or transom.',
     assembly:
       'one vehicle seen from each facing, every view registered to the same footprint, so the engine can swap one for the next as the vehicle turns without it shifting.',
     targetQuantity: 'COMPONENT',

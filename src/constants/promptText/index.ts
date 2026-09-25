@@ -49,6 +49,5 @@ export { depthOrder, depthOrderDescription, DEPTH_ORDER_TEXT, PLAN_DEPTH_ORDER_T
 export { cameraElevationRange, isPlanView, resolveCameraElevation } from './elevation.ts';
 export { FACING_TEXT, facingText, OBJECT_YAW } from './rotation.ts';
 export { leadingSide, signedObjectYaw } from './chirality.ts';
-export { LANDMARK_TEXT } from './landmarks.ts';
 export { ASPECT_TEXT, BACKGROUND_KEY_TEXT } from './sheet.ts';
 export { JOINT_CAP_TEXT, OVERLAP_MARGIN_TEXT } from './rigging.ts';

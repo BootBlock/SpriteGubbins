@@ -13,11 +13,12 @@ import { spellNumber } from '../../utils/numberWords.ts';
  * fourth upper-arm variant would have left the character's arm sentence saying eight of nine, and no
  * test read the words.
  *
- * **The sentence is now a function of the entries it mirrors**, so the four wordings move with the
- * side they describe or they do not move at all. The four call sites differ only in the limb noun,
- * which is what makes one builder right here rather than four near-copies: `arm` and `leg` on the
- * character, `forelimb` and `hindlimb` on the creature — the creature vocabulary being its own for
- * the reason `creature.ts` records, that a beast asked for a hand gets a humanoid one.
+ * **The sentence is now a function of the entries it mirrors**, so every wording moves with the side
+ * it describes or does not move at all. The call sites differ only in the limb noun, which is what
+ * makes one builder right here rather than near-copies: `arm` and `leg` on the character, and on the
+ * creature whatever a body mirrors — `forelimb` and `hindlimb` on the quadruped, `pectoral fin` on the
+ * fish — the creature vocabulary being its own for the reason `creature.ts` records, that a beast asked
+ * for a hand gets a humanoid one.
  *
  * **`parts` stays authored**, as {@link ComponentEntry.parts} requires and for the reason it gives:
  * mirroring the names by substituting the side into them would put the sprite manifest at the mercy

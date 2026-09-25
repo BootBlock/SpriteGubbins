@@ -48,11 +48,10 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   thing depicted, a glyph depicts nothing — which is why the two categories part company here and
  *   nowhere else.
  * - **TERRAIN keeps every projection, and binding it would delete a shipped deliverable.** It is the
- *   category that looks bound and is not: `LANDMARK_TEXT.TERRAIN` does say "a tile has no front — it
- *   is laid flat and read from above", and stops there only in the *tile's* clause. Its second
- *   clause is the rest of the category — "a landform piece's front is the exposed face the camera
- *   sees, the rock wall, the cut bank or the outward side of an outcrop" — and the
- *   `side-on-volcanic-cliff` preset is that sheet, drawn at `ORTHOGRAPHIC_SIDE` because "a
+ *   category that looks bound and is not: a tile has no front, since it is laid flat and read from
+ *   above, but the feature library's landform pieces do — the exposed face the camera sees, the rock
+ *   wall, the cut bank or the outward side of an outcrop — and the `side-on-volcanic-cliff` preset is
+ *   that sheet, drawn at `ORTHOGRAPHIC_SIDE` because "a
  *   platformer's ground is a cliff seen from the side, and an exposed face is exactly what a flat
  *   field has nowhere to put". "Is read from above" is a property of some terrain and not of the
  *   category, and a table cannot tell them apart — which is the argument `CATEGORY_DIRECTION_SETS`

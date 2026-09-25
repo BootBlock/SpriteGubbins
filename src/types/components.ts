@@ -261,9 +261,9 @@ export interface ComponentEntry {
    * **Section 5 reads whether it is set, never what it says.** What the value is for is
    * `mirroredLimb`, which builds this entry's `text` from it — `The same eight variants as the left
    * arm, redrawn for the right side` — so the field is the phrase that sentence is written around
-   * and carries its own article and no trailing stop. The eight pose-library and rig entries that
-   * write both sides out by hand declare it beside prose that already names the side, which is why
-   * eight of the twelve declarations are read by nothing but the predicate.
+   * and carries its own article and no trailing stop. The pose-library and rig entries that write
+   * both sides out declare it beside prose that already names the side, which is why most
+   * declarations are read by nothing but the predicate.
    */
   readonly mirrors?: string;
 }
@@ -440,14 +440,14 @@ export interface AssemblyFailure {
 }
 
 /**
- * One sheet: what it asks for, how many facings it draws, and what its components must assemble into.
+ * What every sheet states, whichever facings it draws — the half {@link SheetPlan}'s two shapes share.
  *
  * The assembly sentence lives here rather than in a table of its own because it is the same
  * decision as the inventory — a set of floor and wall tiles assembles into a floor field, and a set
  * of limb segments assembles into a stride. Splitting them across two `Record`s keyed by different
  * things is how one of them came to describe a tileset while the other described a character.
  */
-export interface SheetPlan {
+interface SheetPlanFields {
   /**
    * What this sheet carries, as the split drawer titles it and the inventory heading names it.
    *
@@ -456,7 +456,6 @@ export interface SheetPlan {
    * change between runs.
    */
   readonly name: string;
-  readonly facings: SheetFacings;
   readonly groups: readonly ComponentGroup[];
   /** Completes "The component set must assemble cleanly into: …". */
   readonly assembly: string;
@@ -582,6 +581,45 @@ export interface SheetPlan {
    */
   readonly assemblyFailure: AssemblyFailure;
 }
+
+/** A sheet drawn to one facing per generation — see {@link SheetFacings}. */
+export interface RunSheetPlan extends SheetPlanFields {
+  readonly facings: 'run';
+}
+
+/** A sheet of views, drawing its pieces at each facing of the tuple — see {@link SheetFacings}. */
+export interface ViewSheetPlan extends SheetPlanFields {
+  readonly facings: readonly [Direction, ...Direction[]];
+  /**
+   * Which end of each piece this sheet draws at several yaws is its front, and which its rear — what
+   * section 3 states as the evidence that a view turned rather than was redrawn.
+   *
+   * A generator cannot check that a component rotated unless it knows which part of it points
+   * forward, and "front" is not the same landmark for a creature, a doorway and a pistol. So the
+   * sentence is written for the pieces, never generically: "its forward-facing surface" is precisely
+   * the loose wording that let three views face the same way.
+   *
+   * **It is the sheet's, not the category's** (issue #286). It was a record keyed by category, and a
+   * category's sheets stopped sharing their pieces once a base could choose them: an octopus's
+   * directional core was told which end of a body and a hindquarters leads above an inventory of heads
+   * and mantles, and a rotorcraft's which end of a drive unit and a turret leads above rotors and
+   * pylons. A sentence naming a piece its own inventory does not list is a rule the generator has
+   * nothing to attach, so `sheetPlans/landmarks.test.ts` grounds every piece it names in the sheet's
+   * own prose.
+   *
+   * **Only a sheet of views carries one**, because the block it fills is gated on a sheet covering
+   * more than one facing, which a run never does. So the type asks for it exactly where it can be
+   * read, and a category with no sheet of views — a tile set, an effect, a glyph — has no sentence to
+   * write and none to leave standing as filler.
+   */
+  readonly landmark: string;
+}
+
+/**
+ * One sheet: what it asks for, how many facings it draws, and what its components must assemble into —
+ * a run or a sheet of views, told apart by {@link SheetFacings}.
+ */
+export type SheetPlan = RunSheetPlan | ViewSheetPlan;
 
 /**
  * Every sheet one (category, sheet-mode) pairing takes, in the order they are generated.

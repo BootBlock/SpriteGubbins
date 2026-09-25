@@ -76,10 +76,10 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
 
   setCategory: (category) => {
     act(() => {
-      // Read before the write, because the category being left is half of what settles a loaded rig
+      // Read before the write, because the subject being left is half of what settles a loaded rig
       // contract: a document loaded for a character is not a claim about a creature, however well
       // the creature's sheets would take a rig.
-      const from = get().category;
+      const from = { category: get().category, subject: get().subject };
       const subject = defaultSubjectFor(category);
       set({ category, subject });
       // A category switch invalidates the most of the technical half; `resolveOutputForSubject`
@@ -173,9 +173,9 @@ function outputFollowing(
 ): OutputConfig | null {
   if (plansFor(category, before) === plansFor(category, after)) return null;
   const { output } = useOutputStore.getState();
-  // The same category on both sides: a base change edits one field of one subject, so a contract
-  // loaded for it is still loaded for it — and only the rig the base leaves behind decides it.
-  const resolved = resolveOutputForSubject(category, after, output, category);
+  // The plans differ, so a contract loaded for the body before the edit does not survive it: it
+  // replaces an inventory the new base no longer draws (issue #286).
+  const resolved = resolveOutputForSubject(category, after, output, { category, subject: before });
   return resolved === output ? null : resolved;
 }
 

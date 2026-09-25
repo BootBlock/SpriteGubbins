@@ -1,4 +1,4 @@
-import type { AssemblyFailure, SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { AssemblyFailure, SheetPlan, SheetSeries, ViewSheetPlan } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 
@@ -110,6 +110,13 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
 };
 
 /**
+ * Which end of an object is its front — see `ViewSheetPlan.landmark`. It names no piece, and states a
+ * front for the object as a whole, so the articulated views and the rigid object's views share it.
+ */
+const OBJECT_LANDMARK =
+  'the front is the face the object presents in use or on display; the rear is what sits behind it — the back panel, the mounting side, the surface never meant to be seen.';
+
+/**
  * The directional views, steered by the chosen facings.
  *
  * Every entry here is a piece drawn once per facing, so the whole plan scales with the set: six
@@ -119,10 +126,11 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
  * chunk. Unlike CHARACTER and CREATURE there is no articulation run behind these: the moving parts
  * are views of the same object, so they turn with it.
  */
-function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
+function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): ViewSheetPlan {
   return {
     name: chunkName('Directional views', chunk, chunks),
     facings: chunk,
+    landmark: OBJECT_LANDMARK,
     assembly:
       'the complete object seen from each facing, with its moving parts in matching positions across those views.',
     targetQuantity: 'ASSEMBLED',
@@ -295,10 +303,11 @@ export const OBJECT_RIGID_STATES: SheetPlan = {
 };
 
 /** One sheet of a rigid object's views: the whole object at each of this sheet's facings. */
-function objectRigidViewSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
+function objectRigidViewSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): ViewSheetPlan {
   return {
     name: chunkName('Object views', chunk, chunks),
     facings: chunk,
+    landmark: OBJECT_LANDMARK,
     assembly:
       'one object seen from each facing, every view registered to the same footprint, so the engine can swap one for the next as the object turns without it shifting.',
     targetQuantity: 'COMPONENT',

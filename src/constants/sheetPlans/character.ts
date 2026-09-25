@@ -1,4 +1,4 @@
-import type { ComponentEntry, SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { ComponentEntry, SheetPlan, SheetSeries, ViewSheetPlan } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 import { FIGURE_ASSEMBLY_FAILURE } from './figureAssemblyFailure.ts';
@@ -144,16 +144,27 @@ export const CHARACTER_POSE_LIBRARY: SheetPlan = {
 };
 
 /**
+ * Which end of each piece the directional core turns is its front — see `ViewSheetPlan.landmark`.
+ *
+ * It named a foot as well, and no core sheet draws one: a foot is the articulation run's, which is
+ * drawn to one facing and states no landmark, so the clause ruled on a piece the one sheet it reached
+ * does not draw (issue #286).
+ */
+const CHARACTER_LANDMARK =
+  'a head’s front is the face and its rear the back of the skull and the neck socket; a torso’s front is the chest and its rear the spine and shoulder blades; a pelvis’s front is the abdomen and its rear the seat and the small of the back.';
+
+/**
  * One core sheet: the trunk, turned to this sheet's share of the chosen facings.
  *
  * Up to five views share a sheet; the eight-compass set arrives as two — see `coreFacingChunks` for
  * why the split is by yaw parity. Either way the entries, the count and section 3's yaw list are all
  * written from the same tuple, so they cannot disagree about which views the sheet owes.
  */
-function characterDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
+function characterDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTuple[]): ViewSheetPlan {
   return {
     name: chunkName('Directional core', chunk, chunks),
     facings: chunk,
+    landmark: CHARACTER_LANDMARK,
     assembly:
       'one head, one torso and one pelvis per facing, reading as one body turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.',
     targetQuantity: 'ASSEMBLED',

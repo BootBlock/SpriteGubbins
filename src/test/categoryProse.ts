@@ -39,28 +39,18 @@ export function everySheetOf(category: SubjectCategory): readonly SheetPlan[] {
  * Everything a category writes about its own subject on the given sheets, plus the name it goes by
  * in the selector.
  *
- * This is the corpus two different claims are grounded against: that section 2 prices a series in a
- * noun that series' own sheets use (`utils/sheetPlans.test.ts`, handed one series at a time), and
- * that section 3's landmark rule names pieces that category's own sheets list
- * (`promptText/landmarks.test.ts`, handed {@link categoryProseFor}). Both ask the same question — is
- * this word one these sheets write — so both read the same sources, and a second copy of that list
- * is a second place for a plan shape to be missed.
+ * This is the corpus a claim about a *series* is grounded against: that section 2 prices a series in a
+ * noun that series' own sheets use (`utils/sheetPlans.test.ts`, handed one series at a time). A claim
+ * about one sheet — its scale example, its landmark — reads {@link planProseFor} instead.
  *
- * **The selector's label is the second source because two categories are grounded by nothing else.**
- * `creature` appears in no CREATURE plan — that category's plans list a head, a body, hindquarters
- * and limb segments — and `building` in no BUILDING plan, whose plans list tiles, bays and roof
- * sections. `Creature / Monster` and `Building / Environment Tile` are where each writes its own
- * name. `CATEGORY_ASSEMBLY` was tried as a third source and grounds nothing that these two do not,
- * so it is deliberately absent: a source that never decides an answer is a source nobody can tell
- * has stopped working.
+ * **The selector's label is the second source because a category can be grounded by nothing else.**
+ * `building` appears in no BUILDING plan, whose plans list tiles, bays and roof sections, and
+ * `Building / Environment Tile` is where the category writes its own name. `CATEGORY_ASSEMBLY` was
+ * tried as a third source and grounds nothing that these two do not, so it is deliberately absent: a
+ * source that never decides an answer is a source nobody can tell has stopped working.
  */
 export function sheetsProseFor(category: SubjectCategory, sheets: readonly SheetPlan[]): string {
   return [CATEGORY_OPTIONS[category].label, ...sheets.map(planProseFor)].join('\n');
-}
-
-/** Everything a category writes about its own subject, over every sheet it can be asked for. */
-export function categoryProseFor(category: SubjectCategory): string {
-  return sheetsProseFor(category, everySheetOf(category));
 }
 
 /**

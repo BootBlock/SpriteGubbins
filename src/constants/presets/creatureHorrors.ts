@@ -6,8 +6,9 @@ import type { PresetArchetype } from '../../types/preset.ts';
 /**
  * The creatures with no animal underneath — oozes, growths, void things and clockwork.
  *
- * The body plans here are the ones a humanoid inventory cannot describe, which is the reason the
- * component plans are keyed on category at all. Two of them also leave the magenta default behind:
+ * The body plans here are the ones a humanoid inventory cannot describe, and two of them are ones a
+ * quadruped's cannot either: *Void Abomination* is drawn on `Octopus Tentacled` and *Ooze Hydra Brood*
+ * on `Serpentine Tailless`, each of which draws a body of its own (issue #286). Two of them also leave the magenta default behind:
  * black for a sheet whose subject *emits* light, and transparent for a render that arrives carrying its
  * own alpha. The reasoning for each is at the field.
  */

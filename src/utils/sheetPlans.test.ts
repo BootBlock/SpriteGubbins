@@ -272,6 +272,9 @@ describe('the plan table itself', () => {
       'CHARACTER / Articulation',
       'CREATURE / Pose library',
       'CREATURE / Articulation',
+      // A creature with no fixed limbs: its mass once per shape and a pseudopod once per reach, on the
+      // run sheet that stands where the articulation sheet stands for a jointed body (issue #286).
+      'CREATURE / Shapes',
       // A hatch closed, part-open and fully open; a rigid object whole at rest and active; a working
       // end in two states; an entrance module closed and open; a mount stowed, traversed and elevated.
       // Only two of these four categories articulate — `CATEGORY_RIG_MODES` gives ITEM and BUILDING
@@ -370,14 +373,7 @@ describe('the plan table itself', () => {
       expect(multiView, where).toHaveLength(2);
 
       const [cardinals, diagonals] = multiView;
-      if (
-        cardinals === undefined ||
-        diagonals === undefined ||
-        cardinals.facings === 'run' ||
-        diagonals.facings === 'run'
-      ) {
-        throw new Error('narrowed above');
-      }
+      if (cardinals === undefined || diagonals === undefined) throw new Error('narrowed above');
       for (const facing of cardinals.facings) expect(OBJECT_YAW[facing] % 90).toBe(0);
       for (const facing of diagonals.facings) expect(OBJECT_YAW[facing] % 90).not.toBe(0);
       expect([...cardinals.facings, ...diagonals.facings].sort(), where).toEqual(
@@ -839,8 +835,9 @@ describe('section 5’s Mirroring rule describes only the sets the sheet in fron
    *
    * Written out rather than read off the plans, for the reason `PAIRING_FRAME` above is: an
    * expectation gathered from `planMirrorsPieces` would move with whatever the plans say and assert
-   * nothing about which answer is right. CHARACTER and CREATURE draw a left and a right of every
-   * limb, so one silhouette is the other reflected. OBJECT's rig is a housing, a base, a panel, a
+   * nothing about which answer is right. CHARACTER and CREATURE's standard sheets draw a left and a
+   * right of every limb, so one silhouette is the other reflected — a CREATURE base with no sided
+   * limb, such as the serpent's, draws no pair at all, which the plan's own entries say. OBJECT's rig is a housing, a base, a panel, a
    * subassembly and two fittings, and has no sided piece at all. VEHICLE's *are* sided — a near-side
    * and a far-side drive unit — and are still not a mirror pair: under a fixed camera the near track
    * faces the viewer and the far one turns away, so neither is the other reflected, and producing

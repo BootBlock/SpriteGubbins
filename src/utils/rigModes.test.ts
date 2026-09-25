@@ -588,6 +588,8 @@ describe('a base with no rig sheet offers no rig', () => {
 
   it('is the rigid object, so the sweep below reads something', () => {
     expect(RIGLESS.map(({ category, base }) => `${category} / ${base}`)).toEqual([
+      // A mass that lays pseudopods over itself rather than hinging them (issue #286).
+      'CREATURE / Amorphous — No Fixed Limbs',
       'OBJECT / Single Rigid Object',
       'VEHICLE / Single Rigid Hull',
     ]);

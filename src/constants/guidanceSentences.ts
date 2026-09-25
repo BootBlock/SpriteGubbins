@@ -143,8 +143,9 @@ export const ABSENT_OPTION_DROPS_THE_PIECES =
  * gives 15 — CREATURE said the field decides how many legs get their own sprite slots while
  * `Amorphous — No Fixed Limbs` still ordered four limbs, and OBJECT said `Single Rigid Object` emits
  * one piece where it compiled to 30, 14 and 7 across its three modes. The OBJECT card is true now,
- * because that base draws its own sheets; the CHARACTER and CREATURE claims stay false until those
- * categories declare bases, which is why their cards carry this sentence.
+ * because that base draws its own sheets, and so is a CREATURE card naming what its bases are cut into,
+ * because its limbless bases draw theirs (issue #286); the CHARACTER claim stays false until that
+ * category declares bases, which is why its card carries this sentence.
  * `tests/subject-field-inventory.test.ts` holds every card to the declarations behind it.
  *
  * **It is on every card whose category declares no base, and not only the ones that lied**, because a

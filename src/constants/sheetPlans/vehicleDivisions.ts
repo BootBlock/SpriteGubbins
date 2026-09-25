@@ -73,6 +73,13 @@ const ROTOR_BORNE: VehicleDivision = {
       { text: 'open', slug: 'open' },
     ],
   },
+  // A rotor turns rather than travels, so its landmark is the side of the mast the nose is on rather
+  // than a leading edge in the direction of travel.
+  landmarks: [
+    'a fuselage’s front is the nose — the end that leads in flight and the end the cockpit looks out of — and its rear is the tail boom',
+    'a mount’s front is its muzzle, sensor face or working end, which turns independently of the fuselage beneath it',
+    'a rotor assembly’s front is the side of its mast that faces the nose',
+  ],
 };
 
 /**
@@ -136,6 +143,12 @@ const THRUSTER_BORNE: VehicleDivision = {
       { text: 'open', slug: 'open' },
     ],
   },
+  // The pylon extends rather than traverses, so it points where the nose does.
+  landmarks: [
+    'a fuselage’s front is the nose — the end that leads in flight and the end the cockpit looks out of — and its rear is the engine bay',
+    'a pylon or sensor mount’s front is its muzzle or sensor face, which points where the nose points',
+    'a thruster cluster’s front is its housing end and its rear the nozzle end',
+  ],
 };
 
 /**
@@ -189,6 +202,11 @@ const TWO_WHEEL: VehicleDivision = {
     ],
   },
   access: null,
+  landmarks: [
+    'a frame’s front is the headstock — the end that leads in travel and the end the rider looks out over — and its rear is the tail behind the seat',
+    'a rack or mount’s front is the end nearer the headstock',
+    'a wheel’s front is its leading edge in the direction of travel',
+  ],
 };
 
 /** A launch, a gunboat, a submersible: a screw that turns and a rudder that swings, both under one hull. */
@@ -248,6 +266,11 @@ const SCREW_AND_RUDDER: VehicleDivision = {
       { text: 'open', slug: 'open' },
     ],
   },
+  landmarks: [
+    'a hull’s front is the bow — the end that leads under way and the end the wheelhouse looks out of — and its rear is the stern or transom',
+    'a deck gun or working mount’s front is its muzzle, jib or working end, which turns independently of the hull beneath it',
+    'a screw and rudder’s front is the shaft end nearer the bow, and its rear the blades and the rudder’s trailing edge',
+  ],
 };
 
 /**
@@ -275,6 +298,10 @@ const TOWED_IMPLEMENT: VehicleDivision = {
       { text: 'working body', slug: 'body' },
     ],
   },
+  landmarks: [
+    ...VEHICLE_SIDE_PAIRED.landmarks,
+    'a towed implement’s front is the end at the drawbar or hitch, and its rear the working end it drags',
+  ],
 };
 
 export const VEHICLE_ROTOR_PLANS: ModePlans = vehiclePlansFor(ROTOR_BORNE);
