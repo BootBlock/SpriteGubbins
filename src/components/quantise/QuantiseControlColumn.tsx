@@ -6,7 +6,7 @@ import type {
   PixelGrid,
   Quantised,
   QuantiseSettings,
-  SheetFacts,
+  SheetReading,
 } from '../../types/quantiser.ts';
 import { AntiAliasControls } from './AntiAliasControls.tsx';
 import { AutoTuneControls } from './AutoTuneControls.tsx';
@@ -24,7 +24,7 @@ import { SymmetryControls } from './SymmetryControls.tsx';
 
 interface QuantiseControlColumnProps {
   readonly source: ImportedImage;
-  readonly facts: SheetFacts | null;
+  readonly reading: SheetReading;
   readonly grid: PixelGrid | null;
   readonly settings: QuantiseSettings | null;
   readonly quantised: Quantised | null;
@@ -54,7 +54,7 @@ interface QuantiseControlColumnProps {
  */
 export function QuantiseControlColumn({
   source,
-  facts,
+  reading,
   grid,
   settings,
   quantised,
@@ -85,7 +85,7 @@ export function QuantiseControlColumn({
       <DialHistoryControls />
 
       <GridControls
-        facts={facts}
+        reading={reading}
         target={target}
         suggested={suggested}
         grid={grid}

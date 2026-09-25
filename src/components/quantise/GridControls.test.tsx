@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { ColorPlan, SheetFacts } from '../../types/quantiser.ts';
+import type { ColorPlan, SheetFacts, SheetReading } from '../../types/quantiser.ts';
 import { GridControls } from './GridControls.tsx';
 
 /**
- * What the panel *says* about the sheet's scale, across the four states it can be in.
+ * What the panel *says* about the sheet's scale, across the states it can be in.
  *
  * The panel's whole job is to keep a number and its provenance together, so its failures are
  * failures of agreement rather than of rendering: a badge that calls a scale measured when it was
@@ -21,12 +21,16 @@ const COLOR_PLAN: ColorPlan = {
   superseded: null,
 };
 
-const factsWith = (scale: SheetFacts['scale']): SheetFacts => ({ scale, colors: 1024 });
+const readWith = (scale: SheetFacts['scale']): SheetReading => ({
+  kind: 'facts',
+  facts: { scale, colors: 1024 },
+});
+const PENDING: SheetReading = { kind: 'pending' };
 
-function show(facts: SheetFacts | null, grid: number | null, colorPlan: ColorPlan = COLOR_PLAN) {
+function show(reading: SheetReading, grid: number | null, colorPlan: ColorPlan = COLOR_PLAN) {
   render(
     <GridControls
-      facts={facts}
+      reading={reading}
       target={null}
       suggested={null}
       grid={grid}
@@ -40,14 +44,14 @@ describe('GridControls', () => {
   it('says an exact reading was measured, and explains nothing further', () => {
     // Nothing to act on: the scale is in the box, and the panel that keeps talking about a settled
     // answer is the one a reader learns to stop reading.
-    show(factsWith({ grid: 8, measurement: 'EXACT' }), 8);
+    show(readWith({ grid: 8, measurement: 'EXACT' }), 8);
 
     expect(screen.getByText(/measured where the art changes/)).toBeInTheDocument();
     expect(screen.queryByText(/Nothing in this image changes on a regular grid/)).toBeNull();
   });
 
   it('marks an estimate as an estimate, and asks for the click that would apply it', () => {
-    show(factsWith({ grid: 8, measurement: 'EDGE_PERIOD' }), null);
+    show(readWith({ grid: 8, measurement: 'EDGE_PERIOD' }), null);
 
     expect(screen.getByText(/estimated from the spacing of its softened edges/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /8× estimated/ })).toBeInTheDocument();
@@ -59,7 +63,7 @@ describe('GridControls', () => {
     // used to describe every one of them as the spacing of the sheet's edges — the reading that
     // answers on none of the eight sheets in `test_sprites/`. A reader deciding whether to trust
     // the number was being told where it came from, wrongly.
-    show(factsWith({ grid: 3, measurement: 'REPEAT_DISTANCE' }), null);
+    show(readWith({ grid: 3, measurement: 'REPEAT_DISTANCE' }), null);
 
     expect(screen.getByText(/estimated from the distance its detail repeats over/)).toBeInTheDocument();
     expect(screen.getByText(/Its detail does repeat over one distance across the sheet/)).toBeInTheDocument();
@@ -71,7 +75,7 @@ describe('GridControls', () => {
     // rather than a measurement, so it has not been applied: click it" — and that stops being true
     // the moment a grid is in force. Left up, the panel asks for something the reader has already
     // done, beside a box holding the number and a preview showing the result.
-    show(factsWith({ grid: 8, measurement: 'EDGE_PERIOD' }), 8);
+    show(readWith({ grid: 8, measurement: 'EDGE_PERIOD' }), 8);
 
     expect(screen.queryByText(/so it has not been applied/)).toBeNull();
     // The badge and the candidate stay: they report where the number came from, which is still true
@@ -81,7 +85,7 @@ describe('GridControls', () => {
   });
 
   it('asks for a number when no reading found a scale', () => {
-    show(factsWith(null), null);
+    show(readWith(null), null);
 
     expect(screen.getByText(/none of the four readings of the sheet found a scale/)).toBeInTheDocument();
   });
@@ -95,13 +99,13 @@ describe('GridControls', () => {
     // in one case mounts a second panel beside the first, and an assertion that the paragraph is
     // present is then satisfied by the *previous* render whatever this one did. `getByText` rather
     // than `getAllByText` for the same reason — it throws on a duplicate, so the leak cannot hide.
-    show(factsWith(null), 6);
+    show(readWith(null), 6);
 
     expect(screen.getByText(/none of the four readings of the sheet found a scale/)).toBeInTheDocument();
   });
 
   it('says it is still looking, and offers nothing to try, before the sheet has been read', () => {
-    show(null, null);
+    show(PENDING, null);
 
     expect(screen.getByText(/Measuring the sheet/)).toBeInTheDocument();
     // The candidate row goes entirely, rather than standing empty: there is nothing to try yet, and
@@ -110,16 +114,37 @@ describe('GridControls', () => {
     expect(screen.queryByRole('button', { name: /measured|estimated|target size/ })).toBeNull();
   });
 
+  it('stops measuring and counting once the survey has failed, and asks for a number', () => {
+    // A failed survey used to arrive as the same `null` as a survey still running, so the badge
+    // pulsed “Measuring the sheet…” and the readout said “counting…” beside the settled error for
+    // as long as the sheet stayed loaded.
+    show({ kind: 'failed', cause: 'sheet' }, null);
+
+    expect(screen.getByText('Not measured — the reading failed')).toBeInTheDocument();
+    expect(screen.getByText('not counted')).toBeInTheDocument();
+    expect(screen.queryByText(/Measuring the sheet/)).toBeNull();
+    expect(screen.queryByText('counting…')).toBeNull();
+    expect(screen.getByText(/The sheet could not be measured/)).toBeInTheDocument();
+  });
+
+  it('asks for no number once the thread itself has died, since none would be computed', () => {
+    show({ kind: 'failed', cause: 'thread' }, null);
+
+    expect(screen.getByText('Not measured — the reading failed')).toBeInTheDocument();
+    expect(screen.queryByText(/Measuring the sheet/)).toBeNull();
+    expect(screen.queryByText(/The sheet could not be measured/)).toBeNull();
+  });
+
   it('offers the dither only once there is a palette to dither against', () => {
     // The control is the palette step in positional form, so with the studio naming no budget and
     // nothing pinned or locked it has nothing to express. Withdrawing it is the same call the panel
     // makes about the ink-weighted dials: a control that could change nothing is a lie on screen.
-    show(factsWith({ grid: 8, measurement: 'EXACT' }), 8);
+    show(readWith({ grid: 8, measurement: 'EXACT' }), 8);
     expect(screen.queryByLabelText('Dither')).toBeNull();
   });
 
   it('offers the dither once a budget is in force', () => {
-    show(factsWith({ grid: 8, measurement: 'EXACT' }), 8, {
+    show(readWith({ grid: 8, measurement: 'EXACT' }), 8, {
       ...COLOR_PLAN,
       reduction: { kind: 'MAX_COLORS', maxColors: 64 },
     });

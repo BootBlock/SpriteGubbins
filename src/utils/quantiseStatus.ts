@@ -1,5 +1,6 @@
 import { estimatedScaleStatus } from '../constants/quantiser.ts';
-import type { PixelGrid, Quantised, SheetFacts } from '../types/quantiser.ts';
+import type { PixelGrid, Quantised, SheetReading } from '../types/quantiser.ts';
+import { sheetReadingFacts } from './sheetReadingFacts.ts';
 
 /**
  * The tab's state as one sentence, for the live region above.
@@ -26,12 +27,14 @@ import type { PixelGrid, Quantised, SheetFacts } from '../types/quantiser.ts';
  */
 export function statusOf(
   busy: boolean,
-  facts: SheetFacts | null,
+  reading: SheetReading,
   grid: PixelGrid | null,
   quantised: Quantised | null,
 ): string {
-  if (busy) return facts === null ? 'Measuring the sheet.' : 'Quantising the sheet.';
-  const scale = facts?.scale ?? null;
+  // Measuring only while the reading is pending: a survey that failed leaves the worker holding the
+  // sheet, so a scale typed afterwards is being quantised, not measured.
+  if (busy) return reading.kind === 'pending' ? 'Measuring the sheet.' : 'Quantising the sheet.';
+  const scale = sheetReadingFacts(reading)?.scale ?? null;
   if (scale !== null && scale.measurement !== 'EXACT' && grid === null) {
     return estimatedScaleStatus(scale.grid, scale.measurement);
   }

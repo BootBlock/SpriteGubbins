@@ -36,6 +36,9 @@ export const QUANTISE_SHEET_ADVICE = {
     'An estimate is waiting under the grid box. Click it, then work through the procedure below rather than trusting it outright — an estimate is read through the very softening it measures, and the preview is what settles it.',
   /** No reading answered and nothing has been applied — the procedure is the way forward. */
   none: 'No reading found a scale in this sheet, so the procedure below is how to find it yourself. It is quicker than it reads: two or three tries usually settle the number.',
+  /** The survey threw on this sheet and nothing has been applied — a typed scale still runs. */
+  failed:
+    'This sheet could not be measured, so no reading offers a scale for it. Type one in the grid box, then find the right number by the procedure below.',
   /** A grid the reading did not put there is in force — clicked, or typed — and wants judging. */
   applied:
     'A scale is in force and the right preview is showing what it makes of this sheet. Judge it by the procedure below, and step the number wherever the preview disagrees.',

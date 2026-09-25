@@ -7,18 +7,19 @@ import {
   targetCeilingAdvice,
 } from '../../constants/quantiseGuide.ts';
 import type { TargetSize } from '../../types/output.ts';
-import type { ColorPlan, PixelGrid, SheetFacts } from '../../types/quantiser.ts';
+import type { ColorPlan, PixelGrid, SheetReading } from '../../types/quantiser.ts';
+import { sheetReadingFacts } from '../../utils/sheetReadingFacts.ts';
 
 interface QuantiseGuideProps {
   /**
-   * What one look at the sheet established, or `null` while the worker is still looking — the same
-   * value `GridControls` takes, for the same reason: the guide's advice has to agree with the badge
-   * beside it about which state the sheet is in, and two derivations of one state can disagree.
+   * Where the one look at the sheet stands — the same value `GridControls` takes, for the same
+   * reason: the guide's advice has to agree with the badge beside it about which state the sheet is
+   * in, and two derivations of one state can disagree.
    */
-  readonly facts: SheetFacts | null;
+  readonly reading: SheetReading;
   /**
-   * Whether a sheet is loaded at all, which `facts` alone cannot say: `null` facts is also the
-   * measuring state, and advice about a sheet that is still being read would be advice about
+   * Whether a sheet is loaded at all, which the reading alone cannot say: with no sheet it is
+   * `pending`, as it is while a sheet is being read, and advice about either would be advice about
    * nothing.
    */
   readonly hasSheet: boolean;
@@ -63,7 +64,7 @@ interface QuantiseGuideProps {
  * them read as this view's steps rather than as decoration.
  */
 export function QuantiseGuide({
-  facts,
+  reading,
   hasSheet,
   target,
   suggested,
@@ -71,7 +72,7 @@ export function QuantiseGuide({
   colorPlan,
   dithered,
 }: QuantiseGuideProps) {
-  const state = hasSheet && facts !== null ? adviceFor(facts, grid) : null;
+  const state = hasSheet ? adviceFor(reading, grid) : null;
   // The ceiling is procedure input, so it accompanies the procedure — and only while a number still
   // needs choosing. With a scale in force the reader is stepping from where they are, and beside a
   // measured sheet a line saying "start there and step downwards" would be the panel disagreeing
@@ -138,13 +139,21 @@ export function QuantiseGuide({
  * measured line keeps the narrower claim it makes: it says the scale “is already applied”, which is
  * true only while the grid in force *is* the exact reading, so a reader who overtypes a measured
  * sheet is handed the judging line like any other hand-chosen number.
+ *
+ * Nothing while the sheet is still being read, and nothing once the thread itself has died: no
+ * scale typed then is computed, so every line here would send the reader to a preview that never
+ * changes, and the error above the panels already says what happened.
  */
-function adviceFor(facts: SheetFacts, grid: PixelGrid | null): string {
+function adviceFor(reading: SheetReading, grid: PixelGrid | null): string | null {
+  if (reading.kind === 'pending') return null;
+  if (reading.kind === 'failed' && reading.cause === 'thread') return null;
+  const facts = sheetReadingFacts(reading);
   if (grid !== null) {
-    return facts.scale?.measurement === 'EXACT' && facts.scale.grid === grid
+    return facts?.scale?.measurement === 'EXACT' && facts.scale.grid === grid
       ? QUANTISE_SHEET_ADVICE.measured
       : QUANTISE_SHEET_ADVICE.applied;
   }
+  if (facts === null) return QUANTISE_SHEET_ADVICE.failed;
   if (facts.scale === null) return QUANTISE_SHEET_ADVICE.none;
   return facts.scale.measurement === 'EXACT'
     ? QUANTISE_SHEET_ADVICE.measured
