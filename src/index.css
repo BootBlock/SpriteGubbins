@@ -1764,8 +1764,9 @@
  *     feedback vanish. An **outline**, not a thicker border: the border is on the box in both
  *     states and only its colour changes, so growing it would shrink the content box by 2px in the
  *     middle of the gesture, shifting the very image being dragged.
- *   - **A current selection.** The zoom level in use and the open view are marked by a fill, which
- *     the mode flattens to the same fill as every unselected sibling. Re-expressed as a `Highlight`
+ *   - **A current selection.** The zoom level in use, the open view and the selected sprite's chip
+ *     and row are marked by a fill, which the mode flattens to the same fill as every unselected
+ *     sibling. Re-expressed as a `Highlight`
  *     fill and **nothing else** — the rule below records what happens to the label when the text
  *     colour is set as well, which is that it disappears.
  *   - **The combo box's arrow-key cursor.** The active row is a background tint and a 2px nudge —
