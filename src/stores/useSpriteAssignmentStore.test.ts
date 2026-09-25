@@ -48,6 +48,21 @@ describe('useSpriteAssignmentStore', () => {
     expect(useSpriteAssignmentStore.getState().edits).toHaveLength(1);
   });
 
+  it('asks for the selected sprite’s row once per selection, and settles when it is shown', () => {
+    // The scroll answers the click, so it is filed by `select` alone and a remounted row that is
+    // still selected finds nothing owed.
+    const { select, revealed } = useSpriteAssignmentStore.getState();
+    select(SECOND);
+    expect(useSpriteAssignmentStore.getState().reveal).toStrictEqual(SECOND);
+
+    revealed();
+    expect(useSpriteAssignmentStore.getState().reveal).toBeNull();
+    expect(useSpriteAssignmentStore.getState().selected).toStrictEqual(SECOND);
+
+    select(null);
+    expect(useSpriteAssignmentStore.getState().reveal).toBeNull();
+  });
+
   it('forgets the decisions and the selection together', () => {
     // What a new sheet triggers. A pin is a coordinate on one result, so a decision carried over
     // would name whatever the next sheet happens to have drawn there.
@@ -58,5 +73,6 @@ describe('useSpriteAssignmentStore', () => {
 
     expect(useSpriteAssignmentStore.getState().edits).toStrictEqual([]);
     expect(useSpriteAssignmentStore.getState().selected).toBeNull();
+    expect(useSpriteAssignmentStore.getState().reveal).toBeNull();
   });
 });

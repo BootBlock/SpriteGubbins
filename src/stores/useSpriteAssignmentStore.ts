@@ -37,6 +37,18 @@ export interface SpriteAssignmentState {
   /** The sprite the reader is working on, so the preview and the panel agree, or `null` for none. */
   readonly selected: SpritePin | null;
   /**
+   * The sprite whose row the panel still owes a scroll into view, or `null` once it has paid it.
+   *
+   * **A request rather than a reading of {@link selected}**, because the scroll answers the reader's
+   * click and nothing else. The selection outlives every dial move, and the list remounts its rows
+   * whenever a result lands — so a row that scrolled because it *was* selected would pull the page
+   * back to itself after every move, taking the slider the reader is dragging off screen. Only
+   * {@link select} files one, and the list settles it through {@link revealed} the next time it
+   * is shown: scrolling to the row it names where the sheet still holds that sprite, and dropping
+   * it where the result that landed re-cut it.
+   */
+  readonly reveal: SpritePin | null;
+  /**
    * Say something about one sprite, or take back whatever was said — `null` is the reader choosing
    * reading order again.
    *
@@ -44,7 +56,10 @@ export interface SpriteAssignmentState {
    * another cannot also be left out, and a second call simply replaces the first.
    */
   decide(pin: SpritePin, decision: SpriteDecision | null): void;
+  /** Select a sprite, or none, and ask the panel to bring the selected sprite's row into view. */
   select(pin: SpritePin | null): void;
+  /** Settle the {@link reveal} request, once the list has scrolled to its row or found none. */
+  revealed(): void;
   /** Drop every decision — the button beside the list, and what a new sheet triggers. */
   forget(): void;
 }
@@ -52,6 +67,7 @@ export interface SpriteAssignmentState {
 export const useSpriteAssignmentStore = create<SpriteAssignmentState>((set) => ({
   edits: [],
   selected: null,
+  reveal: null,
 
   decide: (pin, decision) => {
     set((state) => {
@@ -69,10 +85,14 @@ export const useSpriteAssignmentStore = create<SpriteAssignmentState>((set) => (
   },
 
   select: (selected) => {
-    set({ selected });
+    set({ selected, reveal: selected });
+  },
+
+  revealed: () => {
+    set({ reveal: null });
   },
 
   forget: () => {
-    set({ edits: [], selected: null });
+    set({ edits: [], selected: null, reveal: null });
   },
 }));

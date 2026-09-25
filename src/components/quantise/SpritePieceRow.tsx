@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import type { Ref } from 'react';
 import { SPRITE_ASSIGNMENT_TOOLTIPS } from '../../constants/spriteAssignment.ts';
 import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
 import type { AssignedSprite } from '../../types/spriteAssignment.ts';
@@ -27,6 +27,8 @@ interface SpritePieceRowProps {
   readonly others: readonly { readonly ordinal: number; readonly sprite: AssignedSprite }[];
   /** Whether this is the sprite the reader last clicked in the preview. */
   readonly selected: boolean;
+  /** Where the list reaches this row to scroll it into view, or `null` for every row it does not owe one. */
+  readonly ref: Ref<HTMLDivElement>;
 }
 
 /**
@@ -54,24 +56,13 @@ export function SpritePieceRow({
   inventory,
   others,
   selected,
+  ref,
 }: SpritePieceRowProps) {
   const decide = useSpriteAssignmentStore((state) => state.decide);
-  const row = useRef<HTMLDivElement>(null);
-
-  // Selection is made in the *other* column — the reader clicks a sprite on the preview — so the row
-  // it names may be well outside the panel's scrolled view. Scrolling it into view is what makes the
-  // two halves one control surface rather than two lists that happen to agree.
-  //
-  // `nearest` rather than `center`, so a row already on screen does not jump under the reader; and
-  // no focus is taken, because the click that caused this was in another column and moving focus
-  // away from it would strand a keyboard user who had merely tabbed to the preview.
-  useEffect(() => {
-    if (selected) row.current?.scrollIntoView({ block: 'nearest' });
-  }, [selected]);
 
   return (
     <div
-      ref={row}
+      ref={ref}
       className={`rounded-xl border p-2.5 transition-colors duration-390 ${
         selected ? 'border-accent bg-accent-soft/10' : 'border-foundry-700 bg-foundry-950/40'
       }`}
