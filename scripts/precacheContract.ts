@@ -881,8 +881,22 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * the `aria-disabled:` variants that paint the button unavailable; and 0.01 in `index`.
  *
  * 2424 leaves **0.19 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2424 by the rig contract's geometry refusals** (issue #332). `parseRigContract`
+ * checked each field's type and nothing else, so a contract with a joint below the base, a pivot
+ * outside its piece, a piece larger than the frame, a repeated `slot_id` or a slot carried by itself
+ * parsed cleanly and section 5 then misdescribed it. The reader now refuses each case with its own
+ * sentence. Measured against `main` at `c302abf`, rebuilt from the same lockfile, with the ceiling
+ * forced to zero in each tree so both figures are the ones `assertPrecacheContract` receives:
+ * **2422.58 KiB** on `main` and **2424.56** here, a delta of **1.98** that crossed a ceiling the base
+ * sat 1.42 under. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ * Comparing the two `dist/assets` listings, 1.99 KiB lands in `database`, the chunk the reader is
+ * bundled into because `parseImageConfig` reads a stored contract through it, and 0.01 comes back
+ * out of `index`. It is almost all the refusal sentences, which are the point of the change.
+ *
+ * 2425 leaves **0.44 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2424;
+export const PRECACHE_CEILING_KIB = 2425;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

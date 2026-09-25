@@ -25,8 +25,8 @@ function joinAt(slot: RigSlot): string {
   const { x, y } = slot.rest_position_in_frame;
   const across =
     x === 0 ? 'on the centre line' : `${String(Math.abs(x))} px ${x < 0 ? 'left' : 'right'} of centre`;
-  // Above the base is the only direction a rig piece sits, and the contract writes it negative.
-  const up = `${String(Math.abs(y))} px above the base`;
+  // `parseRigContract` refuses a joint below the base, so turning the sign is all this has to do.
+  const up = `${String(-y)} px above the base`;
   return `${across}, ${up}`;
 }
 
