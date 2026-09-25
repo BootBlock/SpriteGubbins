@@ -50,5 +50,5 @@ export const SYMMETRY_GUIDANCE = {
 
   /** `SNAP`, and nothing qualified — the state that reads as a broken feature and is not. */
   refused:
-    'No sprite on this sheet mirrors closely enough to reach the confidence floor, so none has been changed. That is the ordinary answer for subjects that are asymmetric on purpose, and it is also what a sheet looks like when its halves have drifted further apart than the tolerance admits. The shares listed below say which: a sprite in the high eighties has drifted, and one near half is a subject with something on one side only.',
+    'No sprite on this sheet mirrors closely enough to reach the confidence floor, so none has been changed. That is the ordinary answer for subjects that are asymmetric on purpose, and it is also what a sheet looks like when its halves have drifted further apart than the tolerance admits. The shares listed below say which: a sprite just under the floor has drifted, and one near half is a subject with something on one side only.',
 } as const;

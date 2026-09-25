@@ -1,5 +1,6 @@
 import { NONE_LEAVES_SETTINGS_ALONE } from '../guidanceSentences.ts';
 import { lightingModelsFor, paletteLimitsFor, RENDER_STYLE_TRAITS } from '../promptText/index.ts';
+import { cameraElevationRange } from '../promptText/elevation.ts';
 import { shareRange } from '../promptText/renderStyle.ts';
 import { PALETTE_COLOR_COUNTS } from '../quantiser.ts';
 import { PALETTE_LIMITS } from '../../types/output.ts';
@@ -96,7 +97,7 @@ export const OUTPUT_TOOLTIPS = {
 
   hardwareProfile:
     'The machine the sheet is drawn for. Choosing one is a template: it sets the render style, surface detail, component size, outline, lighting and palette to what that machine’s artwork looked like, and each stays yours to change afterwards.\n\n' +
-    'The prompt then carries the machine’s geometry — its display, tile grid, sprite sizes and how many it could show — because naming a real machine steers a generator further than those figures alone. Colour belongs to the Palette field, so the two can be set independently.\n\n' +
+    'The prompt then carries the machine’s display and whatever structural limits it had, such as a tile grid, a sprite size or a sprite count, because naming a real machine steers a generator further than those figures alone. Colour belongs to the Palette field, so the two can be set independently.\n\n' +
     NONE_LEAVES_SETTINGS_ALONE,
   palette:
     'The exact colours the sheet may use. It is more specific than the colour budget and supersedes it: a budget can say “32 to 64 colours”, and only a palette can say “these four shades of green”.\n\n' +
@@ -135,7 +136,7 @@ export const OUTPUT_TOOLTIPS = {
     'An interface widget offers `ORTHOGRAPHIC_FRONT` alone, because it is composited onto the screen and has no depth axis for another camera to show.',
   cameraElevation:
     'Degrees above the horizon, from 0 at eye level to 90 directly overhead. The projection above sets it, and for every projection but `THREE_QUARTER_TOPDOWN` it is the only elevation that projection can be drawn at.\n\n' +
-    'Under `THREE_QUARTER_TOPDOWN` it is yours to set: raising it shows more of the floor plane and foreshortens the figure’s height. At 90° the prompt also changes what it asks of each facing, because a turn seen from directly overhead hides nothing.',
+    `Under \`THREE_QUARTER_TOPDOWN\` it is yours to set, from ${String(cameraElevationRange('THREE_QUARTER_TOPDOWN').min)}° to ${String(cameraElevationRange('THREE_QUARTER_TOPDOWN').max)}°: raising it shows more of the floor plane and foreshortens the figure’s height.\n\n\`PURE_TOPDOWN\` fixes it at ${String(cameraElevationRange('PURE_TOPDOWN').min)}°, and there the prompt also changes what it asks of each facing, because a turn seen from directly overhead hides nothing.`,
   directions:
     'Which facings the deliverable covers. A directional core draws exactly these views; a cut-out rig, a pose library and the limb articulation sheet read it as a run list, one sheet per facing tied together with an identity lock.\n\n' +
     '- `EIGHT_COMPASS` draws all eight views outright over a cardinal and a diagonal sheet, which an asymmetric subject needs.\n' +
