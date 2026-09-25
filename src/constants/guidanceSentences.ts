@@ -202,3 +202,12 @@ export const ASSEMBLY_BASE_CHOOSES_THE_SHEETS =
  */
 export const SUBJECT_TYPE_ADDS_NO_COMPONENTS =
   'What you choose here reaches the prompt as what the subject is, and no entry of the sheet’s own component list is a function of it — so another choice adds no slot and removes none.';
+
+/**
+ * What survives a reload, on the three controls that reload the app.
+ *
+ * The error boundary's Reload and the update notice's two both clear what is only on screen, so each
+ * says what the reader keeps in the same words.
+ */
+export const SAVED_WORK_SURVIVES_A_RELOAD =
+  'Your prompt history, presets, projects and studio state are in this browser’s storage, and the app reads them back as it starts.';

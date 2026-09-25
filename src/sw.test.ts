@@ -93,7 +93,6 @@ async function runInstall(): Promise<RecordingRequest[]> {
 
   vi.stubGlobal('__WB_MANIFEST', MANIFEST);
   vi.stubGlobal('Request', RecordingRequest);
-  vi.stubGlobal('skipWaiting', () => Promise.resolve());
   vi.stubGlobal('addEventListener', (type: string, handler: (event: InstallEvent) => void) => {
     handlers.set(type, handler);
   });

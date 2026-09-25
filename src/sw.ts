@@ -20,6 +20,9 @@
  */
 
 import { withIsolationHeaders } from './utils/isolationHeaders.ts';
+import { parseRetiredPrecaches, partitionRetired, retirePrecaches } from './utils/retiredPrecaches.ts';
+import type { RetiredPrecache } from './utils/retiredPrecaches.ts';
+import { isSkipWaitingMessage } from './workers/serviceWorkerProtocol.ts';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
@@ -65,8 +68,20 @@ function fingerprint(entries: readonly PrecacheEntry[]): string {
   return hash.toString(16).padStart(8, '0');
 }
 
-const CACHE = `sprite-gubbins-precache-${fingerprint(PRECACHE_ENTRIES)}`;
+/**
+ * What every precache this app creates is named with, and so the only caches it may retire.
+ *
+ * Cache Storage belongs to the origin, not to this worker's scope, and the GitHub Pages origin is
+ * shared with every other project site on the account. A cache without this prefix is another
+ * app's.
+ */
+const CACHE_PREFIX = 'sprite-gubbins-precache-';
+const CACHE = `${CACHE_PREFIX}${fingerprint(PRECACHE_ENTRIES)}`;
 const INDEX_URL = 'index.html';
+
+/** Where the ledger of superseded precaches is kept: see `src/utils/retiredPrecaches.ts`. */
+const LEDGER_CACHE = 'sprite-gubbins-retired-precaches';
+const LEDGER_URL = new URL('retired-precaches.json', sw.location.href).href;
 
 sw.addEventListener('install', (event) => {
   event.waitUntil(
@@ -101,44 +116,96 @@ sw.addEventListener('install', (event) => {
             }),
         ),
       );
-      // `autoUpdate`: a new build takes over as soon as it is ready. The app holds no unsaved
-      // state that a swap could lose — everything the user has typed is already in the local
-      // database — and the isolation bootstrap depends on this worker activating promptly.
-      await sw.skipWaiting();
     })(),
   );
+});
+
+// No `skipWaiting()` in `install`: a new build waits until a reader starts it, because a reload
+// clears what is only on screen (issue #369, and `src/workers/registerAppUpdates.ts`). A first visit is not
+// held up by this, because a worker with no active one before it activates as soon as it installs,
+// and the isolation bootstrap needs nothing more.
+sw.addEventListener('message', (event) => {
+  if (isSkipWaitingMessage(event.data)) event.waitUntil(sw.skipWaiting());
 });
 
 sw.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      // Every cache but this build's precache is a superseded build. This is the first moment
-      // deleting them is safe: the clients they were serving are about to be claimed onto this
-      // build by the `claim()` below.
-      const keys = await caches.keys();
-      await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)));
+      // Every other precache of the app's is a superseded build. It is retired rather than
+      // deleted, because a tab that did not ask for this build still runs the one it booted with.
+      const precaches = (await caches.keys()).filter((key) => key.startsWith(CACHE_PREFIX));
+      const windows = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      await updateLedger(async (ledger) =>
+        prune(
+          retirePrecaches(
+            ledger,
+            precaches,
+            CACHE,
+            windows.map((client) => client.id),
+          ),
+        ),
+      );
       await sw.clients.claim();
     })(),
   );
 });
 
+/** The ledger change in flight, so two never read the same ledger and one's write is lost. */
+let ledgerQueue: Promise<unknown> = Promise.resolve();
+
+/** Read the ledger, change it, and write it back if the change made a new one. */
+function updateLedger(change: (ledger: RetiredPrecache[]) => Promise<RetiredPrecache[]>): Promise<void> {
+  const run = ledgerQueue.then(async () => {
+    const store = await caches.open(LEDGER_CACHE);
+    const stored = await store.match(LEDGER_URL);
+    const ledger = parseRetiredPrecaches(stored ? await stored.json().catch(() => null) : null);
+    const next = await change(ledger);
+    if (next !== ledger) await store.put(LEDGER_URL, Response.json(next));
+  });
+  ledgerQueue = run.catch(() => undefined);
+  return run;
+}
+
+/** Delete every retired precache no open window can still need, and return the ledger without it. */
+async function prune(ledger: RetiredPrecache[]): Promise<RetiredPrecache[]> {
+  const windows = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  const { keep, discard } = partitionRetired(ledger, new Set(windows.map((client) => client.id)));
+  if (discard.length === 0) return ledger;
+  await Promise.all(discard.map(({ cache }) => caches.delete(cache)));
+  return [...keep];
+}
+
 sw.addEventListener('fetch', (event) => {
   // Only GETs are cacheable, and the app issues nothing else — it has no server to POST to.
   if (event.request.method !== 'GET') return;
   event.respondWith(respond(event.request));
+  // A navigation is when a window closes or reloads off a superseded build, so it is when that
+  // build's precache may have stopped being needed.
+  if (event.request.mode === 'navigate') event.waitUntil(updateLedger(prune));
 });
+
+/**
+ * How every lookup in a precache matches: by URL, and by nothing else.
+ *
+ * `ignoreSearch` so a deep link carrying query parameters still matches the one cached shell.
+ * `ignoreVary` because a precache entry is one file per URL, whatever the host's `Vary` header
+ * says. Without it a host sending `Vary: Origin` — Vite's preview server does — makes every module
+ * script miss, because the browser sends an `Origin` header with a module request and `install`
+ * stored its requests without one. The miss falls through to the network, which hides it until the
+ * reader is offline, or until a tab asks for a superseded build's chunk the host no longer serves.
+ */
+const PRECACHE_MATCH = { ignoreSearch: true, ignoreVary: true } as const;
 
 async function respond(request: Request): Promise<Response> {
   const cache = await caches.open(CACHE);
 
-  // Navigations resolve to the precached shell (offline-first). `ignoreSearch` so a deep link
-  // carrying query parameters still matches the one cached shell.
+  // Navigations resolve to the precached shell (offline-first).
   if (request.mode === 'navigate') {
-    const shell = await cache.match(INDEX_URL, { ignoreSearch: true });
+    const shell = await cache.match(INDEX_URL, PRECACHE_MATCH);
     if (shell) return withIsolationHeaders(shell, sw.location.origin);
   }
 
-  const cached = await cache.match(request, { ignoreSearch: true });
+  const cached = (await cache.match(request, PRECACHE_MATCH)) ?? (await matchSuperseded(request));
   if (cached) return withIsolationHeaders(cached, sw.location.origin);
 
   try {
@@ -150,4 +217,22 @@ async function respond(request: Request): Promise<Response> {
     // 200 with the wrong MIME type and hide the real cause, so fail cleanly instead.
     return Response.error();
   }
+}
+
+/**
+ * Answer a request this build's precache lacks from another of the app's precaches.
+ *
+ * A tab still running a superseded build asks for that build's chunks, which only its own precache
+ * still holds. Every precache of the app's is searched, not only those the ledger names, so a lost
+ * ledger cannot cost a running tab its code. A content-hashed URL names the same bytes in every
+ * cache that holds it, and a stable one never gets here, because this build's precache holds them
+ * all.
+ */
+async function matchSuperseded(request: Request): Promise<Response | undefined> {
+  const others = (await caches.keys()).filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE);
+  for (const cacheName of others) {
+    const hit = await caches.match(request, { ...PRECACHE_MATCH, cacheName });
+    if (hit) return hit;
+  }
+  return undefined;
 }
