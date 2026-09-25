@@ -10,11 +10,11 @@ import { AUTHORED_SOURCES, authoredStrings, type AuthoredString } from './author
  * one word into a single prompt. Seventeen such labels had shipped across the category pools and the
  * presets that pin them.
  *
- * The walk is `interface-punctuation.test.ts`'s, for the reason it gives: a string is checked because
- * it is written in `src/`, not because somebody remembered to name its file. So the design work is
- * again deciding what to leave out, and each exclusion below is counted only when it hid a word this
- * list flags. A count of zero fails, because an exclusion that stops hiding anything has become a
- * hole.
+ * The walk is `authoredStrings.ts`, shared with `interface-punctuation.test.ts` and taken for the
+ * reason that suite gives: a string is checked because it is written in `src/`, not because somebody
+ * remembered to name its file. So the design work is again deciding what to leave out, and each
+ * exclusion below is counted only when it hid a word this list flags. A count of zero fails, because
+ * an exclusion that stops hiding anything has become a hole.
  */
 
 /**
