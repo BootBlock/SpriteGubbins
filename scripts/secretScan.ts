@@ -288,3 +288,19 @@ export function binaryPaths(numstat: string): string[] {
   }
   return paths;
 }
+
+/**
+ * The suspect entries a commit adds against **every** one of its parents, given one list per parent.
+ *
+ * A merge commit's tree differs from each parent by everything the other side brought in, so a
+ * diff against any single parent would report the other side's content as the merge's own. That
+ * content is already judged elsewhere: at the commit that first added it, if that commit is in the
+ * range being scanned, or never, if it was already public on `main` before the range began. What a
+ * merge adds of its own is what no parent had, which is an entry present in the list for every
+ * parent. An ordinary commit has one parent, and a root commit is diffed against the empty tree, so
+ * for both of those this is simply the one list.
+ */
+export function addedAgainstEveryParent(perParent: readonly (readonly string[])[]): string[] {
+  const [first = [], ...rest] = perParent;
+  return first.filter((hit) => rest.every((other) => other.includes(hit)));
+}
