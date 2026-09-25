@@ -125,6 +125,14 @@ describe('ditherImage', () => {
     }
   });
 
+  it('leaves the sheet as it arrived under a lock whose snap distance reaches nothing', () => {
+    // The dial's off position, as `applyLockedPalette` reads it. Even a colour identical to an entry
+    // is left alone rather than dithered, because a lock at zero reaches no colour at all.
+    const sheet = imageFrom(8, 8, (x) => (x < 4 ? MID : BLACK));
+    const out = ditherImage(sheet, { kind: 'LOCKED', entries: [BLACK, WHITE], snap: 0 }, BAYER_4);
+    expect([...out.data]).toEqual([...sheet.data]);
+  });
+
   it('dithers a channel-depth space between the rungs either side of the colour', () => {
     const levels = channelLevels(2);
     const between: Rgba = { r: 100, g: 100, b: 100, a: 255 };

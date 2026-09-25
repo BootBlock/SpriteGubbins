@@ -1,3 +1,5 @@
+import { MAX_PALETTE_ENTRIES } from '../utils/pngPalette.ts';
+
 /**
  * What the palette-lock panel says, and how much of a held palette it shows.
  *
@@ -53,4 +55,18 @@ export const PALETTE_LOCK_GUIDANCE = {
    */
   noColours:
     'This sheet’s result has no colours to hold, because every pixel of it is transparent. A generation that came back as nothing but its background key reads this way, and so does a key colour tolerance set high enough to take the artwork along with the field.',
+  /**
+   * There is a result, and it has more colours than a palette can name, so no lock may be taken.
+   *
+   * The ceiling is `MAX_PALETTE_ENTRIES`, where every other palette in the app already stops. A lock
+   * past it is matched against each later sheet colour by colour, which took over half a minute a
+   * transform with a lock taken at a grid of 3, and it is no longer a palette a series could be held
+   * to.
+   *
+   * It names the dials that bring a sheet under the ceiling rather than the setting that put it
+   * there, because the panel cannot tell which it was: an `UNRESTRICTED` budget and a sheet quantised
+   * at a fine grid both arrive at a count like this.
+   */
+  tooManyColours: (count: number): string =>
+    `This sheet’s result has ${count.toLocaleString()} colours, and a palette lock holds at most ${String(MAX_PALETTE_ENTRIES)}. Choose a colour budget or a palette in the studio, or raise the colour merge on this tab, until the result has ${String(MAX_PALETTE_ENTRIES)} colours or fewer.`,
 } as const;

@@ -1,6 +1,7 @@
 import type { Rgba } from '../types/quantiser.ts';
 import { remapColors } from './imageData.ts';
-import { type Oklab, srgbToOklab } from './oklab.ts';
+import { type MutableOklab, type Oklab, srgbToOklab, srgbToOklabInto } from './oklab.ts';
+import { type OklabLattice, oklabLattice } from './oklabLattice.ts';
 
 /**
  * Redrawing a sheet in the colours a previous one was locked at.
@@ -47,14 +48,81 @@ import { type Oklab, srgbToOklab } from './oklab.ts';
  * directory shares.
  */
 export function applyLockedPalette(image: ImageData, entries: readonly Rgba[], snap: number): ImageData {
-  const located = locateEntries(entries);
-  const limit = snap * snap;
+  const reach = lockReach(entries, snap);
 
   return remapColors(image, (color) => {
-    const nearest = nearestOklab(color, located);
-    if (nearest === null || nearest.distance > limit) return color;
-    return { ...nearest.entry, a: color.a };
+    const entry = lockedEntryFor(color, reach);
+    return entry === null ? color : { r: entry.r, g: entry.g, b: entry.b, a: color.a };
   });
+}
+
+/** One locked colour, where it sits, and its place in the lock, which is what settles a tie. */
+interface RankedEntry {
+  readonly entry: Rgba;
+  readonly lab: Oklab;
+  readonly rank: number;
+}
+
+/**
+ * A lock's entries filed for lookup at one snap distance, or `null` where the snap reaches nothing.
+ *
+ * Filed on `oklabLattice` in cells of the snap distance, so a lookup measures only the entries that
+ * could be within reach. A lock holds up to `MAX_PALETTE_ENTRIES` colours, and a later sheet at a grid
+ * of 1 can carry hundreds of thousands of distinct ones, so a scan of every entry per colour is what
+ * made a transform take half a minute. Built once per transform and shared by `ditherImage`, which asks
+ * the same question of the same palette: is this colour inside the lock's reach, and of which entry.
+ *
+ * A snap of `0` reaches nothing, as the dial says. The only colours it could take are ones already
+ * identical to an entry, which it would write back unchanged.
+ */
+export interface LockReach {
+  readonly entries: OklabLattice<RankedEntry>;
+  readonly limit: number;
+}
+
+export function lockReach(entries: readonly Rgba[], snap: number): LockReach | null {
+  if (!(snap > 0)) return null;
+  const lattice = oklabLattice<RankedEntry>(snap);
+  entries.forEach((entry, rank) => {
+    const lab = srgbToOklab(entry.r, entry.g, entry.b);
+    lattice.add(lab, { entry, lab, rank });
+  });
+  return { entries: lattice, limit: snap * snap };
+}
+
+// The lookup's scratch, reused rather than allocated per call, because it runs once per distinct
+// colour of a sheet that may carry hundreds of thousands.
+const TARGET: MutableOklab = { L: 0, a: 0, b: 0 };
+const NEARBY: RankedEntry[] = [];
+
+/**
+ * The locked entry a colour is taken to, or `null` where it sits further than the snap distance from
+ * all of them.
+ *
+ * The same answer {@link nearestOklab} gives with the threshold applied after it, tie included: the
+ * lattice visits cells in no set order, so the earlier entry is chosen by its rank rather than by
+ * when it was met. Colour only, coverage left out, for the reason `nearestOklab` states.
+ */
+export function lockedEntryFor(color: Rgba, reach: LockReach | null): Rgba | null {
+  if (reach === null) return null;
+  srgbToOklabInto(TARGET, color.r, color.g, color.b);
+  reach.entries.near(TARGET, NEARBY);
+  let best: RankedEntry | null = null;
+  let shortest = reach.limit;
+
+  for (const candidate of NEARBY) {
+    const dL = TARGET.L - candidate.lab.L;
+    const dA = TARGET.a - candidate.lab.a;
+    const dB = TARGET.b - candidate.lab.b;
+    const distance = dL * dL + dA * dA + dB * dB;
+    if (distance > shortest) continue;
+    if (distance < shortest || best === null || candidate.rank < best.rank) {
+      best = candidate;
+      shortest = distance;
+    }
+  }
+
+  return best === null ? null : best.entry;
 }
 
 /** One locked colour and where it sits in scaled OKLab — the form {@link nearestOklab} searches. */
@@ -64,12 +132,11 @@ export interface LocatedEntry {
 }
 
 /**
- * The entries converted once, rather than once per colour looked up: a lock holds tens of entries
- * and a sheet quantised at a grid of 1 can carry millions of distinct colours.
+ * The entries converted once, rather than once per colour looked up, for {@link nearestOklab}.
  *
- * Exported alongside {@link nearestOklab} because `ditherImage` asks the same question of the same
- * palette — is this colour inside the lock's reach — and a second conversion and a second nearest
- * search would be a second answer to it.
+ * `antiAlias` is the caller: it wants the nearest entry however far away it is, which a lattice cell
+ * cannot bound, and its set is capped at `MAX_PALETTE_ENTRIES` so the scan stays affordable. A lock
+ * asks a bounded question and is answered by {@link lockReach} instead.
  */
 export function locateEntries(entries: readonly Rgba[]): readonly LocatedEntry[] {
   return entries.map((entry) => ({ entry, lab: srgbToOklab(entry.r, entry.g, entry.b) }));

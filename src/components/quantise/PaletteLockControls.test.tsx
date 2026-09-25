@@ -5,6 +5,7 @@ import { PALETTE_LOCK_GUIDANCE } from '../../constants/paletteLock.ts';
 import { DEFAULT_PALETTE_SNAP } from '../../constants/quantiser.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { Rgba } from '../../types/quantiser.ts';
+import { MAX_PALETTE_ENTRIES } from '../../utils/pngPalette.ts';
 import { PaletteLockControls } from './PaletteLockControls.tsx';
 
 /**
@@ -16,9 +17,10 @@ import { PaletteLockControls } from './PaletteLockControls.tsx';
  * the studio setting in force rather than the lock it replaces, and that the notice about a studio
  * setting the lock has overtaken appears exactly when the plan says it should.
  *
- * And the three states in which no lock may be taken, since the button is the only thing that can
- * report them: no result, a newer one on its way, and a result with no colours in it. The last was
- * the one this panel could not see, and answered a press to with silence.
+ * And the four states in which no lock may be taken, since the button is the only thing that can
+ * report them: no result, a newer one on its way, a result with no colours in it, and one with more
+ * than a palette can name. The empty result was the one this panel could not see, and answered a
+ * press to with silence.
  */
 
 /**
@@ -130,6 +132,36 @@ describe('PaletteLockControls', () => {
 
     expect(screen.getByRole('button', { name: 'Lock this palette' })).toBeDisabled();
     expect(screen.getByText(PALETTE_LOCK_GUIDANCE.noColours)).toBeInTheDocument();
+  });
+
+  it('holds the button shut on a result with more colours than a palette can name, and says why', () => {
+    // An `UNRESTRICTED` result held as a lock was matched against every later sheet colour by
+    // colour, which took half a minute a transform with a lock of 38,886 entries.
+    const overfull = Array.from({ length: MAX_PALETTE_ENTRIES + 1 }, (_unused, at) => ({
+      r: at % 256,
+      g: at >> 8,
+      b: 0,
+      a: 255,
+    }));
+    show({ resultPalette: overfull });
+
+    expect(screen.getByRole('button', { name: 'Lock this palette' })).toBeDisabled();
+    expect(screen.getByText(PALETTE_LOCK_GUIDANCE.tooManyColours(overfull.length))).toBeInTheDocument();
+  });
+
+  it('locks a result at exactly the ceiling, and says nothing about it', async () => {
+    const full = Array.from({ length: MAX_PALETTE_ENTRIES }, (_unused, at) => ({
+      r: at,
+      g: 0,
+      b: 0,
+      a: 255,
+    }));
+    show({ resultPalette: full });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
+
+    expect(useQuantiseStore.getState().lockedPalette?.entries).toEqual(full);
+    expect(screen.queryByText(/a palette lock holds at most/)).toBeNull();
   });
 
   it('says nothing about an empty sheet while there is no result at all', () => {

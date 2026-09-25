@@ -1,3 +1,4 @@
+import { MAX_PALETTE_ENTRIES } from '../../utils/pngPalette.ts';
 import { REDO_KEYBOARD_SHORTCUTS, WRITE_UNAVAILABLE_UNTIL_SETTLED } from '../guidanceSentences.ts';
 
 /**
@@ -64,7 +65,7 @@ export const QUANTISE_ACTION_TOOLTIPS = {
 
   lockPalette:
     'Holds the colours of the quantised sheet beside this, so the next sheet you bring in is drawn in the same ones. Without it, each sheet of a series picks its own near-identical colours, and a character’s armour changes shade between the walk sheet and the run sheet.\n\n' +
-    'A held palette overrides the studio’s colour setting and survives dropping a new sheet; it changes nothing about the prompt, the studio or your downloads. It is unavailable until a sheet is quantised, while a newer result is still being worked out, and when the result has no colours left.',
+    `A held palette overrides the studio’s colour setting and survives dropping a new sheet; it changes nothing about the prompt, the studio or your downloads. It is unavailable until a sheet is quantised, while a newer result is still being worked out, when the result has no colours left, and when it has more than ${String(MAX_PALETTE_ENTRIES)}.`,
 
   unlockPalette:
     'Discards the held palette, so this sheet and the next are coloured by the studio’s own setting again. The sheet on screen is quantised again straight away, and nothing already downloaded changes. Take a new palette from whichever result you would rather the series followed.',

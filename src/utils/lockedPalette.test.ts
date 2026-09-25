@@ -2,8 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { channels, imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { colorHistogram, packColor, readPixel } from './imageData.ts';
-import { applyLockedPalette } from './lockedPalette.ts';
+import {
+  applyLockedPalette,
+  locateEntries,
+  lockReach,
+  lockedEntryFor,
+  nearestOklab,
+} from './lockedPalette.ts';
 import { srgbToOklab } from './oklab.ts';
+import { MAX_PALETTE_ENTRIES } from './pngPalette.ts';
 
 const RED: Rgba = { r: 200, g: 40, b: 40, a: 255 };
 const GREEN: Rgba = { r: 40, g: 160, b: 60, a: 255 };
@@ -101,6 +108,49 @@ describe('applyLockedPalette', () => {
     expect(readPixel(applied.data, 0)).toEqual(perceptuallyNearest);
   });
 });
+
+describe('lockedEntryFor', () => {
+  /**
+   * The lattice lookup against the plain scan it replaced, which is the definition of the answer:
+   * the nearest entry by `nearestOklab`, or nothing where that entry sits past the snap distance.
+   *
+   * A full-size lock, so the entries crowd every cell, and each entry is listed twice as a separate
+   * object. The duplicates are what check the tie: the scan keeps the earlier of two entries at the
+   * same distance, and `toBe` tells the earlier object from its copy where `toEqual` could not.
+   */
+  it('gives the answer a scan of every entry gives, the earlier entry taking a tie', () => {
+    const next = sequence(3);
+    const byte = () => Math.floor(next() * 256);
+    const randomColor = (): Rgba => ({ r: byte(), g: byte(), b: byte(), a: 255 });
+    const unique = Array.from({ length: MAX_PALETTE_ENTRIES / 2 }, randomColor);
+    const entries = [...unique, ...unique.map((entry) => ({ ...entry }))];
+    const located = locateEntries(entries);
+
+    for (const snap of [1, 8, 21, 64]) {
+      const reach = lockReach(entries, snap);
+      for (let probe = 0; probe < 400; probe += 1) {
+        const color = randomColor();
+        const nearest = nearestOklab(color, located);
+        const expected = nearest !== null && nearest.distance <= snap * snap ? nearest.entry : null;
+        expect(lockedEntryFor(color, reach)).toBe(expected);
+      }
+    }
+  });
+
+  it('reaches nothing at a snap distance of zero, not even an identical colour', () => {
+    expect(lockReach([RED], 0)).toBeNull();
+    expect(lockedEntryFor(RED, lockReach([RED], 0))).toBeNull();
+  });
+});
+
+/** A small deterministic generator, so a failure names the same colours on every run. */
+function sequence(seed: number): () => number {
+  let state = seed;
+  return () => {
+    state = (Math.imul(state, 1_103_515_245) + 12_345) >>> 0;
+    return state / 2 ** 32;
+  };
+}
 
 function rgbDistance(left: Rgba, right: Rgba): number {
   return Math.hypot(left.r - right.r, left.g - right.g, left.b - right.b);

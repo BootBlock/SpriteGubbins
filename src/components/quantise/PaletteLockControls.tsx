@@ -3,6 +3,7 @@ import { PALETTE_LOCK_GUIDANCE } from '../../constants/paletteLock.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { Rgba } from '../../types/quantiser.ts';
+import { MAX_PALETTE_ENTRIES } from '../../utils/pngPalette.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { RangeField } from '../common/RangeField.tsx';
@@ -86,11 +87,16 @@ export function PaletteLockControls({
   // that appears to do nothing is the worst outcome available. `PALETTE_LOCK_GUIDANCE.noColours`
   // says why the notice names the causes as symptoms rather than deciding between them.
   const emptySheet = resultPalette !== null && resultPalette.length === 0;
-  const takeable = resultPalette !== null && resultPalette.length > 0 && !busy;
+  // The fourth: a result with more colours than a palette can name, which an `UNRESTRICTED` sheet
+  // is. Held, it would be matched against every later sheet colour by colour, and it is not a
+  // palette in any sense the reader means. `MAX_PALETTE_ENTRIES` is where every other palette in the
+  // app already stops, and `PALETTE_LOCK_GUIDANCE.tooManyColours` says what brings a sheet under it.
+  const overfull = resultPalette !== null && resultPalette.length > MAX_PALETTE_ENTRIES;
+  const takeable = resultPalette !== null && !emptySheet && !overfull && !busy;
 
   const take = () => {
     // Everything `disabled` covers, so this arm is unreachable from a press and is here for the
-    // type. The three conditions are one expression, deliberately: two spellings of when a lock may
+    // type. The four conditions are one expression, deliberately: two spellings of when a lock may
     // be taken is how a button comes to offer a press its handler declines.
     if (!takeable) return;
     lockPalette({ entries: resultPalette, studioIdentity, sheetName });
@@ -171,6 +177,11 @@ export function PaletteLockControls({
           shut button and wants to know what would open it. */}
       {emptySheet && (
         <p className="mt-3 text-xs leading-relaxed text-gold">{PALETTE_LOCK_GUIDANCE.noColours}</p>
+      )}
+      {overfull && (
+        <p className="mt-3 text-xs leading-relaxed text-gold">
+          {PALETTE_LOCK_GUIDANCE.tooManyColours(resultPalette.length)}
+        </p>
       )}
 
       <p className="mt-3 text-xs leading-relaxed text-ink-muted">
