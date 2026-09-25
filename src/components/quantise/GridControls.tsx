@@ -8,7 +8,8 @@ import {
 import { useComponentTarget } from '../../hooks/useComponentTarget.ts';
 import { useSuggestedGrid } from '../../hooks/useSuggestedGrid.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
-import type { ColorPlan, PixelGrid, SheetFacts, SheetScale } from '../../types/quantiser.ts';
+import type { ColorPlan, PixelGrid, SheetReading, SheetScale } from '../../types/quantiser.ts';
+import { sheetReadingFacts } from '../../utils/sheetReadingFacts.ts';
 import { Tooltip } from '../common/Tooltip.tsx';
 import { GridCandidates } from './GridCandidates.tsx';
 import { ScaleBadge } from './ScaleBadge.tsx';
@@ -16,13 +17,14 @@ import { DownscaleControls } from './DownscaleControls.tsx';
 
 interface GridControlsProps {
   /**
-   * What one look at the sheet established, or `null` while the worker is still looking.
+   * Where the one look at the sheet stands: still being taken, answered, or failed.
    *
-   * The reading and "no reading yet" arrive as one value rather than as a `scale` beside a
-   * `measuring`, because two props can contradict each other and these two never may: an empty badge
-   * and a spinner shown at once is the state that tells a user the tab is broken.
+   * The reading, "no reading yet" and "no reading at all" arrive as one value rather than as a
+   * `scale` beside a `measuring`, because two props can contradict each other and these never may:
+   * an empty badge and a spinner shown at once, or a spinner beside the error that ended the wait,
+   * is the state that tells a user the tab is broken.
    */
-  readonly facts: SheetFacts | null;
+  readonly reading: SheetReading;
   /**
    * The grid actually in force — the user's, or an `EXACT` reading of the sheet behind it.
    *
@@ -69,14 +71,14 @@ interface GridControlsProps {
  * written straight to the store, rather than any of them being handed down from the tab: nothing
  * between the two has any part in them.
  */
-export function GridControls({ facts, grid, colorPlan }: GridControlsProps) {
+export function GridControls({ reading, grid, colorPlan }: GridControlsProps) {
   const target = useComponentTarget();
   const suggested = useSuggestedGrid();
   // `null` clears the override, handing the decision back to the sheet's own reading.
   const setGridOverride = useQuantiseStore((state) => state.setGridOverride);
   const inputId = useId();
-  const scale = facts?.scale ?? null;
-  const guidance = scaleGuidance(facts, scale, grid);
+  const scale = sheetReadingFacts(reading)?.scale ?? null;
+  const guidance = scaleGuidance(reading, scale, grid);
 
   return (
     <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
@@ -123,14 +125,12 @@ export function GridControls({ facts, grid, colorPlan }: GridControlsProps) {
               readout is *about* and leaves the badge to say how it was arrived at — and it rhymes
               with "Colours in the sheet" beside it, which is the same kind of fact. */}
           <p className="mb-1.5 text-xs font-semibold text-ink-muted">Scale in the sheet</p>
-          <ScaleBadge facts={facts} />
+          <ScaleBadge reading={reading} />
         </div>
 
         <div className="pb-2.5">
           <p className="mb-1.5 text-xs font-semibold text-ink-muted">Colours in the sheet</p>
-          <p className="font-mono text-xs text-ink-faint">
-            {facts === null ? 'counting…' : `${facts.colors.toLocaleString()} before reduction`}
-          </p>
+          <p className="font-mono text-xs text-ink-faint">{colourReadout(reading)}</p>
         </div>
 
         <div className="pb-2.5">
@@ -167,7 +167,10 @@ export function GridControls({ facts, grid, colorPlan }: GridControlsProps) {
  * Which paragraph the panel owes the reader, or `null` where it owes them none.
  *
  * Nothing at all while the sheet is still being read, and nothing for an `EXACT` scale, which is
- * already in the box and needs no explaining.
+ * already in the box and needs no explaining. A survey that failed on this sheet is owed the same
+ * kind of paragraph as one that found no scale: instructions for typing one, which stay true whatever
+ * is typed. A dead thread is owed nothing here, because no typed scale would be computed and the
+ * error above already says so.
  *
  * **The two that remain are not the same kind of sentence, and that is why one of them goes away.**
  * `none` is *instructions* — what to type, what a grid of 1 does, what to do about a margin — and
@@ -178,9 +181,17 @@ export function GridControls({ facts, grid, colorPlan }: GridControlsProps) {
  * asking for something the reader had already done, beside a box holding the number and a preview
  * showing the result.
  */
-function scaleGuidance(facts: SheetFacts | null, scale: SheetScale | null, grid: PixelGrid | null) {
-  if (facts === null) return null;
+function scaleGuidance(reading: SheetReading, scale: SheetScale | null, grid: PixelGrid | null) {
+  if (reading.kind === 'pending') return null;
+  if (reading.kind === 'failed') return reading.cause === 'sheet' ? QUANTISE_SCALE_GUIDANCE.failed : null;
   if (scale === null) return QUANTISE_SCALE_GUIDANCE.none;
   if (scale.measurement === 'EXACT') return null;
   return grid === null ? estimatedScaleGuidance(scale.measurement) : null;
+}
+
+/** The sheet's own colour count, what is happening to it, or that it was never taken. */
+function colourReadout(reading: SheetReading): string {
+  if (reading.kind === 'pending') return 'counting…';
+  if (reading.kind === 'failed') return 'not counted';
+  return `${reading.facts.colors.toLocaleString()} before reduction`;
 }

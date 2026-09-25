@@ -8,11 +8,12 @@ import type {
   PixelGrid,
   Quantised,
   QuantiseSettings,
-  SheetFacts,
   QuantiseTuning,
+  SheetReading,
 } from '../types/quantiser.ts';
 import { gridInForce } from '../utils/gridInForce.ts';
 import { sameQuantiseSettings } from '../utils/quantiseSettings.ts';
+import { sheetReadingFacts } from '../utils/sheetReadingFacts.ts';
 import { quantiseSheet } from '../workers/quantiseSession.ts';
 
 /**
@@ -24,8 +25,12 @@ import { quantiseSheet } from '../workers/quantiseSession.ts';
  * disagree with what is on screen, because it is computed from the same comparison the result is.
  */
 export interface QuantiseWork {
-  /** The sheet's scale reading and its colour count, or `null` while the worker is still looking. */
-  readonly facts: SheetFacts | null;
+  /**
+   * The sheet's scale reading and its colour count, whether the worker is still looking, or that it
+   * could not look — a survey that threw, or a thread that died before it answered. See
+   * {@link SheetReading} for why the last two are not one `null`.
+   */
+  readonly reading: SheetReading;
   /**
    * The scale in force — the user's, or an `EXACT` reading of the sheet behind it. `null` when there
    * is neither, **which an estimated reading does not resolve**: see the note below.
@@ -58,6 +63,10 @@ export interface QuantiseWork {
   readonly error: string | null;
 }
 
+const PENDING: SheetReading = { kind: 'pending' };
+const SHEET_FAILED: SheetReading = { kind: 'failed', cause: 'sheet' };
+const THREAD_FAILED: SheetReading = { kind: 'failed', cause: 'thread' };
+
 /**
  * The tab's reading of a pipeline that is neither on this thread nor inside this component.
  *
@@ -74,7 +83,7 @@ export interface QuantiseWork {
  *
  * **The grid is resolved here**, from the user's override and what the sheet was read as, because
  * this is the only place that knows both: the override is the caller's, and the reading is the
- * worker's answer. A caller that had to wait for `facts` before it could say what to compute would
+ * worker's answer. A caller that had to wait for the reading before it could say what to compute would
  * have to run the rule itself, and the rule would then live in two places.
  *
  * **That rule has a second half, and it lives here too**: only an `EXACT` reading becomes the grid in
@@ -100,8 +109,15 @@ export function useQuantiseWork(
 
   // What detection found. Guarded on there being a sheet rather than on which one: the session drops
   // replies about a superseded sheet, and `setSource` forgets the answers to the old one, so anything
-  // in the store is about whatever is loaded now.
-  const facts = source !== null && survey?.kind === 'facts' ? survey.facts : null;
+  // in the store is about whatever is loaded now. A dead thread fails the reading as surely as a
+  // survey that threw, since no survey is coming from it either.
+  const reading = useMemo<SheetReading>(() => {
+    if (source === null) return PENDING;
+    if (survey?.kind === 'facts') return { kind: 'facts', facts: survey.facts };
+    if (fatal !== null) return THREAD_FAILED;
+    return survey?.kind === 'failed' ? SHEET_FAILED : PENDING;
+  }, [source, survey, fatal]);
+  const facts = sheetReadingFacts(reading);
   // The user's answer wins where they gave one; clearing the box falls back to the sheet's own
   // scale, which may not have one — in which case there is no result to compute, and the panel says
   // so. The rule itself, and why an estimated reading is never adopted, is `gridInForce`: the
@@ -144,7 +160,7 @@ export function useQuantiseWork(
   }, [source, settings, answered]);
 
   return {
-    facts,
+    reading,
     grid,
     settings,
     // Held against the *sheet* rather than the settings, which is what lets it outlive a settings
@@ -166,9 +182,7 @@ export function useQuantiseWork(
     // the result pane reads `busy` to decide *why* it is empty, and with a scale in force and nothing
     // running the only remaining explanation is a failure that had not happened.
     busy:
-      source !== null &&
-      fatal === null &&
-      ((facts === null && survey?.kind !== 'failed') || (settings !== null && !answered)),
+      source !== null && fatal === null && (reading.kind === 'pending' || (settings !== null && !answered)),
     error:
       fatal ??
       (source !== null && survey?.kind === 'failed' ? survey.reason : null) ??

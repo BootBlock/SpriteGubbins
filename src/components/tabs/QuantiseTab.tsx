@@ -121,7 +121,7 @@ export function QuantiseTab() {
     [palette, customPalette, paletteLimit, lockedPalette, paletteSnap],
   );
 
-  const { facts, grid, settings, quantised, busy, error } = useQuantiseWork(
+  const { reading, grid, settings, quantised, busy, error } = useQuantiseWork(
     source,
     gridOverride,
     keying,
@@ -161,11 +161,11 @@ export function QuantiseTab() {
             because a live region has to be in the document *before* its content changes to be
             announced at all. */}
         <p role="status" className="sr-only">
-          {statusOf(busy, facts, grid, quantised)}
+          {statusOf(busy, reading, grid, quantised)}
         </p>
 
         <QuantiseGuide
-          facts={facts}
+          reading={reading}
           hasSheet={source !== null}
           target={target}
           suggested={suggested}
@@ -179,7 +179,7 @@ export function QuantiseTab() {
         {source !== null && (
           <QuantiseWorkspace
             source={source}
-            facts={facts}
+            reading={reading}
             grid={grid}
             settings={settings}
             quantised={quantised}

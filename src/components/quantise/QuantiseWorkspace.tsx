@@ -5,14 +5,15 @@ import type {
   PixelGrid,
   Quantised,
   QuantiseSettings,
-  SheetFacts,
+  SheetReading,
 } from '../../types/quantiser.ts';
+import { sheetReadingFacts } from '../../utils/sheetReadingFacts.ts';
 import { ImageComparison } from './ImageComparison.tsx';
 import { QuantiseControlColumn } from './QuantiseControlColumn.tsx';
 
 interface QuantiseWorkspaceProps {
   readonly source: ImportedImage;
-  readonly facts: SheetFacts | null;
+  readonly reading: SheetReading;
   readonly grid: PixelGrid | null;
   readonly settings: QuantiseSettings | null;
   readonly quantised: Quantised | null;
@@ -40,7 +41,7 @@ interface QuantiseWorkspaceProps {
  */
 export function QuantiseWorkspace({
   source,
-  facts,
+  reading,
   grid,
   settings,
   quantised,
@@ -50,12 +51,13 @@ export function QuantiseWorkspace({
   keyOffered,
   colorPlan,
 }: QuantiseWorkspaceProps) {
+  const facts = sheetReadingFacts(reading);
   return (
     <div className="grid grid-cols-1 items-start gap-6 quantise:grid-cols-12">
       <div className="space-y-6 quantise:col-span-5">
         <QuantiseControlColumn
           source={source}
-          facts={facts}
+          reading={reading}
           grid={grid}
           settings={settings}
           quantised={quantised}
