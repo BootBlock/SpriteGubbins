@@ -10,6 +10,7 @@ import { STORAGE_KEYS } from './schema.ts';
 import { parseHistoryRow, parsePresetRow, parseProjectRow, parseQuantisePresetRow } from './rows.ts';
 import { toHistoryRow, toPresetRow, toProjectRow, toQuantisePresetRow } from './localStorageRows.ts';
 import { deleteProjectFrom, replaceLibraryIn, type CollectionPort } from './localStorageLibrary.ts';
+import { discardIncompatibleLibrary } from './discardIncompatibleLibrary.ts';
 import { parseJson } from './readers.ts';
 import { writeHistoryRows } from './historyEviction.ts';
 import { parseSession } from './sessionParser.ts';
@@ -53,8 +54,13 @@ export class LocalStorageBackend implements PersistenceBackend {
    * Takes its storage rather than reaching for the global, so tests can drive it without a
    * browser and so the "no usable storage anywhere" case is handled in one place
    * ({@link resolveWebStorage}) instead of being scattered through the methods below.
+   *
+   * A library whose projects cannot all be read is emptied here, before any method reads it, as the
+   * SQLite worker discards an incompatible database before it answers — see
+   * `discardIncompatibleLibrary.ts`.
    */
   constructor(storage: WebStorageLike = resolveWebStorage()) {
+    discardIncompatibleLibrary(storage);
     this.storage = storage;
     this.kind = isMemoryStorage(storage) ? 'memory' : 'localstorage';
   }

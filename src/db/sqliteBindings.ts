@@ -17,9 +17,9 @@ import type { QuantisePreset } from '../types/quantisePreset.ts';
 /**
  * Run `work` as one transaction, rolling the whole of it back if any statement throws.
  *
- * Two requests need it and both need it for the same reason — a half-applied delete or import
- * leaves rows referring to a project that is no longer there, which is a state nothing above can
- * render or repair. Written once here rather than twice inline: the `BEGIN`/`COMMIT` pair is easy
+ * Two requests and the boot-time discard need it, and all three for the same reason — a
+ * half-applied delete, import or discard leaves rows referring to a project that is no longer
+ * there, which is a state nothing above can render or repair. Written once here rather than inline: the `BEGIN`/`COMMIT` pair is easy
  * to get right and easy to leave the `ROLLBACK` out of, and the version with the mistake in it
  * looks exactly like the version without.
  */
