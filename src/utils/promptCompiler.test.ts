@@ -1321,13 +1321,45 @@ describe('generatePrompt — the adherence report', () => {
     expect(withMap).not.toContain('## 13.');
   });
 
-  it('names the second deliverable in the closing line rather than ending on the image alone', () => {
+  it.each([
+    [false, false, 'Generate the sheet now.'],
+    [
+      true,
+      false,
+      'Generate the sheet now.\n\nThen write the component map — after the image has been delivered, never in place of it.',
+    ],
+    [
+      false,
+      true,
+      'Generate the sheet now.\n\nThen write the adherence report — after the image has been delivered, never in place of it.',
+    ],
+    [
+      true,
+      true,
+      'Generate the sheet now.\n\nThen write the component map and then the adherence report, in that order — both after the image\nhas been delivered, never in place of it.',
+    ],
+  ])('closes with every deliverable that is on, in order (map %s, report %s)', (map, report, closing) => {
     // Last-position attention is strong, and "Generate the sheet now." as the final word is what a
-    // model acts on. The report is the one addition that happens *after* that instruction.
-    expect(generatePrompt('CHARACTER', SUBJECT, OUTPUT).trimEnd()).toMatch(/Generate the sheet now\.$/);
-    expect(generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE)).trimEnd()).toMatch(
-      /never in place of it\.$/,
+    // model acts on. Each companion is written *after* that instruction, so the closing lines name
+    // every one that is on — and put the map before the report, because the report closes the reply
+    // and says nothing follows it, so a map written after it breaks the report's own rule.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ ...CAPABLE, emitComponentMap: map, emitPromptFeedback: report }),
     );
+
+    expect(prompt.trimEnd().endsWith(closing)).toBe(true);
+    expect(prompt.match(/Generate the sheet now\./g)).toHaveLength(1);
+  });
+
+  it('ends the report on a pass without forbidding what the closing lines ask for', () => {
+    // "Write nothing further" read as the end of the reply, which with the component map on could
+    // forbid the map. The pass sentence is scoped to the report it ends.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...CAPABLE, emitComponentMap: true }));
+
+    expect(prompt).toContain('If every check holds, say so, and the report ends there.');
+    expect(prompt).not.toContain('write nothing further');
   });
 });
 

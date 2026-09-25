@@ -1222,7 +1222,7 @@ image is reported as unverified rather than as passed.
 
 ### The feedback block
 
-If every check holds, say so, and write nothing further.
+If every check holds, say so, and the report ends there.
 
 If any check is missed, then this specification failed to obtain what it asked for, and its wording
 is what needs to change. Close your reply with one fenced code block — three backticks, then the
@@ -1278,7 +1278,20 @@ image. All three hold of the finished sheet:
 [/IF]
 
 Generate the sheet now.
+[IF:EMIT_COMPONENT_MAP]
+[IF:EMIT_PROMPT_FEEDBACK!=yes]
+
+Then write the component map — after the image has been delivered, never in place of it.
+[/IF]
+[IF:EMIT_PROMPT_FEEDBACK]
+
+Then write the component map and then the adherence report, in that order — both after the image
+has been delivered, never in place of it.
+[/IF]
+[/IF]
+[IF:EMIT_COMPONENT_MAP!=yes]
 [IF:EMIT_PROMPT_FEEDBACK]
 
 Then write the adherence report — after the image has been delivered, never in place of it.
+[/IF]
 [/IF]`;
