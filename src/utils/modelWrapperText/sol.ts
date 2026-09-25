@@ -1,4 +1,4 @@
-import { NATIVE_GRID_HEADING } from '../../constants/promptTemplate.ts';
+import { NATIVE_GRID_HEADING, SCOPE_AND_PRECEDENCE_HEADING } from '../../constants/promptTemplate.ts';
 import { citeSection } from '../templateEngine.ts';
 import type { SectionNumbers } from '../templateEngine.ts';
 
@@ -132,6 +132,17 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * worth the same protection, so the entry protects the block's values rather than describing their
  * shape.
  *
+ * **Section 0 is protected by its numbered items, not whole, and what is left of it is Sol's to
+ * settle.** The directive used to require all of section 0 "as they are written here". Measured on
+ * the default Sol prompt (CHARACTER, eight directions) that section was 639 words, about 91% of the
+ * ~700-word hand-off observed above, and most of it was not addressed to the renderer: eight
+ * citations of sections the renderer never receives, the precedence rules, and the category tripwire
+ * ending "Say so rather than resolving it". `promptConditions` gates that tripwire on `RETURNS_TEXT`
+ * because an image endpoint cannot carry it out, and the directive then ordered it forwarded to one.
+ * So the template now puts those paragraphs under the heading `SCOPE_AND_PRECEDENCE_HEADING` names,
+ * the numbered items above it cite no section by number, and this directive protects the items and
+ * hands the rest to Sol. Whether that changes what a delivered sheet holds is not measured (#403).
+ *
  * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
  * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
  * citations out by hand — `section 0`, `section 2`, `section 3` and `section 4`. The numbers were
@@ -228,9 +239,12 @@ the idea and drops the figure, which leaves the image nothing to be measured aga
   return `[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]
 You are not the model that draws this sheet: you will call an image tool, and a GPT Image model
 renders whatever that call carries. So the call is where a sheet loses its component count, its
-background or its per-component directions. Whatever you send must still carry section ${citeSection(sections, 'CONTRACT')}, the object
-yaws in section ${citeSection(sections, 'CAMERA')} and the inventory in section ${citeSection(sections, 'INVENTORY')} as they are written here. If it has to be
-shortened, shorten the prose elsewhere — never those three.${sectionTwo}
+background or its per-component directions. Whatever you send must still carry the numbered items
+of section ${citeSection(sections, 'CONTRACT')}, the object yaws in section ${citeSection(sections, 'CAMERA')} and the inventory in section ${citeSection(sections, 'INVENTORY')} as they are written
+here. If it has to be shortened, shorten the prose elsewhere — never those three.
+
+What section ${citeSection(sections, 'CONTRACT')} states under “${SCOPE_AND_PRECEDENCE_HEADING}” is addressed to you, not to the image model:
+settle it before you make the call rather than sending it on.${sectionTwo}
 
 ${prompt}`;
 }
