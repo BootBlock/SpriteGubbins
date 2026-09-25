@@ -1901,14 +1901,16 @@ export const QUANTISE_STEPS = [
 ] as const;
 
 /**
- * What the panel says when no reading found a scale at all.
+ * What the panel says when no reading found a scale, or none could be taken.
  *
  * Here rather than inline in `GridControls` for the reason {@link QUANTISE_STEPS} is: it is content,
  * it ships in the bundle, and it is read by strangers. One paragraph inline is a component with some
  * copy in it, and a choice between paragraphs is a component deciding what the app says.
  *
- * A record of one, because the other paragraph the panel can show is {@link estimatedScaleGuidance}
- * — the same choice, made against a reading that answered rather than against silence.
+ * A record of two, because the other paragraph the panel can show is {@link estimatedScaleGuidance}
+ * — the same choice, made against a reading that answered rather than against silence. `failed` is
+ * the paragraph for a survey that threw on this sheet: no reading answered, but for want of a look
+ * rather than for want of a scale.
  *
  * It names no scale, since there is none to name; the estimated paragraph names none either, for
  * the reason given there.
@@ -1916,6 +1918,9 @@ export const QUANTISE_STEPS = [
 export const QUANTISE_SCALE_GUIDANCE = {
   /** Nothing was read at all — the sheet is smooth, with no regular spacing left in it to measure. */
   none: 'Nothing in this image changes on a regular grid, its edges do not soften at a regular spacing, its texture repeats at no pitch from one part of the sheet to the next, and such boundaries as it has keep to no one typical spacing either — so none of the four readings of the sheet found a scale. Type the scale the art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only. The grid does not have to start at the image’s corner — where it sits on the art is measured from the image whenever a scale is applied.',
+  /** The survey threw on this sheet, which leaves the worker holding it, so a typed scale still runs. */
+  failed:
+    'The sheet could not be measured, so neither its scale nor its colour count is known. You can still quantise it: type the scale the art was meant to be drawn at, and a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only.',
 } as const;
 
 /**

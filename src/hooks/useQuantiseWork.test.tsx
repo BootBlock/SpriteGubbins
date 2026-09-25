@@ -133,11 +133,11 @@ describe('useQuantiseWork', () => {
     expect(worker.of('load')).toHaveLength(1);
     // Nothing is known yet, and the tab has to say so rather than show an empty measurement.
     expect(result.current.busy).toBe(true);
-    expect(result.current.facts).toBeNull();
+    expect(result.current.reading).toEqual({ kind: 'pending' });
 
     answer({ id: worker.lastId('load'), kind: 'loaded', facts: FACTS });
 
-    expect(result.current.facts).toEqual(FACTS);
+    expect(result.current.reading).toEqual({ kind: 'facts', facts: FACTS });
     expect(result.current.grid).toBe(8);
     // Still working: the measurement is in, the transform it implies is not.
     expect(result.current.busy).toBe(true);
@@ -259,7 +259,7 @@ describe('useQuantiseWork', () => {
     expect(worker.of('quantise')).toHaveLength(1);
     // …and the tab is showing the sheet it was showing when it left, settled rather than working.
     expect(returned.result.current.busy).toBe(false);
-    expect(returned.result.current.facts).toEqual(FACTS);
+    expect(returned.result.current.reading).toEqual({ kind: 'facts', facts: FACTS });
     expect(returned.result.current.quantised).toEqual({
       result: expect.objectContaining({ colors: 32 }),
       grid: 8,
@@ -313,7 +313,7 @@ describe('useQuantiseWork', () => {
 
     expect(FakeWorker.started).toHaveLength(2);
     expect(result.current.error).toBeNull();
-    expect(result.current.facts).toEqual(FACTS);
+    expect(result.current.reading).toEqual({ kind: 'facts', facts: FACTS });
   });
 
   it('shows no result at all once there is no scale to compute one at', () => {
@@ -344,7 +344,7 @@ describe('useQuantiseWork', () => {
     answer({ id: worker.lastId('load'), kind: 'loaded', facts: ESTIMATE });
     settle();
 
-    expect(result.current.facts).toEqual(ESTIMATE);
+    expect(result.current.reading).toEqual({ kind: 'facts', facts: ESTIMATE });
     expect(result.current.grid).toBeNull();
     expect(worker.of('quantise')).toHaveLength(0);
     expect(result.current.busy).toBe(false);
@@ -376,6 +376,9 @@ describe('useQuantiseWork', () => {
 
     expect(result.current.error).toBe('Array buffer allocation failed');
     expect(result.current.busy).toBe(false);
+    // Failed rather than pending, which is what stops every surface reading it claiming the sheet is
+    // still being measured beside the error that says it will not be.
+    expect(result.current.reading).toEqual({ kind: 'failed', cause: 'sheet' });
 
     const next = sheet('small.png');
     act(() => {
@@ -418,6 +421,7 @@ describe('useQuantiseWork', () => {
 
     expect(result.current.error).toBe('The quantiser could not start in this browser');
     expect(result.current.busy).toBe(false);
+    expect(result.current.reading).toEqual({ kind: 'failed', cause: 'thread' });
   });
 
   it('forgets everything about a sheet that has been cleared, and takes the thread with it', () => {
@@ -432,7 +436,7 @@ describe('useQuantiseWork', () => {
     });
     rerender({ source: null, gridOverride: null });
 
-    expect(result.current.facts).toBeNull();
+    expect(result.current.reading).toEqual({ kind: 'pending' });
     expect(result.current.quantised).toBeNull();
     expect(result.current.busy).toBe(false);
     // The thread was holding the only other copy of the sheet, and a cleared tab has no use for it.

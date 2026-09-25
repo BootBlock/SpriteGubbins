@@ -164,6 +164,22 @@ export interface SheetFacts {
 }
 
 /**
+ * Where the one look at a loaded sheet stands: still being taken, answered, or given up on.
+ *
+ * Three states rather than `SheetFacts | null`, because `null` had to mean both "still measuring"
+ * and "the measuring failed", and every surface that read it took the first meaning — so a sheet
+ * whose survey threw kept a pulsing “Measuring the sheet…” badge and a “counting…” readout beside
+ * the settled error for as long as it stayed loaded. `failed` carries no reason, since the tab shows
+ * the error once, above the panels. It does carry which thing failed, because that decides what the
+ * reader can still do: a survey that threw on one sheet leaves the worker holding it, so a typed
+ * scale is still computed, while a thread that died computes nothing for any sheet.
+ */
+export type SheetReading =
+  | { readonly kind: 'pending' }
+  | { readonly kind: 'facts'; readonly facts: SheetFacts }
+  | { readonly kind: 'failed'; readonly cause: 'sheet' | 'thread' };
+
+/**
  * A key colour and how far a pixel may sit from it and still count as background.
  *
  * One value rather than two loose arguments, because neither means anything alone: a colour with no

@@ -1,4 +1,3 @@
-import type { TargetSize } from '../../types/output.ts';
 import type {
   BackgroundKeying,
   ColorPlan,
@@ -6,14 +5,15 @@ import type {
   PixelGrid,
   Quantised,
   QuantiseSettings,
-  SheetFacts,
+  SheetReading,
 } from '../../types/quantiser.ts';
+import { sheetReadingFacts } from '../../utils/sheetReadingFacts.ts';
 import { ImageComparison } from './ImageComparison.tsx';
 import { QuantiseControlColumn } from './QuantiseControlColumn.tsx';
 
 interface QuantiseWorkspaceProps {
   readonly source: ImportedImage;
-  readonly facts: SheetFacts | null;
+  readonly reading: SheetReading;
   readonly grid: PixelGrid | null;
   readonly settings: QuantiseSettings | null;
   readonly quantised: Quantised | null;
@@ -22,10 +22,6 @@ interface QuantiseWorkspaceProps {
   readonly keying: BackgroundKeying | null;
   readonly keyOffered: boolean;
   readonly colorPlan: ColorPlan;
-  readonly target: TargetSize | null;
-  readonly suggested: PixelGrid | null;
-  readonly expected: number;
-  readonly setGridOverride: (grid: PixelGrid | null) => void;
 }
 
 /**
@@ -45,7 +41,7 @@ interface QuantiseWorkspaceProps {
  */
 export function QuantiseWorkspace({
   source,
-  facts,
+  reading,
   grid,
   settings,
   quantised,
@@ -54,17 +50,14 @@ export function QuantiseWorkspace({
   keying,
   keyOffered,
   colorPlan,
-  target,
-  suggested,
-  expected,
-  setGridOverride,
 }: QuantiseWorkspaceProps) {
+  const facts = sheetReadingFacts(reading);
   return (
     <div className="grid grid-cols-1 items-start gap-6 quantise:grid-cols-12">
       <div className="space-y-6 quantise:col-span-5">
         <QuantiseControlColumn
           source={source}
-          facts={facts}
+          reading={reading}
           grid={grid}
           settings={settings}
           quantised={quantised}
@@ -73,10 +66,6 @@ export function QuantiseWorkspace({
           keying={keying}
           keyOffered={keyOffered}
           colorPlan={colorPlan}
-          target={target}
-          suggested={suggested}
-          expected={expected}
-          setGridOverride={setGridOverride}
         />
       </div>
 
@@ -109,7 +98,6 @@ export function QuantiseWorkspace({
           scale={facts?.scale ?? null}
           grid={grid}
           quantised={quantised}
-          target={target}
           busy={busy}
         />
       </div>

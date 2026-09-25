@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useQuantiseDownloadStore } from '../../stores/useQuantiseDownloadStore.ts';
 import { useSheetWriteStore } from '../../stores/useSheetWriteStore.ts';
 import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
@@ -56,20 +57,9 @@ function draw(
   sprites: SpriteSegmentation | null = null,
   cellChoice: SpriteCellChoice = DEFAULT_SPRITE_CELL_CHOICE,
 ) {
+  useQuantiseDownloadStore.setState({ downloadScale: 1, downloadFormat, cellChoice });
   render(
-    <DownloadControls
-      downloadScale={1}
-      onDownloadScaleChange={() => undefined}
-      downloadFormat={downloadFormat}
-      onDownloadFormatChange={() => undefined}
-      sourceName="armour.png"
-      resultImage={resultImage}
-      duplicates={[]}
-      sprites={sprites}
-      cellChoice={cellChoice}
-      onCellChoiceChange={() => undefined}
-      target={null}
-    />,
+    <DownloadControls sourceName="armour.png" resultImage={resultImage} duplicates={[]} sprites={sprites} />,
   );
 }
 

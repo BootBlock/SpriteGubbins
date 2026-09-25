@@ -1,30 +1,25 @@
 import { ESTIMATED_SCALE_READING } from '../../constants/quantiser.ts';
-import type { SheetFacts } from '../../types/quantiser.ts';
+import type { SheetReading } from '../../types/quantiser.ts';
 import { Badge } from '../common/Badge.tsx';
 
 interface ScaleBadgeProps {
   /**
-   * What one look at the sheet established, or `null` while the worker is still looking.
+   * Where the one look at the sheet stands, and what it established if it answered.
    *
-   * The whole reading rather than the scale out of it, so that "no reading yet" and "no scale in
-   * this image" cannot both be on screen at once — two props can contradict each other, and a
-   * spinner shown beside an answer is the state that tells a user the tab is broken.
-   *
-   * That covers the four states below and no more. `null` also arrives when the survey itself
-   * **failed**, where this pulses "Measuring the sheet…" beside the settled error the tab renders
-   * above — which predates this component and is not what the single-prop shape is claiming to
-   * prevent. Telling those two apart needs the error, which belongs to the tab; do not read this
-   * doc as an assertion that it already has been.
+   * The whole reading rather than the scale out of it, so that "no reading yet", "no reading at
+   * all" and "no scale in this image" cannot be on screen together — two props can contradict each
+   * other, and a spinner shown beside an answer, or beside the error that ended the wait, is the
+   * state that tells a user the tab is broken.
    */
-  readonly facts: SheetFacts | null;
+  readonly reading: SheetReading;
 }
 
 /**
  * What the sheet was read as, and **which reading said so**.
  *
- * Four states, and the distinction the middle two carry is the point of the component. An `EXACT`
- * scale is a fact about the image — every colour transition in it falls on that lattice — and
- * wants nothing from the reader. An estimate is a reading with a tolerance in it, so it wears the
+ * Five states, and the distinction the estimate carries against a measurement is the point of the
+ * component. An `EXACT` scale is a fact about the image — every colour transition in it falls on
+ * that lattice — and wants nothing from the reader. An estimate is a reading with a tolerance in it, so it wears the
  * same "needs attention" gold as finding nothing at all: both mean the reader has to look at the
  * preview before trusting the number. Reporting an estimate in the settled emerald of a measurement
  * would be the exact failure the estimate is hedged against — a scale nobody checked, reducing a
@@ -36,15 +31,21 @@ interface ScaleBadgeProps {
  * wording comes from `ESTIMATED_SCALE_READING`, which the pane, the panel and the live region draw
  * from too.
  *
- * The two gold states never appear together, so sharing a tone costs no distinction: an estimate is
- * only ever read from a sheet the exact pass found nothing in.
+ * A reading that failed is gold as well, and settled rather than pulsing: nothing is being read any
+ * more, and after a survey that failed on this sheet the reader has a number to type all the same.
+ * The error above the panels says why, and the panel beside the badge says whether typing helps.
+ *
+ * The gold states never appear together, so sharing a tone costs no distinction: an estimate is
+ * only ever read from a sheet the exact pass found nothing in, and a failed reading found nothing.
  */
-export function ScaleBadge({ facts }: ScaleBadgeProps) {
-  if (facts === null) {
+export function ScaleBadge({ reading }: ScaleBadgeProps) {
+  if (reading.kind === 'pending') {
     // The only tone that pulses, and this is what it is for: the sheet is being read, right now, on
     // the worker. See the note on `BadgeTone`.
     return <Badge tone="live">Measuring the sheet…</Badge>;
   }
+  if (reading.kind === 'failed') return <Badge tone="attention">Not measured — the reading failed</Badge>;
+  const { facts } = reading;
   if (facts.scale === null) {
     return <Badge tone="attention">No pixel scale in this image</Badge>;
   }

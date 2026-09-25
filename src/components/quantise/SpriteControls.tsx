@@ -1,9 +1,10 @@
 import { QUANTISE_TOOLTIPS, SPRITE_GAP_RANGE } from '../../constants/quantiser.ts';
 import { SPRITE_GUIDANCE } from '../../constants/spriteSegmentation.ts';
+import { useComponentTarget } from '../../hooks/useComponentTarget.ts';
+import { useExpectedComponents } from '../../hooks/useExpectedComponents.ts';
 import { useSheetIdentity } from '../../hooks/useSheetIdentity.ts';
 import { useSpriteAssignment } from '../../hooks/useSpriteAssignment.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
-import type { TargetSize } from '../../types/output.ts';
 import type { SpriteSegmentation } from '../../types/quantiser.ts';
 import { widestSprite } from '../../utils/spriteSegments.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -13,35 +14,6 @@ import { SpritePieceList } from './SpritePieceList.tsx';
 interface SpriteControlsProps {
   /** What the transform found, or `null` while there is no result to have found anything in. */
   readonly sprites: SpriteSegmentation | null;
-  /**
-   * The size **one component** was asked for, or `null` where the studio states none.
-   *
-   * The figure the measurement is worth reading against: a sheet whose sprites come back larger
-   * than this was drawn at a coarser scale than the prompt asked for, which is a thing to know
-   * before the artwork reaches an atlas cell sized from the same number.
-   *
-   * **`null` has two causes and the clause withdraws for both** — see `componentTargetSize`. An
-   * empty field is the obvious one. The other is a sheet whose components are the parts one subject
-   * is cut into, where the studio's stated size is the whole those parts assemble into: on a rig the
-   * largest piece is a torso, so the line compared a torso against a body and its *within the
-   * target* carried the difference between them as slack. Nothing in the app knows that difference, so the reading could not be corrected for —
-   * only withdrawn, which is what a per-component claim the app cannot support is worth.
-   */
-  readonly target: TargetSize | null;
-  /**
-   * How many components the studio's prompt for this sheet contracts for.
-   *
-   * **The other half of what this panel is for, and the half that was missing.** The size reading
-   * below says whether the artwork came back at the scale that was asked for; this says whether it
-   * came back in the pieces that were asked for — and until the two sat together, a sheet returning
-   * nine components where twelve were requested looked, here and in the preview, exactly like a
-   * sheet returning twelve.
-   *
-   * It is a statement about the *studio*, not about the image: nothing can check that the sheet on
-   * this tab is the one the studio is composing. So a mismatch is reported as something to look at
-   * rather than as an error, in the same voice as the target-size clause beside it.
-   */
-  readonly expected: number;
   /** Whether a newer result is on its way, which is what {@link sprites} may be lagging behind. */
   readonly busy: boolean;
 }
@@ -74,7 +46,20 @@ interface SpriteControlsProps {
  * setting would contradict its own badge in both directions, which is why `SpriteSegmentation`
  * carries `SOLID` rather than leaving it to be inferred here.
  */
-export function SpriteControls({ sprites, target, expected, busy }: SpriteControlsProps) {
+export function SpriteControls({ sprites, busy }: SpriteControlsProps) {
+  // The size **one component** was asked for, or `null` where the studio states none — the figure the
+  // measurement is worth reading against: a sheet whose sprites come back larger than this was drawn
+  // at a coarser scale than the prompt asked for, which is a thing to know before the artwork reaches
+  // an atlas cell sized from the same number. `useComponentTarget` says why `null` withdraws the
+  // clause for a sheet of parts as well as for an empty field.
+  const target = useComponentTarget();
+  // How many components the studio's prompt for this sheet contracts for — **the other half of what
+  // this panel is for**. The size reading says whether the artwork came back at the scale that was
+  // asked for; this says whether it came back in the pieces that were asked for. It is a statement
+  // about the *studio*, not about the image: nothing can check that the sheet on this tab is the one
+  // the studio is composing, so a mismatch is reported as something to look at rather than as an
+  // error, in the same voice as the target-size clause beside it.
+  const expected = useExpectedComponents();
   const spriteGap = useQuantiseStore((state) => state.spriteGap);
   const setSpriteGap = useQuantiseStore((state) => state.setSpriteGap);
   // The same two readings the preview's labels and the download take, through the same two hooks —
