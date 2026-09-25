@@ -141,7 +141,7 @@ export function GridControls({ reading, grid, colorPlan }: GridControlsProps) {
         </div>
       </div>
 
-      <DownscaleControls dithers={colorPlan.reduction !== null} />
+      <DownscaleControls reduction={colorPlan.reduction} />
 
       <GridCandidates scale={scale} suggested={suggested} onChoose={setGridOverride} />
 

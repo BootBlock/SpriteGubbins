@@ -1,5 +1,6 @@
 import {
   CLEANUP_PASSES_RANGE,
+  COLOR_MERGE_HELD_REASONS,
   COLOR_MERGE_RANGE,
   DITHER_CHOICES,
   FILL_CLEANUP_RANGE,
@@ -11,19 +12,21 @@ import {
   VOTE_METHOD_CHOICES,
 } from '../../constants/quantiser.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
+import type { ColorReduction } from '../../types/quantiser.ts';
+import { mergeIsExempt } from '../../utils/mergeIsExempt.ts';
 import { RangeField } from '../common/RangeField.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 
 interface DownscaleControlsProps {
   /**
-   * Whether a palette is in force for this sheet, and therefore whether a dither has anything to
-   * express.
+   * The colour reduction in force for this sheet, or `null` for none — which decides whether a
+   * dither has anything to express, and whether the colour merge runs at all.
    *
-   * A prop rather than a fifth store read, because the answer is the studio's colour setting resolved
+   * A prop rather than a store read, because the answer is the studio's colour setting resolved
    * against a palette locked on this tab — which `colorPlanFor` decides once, and which every other
    * panel on this tab is handed rather than re-deriving. See `GridControls`, which holds the plan.
    */
-  readonly dithers: boolean;
+  readonly reduction: ColorReduction | null;
 }
 
 /**
@@ -41,11 +44,14 @@ interface DownscaleControlsProps {
  * read from the other end: it is the palette step in positional form, so with the studio naming no
  * budget and nothing pinned or locked there is no palette for it to dither against, and a control
  * offering four patterns that would all leave the sheet alone is the lie this panel avoids
- * elsewhere. Everything else consumes the store directly with atomic selectors; the
+ * elsewhere. **The colour merge is withdrawn under a stated palette with no dither**, where
+ * `mergeIsExempt` says the pass does not run: it stays on screen with the reason beneath it rather
+ * than vanishing, because its position is still stored and comes back into force the moment a
+ * dither is chosen. Everything else consumes the store directly with atomic selectors; the
  * choices are per-workflow rather than per-sheet, so they survive a new image and fall with
  * Clear — the store says why.
  */
-export function DownscaleControls({ dithers }: DownscaleControlsProps) {
+export function DownscaleControls({ reduction }: DownscaleControlsProps) {
   const vote = useQuantiseStore((state) => state.vote);
   const outlineExpansion = useQuantiseStore((state) => state.outlineExpansion);
   const lineStrength = useQuantiseStore((state) => state.lineStrength);
@@ -66,6 +72,11 @@ export function DownscaleControls({ dithers }: DownscaleControlsProps) {
   const setDither = useQuantiseStore((state) => state.setDither);
 
   const offOr = (value: number): string => (value === 0 ? 'off' : String(value));
+  const mergeHeldReason = !mergeIsExempt({ reduction, dither })
+    ? ''
+    : reduction?.kind === 'LOCKED'
+      ? COLOR_MERGE_HELD_REASONS.LOCKED
+      : COLOR_MERGE_HELD_REASONS.PALETTE;
 
   return (
     <div className="mt-4 space-y-3">
@@ -133,6 +144,7 @@ export function DownscaleControls({ dithers }: DownscaleControlsProps) {
         max={COLOR_MERGE_RANGE.max}
         step={COLOR_MERGE_RANGE.step}
         format={offOr}
+        disabledReason={mergeHeldReason}
         onChange={setColorMerge}
       />
       <RangeField
@@ -156,7 +168,7 @@ export function DownscaleControls({ dithers }: DownscaleControlsProps) {
         onChange={setCleanupPasses}
       />
 
-      {dithers && (
+      {reduction !== null && (
         <div className="max-w-md">
           <SelectField
             label="Dither"

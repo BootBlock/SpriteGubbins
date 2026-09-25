@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { ColorPlan, SheetFacts, SheetReading } from '../../types/quantiser.ts';
+import type { ColorPlan, DitherPattern, Rgba, SheetFacts, SheetReading } from '../../types/quantiser.ts';
 import { QuantiseGuide } from './QuantiseGuide.tsx';
 
 /**
@@ -26,13 +26,15 @@ const readWith = (scale: SheetFacts['scale']): SheetReading => ({
   facts: { scale, colors: 1024 },
 });
 const PENDING: SheetReading = { kind: 'pending' };
+const WHITE: Rgba = { r: 255, g: 255, b: 255, a: 255 };
 
 function show(
   reading: SheetReading,
   hasSheet: boolean,
   suggested: number | null = null,
   grid: number | null = null,
-  dithered = false,
+  dither: DitherPattern = 'NONE',
+  colorPlan: ColorPlan = COLOR_PLAN,
 ) {
   render(
     <QuantiseGuide
@@ -41,8 +43,8 @@ function show(
       target={suggested === null ? null : { width: 16, height: 32 }}
       suggested={suggested}
       grid={grid}
-      colorPlan={COLOR_PLAN}
-      dithered={dithered}
+      colorPlan={colorPlan}
+      dither={dither}
     />,
   );
 }
@@ -155,11 +157,29 @@ describe('QuantiseGuide', () => {
     // where in the pipeline it is applied — which takes the two cleanup passes past it. A paragraph
     // telling a reader those dials tidy what the policy produced would have the order backwards for
     // exactly the sheets where the order is worth knowing.
-    show(readWith({ grid: 8, measurement: 'EXACT' }), true, null, 8, true);
+    show(readWith({ grid: 8, measurement: 'EXACT' }), true, null, 8, 'BAYER_4');
     expect(screen.getByText(/tidying what the reading made of the sheet/)).toBeInTheDocument();
 
     cleanup();
-    show(readWith({ grid: 8, measurement: 'EXACT' }), true, null, 8, false);
-    expect(screen.getByText(/only tidy what that policy produced/)).toBeInTheDocument();
+    show(readWith({ grid: 8, measurement: 'EXACT' }), true, null, 8, 'NONE');
+    expect(screen.getByText(/only tidy what that policy produced\.$/)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['pinned', { kind: 'PALETTE', entries: [WHITE] } as const, /undo the studio’s statement/],
+    [
+      'locked',
+      { kind: 'LOCKED', entries: [WHITE], snap: 21 } as const,
+      /edit the palette the rest of the series/,
+    ],
+  ])('says the sheet-wide merge is off entirely under a %s palette with no dither', (_, reduction, why) => {
+    // The merge is skipped whole, not only for the palette's own entries — the Colour merge slider
+    // is withdrawn under the same condition, and the paragraph beside it has to agree.
+    show(PENDING, false, null, null, 'NONE', { ...COLOR_PLAN, reduction });
+    expect(screen.getByText(/the sheet-wide merge is left off entirely/)).toHaveTextContent(why);
+
+    cleanup();
+    show(PENDING, false, null, null, 'BAYER_4', { ...COLOR_PLAN, reduction });
+    expect(screen.queryByText(/the sheet-wide merge is left off entirely/)).not.toBeInTheDocument();
   });
 });

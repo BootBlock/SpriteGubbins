@@ -8,7 +8,7 @@ import {
   TUNE_TRIM_STRENGTHS,
 } from '../constants/autoTune.ts';
 import { VOTE_METHODS } from '../types/quantiser.ts';
-import { mergeIsExempt } from './quantiseImage.ts';
+import { mergeIsExempt } from './mergeIsExempt.ts';
 import { ladder, type TuneStage } from './tuneStage.ts';
 
 /**

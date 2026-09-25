@@ -17,8 +17,8 @@ interface AntiAliasControlsProps {
    * Whether a colour setting is constraining this sheet, and therefore whether a blend has anything
    * to be kept to.
    *
-   * A prop rather than a sixth store read, for the reason `DownscaleControls` takes `dithers` as
-   * one: the answer is the studio's colour setting resolved against a palette locked on this tab,
+   * A prop rather than a sixth store read, for the reason `DownscaleControls` takes `reduction`
+   * as one: the answer is the studio's colour setting resolved against a palette locked on this tab,
    * which `colorPlanFor` decides once and every panel here is handed rather than re-deriving.
    */
   readonly constrained: boolean;
