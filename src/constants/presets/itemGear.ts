@@ -129,6 +129,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'CEL_SHADED',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       // Pinned rather than inherited, because the arithmetic above counts these facings and this

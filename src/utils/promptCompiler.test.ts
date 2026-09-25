@@ -1172,12 +1172,10 @@ describe('generatePrompt — a render style that withholds the surface', () => {
     // taking the key light away would leave the volumes this pass is run to judge invisible — while
     // every lighting option describes light on a surface, and a flat fill of one colour has none.
     for (const style of PASSES) {
-      const pass = promptText.validationPassFor(style);
-      if (pass === null) throw new Error(`${style} should be a validation pass.`);
-
       const prompt = withStyle(style);
-      if (pass.withholdsLight) expect(prompt, style).not.toContain(LIGHTING);
-      else expect(prompt, style).toContain(LIGHTING);
+      if (promptText.RENDER_STYLE_TRAITS[style].shading === null) {
+        expect(prompt, style).not.toContain(LIGHTING);
+      } else expect(prompt, style).toContain(LIGHTING);
     }
     // Pinned rather than left to the derivation above, because "no pass states the light" would
     // satisfy the loop while losing the distinction it is written to hold.
@@ -3082,9 +3080,13 @@ describe('generatePrompt — the machine and its palette', () => {
       withOutput({ outlineStyle: 'PURE_BLACK_OUTLINE', backgroundKey: 'MAGENTA_FF00FF' }),
     );
 
-    expect(onBlack).toContain(`- Edge / outline treatment: ${promptText.OUTLINE_BESIDE_BLACK_KEY_TEXT}`);
-    expect(onBlack).not.toContain(promptText.OUTLINE_TEXT.PURE_BLACK_OUTLINE);
-    expect(onMagenta).toContain(`- Edge / outline treatment: ${promptText.OUTLINE_TEXT.PURE_BLACK_OUTLINE}`);
+    // The shared configuration is a pixel sheet, so both lines are the pixel contour's wording.
+    const black = promptText.OUTLINE_TEXT.PIXEL.PURE_BLACK_OUTLINE ?? '';
+    expect(onBlack).toContain(
+      `- Edge / outline treatment: ${promptText.OUTLINE_BESIDE_BLACK_KEY_TEXT.PIXEL}`,
+    );
+    expect(onBlack).not.toContain(black);
+    expect(onMagenta).toContain(`- Edge / outline treatment: ${black}`);
   });
 
   it('adds the colour clause to the contract and the audit, only where a palette is pinned', () => {

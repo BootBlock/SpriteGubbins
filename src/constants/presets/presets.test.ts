@@ -326,7 +326,7 @@ describe('the Unsung Saviour presets', () => {
     // Load-bearing: the engine lights actors with CanvasModulate and Light2D and draws its own
     // shadows, so baked directional lighting would fight both.
     expect(characterRig.output.lightingModel).toBe('FLAT_NEUTRAL_ALBEDO');
-    expect(promptFor(characterRig)).toContain(LIGHTING_TEXT.FLAT_NEUTRAL_ALBEDO);
+    expect(promptFor(characterRig)).toContain(LIGHTING_TEXT.HARD.FLAT_NEUTRAL_ALBEDO ?? '');
   });
 
   it('gives the creature rig no sockets, because enemies do not wear player gear', () => {

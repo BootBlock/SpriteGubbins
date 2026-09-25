@@ -33,9 +33,6 @@ const VALIDATION_PASSES: Readonly<Record<RenderStyle, ValidationPass | null>> = 
   LOW_POLY_3D: null,
 
   CLAY_RENDER: {
-    // Lit, and deliberately so: a clay model is read by the way light falls across it, and taking
-    // the key light away would leave the one thing this pass is run to judge invisible.
-    withholdsLight: false,
     text: [
       '**This render style is a validation pass, and it withholds the surface.** Every component is',
       'one untextured material in one colour throughout — no colour regions, no markings, no texture,',
@@ -52,10 +49,6 @@ const VALIDATION_PASSES: Readonly<Record<RenderStyle, ValidationPass | null>> = 
   },
 
   SILHOUETTE_ONLY: {
-    // Nothing for a key light to land on. Every lighting option this app offers describes how light
-    // falls across a surface, and this pass has removed the surface — the flattest of the three still
-    // says "even illumination … so a game engine can light the sprite itself".
-    withholdsLight: true,
     text: [
       '**This render style is a validation pass, and it withholds everything inside the silhouette.**',
       'Every component is one solid fill of a single colour against the background field — no interior',

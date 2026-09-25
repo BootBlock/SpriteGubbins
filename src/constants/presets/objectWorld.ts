@@ -166,6 +166,7 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'CEL_SHADED',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       rigMode: 'NONE',

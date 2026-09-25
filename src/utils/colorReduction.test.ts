@@ -32,6 +32,19 @@ describe('colorPlanFor — what happens to the colours', () => {
     expect(colorPlanFor(studioColors('FREE', 'UNRESTRICTED'), null, 0).reduction).toBeNull();
   });
 
+  it('reduces to the budget the render style is drawn under, which the prompt states', () => {
+    // `RETRO_PIXEL_ART` names a small palette, so a stored `UNRESTRICTED` is stated in the prompt as
+    // the budget that style falls back to — and a quantiser leaving the sheet alone would disagree
+    // with the prompt it was generated from (issue #406).
+    const retro = colorPlanFor(studioColors('FREE', 'UNRESTRICTED', null, 'RETRO_PIXEL_ART'), null, 0);
+    expect(retro.reduction).toEqual({ kind: 'MAX_COLORS', maxColors: 64 });
+    expect(retro.setting).toBe('RESTRAINED_64_COLOR');
+    // A validation pass withdraws the budget line without changing the colour policy.
+    expect(
+      colorPlanFor(studioColors('FREE', 'UNRESTRICTED', null, 'CLAY_RENDER'), null, 0).reduction,
+    ).toBeNull();
+  });
+
   it.each(PALETTE_LIMITS)('ignores the %s budget entirely once a palette is pinned', (limit) => {
     // The whole rule in one assertion, across every budget the studio offers: the answer for a
     // pinned palette does not depend on the limit, including the `UNRESTRICTED` case that would
