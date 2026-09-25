@@ -143,9 +143,12 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * SQLite binary are four fifths of the figure between them. What the figure stands at today is
  * not restated here, because it moves with every commit and a number in a comment would be wrong
  * within the week: every build prints it, as `precache <n> entries (<size> KiB)`. The headroom
- * over it is deliberately small, so a 200 kB addition fails here and is argued for in a diff
+ * over it was a third of the ceiling when it was set, at half again the figure it replaced, so
+ * ordinary growth does not meet it. What it catches is a change of a different order: a bundled dependency, a second
+ * copy of the SQLite binary, a data set pulled into the entry chunk. That is argued for in a diff
  * rather than turning up later in a page-load waterfall. Raising the ceiling is a normal thing to
- * do, and it is a line a reviewer sees.
+ * do, and it is a line a reviewer sees. The notes below record each raise, and all but the last
+ * were set just over the build.
  *
  * **Raised from 2160 by the three subject categories PORTRAIT, ICON and BACKGROUND.** Each ships
  * sixteen option pools with their tooltips, one or two sheet plans, five per-category prompt-text
@@ -1026,8 +1029,15 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * code and user-facing copy.
  *
  * 2436 leaves **0.81 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2436 by half, to 3654, and no longer set just over the build.** Every raise above
+ * was a margin of under a kilobyte, so ordinary work crossed it: a docblock the compiler kept, a
+ * guidance sentence, a check in a worker. Each crossing cost a detached baseline build and a note
+ * here. On 2026-09-25 three branches crossed it, and two of them measured against the same `main`
+ * and raised it to the same figure. The ceiling was stopping sub-kilobyte growth
+ * that nobody would ever cut, which is not what it is for.
  */
-export const PRECACHE_CEILING_KIB = 2436;
+export const PRECACHE_CEILING_KIB = 3654;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
