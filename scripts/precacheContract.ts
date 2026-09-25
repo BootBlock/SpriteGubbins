@@ -981,8 +981,21 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * in `quantiseDials`, which holds the sheet plans. It is prompt text.
  *
  * 2433 leaves **0.87 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2433 by the failed sheet survey** (issue #382). The Quantise panels read a failed
+ * survey as one still running, so a sheet whose survey threw kept “Measuring the sheet…” pulsing and
+ * “counting…” shown beside the error. The reading now has a failed state, with its own badge,
+ * readout and two paragraphs of guidance. Measured against `main` at `02eb920`, rebuilt from the
+ * same lockfile, with the ceiling forced to zero in each tree so both figures are the ones
+ * `assertPrecacheContract` receives: **2432.20 KiB** on `main` and **2433.28** here, a delta of
+ * **1.08** that crossed a ceiling the base sat 0.80 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets` listings summed by
+ * chunk name, 805 bytes land in `QuantiseTab` and 300 in `quantiseDials`, which holds the guidance
+ * copy. It is interface copy and the branches that choose it.
+ *
+ * 2434 leaves **0.72 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2433;
+export const PRECACHE_CEILING_KIB = 2434;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
