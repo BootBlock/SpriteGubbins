@@ -31,11 +31,30 @@
  */
 
 /**
+ * The names a generic assignment is recognised by. Shared by the quoted and the `.env` form, so the
+ * two cannot disagree about which variables hold a credential.
+ */
+const KEY_NAME = '(password|passwd|secret|token|api[_-]?key|client[_-]?secret|access[_-]?key)';
+
+/**
  * Generic `key = "value"` / `key: "value"` assignment. Requires a quoted value of 8+ non-space,
  * non-quote characters so short or obviously-templated values don't trip it.
  */
-const KV_PATTERN =
-  '(password|passwd|secret|token|api[_-]?key|client[_-]?secret|access[_-]?key)["\' ]*[:=][ ]*["\'][^"\' ]{8,}';
+const KV_PATTERN = `${KEY_NAME}["' ]*[:=][ ]*["'][^"' ]{8,}`;
+
+/**
+ * The `.env` form of the same assignment: `OPENAI_API_KEY=value`, unquoted, the only thing on its
+ * line but a trailing `# comment`. `.env.example` is tracked, so this is a line a contributor
+ * commits.
+ *
+ * Each constraint is what separates the file form from code that merely names a credential. The
+ * name must open the line, after optional indentation and `export`, so `const token = …` never
+ * qualifies. A value that ends in `;` is a statement, and one that opens `$` is an interpolation
+ * such as `GH_TOKEN=$GITHUB_TOKEN`, which names a secret rather than holding one. The lookbehind
+ * keeps the name's prefix out of the matched span, so the placeholder test judges `API_KEY=…`
+ * exactly as it judges the quoted form, and a prefix such as `EXAMPLE_` exempts nothing.
+ */
+const ENV_PATTERN = String.raw`(?<=^\s*(?:export\s+)?[A-Za-z0-9_.-]*)${KEY_NAME}\s*=\s*[^\s"'$][^\s"']{6,}[^\s"';](?=\s*(?:#.*)?$)`;
 
 /**
  * The credential shapes this blocks. All matched case-insensitively, and all **global**: a line can
@@ -43,16 +62,27 @@ const KV_PATTERN =
  * judged rather than only the first. `String.prototype.matchAll` clones the expression before
  * iterating, so these are safe to share across calls — no `lastIndex` survives from one line to the
  * next. Nothing here may call `.exec` or `.test` on one of them, which would.
+ *
+ * OpenAI and Anthropic share the `sk-` prefix. The legacy OpenAI key is `sk-` and unbroken
+ * alphanumerics, and it keeps a pattern of its own, because allowing `-` and `_` after a bare `sk-`
+ * would match the tail of every kebab-case name that contains `sk-`. Every current key names its
+ * kind in a segment first: `sk-proj-`, `sk-svcacct-`, `sk-admin-` and `sk-None-` for OpenAI, and
+ * `sk-ant-` with a kind and a two-digit version (`api03`, `admin01`, `oat01`) for Anthropic. The
+ * body after that segment carries `-` and `_`, which is what ended the legacy pattern's match.
  */
 export const SECRET_PATTERNS: readonly RegExp[] = [
   /-----BEGIN[ A-Z]*PRIVATE KEY-----/gi,
   /AKIA[0-9A-Z]{16}/gi,
   /sk-[A-Za-z0-9]{20,}/gi,
+  /sk-(?:proj|svcacct|admin|None|ant-[a-z]+\d\d)-[A-Za-z0-9_-]{20,}/gi,
+  /hf_[A-Za-z0-9]{30,}/gi,
+  /r8_[A-Za-z0-9]{30,}/gi,
   /(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,}/gi,
   /github_pat_[A-Za-z0-9_]{20,}/gi,
   /xox[baprs]-[A-Za-z0-9-]{10,}/gi,
   /AIza[0-9A-Za-z_-]{35}/gi,
   new RegExp(KV_PATTERN, 'gi'),
+  new RegExp(ENV_PATTERN, 'gi'),
 ];
 
 /**
@@ -131,14 +161,14 @@ const PRINTABLE_MIN = 0x20;
 const PRINTABLE_MAX = 0x7e;
 
 /**
- * The shortest run of printable bytes any pattern above can match, which is 15 — `xox`, one of
- * `baprs`, a dash and ten more; and the generic assignment's `token`, a colon, a quote and eight,
- * arriving at the same figure from the other end. A shorter run is dropped while the walk builds
- * it, and that is not only an optimisation: compressed bytes produce short printable runs
+ * The shortest run of printable bytes any pattern above can match, which is 14 — the `.env`
+ * assignment's `token`, an equals sign and eight. The quoted form spends one more on its quote, and
+ * `xox`, one of `baprs`, a dash and ten more also come to 15. A shorter run is dropped while the walk
+ * builds it, and that is not only an optimisation: compressed bytes produce short printable runs
  * constantly, and without the floor a 2 MB PNG would be split into roughly a million one- and
- * two-character fragments for the eight patterns to be run over.
+ * two-character fragments for the patterns to be run over.
  */
-const MIN_RUN = 15;
+const MIN_RUN = 14;
 
 /**
  * How much of a reported value is printed. The generic assignment's value class is unbounded, so a
@@ -167,9 +197,9 @@ const UNICODE_UNIT_SIZES = [1, 2, 4] as const;
  *
  * The set is deliberately a *superset* of the spacings that will ever be right. Reading ordinary
  * bytes at a spacing of two or four produces text that was never in the file, so in principle it
- * could invent a credential shape — but every shape here needs at least fifteen consecutive
+ * could invent a credential shape — but every shape here needs at least fourteen consecutive
  * characters from a narrow class, and a printable run that long turns up in random bytes about
- * three times in ten million positions before the class constraints are applied at all. A rare
+ * once in a million positions before the class constraints are applied at all. A rare
  * false positive is answered with a placeholder; a false negative is a secret in a public history.
  */
 const STRIDES: readonly (readonly [stride: number, offset: number])[] = UNICODE_UNIT_SIZES.flatMap((stride) =>
