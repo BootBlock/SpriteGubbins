@@ -67,10 +67,11 @@ interface RankedEntry {
  * A lock's entries filed for lookup at one snap distance, or `null` where the snap reaches nothing.
  *
  * Filed on `oklabLattice` in cells of the snap distance, so a lookup measures only the entries that
- * could be within reach. A lock holds up to `MAX_PALETTE_ENTRIES` colours, and a later sheet at a grid
- * of 1 can carry hundreds of thousands of distinct ones, so a scan of every entry per colour is what
- * made a transform take half a minute. Built once per transform and shared by `ditherImage`, which asks
- * the same question of the same palette: is this colour inside the lock's reach, and of which entry.
+ * could be within reach, rather than every entry once per distinct colour of the sheet. A lock holds
+ * up to `MAX_PALETTE_ENTRIES` colours and a later sheet at a grid of 1 can carry hundreds of
+ * thousands, so that product is the whole cost of the step; `oklabLattice` gives the measurement.
+ * Built once per transform and shared by `ditherImage`, which asks the same question of the same
+ * palette: is this colour inside the lock's reach, and of which entry.
  *
  * A snap of `0` reaches nothing, as the dial says. The only colours it could take are ones already
  * identical to an entry, which it would write back unchanged.

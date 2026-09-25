@@ -136,7 +136,7 @@ describe('PaletteLockControls', () => {
 
   it('holds the button shut on a result with more colours than a palette can name, and says why', () => {
     // An `UNRESTRICTED` result held as a lock was matched against every later sheet colour by
-    // colour, which took half a minute a transform with a lock of 38,886 entries.
+    // colour: a lock of 38,886 entries made each transform take 35 seconds.
     const overfull = Array.from({ length: MAX_PALETTE_ENTRIES + 1 }, (_unused, at) => ({
       r: at % 256,
       g: at >> 8,

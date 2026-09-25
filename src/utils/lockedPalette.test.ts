@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { channels, imageFrom } from '../test/images.ts';
+import { sequence } from '../test/sequence.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { colorHistogram, packColor, readPixel } from './imageData.ts';
 import {
@@ -115,8 +116,10 @@ describe('lockedEntryFor', () => {
    * the nearest entry by `nearestOklab`, or nothing where that entry sits past the snap distance.
    *
    * A full-size lock, so the entries crowd every cell, and each entry is listed twice as a separate
-   * object. The duplicates are what check the tie: the scan keeps the earlier of two entries at the
-   * same distance, and `toBe` tells the earlier object from its copy where `toEqual` could not.
+   * object. The duplicates check the tie between identical entries: the scan keeps the earlier one,
+   * and `toBe` tells it from its copy where `toEqual` could not. Two entries in different cells at
+   * exactly the same distance are not something eight-bit colours can be relied on to produce, so
+   * the rank comparison that settles them is not exercised here.
    */
   it('gives the answer a scan of every entry gives, the earlier entry taking a tie', () => {
     const next = sequence(3);
@@ -142,15 +145,6 @@ describe('lockedEntryFor', () => {
     expect(lockedEntryFor(RED, lockReach([RED], 0))).toBeNull();
   });
 });
-
-/** A small deterministic generator, so a failure names the same colours on every run. */
-function sequence(seed: number): () => number {
-  let state = seed;
-  return () => {
-    state = (Math.imul(state, 1_103_515_245) + 12_345) >>> 0;
-    return state / 2 ** 32;
-  };
-}
 
 function rgbDistance(left: Rgba, right: Rgba): number {
   return Math.hypot(left.r - right.r, left.g - right.g, left.b - right.b);

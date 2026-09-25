@@ -87,8 +87,9 @@ export function PaletteLockControls({
   // that appears to do nothing is the worst outcome available. `PALETTE_LOCK_GUIDANCE.noColours`
   // says why the notice names the causes as symptoms rather than deciding between them.
   const emptySheet = resultPalette !== null && resultPalette.length === 0;
-  // The fourth: a result with more colours than a palette can name, which an `UNRESTRICTED` sheet
-  // is. Held, it would be matched against every later sheet colour by colour, and it is not a
+  // The fourth: a result with more colours than a palette can name, which an `UNRESTRICTED` sheet or
+  // a bits-per-channel machine can be. Held, it would be matched against every later sheet colour by
+  // colour, and it is not a
   // palette in any sense the reader means. `MAX_PALETTE_ENTRIES` is where every other palette in the
   // app already stops, and `PALETTE_LOCK_GUIDANCE.tooManyColours` says what brings a sheet under it.
   const overfull = resultPalette !== null && resultPalette.length > MAX_PALETTE_ENTRIES;

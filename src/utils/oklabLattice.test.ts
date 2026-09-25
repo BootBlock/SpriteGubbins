@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { type Oklab, srgbToOklab } from './oklab.ts';
 import { oklabLattice } from './oklabLattice.ts';
+import { sequence } from '../test/sequence.ts';
 
 /**
  * The lattice's one promise: every point within `reach` of a colour is among what `near` returns.
@@ -10,15 +11,6 @@ import { oklabLattice } from './oklabLattice.ts';
  * cell, so this checks it against a brute-force scan over points spread across the whole gamut, at
  * reaches from well under a cell index's stride to the widest dial the app offers.
  */
-
-/** A small deterministic generator, so a failure names the same points on every run. */
-function sequence(seed: number): () => number {
-  let state = seed;
-  return () => {
-    state = (Math.imul(state, 1_103_515_245) + 12_345) >>> 0;
-    return state / 2 ** 32;
-  };
-}
 
 function randomColors(count: number, seed: number): Oklab[] {
   const next = sequence(seed);

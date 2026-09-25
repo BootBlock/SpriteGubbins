@@ -8,9 +8,12 @@ import type { Oklab } from './oklab.ts';
  * Two passes ask that question of a set large enough for the scan to be the cost. `mergeColors` asks
  * it of every keeper so far, once per distinct colour of the sheet, and the plain quadratic scan
  * measured a quarter of a minute on a sheet quantised at a grid of 1. `lockReach` asks it of a
- * palette lock, once per distinct colour of each later sheet, where a scan over every held entry
- * made one transform take half a minute. One lattice rather than two copies of the walk, because the
- * packing below is easy to get subtly wrong and a second spelling of it is a second place to do so.
+ * palette lock, once per distinct colour of each later sheet. The lock's cost is bounded by the
+ * lock's size first — `PaletteLockControls` refuses one past `MAX_PALETTE_ENTRIES` — and the lattice
+ * is what keeps the lookup from growing with that size at all: at the full 256 entries and a snap of
+ * 21, over the 201,982 colours of `test_sprites/cyborg_monk.png`, it measured 189 ms where the scan
+ * measured 217. One lattice rather than two copies of the walk, because the packing below is easy to
+ * get subtly wrong and a second spelling of it is a second place to do so.
  *
  * **What it returns is a superset.** Any point within `reach` of another differs by at most one cell
  * on each axis, so the walk is exhaustive, but a corner cell also holds points up to `reach × √12`
