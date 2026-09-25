@@ -24,9 +24,9 @@ import type { QuantiseResult, QuantiseSettings, SheetFacts } from '../types/quan
  * pixel of the result. At a grid of 1 on the largest admitted sheet that is 33.6 MB against the
  * result's own 67 MB, so a reply is half again as large as it was and stays that size in the answer
  * store for as long as the result is on screen. It is transferred with the pixels, so it costs the
- * crossing nothing. It is paid on every transform rather than when the
- * difference mode is opened, because a map fetched separately could describe an older result than
- * the one beside it — see `DifferenceMap`.
+ * crossing nothing. It is paid on every transform rather than when the difference mode is opened,
+ * because a map fetched separately could describe an older result than the one beside it — see
+ * `DifferenceMap`.
  */
 export type QuantiseRequest =
   /** Adopt a sheet. Answered with {@link SheetFacts} — the two measurements that outlive any setting. */

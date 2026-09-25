@@ -73,7 +73,10 @@ describe('answer', () => {
     for (const { reply, transfer } of posts) {
       expect(reply.kind).toBe('quantised');
       if (reply.kind !== 'quantised') return;
-      expect(transfer).toEqual([reply.result.difference.cells.buffer, reply.result.image.data.buffer]);
+      // By identity, since every detached buffer is equal to every other one by content.
+      expect(transfer).toHaveLength(2);
+      expect(transfer[0]).toBe(reply.result.difference.cells.buffer);
+      expect(transfer[1]).toBe(reply.result.image.data.buffer);
       expect(transfer).not.toContain(image.data.buffer);
     }
     // The second transform read the same sheet as the first, not an emptied one.
