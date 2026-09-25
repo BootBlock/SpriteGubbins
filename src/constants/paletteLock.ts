@@ -1,3 +1,5 @@
+import { MAX_PALETTE_ENTRIES } from '../utils/pngPalette.ts';
+
 /**
  * What the palette-lock panel says, and how much of a held palette it shows.
  *
@@ -17,7 +19,7 @@
  */
 export const LOCKED_SWATCHES_SHOWN = 64;
 
-/** What the lock panel says: the paragraph under it, and the two states it has to report. */
+/** What the lock panel says: the paragraph under it, and the three states it has to report. */
 export const PALETTE_LOCK_GUIDANCE = {
   /** Nothing held: what locking would do, and why anyone would want it. */
   open: 'A sprite sheet series is generated one sheet at a time, and a palette chosen afresh from each of them drifts — two sheets of one character come back with two sets of greens that are near-identical and not the same, so the armour changes shade between the walk sheet and the run sheet. Lock the colours of a sheet you are happy with, then drop the next sheet in: each of its colours that comes near a held one is taken to it, so the two sheets share a palette. The lock stays until you unlock it or clear the tab, and it takes over from the studio’s colour setting while it is held.',
@@ -53,4 +55,19 @@ export const PALETTE_LOCK_GUIDANCE = {
    */
   noColours:
     'This sheet’s result has no colours to hold, because every pixel of it is transparent. A generation that came back as nothing but its background key reads this way, and so does a key colour tolerance set high enough to take the artwork along with the field.',
+  /**
+   * There is a result, and it has more colours than a palette can name, so no lock may be taken.
+   *
+   * The ceiling is `MAX_PALETTE_ENTRIES`, where every other palette in the app already stops. A
+   * lock of 38,886 colours, taken off `test_sprites/armour.png` at a grid of 3, made each later
+   * transform take 35 seconds, because every colour of the next sheet was measured against every
+   * held one — and a list that long is no longer a palette a series could be held to.
+   *
+   * **Two studio settings reach a count like this**, and the notice names both as causes rather than
+   * choosing between them, as `noColours` does: the `UNRESTRICTED` budget, which reduces nothing,
+   * and a machine palette stated as bits per channel, which can hold thousands of colours. A fine
+   * grid alone cannot, because every budget and every listed palette is 256 colours or fewer.
+   */
+  tooManyColours: (count: number): string =>
+    `This sheet’s result has ${count.toLocaleString()} colours, and a palette lock holds at most ${String(MAX_PALETTE_ENTRIES)}. The studio’s UNRESTRICTED colour budget can leave a sheet with this many, and so can a machine palette of more than ${String(MAX_PALETTE_ENTRIES)} colours. Choose a colour budget, or a palette of ${String(MAX_PALETTE_ENTRIES)} colours or fewer, in the studio, or raise the colour merge on this tab, until the result has ${String(MAX_PALETTE_ENTRIES)} colours or fewer.`,
 } as const;

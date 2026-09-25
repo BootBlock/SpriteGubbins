@@ -32,18 +32,19 @@ export function IdentitySubjectDigest() {
     // subject changes on every keystroke in the panel above, and a component that re-rendered with
     // it would be re-rendering the continuity group for an answer only this handler ever asks for.
     // Only the segments with something to say are folded. A segment whose fields the user has since
-    // cleared is left where it stands rather than removed, because by then it is very likely *their*
-    // line: the guidance below asks them to edit these into concrete detail from the sheet they
-    // accepted, and clearing a field in the panel above must not delete what they wrote here. It is
-    // the same call the palette capture makes for a sheet with nothing on it but its key field —
-    // pressing a control should never silently destroy prose — and it is what makes "rewrites those
-    // lines and nothing else" literally true.
-    const stated = identitySubjectSegments(useSubjectStore.getState().subject).filter(
-      (segment) => segment.value !== '',
-    );
+    // cleared, or set to their category's declared absence, is left where it stands rather than
+    // removed, because by then it is very likely *their* line: the guidance below asks them to edit
+    // these into concrete detail from the sheet they accepted, and changing a field in the panel
+    // above must not delete what they wrote here. It is the same call the palette capture makes for
+    // a sheet with nothing on it but its key field — pressing a control should never silently
+    // destroy prose — and it is what makes "rewrites those lines and nothing else" literally true.
+    const { category, subject } = useSubjectStore.getState();
+    const stated = identitySubjectSegments(category, subject).filter((segment) => segment.value !== '');
 
     if (stated.length === 0) {
-      showToast('The subject has none of those fields filled in — the identity lock is unchanged');
+      showToast(
+        'The subject leaves every one of those fields empty or declared absent — the identity lock is unchanged',
+      );
       return;
     }
 

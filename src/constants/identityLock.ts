@@ -71,10 +71,12 @@ export interface IdentitySubjectSegment {
  *   and inventory **above** subject identity — so the sheet already pins it harder than the lock
  *   could, and a count restated in two places is a count that can disagree with itself.
  * - `exclusions` is the one negative field. That section owns it, and an absence has no place in a
- *   block headed "reproduce exactly".
+ *   block headed "reproduce exactly". The same reason drops a stated field's value when it is its
+ *   pool's declared absence — CREATURE's `NONE`, TERRAIN's `No Focal Feature` — which is what
+ *   `identitySubjectSegments` takes the category for.
  *
- * Ten fields across three segments comes out at the scale §5's worked example is written at: 243 to
- * 311 characters across every category's shipped defaults, against 197 of prose there and 275
+ * Ten fields across three segments comes out at the scale §5's worked example is written at: 208 to
+ * 320 characters across every category's shipped defaults, against 197 of prose there and 275
  * with its palette line. `IDENTITY_PALETTE_SIZE`'s reasoning applies unchanged — brevity is a
  * correctness property here, not a style one — so a fourth segment is a decision about what the
  * lock can afford to say, not a free addition.

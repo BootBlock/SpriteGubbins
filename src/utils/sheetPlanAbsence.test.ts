@@ -18,6 +18,7 @@ import { generatePrompt } from './promptCompiler.ts';
 import {
   absentFieldsOf,
   declaresAbsence,
+  declinedFieldsOf,
   entryDeclinedBy,
   planAsDrawn,
   planDraws,
@@ -531,6 +532,22 @@ describe('a subject that says it has none of the attribute', () => {
     expect(declaresAbsence('TERRAIN', 'face_head', 'No Focal Feature')).toBe(true);
     expect(declaresAbsence('TERRAIN', 'clothing', 'No Focal Feature')).toBe(false);
     expect(declaresAbsence('TERRAIN', 'face_head', 'Bare Untouched Ground')).toBe(false);
+  });
+
+  it('names exactly the fields the subject declines, one at a time or all together', () => {
+    // The one reading the plan filter and the identity digest share, so each declinable field is
+    // checked on its own as well as with every other one: a field read off the wrong key would show
+    // up as a pair where one was expected.
+    for (const category of SUBJECT_CATEGORIES) {
+      const subject = standardSubject();
+      expect(declinedFieldsOf(category, subject), category).toEqual([]);
+      for (const key of absentFieldsOf(category)) {
+        expect(declinedFieldsOf(category, decliningSubject(subject, category, key)), category).toEqual([key]);
+      }
+      expect(declinedFieldsOf(category, decliningEverything(subject, category)), category).toEqual(
+        absentFieldsOf(category),
+      );
+    }
   });
 
   it.each(DECLARING)('gives $category no $key entry it can neither keep nor drop', ({ category, key }) => {
