@@ -1,5 +1,6 @@
 import { FRAME_DRIFT_SEARCH } from '../constants/quantiser.ts';
 import type { AlignedFrame, PixelShift, SpriteBox, SpriteStrip } from '../types/quantiser.ts';
+import { bordersArtwork } from './bordersArtwork.ts';
 import { reachesAny } from './boxClearance.ts';
 import { driftAt, fitLattice } from './frameLattice.ts';
 import { registerFrame } from './frameRegister.ts';
@@ -35,8 +36,10 @@ import { spriteStrips } from './spriteStrips.ts';
  *
  * The room a move needs is the box it vacates *and* the box it arrives at, kept further than the
  * sprite gap from every other sprite on the sheet and from every move already accepted — nearer, and
- * the next segmentation would merge the neighbour into the moved frame. {@link reachesAny} is the
- * shared rule, and the same one the duplicate fold is refused by. On a real sheet it never bites:
+ * the next segmentation would merge the neighbour into the moved frame — with no drawn pixel directly
+ * against it, since a speck the moved frame joined would carry its box past the region.
+ * {@link reachesAny} and {@link bordersArtwork} are the shared rule, and the same one the duplicate
+ * fold is refused by. On a real sheet it never bites:
  * frames sit in a gutter and a drift is a pixel or two. On a sheet with no gutter it is what stops
  * the pass carrying one frame into the next.
  *
@@ -134,6 +137,7 @@ function makesRoom(
 
   if (region.left < 0 || region.top < 0) return false;
   if (region.left + region.width > image.width || region.top + region.height > image.height) return false;
+  if (bordersArtwork(image, region)) return false;
   // `box` excludes the frame's own entry by **object identity**, which holds because `spriteStrips`
   // copies the row array and not the boxes in it — see the note there, which is the other end of
   // this. Excluding it by value would need a comparison this has no reason to invent.

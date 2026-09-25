@@ -3,7 +3,7 @@ import { DEFAULT_SPRITE_GAP, SPRITE_GAP_RANGE } from '../constants/quantiser.ts'
 import { channels, imageFrom } from '../test/images.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { pixelOffset, readPixel } from './imageData.ts';
-import { settleSprites } from './settleSprites.ts';
+import { type SettledSheet, settleSprites } from './settleSprites.ts';
 
 const CLEAR: Rgba = { r: 0, g: 0, b: 0, a: 0 };
 const FILL: Rgba = { r: 90, g: 110, b: 140, a: 255 };
@@ -169,7 +169,7 @@ describe('settleSprites — the sprite gap', () => {
 });
 
 /**
- * A canonical a row taller than its repeat, with a third sprite two clear rows below the repeat.
+ * A canonical one row taller than its repeat, with a third sprite two clear rows below the repeat.
  *
  * At the narrow gap the three are three sprites, and twenty cells to a side is what makes the first
  * two one drawing at the fold's tolerance. Folding the repeat would grow it a row, to within the gap
@@ -198,8 +198,40 @@ function frameOverSliver(): ImageData {
   });
 }
 
+/**
+ * {@link tallerCanonical} with a three-pixel speck directly under the repeat's fold region, and the
+ * third sprite moved down so that only the speck bridges the gap to it.
+ *
+ * The region clears the third sprite by four rows, so the box rule alone would let the fold through.
+ * But the repeat's grown bottom row would touch the speck, which the segmentation drops rather than
+ * boxes, and the joined component reaches within the gap of the third sprite.
+ */
+function tallerCanonicalOverSpeck(): ImageData {
+  return imageFrom(80, 32, (x, y) => {
+    if (x >= 2 && x < 22 && y >= 2 && y < 23) return FILL;
+    if (x >= 30 && x < 50 && y >= 2 && y < 22) return FILL;
+    if (x === 40 && y >= 23 && y < 26) return EDGE;
+    if (x >= 28 && x < 52 && y >= 27 && y < 31) return EDGE;
+    return CLEAR;
+  });
+}
+
+/**
+ * {@link frameOverSliver} with a three-pixel speck one clear row below the high frame, and a sprite
+ * one clear row below the speck. The move clears that sprite by four rows, and would still bring the
+ * frame against the speck, whose joined box then reaches within the gap of the sprite.
+ */
+function frameOverSpeck(): ImageData {
+  return imageFrom(120, 20, (x, y) => {
+    const frame = (left: number, top: number) => x >= left && x < left + 6 && y >= top && y < top + 6;
+    if ([10, 30, 70, 90].some((left) => frame(left, 4)) || frame(50, 3)) return FILL;
+    if (x === 53 && y >= 10 && y < 13) return EDGE;
+    return x >= 50 && x < 56 && y >= 14 && y < 16 ? EDGE : CLEAR;
+  });
+}
+
 /** How many sprites a settled sheet reports, or `0` where it did not segment. */
-function spriteCount(sheet: ReturnType<typeof settleSprites>): number {
+function spriteCount(sheet: SettledSheet): number {
   return sheet.sprites.kind === 'SEGMENTED' ? sheet.sprites.boxes.length : 0;
 }
 
@@ -209,13 +241,23 @@ function spriteCount(sheet: ReturnType<typeof settleSprites>): number {
  * into the sprite it edited would shift all four.
  */
 describe('settleSprites — a snap keeps the sprite count', () => {
+  const fold = { duplicateSnap: true };
+  const align = { frameAlignment: 'SNAP' as const };
+  const groups = (read: SettledSheet) => read.duplicates.length;
+  const drifts = (read: SettledSheet) =>
+    read.strips?.flatMap((strip) => strip.frames).filter((frame) => frame.drift.y !== 0).length ?? 0;
+
   it.each([
-    ['the duplicate fold', tallerCanonical, { duplicateSnap: true }],
-    ['the frame alignment', frameOverSliver, { frameAlignment: 'SNAP' as const }],
-  ])('%s leaves a neighbour within the gap of its write alone', (_route, sheet, snap) => {
+    ['the duplicate fold', 'a neighbour within the gap of its write', tallerCanonical, fold, groups],
+    ['the duplicate fold', 'a speck against its write', tallerCanonicalOverSpeck, fold, groups],
+    ['the frame alignment', 'a neighbour within the gap of its write', frameOverSliver, align, drifts],
+    ['the frame alignment', 'a speck against its write', frameOverSpeck, align, drifts],
+  ])('%s leaves %s alone', (_route, _case, sheet, snap, targets) => {
     const read = settleSprites(sheet(), READING_ONLY);
     const snapped = settleSprites(sheet(), { ...READING_ONLY, ...snap });
 
+    // Something for the snap to act on, or the count could only stay put.
+    expect(targets(read)).toBe(1);
     expect(spriteCount(read)).toBeGreaterThan(0);
     expect(spriteCount(snapped)).toBe(spriteCount(read));
     expect(channels(snapped.image)).toEqual(channels(sheet()));

@@ -21,7 +21,9 @@ import { boxSeparation } from './boxSeparation.ts';
  * the labelling's eight-connectivity and nothing wider.
  *
  * The edited sprite's box after the write lies inside the region, so a region further than `gap`
- * from every other box leaves a box that is too. The boxes it is checked against are the merge's
+ * from every other box leaves a box that is too. That holds only while nothing drawn sits against
+ * the region, since a speck the write joins would carry the box past it — which is why both passes
+ * ask `bordersArtwork` as well. The boxes it is checked against are the merge's
  * fixed point, already further than `gap` from one another, so no chain can form through them.
  *
  * `self` is the box the region is replacing, which is the one thing it is entitled to reach. Pass

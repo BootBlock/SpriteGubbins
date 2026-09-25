@@ -1,4 +1,5 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
+import { bordersArtwork } from './bordersArtwork.ts';
 import { reachesAny } from './boxClearance.ts';
 import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 
@@ -24,7 +25,8 @@ import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.
  * sprite count as surely. The condition is therefore the segmentation's own merge rule: the region
  * has to sit further than `gap` from every other sprite's box, and from every accepted region before
  * it — the separation the segmentation already found between those boxes, since it would otherwise
- * have merged them. Anything closer is skipped, so the sheet keeps a repeat rather than losing a
+ * have merged them — and no drawn pixel may sit directly against it, since a speck the fold joined
+ * would carry the member's box past the region (see `bordersArtwork`). Anything closer is skipped, so the sheet keeps a repeat rather than losing a
  * neighbour. On a real sheet it does not arise — sprites sit in a gutter, and a canonical is at most
  * a pixel or two larger than the member it is folding.
  *
@@ -64,6 +66,7 @@ export function snapDuplicates(
         pixels: 0,
       };
       if (region.left + region.width > image.width || region.top + region.height > image.height) continue;
+      if (bordersArtwork(image, region)) continue;
       if (reachesAny(region, boxes, member.box, gap) || reachesAny(region, written, null, gap)) continue;
 
       for (let row = 0; row < region.height; row += 1) {
