@@ -6,7 +6,8 @@ import { modesFor, sheetSeriesFor } from '../src/constants/sheetPlans/index.ts';
 import { assemblyBaseSubjectsOf } from '../src/test/assemblyBaseSubjects.ts';
 import { PROJECTIONS } from '../src/types/output.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
-import type { OutputConfig } from '../src/types/output.ts';
+import type { DirectionSet, OutputConfig } from '../src/types/output.ts';
+import type { SubjectCategory } from '../src/types/subject.ts';
 import { generatePrompt } from '../src/utils/promptCompiler.ts';
 import { sheetFacts } from '../src/utils/promptFacts.ts';
 
@@ -16,15 +17,15 @@ import { sheetFacts } from '../src/utils/promptFacts.ts';
  * The directional audit told the `EIGHT_COMPASS` diagonal sheet — 45°, 135°, 225° and 315°, every
  * view a three-quarter view — to confirm its side view was "not a second three-quarter view" and its
  * rear view hid what its front view presented, then to fail the sheet when it could not. A
- * generator that obeyed redrew a view towards a yaw section 3 forbids it. Section 3's list of failed
- * rotations named the same views. Both are read here on every sheet of every category, mode and
- * direction set, at an ordinary camera and from directly overhead, against the yaws that sheet
- * actually covers.
+ * generator that obeyed redrew a view towards a yaw section 3 forbids it. Section 3's rotation rules
+ * and its list of failed rotations named the same views. Both are read here on every sheet of every
+ * category, mode and direction set, at an ordinary camera and from directly overhead, against the
+ * yaws that sheet actually covers.
  */
 
-/** Section 3's list of failed rotations, and section 9's directional audit. */
+/** Section 3's rotation rules through its list of failed rotations, and section 9's directional audit. */
 const ROTATION_CHECKS = [
-  /Each of these is the easy way out[\s\S]*?stays put\./,
+  /### Silhouette and rotation carry the direction[\s\S]*?stays put\./,
   /### Directional audit[\s\S]*?If two views of one component/,
 ];
 
@@ -32,12 +33,18 @@ const ROTATION_CHECKS = [
 const SIDE_VIEW = /\bside”? views?\b/i;
 const FRONT_OR_REAR_VIEW = /\b(?:front|rear)”? views?\b/i;
 
-/** Every configuration that compiles a distinct multi-view sheet, at every projection. */
-function* multiViewSheets(): Generator<{
+/** One compiled multi-view sheet, with what it is a sheet of and the yaws it covers. */
+interface Sheet {
   readonly where: string;
+  readonly category: SubjectCategory;
+  readonly directions: DirectionSet;
+  readonly plan: boolean;
   readonly prompt: string;
-  readonly yaws: number[];
-}> {
+  readonly yaws: readonly number[];
+}
+
+/** Every configuration that compiles a distinct multi-view sheet, at every projection. */
+function* multiViewSheets(): Generator<Sheet> {
   for (const category of SUBJECT_CATEGORIES) {
     for (const subject of assemblyBaseSubjectsOf(category)) {
       for (const directionalMode of modesFor(category, subject)) {
@@ -56,9 +63,12 @@ function* multiViewSheets(): Generator<{
                 };
                 const facts = sheetFacts(category, subject, output);
                 if (facts.coveredDirections.length < 2) continue;
-                const plan = isPlanView(facts.cameraElevation) ? 'plan' : 'elevated';
+                const plan = isPlanView(facts.cameraElevation);
                 yield {
-                  where: `${category} / ${subject.anatomy} / ${directionalMode} / ${directions} #${sheetIndex} / ${plan}`,
+                  where: `${category} / ${subject.anatomy} / ${directionalMode} / ${directions} #${sheetIndex} / ${plan ? 'plan' : 'elevated'}`,
+                  category,
+                  directions,
+                  plan,
                   prompt: generatePrompt(category, subject, output),
                   yaws: facts.coveredDirections.map((direction) => OBJECT_YAW[direction]),
                 };
@@ -116,28 +126,45 @@ describe('the rotation checks against the views a sheet draws', () => {
     const diagonal = SHEETS.filter(({ yaws }) => yaws.every((yaw) => yaw % 90 === 45));
 
     // Six categories split `EIGHT_COMPASS` into a cardinal and a diagonal core; the sweep has to
-    // reach them, or every assertion in this file passes by never meeting the sheet at issue.
-    expect(diagonal.length).toBeGreaterThanOrEqual(6);
+    // reach every one of them, from overhead as well as from an elevated camera, or the assertions
+    // below pass by never meeting the sheet at issue.
+    expect(new Set(diagonal.map(({ category }) => category))).toStrictEqual(
+      new Set(['CHARACTER', 'CREATURE', 'OBJECT', 'ITEM', 'BUILDING', 'VEHICLE']),
+    );
+    expect(diagonal.some(({ plan }) => plan)).toBe(true);
+    expect(diagonal.some(({ plan }) => !plan)).toBe(true);
     for (const { where, prompt } of diagonal) {
       expect(checksOf(prompt), where).toContain('Every view sits on a diagonal, 45° from the nearest');
       expect(checksOf(prompt), where).toContain('a diagonal view drifted square to the front');
     }
   });
 
-  it('states the occlusion check between views turned towards and away where no front and rear pair exists', () => {
+  it('states the occlusion checks between views turned towards and away where no front and rear pair exists', () => {
     const oblique = SHEETS.filter(
-      ({ where, yaws }) =>
-        !where.endsWith('/ plan') &&
+      ({ plan, yaws }) =>
+        !plan &&
         !(yaws.includes(0) && yaws.includes(180)) &&
         yaws.some((yaw) => yaw < 90 || yaw > 270) &&
         yaws.some((yaw) => yaw > 90 && yaw < 270),
     );
 
-    expect(oblique.length).toBeGreaterThan(0);
+    expect(new Set(oblique.map(({ directions }) => directions))).toStrictEqual(
+      new Set(['THREE_CLASSIC', 'EIGHT_COMPASS']),
+    );
     for (const { where, prompt } of oblique) {
-      expect(checksOf(prompt), where).toContain(
-        'Every view turned away from the camera hides the front surfaces',
-      );
+      const checks = checksOf(prompt);
+      expect(checks, where).toContain('A view turned away from the camera gives the rear surfaces the room');
+      expect(checks, where).toContain('a view turned away from the camera that is a view turned towards it');
+      expect(checks, where).toContain('Every view turned away from the camera lets rear surfaces dominate');
     }
+  });
+
+  it('never names a view turned towards or away from a camera that is directly overhead', () => {
+    // From overhead a turn hides nothing, so section 3 says there is no such view to fail.
+    const wrong = SHEETS.filter(
+      ({ plan, prompt }) => plan && /turned (?:away from|towards) the camera/.test(checksOf(prompt)),
+    ).map(({ where }) => where);
+
+    expect(wrong).toStrictEqual([]);
   });
 });

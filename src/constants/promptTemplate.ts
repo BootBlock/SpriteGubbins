@@ -783,10 +783,21 @@ rendered.
   comes from rotated geometry, never from different highlights, markings, glow or rearranged small
   details.
 [IF:PLAN_VIEW!=yes]
-- Rotation changes what is visible. A side view occludes the far side’s features and foreshortens
-  what is left of the front. A rear view shows the rear surfaces a front view hid and gives them the
-  room the front loses there. **A rear view still presenting the surfaces the front view presented
-  is a failed rotation**, not a stylistic choice.
+- Rotation changes what is visible.
+[IF:SIDE_VIEW]
+  A side view occludes the far side’s features and foreshortens what is left of the front.
+[/IF]
+[IF:FRONT_AND_REAR_VIEWS]
+  A rear view shows the rear surfaces a front view hid and gives them the room the front loses
+  there. **A rear view still presenting the surfaces the front view presented is a failed
+  rotation**, not a stylistic choice.
+[/IF]
+[IF:TURNED_AWAY_VIEWS]
+  A view turned away from the camera gives the rear surfaces the room the front loses there, and
+  keeps only as much of the front as its yaw above leaves visible. **A view turned away still
+  presenting the surfaces a view turned towards the camera presented is a failed rotation**, not a
+  stylistic choice.
+[/IF]
 - **A mirrored copy is not a rotation.** Mirroring flips handedness in the image without exposing a
   single surface that turning the component would reveal, so it may never stand in for a turned view.
 [IF:MIRROR_PAIRS]
@@ -841,7 +852,9 @@ a diagonal view drifted square to the front, a side or the rear ·
 a rear view that is the front view with its details moved ·
 [/IF]
 [IF:TURNED_AWAY_VIEWS]
+[IF:PLAN_VIEW!=yes]
 a view turned away from the camera that is a view turned towards it with its details moved ·
+[/IF]
 [/IF]
 a view produced by mirroring another · a view produced by moving the camera · direction signalled
 by changing details while the orientation stays put.
@@ -1168,8 +1181,9 @@ each of its views and confirm:
 [/IF]
 [IF:TURNED_AWAY_VIEWS]
 [IF:PLAN_VIEW!=yes]
-- Every view turned away from the camera hides the front surfaces the views turned towards it
-  presented, and shows rear surfaces in their place.
+- Every view turned away from the camera lets rear surfaces dominate where the views turned
+  towards it presented the front, and keeps only as much of the front as its yaw in section [SEC:CAMERA]
+  leaves visible.
 [/IF]
 [/IF]
 [IF:ONE_SIDED_FEATURES]
