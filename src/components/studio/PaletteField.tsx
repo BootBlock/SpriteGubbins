@@ -19,7 +19,7 @@ import { CustomPaletteField } from './CustomPaletteField.tsx';
  * which is exactly what it exists for. Nothing here claims a second exemption from the design
  * tokens.
  *
- * A channel-depth palette has no list to show — 512 or 32,768 swatches would be a wall, and the
+ * A channel-depth palette has no list to show — 64 to 262,144 swatches would be a wall, and the
  * ladder is the definition anyway — so the description carries the rule and the strip is absent.
  *
  * The strip is `aria-hidden` and is a visual convenience rather than the only statement of the
