@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_SPRITE_GAP } from '../constants/quantiser.ts';
 import { imageFrom } from '../test/images.ts';
 import type { PixelShift, SpriteBox } from '../types/quantiser.ts';
 import { sheetStrips } from './frameAlignment.ts';
@@ -29,22 +30,25 @@ function rowOf(lefts: readonly number[], tops: readonly number[] = []): ImageDat
   );
 }
 
+/** The sprite gap every case segments at, and hands the pass — the tab's opening position. */
+const GAP = DEFAULT_SPRITE_GAP;
+
 /** The sheet's sprites, as the pipeline hands them to this pass. */
 function boxesOf(image: ImageData): readonly SpriteBox[] {
-  const found = spriteSegments(image, 1);
+  const found = spriteSegments(image, GAP);
   return found.kind === 'SEGMENTED' ? found.boxes : [];
 }
 
 /** Each frame's drift, strip by strip — the figure the panel lists. */
 function driftsOf(image: ImageData, snapAbove: number | null = null): readonly (readonly PixelShift[])[] {
-  return sheetStrips(image, boxesOf(image), snapAbove).map((strip) =>
+  return sheetStrips(image, boxesOf(image), snapAbove, GAP).map((strip) =>
     strip.frames.map((frame) => frame.drift),
   );
 }
 
 /** Which frames of each strip the pass marked for the move. */
 function markedIn(image: ImageData, snapAbove: number): readonly (readonly boolean[])[] {
-  return sheetStrips(image, boxesOf(image), snapAbove).map((strip) =>
+  return sheetStrips(image, boxesOf(image), snapAbove, GAP).map((strip) =>
     strip.frames.map((frame) => frame.snapped),
   );
 }
@@ -83,14 +87,14 @@ describe('sheetStrips', () => {
   });
 
   it('has nothing to say about a sheet whose sprites form no row of three', () => {
-    expect(sheetStrips(rowOf([10, 30]), boxesOf(rowOf([10, 30])), null)).toEqual([]);
+    expect(sheetStrips(rowOf([10, 30]), boxesOf(rowOf([10, 30])), null, GAP)).toEqual([]);
   });
 
   it('marks nothing while the mode is CHECK, whatever it found', () => {
     expect(markedIn(rowOf([10, 30, 53, 70, 90]), 0)).toEqual([[false, false, true, false, false]]);
     expect(
-      sheetStrips(rowOf([10, 30, 53, 70, 90]), boxesOf(rowOf([10, 30, 53, 70, 90])), null).flatMap((strip) =>
-        strip.frames.map((frame) => frame.snapped),
+      sheetStrips(rowOf([10, 30, 53, 70, 90]), boxesOf(rowOf([10, 30, 53, 70, 90])), null, GAP).flatMap(
+        (strip) => strip.frames.map((frame) => frame.snapped),
       ),
     ).toEqual([false, false, false, false, false]);
   });
@@ -111,9 +115,26 @@ describe('sheetStrips', () => {
       const row = [10, 30, 70, 90].some((left) => frame(left, 4)) || frame(50, 2);
       return row || frame(50, 10) ? INK : CLEAR;
     });
-    const [strip] = sheetStrips(crowded, boxesOf(crowded), 0);
+    const [strip] = sheetStrips(crowded, boxesOf(crowded), 0, GAP);
 
     expect(strip?.frames.map((frame) => frame.drift.y)).toEqual([0, 0, -2, 0, 0]);
+    expect(strip?.frames.map((frame) => frame.snapped)).toEqual([false, false, false, false, false]);
+  });
+
+  it('refuses a move that would bring a frame within the sprite gap of a neighbour', () => {
+    // The third frame sits a row high, and a sliver sits two clear rows below it — further than the
+    // gap, so it is a sprite of its own. The move would leave one clear row between them, which the
+    // gap merge folds, so the next segmentation would absorb the sliver into the frame.
+    const crowded = imageFrom(SHEET_WIDTH, SHEET_HEIGHT, (x, y) => {
+      const frame = (left: number, top: number) =>
+        x >= left && x < left + FRAME_SIDE && y >= top && y < top + FRAME_SIDE;
+      const row = [10, 30, 70, 90].some((left) => frame(left, 4)) || frame(50, 3);
+      return row || (x === 53 && y >= 11 && y < 15) ? INK : CLEAR;
+    });
+    expect(boxesOf(crowded)).toHaveLength(6);
+    const [strip] = sheetStrips(crowded, boxesOf(crowded), 0, GAP);
+
+    expect(strip?.frames.map((frame) => frame.drift.y)).toEqual([0, 0, -1, 0, 0]);
     expect(strip?.frames.map((frame) => frame.snapped)).toEqual([false, false, false, false, false]);
   });
 
@@ -121,7 +142,7 @@ describe('sheetStrips', () => {
     // The row keeps to a pitch of 20 and its first frame sits three pixels right of where that
     // pitch starts, so its slot is a pixel past the left edge. Nothing can be carried there.
     const overhang = rowOf([2, 19, 39, 59]);
-    const [strip] = sheetStrips(overhang, boxesOf(overhang), 0);
+    const [strip] = sheetStrips(overhang, boxesOf(overhang), 0, GAP);
 
     expect(strip?.frames[0]?.drift.x).toBe(3);
     expect(strip?.frames[0]?.snapped).toBe(false);
@@ -132,7 +153,7 @@ describe('sheetStrips', () => {
     // 0, 21, 43, 64 is the whole-pixel reading of a row spaced 21⅓ apart. Every frame is on its own
     // slot, and the slots step by the row's own spacing rather than by a rounded copy of it.
     const fractional = rowOf([10, 31, 53, 74]);
-    const [strip] = sheetStrips(fractional, boxesOf(fractional), null);
+    const [strip] = sheetStrips(fractional, boxesOf(fractional), null, GAP);
 
     expect(strip?.frames.map((frame) => frame.drift.x)).toEqual([0, 0, 0, 0]);
     expect(strip?.frames.map((frame) => frame.slot.x)).toEqual([0, 21, 43, 64]);
@@ -145,7 +166,9 @@ describe('sheetStrips', () => {
       return inRow(2, [10, 30, 50]) || inRow(24, [10, 30, 53]) ? INK : CLEAR;
     });
 
-    expect(sheetStrips(twoRows, boxesOf(twoRows), null).map((strip) => strip.frames.length)).toEqual([3, 3]);
+    expect(sheetStrips(twoRows, boxesOf(twoRows), null, GAP).map((strip) => strip.frames.length)).toEqual([
+      3, 3,
+    ]);
     // The first row is even and reports nothing; the second is 20 then 23 apart. Three frames cannot
     // say *which* of them moved — the same row is equally well described as a middle frame a pixel
     // and a half early or a last frame three pixels late — so the fit splits the difference, which

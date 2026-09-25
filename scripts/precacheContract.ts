@@ -982,22 +982,39 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2433 leaves **0.87 KiB**, the smallest whole figure over the build.
  *
- * **Raised from 2433 by withdrawing the Colour merge slider where the merge does not run** (issue
+ * **Raised from 2433 by the duplicate fold and the frame snap keeping outside the sprite gap**
+ * (issue #319). A write within the gap of a neighbour had the next segmentation merge the neighbour
+ * into the edited sprite, so both passes now take the gap and refuse such a write. They also refuse
+ * a write with a drawn pixel directly against its region, because the segmentation drops a speck
+ * without a position and a write that joined one could carry the edited sprite into the gap all the
+ * same. The figures below cover both refusals and the guidance sentence that names the gap. Measured against `main` at `a10c0cb`, rebuilt from
+ * the same lockfile, with the ceiling forced to zero in each tree so both figures are the ones
+ * `assertPrecacheContract` receives: **2432.81 KiB** on `main` and **2433.46** here, a delta of
+ * **0.65** that crossed a ceiling the base sat 0.19 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets` listings summed by
+ * chunk name, 321 bytes land in `quantiseWorker` and 319 in `autoTuneWorker`, each of which carries
+ * its own copy of the settle passes, and 17 in `QuantiseTab`, which holds the frame alignment's
+ * guidance. It is code a worker runs.
+ *
+ * 2434 leaves **0.54 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2434 by withdrawing the Colour merge slider where the merge does not run** (issue
  * #429). Under a pinned or locked palette with no dither the pipeline skips the merge entirely, while
  * the slider stayed live and its card said only the palette's entries were exempt. The slider now
- * takes a stated reason from `mergeIsExempt`, which moved to a module of its own so the panel can ask
- * it without bundling the pipeline, and `RangeField` gained the `disabledReason` the other field
- * primitives carry. Measured against `main` at `a10c0cb`, rebuilt from the same lockfile, with the
- * ceiling forced to zero in each tree so both figures are the ones `assertPrecacheContract`
- * receives: **2432.81 KiB** on `main` and **2433.88** here, a delta of **1.07** that crossed a
- * ceiling the base sat 0.19 under. No file was added to or removed from `PRECACHE_SHAPES`, and no
- * chunk was renamed. Comparing the two `dist/assets` listings summed by chunk name, 0.71 KiB lands in
- * `QuantiseTab`, where the panel, the slider and the guide are bundled, and 0.35 in `quantiseDials`,
- * which holds the quantiser's guidance copy. It is component code and user-facing copy.
+ * takes a stated reason from `mergeIsExempt`, which moved to a module of its own so the panel and
+ * the guide can ask it without bundling the pipeline, and `RangeField` gained the `disabledReason`
+ * the other field primitives carry. Measured against `main` at `88e0522`, rebuilt from the same
+ * lockfile, with the ceiling forced to zero in each tree so both figures are the ones
+ * `assertPrecacheContract` receives: **2433.46 KiB** on `main` and **2434.52** here, a delta of
+ * **1.06** that crossed a ceiling the base sat 0.54 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets` listings summed by
+ * chunk name, 0.71 KiB lands in `QuantiseTab`, where the panel, the slider and the guide are
+ * bundled, and 0.35 in `quantiseDials`, which holds the quantiser's guidance copy. It is component
+ * code and user-facing copy.
  *
- * 2434 leaves **0.12 KiB**, the smallest whole figure over the build.
+ * 2435 leaves **0.48 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2434;
+export const PRECACHE_CEILING_KIB = 2435;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

@@ -53,7 +53,7 @@ export const FRAME_ALIGNMENT_GUIDANCE = {
 
   /** `SNAP`, and at least one frame was moved. */
   moved:
-    'The frames marked below sat further from their slot than the tolerance allows, so each has been carried onto it. Nothing about the artwork changed — every pixel of a moved frame is the same pixel in the same colour, in a different place — and the box it left behind is now empty. A move that would have brought a frame against its neighbour was refused rather than made, so a row with no gutter keeps its drift instead of losing a sprite. Switch the preview to Onion skin to see the row laid over itself.',
+    'The frames marked below sat further from their slot than the tolerance allows, so each has been carried onto it. Nothing about the artwork changed — every pixel of a moved frame is the same pixel in the same colour, in a different place — and the box it left behind is now empty. A move that would have brought a frame within the sprite gap of its neighbour was refused rather than made, so a row with no gutter keeps its drift instead of losing a sprite. Switch the preview to Onion skin to see the row laid over itself.',
 
   /** `SNAP`, and nothing qualified — the state that reads as a broken feature and is not. */
   refused:
