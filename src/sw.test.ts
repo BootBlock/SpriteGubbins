@@ -18,16 +18,12 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-/** One entry of the injected precache manifest, as `src/sw.ts` reads it. */
-interface ManifestEntry {
-  readonly url: string;
-  readonly revision: string | null;
-}
-
-/** As much of `ExtendableEvent` as the install handler touches. */
-interface InstallEvent {
-  waitUntil(promise: Promise<unknown>): void;
-}
+import {
+  type ManifestEntry,
+  type RecordingRequest,
+  resolved,
+  ServiceWorkerDouble,
+} from './test/serviceWorkerDoubles.ts';
 
 const MANIFEST: readonly ManifestEntry[] = [
   { url: 'index.html', revision: '0f1e2d3c4b5a69788796a5b4c3d2e1f0' },
@@ -66,69 +62,12 @@ const EXPECTED_MODES: Readonly<Record<string, RequestCache>> = {
   'assets/sqlite3-CFuOw83T.wasm': 'default',
 };
 
-/**
- * A stand-in for `Request`, because happy-dom's does not expose `.cache` — the single property
- * this file exists to read. It records rather than fetches; nothing here reaches the network.
- */
-class RecordingRequest {
-  constructor(
-    readonly url: string,
-    readonly init: RequestInit = {},
-  ) {}
-}
-
-/**
- * Run the worker's `install` handler against {@link MANIFEST} and return what it asked for, in
- * order and with repeats intact — keying by URL here would collapse exactly the duplicates the
- * second test is looking for.
- *
- * The handler is captured through a stubbed `addEventListener` rather than reached by dispatching
- * an event. `vi.resetModules()` re-executes `sw.ts` on every call, and each execution registers
- * another listener that nothing removes: a dispatch on the second call would run both, and every
- * entry would be requested twice while still looking correct.
- */
+/** Run the worker's `install` handler against {@link MANIFEST} and return what it asked for. */
 async function runInstall(): Promise<RecordingRequest[]> {
-  const requested: RecordingRequest[] = [];
-  const handlers = new Map<string, (event: InstallEvent) => void>();
-
-  vi.stubGlobal('__WB_MANIFEST', MANIFEST);
-  vi.stubGlobal('Request', RecordingRequest);
-  vi.stubGlobal('skipWaiting', () => Promise.resolve());
-  vi.stubGlobal('addEventListener', (type: string, handler: (event: InstallEvent) => void) => {
-    handlers.set(type, handler);
-  });
-  vi.stubGlobal('caches', {
-    open: () =>
-      Promise.resolve({
-        addAll: (requests: RecordingRequest[]) => {
-          requested.push(...requests);
-          return Promise.resolve();
-        },
-      }),
-  });
-
-  vi.resetModules();
-  await import('./sw.ts');
-
-  const install = handlers.get('install');
-  if (!install) throw new Error('the worker registered no install handler');
-
-  // The handler hands its work to `waitUntil` and returns; without keeping that promise the
-  // assertions would run against an empty list.
-  let installing: Promise<unknown> = Promise.resolve();
-  install({
-    waitUntil: (promise) => {
-      installing = promise;
-    },
-  });
-  await installing;
-
-  return requested;
-}
-
-/** The absolute form `src/sw.ts` resolves a manifest URL to, so the recorded keys line up. */
-function resolved(url: string): string {
-  return new URL(url, globalThis.location.href).href;
+  const worker = new ServiceWorkerDouble();
+  await worker.load(MANIFEST);
+  await worker.dispatch('install');
+  return worker.requested;
 }
 
 afterEach(() => {
