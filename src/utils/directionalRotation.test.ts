@@ -20,6 +20,19 @@ import { directionalRotation } from './directionalRotation.ts';
 
 const THREE = DIRECTION_LISTS.THREE_CLASSIC;
 
+/** The part of a batch the yaw block reads: which facings each sheet draws. */
+type TestBatch = Parameters<typeof directionalRotation>[2];
+
+/** A batch of one sheet per facing, as the runs of a `'run'` plan are. */
+function runsAt(facings: readonly Direction[]): TestBatch {
+  return { sheets: facings.map((facing) => ({ covered: [facing] as const })) };
+}
+
+/** A batch of one sheet that draws every facing it is given. */
+function sheetsAt(facings: readonly [Direction, ...Direction[]]): TestBatch {
+  return { sheets: [{ covered: facings }] };
+}
+
 /** A batch of eight compass runs, where every single-facing sheet has seven siblings at other yaws. */
 const EIGHT = DIRECTION_LISTS.EIGHT_COMPASS;
 
@@ -31,7 +44,7 @@ const OVERHEAD = DEFAULT_CAMERA_ELEVATIONS.PURE_TOPDOWN;
 
 describe('directionalRotation', () => {
   it('gives every facing of a set a distinct object yaw', () => {
-    const block = directionalRotation(THREE, ANGLED, THREE);
+    const block = directionalRotation(THREE, ANGLED, sheetsAt(THREE));
 
     expect(block).toContain('**Front-three-quarter — object yaw 45°.**');
     expect(block).toContain('**Right side — object yaw 90°.**');
@@ -41,7 +54,7 @@ describe('directionalRotation', () => {
   it('states what each yaw hides, not only what it shows', () => {
     // A direction name can be met by a three-quarter view with different details; "front-facing
     // features are mostly turned away" cannot. Occlusion is the half that makes the rotation real.
-    const block = directionalRotation(THREE, ANGLED, THREE);
+    const block = directionalRotation(THREE, ANGLED, sheetsAt(THREE));
 
     expect(block).toContain('the left side is completely hidden');
     expect(block).toContain('front-facing features are mostly turned away');
@@ -50,7 +63,7 @@ describe('directionalRotation', () => {
   it('separates the yaw figure from the screen angle it produces', () => {
     // Yaw is a rotation of the object, and the projection decides how much apparent turn that is.
     // Demanding 90° of visible screen rotation from an angled-overhead camera is unsatisfiable.
-    expect(directionalRotation(THREE, ANGLED, THREE)).toContain(
+    expect(directionalRotation(THREE, ANGLED, sheetsAt(THREE))).toContain(
       'not a screen angle to measure off the finished image',
     );
   });
@@ -60,7 +73,11 @@ describe('directionalRotation', () => {
     // and a rear view differ by an in-plane rotation and nothing else. Stating that one hides what
     // the other presents asks for a difference this camera cannot produce — and section 9 then
     // audits for it and fails the sheet over it either way round.
-    const block = directionalRotation(DIRECTION_LISTS.FOUR_CARDINAL, OVERHEAD, DIRECTION_LISTS.FOUR_CARDINAL);
+    const block = directionalRotation(
+      DIRECTION_LISTS.FOUR_CARDINAL,
+      OVERHEAD,
+      runsAt(DIRECTION_LISTS.FOUR_CARDINAL),
+    );
 
     expect(block).toContain('**South — object yaw 0°.**');
     expect(block).not.toContain('no part of the rear is visible');
@@ -71,7 +88,11 @@ describe('directionalRotation', () => {
   it('says where each facing points instead, and where its own sides land', () => {
     // What a plan view actually varies, and the half that goes wrong when nothing states it: seen
     // from above, a subject facing down the frame has its right side towards the frame's left.
-    const block = directionalRotation(DIRECTION_LISTS.FOUR_CARDINAL, OVERHEAD, DIRECTION_LISTS.FOUR_CARDINAL);
+    const block = directionalRotation(
+      DIRECTION_LISTS.FOUR_CARDINAL,
+      OVERHEAD,
+      runsAt(DIRECTION_LISTS.FOUR_CARDINAL),
+    );
 
     expect(block).toContain('front axis points towards the bottom of the frame');
     expect(block).toContain('**right** side the frame’s left');
@@ -80,7 +101,7 @@ describe('directionalRotation', () => {
   });
 
   it('warns a single-facing run of a turning series off mirroring itself', () => {
-    const block = directionalRotation(['north-west'], ANGLED, EIGHT);
+    const block = directionalRotation(['north-west'], ANGLED, runsAt(EIGHT));
 
     expect(block).toContain('This sheet covers one object yaw');
     expect(block).toContain('**North-west — object yaw 135°.**');
@@ -92,7 +113,7 @@ describe('directionalRotation', () => {
   it('measures a single facing from the frame when there is nothing to face', () => {
     // The datum survives the register change: yaw still starts from the same orientation, stated in
     // the only terms a plan view leaves — "facing the camera" describes nothing from the vertical.
-    const block = directionalRotation(['north-west'], OVERHEAD, EIGHT);
+    const block = directionalRotation(['north-west'], OVERHEAD, runsAt(EIGHT));
 
     expect(block).toContain('This sheet covers one object yaw');
     // Matched across the block's own wrapping, so re-flowing the paragraph does not fail a test
@@ -106,8 +127,12 @@ describe('directionalRotation', () => {
     // The defect: an icon or a terrain tile is one sheet, and a font is four sheets all facing
     // front, yet each was told another sheet of its series was the same subject at a different yaw.
     // Section 3 then described a sheet that does not exist, and the Sol directive forwards it.
-    const alone = directionalRotation(['front'], ANGLED, ['front']);
-    const sameYawSeries = directionalRotation(['front'], ANGLED, ['front', 'front', 'front', 'front']);
+    const alone = directionalRotation(['front'], ANGLED, runsAt(['front']));
+    const sameYawSeries = directionalRotation(
+      ['front'],
+      ANGLED,
+      runsAt(['front', 'front', 'front', 'front']),
+    );
 
     for (const block of [alone, sameYawSeries]) {
       expect(block).toContain('This sheet covers one object yaw');
@@ -119,10 +144,10 @@ describe('directionalRotation', () => {
 
   it('compares the batch by yaw, not by the name a facing is spelled with', () => {
     // `front` and `south` are one yaw, so a batch holding both still has no sheet at another yaw.
-    const block = directionalRotation(['front'], ANGLED, ['front', 'south']);
+    const block = directionalRotation(['front'], ANGLED, runsAt(['front', 'south']));
 
     expect(block).not.toContain('Another sheet in this series');
-    expect(directionalRotation(['front'], ANGLED, ['front', 'right side'])).toContain(
+    expect(directionalRotation(['front'], ANGLED, runsAt(['front', 'right side']))).toContain(
       'never this sheet mirrored',
     );
   });

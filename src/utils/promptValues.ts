@@ -194,13 +194,9 @@ export function promptValues(
     // The fix for the defect that made a front-three-quarter, a right-side and a back-three-quarter
     // head come back at the same angle: the facings are stated as object *yaws* beneath a camera the
     // prompt separately pins, rather than as names a generator can satisfy with its favourite view.
-    // The elevation goes with them because what a yaw reveals is a function of both, and the batch's
-    // facings because a single-facing sheet names the sheet at another yaw only where one exists.
-    DIRECTIONAL_ROTATION: directionalRotation(
-      coveredDirections,
-      cameraElevation,
-      batch.sheets.flatMap((sheet) => sheet.covered),
-    ),
+    // The elevation goes with them because what a yaw reveals is a function of both, and the batch
+    // because a single-facing sheet names the sheet at another yaw only where one exists.
+    DIRECTIONAL_ROTATION: directionalRotation(coveredDirections, cameraElevation, batch),
     // The same facings related to each other rather than enumerated: cell N + 1 is cell N after a
     // stated turn. The yaw list above is four independent descriptions, and a generator reads it as
     // four independent pictures — which is how a sheet comes back with its asymmetries re-decided in
