@@ -1,8 +1,10 @@
 import {
   NATIVE_GRID_HEADING,
   ONE_SIDED_FEATURES_HEADING,
+  RIG_GEOMETRY_HEADING,
   SCOPE_AND_PRECEDENCE_HEADING,
 } from '../../constants/promptTemplate.ts';
+import type { SolGatedBlocks } from '../../types/solGatedBlocks.ts';
 import { citeSection } from '../templateEngine.ts';
 import type { SectionNumbers } from '../templateEngine.ts';
 
@@ -135,6 +137,16 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * worth the same protection, so the entry protects the block's values rather than describing their
  * shape.
  *
+ * **Under a rig contract the native-grid block is protected with the figures it points at, because
+ * it holds none of its own.** On that sheet it says "The piece sizes in section 5 are a native pixel
+ * grid" and states only the multiple, and the sizes, joints and pivots are the fifteen lines of
+ * section 5's piece-geometry block. Protecting the pointer and not what it points at would forward
+ * "6× or more" of a grid Sol was free to paraphrase away. This is not the symmetry the hardware
+ * paragraph refuses: it is the measured block's own figures, moved to another section by the
+ * contract. That those lines are lost at the call is plausible rather than observed, since no Sol
+ * run of a rig-contract sheet has been traced (#397). The list therefore names a section per entry,
+ * and its lead-in no longer says every figure it protects is in section 2.
+ *
  * **Section 0 is protected by its numbered items, not whole, and what is left of it is Sol's to
  * settle.** The directive used to require all of section 0 "as they are written here". Measured on
  * the default Sol prompt (CHARACTER, eight directions) that section was 639 words, about 91% of the
@@ -157,9 +169,9 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * same run, so naming these two rests on that one run rather than on a measurement of them, and
  * whether it changes what a delivered sheet holds is not measured (#327). Both are gated, so both
  * entries are too: the invariants on `sections.has('INVARIANTS')`, which is the walk that numbered the
- * prompt, and the ledger on `oneSidedFeatures`. The closing sentence counts nothing — "never anything
- * in that list" — because a count written beside a list whose length varies is a second statement of
- * one fact.
+ * prompt, and the ledger on `SolGatedBlocks.oneSidedFeatures`. The closing sentence counts nothing —
+ * "never anything in that list" — because a count written beside a list whose length varies is a
+ * second statement of one fact.
  *
  * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
  * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
@@ -170,20 +182,21 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * `applySectionNumbers` numbers the headings by, so the two move together — see `citeSection` for
  * what that does and does not reach.
  *
- * **`nativeGrid`, `palette` and `oneSidedFeatures` are passed rather than worked out here**, for the
- * reason every other wrapper's arguments are: this file holds text and knows nothing about render
- * styles, resolution profiles, palettes or option pools. All three are the compiler's own gate
- * answers — the same values that decide whether the blocks are in the prompt at all — so the
- * directive cannot name a block that is not there, which would read as an instruction and be a
- * fault. They are positional booleans because that is what this directory already does with a
- * conditional flag; `wrapForMidjourney` takes `frameIsAComponent` the same way.
+ * **`SolGatedBlocks` is passed rather than worked out here**, for the reason every other wrapper's
+ * arguments are: this file holds text and knows nothing about render styles, resolution profiles,
+ * palettes, rigs or option pools. Each field is the compiler's own gate answer — the same value that
+ * decides whether its block is in the prompt at all — so the directive cannot name a block that is
+ * not there, which would read as an instruction and be a fault. They are named fields rather than
+ * the positional booleans the rest of this directory uses, because four booleans in a row is a call
+ * site that reads the same with any two of them swapped. The invariants section needs no field: it
+ * is a numbered section, so `sections` already answers whether the prompt carries it.
  *
  * **Everything else this wrapper used to say is gone.** It previously opened "High reasoning effort"
  * and then pointed at section 0 as a done-condition and section 9 as a verification pass. Reasoning
  * effort is a request parameter rather than something prose sets, and the two pointers restate
  * headings the template already carries — section 0 is titled NON-NEGOTIABLE OUTPUT CONTRACT and
- * opens "Satisfy this section before any aesthetic consideration", and section 9 opens "Before
- * delivering, verify". OpenAI's own guidance for this model family is that such lines are not free:
+ * opens "Satisfy this section before any aesthetic consideration", and section 9 opens with its own
+ * checklist. OpenAI's own guidance for this model family is that such lines are not free:
  * it says to remove "repeated statements of the same rule" and "process instructions for behavior
  * the model already performs reliably", and warns that "GPT-5-class models follow prompt contracts
  * closely, so conflicting rules can create more instability than missing detail". A target-specific
@@ -214,9 +227,24 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * pages rather than one, and they agree.
  * https://developers.openai.com/api/docs/guides/image-prompting
  *
- * The same guidance is why the self-audit stays: "Render the artifact before finalizing. Inspect
- * layout, clipping, spacing, missing content, and visual consistency" is what that section asks for,
- * and a verification pass is not a repeated statement of a rule.
+ * The same guidance is why the self-audit stays, and it is also why the audit on this target checks
+ * a plan rather than pixels. That guidance says "Render the artifact before finalizing. Inspect
+ * layout, clipping, spacing, missing content, and visual consistency" — a verification pass, which
+ * is not a repeated statement of a rule. But on this target rendering *is* delivering: Sol sees
+ * nothing until the tool returns, and the reader sees it then too, so an audit ending "redraw
+ * rather than delivering" could only be obeyed with a second render or an edit of the first — two
+ * images, or one that no longer matches the composition it was written to. So the template gives
+ * this target the plan-before-render audit, gated on `seesCanvasBeforeDelivery` in
+ * `constants/models.ts`, and the verification pass happens where Sol can still act: on the call.
+ *
+ * **The one-call paragraph is what only this wrapper can say about that audit.** It maps the audit
+ * onto the hand-off — the plan it checks is the call, and there is one call — which nothing in a
+ * default Sol prompt said before: in 33,716 characters of one, with the map and the report on,
+ * "one image", "single image" and "one call" never appeared. It names section 9 rather than "every
+ * check below", because the adherence report below it checks the delivered pixels after the call,
+ * and a sentence scoping every check to before the call would tell Sol to answer that from its
+ * plan. The same paragraph settles who "you" is in the body, which addresses whoever draws, while
+ * the directive's first sentence says Sol does not.
  *
  * Sources: [model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
  * [image generation tool](https://developers.openai.com/api/docs/guides/tools-image-generation),
@@ -225,18 +253,12 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * [GPT Image 2.5 prompting guide](https://developers.openai.com/api/docs/guides/image-prompting),
  * [ChatGPT image prompting](https://learn.chatgpt.com/docs/image-generation).
  */
-export function wrapForSol(
-  prompt: string,
-  nativeGrid: boolean,
-  palette: boolean,
-  oneSidedFeatures: boolean,
-  sections: SectionNumbers,
-): string {
+export function wrapForSol(prompt: string, gated: SolGatedBlocks, sections: SectionNumbers): string {
   // In the order the prompt states them. Each gated entry reads the answer that gated its block, so
   // the list never names a block the prompt does not carry.
   const carried = [
     `- the numbered items of section ${citeSection(sections, 'CONTRACT')}`,
-    oneSidedFeatures
+    gated.oneSidedFeatures
       ? `- the block in section ${citeSection(sections, 'CAMERA')} headed “${ONE_SIDED_FEATURES_HEADING}”`
       : '',
     `- the object yaws in section ${citeSection(sections, 'CAMERA')}`,
@@ -249,20 +271,27 @@ export function wrapForSol(
   // A list rather than a clause, because the entries are conditional and their combined length is
   // not knowable here: spliced into a sentence they push one line to half again the width of every
   // other line in the directive, and the line breaks in this file are the breaks the model reads.
+  // Each entry cites its own section, because they are no longer all in one. The citation is made
+  // only inside its gate: `citeSection` throws for a section the prompt does not carry.
   const blocks = [
-    nativeGrid ? `- the block headed “${NATIVE_GRID_HEADING}”` : '',
-    palette ? '- every value in the palette block' : '',
+    gated.nativeGrid
+      ? `- the block headed “${NATIVE_GRID_HEADING}” in section ${citeSection(sections, 'STYLE')}`
+      : '',
+    gated.palette ? `- every value in the palette block in section ${citeSection(sections, 'STYLE')}` : '',
+    gated.rigGeometry
+      ? `- the block headed “${RIG_GEOMETRY_HEADING}” in section ${citeSection(sections, 'RIG')}`
+      : '',
   ].filter((block) => block !== '');
 
-  // Nothing at all where neither block was emitted, rather than a sentence about section 2 that
-  // names none of it — which is the studio's own opening configuration, whose `HIGH_RESOLUTION`
-  // profile states its own scale and so has no native grid to enlarge.
-  const sectionTwo =
+  // Nothing at all where no block was emitted, rather than a sentence that names none of them —
+  // which is the studio's own opening configuration, whose `HIGH_RESOLUTION` profile states its own
+  // scale and so has no native grid to enlarge.
+  const otherFigures =
     blocks.length === 0
       ? ''
       : `
 
-Section ${citeSection(sections, 'STYLE')} states figures as well, and they are protected in the same way. Shorten nothing in:
+Other blocks state figures as well, and they are protected in the same way. Shorten nothing in:
 
 ${blocks.join('\n')}
 
@@ -280,7 +309,12 @@ ${carried.join('\n')}
 If it has to be shortened, shorten the prose elsewhere — never anything in that list.
 
 What section ${citeSection(sections, 'CONTRACT')} states under “${SCOPE_AND_PRECEDENCE_HEADING}” is addressed to you, not to the image model:
-act on it yourself before you make the call, and leave it out of what you send.${sectionTwo}
+act on it yourself before you make the call, and leave it out of what you send.
+
+Make exactly one image-tool call, and make it: render the sheet rather than describe it. You see the
+image only when the reader does, so the self-audit in section ${citeSection(sections, 'LAYOUT')} is a check of what that call carries,
+made before you make it — never a second call or an edit of the image afterwards. Where the text
+below says to draw, it states what the image your call obtains must show.${otherFigures}
 
 ${prompt}`;
 }

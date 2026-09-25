@@ -148,6 +148,6 @@ export const OUTPUT_TOOLTIPS = {
     'Only the conversational targets can return text and an image together; on the rest the option is unavailable and says so. Ticking it lengthens the prompt and changes nothing about the image.\n\n' +
     'Read the map as the model’s claim rather than a measurement. It is not the manifest the Quantise tab downloads, but both number components from one in the same reading order, so the two line up sprite by sprite.',
   emitPromptFeedback:
-    'Asks the generator, once it has delivered the sheet, to check what it drew against the prompt and say whether each check holds. For each miss it writes a copy-ready Markdown block for whoever maintains Sprite Gubbins, naming the instruction that was too loose: feedback on the wording, never a request to redraw.\n\n' +
+    'Asks the generator, once it has delivered the sheet, to check that sheet against the prompt and say whether each check holds. For each miss it writes a copy-ready Markdown block for whoever maintains Sprite Gubbins, naming the instruction that was too loose: feedback on the wording, never a request to redraw.\n\n' +
     'Hand that block to a developer or a coding agent working on this app. It needs a target that both reasons over the prompt and returns text; the rest say which half they are missing. Turn it on when a sheet comes back wrong and you would rather fix the prompt than repeat the run.',
 } as const;

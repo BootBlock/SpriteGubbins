@@ -106,10 +106,18 @@ export function wrapForModel(
      */
     readonly palette: boolean;
     /**
+     * Whether section 5 emitted its piece-geometry block, from the sheet's rig contract.
+     *
+     * Read by Sol because, under a contract, the native-grid block states no size of its own and
+     * points here for every one of them — so protecting that block alone forwards a multiple of a
+     * grid the hand-off was free to paraphrase away.
+     */
+    readonly rigGeometry: boolean;
+    /**
      * Whether section 3 emitted its one-sided-feature ledger, from `ONE_SIDED_FEATURES`.
      *
-     * Read by Sol for the same reason: the ledger is the per-feature statement of which flank each
-     * piece of gear sits on, and a block Sol is not told to protect is prose it is told to cut.
+     * Read by Sol because the ledger is the per-feature statement of which flank each piece of gear
+     * sits on, and a block Sol is not told to protect is prose it is told to cut.
      */
     readonly oneSidedFeatures: boolean;
     /**
@@ -129,9 +137,12 @@ export function wrapForModel(
     case 'CHATGPT_5_6_SOL':
       return wrapForSol(
         prompt,
-        options.nativeGrid,
-        options.palette,
-        options.oneSidedFeatures,
+        {
+          nativeGrid: options.nativeGrid,
+          palette: options.palette,
+          rigGeometry: options.rigGeometry,
+          oneSidedFeatures: options.oneSidedFeatures,
+        },
         options.sectionNumbers,
       );
 

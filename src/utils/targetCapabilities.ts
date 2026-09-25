@@ -32,8 +32,9 @@ function capabilitiesFor(target: TargetModelId): TargetCapabilities {
  * one description.
  *
  * What it gates is instruction the target cannot carry out: the self-audit tells the reader
- * to check the sheet against the specification and redraw before delivering, which a single-pass
- * diffusion endpoint has no step for. Emitting it there spends tokens on the most
+ * to check the sheet against the specification before it is delivered, which a single-pass
+ * diffusion endpoint has no step for. Whether that check is of pixels or of a plan is
+ * {@link seesCanvasBeforeDelivery}'s question. Emitting it there spends tokens on the most
  * rule-list-shaped block in the template for no return.
  *
  * That is the whole argument, and it used to close on a second one — that the tokens are spent at
@@ -52,6 +53,17 @@ function capabilitiesFor(target: TargetModelId): TargetCapabilities {
  */
 export function deliberates(target: TargetModelId): boolean {
   return capabilitiesFor(target).deliberates;
+}
+
+/**
+ * Whether this target sees the image it rendered before the reader does.
+ *
+ * What it gates is the *tense* of the self-audit, not its presence: a target that sees its canvas
+ * checks the pixels and redraws before delivering, and one that does not checks its plan before the
+ * render and delivers what comes back. See {@link TargetCapabilities.seesCanvasBeforeDelivery}.
+ */
+export function seesCanvasBeforeDelivery(target: TargetModelId): boolean {
+  return capabilitiesFor(target).seesCanvasBeforeDelivery;
 }
 
 /**
