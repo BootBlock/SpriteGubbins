@@ -42,7 +42,7 @@ export const RIG_GEOMETRY_HEADING = 'Piece geometry — the rig these pieces are
 export const SCOPE_AND_PRECEDENCE_HEADING = 'Scope and precedence';
 
 /**
- * The heading of section 3's ledger of the one-sided features this subject carries.
+ * The heading of the CAMERA section's ledger of the one-sided features this subject carries.
  *
  * `utils/modelWrapperText/sol.ts` names it among what Sol must forward to the image tool as written,
  * for the reason `NATIVE_GRID_HEADING` is extracted: a pointer at a heading that has since been
@@ -137,7 +137,7 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * and `utils/modelWrapperText/sol.ts` records why that guidance and the *lean prompt* guidance are
  * both true — they address the model reading this specification and the model rendering from it, and
  * the second of those never sees anything but what survived the hand-off. That is why the Sol
- * directive names this section, and section 3's one-sided-feature ledger, among what it may not
+ * directive names this section, and the CAMERA section's one-sided-feature ledger, among what it may not
  * shorten: a block it does not name is prose it is told to cut first.
  *
  * **That closing section carries the directional invariants and nothing else, and the omissions are
