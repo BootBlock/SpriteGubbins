@@ -982,10 +982,12 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * 2433 leaves **0.87 KiB**, the smallest whole figure over the build.
  *
- * **Raised from 2433 by the duplicate fold and the frame snap keeping clear of a speck** (issue
- * #319). Both passes now refuse a write with a drawn pixel directly against its region, because the
- * segmentation drops a speck without a position and a write that joined one could carry the edited
- * sprite within the sprite gap of a neighbour. Measured against `main` at `a10c0cb`, rebuilt from
+ * **Raised from 2433 by the duplicate fold and the frame snap keeping outside the sprite gap**
+ * (issue #319). A write within the gap of a neighbour had the next segmentation merge the neighbour
+ * into the edited sprite, so both passes now take the gap and refuse such a write. They also refuse
+ * a write with a drawn pixel directly against its region, because the segmentation drops a speck
+ * without a position and a write that joined one could carry the edited sprite into the gap all the
+ * same. The figures below cover both refusals and the guidance sentence that names the gap. Measured against `main` at `a10c0cb`, rebuilt from
  * the same lockfile, with the ceiling forced to zero in each tree so both figures are the ones
  * `assertPrecacheContract` receives: **2432.81 KiB** on `main` and **2433.46** here, a delta of
  * **0.65** that crossed a ceiling the base sat 0.19 under. No file was added to or removed from
