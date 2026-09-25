@@ -75,6 +75,11 @@ export function SpriteLabelOverlay({ assignment, magnification }: SpriteLabelOve
             >
               <button
                 type="button"
+                // **The selection said as a state, not only as a fill.** The chip is a toggle, and
+                // `bg-accent` is invisible to a screen reader and flattened by a forced palette — so
+                // without this a press is heard as no change at all, and the `[aria-pressed='true']`
+                // rule in `index.css` has nothing to paint `Highlight` on.
+                aria-pressed={isSelected}
                 onPointerDown={(event) => {
                   // **Held back from the scrollport, or the press never becomes a click.** The pane
                   // is panned by dragging the image, and `useDragPan` answers a pointerdown by

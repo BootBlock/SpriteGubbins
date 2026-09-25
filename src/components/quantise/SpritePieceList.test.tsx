@@ -53,6 +53,18 @@ describe('SpritePieceList', () => {
     expect(screen.getByRole('combobox', { name: 'Sprite 3' })).toBeInTheDocument();
   });
 
+  it('marks the selected sprite’s row as current, not only with a border', () => {
+    // A forced palette erases the border and tint, and repaints a selection only where the
+    // `index.css` rule finds a marker such as `aria-current`.
+    useSpriteAssignmentStore.getState().select({ x: 12, y: 2 });
+    show();
+
+    const current = document.querySelectorAll('[aria-current]');
+    expect(current).toHaveLength(1);
+    expect(current[0]).toHaveAttribute('aria-current', 'true');
+    expect(current[0]).toContainElement(screen.getByRole('combobox', { name: 'Sprite 2' }));
+  });
+
   it('records a name the reader chooses against that sprite', async () => {
     show();
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'name:torso');

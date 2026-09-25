@@ -61,8 +61,12 @@ export function SpritePieceRow({
   const decide = useSpriteAssignmentStore((state) => state.decide);
 
   return (
+    // `aria-current` rather than colour alone: the border and tint are all a sighted reader gets, a
+    // forced palette erases both, and the `index.css` rule that repaints a current selection in
+    // `Highlight` keys on this attribute. `true` rather than `page`, since this is one item of a set.
     <div
       ref={ref}
+      aria-current={selected ? 'true' : undefined}
       className={`rounded-xl border p-2.5 transition-colors duration-390 ${
         selected ? 'border-accent bg-accent-soft/10' : 'border-foundry-700 bg-foundry-950/40'
       }`}
