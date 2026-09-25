@@ -23,7 +23,7 @@ interface ProjectPresetRowProps {
  * One studio archetype the reader saved, inside the project it is filed under.
  *
  * **A row rather than a card, and the project dropdown is why.** The preset library shows its
- * built-ins as a grid of cards, which is right for browsing seventy of them — but a card in a
+ * built-ins as a grid of cards, which is right for browsing a library of that size — but a card in a
  * three-column grid is about 240px wide, and a native `<select>` truncates an option it cannot fit.
  * Every project name in the app would have lost its tail in the one control that re-files a preset.
  * A full-width row gives that control the width the app's own option budget asks for, and this view

@@ -1,7 +1,8 @@
 # Rig contract import — the prompt states the engine's own piece geometry
 
-> **Status:** 🟢 ACTIVE — issue #294. The writer (BootBlock/unsung-saviour#720) has shipped; this is
-> the reader.
+> **Status:** ✅ COMPLETE — issue #294. The writer (BootBlock/unsung-saviour#720) and this reader
+> have both shipped: `parseRigContract`, `rigContractGeometry`, `rigContractPlan` and
+> `sheetRigContract` in `src/utils/`.
 
 ## 1. What is wrong
 
