@@ -997,8 +997,22 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * guidance. It is code a worker runs.
  *
  * 2434 leaves **0.54 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2434 by four guidance cards that promised what the app does not do** (issue #456).
+ * The Studio card now names the two things outside it that change the prompt, the camera card states
+ * the settable elevation range and attaches the overhead facing change to the projection that
+ * reaches it, and the System Profile card and the symmetry refusal stop naming figures that only
+ * some machines and floors have. Measured against `main` at `5606d76`, rebuilt from the same
+ * lockfile, with the ceiling forced to zero in each tree so both figures are the ones
+ * `assertPrecacheContract` receives: **2433.99 KiB** on `main` and **2434.28** here, a delta of
+ * **0.29** that crossed a ceiling the base sat 0.01 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets` listings summed by
+ * chunk name, 298 bytes land in `quantiseDials` and 3 in `QuantiseTab`, the two chunks
+ * the changed constants are bundled into. It is guidance text.
+ *
+ * 2435 leaves **0.72 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2434;
+export const PRECACHE_CEILING_KIB = 2435;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
