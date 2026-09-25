@@ -47,6 +47,16 @@ describe('StorageStatus', () => {
     expect(screen.queryByText(/SQLite/)).not.toBeInTheDocument();
   });
 
+  it('says so when the work is kept only in this tab’s memory', async () => {
+    // The fallback over a store in memory behaves exactly like the one over localStorage until a
+    // reload empties it, so naming local storage here would promise the reader a library they lack.
+    databasePromise = Promise.resolve(backendOfKind('memory'));
+    render(<StorageStatus />);
+
+    expect(await screen.findByText(/memory only/)).toBeInTheDocument();
+    expect(screen.queryByText(/local storage/)).not.toBeInTheDocument();
+  });
+
   it('tells a second tab what is holding its library, and what to do about it', async () => {
     // The one state here that is a fault rather than a statement of fact, so the one label that has
     // to name a cause and a fix: this tab can read nothing and store nothing until the other closes,
@@ -58,7 +68,7 @@ describe('StorageStatus', () => {
     expect(screen.queryByText(/local storage/)).not.toBeInTheDocument();
   });
 
-  it('marks that state for attention, and the two working ones not', async () => {
+  it('marks the two states that will not keep this tab’s work for attention, and the two working ones not', async () => {
     // The tone is the difference between "here is where your work is" and "your work is not here",
     // and it is the half a label alone cannot carry.
     const toneOf = async (kind: BackendKind, label: RegExp) => {
@@ -71,9 +81,13 @@ describe('StorageStatus', () => {
     };
 
     const held = await toneOf('held-elsewhere', /Open in another tab/);
+    const memory = await toneOf('memory', /memory only/);
     const fallback = await toneOf('localstorage', /local storage/);
+    const sqlite = await toneOf('sqlite-opfs', /SQLite/);
 
     expect(held).not.toBe(fallback);
+    expect(memory).toBe(held);
+    expect(sqlite).toBe(fallback);
   });
 
   it('does not sit on "Checking…" for ever if the lookup breaks its own guarantee', async () => {

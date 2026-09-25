@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeDatabaseWorker } from '../test/fakeDatabaseWorker.ts';
+import { createBoundedStorage } from '../test/storageDoubles.ts';
 import { HELD_ELSEWHERE_REFUSAL } from './heldElsewhereBackend.ts';
 import { getDatabase, resetDatabaseForTests } from './database.ts';
 import { parseSettings } from './settingsParser.ts';
@@ -63,6 +64,10 @@ describe('getDatabase', () => {
   });
 
   it('falls back to localStorage where there is no database to open', async () => {
+    // A readable store stands in for the browser's: this environment has no `localStorage`, and the
+    // fallback reports a store in memory as `memory`, so without one this would not be the case named.
+    vi.stubGlobal('localStorage', createBoundedStorage(Number.MAX_SAFE_INTEGER));
+
     expect((await backendAfterRefusal('ABSENT')).kind).toBe('localstorage');
   });
 
