@@ -582,7 +582,7 @@ describe('ImageComparison’s preview modes', () => {
     ).toBeInTheDocument();
   });
 
-  it('falls back to the pair when there is no result, rather than wiping against nothing', () => {
+  it('ignores a press on the wipe while there is no result, and keeps the pair', () => {
     show(null);
     choose('Wipe');
 

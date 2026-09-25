@@ -28,10 +28,9 @@ interface SegmentedChoiceProps<T extends string | number> {
 /**
  * One value chosen from a small fixed set, as a row of pills.
  *
- * Seven controls in the Quantise tab are this — the preview layout, the preview magnification, the
- * heatmap scale, the keying tolerance, the edge hardening, and the download's magnification and
- * format. Most are a
- * handful of stepped numbers where a slider would be the obvious choice and the wrong one —
+ * Ten controls in the Quantise tab are this — the preview layout, the preview magnification, the
+ * heatmap scale, the keying tolerance, the edge hardening, the download's magnification and format,
+ * and the sprite cell's source and its two sizes. Most are a handful of stepped numbers where a slider would be the obvious choice and the wrong one —
  * every one of them re-runs work proportional to the whole image, and a drag would spend a recompute
  * per pointer move on a sheet that may be sixteen megapixels. Stepped values reach the same range at
  * one recompute per click.
@@ -52,7 +51,7 @@ interface SegmentedChoiceProps<T extends string | number> {
  * 4×" would be ten places for the explanation of one thing to drift apart.
  *
  * **Generic over the value, because a rung is not always a number.** The preview's layout choice is
- * one of three named modes, and it is the same control in every respect that matters — a small fixed
+ * one of five named modes, and it is the same control in every respect that matters — a small fixed
  * set, one of them current, each reachable in a click. Writing a second pill row for it is where the
  * `aria-pressed` above goes missing.
  *

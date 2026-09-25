@@ -124,8 +124,8 @@ export function ImageComparison({
   const panel = useRef<HTMLElement>(null);
   const detached = useDetachedWindow(`Sprite Gubbins — ${sourceName}`);
 
-  // With nothing to compare against, every layout but the pair would draw a placeholder over the
-  // sheet and call it a comparison, so the toolbar will not take a press on one (#395): a press that
+  // With no result, every layout but the pair would draw a placeholder over the sheet, since each of
+  // them is a picture of the result, so the toolbar will not take a press on one (#395): a press that
   // changed nothing was stored, and replayed unasked the moment a result arrived. What can still be
   // held is a layout chosen while a result was on screen, whose grid has since been cleared — so the
   // pair is derived here rather than written into state, which is the call `DownloadControls` makes

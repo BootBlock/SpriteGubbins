@@ -15,6 +15,7 @@ import { IDENTITY_CAPTURE_UNAVAILABLE } from '../identityCapture.ts';
 import { SHEET_IDENTITY_GUIDANCE } from '../sheetIdentity.ts';
 import { STUDIO_HISTORY_GUIDANCE } from '../studioHistory.ts';
 import { APP_TAB_CHOICES } from '../ui.ts';
+import { RESULT_PREVIEW_MODES_UNAVAILABLE } from '../previewModes.ts';
 import { presetCollectionGuidance } from './presets.ts';
 
 /**
@@ -121,6 +122,9 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   // state of *this sheet's* sweep, which is the `QUANTISE_SCALE_GUIDANCE` case and out of scope.
   ['AUTO_TUNE_GUIDANCE.idle', AUTO_TUNE_GUIDANCE.idle],
   ['AUTO_TUNE_GUIDANCE.waiting', AUTO_TUNE_GUIDANCE.waiting],
+  // Why four of the preview layout's pills cannot be chosen yet, on the `waiting` footing: a reason
+  // a control is unavailable, rendered under it and pointed at by each of the pills it withholds.
+  ['RESULT_PREVIEW_MODES_UNAVAILABLE', RESULT_PREVIEW_MODES_UNAVAILABLE],
   // Both entries of both undo panels, on the same footing as the two above: each says what the two
   // buttons beside it do — what a step back restores, and what performing another act costs — which
   // is a control's own explanation rendered under it rather than behind an ⓘ. Neither record is
@@ -222,6 +226,7 @@ const PLAIN_SURFACES = [
   'ANTI_ALIAS_GUIDANCE.',
   'SHEET_IDENTITY_GUIDANCE.',
   'PALETTE_EXPORT_GUIDANCE.',
+  'RESULT_PREVIEW_MODES_UNAVAILABLE',
 ] as const;
 
 /** Whether an entry is rendered as plain text rather than as a card. */
