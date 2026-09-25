@@ -90,7 +90,7 @@ export const PROJECT_ACTION_TOOLTIPS = {
     'The Move button appears under the dropdown once you choose a project other than the one the set is in. A project that already has a set of this name cannot take it, because a save there could not tell the two apart, so a note replaces the button.',
 
   confirmMoveQuantise:
-    'Files this saved set of dial positions under the project you chose, right now. The dials are untouched and a set you have loaded stays loaded. Moving it back to the old project undoes the move.',
+    'Files this saved set of dial positions under the project you chose, right now. The dials are untouched and a set you have loaded stays loaded. Moving it back to the old project undoes the move, unless that project has since gained a set of the same name.',
 } as const;
 
 /**

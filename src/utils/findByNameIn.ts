@@ -5,11 +5,14 @@ import { findByName } from './findByName.ts';
  * it.
  *
  * **A name is unique inside one project**, for both saved collections: the studio's archetypes and
- * the quantiser's dial positions. Every path that could put a name into a project asks this one
+ * the quantiser's dial positions. The three actions that put a name into a project ask this one
  * question over the same set — a save, which updates the match; a rename, which is refused by it;
  * and a move, which is refused by it too (issue #454). A move that let two records with one name
  * share a project left every later save and rename acting on whichever the list showed first, so
  * the three have to agree on the set as well as on the comparison, which is `findByName`'s.
+ *
+ * **A library-pack import does not ask it yet**: `parseLibraryPack` de-duplicates ids, not names,
+ * so a pack can still file two records with one name in one project (issue #459).
  */
 export function findByNameIn<T extends { readonly name: string; readonly projectId: string }>(
   records: readonly T[],
