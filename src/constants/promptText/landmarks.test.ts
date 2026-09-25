@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categoryProseFor, everySheetOf } from '../../test/categoryProse.ts';
+import { categoryProseFor, everySheetOf, planProseFor } from '../../test/categoryProse.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
 import { LANDMARK_TEXT } from './landmarks.ts';
@@ -102,6 +102,41 @@ describe('LANDMARK_TEXT', () => {
           const grounded = new RegExp(String.raw`\b${word}`, 'i').test(prose);
           expect(grounded, `${category}: “${word}” is a piece this category’s sheets never list`).toBe(true);
         }
+      }
+    }
+  });
+
+  it('lets a sheet state its own only in pieces that sheet draws', () => {
+    // `SheetPlan.landmark` is how a CHARACTER taur's or serpent's directional core replaces the
+    // category's sentence, which gives a pelvis a front on a sheet with no pelvis and a lower body none.
+    // Held to the sheet's own inventory rather than the category's, because it exists for exactly the
+    // case where the two differ.
+    const own = SUBJECT_CATEGORIES.flatMap((category) =>
+      everySheetOf(category).flatMap((plan) => (plan.landmark === undefined ? [] : [{ category, plan }])),
+    );
+    expect(own.length).toBeGreaterThan(0);
+
+    for (const { category, plan } of own) {
+      const landmark = plan.landmark ?? '';
+      const prose = `${planProseFor(plan)} ${plan.componentClass}`;
+      const pieces = namedPiecesIn(landmark);
+      expect(pieces.length, `${category} / ${plan.name}: the landmark names no piece`).toBeGreaterThan(0);
+
+      for (const piece of pieces) {
+        for (const word of piece.split(' ').filter((part) => !SCAFFOLDING.has(part))) {
+          const grounded = new RegExp(String.raw`\b${word}`, 'i').test(prose);
+          expect(grounded, `${category} / ${plan.name}: “${word}” is a piece this sheet never lists`).toBe(
+            true,
+          );
+        }
+      }
+      // And every piece the sheet turns has a front, or the rule leaves one of them to be guessed.
+      for (const entry of plan.groups.flatMap((group) => group.entries)) {
+        const piece = entry.text.split(':')[0]?.toLowerCase() ?? '';
+        expect(
+          pieces.some((named) => piece.startsWith(named.replace(/y$/, ''))),
+          `${category} / ${plan.name}: “${piece}” is given no front`,
+        ).toBe(true);
       }
     }
   });

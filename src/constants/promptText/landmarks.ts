@@ -1,6 +1,17 @@
 import type { SubjectCategory } from '../../types/subject.ts';
 
 /**
+ * The fronts of the head and torso every CHARACTER body has, as clauses of its landmark sentence.
+ *
+ * Exported because a body whose trunk is not a head, a torso and a pelvis states its own sentence on
+ * its directional core (`SheetPlan.landmark`), and the two pieces it shares with the standard figure
+ * face the same way in both — so the clause is written once.
+ */
+export const HEAD_LANDMARK =
+  'a head’s front is the face and its rear the back of the skull and the neck socket';
+export const TORSO_LANDMARK = 'a torso’s front is the chest and its rear the spine and shoulder blades';
+
+/**
  * Which end of a component is its front, per category.
  *
  * A generator cannot check that a component rotated unless it knows which part of it points forward,
@@ -15,8 +26,7 @@ import type { SubjectCategory } from '../../types/subject.ts';
  * sentence names has to be a word that category's plans, or the guard above its inventory, write.
  */
 export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
-  CHARACTER:
-    'a head’s front is the face and its rear the back of the skull and the neck socket; a torso’s front is the chest and its rear the spine and shoulder blades; a pelvis’s front is the abdomen and its rear the seat and the small of the back; a foot’s front is the toes.',
+  CHARACTER: `${HEAD_LANDMARK}; ${TORSO_LANDMARK}; a pelvis’s front is the abdomen and its rear the seat and the small of the back; a foot’s front is the toes.`,
   // The nouns are the creature plans’ own — a body and a hindquarters, never a torso and a pelvis.
   // This entry was drafted from CHARACTER’s and kept its vocabulary, so section 3 named two pieces the
   // inventory in section 4 does not list, and the landmark rule reached the generator in words it had

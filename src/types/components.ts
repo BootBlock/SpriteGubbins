@@ -581,6 +581,16 @@ export interface SheetPlan {
    * must not carry.
    */
   readonly assemblyFailure: AssemblyFailure;
+  /**
+   * Which end of each piece on this sheet is its front, where the category's own sentence in
+   * `promptText/landmarks.ts` names pieces this sheet does not draw.
+   *
+   * Section 3 states it on a sheet holding more than one facing, as the rule a generator checks each
+   * turned view against. A CHARACTER taur's directional core draws a lower body where the category's
+   * sentence gives a pelvis a front, and a serpent-bodied one draws neither, so their core sheets say
+   * which way their own pieces face (issue #284). Absent, the category's sentence stands.
+   */
+  readonly landmark?: string;
 }
 
 /**

@@ -267,9 +267,18 @@ describe('the plan table itself', () => {
     ];
 
     expect(posed).toEqual([
-      // The limb variants of both figure categories, on both of the modes that draw them.
+      // The limb variants of both figure categories, on both of the modes that draw them — and the
+      // two halves of each where a taur's or a four-armed body's variants are past one generation.
       'CHARACTER / Pose library',
       'CHARACTER / Articulation',
+      'CHARACTER / Pose library — trunk, arms and forelegs',
+      'CHARACTER / Pose library — hind legs and tail',
+      'CHARACTER / Articulation — arms and forelegs',
+      'CHARACTER / Articulation — hind legs and tail',
+      'CHARACTER / Pose library — trunk, arms and second arms',
+      'CHARACTER / Pose library — legs',
+      'CHARACTER / Articulation — arms and second arms',
+      'CHARACTER / Articulation — legs',
       'CREATURE / Pose library',
       'CREATURE / Articulation',
       // A hatch closed, part-open and fully open; a rigid object whole at rest and active; a working

@@ -1,6 +1,6 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
-  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
   HEX_CODE_PINS_THE_HUE,
   SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
@@ -190,9 +190,10 @@ export const CHARACTER: CategoryDefinition = {
         'Spiked Shadow Outline',
         'Asymmetrical Pauldrons',
         'Broad-Shouldered Fortress',
-        'Floating Orbs & Ribbon',
+        // `Floating Orbs & Ribbon` and `Head And Shoulders Only` were here (issue #284). No CHARACTER
+        // sheet draws an orb floating free of the body, and every one draws legs and feet below the
+        // shoulders; PORTRAIT is the category that draws a bust.
         'Horned Spiked Silhouette',
-        'Head And Shoulders Only',
         'Hunched Cloaked Bundle',
         'Wide Conical Hat & Robe',
         'Trailing Ribbon Streamers',
@@ -246,9 +247,9 @@ export const CHARACTER: CategoryDefinition = {
       key: 'anatomy',
       label: 'Anatomy Base',
       tooltip:
-        'The skeleton the figure is drawn on, and what the generator is told to keep separable. A winged, tailed or four-armed base says those parts are the subject’s own rather than fused onto a limb it already has.\n\n' +
-        ASSEMBLY_BASE_ADDS_NO_COMPONENTS +
-        '\n\nA part that needs a sprite slot of its own goes in Additional Genuine Anatomy, the field that adds one.',
+        'The skeleton the figure is drawn on. A winged, tailed, four-armed, taur, centaur or serpent base draws its wings, tail, second arms or lower body as components of their own, and a digitigrade base draws feet that stand on their toes.\n\n' +
+        ASSEMBLY_BASE_CHOOSES_THE_SHEETS +
+        '\n\nA part no base draws goes in Additional Genuine Anatomy, which adds a sprite slot for each piece you name.',
       options: [
         'Standard Humanoid',
         'Humanoid With Wings',
@@ -456,7 +457,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Additional Genuine Anatomy',
       tooltip:
-        'Extra anatomy, such as a tail, a wing pair or auxiliary arms, each requested as its own sprite slot so you can animate it apart from the body.\n\n' +
+        'Extra anatomy, such as horns, a tail, a wing pair or auxiliary arms, each requested as its own sprite slot so you can animate it apart from the body. Anatomy Base already draws the wings, tail or second arms its own body has.\n\n' +
         'List them with commas and `×N` for how many of each: “Demon Horn ×2, Tail ×1” names three pieces, each drawn at every facing the sheet covers. That is fifteen components on a five-view directional core, or three on a single-facing sheet.',
       options: [
         NO_ADDITIONAL_ANATOMY,

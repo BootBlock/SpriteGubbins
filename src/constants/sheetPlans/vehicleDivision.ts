@@ -5,10 +5,12 @@ import type {
   SheetPlan,
   SheetSeries,
 } from '../../types/components.ts';
+import { spokenList } from '../../utils/spokenList.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 import { fixed } from './modePlans.ts';
 import type { ModePlans } from './modePlans.ts';
+import type { PartDrawing } from './partDrawing.ts';
 
 /**
  * How one vehicle divides, and the three sheets that divide it that way (issue #288).
@@ -32,19 +34,6 @@ import type { ModePlans } from './modePlans.ts';
  * the scale example names the hull. Writing any of them by hand is how a division's sheet comes to
  * promise a travel its inventory does not draw.
  */
-
-/**
- * One drawing of a part: the words an entry names it with, and the suffix the drawing's own name takes.
- *
- * Both halves are authored, for the reason {@link ComponentEntry.parts} gives — a name slugged from the
- * prose would be renamed by rewording it, and `at rest` is a phrase where `rest` is a file name.
- */
-export interface PartDrawing {
-  /** `at rest`, `stowed`, `root segment` — what the entry calls this drawing. */
-  readonly text: string;
-  /** `rest`, `stowed`, `root` — what the component's own name ends in. */
-  readonly slug: string;
-}
 
 /** One of the two units that carry the vehicle, as this base divides them. */
 export interface DriveUnit {
@@ -161,9 +150,7 @@ function onceEntry(label: string, name: string, kind: ComponentKind): ComponentE
 
 /** `at rest and at mid-travel`, `stowed, traversed and elevated` — a promise's list of positions. */
 function joined(drawings: readonly PartDrawing[]): string {
-  const texts = drawings.map((drawing) => drawing.text);
-  const last = texts.pop() ?? '';
-  return texts.length === 0 ? last : `${texts.join(', ')} and ${last}`;
+  return spokenList(drawings.map((drawing) => drawing.text));
 }
 
 /** What the part library promises its states assemble into, named from the entries that draw them. */

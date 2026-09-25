@@ -98,7 +98,7 @@ export function supportsRigMode(category: SubjectCategory, subject: SheetSubject
  * Whether any sheet of this deliverable has already committed a moving part to a position.
  *
  * **The question is asked of the series and not of one sheet, and that is the second half of the
- * defect.** A pairing is a *deliverable*: `CHARACTER_ARTICULATION`'s assembly promise is "the limbs
+ * defect.** A pairing is a *deliverable*: a CHARACTER articulation run's assembly promise is "the limbs
  * of … each fitted to the trunk drawn on the directional core sheets", and the core's own promise
  * calls itself "the trunk the articulation sheets hang their limbs on". They are two halves of one
  * set, generated separately and assembled together.
