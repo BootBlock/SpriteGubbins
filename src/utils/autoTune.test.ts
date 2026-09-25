@@ -4,11 +4,12 @@ import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import { imageFrom, soften } from '../test/images.ts';
 import { TUNED_DIAL_KEYS, TUNE_STAGE_NAMES } from '../types/autoTune.ts';
 import type { TunedDials } from '../types/autoTune.ts';
-import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
+import type { GridMesh, QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { autoTune } from './autoTune.ts';
+import { upscaleOverMesh } from './gridAlignment.ts';
 import { oklabPlanes } from './oklabPlanes.ts';
 import { proxyCrops } from './proxyCrops.ts';
-import { quantiseFromPrologue, quantiseImage } from './quantiseImage.ts';
+import { quantiseFromPrologue } from './quantiseImage.ts';
 import { quantisePrologue } from './quantisePrologue.ts';
 import { meanSsim } from './ssim.ts';
 import { readCandidate } from './tuneCandidate.ts';
@@ -155,9 +156,9 @@ describe('autoTune', () => {
     // below: the sweep's own scorer against the reference it uses, and the same result measured
     // against the sheet as it arrived.
     //
-    // **At a grid of 1 the magnification is the identity**, so the two sides are already the same
-    // size and the second reading needs no trim — which is why the counterfactual can be taken
-    // directly here rather than through a second copy of `readCandidate`'s seam.
+    // **At a grid of 1 every cell of the mesh is one pixel**, so painting the result back over it is
+    // the identity and the result is already the sheet's own size — which is why the counterfactual
+    // can be taken directly here rather than through a second copy of `readCandidate`'s seam.
     const keyed: QuantiseSettings = { ...BASE, grid: 1, key: { color: MAGENTA, tolerance: 16 } };
     const prologue = quantisePrologue(KEYED_SHEET, keyed);
     const dials = tunedDialsOf(keyed);
@@ -172,15 +173,17 @@ describe('autoTune', () => {
     expect(scored).toBeGreaterThan(againstTheField + 0.1);
   });
 
-  it('scores every candidate alike on the lattice while their fidelities differ', () => {
+  it('scores every candidate alike on the mesh while their fidelities differ', () => {
     // Why the roadmap's third scorer is not here, shown as the pair it is. A lattice score asks
-    // whether the result sits on the grid; every candidate is judged on its result magnified by that
-    // same grid, so all of them put all of their change on it by construction of the magnification.
-    // That is exactly the point: it is constant where the score the sweep does use is not.
+    // whether the result sits on the grid; every candidate is judged on its result painted back over
+    // the crop's own mesh, so all of them put all of their change on that mesh's boundaries by
+    // construction of the painting. That is exactly the point: it is constant where the score the
+    // sweep does use is not.
     const [crop] = proxyCrops(SHEET, GRID, PROXY_CROP_CELLS, PROXY_CROP_COUNT);
     expect(crop).toBeDefined();
     if (crop === undefined) return;
 
+    const prologue = quantisePrologue(crop.image, BASE);
     const base = tunedDialsOf(QUANTISE_DEFAULT_DIALS);
     const far: TunedDials[] = [
       { ...base, vote: 'DOMINANT', outlineExpansion: 0 },
@@ -188,10 +191,15 @@ describe('autoTune', () => {
       { ...base, vote: 'K_CENTROID', colorMerge: 48, fillCleanup: 48 },
     ];
     const scores = far.map((dials) => {
-      const magnified = upscaleNearest(quantiseImage(crop.image, { ...BASE, ...dials }).image, GRID);
+      const painted = upscaleOverMesh(
+        quantiseFromPrologue(prologue, { ...BASE, ...dials }).image,
+        prologue.mesh,
+        prologue.source.width,
+        prologue.source.height,
+      );
       return {
-        lattice: offLatticeShare(magnified, GRID),
-        fidelity: meanSsim(crop.image, magnified),
+        lattice: offMeshShare(painted, prologue.mesh),
+        fidelity: meanSsim(prologue.source, painted),
       };
     });
 
@@ -298,8 +306,9 @@ describe('autoTune', () => {
   });
 });
 
-/** The share of neighbouring-pixel change that falls anywhere but on a lattice boundary. */
-function offLatticeShare(image: ImageData, grid: number): number {
+/** The share of neighbouring-pixel change that falls anywhere but on one of the mesh's column boundaries. */
+function offMeshShare(image: ImageData, mesh: GridMesh): number {
+  const boundaries = new Set(mesh.x);
   const planes = oklabPlanes(image);
   let total = 0;
   let off = 0;
@@ -308,7 +317,7 @@ function offLatticeShare(image: ImageData, grid: number): number {
       for (let x = 1; x < image.width; x += 1) {
         const step = Math.abs((plane[y * image.width + x] ?? 0) - (plane[y * image.width + x - 1] ?? 0));
         total += step;
-        if (x % grid !== 0) off += step;
+        if (!boundaries.has(x)) off += step;
       }
     }
   }

@@ -13,7 +13,7 @@ import { keyBackground } from './keyBackground.ts';
  * {@link QuantiseSettings.silhouetteThreshold} and {@link QuantiseSettings.grid}. A caller that
  * holds all three fixed while it moves the dials — which is what the auto-tune sweep is — was
  * paying for the same three answers on every candidate: a sweep of `test_sprites/armour.png` at a
- * grid of 6 runs 403 positions over 5 crops, so `boundaryMesh` ran 2,015 times to answer the five
+ * grid of 6 runs 142 positions over 5 crops, so `boundaryMesh` ran 710 times to answer the five
  * meshes those crops have. Keying is worse again, because the key and the hardening produce the
  * value the sweep scores against as well: `autoTune` built it once a crop and then rebuilt it
  * inside every candidate.

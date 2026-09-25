@@ -12,8 +12,8 @@ import { upscaleNearest } from '../src/utils/upscaleNearest.ts';
  * **A count, not a wall clock.** What prompted this was a share of a sweep's running time, and no
  * such share reproduces: it moves with the machine, and with how many Vitest workers are competing
  * for it. What reproduces is what the seconds were made of — a sweep of `test_sprites/armour.png` at
- * a grid of 6 runs 403 positions over 5 crops, so `boundaryMesh` ran 2,015 times to answer five
- * meshes and `differenceMap` ran 2,015 times for a value `readCandidate` never reads.
+ * a grid of 6 runs 142 positions over 5 crops, so `boundaryMesh` ran 710 times to answer five
+ * meshes and `differenceMap` ran 710 times for a value `readCandidate` never reads.
  * `constants/autoTune.ts` states the same rule for its own ladders — the count of positions is what
  * a change here has to be judged by — so this counts calls.
  *
@@ -115,14 +115,14 @@ describe('the auto-tune sweep against the pipeline prologue', () => {
 
     // Once a crop, which is `outcome.candidates` times fewer than before: each of these used to run
     // inside every candidate on every crop. Restoring that shape by hand — the raw crop handed to
-    // `quantiseImage`, as `readCandidate` used to hand it — this fixture reports 380 mesh
-    // measurements and 382 keyings and hardenings, the extra two being the reference `autoTune`
+    // `quantiseImage`, as `readCandidate` used to hand it — this fixture reports 620 mesh
+    // measurements and 622 keyings and hardenings, the extra two being the reference `autoTune`
     // built for itself and then had rebuilt underneath it.
     expect(counts.mesh).toBe(outcome.crops);
     expect(counts.key).toBe(outcome.crops);
     expect(counts.harden).toBe(outcome.crops);
 
-    // And never, where the same restoration reports 380. `readCandidate` reads the image and the
+    // And never, where the same restoration reports 620. `readCandidate` reads the image and the
     // colour count and nothing else, and this is the one reading that costs a second walk over the
     // source rather than falling out of the transform — which is why it is the field
     // `quantiseFromPrologue` leaves out.

@@ -25,64 +25,69 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * carry one. With the anti-aliasing control at its own `OFF`, which is where the tab opens, those
  * three stages skip and the two figures are **857** and **889**. Those are ceilings rather than
  * ordinary costs, because the descent stops as soon as a round retraces a position it has already
- * stood at: measured over the eight corpus sheets the real figures run from 134 to 403 positions, and
+ * stood at: measured over the eight corpus sheets the real figures run from 87 to 189 positions, and
  * {@link TUNE_ROUNDS} carries that table. Every stage also ranks the positions
  * already in force, which costs nothing where its ladder already holds them; see `withIncumbent` for
  * why the incumbent is in the set at all.
  *
  * **Measured on the reference sheet** (`test_sprites/armour.png`, 1254², a grid of 6, no keying, no
  * colour budget, every dial at its opening position), by running `autoTune` over it directly: five
- * crops of 240 px and **403 positions over six rounds**, the three anti-aliasing stages skipping
- * because the tab opens that control off, ending at a likeness of **0.6554 for 112 colours** where
- * the opening position it started from scored 0.6264 for 960. A ninth of the colours for three
+ * crops of 240 px and **142 positions over three rounds**, the three anti-aliasing stages skipping
+ * because the tab opens that control off, ending at a likeness of **0.7428 for 113 colours** where
+ * the opening position it started from scored 0.7209 for 960. An eighth of the colours for two
  * hundredths *more* likeness, which is the elbow finding a knee that is better on both counts than
- * where the reader began. It is also the sheet that costs the most rounds of the eight — the table
- * under {@link TUNE_ROUNDS} carries the rest.
+ * where the reader began. The position it settles on is `K_CENTROID` with the merge at 6, the
+ * cleanup at 16 and two cleanup passes; the table under {@link TUNE_ROUNDS} carries the other seven
+ * sheets, and every one of them settles on `K_CENTROID` too.
  *
  * **What the widening bought, measured rather than assumed.** The narrower sweep this replaced — 35
  * positions, one round, three crops — settled this sheet on `DOMINANT` with the merge at 12 and the
- * cleanup at 48. Scored on the same five crops the widened sweep reads, that position is **0.6254 for
- * 54 colours** against the **0.6554 for 112** above: the two are a genuine trade rather than one
- * strictly beating the other, and it is a trade the narrow sweep could not offer at all, because
- * `K_CENTROID` at a line strength of 2 and an ink threshold of 56 is not a position any of its
- * ladders could reach in one round. Both figures are on the same sample, which is the only way the
- * pair means anything — the crop count moved with the ladders, so the *baselines* either side of this
- * change are not comparable and the answers are.
+ * cleanup at 48. Scored on the same five crops the widened sweep reads, that position is **0.7115 for
+ * 54 colours** against the **0.7428 for 113** above: the two are a genuine trade rather than one
+ * strictly beating the other, and it is a trade the narrow sweep could not offer at all, because the
+ * reading stage's first round chooses `DOMINANT` (see below) and only a later round, taken against a
+ * merge and a cleanup already swept, moves it to `K_CENTROID`. Both figures are on the same sample,
+ * which is the only way the pair means anything — the crop count moved with the ladders, so the
+ * *baselines* either side of this change are not comparable and the answers are.
  *
  * **With the anti-aliasing pointed somewhere the sweep shapes it, and the shaping is real.** The same
- * sheet at `BOTH` costs 301 positions over four rounds and settles the pass at a contrast floor of 40
- * and a strength of **30%** — the dial turned down to under a third of the coverage the geometry
- * computes, which is pixel-art practice's one standing rule about anti-aliasing arrived at by
- * measurement. It reaches 0.6568 for 302 colours from a baseline of 0.6399 for 1058.
+ * sheet at `BOTH` costs 301 positions over four rounds and settles the pass at a contrast floor of 96,
+ * a shortest run of 12 and a strength of **10%** — the top of the first two ladders and the bottom of
+ * the third, so the pass softens only the hardest, longest contours and by the least the ladder
+ * offers. That is pixel-art practice's one standing rule about anti-aliasing, to use as little of it
+ * as the shape needs, arrived at by measurement. It reaches 0.7426 for 117 colours from a baseline of
+ * 0.7218 for 1058.
  *
  * **The count of positions is what a change to any ladder here has to be judged by**, not a wall
  * clock — the same code over the same sheet takes several times longer on one host than another, so
  * the guidance's "a minute or two" is stated against the position count rather than against any figure
  * a stopwatch produced.
  *
- * **The sweep chose the *cheapest* of the three readings on that sheet rather than the most faithful,
- * and that is the elbow doing what it says rather than a defect.** Of the fifteen positions the
- * reading stage tries, `INK_WEIGHTED` at expansion 0 reproduces the crops most closely at 0.6459 and
- * `K_CENTROID` at expansion 0 comes next at 0.6429, both spending 1208 colours; `DOMINANT` at
- * expansion 0 is the least faithful of the three at 0.6089 and spends 1030. The knee of that frontier
- * is `DOMINANT`, so a reader whose artwork lives on its linework has to ask for `INK_WEIGHTED`
- * themselves — which is what `AUTO_TUNE_GUIDANCE.settled` tells them to try. Those four figures are a
- * reading of the first stage alone at three crops, taken before the widening below; the reading
- * ladder is the one this change did not touch, so they still describe the positions it tries.
+ * **The reading stage's first round chooses the *cheapest* of the three readings on that sheet
+ * rather than the most faithful, and that is the elbow doing what it says rather than a defect.** Of
+ * the fifteen positions the reading stage tries, `K_CENTROID` at expansion 0 reproduces the crops
+ * most closely at 0.7356 and `INK_WEIGHTED` at expansion 0 comes next at 0.7258, both spending 1208
+ * colours; `DOMINANT` at expansion 0 is the least faithful of the three at 0.7074 and spends 1030.
+ * The knee of that frontier is `DOMINANT`. Once the merge and the cleanup have folded the averaging
+ * readings' extra colours away, a later round ranks a different frontier and its knee is
+ * `K_CENTROID` — which is what a descent of more than one round is for. Those four figures are a
+ * reading of the first stage alone at three crops, taken before the widening above; the reading
+ * ladder is the one that change did not touch, so they still describe the positions it tries.
  *
- * **The averaging bias that guidance warns about is real on this sheet, and on the second sheet it
- * beats the reading the sweep goes on to choose.** A resampled sheet has soft edges, and an average
- * genuinely is closer to a soft edge than a hard one is — which is why both averaging readings
- * out-score `DOMINANT` on likeness above, on a sheet whose contours were softened on the way back
- * from the generator. On `test_sprites/cyborg_healer.png` (a grid of 4, and again a grid the run was
- * given rather than one the sheet reads at) `K_CENTROID` at expansion 0 beats the other averaging
- * reading on **both** counts — 0.6649 for 1416 colours against `INK_WEIGHTED`'s 0.6571 for 1435 — and
- * the elbow settles on `DOMINANT`, at 0.6478 for 1298, because it is cheaper than either. Those six
- * figures are a reading of the first stage **at three crops**, like the four above them; at five they
- * are 0.6638 for 1427, 0.6569 for 1445 and 0.6567 for 1321, which moves no part of the argument.
- * So on that sheet a reader who wants what the likeness column says is best has to ask for it, which
- * is the warning stated at its sharpest: the bias is a reason to check the reading, and the elbow is
- * a separate reason not to read the settled position as "the most faithful one".
+ * **The averaging bias that guidance warns about is real on this sheet, and the sweep settles on the
+ * averaging reading it favours most.** A resampled sheet has soft edges, and an average genuinely is
+ * closer to a soft edge than a hard one is — which is why both averaging readings out-score
+ * `DOMINANT` on likeness above, on a sheet whose contours were softened on the way back from the
+ * generator. On `test_sprites/cyborg_healer.png` (a grid of 4, and again a grid the run was given
+ * rather than one the sheet reads at) `K_CENTROID` at expansion 0 beats the other averaging reading
+ * on **both** counts — 0.7228 for 1416 colours against `INK_WEIGHTED`'s 0.7153 for 1435 — and the
+ * first round's elbow settles on `DOMINANT`, at 0.7029 for 1298, because it is cheaper than either.
+ * Those six figures are a reading of the first stage **at three crops**, like the four above them;
+ * at five they are 0.7270 for 1427, 0.7168 for 1445 and 0.7074 for 1321, which moves no part of the
+ * argument. The whole sweep then settles every corpus sheet on `K_CENTROID`, which is the warning
+ * stated at its sharpest: a sheet that lives on its contours gets the reading that softens them
+ * unless the reader asks for `INK_WEIGHTED` — which is what `AUTO_TUNE_GUIDANCE.settled` tells them
+ * to try.
  */
 
 /**
@@ -126,7 +131,8 @@ export const PROXY_CROP_COUNT = 5;
  *
  * Half, so a busy region cannot fall between two windows and be missed by both, while the count of
  * positions to score stays four to the sheet's area rather than one per pixel. Rounded down to a
- * whole number of cells wherever that is at least one cell, so every window starts on the lattice.
+ * whole number of cells wherever that is at least one cell, so every window starts a whole number of
+ * cells from the sheet's corner — which is not the sheet's own lattice; see `proxyCrops`.
  */
 export const PROXY_CROP_STRIDE = 0.5;
 
@@ -147,14 +153,14 @@ export const PROXY_CROP_STRIDE = 0.5;
  *
  * | Sheet | Grid the run was given | Rounds | Positions |
  * | --- | --- | --- | --- |
- * | `armour.png` | 6 | **6** | 403 |
- * | `character_space_marine_blue.png` | 5 | 4 | 181 |
- * | `vehicles_and_props.png` | 5 | 4 | 185 |
- * | `cyborg_black_red.png` | 6 | 3 | 142 |
- * | `three-quarter-view_tiles1.png` | 5 | 3 | 142 |
- * | `ui_elements1.png` | 4 | 3 | 142 |
+ * | `cyborg_black_red.png` | 6 | **4** | 189 |
+ * | `armour.png` | 6 | 3 | 142 |
+ * | `vehicles_and_props.png` | 5 | 3 | 134 |
  * | `cyborg_monk.png` | 4 | 3 | 134 |
- * | `cyborg_healer.png` | 4 | 3 | 134 |
+ * | `character_space_marine_blue.png` | 5 | 3 | 130 |
+ * | `cyborg_healer.png` | 4 | 3 | 130 |
+ * | `three-quarter-view_tiles1.png` | 5 | 2 | 95 |
+ * | `ui_elements1.png` | 4 | 2 | 87 |
  *
  * **The grid column is the run's own input, not a reading of the sheet.** Each grid was chosen
  * coarse enough that forty cells of it span something worth reading — see {@link PROXY_CROP_CELLS},
@@ -165,19 +171,19 @@ export const PROXY_CROP_STRIDE = 0.5;
  *
  * **Eight is the worst of those eight plus headroom, and the headroom is the point.** A cap that a
  * sheet exactly reaches cannot be told apart from one that cut it short — and a cut descent does not
- * merely stop early, it answers with wherever the cut happened to fall. The reference sheet is the
- * case that says so: stopped at three it would have reported a likeness of 0.6525 for 112 colours,
- * where the position it reaches two rounds later is 0.6554 for the *same* 112 — strictly better on
- * both figures. Seven of the eight sheets never see the extra rounds at all, so the headroom is paid
- * only by a sheet that needs it.
+ * merely stop early, it answers with wherever the cut happened to fall. On the corpus the last round
+ * is only ever the one that finds the repeat: `cyborg_black_red.png` capped at three rounds answers
+ * with the position its fourth round confirms. But before each candidate was scored over its crop's
+ * own mesh, the reference sheet ran six rounds and would have answered strictly worse cut at three,
+ * so the rounds a sheet needs move with the score and the ladders, and a cap sized to today's worst
+ * case would be the first thing either change broke. None of the eight reaches a fifth round, so
+ * the headroom is paid only by a sheet that needs it.
  *
  * **A cap is still needed, because nothing guarantees the descent settles.** What the stages descend
  * on is a pair of figures ranked by an elbow rather than a scalar objective, and an elbow's knee
  * moves with the candidate set — so a descent can circle a loop instead of reaching a fixed point.
- * That is not a rare case, and it is not confined to synthetic fixtures: the reference sheet at a
- * colour budget of 16 with the anti-aliasing at `BOTH` circles for all eight rounds and never
- * repeats, and the fixture in `autoTune.test.ts` settles into a two-round loop — which is why the
- * stop compares against every position visited rather than only against the round before.
+ * The fixture in `autoTune.test.ts` settles into a two-round loop, which is why the stop compares
+ * against every position visited rather than only against the round before.
  */
 export const TUNE_ROUNDS = 8;
 
@@ -314,7 +320,7 @@ export const TUNE_STAGE_LABELS: Readonly<Record<TuneStageName, string>> = {
 export const AUTO_TUNE_GUIDANCE = {
   waiting:
     'A pixel scale has to be settled before the dials can be swept: every candidate is judged by re-drawing the result at that scale and comparing it with the artwork it came from, and there is nothing to compare against until the scale is known. Set a grid above, then come back.',
-  idle: 'The dials on this tab open at positions that suit some sheets and not others, and nothing on screen says which kind of sheet you have. This runs the pipeline over five busy crops of it, at several hundred combinations of the dials that decide how a cell is read, how its colours settle and how its contours are softened, and moves them to whichever came closest to the artwork for the fewest colours. It goes round the dials up to eight times, stopping as soon as a round retraces ground it has already covered, so each one is finally chosen against the others rather than against the positions they opened at.',
+  idle: 'The dials on this tab open at positions that suit some sheets and not others, and nothing on screen says which kind of sheet you have. This runs the pipeline over five busy crops of it, at a hundred or more combinations of the dials that decide how a cell is read, how its colours settle and how its contours are softened, and moves them to whichever came closest to the artwork for the fewest colours. It goes round the dials up to eight times, stopping as soon as a round retraces ground it has already covered, so each one is finally chosen against the others rather than against the positions they opened at.',
   running:
     'Running the pipeline over five crops of the sheet, once for each candidate, and going round the dials until they stop moving. It can take a minute or two on a large sheet, and the preview beside it keeps working throughout — the sweep is on a thread of its own.',
   settled:

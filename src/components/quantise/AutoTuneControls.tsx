@@ -28,7 +28,7 @@ interface AutoTuneControlsProps {
  * Where this sheet's dials want to be, found by running them.
  *
  * The one panel on this tab that answers a question instead of asking one. Every other control here
- * is a position for the reader to find; this reads five busy crops of their sheet at several hundred
+ * is a position for the reader to find; this reads five busy crops of their sheet at a hundred or more
  * combinations and says which came closest to the artwork for the fewest colours.
  *
  * **Directly under the grid, and above every dial it moves.** It cannot run without a pixel scale —

@@ -3,11 +3,13 @@ import { createImage, packedColorAt, pixelOffset, writePackedColor } from './ima
 import { lineAwareWinner } from './lineVote.ts';
 
 /**
- * Snapping an image to its cell mesh, and reducing it to one pixel per cell.
+ * Snapping an image to its cell mesh, reducing it to one pixel per cell, and painting such a
+ * reduction back over the cells it came from.
  *
- * The transforms that act on the mesh `boundaryMesh` measures for whatever scale is in force. Both
- * return a new `ImageData` and mutate nothing they were given, and both walk the same mesh — which
- * is what makes it impossible for the reduction to sample a pixel the alignment never resolved.
+ * The transforms that act on the mesh `boundaryMesh` measures for whatever scale is in force. All
+ * three return a new `ImageData` and mutate nothing they were given, and all three walk the same
+ * mesh — which is what makes it impossible for the reduction to sample a pixel the alignment never
+ * resolved, or for the painting to put a cell anywhere but over the pixels it was read from.
  *
  * A cell is `[starts[i], starts[i + 1])` on each axis, with the image's own edge closing the last
  * one — so partial cells at either end of an axis are cells like any other, aligned over whatever
@@ -17,7 +19,7 @@ import { lineAwareWinner } from './lineVote.ts';
  * **How partial an end cell may be is the mesh's business, not these transforms'.** `boundEndCells`
  * in `boundEndCells.ts` merges an end band of fewer than three source pixels into the cell beside it, so
  * nothing here has to ask whether the cell it is reducing to one pixel stands for a real band or a
- * one-pixel sliver. Neither transform may start deciding that for itself: they walk the mesh they
+ * one-pixel sliver. None of the three may start deciding that for itself: they walk the mesh they
  * are given, which is the whole of what keeps them agreeing about where a cell begins.
  */
 
@@ -168,6 +170,43 @@ export function downscaleNearest(image: ImageData, mesh: GridMesh): ImageData {
     for (const [x, left] of mesh.x.entries()) {
       const color = packedColorAt(image.data, pixelOffset(image.width, left, top));
       writePackedColor(output.data, pixelOffset(mesh.x.length, x, y), color);
+    }
+  }
+
+  return output;
+}
+
+/**
+ * One pixel per mesh cell painted back over the cell it stands for — the inverse of
+ * {@link downscaleNearest}, at the size of the image the mesh was measured on.
+ *
+ * `upscaleNearest` is the same idea on a lattice that starts at the corner and never drifts, and
+ * that is the one mesh `boundaryMesh` is not guaranteed to return: `boundEndCells` can make the
+ * leading cell narrower or wider than the grid, and a walk that follows drift moves every boundary
+ * after it. Magnified by the grid instead, a result sits a fixed offset off its source past a phased
+ * first cell and a growing one across a drifting sheet, so every comparison made against it is made
+ * against art it does not sit over. Painted over its own mesh, each cell covers exactly the source
+ * pixels it was read from, so `downscaleNearest` of this over the same mesh returns `cells`.
+ *
+ * `cells` must be one pixel per cell of `mesh`; anything else was not read from it, and is refused
+ * rather than painted over cells it does not describe.
+ */
+export function upscaleOverMesh(cells: ImageData, mesh: GridMesh, width: number, height: number): ImageData {
+  if (cells.width !== mesh.x.length || cells.height !== mesh.y.length) {
+    throw new Error('An image can only be painted over the mesh it was read from, one pixel per cell');
+  }
+  const output = createImage(width, height);
+
+  for (const [row, top] of mesh.y.entries()) {
+    const bottom = Math.min(mesh.y[row + 1] ?? height, height);
+    for (const [column, left] of mesh.x.entries()) {
+      const right = Math.min(mesh.x[column + 1] ?? width, width);
+      const color = packedColorAt(cells.data, pixelOffset(cells.width, column, row));
+      for (let y = top; y < bottom; y += 1) {
+        for (let x = left; x < right; x += 1) {
+          writePackedColor(output.data, pixelOffset(width, x, y), color);
+        }
+      }
     }
   }
 

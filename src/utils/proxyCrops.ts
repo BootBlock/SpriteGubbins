@@ -25,12 +25,16 @@ export interface ProxyCrop {
  * summed-area table answers every window in constant time, so the choice costs a handful of passes
  * over the sheet however many windows are considered.
  *
- * **Every window starts and ends on the grid's own lattice.** The pipeline measures its mesh from
- * whatever image it is handed, so a crop cut mid-cell would hand it a sheet whose first cell is a
- * fragment — and the dials chosen on that are chosen against a mesh the whole sheet does not have.
- * Aligning the origin does not guarantee the crop's mesh matches the sheet's, because the sheet's
- * own lattice may be phased or drifting; what it guarantees is that every candidate meets the *same*
- * mesh, which is what makes the ranking between them sound.
+ * **Every window starts and ends on a whole number of cells from the sheet's corner**, which is not
+ * the same thing as the sheet's own lattice: a sheet's lattice may be phased, so its first boundary
+ * sits somewhere other than the corner, or drifting, so no fixed multiple of the grid stays on it.
+ * The windows are placed on the corner's multiples because that is the one lattice known before any
+ * mesh is measured, and the mesh itself is measured inside each crop by the pipeline the sweep runs,
+ * so a crop's cells are wherever the art in that crop puts them. What the placement buys is that the
+ * crop is a whole number of grid widths across, and what the shared prologue buys is that every
+ * candidate meets the *same* mesh on a crop, which is what makes the ranking between them sound.
+ * Scoring each candidate against the result painted back over that mesh, rather than magnified from
+ * the crop's corner, is what keeps a phased crop's figure honest — see `readCandidate`.
  *
  * The windows are non-overlapping, so five crops are five samples rather than five views of one
  * busy corner. Where the sheet cannot hold as many as were asked for, it returns what it has —
