@@ -1,4 +1,4 @@
-import { NATIVE_GRID_HEADING } from '../../constants/promptTemplate.ts';
+import { NATIVE_GRID_HEADING, SCOPE_AND_PRECEDENCE_HEADING } from '../../constants/promptTemplate.ts';
 import { citeSection } from '../templateEngine.ts';
 import type { SectionNumbers } from '../templateEngine.ts';
 
@@ -36,9 +36,8 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * already records in the other direction. The instruction now names only the hand-off itself,
  * which is certain on both paths, and says what any call must still carry.
  *
- * **The must-carry list is the whole of what this wrapper does, and it is known to work on the call
- * it names.** A
- * sheet generated on chatgpt.com was traced back to the arguments Sol actually passed to the image
+ * **The must-carry list is what this wrapper does, beside one sentence that keeps section 0's
+ * reader rules with Sol, and the list is known to work on the call it names.** A sheet generated on chatgpt.com was traced back to the arguments Sol actually passed to the image
  * tool, and they were Sol's own ~700-word composition rather than the ~40,000-character
  * specification it was given. The three things this wrapper names all arrived intact — the exact
  * component count, the key colour and the ban on text and shadows from section 0; all five object
@@ -131,6 +130,18 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * absent, but naming the wrong thing inside one that is present. Every figure in either form is
  * worth the same protection, so the entry protects the block's values rather than describing their
  * shape.
+ *
+ * **Section 0 is protected by its numbered items, not whole, and what is left of it is Sol's to
+ * settle.** The directive used to require all of section 0 "as they are written here". Measured on
+ * the default Sol prompt (CHARACTER, eight directions) that section was 639 words, about 91% of the
+ * ~700-word hand-off observed above, and most of it was not addressed to the renderer: eight
+ * citations of sections the renderer never receives, the precedence rules, and the category tripwire
+ * ending "Say so rather than resolving it". `promptConditions` gates that tripwire on `RETURNS_TEXT`
+ * because an image endpoint cannot carry it out, and the directive then ordered it forwarded to one.
+ * So the template now puts those paragraphs under the heading `SCOPE_AND_PRECEDENCE_HEADING` names,
+ * the numbered items above it cite no section by number, and this directive protects the items and
+ * tells Sol to act on the rest itself. It says "act on", not "settle", because the tripwire tells
+ * Sol to report a malformed specification rather than resolve it. Whether that changes what a delivered sheet holds is not measured (#403).
  *
  * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
  * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
@@ -228,9 +239,12 @@ the idea and drops the figure, which leaves the image nothing to be measured aga
   return `[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]
 You are not the model that draws this sheet: you will call an image tool, and a GPT Image model
 renders whatever that call carries. So the call is where a sheet loses its component count, its
-background or its per-component directions. Whatever you send must still carry section ${citeSection(sections, 'CONTRACT')}, the object
-yaws in section ${citeSection(sections, 'CAMERA')} and the inventory in section ${citeSection(sections, 'INVENTORY')} as they are written here. If it has to be
-shortened, shorten the prose elsewhere — never those three.${sectionTwo}
+background or its per-component directions. Whatever you send must still carry the numbered items
+of section ${citeSection(sections, 'CONTRACT')}, the object yaws in section ${citeSection(sections, 'CAMERA')} and the inventory in section ${citeSection(sections, 'INVENTORY')} as they are written
+here. If it has to be shortened, shorten the prose elsewhere — never those three.
+
+What section ${citeSection(sections, 'CONTRACT')} states under “${SCOPE_AND_PRECEDENCE_HEADING}” is addressed to you, not to the image model:
+act on it yourself before you make the call, and leave it out of what you send.${sectionTwo}
 
 ${prompt}`;
 }

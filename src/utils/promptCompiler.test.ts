@@ -36,7 +36,7 @@ import {
 } from '../types/output.ts';
 import type { AspectRatio, OutputConfig } from '../types/output.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
-import { sectionOf } from '../test/promptSections.ts';
+import { renderContractOf, sectionOf } from '../test/promptSections.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
@@ -680,7 +680,7 @@ describe('generatePrompt — numbered lists', () => {
     );
 
     expect(numberedRuns(prompt)).toHaveLength(3);
-    // Eight in the contract — seven fixed plus the pixel-grid rule — nine in the audit, which is the
+    // Nine in the contract — seven fixed, the pixel-grid rule and the turn clause — nine in the audit, which is the
     // run that used to end at 8 with no 7 above it and now carries the component-boundary check, and
     // three in the closing invariants, which this configuration reaches because it is multi-facing.
     // The contract's fixed items went from five to six when the text ban split off the annotation
@@ -688,8 +688,9 @@ describe('generatePrompt — numbered lists', () => {
     // carrying both could not be made conditional at all. Each list then gained the canvas shape as
     // its second entry, which is why both figures moved together. The audit is ten now because the
     // key colour's reservation is checked beside the background item; in the contract that
-    // reservation continues the background item rather than numbering one of its own.
-    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([8, 10, 3]);
+    // reservation continues the background item rather than numbering one of its own. The contract
+    // is nine because the clause that a multi-facing component turns became its last item.
+    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([9, 10, 3]);
   });
 });
 
@@ -796,6 +797,79 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
       // spelling test is the thing the written-down article exists instead of.
       expect(contract, category).not.toContain(`do not belong to ${wrong} ${category}`);
     }
+  });
+});
+
+describe('generatePrompt — section 0’s render contract, as the image model receives it', () => {
+  /**
+   * Every gate that adds a numbered item or a paragraph to section 0, each switched on once. The
+   * pixel-art sheet with a parseable custom size is the one that emits the native grid, and a clay
+   * render is a validation pass.
+   */
+  const VARIANTS = [
+    {},
+    { palette: 'NES' },
+    { renderStyle: 'PIXEL_ART', resolutionProfile: 'CUSTOM', spriteTargetSize: '16 × 32 px' },
+    { renderStyle: 'CLAY_RENDER' },
+    { directionalMode: 'CORE_DIRECTIONAL_VARIANTS' },
+  ] as const satisfies readonly Partial<OutputConfig>[];
+
+  function numberedItems(prompt: string): string {
+    return renderContractOf(prompt).replaceAll(/\s+/g, ' ');
+  }
+
+  it('cites no section by number in the items, and keeps every rule for the reader below them', () => {
+    // The defect (issue #403): Sol was told to forward all of section 0 "as written", and the
+    // section cited other sections eight times and ended in a tripwire asking for a reply in text.
+    // The image model receives only what Sol forwards, so a citation there points at nothing.
+    const seen = new Set<string>();
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const targetModel of TARGET_MODEL_IDS) {
+        for (const variant of VARIANTS) {
+          const prompt = generatePrompt(
+            category,
+            defaultSubjectFor(category),
+            withOutput({ ...variant, targetModel }),
+          );
+          const items = numberedItems(prompt);
+          const where = `${category} / ${targetModel} / ${JSON.stringify(variant)}`;
+
+          expect(items, where).not.toMatch(/section \d/i);
+          for (const [gate, text] of [
+            ['series', '** The other sheets are generated separately'],
+            ['tripwire', 'Say so rather than resolving'],
+            ['precedence', 'Where two instructions pull against each other'],
+            ['validation pass', 'This sheet’s render style is a validation pass'],
+            ['exclusions', 'outranks every attribute that asks for the same visible element'],
+          ] as const) {
+            expect(items, `${where}: ${gate}`).not.toContain(text);
+            if (prompt.includes(text)) seen.add(gate);
+          }
+          for (const [gate, text] of [
+            ['native grid', `“${NATIVE_GRID_HEADING}” states the grid`],
+            ['palette', 'comes from the palette this specification fixes'],
+            ['turns', 'is one component, drawn once per direction'],
+            ['lettering', 'are the **only** lettering'],
+          ] as const) {
+            if (items.includes(text)) seen.add(gate);
+          }
+        }
+      }
+    }
+    // Guards the sweep against passing vacuously: every gate it exists to cover was reached.
+    expect([...seen].sort()).toStrictEqual(
+      [
+        'exclusions',
+        'lettering',
+        'native grid',
+        'palette',
+        'precedence',
+        'series',
+        'tripwire',
+        'turns',
+        'validation pass',
+      ].sort(),
+    );
   });
 });
 
@@ -1882,14 +1956,13 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     // stated in neither — it lived only in section 3, a quarter of the way down a prompt several
     // thousand tokens long.
     // This is the hoist, not a third copy: section 3 still owns how far each turn goes.
+    // It is a numbered item rather than a paragraph after them, because the numbered items are the
+    // part of section 0 Sol forwards to the image tool, and this is the clause the renderer needs.
     const prompt = generatePrompt('CHARACTER', SUBJECT, CORE);
-    const contract = prompt.slice(
-      prompt.indexOf('## 0. NON-NEGOTIABLE OUTPUT CONTRACT'),
-      prompt.indexOf('## 1. SUBJECT DEFINITION'),
-    );
+    const contract = renderContractOf(prompt).replaceAll(/\s+/g, ' ');
 
     expect(contract).toMatch(
-      /\*\*A component the inventory lists in more than one direction is one\s+component/,
+      /\d+\. A component the inventory lists in more than one direction is one component/,
     );
     expect(contract).toContain('never one view repeated, never a mirrored copy');
   });
@@ -2956,9 +3029,9 @@ describe('generatePrompt — the machine and its palette', () => {
     const withPalette = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'NES' }));
     const without = generatePrompt('CHARACTER', SUBJECT, OUTPUT);
 
-    expect(withPalette).toContain('comes from the palette section 2 fixes');
+    expect(withPalette).toContain('comes from the palette this specification fixes');
     expect(withPalette).toContain('is one the palette in section 2 permits');
-    expect(without).not.toContain('palette section 2 fixes');
+    expect(without).not.toContain('palette this specification fixes');
     expect(without).not.toContain('palette in section 2 permits');
   });
 
