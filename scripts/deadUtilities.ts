@@ -52,10 +52,15 @@ import { appMarkup, sourceText, tailwindScanned } from './sourceFiles.ts';
  * is a candidate to the scanner exactly as a sentence is, and there is no more reason to rename one
  * than to reword the other.
  *
+ * `transform` is the quantiser’s own word: the work that turns a sheet into its
+ * quantised result is *the transform* across its hooks, stores, worker and comments. Until issue
+ * #306 cut it, a sentence in one tooltip was the only place outside a comment that spelled it, which
+ * is all that had kept the rule it emits from being reported.
+ *
  * They are admissible because none of them is a class this project bans. Each is an unremarkable
  * Tailwind utility that a component could reach for and be right, so nothing hides behind the
  * exemption — which is the property that separates this list from the fill that opened the docblock
- * above, and the test an eighth entry has to pass.
+ * above, and the test a new entry has to pass.
  *
  * **An entry cannot be checked for having gone vacuous, and that is a property of where it lives.**
  * Tailwind reads `scripts/` along with everything else, so these strings are themselves candidates:
@@ -71,6 +76,7 @@ export const PROSE_COLLISIONS: readonly string[] = [
   'lowercase',
   'sepia',
   'shrink',
+  'transform',
 ];
 
 /**

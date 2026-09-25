@@ -31,7 +31,7 @@ describe('the colour budget guidance', () => {
 
     if (reduction === null) {
       expect(OUTPUT_TOOLTIPS.paletteLimit).toMatch(
-        new RegExp(`leaves an? ${limit} sheet’s colours as they arrived`),
+        new RegExp(`leaves an? \`${limit}\` sheet’s colours as they arrived`),
       );
       return;
     }
@@ -42,7 +42,7 @@ describe('the colour budget guidance', () => {
     if (reduction.kind !== 'MAX_COLORS') return;
 
     expect(OUTPUT_TOOLTIPS.paletteLimit).toMatch(
-      new RegExp(`\\b${String(reduction.maxColors)} (?:colours chosen from that sheet )?under ${limit}\\b`),
+      new RegExp(`\\b${String(reduction.maxColors)} (?:colours chosen from that sheet )?under \`${limit}\``),
     );
   });
 });

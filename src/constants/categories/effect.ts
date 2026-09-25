@@ -30,7 +30,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'species',
       label: 'Effect Type',
       tooltip:
-        'What the effect *is*, which decides what every frame of the sequence is drawn as — a one-shot explosion, a muzzle flash and a looping portal are three different animations. ' +
+        'What the effect _is_, which decides what every frame of the sequence is drawn as. A one-shot explosion, a muzzle flash and a looping portal are three different animations.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS +
         ' Every type is drawn across the same number of frames.',
       options: [
@@ -52,7 +52,8 @@ export const EFFECT: CategoryDefinition = {
       key: 'gender',
       label: 'Element / Energy Class',
       tooltip:
-        'What the effect is made of, said as energy rather than as matter. It is the strongest single lever on colour, edge quality and how the light falls off — frost holds hard crystalline edges and a narrow hue range, fire spreads soft and spans half the warm spectrum — so stating it separately from the palette keeps the two from contradicting each other.',
+        'What the effect is made of, described as energy rather than matter. It is the strongest single lever on colour, edge quality and how the light falls off: frost holds hard crystalline edges and a narrow hue range, while fire spreads soft across half the warm spectrum.\n\n' +
+        'Stating it apart from the palette keeps the two from contradicting each other.',
       options: [
         'Fire & Ember',
         'Ice & Frost',
@@ -73,7 +74,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'age',
       label: 'Intensity Tier',
       tooltip:
-        'How much force this instance of the effect carries. A game usually ships one effect at three strengths, and the tiers have to be tellable apart at a glance while still reading as the same effect — which is a decision about scale, frame count and core brightness, not about redesigning the thing.',
+        'How much force this instance of the effect carries. A game often ships one effect at three strengths, and the tiers must be easy to tell apart while still reading as the same effect. That is a matter of scale, frame count and core brightness, not a redesign.',
       options: [
         'Minor / Glancing',
         'Standard Hit',
@@ -89,7 +90,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'role',
       label: 'Gameplay Role',
       tooltip:
-        'What the effect is telling the player, which governs its timing more than its look does. A telegraph has to be legible *before* anything happens and holds a readable shape for several frames; an impact confirmation has to land in two and get out of the way of the thing it just hit.',
+        'What the effect is telling the player, which governs its timing more than its look. A telegraph must be legible _before_ anything happens and holds a readable shape for several frames; an impact confirmation lands in two and gets out of the way.',
       options: [
         'Telegraph / Wind-Up',
         'Impact Confirmation',
@@ -108,7 +109,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'setting',
       label: 'World & Genre',
       tooltip:
-        'The fiction the whole effect library belongs to. It aligns the vocabulary across every effect at once — a grounded military game and a high-fantasy one disagree about whether a hit spark may carry runes at all, and mixing the two reads as two games sharing a screen.',
+        'The fiction the whole effect library belongs to. It aligns the vocabulary across every effect at once: a grounded military game and a high-fantasy one disagree about whether a hit spark may carry runes at all.',
       options: [
         'High Fantasy Magic',
         'Deep-Space Sci-Fi',
@@ -126,7 +127,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'build',
       label: 'Scale & Coverage',
       tooltip:
-        'How much of the screen the effect occupies at its widest frame. Stating it explicitly is what stops a hit spark and a cataclysm arriving the same size — and it is the extent every frame has to fit inside, since a sheet whose peak frame overruns its cell cannot be cut apart.',
+        'How much of the screen the effect covers at its widest frame. Stating it stops a hit spark and a cataclysm arriving at the same size, and it is the extent every frame must fit inside, since a peak frame that overruns its cell cannot be cut apart.',
       options: [
         'Point Spark',
         'Actor-Sized Burst',
@@ -142,7 +143,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'silhouette',
       label: 'Core Shape Language',
       tooltip:
-        'The outline the effect grows along. At sprite scale it is the whole read — a radial burst and a directed cone are still distinguishable at 32 px long after the ember detail is gone — and it is also what tells the player where the force came from and where it is going.',
+        'The outline the effect grows along. At sprite scale it is the whole read, since a radial burst and a directed cone stay distinct at 32 px long after the ember detail is gone. It also shows the player where the force came from and where it is going.',
       options: [
         'Radial Burst',
         'Directed Cone',
@@ -162,7 +163,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'face_head',
       label: 'Focal Core',
       tooltip:
-        'The brightest point the eye lands on, and the anchor every frame is registered against. An effect without one reads as a smear: the core is what stays put while the rest expands, so it is the landmark a player tracks and the reference an animator aligns the cells by.',
+        'The brightest point the eye lands on, and the anchor every frame is registered against. The core stays put while the rest expands, so it is the landmark a player tracks and the reference an animator aligns the cells by. Without one, an effect reads as a smear.',
       options: [
         'Hot White Centre',
         'Dense Molten Core',
@@ -178,7 +179,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Frame Assembly Base',
       tooltip:
-        'How the sequence divides in time — the equivalent of the part split every other category makes in space. It tells the generator what the first and last frames have to do: a loop’s final frame must read back into its first with no seam, where a one-shot’s simply ends. ' +
+        'How the sequence divides in time, as the part split does in space for every other category. It tells the generator what the first and last frames must do: a loop’s final frame reads back into its first with no seam, where a one-shot simply ends.\n\n' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'One-Shot Burst Sequence',
@@ -194,7 +195,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'clothing',
       label: 'Secondary Layer',
       tooltip:
-        'What trails the core and outlives it — smoke, debris, sparks. Painted into the frames rather than drawn as a separate piece, and it is what carries the tail of the sequence: the flash is over in three frames and the smoke it left is still clearing eight later, so this is what those last frames have in them.',
+        'What trails the core and outlives it: smoke, debris, sparks. It is painted into the frames rather than drawn as a separate piece, and it fills the tail of the sequence, since the flash is over in three frames and its smoke is still clearing eight frames later.',
       options: [
         'Smoke & Soot Plume',
         'Flying Debris Chunks',
@@ -213,7 +214,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'worn_details',
       label: 'Surface Motifs',
       tooltip:
-        'The marks carried inside the effect’s own shape — glyphs, filaments, banding. Each costs palette budget and disappears first at small sizes, so a few bold motifs that survive downscaling carry further than fine texture that turns to noise.',
+        'The marks carried inside the effect’s own shape: glyphs, filaments, banding. Each costs palette budget and disappears first at small sizes, so a few bold motifs carry further than fine texture that turns to noise.',
       options: [
         'Runic Glyphs & Sigils',
         'Arcing Filaments',
@@ -231,7 +232,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant colours of the effect’s body — what it is identified by against whatever it plays over. Two colours with a clear value gap are what keep it legible on both a dark cave floor and a bright snowfield, which a single mid-tone never manages.',
+        'The dominant colours of the effect’s body, by which it is identified against whatever it plays over. Two colours with a clear value gap keep it legible on both a dark cave floor and a bright snowfield, which a single mid-tone never manages.',
       options: [
         'Ember Orange #F97316 & Deep Red',
         'Frost Blue #38BDF8 & Pale White',
@@ -249,7 +250,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The hottest and coolest extremes — the core flash, the spark tips, the scorch left behind. ' +
+        'The hottest and coolest extremes: the core flash, the spark tips, the scorch left behind. ' +
         HEX_CODE_PINS_THE_HUE,
       options: [
         'Core Flash White #FFFFFF',
@@ -268,7 +269,8 @@ export const EFFECT: CategoryDefinition = {
       key: 'materials',
       label: 'Emission Medium',
       tooltip:
-        'How the effect reads as light: additive glow has no dark side and cannot be occluded, opaque shapes can be, and refraction shows what is behind it. It decides whether the sheet is usable under the engine’s own blend mode at all — an additive effect painted with opaque black edges keys out as a hole.',
+        'How the effect reads as light. Additive glow has no dark side and cannot be hidden behind anything, opaque shapes can be, and refraction shows what is behind it.\n\n' +
+        'This decides whether the sheet works under the engine’s own blend mode at all: an additive effect painted with opaque black edges keys out as a hole.',
       options: [
         'Additive Glow, No Opaque Mass',
         'Opaque Painted Shapes',
@@ -286,7 +288,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping everything except the effect off the sheet. The source is the usual offender — asked for a muzzle flash, a generator draws the gun — and so is motion blur, which smears past a frame’s own bounds and destroys the cell alignment an atlas depends on.',
+        'Negative rules that keep everything except the effect off the sheet. The source is the usual offender, since a generator asked for a muzzle flash draws the gun. Motion blur is another: it smears past a frame’s bounds and breaks the cell alignment an atlas depends on.',
       options: [
         'No character, hand or weapon in frame',
         'No ground plane or cast shadow',
@@ -302,7 +304,8 @@ export const EFFECT: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Additional Elements',
       tooltip:
-        'Extra pieces beyond the sequence itself — a shockwave ring, a scorch decal, loose debris a particle system scatters — each isolated into its own sprite slot so the engine can time it independently. Comma-separated, with ×N for how many of each: “Shockwave Ring ×1, Ember Cluster ×2” adds three components to the inventory and to the sheet’s stated count.',
+        'Extra pieces beyond the sequence itself, such as a shockwave ring, a scorch decal or loose debris for a particle system, each isolated in its own sprite slot so the engine can time it on its own.\n\n' +
+        'List them with commas and `×N` for how many of each: “Shockwave Ring ×1, Ember Cluster ×2” adds three components to the inventory and to the sheet’s stated count.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Shockwave Ring ×1, Ember Cluster ×2',

@@ -60,7 +60,8 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'species',
       label: 'Portrait Subject',
       tooltip:
-        'Who the portrait is of. It fixes the head shape, the skin or hide, and how far the face may depart from a human one before the expressions stop reading — a beak and a muzzle carry a smile very differently from a mouth, and a sheet that is not told which it is drawing tends to split the difference. The augmented entries differ in how much face is left: an augmented human still expresses with skin, where a full conversion expresses with plating and lights, and stating which decides whether the set can carry a smile at all. ' +
+        'Who the portrait is of. It fixes the head shape, the skin or hide, and how far the face may depart from a human one before the expressions stop reading, since a beak or a muzzle carries a smile differently from a mouth.\n\n' +
+        'Of the augmented values, `Cyborg & Augmented Human` still expresses with skin, where `Full Conversion Cyborg` expresses with plating and lights.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Human',
@@ -93,7 +94,7 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'gender',
       label: 'Gender Presentation',
       tooltip:
-        'How the subject presents, which the generator reads for jaw, brow and neck as much as for anything else. Leave it androgynous where the design should not settle it — that reads as a deliberate choice, where an unstated one is silently answered for you.',
+        'How the subject presents, which the generator reads for jaw, brow and neck as much as anything else. Choose androgynous where the design should not settle it; left unstated, the generator answers the question for you.',
       options: [
         'Male',
         'Female',
@@ -110,7 +111,8 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'age',
       label: 'Apparent Age',
       tooltip:
-        'How old the face looks. A portrait is read closer than any other art this app composes for, so age is carried by detail a sprite never shows — the set of the eyes, the slackness of the jaw, the lines that deepen when the expression changes. The last two entries state a face whose age has been interfered with, which is worth saying outright: clinic-smooth skin over a worn-out body is a design, and a generator left to infer it simply picks one age and holds it.',
+        'How old the face looks. A portrait is seen closer than a sprite, so age is carried by fine detail: the set of the eyes, the slackness of the jaw, the lines that deepen as the expression changes.\n\n' +
+        '`Clinically Rejuvenated` and `Prematurely Worn & Burnt Out` describe a face whose age has been interfered with. Say so outright, because a generator left to infer it picks one age and holds it.',
       options: [
         'Child',
         'Adolescent',
@@ -128,7 +130,7 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'role',
       label: 'Narrative Role',
       tooltip:
-        'What this person is to the player. Role is what decides where the eyes go and how the shoulders sit — a merchant meets the player’s gaze and an antagonist looks down at it — and stating it is cheaper than describing the same thing pose by pose.',
+        'What this person is to the player. Role decides where the eyes go and how the shoulders sit: a merchant meets the player’s gaze and an antagonist looks down at it. Stating it is cheaper than describing the same thing pose by pose.',
       options: [
         'Player Avatar',
         'Party Member & Ally',
@@ -163,7 +165,8 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'setting',
       label: 'World & Era',
       tooltip:
-        'The world this face belongs to. It settles the clothing at the shoulders, the grooming and the jewellery all at once, which is most of what separates two portraits that share a bone structure. The near-future entries are deliberately several rather than one: a neon sprawl, a corporate arcology, a rain-slick noir street and a recovered post-cyberpunk city are four wardrobes and four lighting schemes, and “cyberpunk” on its own is answered as whichever of them the generator has seen most of.',
+        'The world this face belongs to. It settles the clothing at the shoulders, the grooming and the jewellery at once, which is most of what separates two portraits sharing a bone structure.\n\n' +
+        'The near-future values are several on purpose: a neon sprawl, a corporate arcology and a rain-slick noir street are different wardrobes and lighting. “Cyberpunk” alone gets whichever the generator has seen most.',
       options: [
         'High Fantasy',
         'Grim Dark Fantasy',
@@ -200,7 +203,8 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'build',
       label: 'Framing & Crop',
       tooltip:
-        'How much of the person the frame holds, measured from the top of the head down. This is the single most important field on the sheet: a dialogue box wants a head and shoulders, a party roster wants a bust, and a title screen wants a half body — and a set drawn to two different crops cannot be swapped one for another at runtime. Every value here holds the whole face, because both sheets draw the mouth: one as part of each expression, the other as eight pieces of its own.',
+        'How much of the person the frame holds, measured from the top of the head down. It is the most important field on the sheet: a dialogue box wants head and shoulders, a party roster a bust, a title screen a half body.\n\n' +
+        'A set drawn to two crops cannot be swapped at runtime. Every value holds the whole face, because both sheets draw the mouth: one inside each expression, the other as eight pieces of its own.',
       options: [
         'Head Only',
         'Head And Shoulders',
@@ -215,7 +219,8 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'silhouette',
       label: 'Head Turn & Pose',
       tooltip:
-        'Which way the head and shoulders are turned inside the frame, and how they are held. This is the subject’s own pose, not the camera — the sheet is drawn straight on whatever this says — and it has to hold across every expression, because a head that turns between two expressions cannot be cut to the same box. So no value here hides the face, wears one of the feelings, or fixes a brow, an eye or a mouth: each of those leaves a sheet unable to draw the pieces it was asked for.',
+        'Which way the head and shoulders are turned inside the frame, and how they are held. This is the subject’s own pose, not the camera, and it must hold across every expression, since a head that turns between two expressions cannot be cut to the same box.\n\n' +
+        'No value hides the face, wears one of the feelings, or fixes a brow, an eye or a mouth: each would leave the sheet unable to draw the pieces it was asked for.',
       options: [
         'Facing The Viewer, Level',
         'Slight Three-Quarter Turn',
@@ -236,7 +241,8 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'face_head',
       label: 'Facial Features & Hair',
       tooltip:
-        'The face itself and what frames it — the eyes, the nose, the mouth, the hair and whatever grows on the jaw. On a portrait these are the subject rather than a detail of it, so it is worth being specific: this is the field the likeness actually lives in. An implant named here is part of that likeness and has to be drawn identically in every expression, which is why the chrome entries say where it sits rather than only that there is some.',
+        'The face itself and what frames it: eyes, nose, mouth, hair and whatever grows on the jaw. On a portrait these are the subject, and the likeness lives here, so be specific.\n\n' +
+        'An implant named here is part of the likeness and is drawn identically in every expression, which is why the chrome values say where it sits.',
       options: [
         'Sharp Angular Features, Short Hair',
         'Soft Rounded Features, Long Hair',
@@ -278,16 +284,18 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Portrait Assembly Base',
       tooltip:
-        'How the set is cut, and it decides which sheet you get. A flat portrait redraws the whole head for each feeling, and the sheet is twelve finished drawings. A layered set draws the head once with its brow, eye and mouth regions left clear, and the sheet is that head beside the pieces that swap over it — which is how a dialogue system gets hundreds of faces out of a handful of sprites. Choose by how many expressions the game needs, not by how the art looks. ' +
-        ASSEMBLY_BASE_CHOOSES_THE_SHEETS +
-        ' Extra Expressions adds further pieces to whichever of the two you pick.',
+        'How the set is cut, which decides the sheet you get:\n\n' +
+        '- A _flat_ portrait redraws the whole head for each feeling, so the sheet is twelve finished drawings.\n' +
+        '- A _layered_ set draws the head once with its brow, eye and mouth regions left clear, beside the pieces that swap over it. A dialogue system gets hundreds of faces from a handful of sprites this way.\n\n' +
+        'Choose by how many expressions the game needs, not by how the art looks. Extra Expressions adds pieces to either. ' +
+        ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: ['Single Flat Portrait Per Expression', 'Shared Head With Swappable Brows, Eyes And Mouths'],
     },
     {
       key: 'clothing',
       label: 'Garments At The Shoulders',
       tooltip:
-        'What the crop actually shows of what the subject is wearing — a collar, a gorget, a pauldron, a hood. Only the part inside the frame matters here, and describing a whole outfit is wasted budget on a sheet cropped at the chest.',
+        'What the crop shows of what the subject is wearing: a collar, a gorget, a pauldron, a hood. Only the part inside the frame matters, so describing a whole outfit is wasted on a sheet cropped at the chest.',
       options: [
         'Bare Shoulders',
         'Simple Linen Collar',
@@ -326,7 +334,7 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'worn_details',
       label: 'Marks & Adornment',
       tooltip:
-        'What the skin and hair carry — scars, tattoos, paint, piercings, circuitry. On a portrait these are the details a player remembers a character by, and they have to be drawn identically in every expression or the set reads as several different people.',
+        'What the skin and hair carry: scars, tattoos, paint, piercings, circuitry. Players remember a character by these, and they must be drawn identically in every expression or the set reads as several people.',
       options: [
         'Unmarked Skin',
         'Battle Scars Across The Face',
@@ -365,7 +373,7 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant colours of the portrait — skin, hair and the largest garment. These are what the character is recognised by at roster size, where the face itself is only a few pixels across.',
+        'The dominant colours of the portrait: skin, hair and the largest garment. They are what the character is recognised by at roster size, where the face is only a few pixels across.',
       options: [
         'Warm Tan Skin & Chestnut Hair',
         'Fair Skin & Ash Blonde Hair',
@@ -391,7 +399,7 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The one or two colours carried by the eyes, the jewellery and the trim — the smallest areas on the portrait and the ones the eye goes to first. ' +
+        'The one or two colours in the eyes, the jewellery and the trim, which are the smallest areas on the portrait and the first the eye goes to. ' +
         HEX_CODE_PINS_THE_HUE,
       options: [
         'Amber Eyes #F59E0B',
@@ -416,7 +424,7 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'materials',
       label: 'Surface Materials',
       tooltip:
-        'What the surfaces are and how light reads off them: skin scatters and stays soft, plate takes a hard specular edge, and wet eyes carry the only true highlight on most faces. It is what keeps a portrait from reading as one flat painted mass.',
+        'What the surfaces are and how light reads off them: skin scatters and stays soft, plate takes a hard specular edge, and wet eyes carry the only true highlight on most faces. It keeps a portrait from reading as one flat mass.',
       options: [
         'Soft Skin, Matte Cloth & Wet Eyes',
         'Weathered Hide & Coarse Wool',
@@ -441,7 +449,8 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping the dialogue system’s job off the sheet. The name plate is the one that matters most: a portrait with a name painted beside it serves one character in one language, and the box the engine draws would then sit over the top of it. The last four are what a near-future look invites onto a portrait — city glow, an interface overlay, a glitch pass and the weather of the street it was drawn on. Each is something an engine paints for itself at runtime, and baked into the sprite none of them can be turned off again.',
+        'Negative rules that keep the dialogue system’s job off the sheet. The name plate matters most: a portrait with a name painted beside it serves one character in one language, and the engine’s own box would sit over it.\n\n' +
+        'The neon, interface, glitch and haze rules cover what a near-future look invites. An engine paints each of those at runtime, and once baked into the sprite none can be turned off.',
       options: [
         'No name plate, caption or speech bubble',
         'No background scene behind the head',
@@ -462,7 +471,8 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Extra Expressions',
       tooltip:
-        'Further expressions or overlays beyond the ones the sheet already lists, each isolated into its own sprite slot. Comma-separated, with ×N for how many of each: “Blush Overlay ×1, Tear Streaks ×2” adds three components to the inventory and to the sheet’s stated count.',
+        'Further expressions or overlays beyond those the sheet already lists, each isolated in its own sprite slot.\n\n' +
+        'List them with commas and `×N` for how many of each: “Blush Overlay ×1, Tear Streaks ×2” adds three components to the inventory and to the sheet’s stated count.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Blush Overlay ×1, Sweat Drop ×1',

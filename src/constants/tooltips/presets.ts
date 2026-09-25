@@ -7,40 +7,48 @@
  */
 export const PRESET_ACTION_TOOLTIPS = {
   savePresetName:
-    'The name this preset is saved under. It is what you will pick it out of its project by, so something describing the subject and the treatment — “Knight, eight-way cut-out rig” — is worth more later than “test 3”. Names only have to be different inside one project: reusing one this project already holds updates that preset rather than adding a second, and the button beside this says which of the two it is about to do.',
+    'The name this preset is saved under, and what you will pick it out of its project by. Something describing the subject and the treatment, such as “Knight, eight-way cut-out rig”, is worth more later than “test 3”.\n\n' +
+    'Names only have to differ inside one project. Reusing one this project already holds updates that preset rather than adding a second, and the button beside this says which it is about to do.',
 
   savePresetDescription:
-    'A sentence saying what this configuration is for, shown under its name on the Projects tab — “Eight-way overworld rig for the town scenes” tells you in a month what a name on its own will not. It is optional, and a preset saved without one shows its subject and setting instead. Naming a preset the chosen project already holds fills this in with that preset’s own description, so updating it edits what is in front of you rather than quietly replacing it.',
+    'A sentence saying what this configuration is for, shown under its name on the Projects tab. It is optional, and a preset saved without one shows its subject and setting instead.\n\n' +
+    'Naming a preset the chosen project already holds fills this in with that preset’s own description, so updating it edits what is in front of you rather than quietly replacing it.',
 
   savePreset:
-    'Stores the studio exactly as it stands — the category, every subject field and every output setting — under the name beside this, in the project the dropdown names. It reads as Update instead when that project already holds a preset of that name, and then overwrites that one; a preset of the same name in another project is left alone. Built-in presets are never touched. Saved presets live in this browser’s own storage, so exporting your library from the Projects tab is what gets them onto another machine.',
+    'Stores the studio exactly as it stands (the category, every subject field and every output setting) under the name beside this, in the project the dropdown names.\n\n' +
+    'It reads as **Update** when that project already holds a preset of that name, and then overwrites that one; a preset of the same name in another project is left alone. Built-in presets are never touched.\n\n' +
+    'Saved presets live in this browser’s own storage, so export your library from the Projects tab to take them to another machine.',
 
   searchPresets:
-    'Narrows the built-in library to presets matching what you type, across their names, descriptions, subjects and the settings on each card, so “isometric” or “cut-out” finds them as readily as a name does. It filters every collection at once, and the number beside each collection in the list says how many of its presets match. Your own saved presets are not in this library and are not searched — they are on the Projects tab, under the project each was filed in. Escape clears the box.',
+    'Narrows the built-in library to presets matching what you type, across their names, descriptions, subjects and settings, so “isometric” or “cut-out” finds them as readily as a name does. It filters every collection at once, and each collection’s count says how many of its presets match.\n\n' +
+    'Your own saved presets are not searched: they are on the Projects tab, under the project each was filed in. Escape clears the box.',
 
   clearSearch:
-    'Empties the search box and puts the whole library back, returning to the collection you last chose from the list — a search that found its match somewhere else moves the view while it is running, and this is what takes you back. Escape in the box does the same thing.',
+    'Empties the search box and puts the whole library back, returning to the collection you last chose. A search that found its match elsewhere moves the view while it runs, and this takes you back. Escape in the box does the same thing.',
 
   loadPreset:
-    'Replaces the entire studio configuration with this preset’s — the category, every subject field and every output setting — and takes you to the Studio, where the prompt has been recompiled from it. What was in the studio is recorded in the Subject history panel on that tab first, so one Undo brings the whole of it back. A preset is a starting point rather than a finished answer: change whatever it got wrong for your subject afterwards.',
+    'Replaces the entire studio configuration with this preset’s and takes you to the Studio, where the prompt has been recompiled from it.\n\n' +
+    'What was in the studio is recorded in the Subject history panel on that tab first, so one Undo brings the whole of it back. A preset is a starting point: change whatever it got wrong for your subject afterwards.',
 
   editPresetDetails:
-    'Opens the name and the description of this preset for editing, in place of its title. Only those two change — the configuration behind them is untouched, and nothing in the studio moves, which makes this the way to correct a sentence without saving over the preset with whatever you currently have open. A name another preset in this same project uses is refused, because saving under a name that exists there overwrites it, and two presets with one name in one project would make which of them a mystery.',
+    'Opens this preset’s name and description for editing, in place of its title. The configuration behind them is untouched and nothing in the studio moves, so you can correct a sentence without saving over the preset.\n\n' +
+    'A name another preset in this same project uses is refused, because two presets with one name in one project could not be told apart.',
 
   deletePreset:
-    'Deletes this preset, after asking once. It is one of yours rather than a built-in, so nothing else holds a copy: unless it is in a library pack you exported, deleting it is the end of that configuration. Nothing in the studio changes — a preset you had loaded stays loaded, so saving it again under the same name is the way back if you press this by mistake.',
+    'Deletes this preset, after asking once. Nothing else holds a copy unless it is in a library pack you exported.\n\n' +
+    'Nothing in the studio changes: a preset you had loaded stays loaded, so saving it again under the same name is the way back if you press this by mistake.',
 
   detailsNameBox:
     'The preset’s new name. Enter saves both boxes and Escape leaves the preset as it was. The configuration stored under it is untouched either way, and nothing in the studio moves.',
 
   detailsDescriptionBox:
-    'The sentence this preset carries under its name on the Projects tab. Leaving it empty is fine — the row names the subject and the setting instead. Enter saves both boxes and Escape abandons the edit; neither the stored configuration nor the studio is affected either way.',
+    'The sentence this preset carries under its name on the Projects tab. Leaving it empty is fine, because the row names the subject and the setting instead. Enter saves both boxes and Escape abandons the edit; neither the stored configuration nor the studio is affected.',
 
   confirmDetails:
-    'Stores the name and the description together. It is refused if another of your presets already uses that name, and the boxes stay open so you can pick a different one; the configuration behind the preset is not touched either way.',
+    'Stores the name and the description together. It is refused if another of your presets already uses that name, and the boxes stay open so you can pick a different one. The configuration behind the preset is not touched either way.',
 
   confirmDeletePreset:
-    'Deletes this preset for good. There is no undo, and no other copy of it unless you have exported your library. The configuration currently in the studio is untouched either way.',
+    'Deletes this preset for good. **There is no undo**, and no other copy of it unless you have exported your library. The configuration currently in the studio is untouched either way.',
 
   cancelDeletePreset: 'Leaves the preset where it is and puts the card back to its ordinary buttons.',
 
@@ -64,5 +72,8 @@ export const PRESET_ACTION_TOOLTIPS = {
  * with a single carrier is a fact stated once in a file nothing else reads.
  */
 export function presetCollectionGuidance(label: string): string {
-  return `Shows the built-in presets written for the ${label} category. Loading any of them switches the studio to that category as well, so the field labels and option pools change with it. The count beside it is how many match the search, where one is running.`;
+  return (
+    `Shows the built-in presets written for the ${label} category.\n\n` +
+    'Loading any of them switches the studio to that category as well, so the field labels and option pools change with it. The count beside it is how many match the search, where one is running.'
+  );
 }

@@ -73,26 +73,38 @@ export const TEXTURE_FORMATS: readonly TextureFormat[] = TEXTURE_FORMAT_IDS.map(
 
 export const ATLAS_TOOLTIPS = {
   canvasSize:
-    'The dimensions of the finished texture every component gets packed into. Each cell size below is derived from it, so raising this buys resolution per component and costs graphics memory on every platform that loads the texture — 2048 px is the usual ceiling for mobile, 4096 px for desktop. Every size offered is a power of two, which is what keeps mipmapping and the older sampling paths available.',
+    'The size of the finished texture every component is packed into. Each cell size below is derived from it.\n\n' +
+    'A larger texture gives each component more resolution and costs more graphics memory on every platform that loads it. 2048 px is the usual ceiling for mobile and 4096 px for desktop. Every size is a power of two, which keeps mipmapping available.',
   padding:
-    'The gutter left around each cell, in pixels. It stops neighbouring cells bleeding into one another when the engine filters or mipmaps the texture — the symptom is a faint edge of the sprite next door appearing as the camera pulls back. 4 px survives a full mip chain; 0 px is only safe with point filtering and no mipmaps.',
+    'The gutter left around each cell, in pixels. It stops neighbouring cells bleeding into each other when the engine filters or mipmaps the texture, which shows as a faint edge of the next sprite as the camera pulls back.\n\n' +
+    'A 4 px gutter survives a full mip chain. 0 px is safe only with point filtering and no mipmaps.',
   memory:
-    'What this texture occupies in graphics memory once uploaded — the figure to budget against, not the size of the PNG on disk. Uncompressed is width × height × 4 bytes. Every 4 × 4 block format a 2D engine ships an atlas in — BC7, BC3/DXT5, ETC2 RGBA and ASTC 4 × 4 — stores each block of 16 texels in 16 bytes, so they all cost a quarter of that and differ only in which GPU accepts them. A full mip chain adds roughly a third again, and is what filtering needs to stop distant sprites shimmering.',
-  fit: 'Whether the component size the studio asks the generator for actually fits the cell this texture affords, and the largest whole-number scale it fits at. Whole numbers only: artwork placed at a fractional scale is resampled, which is exactly what destroys pixel art — so a component that only fits at 1.6× fits at 1×, and the rest of the cell is headroom.',
+    'What this texture occupies in graphics memory once uploaded. Budget against this figure, not the size of the PNG on disk.\n\n' +
+    '- **Uncompressed** is width × height × 4 bytes.\n' +
+    '- **Block compressed** formats (BC7, BC3/DXT5, ETC2 RGBA, ASTC 4 × 4) store each 4 × 4 block in 16 bytes, a quarter of that. They differ only in which GPU accepts them.\n\n' +
+    'A full mip chain adds roughly a third again, and filtering needs it to stop distant sprites shimmering.',
+  fit:
+    'Whether the component size the studio asks the generator for fits the cell this texture affords, and the largest whole-number scale it fits at.\n\n' +
+    'Only whole numbers count, because artwork placed at a fractional scale is resampled, and resampling destroys pixel art. A component that fits at 1.6× fits at 1×, and the rest of the cell is headroom.',
   componentCount:
-    'How many separately-drawn pieces the sheet is being asked for — the category plan for the chosen directional mode, plus any additional anatomy the subject names. It is the same number the prompt states as its done-condition, so the grid below is the grid the prompt would actually produce.',
+    'How many separately drawn pieces the sheet asks for: the category plan for the chosen directional mode, plus any extra anatomy the subject names. The prompt states the same number as its done-condition, so the grid below is the one the prompt would produce.',
   gridLayout:
-    'Columns × rows the components are laid into. The shape follows the sheet aspect ratio, so a 16:9 sheet is biased towards columns and a 9:16 sheet towards rows; the count is always at least the component count, which is where empty slots come from.',
+    'The columns × rows the components are laid into. The shape follows the sheet aspect ratio, so a 16:9 sheet leans towards columns and a 9:16 sheet towards rows. The grid holds at least the component count, and the cells left over are the empty slots.',
   cellSize:
-    'The pitch of one grid cell on the texture, before the bleed gutter. Divided by the grid’s longer axis, not its width — a grid taller than it is wide has to fit the texture downwards too.',
+    'The pitch of one grid cell on the texture, before the bleed gutter. It is the texture divided by the grid’s longer axis, not its width, because a grid taller than it is wide has to fit the texture downwards too.',
   usableBounds:
-    'The square a component actually has to itself, once the bleed gutter is removed from both sides of the cell. This is what a sprite has to fit inside, and it is what the fit check above measures against.',
+    'The square each component has to itself once the bleed gutter is removed from both sides of the cell. A sprite has to fit inside it, and the fit check above measures against it.',
   emptySlots:
-    'Cells the grid affords that no component lands in. The grid has to be rectangular, so a component count that is not a neat product leaves a short last row — texture that is uploaded, and paid for, holding nothing.',
+    'Cells in the grid that no component lands in. The grid has to be rectangular, so a component count that is not a neat product leaves a short last row: texture that is uploaded, and paid for, holding nothing.',
   usableShare:
-    'How much of the texture ends up inside a filled cell’s usable bounds. It prices every kind of waste at once: empty slots, the gutter around each cell, and the strip left over where the grid’s shorter axis stops short of the texture edge. A low figure with a wide or tall sheet aspect ratio is that last one — a square sheet packs a square texture better.',
+    'How much of the texture ends up inside a filled cell’s usable bounds. It counts every kind of waste at once:\n\n' +
+    '- empty slots\n' +
+    '- the gutter around each cell\n' +
+    '- the strip left where the grid’s shorter axis stops short of the texture edge\n\n' +
+    'A low figure with a wide or tall sheet aspect ratio is that last strip. A square sheet packs a square texture better.',
   packingPlan:
-    'The same figures drawn to scale, so the waste has a shape rather than only a price. The bright cells are components, the dim ones are slots the grid affords that nothing lands in, and the bare margin is texture the grid never reaches. It plans the atlas you repack the extracted artwork into. The prompt fixes the order the components are drawn in but never the number of rows and columns, so treat this as the packing you can choose rather than a picture of the sheet you will get back.',
+    'The same figures drawn to scale. Bright cells are components, dim cells are slots nothing lands in, and the bare margin is texture the grid never reaches.\n\n' +
+    'It plans the atlas you repack the extracted artwork into. The prompt fixes the order the components are drawn in but not the rows and columns, so treat this as a packing you can choose, not a picture of the sheet you will get back.',
 } as const;
 
 /**

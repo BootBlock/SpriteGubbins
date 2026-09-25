@@ -35,7 +35,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'species',
       label: 'Element Type',
       tooltip:
-        'Which widget this is. It decides what every piece is drawn as, because what a widget has to *do* fixes how it looks — a button has to read as pressable, a panel has edges that stretch, and a bar has a track its fill slides inside. ' +
+        'Which widget this is. What a widget has to _do_ decides how every piece is drawn: a button must read as pressable, a panel has edges that stretch, and a bar has a track its fill slides inside.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Button & Key Cap',
@@ -58,7 +58,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'gender',
       label: 'Emphasis Tier',
       tooltip:
-        'How loudly the widget speaks in the hierarchy. Tier is what a player reads before they read anything else on the screen, and stating it separately from the colours is what keeps a quiet secondary button from arriving as bright as the confirm beside it.',
+        'How loudly the widget speaks in the hierarchy. A player reads tier before anything else on the screen, and stating it apart from the colours keeps a quiet secondary button from arriving as bright as the confirm beside it.',
       options: [
         'Primary Call To Action',
         'Secondary / Supporting',
@@ -74,7 +74,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'age',
       label: 'Finish & Condition',
       tooltip:
-        'How much of a life the interface is meant to have had. A parchment menu and a field terminal are both worn, and they wear differently — so this is stated apart from the theme, which otherwise pulls every widget towards factory-new whatever world it sits in.',
+        'How much of a life the interface has had. A parchment menu and a field terminal both wear, but differently. Without this, the theme pulls every widget towards factory-new whatever world it sits in.',
       options: [
         'Crisp Factory-New',
         'Softly Worn Edges',
@@ -92,7 +92,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'role',
       label: 'Interface Role',
       tooltip:
-        'What pressing it does, or what it reports. Role governs the focal mark and the accent more than the frame does — a confirm and a cancel are usually the same body in two colours with two different glyphs, which is the cheapest way to get a whole set out of one design.',
+        'What pressing the widget does, or what it reports. Role governs the focal mark and the accent more than the frame: a confirm and a cancel are usually one body in two colours with two glyphs, which gets a whole set out of one design.',
       options: [
         'Confirm & Accept',
         'Cancel & Dismiss',
@@ -113,7 +113,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'setting',
       label: 'Interface Theme',
       tooltip:
-        'The design language the whole interface is drawn in. It aligns corner treatment, trim and material across every widget at once — carved stone and flat modern rarely share a screen without looking like two games bolted together.',
+        'The design language the whole interface is drawn in. It aligns corner treatment, trim and material across every widget at once, so the kit reads as one design.',
       options: [
         'Parchment & Ink Fantasy',
         'Carved Stone & Rune',
@@ -134,7 +134,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'build',
       label: 'Footprint & Density',
       tooltip:
-        'How much room the widget takes and how tightly its contents pack into it. Stating it explicitly is what stops a compact HUD counter and a full-screen dialogue box arriving at the same proportions — the failure that makes a generated kit look like one widget at six sizes.',
+        'How much room the widget takes and how tightly its contents pack. Stating it stops a compact HUD counter and a full-screen dialogue box arriving at the same proportions, the failure that makes a generated kit look like one widget at six sizes.',
       options: [
         'Compact & Tightly Packed',
         'Standard Touch Target',
@@ -151,7 +151,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'silhouette',
       label: 'Frame Profile & Corners',
       tooltip:
-        'The outline the widget is recognised by, and how much relief its edge carries. At interface scale the corner treatment and the raised-or-recessed read are the whole identity — they survive at 16 px where trim and surface motifs are long gone.',
+        'The outline the widget is recognised by, and how much relief its edge carries. At interface scale the corners and the raised or recessed read are its whole identity, and they survive at 16 px where trim and motifs do not.',
       options: [
         'Square Corners, Hard Edge',
         'Softly Rounded Corners',
@@ -170,7 +170,8 @@ export const INTERFACE: CategoryDefinition = {
       key: 'face_head',
       label: 'Focal Glyph',
       tooltip:
-        'The mark at the widget’s centre — where the eye lands first, and the only thing distinguishing two widgets that share a body. A drawn glyph, never a letter or a numeral: section 0 forbids text anywhere on the sheet, because a label is applied by the engine at runtime rather than baked into the atlas.',
+        'The mark at the widget’s centre: where the eye lands first, and all that tells apart two widgets sharing a body.\n\n' +
+        'It is a drawn glyph, never a letter or a numeral. The prompt forbids text anywhere on the sheet, because the engine applies a label at runtime rather than baking it into the atlas.',
       options: [
         'No Glyph — Blank Face',
         'Chevron & Directional Wedge',
@@ -197,7 +198,11 @@ export const INTERFACE: CategoryDefinition = {
       // `sheetPlans/assemblyBases.ts` (issue #283).
       label: 'Widget Assembly Base',
       tooltip:
-        'How the widget is cut into the pieces the engine builds it from. Choose by what those pieces have to do — a nine-slice keeps four fixed corners while its edges and centre repeat, a three-slice stretches on one axis only, a fixed piece never resizes at all, and a frame, fill and trim cut apart let a change of state redraw one piece and leave the rest. ' +
+        'How the widget is cut into the pieces the engine builds it from. Choose by what those pieces have to do:\n\n' +
+        '- A nine-slice keeps four fixed corners while its edges and centre repeat.\n' +
+        '- A three-slice stretches on one axis only.\n' +
+        '- A fixed piece never resizes.\n' +
+        '- A frame, fill and trim cut apart let a change of state redraw one piece and leave the rest.\n\n' +
         ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Frame, Fill & Trim Cut Apart',
@@ -217,7 +222,8 @@ export const INTERFACE: CategoryDefinition = {
       key: 'clothing',
       label: 'Ornament & Trim',
       tooltip:
-        'What is applied along the widget’s edge — rivets, scrollwork, piping, binding. Trim is drawn as its own geometry over the frame beneath it, so it is also the cheapest way to give one panel a rare and a common variant. Every kit sheet draws the corner ornament that carries it, so this names the treatment rather than whether you get the piece, and the pool offers no “none”: an untrimmed edge would delete the ornament that Widget Assembly Base’s own nine-slice-with-corner variant is built around.',
+        'What is applied along the widget’s edge: rivets, scrollwork, piping, binding. Trim is drawn as its own geometry over the frame, so it is also the cheapest way to give one panel a rare and a common variant.\n\n' +
+        'Every kit sheet draws the corner ornament that carries it, so this names the treatment, not whether you get the piece. There is no “none”, because an untrimmed edge would delete the ornament the Widget Assembly Base value `Nine-Slice With Fixed Corner Ornament` is built around.',
       options: [
         'Beaded Metal Rivets',
         'Filigree Corner Scrollwork',
@@ -235,7 +241,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'worn_details',
       label: 'Surface Motifs',
       tooltip:
-        'What the flat interior fields carry, if anything. Interface art is read at a glance over moving gameplay, so a quiet field is usually the right answer — and every motif costs palette budget that the glyph and the accent need more.',
+        'What the flat interior fields carry, if anything. Interface art is read at a glance over moving gameplay, so a quiet field is usually right, and every motif costs palette budget the glyph and the accent need more.',
       options: [
         'Clean Untextured Fields',
         'Woven Fabric Weave',
@@ -253,7 +259,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant frame and field colours — what the interface is identified by, and what gameplay has to stay legible against. Two colours with a clear value gap keep a panel readable over any scene it is drawn on top of.',
+        'The dominant frame and field colours, by which the interface is identified and against which gameplay must stay legible. Two colours with a clear value gap keep a panel readable over any scene beneath it.',
       options: [
         'Aged Parchment & Sepia Ink',
         'Slate #1E293B & Cool Grey',
@@ -271,8 +277,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The state and emphasis colour — what a hover, a fill or an alert is carried in. ' +
-        HEX_CODE_PINS_THE_HUE,
+        'The state and emphasis colour that carries a hover, a fill or an alert. ' + HEX_CODE_PINS_THE_HUE,
       options: [
         'Interface Cyan #22D3EE',
         'Confirm Green #10B981',
@@ -290,7 +295,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'materials',
       label: 'Surface Materials',
       tooltip:
-        'What the interface is notionally made of, and how light reads off it: brushed steel takes a broad soft sheen, parchment none at all, backlit acrylic emits rather than reflects. It is what separates the frame from its fill under flat neutral lighting.',
+        'What the interface is notionally made of, and how light reads off it: brushed steel takes a broad soft sheen, parchment none at all, backlit acrylic gives off its own light. Under flat neutral lighting it separates the frame from its fill.',
       options: [
         'Aged Parchment & Wax Seal',
         'Brushed Steel & Smoked Glass',
@@ -308,7 +313,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping the engine’s job off the atlas. Lettering is the one that matters most: a label, a count or a key name is drawn at runtime in the player’s own language, so a widget with one baked into it can only ever be used for that one string.',
+        'Negative rules that keep the engine’s job off the atlas. Lettering matters most: a label, a count or a key name is drawn at runtime in the player’s own language, so a widget with one baked in can only ever show that one string.',
       options: [
         'No lettering, numerals or captions',
         'No drop shadow behind any piece',
@@ -324,7 +329,8 @@ export const INTERFACE: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Extra States',
       tooltip:
-        'Further states or overlays beyond the ones the sheet already lists, each isolated into its own sprite slot so the engine can draw it over a widget that never changes. Comma-separated, with ×N for how many of each: “Focus Ring ×1, Cooldown Sweep ×2” adds three components to the inventory and to the sheet’s stated count.',
+        'Further states or overlays beyond those the sheet already lists, each isolated in its own sprite slot so the engine can draw it over a widget that never changes.\n\n' +
+        'List them with commas and `×N` for how many of each: “Focus Ring ×1, Cooldown Sweep ×2” adds three components to the inventory and to the sheet’s stated count.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Focus Ring ×1, Selected Fill ×1',

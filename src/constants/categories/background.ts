@@ -54,7 +54,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'species',
       label: 'Layer Type',
       tooltip:
-        'What the backdrop’s scenery is, which sets the shapes its pieces are drawn in: a sky is one unbroken gradient, a treeline is a broken profile, and a foreground occluder has gaps the player is seen through. ' +
+        'What the backdrop’s scenery is, which sets the shapes its pieces are drawn in: a sky is one unbroken gradient, a treeline a broken profile, and a foreground occluder has gaps the player is seen through.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Sky & Cloud Layer',
@@ -77,7 +77,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'gender',
       label: 'Depth Tier',
       tooltip:
-        'How far back this layer sits, which is the same thing as how far it moves when the camera does. Tier is what governs contrast and detail more than distance does — a far layer is desaturated towards the sky colour and carries almost no internal detail, and a layer drawn at full contrast at the back fights the playfield in front of it.',
+        'How far back this layer sits, which is also how far it moves when the camera does. Tier governs contrast and detail: a far layer is desaturated towards the sky colour with almost no internal detail, and a full-contrast back layer fights the playfield in front.',
       options: [
         'Furthest Sky Plane, Fixed',
         'Far Parallax, Slowest',
@@ -93,7 +93,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'age',
       label: 'Weather, Season & Time',
       tooltip:
-        'The conditions the scene is drawn under. It settles the sky, the palette and the haze together, and stating it apart from the world is what lets one setting ship as a dawn set and a storm set rather than being redrawn twice from scratch.',
+        'The conditions the scene is drawn under. It settles the sky, the palette and the haze together, and stating it apart from the world lets one setting ship as a dawn set and a storm set without redrawing it from scratch.',
       options: [
         'Clear Midday',
         'Golden Hour & Long Light',
@@ -115,7 +115,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'role',
       label: 'Scene Purpose',
       tooltip:
-        'What the backdrop is behind. Purpose is what decides how quiet the art has to be — a combat arena backdrop must lose to the sprites in front of it, where a title screen is the only thing on the screen and can carry the whole composition.',
+        'What the backdrop sits behind, which decides how quiet the art must be. A combat arena backdrop must lose to the sprites in front of it, where a title screen is all that is on screen and can carry the whole composition.',
       options: [
         'Establishing Vista',
         'Combat Arena Backdrop',
@@ -136,7 +136,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'setting',
       label: 'World & Era',
       tooltip:
-        'The world the scenery belongs to. It aligns architecture, vegetation and sky across every piece at once, which is most of what makes a stack of layers read as one place rather than as several.',
+        'The world the scenery belongs to. It aligns architecture, vegetation and sky across every piece at once, which is most of what makes a stack of layers read as one place.',
       options: [
         'High Fantasy Wilderness',
         'Grim Dark Ruin',
@@ -160,7 +160,8 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'build',
       label: 'Scene Proportions & Extent',
       tooltip:
-        'How much of the screen the backdrop fills, and how far a looping one runs before it repeats. A short repeat is cheap and gives itself away; a long one costs texture memory and hides the loop. A backdrop that never scrolls repeats nothing, so it takes a size alone. State it, because a generator left to choose returns whatever composition looked best and no repeat length at all.',
+        'How much of the screen the backdrop fills, and how far a looping one runs before it repeats. A short repeat is cheap and gives itself away; a long one costs texture memory and hides the loop.\n\n' +
+        'A backdrop that never scrolls takes a size alone. State it either way, because a generator left to choose returns whatever composition looked best and no repeat length at all.',
       options: [
         'One Screen Tall',
         'Short Repeat, One Screen Wide',
@@ -180,7 +181,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'silhouette',
       label: 'Skyline Profile',
       tooltip:
-        'The outline the scenery reads as against whatever is behind it. At a distance the profile is the whole identity — a jagged ridge, a flat plateau, a broken roofline — because everything inside it has been flattened towards one value by the haze.',
+        'The outline the scenery reads as against whatever is behind it. At a distance the profile is the whole identity, such as a jagged ridge, a flat plateau or a broken roofline, because haze flattens everything inside it towards one value.',
       options: [
         'Flat Level Horizon',
         'Rolling Soft Hills',
@@ -201,7 +202,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'face_head',
       label: 'Focal Landmark',
       tooltip:
-        'The one distinctive thing in the scene — a castle on the ridge, a moon, a wrecked ship. Both backdrop sheets draw it as a piece of its own, placed once over the layer it belongs to, because a landmark painted into a looping layer is recognised again on every screen.',
+        'The one distinctive thing in the scene: a castle on the ridge, a moon, a wrecked ship. Both backdrop sheets draw it as a piece of its own, placed once over its layer, because a landmark painted into a looping layer is recognised again on every screen.',
       options: [
         // Every sheet still orders a focal landmark beside this value, which issue #281 records.
         'No Landmark',
@@ -224,7 +225,10 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'anatomy',
       label: 'Layer Assembly Base',
       tooltip:
-        'How the backdrop is cut so the engine can move it. Choose by whether it repeats and along which axis — a seamless band loops along one axis for ever, a stacked set is several layers moved at different rates, and a single panel never repeats at all and is sized to the screen instead. ' +
+        'How the backdrop is cut so the engine can move it. Choose by whether it repeats, and along which axis:\n\n' +
+        '- A seamless band loops along one axis for ever.\n' +
+        '- A stacked set is several layers moved at different rates.\n' +
+        '- A single panel never repeats and is sized to the screen.\n\n' +
         ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Stacked Depth Layers',
@@ -243,7 +247,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'clothing',
       label: 'Applied Atmosphere',
       tooltip:
-        'What is laid over the scenery as its own separate piece — a fog bank, a rain veil, shafts of light, drifting motes. Kept apart from the layers beneath it so the engine can move it at a different rate or fade it out, which is the whole reason to draw it separately. ' +
+        'What is laid over the scenery as a separate piece: a fog bank, a rain veil, shafts of light, drifting motes. It is kept apart from the layers beneath so the engine can move it at a different rate or fade it out.\n\n' +
         ABSENT_OPTION_DROPS_THE_PIECES,
       options: [
         'Clear — No Overlay',
@@ -264,7 +268,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'worn_details',
       label: 'Surface Texture',
       tooltip:
-        'What the flat areas of the scenery carry, if anything. A background is looked past rather than at, so a quiet surface is usually the right answer — and every texture costs palette budget the playfield in front needs more.',
+        'What the flat areas of the scenery carry, if anything. A background is looked past rather than at, so a quiet surface is usually right, and every texture costs palette budget the playfield in front needs more.',
       options: [
         'Clean Untextured Fields',
         'Soft Painterly Blocking',
@@ -282,7 +286,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant colours of the backdrop — the sky and the largest mass beneath it. These have to sit far enough from the playfield’s own palette that a sprite never disappears against them, which is the failure a beautiful backdrop most often causes.',
+        'The dominant colours of the backdrop: the sky and the largest mass beneath it. Keep them far enough from the playfield’s own palette that a sprite never disappears against them, the failure a beautiful backdrop most often causes.',
       options: [
         'Dawn Rose & Pale Gold',
         'Clear Cobalt & Cloud White',
@@ -320,7 +324,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'materials',
       label: 'Surface Materials',
       tooltip:
-        'What the scenery is made of and how light reads off it at distance: wet stone holds a broad sheen, foliage scatters into a soft mass, and glass returns the sky rather than its own colour. It is what keeps three layers of the same value from merging into one.',
+        'What the scenery is made of and how light reads off it at distance: wet stone holds a broad sheen, foliage scatters into a soft mass, glass returns the sky rather than its own colour. It keeps three layers of the same value from merging.',
       options: [
         'Weathered Stone & Moss',
         'Timber, Thatch & Plaster',
@@ -340,7 +344,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping the playfield’s job off the backdrop. Playable geometry is the one that matters most: a platform painted into a far layer is one the player will try to stand on, and a ledge that is scenery is a bug report rather than a drawing.',
+        'Negative rules that keep the playfield’s job off the backdrop. Playable geometry matters most: a player will try to stand on a platform painted into a far layer, and a ledge that is only scenery becomes a bug report.',
       options: [
         'No playable platforms, ledges or collision geometry',
         'No characters, creatures or vehicles',
@@ -357,7 +361,8 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Extra Layers',
       tooltip:
-        'Further layers or overlays beyond the ones the sheet already lists, each isolated into its own sprite slot so the engine can move it at its own rate. Comma-separated, with ×N for how many of each: “Distant Birds ×2, Falling Leaf ×3” adds five components to the inventory and to the sheet’s stated count.',
+        'Further layers or overlays beyond those the sheet already lists, each isolated in its own sprite slot so the engine can move it at its own rate.\n\n' +
+        'List them with commas and `×N` for how many of each: “Distant Birds ×2, Falling Leaf ×3” adds five components to the inventory and to the sheet’s stated count.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Distant Birds ×2',

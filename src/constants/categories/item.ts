@@ -21,7 +21,7 @@ export const ITEM: CategoryDefinition = {
       key: 'species',
       label: 'Item Type',
       tooltip:
-        'What the item actually is: weapon, potion, armour, artefact. It decides the whole shape language — a rifle reads by its long barrel and stock, and a potion by its flask and stopper. ' +
+        'What the item is: weapon, potion, armour, artefact. It decides the whole shape language, so a rifle reads by its long barrel and stock and a potion by its flask and stopper.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Melee Weapon (Sword/Axe)',
@@ -50,7 +50,7 @@ export const ITEM: CategoryDefinition = {
       key: 'gender',
       label: 'Rarity / Tier',
       tooltip:
-        'The prestige tier, expressed visually rather than as a label. Gold trim, rune glow and artefact energy are what let a player rank a drop at a glance, before reading a word of its description.',
+        'The prestige tier, shown in the art rather than as a label. Gold trim, rune glow and artefact energy let a player rank a drop at a glance, before reading a word of its description.',
       options: [
         'Legendary / Artifact',
         'Epic Enchanted',
@@ -66,7 +66,7 @@ export const ITEM: CategoryDefinition = {
       key: 'age',
       label: 'Condition State',
       tooltip:
-        'Surface wear, scratching or overcharge. It is what separates a battlefield pickup from a shop item built to the same design, and it is worth varying across a set that shares one silhouette.',
+        'Surface wear, scratching or overcharge. It separates a battlefield pickup from a shop item of the same design, and it is worth varying across a set that shares one silhouette.',
       options: [
         'Pristine Forge Condition',
         'Battle-Scarred Veteran',
@@ -82,7 +82,7 @@ export const ITEM: CategoryDefinition = {
       key: 'role',
       label: 'Item Purpose',
       tooltip:
-        'The functional role the item plays in the game. It steers proportion and affordance — a duelling blade and a siege weapon obey different rules about grip length and blade mass, however similar the art style is.',
+        'The part the item plays in the game. It steers proportion and affordance: a duelling blade and a siege weapon follow different rules for grip length and blade mass, however alike the art style is.',
       options: [
         'Primary Offensive Weapon',
         'Defensive Barrier Shield',
@@ -101,7 +101,7 @@ export const ITEM: CategoryDefinition = {
       key: 'setting',
       label: 'Art Style Theme',
       tooltip:
-        'The world vocabulary the item is drawn in. It aligns the whole inventory set: fantasy filigree and sci-fi plasma housing rarely coexist in one loot list without looking like an accident.',
+        'The world vocabulary the item is drawn in. It aligns the whole inventory set, since fantasy filigree and sci-fi plasma housing rarely share one loot list without looking like an accident.',
       options: [
         'High Fantasy Magic',
         'Cyberpunk Plasma Tech',
@@ -121,7 +121,7 @@ export const ITEM: CategoryDefinition = {
       key: 'build',
       label: 'Weight & Size',
       tooltip:
-        'The item’s scale inside an inventory grid. Stating it explicitly is what stops a dagger and a greatsword being drawn at the same size — the most common failure in a generated icon set.',
+        'The item’s scale inside an inventory grid. Stating it stops a dagger and a greatsword being drawn at the same size, the most common failure in a generated icon set.',
       options: [
         'Heavy Two-Handed',
         'Compact One-Handed',
@@ -138,7 +138,7 @@ export const ITEM: CategoryDefinition = {
       key: 'silhouette',
       label: 'Blade / Shape Profile',
       tooltip:
-        'The outline the item is recognised by. An inventory icon is often seen at 32 px or smaller, where the profile is all that survives and interior engraving does not.',
+        'The outline the item is recognised by. An inventory icon is often seen at 32 px or smaller, where the profile is all that survives and interior engraving is lost.',
       options: [
         'Aggressive Serrated Edge',
         'Symmetrical Elegant Blade',
@@ -160,7 +160,7 @@ export const ITEM: CategoryDefinition = {
       key: 'face_head',
       label: 'Grip & Pommel',
       tooltip:
-        'The hilt, grip texture and pommel — the end a character actually holds. It sets where the item meets a hand socket, so it matters even when the icon itself is never rigged.',
+        'The hilt, grip texture and pommel: the end a character holds. It sets where the item meets a hand socket, so it matters even when the icon itself is never rigged.',
       options: [
         'Leather Wrapped Hilt & Gem Pommel',
         'Ergonomic Synthetic Grip',
@@ -184,7 +184,7 @@ export const ITEM: CategoryDefinition = {
       key: 'anatomy',
       label: 'Item Assembly Base',
       tooltip:
-        'What the finished item is meant to separate into — a magazine, a blade, a lid. Choose by what has to detach or animate rather than by how detailed the item looks. ' +
+        'What the finished item is meant to separate into, such as a magazine, a blade or a lid. Choose by what has to detach or animate, not by how detailed the item looks.\n\n' +
         ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Single Weapon Item',
@@ -202,7 +202,8 @@ export const ITEM: CategoryDefinition = {
       key: 'clothing',
       label: 'Scabbard / Holster',
       tooltip:
-        'How the item is stowed when it is not in hand — a sheath, a holster, a roll, a case. It is drawn together with the item rather than as a sprite of its own, so it shapes the item’s design without costing you a component. Name the empty carrier under Detachable Parts as well when a character has to be seen wearing it while the item is elsewhere.',
+        'How the item is stowed when it is not in hand: a sheath, a holster, a roll, a case. It is drawn together with the item rather than as a sprite of its own, so it shapes the design without costing a component.\n\n' +
+        'When a character must be seen wearing the empty carrier while the item is elsewhere, name the carrier under Detachable Parts as well.',
       options: [
         'Matched Scabbard / Sheath',
         'Magnetic Back Sling',
@@ -239,7 +240,7 @@ export const ITEM: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant body and blade colours — how the item is identified at a glance in a loot list. A clear value gap between the two keeps the icon readable against any inventory background.',
+        'The dominant body and blade colours, by which the item is identified in a loot list. A clear value gap between the two keeps the icon readable against any inventory background.',
       options: [
         'Damascus Steel & Obsidian',
         'Polished Silver & Gold #F59E0B',
@@ -258,7 +259,7 @@ export const ITEM: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The enchantment glow and energy colours that signal an item is magical or powered. ' +
+        'The enchantment glow and energy colours that mark an item as magical or powered. ' +
         HEX_CODE_PINS_THE_HUE,
       options: [
         'Ethereal Arcane Purple #8B5CF6',
@@ -276,7 +277,7 @@ export const ITEM: CategoryDefinition = {
       key: 'materials',
       label: 'Core Material',
       tooltip:
-        'What the item is forged from, and how light reads off it: polished metal takes a hard specular, crystal transmits, polymer stays flat. It is the strongest cue for how heavy the item is meant to feel.',
+        'What the item is forged from, and how light reads off it: polished metal takes a hard highlight, crystal lets light through, polymer stays flat. It is the strongest cue for how heavy the item should feel.',
       options: [
         'Mithril & Dragon Scale',
         'Plasma Conduit & Polymer',
@@ -296,7 +297,7 @@ export const ITEM: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping hands, stands and effect flourishes out of an isolated inventory icon. Drop shadows and glow trails are worth naming explicitly: both extend past the item’s own bounds and break grid alignment.',
+        'Negative rules that keep hands, stands and effect flourishes out of an isolated inventory icon. Name drop shadows and glow trails: both extend past the item’s own bounds and break grid alignment.',
       options: [
         'No holding hand or character',
         'No pedestal or stand',
@@ -318,7 +319,8 @@ export const ITEM: CategoryDefinition = {
       // instruction that carries no information in the two places it is read hardest.
       label: 'Detachable Parts',
       tooltip:
-        'Extra detachable parts — scopes, ribbons, power cells — each isolated into its own sprite slot so it can be swapped or animated. Comma-separated, with ×N for how many of each: “Scope ×1, Charm Ribbon ×2” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing sheet.',
+        'Extra detachable parts, such as scopes, ribbons or power cells, each isolated in its own sprite slot so it can be swapped or animated.\n\n' +
+        'List them with commas and `×N` for how many of each: “Scope ×1, Charm Ribbon ×2” names three pieces, each drawn at every facing the sheet covers, which is fifteen components on a five-view directional core and three on a single-facing sheet.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Attachable Scope ×1, Laser Sight ×1',

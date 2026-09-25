@@ -45,7 +45,7 @@ export const NONE_LEAVES_SETTINGS_ALONE = 'NONE writes nothing else and leaves y
  * same thing about the sheet, the download and stored data in both places.
  */
 export const CHECK_CHANGES_NOTHING =
-  'CHECK reports and changes nothing — not one pixel of the sheet, the download or anything stored.';
+  '`CHECK` reports and changes nothing — not one pixel of the sheet, the download or anything stored.';
 
 /**
  * When a download button is unavailable, on the two that state it this briefly.

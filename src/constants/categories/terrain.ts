@@ -52,7 +52,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'species',
       label: 'Terrain Type',
       tooltip:
-        'What the ground itself is. It fixes the material read and the shape of every boundary before any styling is applied — grass, scree and lava crust wash into a neighbouring material in completely different ways. ' +
+        'What the ground itself is. It sets the material read and the shape of every boundary, since grass, scree and lava crust each wash into a neighbouring material in a different way.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Grassland & Meadow',
@@ -77,7 +77,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'gender',
       label: 'Biome State',
       tooltip:
-        'The condition the biome is in, which is what turns one terrain into a set. The same grassland lush, blighted and frozen is three tile sets off one design, and a level that changes state without changing layout is the cheapest scene change a game gets.',
+        'The condition the biome is in, which turns one terrain into a set. The same grassland drawn lush, blighted and frozen gives three tile sets from one design, so a level can change state without changing its layout.',
       options: [
         'Lush & Thriving',
         'Dry & Parched',
@@ -96,7 +96,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'age',
       label: 'Weathering & Erosion',
       tooltip:
-        'How long the ground has been exposed, read as erosion rather than as dirt. It governs edge softness above all: a freshly cut bank has a hard lip where a weathered one is rounded and shedding, and that difference shows at every tile boundary.',
+        'How long the ground has been exposed, read as erosion rather than as dirt. It mostly governs edge softness: a freshly cut bank has a hard lip, a weathered one is rounded and shedding, and the difference shows at every tile boundary.',
       options: [
         'Freshly Cut & Sharp-Edged',
         'Lightly Weathered',
@@ -113,7 +113,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'role',
       label: 'Playfield Role',
       tooltip:
-        'What the ground does to whoever stands on it. Walkable, blocking, hazardous and transitional ground have to be told apart instantly and without a legend, so this decides how much of the set’s contrast budget is left for decoration.',
+        'What the ground does to whoever stands on it. Walkable, blocking, hazardous and transitional ground must be told apart at a glance and without a legend, so this decides how much contrast is left over for decoration.',
       options: [
         'Walkable Ground',
         'Blocking Obstacle',
@@ -132,7 +132,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'setting',
       label: 'Art Style Theme',
       tooltip:
-        'The design language the whole set is drawn in. It aligns edge treatment, noise density and colour temperature across every tile at once — a painterly forest and a hard-edged colony deck rarely share a level without looking like two games.',
+        'The design language the whole set is drawn in. It aligns edge treatment, noise density and colour temperature across every tile at once, so the set reads as one game.',
       options: [
         'High Fantasy Wilderness',
         'Grim Dark Ruin',
@@ -151,7 +151,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'build',
       label: 'Tile Scale & Density',
       tooltip:
-        'How much world one tile holds, and how busy it is. Worth setting against the resolution profile rather than in isolation: the same blade of grass is a readable tuft at one tile size and noise at another, and a field of noise reads as flat colour from any distance.',
+        'How much world one tile holds, and how busy it is. Set it against the resolution profile: the same blade of grass is a readable tuft at one tile size and noise at another, and a field of noise reads as flat colour.',
       options: [
         'Fine Grain, Dense Detail',
         'Medium Grain, Balanced',
@@ -166,7 +166,8 @@ export const TERRAIN: CategoryDefinition = {
       key: 'silhouette',
       label: 'Edge & Cliff Profile',
       tooltip:
-        'The shape the boundary takes where one material stops and the next begins, and where the ground steps up. That boundary is the only line in a terrain set the eye actually follows, so a ragged organic edge and a hard geometric one give different sets from identical materials. Every value is a shape the ground itself takes: a fence or a wall is a structure, which this category bans on both sheets and Extra Tiles is the place to ask for.',
+        'The shape of the boundary where one material stops and the next begins, and where the ground steps up. It is the one line in a terrain set the eye follows, so a ragged organic edge and a hard geometric one give different sets from the same materials.\n\n' +
+        'Every value is a shape the ground itself takes. A fence or a wall is a structure, which this category bans on both sheets; ask for one in Extra Tiles.',
       options: [
         'Soft Organic Feathered Edge',
         'Ragged Torn Boundary',
@@ -183,7 +184,9 @@ export const TERRAIN: CategoryDefinition = {
       key: 'face_head',
       label: 'Focal Feature',
       tooltip:
-        'The one thing the eye lands on — the hero rock, the water surface, the glowing vent. Every other piece in the set is written to go unnoticed, so this is where a terrain sheet is allowed to be distinctive, and it belongs on a piece placed once rather than on a tile that repeats. Only the feature library draws such a piece: a blend set is tiles and nothing else, and its own rule against a mark a player could recognise twice is what forbids one there. No Focal Feature is therefore the value a blend set takes, and on a feature library it removes that one piece and leaves the boulders, the rooted growth and the spoil heap, so the component count falls by one.',
+        'The one thing the eye lands on: the hero rock, the water surface, the glowing vent. It belongs on a piece placed once, never on a tile that repeats.\n\n' +
+        'Only the feature library draws that piece. A blend set is tiles alone, and its rule against any mark a player could recognise twice forbids one there, so choose `No Focal Feature` for a blend set.\n\n' +
+        'On a feature library, `No Focal Feature` removes that one piece and keeps the boulders, the rooted growth and the spoil heap, so the component count falls by one.',
       options: [
         'No Focal Feature',
         'Hero Boulder Outcrop',
@@ -204,7 +207,11 @@ export const TERRAIN: CategoryDefinition = {
       key: 'anatomy',
       label: 'Tile Assembly Base',
       tooltip:
-        'How an autotiler is meant to index the set. Choose by how the pieces will be *placed* — a corner-matched set blends two materials in any arrangement, a nine-patch frames one rectangular platform, and seamless tiles on one shared grid commit to nothing beyond edges that meet — because the discipline decides which boundaries have to be drawn at all. It names a discipline rather than a tile count. ' +
+        'How an autotiler is meant to index the set. Choose by how the pieces will be _placed_, because that decides which boundaries have to be drawn at all:\n\n' +
+        '- A corner-matched set blends two materials in any arrangement.\n' +
+        '- A nine-patch frames one rectangular platform.\n' +
+        '- Seamless tiles on one shared grid commit only to edges that meet.\n\n' +
+        'Each value names a matching discipline, never a tile count. ' +
         ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Seamless Tiles On One Shared Grid',
@@ -222,7 +229,8 @@ export const TERRAIN: CategoryDefinition = {
       key: 'clothing',
       label: 'Scatter Layer',
       tooltip:
-        'The loose material lying on the ground — pebbles, tufts, twigs, drifts. It is what one base tile’s variants differ in, and therefore what keeps a field from reading as a single tile stamped in rows, so it is painted onto the tiles rather than drawn as pieces laid over them. Bare Untouched Ground takes those seven variants off the blend set and leaves one tile per material beside the fourteen transitions, which is the sixteen an autotiler indexes.',
+        'The loose material lying on the ground: pebbles, tufts, twigs, drifts. It is what a base tile’s variants differ in, which keeps a field from reading as one tile stamped in rows, so it is painted onto the tiles rather than laid over them.\n\n' +
+        '`Bare Untouched Ground` takes those seven variants off the blend set. That leaves one tile per material beside the fourteen transitions, which is the sixteen an autotiler indexes.',
       options: [
         'Pebble & Stone Scatter',
         'Grass Tufts & Weeds',
@@ -243,7 +251,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'worn_details',
       label: 'Surface Motifs',
       tooltip:
-        'The small marks repeated across the field — cracks, tufts, pebble runs, ripples. They are painted onto the tiles rather than drawn as pieces, and they are the first thing to give a tiled field away: a motif bold enough to notice is a motif a player will count.',
+        'The small marks repeated across the field: cracks, tufts, pebble runs, ripples. They are painted onto the tiles, and they are the first thing to give a tiled field away, since a motif bold enough to notice is one a player will count.',
       options: [
         'Hairline Cracks & Fractures',
         'Pebble Runs & Grit',
@@ -263,7 +271,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant ground colours the whole field is read against. Terrain fills most of the screen, so these want to sit *quieter* than anything standing on them — a ground plane carrying as much contrast as the sprites will swallow them.',
+        'The dominant ground colours the whole field is read against. Terrain fills most of the screen, so these should sit _quieter_ than anything standing on them: a ground plane with as much contrast as the sprites will swallow them.',
       options: [
         'Meadow Green & Loam Brown',
         'Sun-Bleached Sand & Ochre',
@@ -282,7 +290,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The few saturated notes the field is allowed — flowering, mineral veins, lava in a crack, bioluminescence. ' +
+        'The few saturated notes the field is allowed, such as flowering, mineral veins, lava in a crack or bioluminescence. ' +
         HEX_CODE_PINS_THE_HUE,
       options: [
         'Wildflower Yellow #FACC15',
@@ -301,7 +309,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'materials',
       label: 'Ground Materials',
       tooltip:
-        'What the ground is made of, and how light reads off it: wet stone takes a hard sheen, dry soil none at all, snow scatters it. Under flat neutral lighting the material read is the only thing separating one tile from the next, so the two materials a blend set joins want different surface behaviour and not merely different hues.',
+        'What the ground is made of, and how light reads off it: wet stone takes a hard sheen, dry soil none, snow scatters it. Under flat lighting the material read is all that separates one tile from the next, so the two materials a blend set joins need different surface behaviour, not only different hues.',
       options: [
         'Soil, Turf & Root Mat',
         'Dry Sand & Wind-Packed Dust',
@@ -321,7 +329,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping the inhabitants, the sky and the scene off a tile sheet. A composed landscape is the one to guard against here: asked for terrain, a generator draws a *view* of it, and a view cannot be cut into tiles.',
+        'Negative rules that keep the inhabitants, the sky and the scene off a tile sheet. Guard most against a composed landscape: asked for terrain, a generator draws a _view_ of it, and a view cannot be cut into tiles.',
       options: [
         'No characters, creatures or vehicles',
         'No buildings, fences or structures',
@@ -336,7 +344,7 @@ export const TERRAIN: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Extra Tiles',
       tooltip:
-        'Extra tiles or landform pieces beyond the set the sheet already asks for — a path run, a ford, a fallen log. Comma-separated, with ×N for how many of each: “Stepping Stone ×3, Ford Crossing ×1” adds four components to the inventory and to the sheet’s stated count.',
+        'Extra tiles or landform pieces beyond the set the sheet already asks for, such as a path run, a ford or a fallen log. Separate them with commas and add `×N` for how many of each: “Stepping Stone ×3, Ford Crossing ×1” adds four components to the inventory and to the sheet’s stated count.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Stepping Stone ×3, Ford Crossing ×1',

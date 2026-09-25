@@ -17,19 +17,19 @@ import { KEY_TOLERANCES } from './quantiser.ts';
  */
 export const IDENTITY_CAPTURE_UNAVAILABLE = {
   noSheet:
-    'There is no sheet in the Quantise tab at the moment, so there is nothing here to read. Drop the sheet you accepted in there, or choose the file with the picker beside this button.',
+    'The Quantise tab has no sheet in it, so there is nothing to read. Drop the sheet you accepted in there, or choose the file with the picker beside this button.',
 
   noResult:
-    'The Quantise tab is not showing a result for its sheet. That tab needs a pixel scale in force before it produces one, and this reads the result rather than the image you dropped.',
+    'The Quantise tab is not showing a result yet. It needs a pixel scale in force first, and this button reads the result rather than the image you dropped.',
 
   failed:
-    'The last attempt to quantise that sheet failed, so there is no result to read. The Quantise tab says what went wrong, and a smaller pixel scale is the usual answer.',
+    'The last attempt to quantise that sheet failed, so there is no result to read. The Quantise tab says what went wrong, and a smaller pixel scale usually fixes it.',
 
   stale:
-    'The Quantise tab’s result was computed before you changed the background key or the colour settings, so its colours are no longer the ones this configuration asks for. Open that tab to let it recompute, then come back.',
+    'The Quantise tab’s result was computed before you changed the background key or the colour settings, so its colours are out of date. Open that tab to let it recompute, then come back.',
 
   keyStillOn:
-    'The quantised sheet still has its background key painted on it, and the key is most of a sheet by area — so the colour reduction that tab already applied was spent largely on the field, and the colours it left are not the ones your next sheet would be drawn in. In the Quantise tab, turn on “Key the background to transparency”, or raise the tolerance beside it if it is already on.',
+    'The quantised sheet still has its background key on it, so most of its colours were spent on that field. In the Quantise tab, turn on “Key the background to transparency”, or raise the tolerance beside it if it is already on.',
 } as const;
 
 /**

@@ -21,7 +21,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'species',
       label: 'Structure Type',
       tooltip:
-        'What the structure is for. It fixes the massing and the entrance treatment before any styling is applied — a watchtower, a market kiosk and a shopfront are different buildings even in identical materials. ' +
+        'What the structure is for. It fixes the massing and the entrance treatment, so a watchtower, a market kiosk and a shopfront are different buildings even in identical materials.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Modular Watchtower',
@@ -54,7 +54,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'gender',
       label: 'Occupancy / State',
       tooltip:
-        'Whether the building is in use, abandoned, ruined or overgrown. State is what turns one structure into a set — the same shop lit and shuttered tells a player something without a word of text.',
+        'Whether the building is in use, abandoned, ruined or overgrown. State turns one structure into a set: the same shop lit and shuttered tells a player something without a word of text.',
       options: [
         'Active & In-Use',
         'Abandoned Ruins',
@@ -73,7 +73,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'age',
       label: 'Era & Architecture',
       tooltip:
-        'The architectural language — proportion, window rhythm, roof pitch, ornament. It carries more of a building’s identity than its materials do, and it is what keeps a street of separate pieces looking like one place.',
+        'The architectural language: proportion, window rhythm, roof pitch, ornament. It carries more of a building’s identity than its materials do, and keeps a street of separate pieces looking like one place.',
       options: [
         'Neo-Tokyo Cyberpunk',
         'Medieval Timber-Frame',
@@ -91,7 +91,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'role',
       label: 'Game Building Role',
       tooltip:
-        'What the player comes here to do. It drives the readable affordances — a vendor counter, a turret mount, a crafting sign — so the building advertises its function from across the level.',
+        'What the player comes here to do. It drives the visible affordances, such as a vendor counter, a turret mount or a crafting sign, so the building advertises its function from across the level.',
       options: [
         'Vendor / Shop Kiosk',
         'Defense Tower Structure',
@@ -112,7 +112,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'setting',
       label: 'Environment Biome',
       tooltip:
-        'The surroundings the building has to sit in. Biome shows up on the structure itself as snow load, sand scour or neon spill, which is what stops a building looking pasted onto its background.',
+        'The surroundings the building has to sit in. Biome shows on the structure itself as snow load, sand scour or neon spill, which stops it looking pasted onto its background.',
       options: [
         'Rain-Slicked Neon Street',
         'Snowy Mountain Pass',
@@ -132,7 +132,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'build',
       label: 'Building Scale',
       tooltip:
-        'Footprint and storey count. This decides how the structure relates in size to the character sprites beside it, so it is worth setting against the resolution profile rather than in isolation.',
+        'Footprint and storey count. It decides how big the structure is beside the character sprites, so set it against the resolution profile.',
       options: [
         '2-Story Compact Footprint',
         '1-Story Wide Kiosk',
@@ -149,7 +149,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'silhouette',
       label: 'Roof & Framework',
       tooltip:
-        'The roofline — the part of a building visible from furthest away. Pitched tiles, solar glass and battlements each give a distinct top edge, and that edge is usually the only feature that survives at map zoom.',
+        'The roofline, the part of a building visible from furthest away. Pitched tiles, solar glass and battlements each give a distinct top edge, and that edge is usually all that survives at map zoom.',
       options: [
         'Pitched Tiled Roof & Lanterns',
         'Overhanging Neon Signage & Pipes',
@@ -170,7 +170,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'face_head',
       label: 'Entrance & Facade',
       tooltip:
-        'The front entry, and how the facade frames it. On a game building the entrance is the interaction point, so it needs to read as enterable at a glance rather than as another piece of decoration.',
+        'The front entry, and how the facade frames it. On a game building the entrance is where the player interacts, so it must read as enterable at a glance rather than as more decoration.',
       options: [
         'Open Counter & Bar Stools',
         'Heavy Reinforced Oak Door',
@@ -191,7 +191,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'anatomy',
       label: 'Building Assembly Base',
       tooltip:
-        'How the structure is split into modular tiles or components. Choose by how it will be placed — a repeating wall module tiles horizontally, a single-piece kiosk does not — because the split has to match the level grid. ' +
+        'How the structure is split into modular tiles or components. Choose by how it will be placed, because the split has to match the level grid: a repeating wall module tiles horizontally, a single-piece kiosk does not.\n\n' +
         ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         // First because all three sheets draw it: the tile set's wall tops, faces and corners, and the
@@ -231,7 +231,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'worn_details',
       label: 'Facade Details',
       tooltip:
-        'Lanterns, signage, vents, cabling and ivy — the layer that gives a building lived-in specificity. Small emissive details here double as night-time lighting cues, so they earn their palette budget twice.',
+        'Lanterns, signage, vents, cabling and ivy: the layer that makes a building look lived in. Small glowing details here double as night-time lighting cues.',
       options: [
         'Hanging Paper Lanterns & Cables',
         'Wall Mounted Torches & Shield',
@@ -251,7 +251,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant wall, roof and structural colours that set the building against its biome. Roof and wall want a clear value gap between them, since the roof is the plane a player sees first from above.',
+        'The dominant wall, roof and structural colours that set the building against its biome. Give roof and wall a clear value gap, since the roof is the plane a player sees first from above.',
       options: [
         'Dark Stained Wood & Vermilion Red #EA580C',
         'Weathered Grey Stone & Oak',
@@ -289,7 +289,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'materials',
       label: 'Construction Materials',
       tooltip:
-        'What the structure is built from, and how those surfaces read at sprite scale. Brick, timber and concrete stop being individual units once a piece is small and become texture instead, so choose for the pattern each one leaves behind.',
+        'What the structure is built from, and how those surfaces read at sprite scale. Brick, timber and concrete stop being separate units once a piece is small and become texture, so choose for the pattern each leaves.',
       options: [
         'Cedar Wood, Clay Tiles & Paper',
         'Cut Granite Blocks & Iron Girders',
@@ -309,7 +309,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping terrain, scenery and inhabitants off the building’s own pieces. Ground, foliage and cast shadows matter most: each fuses the building to a background the level is going to replace.',
+        'Negative rules that keep terrain, scenery and inhabitants off the building’s own pieces. Ground, foliage and cast shadows matter most: each fuses the building to a background the level will replace.',
       options: [
         'No ground terrain tiles, no characters',
         'No surrounding trees or sky',
@@ -326,7 +326,8 @@ export const BUILDING: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Structural Appendages',
       tooltip:
-        'Extra attached structures — chimneys, antennae, annexes — each isolated into its own sprite slot so it can be varied per placement. Comma-separated, with ×N for how many of each: “Chimney ×2, Antenna Rig ×1” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing tileset or module sheet.',
+        'Extra attached structures, such as chimneys, antennae or annexes, each isolated in its own sprite slot so it can vary per placement.\n\n' +
+        'List them with commas and `×N` for how many of each: “Chimney ×2, Antenna Rig ×1” names three pieces, each drawn at every facing the sheet covers. That makes fifteen components on a five-view directional core, or three on a single-facing tileset or module sheet.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'External Chimney ×1, Smoke Pipe ×1',

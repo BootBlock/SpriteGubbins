@@ -558,7 +558,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // FLUX.1 [dev], and the Playground article names no FLUX.2 [dev] among its selectable models.
     generatorSite: {
       kind: 'NONE',
-      note: 'These are the FLUX.2 weights on your own machine, which read 512 tokens. Black Forest Labs do serve a hosted [klein] from their Playground, but that reads the whole prompt and is the Flux (BFL API) target below.',
+      note: 'These are the FLUX.2 weights on your own machine, which read 512 tokens. The hosted [klein] in Black Forest Labs’ Playground reads the whole prompt, and is the _Flux (BFL API)_ target below.',
     },
     capabilities: {
       deliberates: false,
@@ -693,7 +693,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // https://help.openai.com/en/articles/11084440-images-in-chatgpt
     generatorSite: {
       kind: 'NONE',
-      note: 'OpenAI run no page that generates through the Images API, and ChatGPT’s own image surface is the ChatGPT 5.6 Sol target rather than this one.',
+      note: 'OpenAI run no page that generates through the Images API. ChatGPT’s own image surface is the _ChatGPT 5.6 Sol_ target.',
     },
     capabilities: {
       deliberates: false,

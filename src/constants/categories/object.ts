@@ -21,9 +21,8 @@ export const OBJECT: CategoryDefinition = {
       key: 'species',
       label: 'Object Category',
       tooltip:
-        'What the prop fundamentally is, which decides its look and the shapes its pieces are drawn in — a hinged chest reads by its lid, a turret by its barrel and a wall panel by its flat face. ' +
-        SUBJECT_TYPE_ADDS_NO_COMPONENTS +
-        ' Set it before the structure base below, which should agree with it.',
+        'What the prop is, which decides its look and the shapes its pieces are drawn in: a hinged chest reads by its lid, a turret by its barrel, a wall panel by its flat face. Set it before the Structure Base, which should agree with it.\n\n' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Interactive Terminal',
         'Loot Chest / Container',
@@ -56,7 +55,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'gender',
       label: 'Operational Status',
       tooltip:
-        'Whether the object is working, damaged, sealed or overloading. It reads mostly as emissive state and damage — a powered-down console loses its glow entirely — which is what makes a paired on/off variant of one prop worth generating.',
+        'Whether the object is working, damaged, sealed or overloading. It reads mostly as glow and damage, and a powered-down console loses its glow entirely, which makes a paired on and off variant of one prop worth generating.',
       options: [
         'Fully Functional',
         'Damaged / Repaired',
@@ -77,7 +76,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'age',
       label: 'Tech Era',
       tooltip:
-        'The design language the object is built in. It governs panel shapes, fastener style and material vocabulary across every component at once, which is what keeps a prop consistent with the world it is dropped into.',
+        'The design language the object is built in. It governs panel shapes, fastener style and material vocabulary across every component at once, which keeps a prop consistent with the world it is placed in.',
       options: [
         'Futuristic Sci-Fi',
         'Ancient Magitech',
@@ -97,7 +96,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'role',
       label: 'Game Function',
       tooltip:
-        'What the object does for the player. It drives the indicators that make that legible without a label — healing greens, hazard reds, objective markers — so the prop’s purpose reads before anyone interacts with it.',
+        'What the object does for the player. It drives the indicators that make that clear without a label, such as healing greens, hazard reds and objective markers, so the prop’s purpose reads before anyone touches it.',
       options: [
         'Save Station / Healer',
         'High-Tier Loot Source',
@@ -118,7 +117,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'setting',
       label: 'Environment Context',
       tooltip:
-        'The space the object is installed in. Its surroundings show up on the housing as grime, frost or neon spill, and that is what makes a prop look like it belongs somewhere rather than like it was dropped in.',
+        'The space the object is installed in. Its surroundings show on the housing as grime, frost or neon spill, which makes the prop look as though it belongs there.',
       options: [
         'Command Bridge',
         'Dungeon Chamber',
@@ -141,7 +140,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'build',
       label: 'Form Factor',
       tooltip:
-        'The physical geometry and volume — a pillar, a tabletop unit, a wall panel. It fixes how the object occupies space, and therefore its cell proportions in the atlas and whether it can sit on a floor tile at all.',
+        'The physical geometry and volume: a pillar, a tabletop unit, a wall panel. It fixes how the object occupies space, and so its cell proportions in the atlas and whether it can sit on a floor tile at all.',
       options: [
         'Heavy Heavy Pillar',
         'Compact Tabletop Device',
@@ -161,7 +160,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'silhouette',
       label: 'Hard Surfaces',
       tooltip:
-        'The edge profile of the casing — chamfered, gothic, sleek pod. Hard-surface props live or die on this: interior detail vanishes at sprite scale, while a distinctive corner treatment is still readable.',
+        'The edge profile of the casing: chamfered, gothic, sleek pod. Hard-surface props depend on it, because interior detail vanishes at sprite scale while a distinctive corner treatment stays readable.',
       options: [
         'Chamfered Rectangular Box',
         'Pyramidal Conduit',
@@ -183,7 +182,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'face_head',
       label: 'Interface Screen',
       tooltip:
-        'The focal display — the part the eye goes to first. One bright interface reads better at sprite scale than several small ones, and it is usually the only component that needs an emissive colour at all.',
+        'The focal display, the part the eye goes to first. One bright interface reads better at sprite scale than several small ones, and it is usually the only component that needs a glowing colour at all.',
       options: [
         'Holographic Display Screen',
         'Analog Dials & Gauge Panels',
@@ -209,7 +208,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Structure Base',
       tooltip:
-        'How the finished object is meant to come apart — in one piece if it is rigid, at the hinges and segment joins if it is not. Choose by what has to animate rather than by how complex the prop looks. ' +
+        'How the finished object is meant to come apart: in one piece if it is rigid, at the hinges and segment joins if it is not. Choose by what has to animate, not by how complex the prop looks.\n\n' +
         ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Single Rigid Object',
@@ -227,7 +226,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'clothing',
       label: 'Mounting / Framework',
       tooltip:
-        'How the object is fixed in place — bolted, caged, suspended, freestanding. The mount is drawn as part of the prop, so it also decides where the prop can legally be placed once it is in a level.',
+        'How the object is fixed in place: bolted, caged, suspended, freestanding. The mount is drawn as part of the prop, so it also decides where the prop can be placed in a level.',
       options: [
         'Floor Bolted Frame',
         'Reinforced Steel Cage',
@@ -245,7 +244,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'worn_details',
       label: 'Utility Markings',
       tooltip:
-        'Hazard stripes, chevrons, engravings, exposed cabling and wear. These are what make an industrial prop believable, but each costs palette budget — a few well-placed marks read better than full coverage.',
+        'Hazard stripes, chevrons, engravings, exposed cabling and wear. They make an industrial prop believable, but each costs palette budget, so a few well-placed marks read better than full coverage.',
       options: [
         'Hazard Stripes & Decals',
         'Warning Chevrons & LEDs',
@@ -268,7 +267,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The structural casing colours — what a prop is recognised by in a busy scene. Two colours with a clear value gap keep the object separable from whatever it is standing against.',
+        'The structural casing colours, which a prop is recognised by in a busy scene. Two colours with a clear value gap keep the object separable from whatever it stands against.',
       options: [
         'Industrial Yellow #EAB308 & Charcoal',
         'Matte White & Dark Slate',
@@ -290,7 +289,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The status LEDs, wiring and screen light — the parts that read as emitting rather than reflecting. ' +
+        'The status LEDs, wiring and screen light: the parts that read as emitting light rather than reflecting it. ' +
         HEX_CODE_PINS_THE_HUE,
       options: [
         'Alert Orange LEDs #F97316',
@@ -312,7 +311,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'materials',
       label: 'Material Plating',
       tooltip:
-        'What the casing is made of, and how light reads off it: painted metal takes a soft sheen, polished brass a hard one, cut stone none at all. Under flat neutral lighting this is what still separates one surface from the next.',
+        'What the casing is made of, and how light reads off it: painted metal takes a soft sheen, polished brass a hard one, cut stone none at all. Under flat neutral lighting this still separates one surface from the next.',
       options: [
         'Painted Sheet Metal & Acrylic',
         'Polished Brass & Oak',
@@ -333,7 +332,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping operators, ground fixtures and scene dressing out of the sheet. Floor cables and pedestals are the usual offenders — each anchors the prop to a surface it may never actually be placed on.',
+        'Negative rules that keep operators, ground fixtures and scene dressing off the sheet. Floor cables and pedestals are the usual offenders: each anchors the prop to a surface it may never be placed on.',
       options: [
         'No living character, no shadows',
         'No cables on floor',
@@ -354,7 +353,8 @@ export const OBJECT: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Deployable Modules',
       tooltip:
-        'Extra moving parts — dishes, clamps, vents, barrels — each isolated into its own sprite slot so it can animate against a static body. Comma-separated, with ×N for how many of each: “Vent Flap ×2, Clamp ×1” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing sheet.',
+        'Extra moving parts, such as dishes, clamps, vents or barrels, each isolated in its own sprite slot so it can animate against a static body.\n\n' +
+        'List them with commas and `×N` for how many of each: “Vent Flap ×2, Clamp ×1” names three pieces, each drawn at every facing the sheet covers. A five-view directional core makes that fifteen components, and a single-facing sheet three.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Deployable Sensor Dish ×1',
