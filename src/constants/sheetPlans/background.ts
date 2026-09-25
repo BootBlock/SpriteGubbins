@@ -252,9 +252,13 @@ the far mass to move less than the near one:`,
           kind: 'structure',
         },
       ],
-      outro: `The pieces overlap where they meet rather than butting: a backdrop is stacked front to back, not laid
-edge to edge, and a piece cut exactly to its neighbour shows a hairline the moment the camera moves.
-Each is drawn full-height within its own bounds so nothing shows through beneath it.`,
+      // Its `ends` rather than an outro, because section 4's generic boundary paragraph would otherwise
+      // tell these pieces to stop at each join with a clean edge, which is the hairline this forbids.
+      ends: `Each of these is a separate piece of one backdrop — never the whole scene with the other pieces
+faded or hidden, and never carrying a neighbouring piece drawn onto it. The pieces overlap where they
+meet rather than butting: a backdrop is stacked front to back, not laid edge to edge, and a piece cut
+exactly to its neighbour shows a hairline the moment the camera moves. Each is drawn full-height within
+its own bounds so nothing shows through beneath it.`,
     },
     {
       heading: 'Set dressing',

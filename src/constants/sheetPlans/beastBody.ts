@@ -1,6 +1,7 @@
 import { bodySegment } from './bodySegment.ts';
 import type { LimbSegment, TrunkPiece } from './creatureBody.ts';
 import type { PartDrawing } from './partDrawing.ts';
+import { severedPieceOpening } from './severedPieceOpening.ts';
 
 /**
  * A beast's trunk and its forelimb and hindlimb, as the bodies built on them are fitted with them
@@ -31,8 +32,7 @@ export const BEAST_TRUNK: readonly [TrunkPiece, ...TrunkPiece[]] = [
  * hindquarters, so a sentence citing the limbs "the inventory lists separately" named a list that
  * sheet does not have.
  */
-export const BEAST_TERMINATION = `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
-parts faded or hidden. A head ends at the neck, with no body behind it. A body ends at the neck
+export const BEAST_TERMINATION = `${severedPieceOpening('animal')}A head ends at the neck, with no body behind it. A body ends at the neck
 join, the two forelimb shoulder joins and the join to the hindquarters, and carries **no head and no
 limbs**: each join is a clean, capped socket, never a stump trailing into a limb. A hindquarters
 ends at the body join and the two hindlimb hip joins, and carries **no limbs** — and no tail, unless

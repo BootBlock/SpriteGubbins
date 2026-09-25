@@ -3,6 +3,7 @@ import { bodySegment, CURVES } from './bodySegment.ts';
 import { creaturePlansFor } from './creatureBody.ts';
 import type { CreatureBody, LimbSegment } from './creatureBody.ts';
 import type { ModePlans } from './modePlans.ts';
+import { severedPieceOpening } from './severedPieceOpening.ts';
 
 /**
  * The three *Anatomy Base* values that walk on jointed legs, and the sheets each of them draws
@@ -61,8 +62,7 @@ function legPair(place: string, set: string): CreatureBody['limbs'] {
 
 /** Where each piece ends, for a trunk whose legs all meet one piece of it. */
 function leggedTermination(pieces: string): string {
-  return `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
-parts faded or hidden. ${pieces} Each join is a clean, capped socket, never a stump trailing into a
+  return `${severedPieceOpening('animal')}${pieces} Each join is a clean, capped socket, never a stump trailing into a
 leg. Every leg is a component counted in its own right, on this sheet or on another of this
 series, so a trunk piece that arrives wearing one has merged two components into one and breaks the
 count in section [SEC:CONTRACT].`;
@@ -167,8 +167,7 @@ const CENTIPEDE: CreatureBody = {
   motionNoun: 'movement',
   motions:
     'a coiled resting stance; an alert posture with the front of the body raised; a rippling crawl with each pair of legs stepping a beat behind the pair before it; a fast scuttle with the body swinging from side to side; a striking lunge with the venom claws forward; and a defensive curl',
-  termination: `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
-parts faded or hidden. A head ends at the join to the fore segment, with its antennae and venom claws
+  termination: `${severedPieceOpening('animal')}A head ends at the join to the fore segment, with its antennae and venom claws
 and no body behind it. Each body segment ends at the join to the segment before it and the join to the
 segment after it, and carries a pair of leg sockets and **no legs**. The body is assembled from the
 fore segment, as many mid segments as its length needs, the hind segment and the tail end, which closes

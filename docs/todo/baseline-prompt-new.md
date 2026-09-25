@@ -334,7 +334,7 @@ Satisfy this section before any aesthetic consideration.
 
 [N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
    overlapping — and none carrying another: a component that arrives with a neighbouring piece
-   still attached to it is two entries merged, not one component.
+   still attached to it is two components merged into one.
 [/IF]
 [IF:COMPONENTS_ARE_WHOLE]
 

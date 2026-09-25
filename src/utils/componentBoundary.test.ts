@@ -24,8 +24,6 @@ import { sheetFacts } from './promptFacts.ts';
  */
 
 const BOUNDARY_HEADING = '### A component ends at its own boundary';
-/** How every group's `ends` opens — the plan's own statement of the rule. */
-const ENDS_OPENING = /Each of these is a (?:severed, isolated|separate) piece of one /g;
 
 interface CompiledSheet {
   readonly where: string;
@@ -89,12 +87,12 @@ describe('where each component ends', () => {
     for (const { where, plan, prompt } of everySheet(category)) {
       if (plan.extent !== 'PIECE') continue;
       const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
-      const generic = inventory.includes(BOUNDARY_HEADING) ? 1 : 0;
-      const own = inventory.match(ENDS_OPENING)?.length ?? 0;
+      const own = plan.groups.flatMap((group) => (group.ends === undefined ? [] : [group.ends]));
 
-      // One of the two, never both and never neither — and which one is the plan's to say.
-      expect(generic + own, where).toBe(1);
-      expect(own === 1, where).toBe(statesItsEnds(plan));
+      // The plan's own statement where it has one, printed — read by its first line, which carries no
+      // citation for the compiler to resolve — and the generic paragraph exactly where it has none.
+      for (const ends of own) expect(inventory, where).toContain(ends.split('\n')[0]);
+      expect(inventory.includes(BOUNDARY_HEADING), where).toBe(own.length === 0);
       expect(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT'), where).toContain('none carrying another');
       expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT'), where).toContain('stops at its own joins');
     }

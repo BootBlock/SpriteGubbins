@@ -279,12 +279,14 @@ export interface ComponentGroup {
    * Where each piece of this group ends, in the subject's own words, straight after the bullets.
    *
    * **Section 4's boundary paragraph gives way to it** (issue #402). The paragraph states the rule in
-   * general terms — a piece stops at its join — and a trunk group states the same rule by naming the
-   * joins, which is what a generator can check a drawing against. Printed together they were one rule
-   * stated twice within ten lines, inside the inventory Sol forwards verbatim, and the general one was
-   * false on a directional core: it justified the rule by "entries the count lists separately" above
-   * an inventory that is the trunk alone. So a group carries it here rather than in {@link outro},
-   * and the compiler reads its presence to decide which of the two statements the sheet gets.
+   * general terms — a piece stops at its join, with a clean edge — and a group that knows its own joins
+   * states it better: a trunk names each join, which is what a generator can check a drawing against,
+   * and two sheets need a different rule altogether. BACKGROUND's layer library overlaps its pieces
+   * rather than butting them, and PORTRAIT's feature cut lays its pieces over a head drawn with their
+   * regions clear, which the paragraph's "never the whole subject" forbids. Printed together they were
+   * one rule stated twice or two rules disagreeing, inside the inventory Sol forwards verbatim. So a
+   * group carries it here rather than in {@link outro}, and the compiler reads its presence to decide
+   * which of the two statements the sheet gets.
    */
   readonly ends?: string;
   /** Prose after the bullets — a constraint that applies to the group as a whole. */

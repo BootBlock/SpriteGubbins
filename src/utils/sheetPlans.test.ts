@@ -1649,6 +1649,18 @@ describe('the trunk-termination paragraph is true on every sheet that carries it
     expect(terminationParagraphs(category, mode, sheet)).toHaveLength(1);
   });
 
+  it.each(TRUNK_SHEETS)(
+    'keeps every piece on $category’s $sheet sheet to its joins',
+    ({ category, mode, sheet }) => {
+      // The paragraph replaces section 4's generic one there (issue #402), and it names the trunk's joins
+      // alone while the pose library and the rig list limb segments too, so its opening has to carry the
+      // generic rule for every entry.
+      for (const paragraph of terminationParagraphs(category, mode, sheet)) {
+        expect(paragraph).toContain('never carrying a neighbouring piece past the join where the two meet');
+      }
+    },
+  );
+
   it('has a sheet whose inventory lists no limb, which is what the old wording was false on', () => {
     // The reported defect: the paragraph read "has merged entries the inventory lists separately",
     // which is true of the pose library and the rig — both of which list the limbs — and false on

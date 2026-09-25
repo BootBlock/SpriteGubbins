@@ -328,8 +328,9 @@ describe('what a sheet says about itself outside its inventory', () => {
         expect(exclusion, where).toMatch(/^[A-Z][^.]*\.$/);
         expect(exclusion, where).not.toMatch(/^Do not /);
 
-        // Section 9's completes "…no entry arrives with a neighbouring piece attached, and …", which the
-        // template closes with its own full stop.
+        // Section 9's completes "…no entry arrives with a neighbouring piece attached, and …" on a sheet
+        // of pieces and "…one complete drawing, apart from every other, and …" on a sheet of whole
+        // drawings, and the template closes either with its own full stop.
         expect(audit, where).toBe(audit.trim());
         expect(audit, where).toMatch(/^[a-z]/);
         expect(audit, where).not.toMatch(/[.;]/);

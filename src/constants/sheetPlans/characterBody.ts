@@ -11,6 +11,7 @@ import { fixed } from './modePlans.ts';
 import type { ModePlans } from './modePlans.ts';
 import type { PartDrawing } from './partDrawing.ts';
 import { RIG_PIECES_OUTRO } from './rigPieces.ts';
+import { severedPieceOpening } from './severedPieceOpening.ts';
 
 /**
  * One CHARACTER body plan, and the sheets of every mode that draw it (issue #284).
@@ -110,8 +111,7 @@ export interface CharacterBody {
  */
 function trunkTermination(body: CharacterBody): string {
   const sorts = [...new Set(body.chains.map((chain) => chain.sort))];
-  return `Each of these is a severed, isolated piece of one figure — never the whole figure with the other
-parts faded or hidden. ${body.trunk.map((piece) => piece.ends).join(' ')} Every ${spokenList(sorts)} is a component counted in its own
+  return `${severedPieceOpening('figure')}${body.trunk.map((piece) => piece.ends).join(' ')} Every ${spokenList(sorts)} is a component counted in its own
 right, on this sheet or on another of this series, so a trunk piece that arrives wearing one has
 merged two components into one and breaks the count in section [SEC:CONTRACT].`;
 }

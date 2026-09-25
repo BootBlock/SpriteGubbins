@@ -3,6 +3,7 @@ import { bodySegment, CURVES } from './bodySegment.ts';
 import { creaturePlansFor } from './creatureBody.ts';
 import type { CreatureBody } from './creatureBody.ts';
 import type { ModePlans } from './modePlans.ts';
+import { severedPieceOpening } from './severedPieceOpening.ts';
 
 /**
  * `Multi-Headed Hydra Stems`: a beast on four limbs, with necks rising from its shoulders (issue #285).
@@ -66,8 +67,7 @@ const HYDRA: CreatureBody = {
   motionNoun: 'gait',
   motions:
     'a neutral standing stance with the necks raised; an alert stance with the heads spread to watch every side; a lowered stalking crouch; a walking gait with opposing limbs; a lunging strike with one neck thrown forward; and a rearing roar with every neck raised',
-  termination: `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
-parts faded or hidden. A head ends at the join to the upper neck, with no neck behind it. The head and
+  termination: `${severedPieceOpening('animal')}A head ends at the join to the upper neck, with no neck behind it. The head and
 neck pieces serve every head — each neck is assembled from the same pieces and carries the same head,
 one to each neck socket — so this series draws one neck and one head rather than one per head. A body ends at
 the row of neck sockets across its shoulders, the two forelimb shoulder joins and the join to the
