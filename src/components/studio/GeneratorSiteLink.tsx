@@ -1,3 +1,4 @@
+import { GUIDANCE_PARAGRAPH_BREAK } from '../../constants/guidanceMarkup.ts';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import type { GeneratorSite } from '../../types/output.ts';
@@ -38,8 +39,9 @@ export function GeneratorSiteLink({ name, site }: GeneratorSiteLinkProps) {
         hint={HINT}
         // The entry's own finding, after the sentence that is the same for every target. A reader
         // who meets a disabled control is owed the reason for *this* target, and that reason is a
-        // checkable claim recorded beside the target in `constants/models.ts` rather than here.
-        text={`${STUDIO_ACTION_TOOLTIPS.openGenerator} ${site.note}`}
+        // checkable claim recorded beside the target in `constants/models.ts` rather than here. It is
+        // a paragraph of its own, so the card reads as what the control does and then why it cannot.
+        text={`${STUDIO_ACTION_TOOLTIPS.openGenerator}${GUIDANCE_PARAGRAPH_BREAK}${site.note}`}
       >
         <button
           type="button"
