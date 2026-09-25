@@ -1,11 +1,12 @@
 import type { RefObject } from 'react';
+import { GuidanceMarkup } from './GuidanceMarkup.tsx';
 
 interface TooltipCardProps {
   readonly id: string;
   readonly cardRef: RefObject<HTMLSpanElement | null>;
   /** A short heading naming the thing being explained. */
   readonly hint: string;
-  /** The guidance itself — what this control does and how it changes the prompt. */
+  /** The guidance itself, in the Markdown subset {@link GuidanceMarkup} sets. */
   readonly text: string;
 }
 
@@ -38,6 +39,11 @@ interface TooltipCardProps {
  * where the surface is defined — the alternative is every ancestor in the app having to remember it
  * carries guidance, which is bookkeeping every other call site happens to get right only by having
  * put its weight on a sibling label rather than on a span the ⓘ sits within.
+ *
+ * **It is wide, and its text is set rather than poured** (issue #306). At 18rem a long card ran to a
+ * column taller than the viewport, so the card is 28rem, held inside the viewport’s own width on a
+ * narrow screen, and its guidance is paragraphs and lists with code, bold and italics, through
+ * {@link GuidanceMarkup}. How long a card may be is the guidance suite’s to hold, not this surface’s.
  */
 export function TooltipCard({ id, cardRef, hint, text }: TooltipCardProps) {
   return (
@@ -58,7 +64,7 @@ export function TooltipCard({ id, cardRef, hint, text }: TooltipCardProps) {
       // argues for — the five inheritable text properties an ancestor can reach the guidance
       // through. The hint below re-states `font-bold uppercase tracking-wide` on itself, so it keeps
       // the eyebrow treatment it has always had rather than being caught by its own card's reset.
-      className="glass-float animate-tooltip-in group/card absolute top-full left-1/2 z-50 mt-2.5 block w-72 -translate-x-1/2 origin-top overflow-visible rounded-xl p-3 text-left font-sans text-xs leading-relaxed font-normal tracking-normal normal-case text-ink"
+      className="glass-float animate-tooltip-in group/card absolute top-full left-1/2 z-50 mt-2.5 block w-md max-w-[calc(100vw-1rem)] -translate-x-1/2 origin-top overflow-visible rounded-xl p-3 text-left font-sans text-xs leading-relaxed font-normal tracking-normal normal-case text-ink"
     >
       <span className="mb-1.5 flex items-center gap-2">
         {/* The accent tick that ties the card back to the trigger it belongs to. */}
@@ -66,7 +72,9 @@ export function TooltipCard({ id, cardRef, hint, text }: TooltipCardProps) {
         <span className="text-2xs font-bold tracking-wide text-accent-soft uppercase">{hint}</span>
       </span>
 
-      <span className="block text-ink-muted">{text}</span>
+      <span className="block text-ink-muted">
+        <GuidanceMarkup text={text} />
+      </span>
 
       {/*
         The caret, pointing back at the trigger. A rotated square carrying only the two edges that

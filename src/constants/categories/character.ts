@@ -15,9 +15,8 @@ export const CHARACTER: CategoryDefinition = {
       key: 'species',
       label: 'Species / Archetype',
       tooltip:
-        'The base organism or entity type, and the strongest single influence on the figure: it sets the body shape and the proportions every other field is drawn on top of. ' +
-        SUBJECT_TYPE_ADDS_NO_COMPONENTS +
-        ' Free text is accepted — the list is a starting point, not a constraint.',
+        'The base organism or entity type, and the strongest single influence on the figure: it sets the body shape and proportions every other field is drawn on. You can type your own; the list is only a starting point.\n\n' +
+        SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Human',
         'Cybernetic Cyborg',
@@ -53,7 +52,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'gender',
       label: 'Gender / Presentation',
       tooltip:
-        'Body presentation and shape language. It guides shoulder width, waist ratio and torso curvature across every component, and lands hardest on the torso and pelvis pieces, where the silhouette is established.',
+        'Body presentation and shape language. It guides shoulder width, waist ratio and torso curvature across every component, and lands hardest on the torso and pelvis, where the silhouette is set.',
       options: [
         'Androgynous / Neutral',
         'Feminine',
@@ -73,7 +72,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'age',
       label: 'Age Presentation',
       tooltip:
-        'Apparent age, read as posture, surface condition and facial structure. An older presentation brings stance stiffness and wear with it; an ageless synthetic one suppresses both and keeps surfaces clean.',
+        'Apparent age, read as posture, surface condition and facial structure. An older presentation brings a stiffer stance and wear; an ageless synthetic one suppresses both and keeps surfaces clean.',
       options: [
         'Young Adult (20s)',
         'Mature / Veteran (40s)',
@@ -94,7 +93,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'role',
       label: 'Role / Class',
       tooltip:
-        'The combat or utility specialisation. It decides where visual weight goes — a rogue reads light and close to the body, a paladin heavy and outward — so it shapes the limb components as much as the gear on them.',
+        'The combat or utility specialisation. It decides where visual weight goes, so a rogue reads light and close to the body and a paladin heavy and outward. It shapes the limbs as much as the gear on them.',
       options: [
         'Katana Specialist',
         'Heavy Mech Marine',
@@ -127,7 +126,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'setting',
       label: 'Setting / Theme',
       tooltip:
-        'The world the subject belongs to. It enforces epoch-appropriate design across every part at once, which is what stops a plate gauntlet turning up on a cyberpunk figure — set it before reaching for the per-part detail fields.',
+        'The world the subject belongs to. It keeps every part true to one epoch, which stops a plate gauntlet turning up on a cyberpunk figure, so set it before the per-part detail fields.',
       options: [
         'Cyberpunk Dystopia',
         'Dark Fantasy',
@@ -158,7 +157,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'build',
       label: 'Build & Proportions',
       tooltip:
-        'Weight, muscularity and width. This sets the bounding-box volume each component occupies, so it decides how many pixels a limb actually gets once the sheet is packed into an atlas cell.',
+        'Weight, muscularity and width. It sets the volume each component’s bounding box holds, and so how many pixels a limb gets once the sheet is packed into an atlas cell.',
       options: [
         'Athletic & Slender',
         'Heavy Armoured Tank',
@@ -182,7 +181,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'silhouette',
       label: 'Overall Silhouette',
       tooltip:
-        'The outline the figure reads as at a glance. It is what decides whether the sprite is recognisable at gameplay distance: a distinctive edge profile survives downscaling long after the interior detail has gone.',
+        'The outline the figure reads as at a glance. It decides whether the sprite is recognisable at gameplay distance, because a distinctive edge survives downscaling long after the interior detail has gone.',
       options: [
         'Dynamic Sharp Edges',
         'Bulky Plated Layers',
@@ -207,7 +206,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'face_head',
       label: 'Face, Hair & Head',
       tooltip:
-        'Expression, hair, helmets and visors — everything shaping the isolated head component and its directional variants. The head is usually the smallest piece and the most looked at, so one strong feature beats fine detail here.',
+        'Expression, hair, helmets and visors: everything that shapes the head component and its directional variants. The head is usually the smallest piece and the most looked at, so one strong feature beats fine detail.',
       options: [
         'Neon Visor & Undercut',
         'Full Enclosed Helmet',
@@ -247,9 +246,9 @@ export const CHARACTER: CategoryDefinition = {
       key: 'anatomy',
       label: 'Anatomy Base',
       tooltip:
-        'The skeleton the figure is drawn on, and what the generator is told to keep separable — a winged, tailed or four-armed base says those parts are the subject’s own rather than fused onto a limb it already has. ' +
+        'The skeleton the figure is drawn on, and what the generator is told to keep separable. A winged, tailed or four-armed base says those parts are the subject’s own rather than fused onto a limb it already has.\n\n' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS +
-        ' Anything that needs a sprite slot of its own goes in Additional Genuine Anatomy, which is the field that adds one.',
+        '\n\nA part that needs a sprite slot of its own goes in Additional Genuine Anatomy, the field that adds one.',
       options: [
         'Standard Humanoid',
         'Humanoid With Wings',
@@ -279,7 +278,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'clothing',
       label: 'Clothing / Armour',
       tooltip:
-        'Garments and protective plating, drawn into the limb and torso surfaces rather than laid over them as separate pieces. Anything that has to move independently belongs in Additional Genuine Anatomy or a socket instead.',
+        'Garments and protective plating, drawn into the limb and torso surfaces rather than laid over them as separate pieces. Anything that has to move on its own belongs in Additional Genuine Anatomy or a socket.',
       options: [
         'Tactical Kevlar & Plates',
         'Gothic Plate Armour',
@@ -310,7 +309,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'worn_details',
       label: 'Integrated Worn Details',
       tooltip:
-        'Holsters, pouches, cabling and belts, attached cleanly to the part each one sits on. “Integrated” is the operative word: loose clutter that spans two components cannot be cut apart without tearing one of them.',
+        'Holsters, pouches, cabling and belts, each attached cleanly to the part it sits on. Loose clutter that spans two components cannot be cut apart without tearing one of them, so keep every detail _integrated_.',
       options: [
         'Holstered Sidearm & Pouch',
         'Shoulder Pauldrons & Cloak',
@@ -347,7 +346,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant share of the palette — roughly 60% — applied as global albedo across every component. Naming two colours reads more reliably than one, because it gives the generator a value contrast to hold the sheet together with.',
+        'The dominant share of the palette, roughly 60%, applied as the base colour of every component. Two colours read more reliably than one, because they give the generator a value contrast to hold the sheet together.',
       options: [
         'Matte Charcoal Black & Gunmetal',
         'Royal Navy & Deep Silver',
@@ -371,7 +370,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The high-contrast remainder — roughly 20% — for energy lines, eyes, trim and glows. ' +
+        'The high-contrast remainder, roughly 20%, for energy lines, eyes, trim and glows. ' +
         HEX_CODE_PINS_THE_HUE,
       options: [
         'Cyan Neon #06B6D4',
@@ -395,7 +394,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'materials',
       label: 'Materials & Surfaces',
       tooltip:
-        'What the surfaces are made of, and therefore how light reads off them: metal takes a hard specular edge, cloth stays matte. It still matters under flat neutral lighting, because the material is what decides the shading steps.',
+        'What the surfaces are made of, and so how light reads off them: metal takes a hard specular edge, cloth stays matte. It matters even under flat neutral lighting, because the material decides the shading steps.',
       options: [
         'Reinforced Composites & Alloy',
         'Burnished Steel & Leather',
@@ -419,7 +418,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules compiled into the prompt to keep unrequested things out of the sheet. Floor shadows and stray props are the usual offenders — both fuse a component to its background and leave nothing clean to key out.',
+        'Negative rules in the prompt that keep unrequested things off the sheet. Floor shadows and stray props are the usual offenders: both fuse a component to its background and leave nothing clean to key out.',
       options: [
         // First, and that is a decision rather than an ordering: `defaultSubjectFor` builds the
         // subject a category switch installs out of every pool's leading option, so this one is
@@ -457,7 +456,8 @@ export const CHARACTER: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Additional Genuine Anatomy',
       tooltip:
-        'Extra anatomy — a tail, a wing pair, auxiliary arms — each requested as its own sprite slot so it can be animated separately from the body. Comma-separated, with ×N for how many of each: “Demon Horn ×2, Tail ×1” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing sheet.',
+        'Extra anatomy, such as a tail, a wing pair or auxiliary arms, each requested as its own sprite slot so you can animate it apart from the body.\n\n' +
+        'List them with commas and `×N` for how many of each: “Demon Horn ×2, Tail ×1” names three pieces, each drawn at every facing the sheet covers. That is fifteen components on a five-view directional core, or three on a single-facing sheet.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Prehensile Cyber Tail ×1',

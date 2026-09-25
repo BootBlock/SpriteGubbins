@@ -44,7 +44,7 @@ export const ICON: CategoryDefinition = {
       key: 'species',
       label: 'Icon Family',
       tooltip:
-        'What kind of icon this is, and what it has to communicate fixes how it is drawn — an inventory icon depicts an object, a status badge depicts a condition, and a damage-type symbol is an abstract mark with no object behind it at all. ' +
+        'What kind of icon this is. What it has to communicate decides how it is drawn: an inventory icon depicts an object, a status badge a condition, and a damage-type symbol is an abstract mark with no object behind it.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Inventory & Item Icon',
@@ -67,7 +67,7 @@ export const ICON: CategoryDefinition = {
       key: 'gender',
       label: 'Rarity Tier',
       tooltip:
-        'How valuable or how loud the icon is meant to read. Rarity is the emphasis axis an icon set actually has, and stating it separately from the colours is what keeps a common tier from arriving as bright as the legendary beside it — the distinction the player is meant to catch without reading anything.',
+        'How valuable or how loud the icon should read. Rarity is the emphasis axis an icon set has, and stating it apart from the colours keeps a common tier from arriving as bright as the legendary beside it, a difference the player should catch without reading.',
       options: [
         'Common',
         'Uncommon',
@@ -85,7 +85,7 @@ export const ICON: CategoryDefinition = {
       key: 'age',
       label: 'Condition & Finish',
       tooltip:
-        'How much of a life the depicted thing has had. It is the cheapest way to get a tier ladder out of one design — the same blade drawn chipped, serviceable and pristine is three icons — and it is stated apart from the world, which otherwise pulls everything towards factory-new.',
+        'How much of a life the depicted thing has had. It gives a tier ladder from one design, since the same blade drawn chipped, serviceable and pristine is three icons. Without it, the world pulls everything towards factory-new.',
       options: [
         'Pristine & Newly Made',
         'Serviceable & Lightly Used',
@@ -102,7 +102,7 @@ export const ICON: CategoryDefinition = {
       key: 'role',
       label: 'What It Signals',
       tooltip:
-        'What the player is meant to understand from it. This is what governs the focal mark and the accent more than the object does — a healing potion and a poison flask are the same bottle in two colours with two different marks, which is the cheapest way to get a whole set out of one design.',
+        'What the player should understand from the icon. It governs the focal mark and the accent more than the object does: a healing potion and a poison flask are one bottle in two colours with two marks, which gets a whole set out of one design.',
       options: [
         'Restores & Heals',
         'Damages & Attacks',
@@ -124,7 +124,7 @@ export const ICON: CategoryDefinition = {
       key: 'setting',
       label: 'World & Era',
       tooltip:
-        'The world the icons belong to. It aligns the objects, the marks and the trim across the whole set at once — a rune and a circuit trace rarely share a grid without looking like two games bolted together.',
+        'The world the icons belong to. It aligns the objects, the marks and the trim across the whole set at once, so the icons read as one set.',
       options: [
         'High Fantasy',
         'Grim Dark Fantasy',
@@ -147,7 +147,7 @@ export const ICON: CategoryDefinition = {
       key: 'build',
       label: 'Cell Fill & Padding',
       tooltip:
-        'How much of its box each icon fills, and how much clear margin it keeps. Stating it for the whole set is what stops one icon arriving twice the visual weight of the next — the failure that makes a generated grid look like icons from four different packs.',
+        'How much of its box each icon fills, and how much clear margin it keeps. Stating it for the whole set stops one icon arriving with twice the visual weight of the next, the failure that makes a generated grid look like four different packs.',
       options: [
         'Tightly Filling The Cell',
         'Standard Padded Margin',
@@ -163,7 +163,7 @@ export const ICON: CategoryDefinition = {
       key: 'silhouette',
       label: 'Silhouette Read',
       tooltip:
-        'The outline the icon is recognised by with every internal detail removed. At icon size this is the whole identity — it is what survives at 32 px when the trim, the texture and the shading are long gone — so it is worth choosing before anything about the surface.',
+        'The outline the icon is recognised by with every internal detail removed. At icon size it is the whole identity, surviving at 32 px when trim, texture and shading are gone, so choose it before anything about the surface.',
       options: [
         'Bold Compact Blob',
         'Long Diagonal Sweep',
@@ -183,7 +183,8 @@ export const ICON: CategoryDefinition = {
       key: 'face_head',
       label: 'Focal Motif',
       tooltip:
-        'The mark at the icon’s centre, and the only thing distinguishing two icons that share a silhouette. A drawn motif, never a letter or a numeral: section 0 forbids text anywhere on the sheet, because a count or a key name is drawn by the engine at runtime over the top of the sprite.',
+        'The mark at the icon’s centre, and all that tells apart two icons sharing a silhouette.\n\n' +
+        'It is a drawn motif, never a letter or a numeral. The prompt forbids text anywhere on the sheet, because the engine draws a count or a key name over the sprite at runtime.',
       options: [
         'No Motif — Plain Object',
         'Flame & Ember',
@@ -209,7 +210,8 @@ export const ICON: CategoryDefinition = {
       key: 'anatomy',
       label: 'Set Assembly Base',
       tooltip:
-        'How the set is cut so the engine can build a variant. Choose by what the game needs to change at runtime — a standalone icon is replaced whole, where a state overlay or a tier mark is laid over one the set already has. Every value here names a cut the one sheet draws: a layered backing and a swappable motif are a different deliverable, and neither is on it. ' +
+        'How the set is cut so the engine can build a variant. Choose by what the game changes at runtime: a standalone icon is replaced whole, where a state overlay or a tier mark is laid over an icon the set already has.\n\n' +
+        'Every value names a cut this one sheet draws. A layered backing and a swappable motif are a different deliverable, and neither is on it.\n\n' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Single Standalone Icon',
@@ -223,7 +225,8 @@ export const ICON: CategoryDefinition = {
       key: 'clothing',
       label: 'Applied Overlay',
       tooltip:
-        'Which overlay the set is built around — the one whose weight, colour and margin the rest are matched to. Every icon sheet draws the whole overlay library, so this steers how those pieces look rather than which of them you get. That is also why the pool offers no “none”: the sheet would draw them regardless, and the prompt would then tell the generator the set has none and order thirteen of them.',
+        'The overlay the set is built around, whose weight, colour and margin the rest are matched to.\n\n' +
+        'Every icon sheet draws the whole overlay library, so this steers how those pieces look, not which you get. That is why there is no “none”: the prompt would tell the generator the set has no overlays and still order thirteen of them.',
       options: [
         'Rarity Glow & Aura',
         'Locked Padlock Mark',
@@ -242,7 +245,7 @@ export const ICON: CategoryDefinition = {
       key: 'worn_details',
       label: 'Interior Detail',
       tooltip:
-        'How much detail the inside of the outline carries. Icons are read at a glance in a full grid, so restraint is usually right — every extra line costs contrast that the silhouette and the accent need more, and detail that does not survive downscaling is detail that only shows up as noise.',
+        'How much detail the inside of the outline carries. Icons are read at a glance in a full grid, so restraint is usually right: every extra line costs contrast the silhouette and the accent need, and detail lost in downscaling shows only as noise.',
       options: [
         'Flat Fill, No Interior Detail',
         'Two-Tone Block Shading',
@@ -260,7 +263,7 @@ export const ICON: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant colours of the icon body — what it is identified by across a grid. Two colours with a clear value gap keep an icon readable against every plate the interface might put behind it.',
+        'The dominant colours of the icon body, by which it is identified across a grid. Two colours with a clear value gap keep an icon readable against every plate the interface might put behind it.',
       options: [
         'Steel Grey & Cool Shadow',
         'Warm Leather Brown & Tan',
@@ -279,7 +282,7 @@ export const ICON: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The one bright colour the motif and the rarity glow are carried in — the smallest area on the icon and the first thing the eye finds. ' +
+        'The one bright colour that carries the motif and the rarity glow: the smallest area on the icon and the first thing the eye finds. ' +
         HEX_CODE_PINS_THE_HUE,
       options: [
         'Health Red #EF4444',
@@ -299,7 +302,7 @@ export const ICON: CategoryDefinition = {
       key: 'materials',
       label: 'Surface Materials',
       tooltip:
-        'What the depicted thing is made of and how light reads off it: polished metal takes a hard specular edge, cloth stays matte, and glass carries the background through it. At icon size the material read is often what separates two objects of the same shape.',
+        'What the depicted thing is made of and how light reads off it: polished metal takes a hard specular edge, cloth stays matte, glass shows the background through it. At icon size this often separates two objects of the same shape.',
       options: [
         'Forged Steel & Oiled Leather',
         'Carved Wood & Woven Cord',
@@ -318,7 +321,7 @@ export const ICON: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping the interface’s job off the icon sheet. Lettering is the one that matters most: a stack count, a cooldown timer and a keybind are all drawn by the engine at runtime, so an icon with one baked in serves one quantity, in one language, on one keyboard.',
+        'Negative rules that keep the interface’s job off the icon sheet. Lettering matters most: the engine draws stack counts, cooldown timers and keybinds at runtime, so an icon with one baked in serves one quantity, in one language, on one keyboard.',
       options: [
         'No lettering, numerals, stack counts or keybinds',
         'No slot plate, frame or border behind the icon',
@@ -334,7 +337,8 @@ export const ICON: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Extra Icons',
       tooltip:
-        'Further icons or overlays beyond the ones the sheet already lists, each isolated into its own sprite slot. Comma-separated, with ×N for how many of each: “Empty Slot Mark ×1, Tier Pip ×3” adds four components to the inventory and to the sheet’s stated count.',
+        'Further icons or overlays beyond those the sheet already lists, each isolated in its own sprite slot.\n\n' +
+        'List them with commas and `×N` for how many of each: “Empty Slot Mark ×1, Tier Pip ×3” adds four components to the inventory and to the sheet’s stated count.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Empty Slot Mark ×1',

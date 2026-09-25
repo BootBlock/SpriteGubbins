@@ -10,16 +10,18 @@
  */
 export const DIALOG_TOOLTIPS = {
   close:
-    'Closes this panel. Nothing you have set outside it is affected, and nothing here was waiting on a Save — a preference applies as you change it, and the atlas calculator’s own two settings are working state that starts fresh next time. Escape does the same thing.',
+    'Closes this panel. Nothing outside it is affected, and nothing here waits on a Save: a preference applies as you change it, and the atlas calculator’s two settings start fresh next time. Escape does the same.',
 
-  done: 'Closes the panel, exactly as the ✕ does. Nothing is submitted by it: whatever this dialog changes has already been changed.',
+  done: 'Closes the panel, exactly as the ✕ does. It submits nothing, because whatever this dialog changes has already been changed.',
 
   copyAtlasSpec:
-    'Puts the atlas layout on the clipboard as JSON — the texture size, the grid, the cell pitch, the usable bounds each component gets, and whether the requested component size fits them. It is engine metadata rather than prompt text: paste it into the importer, packer or build script that has to know how the returned sheet is laid out. It changes nothing in the studio.',
+    'Copies the atlas layout to the clipboard as JSON: the texture size, the grid, the cell pitch, the usable bounds each component gets, and whether the requested component size fits them.\n\n' +
+    'Paste it into the importer, packer or build script that needs the returned sheet’s layout. It is not prompt text, and it changes nothing in the studio.',
 
   resetSettings:
-    'Puts every preference in this dialog back to what a fresh install renders — the default accent, motion following your system alone, the ambient backdrop painted, and the app opening on the Studio. It touches nothing outside this dialog: the studio configuration, your saved presets and the prompt history are all left as they are.',
+    'Puts every preference in this dialog back to its fresh-install default: the default accent, motion following your system alone, the ambient backdrop painted, and the app opening on the Studio. The studio configuration, your saved presets and the prompt history are untouched.',
 
   copySheetPrompt:
-    'Puts this one sheet’s finished prompt on the clipboard and records it in the history, which is also what marks the row as copied — so the drawer still shows how far through the batch you are after closing it, changing the identity lock, or coming back in a later session. Generate the sheets one at a time; a single prompt asking for all of it comes back as a plausible subset rather than an obvious shortfall.',
+    'Copies this one sheet’s finished prompt and records it in the history, which marks the row as copied. The drawer still shows how far through the batch you are after you close it, change the identity lock or come back in a later session.\n\n' +
+    'Generate the sheets one at a time. A single prompt asking for all of them comes back as a plausible subset rather than an obvious shortfall.',
 } as const;

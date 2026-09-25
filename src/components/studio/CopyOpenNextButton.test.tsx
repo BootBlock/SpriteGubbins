@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
+import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { PersistenceBackend } from '../../db/backend.ts';
 import { LocalStorageBackend } from '../../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../../db/webStorage.ts';
@@ -342,5 +343,25 @@ describe('CopyOpenNextButton', () => {
       'aria-disabled',
       'false',
     );
+  });
+  it('sets the note about a target with no page as a paragraph of its own', async () => {
+    useOutputStore.setState({ output: { ...useOutputStore.getState().output, targetModel: 'GENERIC' } });
+    render(<Harness />);
+
+    const button = screen.getByRole('button', { name: 'Copy & next' });
+    const wrapper = button.parentElement;
+    if (wrapper === null) throw new Error('The button has no guidance wrapper');
+    fireEvent.pointerEnter(wrapper, { pointerType: 'mouse', isPrimary: true });
+
+    // One paragraph for what the button does, and one for why it opens nothing here, rather than
+    // the note run on into the end of the guidance.
+    const card = await screen.findByRole('tooltip');
+    const paragraphs = [...card.querySelectorAll('span.block > span > span.block')].map((paragraph) =>
+      paragraph.textContent.trim(),
+    );
+    expect(paragraphs).toEqual([
+      STUDIO_ACTION_TOOLTIPS.copyOpenNext,
+      STUDIO_ACTION_TOOLTIPS.copyOpenNextNoSite,
+    ]);
   });
 });

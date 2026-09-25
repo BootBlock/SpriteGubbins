@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { GUIDANCE_PARAGRAPH_BREAK } from '../../constants/guidanceMarkup.ts';
 import { TARGET_MODEL_ENTRIES } from '../../constants/targetModelEntries.ts';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useCopyPrompt } from '../../hooks/useCopyPrompt.ts';
@@ -81,7 +82,8 @@ export function CopyOpenNextButton({ promptText }: CopyOpenNextButtonProps) {
     isSpent && STUDIO_ACTION_TOOLTIPS.copyOpenNextSpent,
   ]
     .filter((sentence) => sentence !== false)
-    .join(' ');
+    // Each note is a paragraph of its own under the guidance, as the other composed cards set it.
+    .join(GUIDANCE_PARAGRAPH_BREAK);
 
   const press = async () => {
     if (isSpent || pending.current) return;

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import type { GuidanceInline } from '../../types/guidanceMarkup.ts';
 import { ACCENT_HUES } from '../../types/settings.ts';
+import { guidanceMarkupProblems } from '../../utils/guidanceMarkupProblems.ts';
+import { parseGuidanceMarkup } from '../../utils/parseGuidanceMarkup.ts';
 import { ANTI_ALIAS_GUIDANCE } from '../antiAlias.ts';
 import { AUTO_TUNE_GUIDANCE } from '../autoTune.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
@@ -193,8 +196,69 @@ const SHORTEST_USEFUL = 60;
 function sentences(text: string): string[] {
   return text
     .split(/(?<=[.?!])\s+/)
-    .map((piece) => piece.trim())
+    .map((piece) => piece.trim().replace(/^- /, ''))
     .filter((piece) => piece.length > 0);
+}
+
+/**
+ * The guidance a reader meets as **plain text under a control**, named by the prefix of its entry.
+ *
+ * Everything else in `GUIDANCE` is a card, set by `GuidanceMarkup` as paragraphs and lists with code,
+ * bold and italics (issue #306). These are not: each is a `description` or a paragraph a component
+ * renders as it stands, so markup here would reach the reader as backticks and asterisks. The two
+ * tests below hold each side to its own surface — a card to well-formed markup and a length it can
+ * be read at, and these to none at all.
+ *
+ * `TARGET_MODELS.<id>.generatorSite` is a card, where the bare `TARGET_MODELS.<id>` is not: the note
+ * is the second paragraph of the disabled link’s card, and the description is the text under the
+ * select. So the prefix is matched with the dot after it and the note is excluded by name.
+ */
+const PLAIN_SURFACES = [
+  'DIRECTIONAL_MODE_TOOLTIPS.',
+  'TARGET_MODELS.',
+  'AUTO_TUNE_GUIDANCE.',
+  'DIAL_HISTORY_GUIDANCE.',
+  'STUDIO_HISTORY_GUIDANCE.',
+  'ANTI_ALIAS_GUIDANCE.',
+  'SHEET_IDENTITY_GUIDANCE.',
+  'PALETTE_EXPORT_GUIDANCE.',
+] as const;
+
+/** Whether an entry is rendered as plain text rather than as a card. */
+function isPlainSurface(name: string): boolean {
+  if (name.endsWith('.generatorSite')) return false;
+  return PLAIN_SURFACES.some((prefix) => name.startsWith(prefix));
+}
+
+const CARDS = GUIDANCE.filter(([name]) => !isPlainSurface(name));
+const PLAIN = GUIDANCE.filter(([name]) => isPlainSurface(name));
+
+/**
+ * The longest a card may be, in characters of its source text.
+ *
+ * Issue #306 is the reason: the Target Assembled Size card ran past 2,000 characters, and at the
+ * card’s width that is a column taller than most screens. This is about a dozen lines of the
+ * 28rem card. A card that needs more is explaining something that belongs in the guide rather than
+ * beside a control.
+ */
+const CARD_LONGEST = 800;
+
+/** The longest one paragraph or one list item may be, which is about five lines of the card. */
+const BLOCK_LONGEST = 320;
+
+/** How many characters a run of inlines puts on screen, which is its source less the markers. */
+function visibleLength(runs: readonly GuidanceInline[]): number {
+  return runs.reduce(
+    (total, run) => total + ('text' in run ? run.text.length : visibleLength(run.children)),
+    0,
+  );
+}
+
+/** The visible length of each paragraph and each list item of a card. */
+function blockLengths(text: string): number[] {
+  return parseGuidanceMarkup(text).flatMap((block) =>
+    block.kind === 'paragraph' ? [visibleLength(block.children)] : block.items.map(visibleLength),
+  );
 }
 
 /**
@@ -262,6 +326,19 @@ describe('control guidance', () => {
     // that a line was pasted in from somewhere else rather than written here.
     expect(text).not.toContain("'");
     expect(text).not.toContain('"');
+  });
+
+  it.each(CARDS)('%s is well-formed card markup', (_name, text) => {
+    expect(guidanceMarkupProblems(text)).toEqual([]);
+  });
+
+  it.each(CARDS)('%s is short enough to read beside its control', (_name, text) => {
+    expect(text.length).toBeLessThanOrEqual(CARD_LONGEST);
+    for (const length of blockLengths(text)) expect(length).toBeLessThanOrEqual(BLOCK_LONGEST);
+  });
+
+  it.each(PLAIN)('%s carries no markup, because it is rendered as plain text', (_name, text) => {
+    expect(text).not.toMatch(/[`*]|\n/);
   });
 
   it.each(TEMPLATED_ORIGINS)('%s renders a different card for every argument', (origin) => {

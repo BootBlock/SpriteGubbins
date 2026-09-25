@@ -81,35 +81,38 @@ export const APP_TAB_CHOICE_BY_ID = {
     label: 'Studio',
     icon: '🛠️',
     guidance:
-      'Where the prompt is built: the subject on the left, the output configuration under it, and the compiled text on the right, recompiled as you type. Everything that reaches the generator is set here, and nothing in any other view changes a word of it.',
+      'Where you build the prompt: the subject on the left, the output configuration under it, and the compiled text on the right, recompiled as you type. Everything that reaches the generator is set here, and no other view changes a word of it.',
   },
   quantise: {
     id: 'quantise',
     label: 'Quantise',
     icon: '🔲',
     guidance:
-      'The second half of the job, for a sheet a generator has already returned: snap it back to the pixel scale it was meant to be drawn at, bring its colours down to what the prompt asked for, and turn the background key into transparency. It is the one follow-up no wording can replace — the prompt already forbids smooth downscaled artwork, and models hand it back anyway. Nothing is uploaded; the image is decoded and transformed in the tab.',
+      'For a sheet a generator has already returned. It snaps the artwork back to the pixel scale it was meant to be drawn at, brings its colours down to what the prompt asked for, and turns the background key into transparency.\n\n' +
+      'Models return smooth, downscaled artwork even though the prompt forbids it, so no wording replaces this step. Nothing is uploaded: the image is decoded and transformed in this tab.',
   },
   presets: {
     id: 'presets',
     label: 'Presets',
     icon: '⚡',
     guidance:
-      'The archetype library: the configurations this app ships with, covering every subject category. Loading one replaces the whole studio setup, so it is a starting point to work from rather than a finished answer. The count beside the label is how many it holds, and it never moves — what you save yourself is filed under a project and lives on the Projects view.',
+      'The library of configurations the app ships with, covering every subject category. Loading one replaces the whole studio setup, so treat it as a starting point rather than a finished answer.\n\n' +
+      'The count beside the label is the size of this library. What you save yourself is filed under a project on the Projects view.',
   },
   projects: {
     id: 'projects',
     label: 'Projects',
     icon: '🗂️',
     guidance:
-      'Everything you have saved, grouped by the game or job it was saved for — the studio archetypes and the quantiser dial positions alike. Make a project here, rename or describe one, re-file a save into another, or delete a project and its contents together. This is also where the whole library is exported to a file and read back in; nothing on this view alters the prompt or the studio until you load one of the saves it lists.',
+      'Everything you have saved, grouped by the game or job it is for, from studio setups to quantiser dial positions. Here you make, rename and describe projects, move a save into another, delete a project with its contents, and export or import the whole library.\n\n' +
+      'Nothing here changes the prompt or the studio until you load a save.',
   },
   spec: {
     id: 'spec',
     label: 'Architecture',
     icon: '📜',
     guidance:
-      'How the app is built and where your work is kept — the storage it is using in this browser, what it does and does not send anywhere, the version and the source. Documentation rather than a control panel: nothing here changes the prompt or the configuration.',
+      'How the app is built and where your work is kept: the storage it uses in this browser, what it does and does not send anywhere, the version and the source. It is documentation, so nothing here changes the prompt or the configuration.',
   },
 } satisfies Record<AppTab, AppTabChoice>;
 

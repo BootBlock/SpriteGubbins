@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
+import { GUIDANCE_PARAGRAPH_BREAK } from '../../constants/guidanceMarkup.ts';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useIdentityPaletteCapture } from '../../hooks/useIdentityPaletteCapture.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
@@ -91,11 +92,11 @@ export function QuantisedSheetCaptureButton() {
       hint="Use the quantised sheet"
       // The finding after the guidance, as `GeneratorSiteLink` does it: the sentence explaining what
       // the control is for is the same in every state, and only the reason it cannot run right now
-      // changes.
+      // changes. It is a paragraph of its own, set apart from the guidance it follows.
       text={
         offer.kind === 'READY'
           ? STUDIO_ACTION_TOOLTIPS.readPaletteFromQuantise
-          : `${STUDIO_ACTION_TOOLTIPS.readPaletteFromQuantise} ${offer.reason}`
+          : `${STUDIO_ACTION_TOOLTIPS.readPaletteFromQuantise}${GUIDANCE_PARAGRAPH_BREAK}${offer.reason}`
       }
     >
       <button

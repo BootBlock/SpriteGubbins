@@ -25,7 +25,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'species',
       label: 'Vehicle Class',
       tooltip:
-        'What carries the vehicle — wheels, tracks, legs, rotors, thrusters or a hull in water. It decides what the drive is drawn as, and the drive is the half of a vehicle that has to animate. ' +
+        'What carries the vehicle: wheels, tracks, legs, rotors, thrusters or a hull in water. It decides what the drive is drawn as, and the drive is the half of a vehicle that has to animate.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Wheeled Ground Vehicle',
@@ -45,7 +45,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'gender',
       label: 'Faction Livery',
       tooltip:
-        'Whose vehicle it is, said in paint rather than in a label. Livery is what lets a player tell friendly from hostile at a glance across a moving battlefield, and it is the cheapest way to get three sprites out of one chassis.',
+        'Whose vehicle it is, said in paint rather than with a label. Livery lets a player tell friend from foe at a glance across a moving battlefield, and it is the cheapest way to get three sprites from one chassis.',
       options: [
         'Player Faction Colours',
         'Enemy Raider Markings',
@@ -63,7 +63,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'age',
       label: 'Service Condition',
       tooltip:
-        'How hard a life the vehicle has had. Wear sits almost entirely on the lower hull and the drive — the surfaces that meet the ground — so stating it separately from the livery is what keeps a battered vehicle from reading as a badly-painted new one.',
+        'How hard a life the vehicle has had. Wear sits almost entirely on the lower hull and the drive, where they meet the ground, and stating it apart from the livery keeps a battered vehicle from reading as a badly painted new one.',
       options: [
         'Factory Fresh',
         'Field-Worn Service',
@@ -81,7 +81,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'role',
       label: 'Operational Role',
       tooltip:
-        'What the vehicle is for on the field. It governs proportion more than decoration does — a scout and a siege platform obey opposite rules about hull length, weapon mass and how much of the frame is glass.',
+        'What the vehicle is for on the field. It governs proportion more than decoration: a scout and a siege platform follow opposite rules for hull length, weapon mass and how much of the frame is glass.',
       options: [
         'Fast Scout / Recon',
         'Troop Transport',
@@ -102,7 +102,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'setting',
       label: 'World & Era',
       tooltip:
-        'The design language the whole fleet is drawn in. It aligns rivet spacing, panel shapes and glass tint across every vehicle at once — diesel-punk plate and deep-space composite rarely share a garage without looking like two games.',
+        'The design language the whole fleet is drawn in. It aligns rivet spacing, panel shapes and glass tint across every vehicle at once, so the fleet reads as one design.',
       options: [
         'Near-Future Military',
         'Deep-Space Sci-Fi',
@@ -121,7 +121,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'build',
       label: 'Chassis Mass',
       tooltip:
-        'The vehicle’s bulk and its footprint on the ground. Stating it explicitly is what stops a scout buggy and a siege tank arriving at the same size — the failure that makes a generated fleet look like one vehicle in six paint schemes.',
+        'The vehicle’s bulk and its footprint on the ground. Stating it stops a scout buggy and a siege tank arriving at the same size, the failure that makes a generated fleet look like one vehicle in six paint schemes.',
       options: [
         'Light & Nimble',
         'Medium Balanced Frame',
@@ -142,7 +142,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'silhouette',
       label: 'Hull Profile',
       tooltip:
-        'The outline the vehicle is recognised by from above or side-on. At sprite scale the profile is the whole read — a sloped glacis and a boxy slab are still distinguishable at 32 px where panel lines and rivets are long gone.',
+        'The outline the vehicle is recognised by from above or side-on. At sprite scale the profile is the whole read: a sloped glacis and a boxy slab stay distinct at 32 px, long after panel lines and rivets are gone.',
       options: [
         'Low Wedge & Sloped Glacis',
         'Boxy Utilitarian Slab',
@@ -160,7 +160,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'face_head',
       label: 'Cockpit & Front Face',
       tooltip:
-        'The crew position and the face the vehicle leads with — where the eye lands first, and the landmark that tells a viewer which way it is pointing. It is also the one area worth an emissive colour, since a lit canopy reads as crewed.',
+        'The crew position and the face the vehicle leads with: where the eye lands first, and the landmark that shows which way it points. It is also the one area worth a glowing colour, since a lit canopy reads as crewed.',
       options: [
         'Armoured Glass Canopy',
         'Vision Slit & Periscope',
@@ -177,7 +177,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'anatomy',
       label: 'Drive & Assembly Base',
       tooltip:
-        'Where the finished vehicle is meant to divide — a turret ring, a road wheel, a rotor mast, a rudder stock. Choose by what has to turn, spin or travel rather than by how detailed the hull is. ' +
+        'Where the finished vehicle is meant to divide, such as a turret ring, a road wheel, a rotor mast or a rudder stock. Choose by what has to turn, spin or travel, not by how detailed the hull is.\n\n' +
         ASSEMBLY_BASE_CHOOSES_THE_SHEETS,
       options: [
         'Single Rigid Hull',
@@ -197,7 +197,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'clothing',
       label: 'Armour & Cladding',
       tooltip:
-        'What is bolted over the bare frame — plating, fairings, improvised scrap. Cladding is drawn as separate geometry from the hull beneath it, so it is also the cheapest way to give one chassis an up-armoured variant. ' +
+        'What is bolted over the bare frame: plating, fairings, improvised scrap. Cladding is drawn as geometry separate from the hull beneath it, so it is also the cheapest way to give one chassis an up-armoured variant.\n\n' +
         ABSENT_OPTION_DROPS_THE_PIECES,
       options: [
         'Bolted Applique Plating',
@@ -216,7 +216,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'worn_details',
       label: 'Markings & Service Wear',
       tooltip:
-        'Roundels, chevrons, grime and weld seams across the hull. These are what make a vehicle look operated rather than modelled — but each costs palette budget, so a few bold marks carry further than full coverage at any sprite size.',
+        'Roundels, chevrons, grime and weld seams across the hull. They make a vehicle look operated rather than modelled, but each costs palette budget, so a few bold marks carry further than full coverage.',
       options: [
         'Roundels & Squadron Flashes',
         'Hazard Stripes & Chevrons',
@@ -233,7 +233,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant hull colours — what the vehicle is identified by across a busy field. Two colours with a clear value gap keep it separable from the terrain it drives over, which a single flat body colour never manages.',
+        'The dominant hull colours, by which the vehicle is identified across a busy field. Two colours with a clear value gap keep it separable from the terrain it drives over, which a single flat body colour never manages.',
       options: [
         'Olive Drab & Gunmetal',
         'Desert Sand & Rust',
@@ -250,7 +250,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'Lamps, thruster glow, beacons and stripe work — the parts that read as emitting rather than reflecting. ' +
+        'Lamps, thruster glow, beacons and stripe work: the parts that read as giving off light rather than reflecting it. ' +
         HEX_CODE_PINS_THE_HUE,
       options: [
         'Headlamp Amber #F59E0B',
@@ -266,7 +266,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'materials',
       label: 'Hull Materials',
       tooltip:
-        'What the vehicle is built from, and how light reads off it: rolled plate takes a broad soft sheen, chrome a hard one, canvas none at all. Under flat neutral lighting it is what still separates the hull from the tyres and the glass.',
+        'What the vehicle is built from, and how light reads off it: rolled plate takes a broad soft sheen, chrome a hard one, canvas none at all. Under flat neutral lighting it still separates the hull from the tyres and the glass.',
       options: [
         'Rolled Steel Plate & Rubber',
         'Riveted Brass & Hardwood',
@@ -283,7 +283,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping the crew, the road and the effects work off the sheet. Dust plumes and speed lines are the usual offenders — both extend well past the vehicle’s own bounds, which breaks the cell alignment an atlas depends on.',
+        'Negative rules that keep the crew, the road and the effects work off the sheet. Dust plumes and speed lines are the usual offenders: both extend well past the vehicle’s bounds and break the cell alignment an atlas depends on.',
       options: [
         'No driver, pilot or crew',
         'No ground, road or landing pad',
@@ -298,7 +298,8 @@ export const VEHICLE: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Attached Modules',
       tooltip:
-        'Extra bolted-on parts — pods, gear, drums, trailers — each isolated into its own sprite slot so it can be swapped or animated against a static hull. Comma-separated, with ×N for how many of each: “Missile Pod ×2, Ammo Box ×1” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing sheet.',
+        'Extra bolted-on parts, such as pods, gear, drums or trailers, each isolated in its own sprite slot so it can be swapped or animated against a static hull.\n\n' +
+        'List them with commas and `×N` for how many of each: “Missile Pod ×2, Ammo Box ×1” names three pieces, each drawn at every facing the sheet covers, so a five-view directional core gets fifteen components and a single-facing sheet three.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Roof Turret ×1, Ammo Box ×2',

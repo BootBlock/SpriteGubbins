@@ -60,9 +60,10 @@ export const FONT: CategoryDefinition = {
       key: 'species',
       label: 'Font Family',
       tooltip:
-        'What kind of typeface this is. It decides how every letter is drawn, because what a font has to do decides its strokes — a display face carries weight a body face cannot afford, and a pixel face is drawn on a grid rather than described by curves. ' +
+        'What kind of typeface this is, which decides how every letter is drawn: a display face carries weight a body face cannot afford, and a pixel face is drawn on a grid.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS +
-        ' Every family is drawn across the same printable characters, a numeric face included. Be aware that image generators render lettering unreliably: the targets that reason over a prompt do better than the diffusion ones, and any set is worth checking glyph by glyph before it reaches an engine.',
+        ' Every family is drawn across the same printable characters, a numeric face included.\n\n' +
+        'Image generators render lettering unreliably, and targets that reason over a prompt do better than diffusion ones. Check any set glyph by glyph before it reaches an engine.',
       options: [
         'Blocky Display Face',
         'Narrow Condensed Face',
@@ -87,7 +88,7 @@ export const FONT: CategoryDefinition = {
       key: 'gender',
       label: 'Weight',
       tooltip:
-        'How heavy the strokes are across the whole set. It is stated once for every glyph because weight is what a run of text is read by — a set whose letters disagree about it reads as two fonts mixed in one word, which is the failure this sheet has most often.',
+        'How heavy the strokes are across the whole set. It is stated once for every glyph because a run of text is read by its weight, and letters that disagree about it read as two fonts mixed in one word, this sheet’s most common failure.',
       options: [
         'Light',
         'Regular',
@@ -103,7 +104,7 @@ export const FONT: CategoryDefinition = {
       key: 'age',
       label: 'Wear & Finish',
       tooltip:
-        'How much of a life the lettering has had. It is the cheapest way to place a font in a world without changing its construction — the same skeleton drawn clean, chipped and eaten away is three fonts — and it is stated apart from the world, which otherwise pulls everything towards freshly printed.',
+        'How much of a life the lettering has had. It places a font in a world without changing its construction, since the same skeleton drawn clean, chipped and eaten away is three fonts. Without it, the world pulls everything towards freshly printed.',
       options: [
         'Clean & Newly Cut',
         'Lightly Inked & Even',
@@ -121,7 +122,7 @@ export const FONT: CategoryDefinition = {
       key: 'role',
       label: 'What It Is For',
       tooltip:
-        'Where in the game the text is drawn. It governs the metrics more than the styling does — a dialogue face is read in long runs and wants even colour, where a damage face is read at a glance in ones and twos and wants weight.',
+        'Where in the game the text is drawn. It governs the metrics more than the styling: a dialogue face is read in long runs and wants even colour, where a damage face is read at a glance in ones and twos and wants weight.',
       options: [
         'Interface Labels & Buttons',
         'Dialogue & Narration',
@@ -141,7 +142,7 @@ export const FONT: CategoryDefinition = {
       key: 'setting',
       label: 'World & Era',
       tooltip:
-        'The world the lettering belongs to. It aligns the construction, the finish and the trim across every glyph at once — a carved rune and a backlit terminal glyph rarely share a baseline without looking like two games bolted together.',
+        'The world the lettering belongs to. It aligns the construction, the finish and the trim across every glyph at once, so the glyphs read as one font.',
       options: [
         'High Fantasy',
         'Grim Dark Fantasy',
@@ -165,7 +166,8 @@ export const FONT: CategoryDefinition = {
       key: 'build',
       label: 'Vertical Metrics',
       tooltip:
-        'Where the glyphs sit against each other — the baseline they all stand on, and how far the capitals rise above the lower-case letters. Stating it for the whole set is what stops one glyph arriving a pixel taller than the next, which is invisible on the sheet and visible in every word the engine draws. It decides the heights, never which characters the set holds: the sheets always cover printable ASCII, so a value here that withheld the lower case would be asking for a sheet the inventory still lists.',
+        'Where the glyphs sit against each other: the baseline they stand on, and how far the capitals rise above the lower case. Stating it for the whole set stops one glyph arriving a pixel taller than the next, which is invisible on the sheet and visible in every word.\n\n' +
+        'It sets the heights, never which characters the set holds: the sheets always cover printable ASCII.',
       options: [
         'Unicase, One Height Throughout',
         'Short X-Height, Tall Caps',
@@ -182,7 +184,7 @@ export const FONT: CategoryDefinition = {
       key: 'silhouette',
       label: 'Stroke Construction',
       tooltip:
-        'How each letter’s skeleton is built, with every surface treatment removed. At the size a game renders text this is the whole identity — it is what survives when the fill, the outline and the texture are gone — so it is worth choosing before anything about the surface.',
+        'How each letter’s skeleton is built, with every surface treatment removed. At the size a game renders text it is the whole identity, surviving when the fill, outline and texture are gone, so choose it before anything about the surface.',
       options: [
         'Straight Segments, Sharp Corners',
         'Straight Segments, Cut Corners',
@@ -202,7 +204,7 @@ export const FONT: CategoryDefinition = {
       key: 'face_head',
       label: 'Terminal Treatment',
       tooltip:
-        'How each stroke ends — the detail at the tip of every stem and arm, and the thing two fonts sharing a skeleton are told apart by. It is the smallest decision on the sheet and the one repeated most, because every glyph carries several of them.',
+        'How each stroke ends: the detail at the tip of every stem and arm, and what tells apart two fonts sharing a skeleton. It is the smallest decision on the sheet and the most repeated, because every glyph carries several.',
       options: [
         'Flat Cut Terminals',
         'Rounded Terminals',
@@ -222,7 +224,8 @@ export const FONT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Set Assembly Base',
       tooltip:
-        'How the sheet is cut so an engine can lay the glyphs out. Choose by how the game measures text — a fixed cell lets a renderer index straight into the sheet by codepoint, where a proportional set needs a width recorded per glyph and reads far better in long runs. Every value names a cell rule or a run the series already draws apart — the digits and sentence marks on the third sheet, the circumflex, grave and tilde on the fourth — and none of them names a sheet layout, which the aspect format fixes. ' +
+        'How the sheet is cut so an engine can lay the glyphs out. Choose by how the game measures text: a _fixed cell_ lets a renderer index straight into the sheet by codepoint, where a _proportional_ set records a width per glyph and reads far better in long runs.\n\n' +
+        'Every value names a cell rule or a run the series already draws apart, never a sheet layout, which the aspect format fixes.\n\n' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Fixed Cell, One Width For All',
@@ -237,7 +240,7 @@ export const FONT: CategoryDefinition = {
       key: 'clothing',
       label: 'Applied Treatment',
       tooltip:
-        'What is drawn over each finished glyph as part of the same component — an outline, an inner bevel, a glow. It goes into the glyph rather than arriving as a separate piece, because an engine renders one sprite per character and has nothing to lay a second pass over.',
+        'What is drawn over each finished glyph as part of the same component: an outline, an inner bevel, a glow. It goes into the glyph rather than arriving as a separate piece, because an engine renders one sprite per character and has nothing to lay a second pass over.',
       options: [
         'No Treatment',
         'Hard Outline Around Each Glyph',
@@ -256,7 +259,7 @@ export const FONT: CategoryDefinition = {
       key: 'worn_details',
       label: 'Interior Detail',
       tooltip:
-        'How much detail the inside of each stroke carries. Text is read as a run rather than as a picture, so restraint is usually right — every extra line inside a stem costs contrast that the letterform itself needs more, and detail that does not survive being drawn at 8 px only shows up as noise.',
+        'How much detail the inside of each stroke carries. Text is read as a run, not as a picture, so restraint is usually right: every extra line inside a stem costs contrast the letterform needs, and detail lost at 8 px shows only as noise.',
       options: [
         'Flat Fill, No Interior Detail',
         'Two-Tone Block Shading',
@@ -274,7 +277,7 @@ export const FONT: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant colours of the letterforms themselves — what the text is read as. Two colours with a clear value gap keep a glyph legible against every panel the interface might put behind it.',
+        'The dominant colours of the letterforms themselves, which the text is read as. Two colours with a clear value gap keep a glyph legible against every panel the interface might put behind it.',
       options: [
         'Bone White & Cool Shadow',
         'Parchment Cream & Sepia',
@@ -293,7 +296,7 @@ export const FONT: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The one bright colour the outline, the inline or the glow is carried in — the smallest area on each glyph and the thing that separates this set from a plain one. ' +
+        'The one bright colour that carries the outline, the inline or the glow: the smallest area on each glyph, and what sets this set apart from a plain one. ' +
         HEX_CODE_PINS_THE_HUE,
       options: [
         'Legendary Gold #D4AF37',
@@ -313,7 +316,7 @@ export const FONT: CategoryDefinition = {
       key: 'materials',
       label: 'Surface Materials',
       tooltip:
-        'What the lettering appears to be made of and how light reads off it: cut metal takes a hard specular edge, painted board stays matte, and a backlit panel carries its light from within. At text size the material read is often all that separates two sets sharing a skeleton.',
+        'What the lettering appears to be made of and how light reads off it: cut metal takes a hard specular edge, painted board stays matte, a backlit panel glows from within. At text size this is often all that separates two sets sharing a skeleton.',
       options: [
         'Ink On Parchment',
         'Painted Board & Flaking Varnish',
@@ -333,7 +336,7 @@ export const FONT: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping everything but the glyphs off the sheet. The first is the one that matters most: the components are single characters drawn apart, so any two of them set side by side as a word is two entries merged rather than a sheet that reads nicely.',
+        'Negative rules that keep everything but the glyphs off the sheet. The rule against words matters most: each component is a single character drawn apart, so two set side by side as a word are two entries merged.',
       options: [
         'No word, phrase or specimen line set from the glyphs',
         'No frame, plate or panel behind a glyph',
@@ -351,7 +354,8 @@ export const FONT: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Extra Glyphs',
       tooltip:
-        'Further characters beyond the ones the sheet already lists, each isolated into its own sprite slot. Comma-separated, with ×N for how many of each: “Currency Mark ×3, Arrow Glyph ×4” adds seven components to the inventory and to the sheet’s stated count.',
+        'Further characters beyond those the sheet already lists, each isolated in its own sprite slot.\n\n' +
+        'List them with commas and `×N` for how many of each: “Currency Mark ×3, Arrow Glyph ×4” adds seven components to the inventory and to the sheet’s stated count.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Currency Mark ×3',

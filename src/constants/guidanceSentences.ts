@@ -35,7 +35,7 @@
  * value is chosen, so both owe the reader the same reassurance about the option that fills in
  * nothing. It is the same promise in the same words because it is the same behaviour.
  */
-export const NONE_LEAVES_SETTINGS_ALONE = 'NONE writes nothing else and leaves your settings alone.';
+export const NONE_LEAVES_SETTINGS_ALONE = '`NONE` writes nothing else and leaves your settings alone.';
 
 /**
  * What the `CHECK` scope of a quantiser pass does, on the two passes that offer one.
@@ -45,7 +45,7 @@ export const NONE_LEAVES_SETTINGS_ALONE = 'NONE writes nothing else and leaves y
  * same thing about the sheet, the download and stored data in both places.
  */
 export const CHECK_CHANGES_NOTHING =
-  'CHECK reports and changes nothing — not one pixel of the sheet, the download or anything stored.';
+  '`CHECK` reports and changes nothing — not one pixel of the sheet, the download or anything stored.';
 
 /**
  * When a download button is unavailable, on the two that state it this briefly.

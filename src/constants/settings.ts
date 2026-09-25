@@ -56,7 +56,7 @@ export const DEFAULT_ACCENT_LABEL = ACCENT_LABELS[DEFAULT_SETTINGS.accentHue];
  */
 export function accentSwatchGuidance(hue: AccentHue): string {
   const label = ACCENT_LABELS[hue];
-  return `Sets the primary action, the focus ring, selection and the ambient glow to ${label.toLowerCase()}. It applies the moment you press it and is kept for next time. Each view keeps its own colour whichever of these is chosen, and nothing here reaches the compiled prompt.`;
+  return `Sets the primary action, the focus ring, selection and the ambient glow to **${label.toLowerCase()}**. It applies the moment you press it and is kept for next time, and it never reaches the compiled prompt.`;
 }
 
 /**
@@ -77,14 +77,17 @@ export const OPENING_VIEW_CHOICES = APP_TAB_CHOICES.map((tab) => ({ value: tab.i
  * moves it.
  */
 export const SETTINGS_TOOLTIPS = {
-  accentHue: `The colour the app uses for its primary action, the focus ring, selection and the ambient glow — the meanings that stay the same wherever you are. Each view keeps its own colour regardless, because that is how the app says which view you are looking at. Every hue here is a position on the same wheel those come from, at the same luminance as the ${DEFAULT_ACCENT_LABEL.toLowerCase()} default, so switching one in cannot change how legible anything is. Cyan is not offered: it marks something recomputing live, and an accent resting on it would erase that signal.`,
+  accentHue:
+    'The colour the app uses for its primary action, the focus ring, selection and the ambient glow. Each view keeps its own colour whatever you choose here, because that colour is how the app tells you which view you are in.\n\n' +
+    `Every hue has the same luminance as the ${DEFAULT_ACCENT_LABEL.toLowerCase()} default, so switching cannot make anything harder to read. Cyan is not offered, because it marks something recomputing live.`,
 
   motion:
-    'Runs the whole motion layer at its shortest, the way the app already does for anyone whose system asks for reduced motion. Turn it on to quiet this app alone, without changing that system-wide setting. If your system already asks for reduced motion, the app honours it whatever is chosen here — this can only ever take motion away, never add it.',
+    'Runs all of the app’s motion at its shortest, as the app already does when your system asks for reduced motion. Turn it on to quiet this app alone without changing that system-wide setting.\n\n' +
+    'If your system already asks for reduced motion, the app honours it whatever you choose here. This setting can only take motion away.',
 
   ambientBackdrop:
-    'Paints the ambient wash, the dot grid and the two drifting glows behind the page. Worth switching off when you are judging the colours in a sprite sheet: the wash tints the whole page in the active view’s hue, and your artwork is being read against it.',
+    'Paints the ambient wash, the dot grid and the two drifting glows behind the page. Switch it off when you are judging the colours in a sprite sheet: the wash tints the whole page in the active view’s hue, and you are reading your artwork against it.',
 
   openingView:
-    'The view the app opens on. Applied only on a fresh load — navigating during a session is never overridden, and changing this does not move you now.',
+    'The view the app opens on. It applies only on a fresh load, so changing it does not move you now and never overrides where you go during a session.',
 } as const;

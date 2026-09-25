@@ -23,7 +23,10 @@
  */
 export const SPRITE_ASSIGNMENT_TOOLTIPS = {
   sprite:
-    'Says what this sprite is, in the one choice the four answers are exclusive over. Left on “reading order” it takes whichever inventory name its position gives it, which is right whenever the generator laid the components out in the order it was asked for. Name it instead wherever the generator did not: a sheet that drew the right arm before the left has the correct number of pieces and the wrong name on both, and nothing but your eyes can see that. “Leave out” keeps it out of the download altogether — no file, no frame, no rect — which is for what the sheet picked up rather than what it drew, such as a detached tip the key cut adrift. “Join to” treats it and the sprite you choose as two halves of one drawing, written as a single piece cut to the box that holds both, which is what puts a blade back with its guard; joins carry through a chain, and whatever else lies inside the combined box is cut in with them.',
+    'Says what this sprite is in the download. Left on “Reading order”, it takes the inventory name its position gives it, which is right when the generator drew the components in the order asked.\n\n' +
+    '- **A name**: for a sheet drawn out of order. One that drew the right arm before the left has the right count and two wrong names, and only your eyes can see that.\n' +
+    '- **Leave out**: drops it from the download, for something the sheet picked up rather than drew.\n' +
+    '- **Join to**: cuts it and the sprite you choose as one piece, such as a blade and its guard. Anything else inside the box around both is cut in with them.',
 } as const;
 
 /** What the panel says under the list, keyed to what is standing between this sheet and its names. */
