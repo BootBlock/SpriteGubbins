@@ -67,6 +67,7 @@ export const ICON_SYMBOL_SET: SheetPlan = {
   assembly:
     'a full grid of icons at one cell size — every member filling the same margin at the same visual weight, readable from its silhouette alone at the smallest size the game shows it, and swappable one for another without the grid changing character.',
   targetQuantity: 'COMPONENT',
+  extent: 'WHOLE',
   // The cooldown sweep is drawn at two stages, and the changed-state pair active and inactive.
   posing: 'PER_POSITION',
   // The agreement shape, for EFFECT's reason: this sheet's components are not pieces of each

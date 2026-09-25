@@ -122,6 +122,7 @@ export const PORTRAIT_FEATURE_CUT: SheetPlan = {
   assembly:
     'one head and the features a conversation moves, composited at runtime — every piece drawn to the same crop and the same registration as the head, so any brow, any eye and any mouth can be laid on it together without the face shifting on the screen.',
   targetQuantity: 'COMPONENT',
+  extent: 'PIECE',
   // A brow, an eye and a mouth each appear once per shape the feeling puts them in.
   posing: 'PER_POSITION',
   // The one PORTRAIT sheet that holds a genuine pair: a mouth piece has to fit the space the head
@@ -153,6 +154,16 @@ occupy are left clear rather than drawn at rest:`,
       intro: `The ${spellNumber(componentTotal(FEATURE_ENTRIES))} pieces that swap over that head, each drawn alone and clear of it. Every one is
 registered to the same point as the head, so a piece laid on it lands where the head left room:`,
       entries: FEATURE_ENTRIES,
+      // Its own statement of where each entry ends, because section 4's generic one forbids "the whole
+      // subject with the other parts faded, cropped or hidden" — and the head is the whole portrait with
+      // the three feature regions left clear, as its entry says. The pieces are laid over the head
+      // rather than joined to it, so there is no join for a generic rule to name.
+      ends: `The head and every piece are drawn apart and never joined. The head is the one entry drawn as the
+whole portrait, and it stops short of the three features: where a brow, the eyes or the mouth would
+sit, it shows the bare face the pieces are laid over. Each piece is its feature alone — no hair,
+outline or surrounding face of the head drawn around it, and no other feature beside it — so a brow
+drawn with the eyes below it, or a mouth drawn with the chin, is two components merged into one and
+cannot be laid on the head.`,
       outro: `Each piece is drawn to the head above and to no other face: the skin tone, the outline weight and the
 light all match it, so a brow and a mouth laid on together read as one person rather than as two
 drawings meeting. Any brow goes with any eye and any mouth, which is what makes ${String(EXPRESSIONS_REACHED)} faces out

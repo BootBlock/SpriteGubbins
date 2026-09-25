@@ -19,7 +19,7 @@ import type { RigContract } from '../types/rigContract.ts';
  * component and the *n*th manifest entry with no matching step anywhere.
  *
  * Everything outside the entries is left alone. The plan's assembly sentence, its scale example and
- * its outro are statements about how a rig sheet is drawn, which no contract has an opinion about —
+ * its ends and outro are statements about how a rig sheet is drawn, which no contract has an opinion about —
  * and its `posing` is what said this was a rig sheet in the first place.
  */
 /**
@@ -55,10 +55,12 @@ export function rigContractPlan(plan: SheetPlan, contract: RigContract): SheetPl
   });
 
   const named = contract.skeleton_name === '' ? 'the rig' : contract.skeleton_name;
-  // Spread rather than assigned, because the plan's own group may carry no outro and
-  // `exactOptionalPropertyTypes` tells an absent key apart from one holding `undefined`.
-  const outro = plan.groups[0]?.outro;
-  const closing = outro === undefined ? {} : { outro };
+  // Spread rather than assigned, because the plan's own group may carry neither and
+  // `exactOptionalPropertyTypes` tells an absent key apart from one holding `undefined`. The ends
+  // travel with the outro: they are what stands in for section 4's boundary paragraph on this sheet,
+  // so a rebuild that dropped them would leave the rig pieces with no statement of where each ends.
+  const { ends, outro } = plan.groups[0] ?? {};
+  const closing = { ...(ends === undefined ? {} : { ends }), ...(outro === undefined ? {} : { outro }) };
 
   return {
     ...plan,

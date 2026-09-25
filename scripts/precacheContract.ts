@@ -967,8 +967,22 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * where the template is bundled. It is prompt text.
  *
  * 2432 leaves **0.78 KiB**, the smallest whole figure over the build.
+ *
+ * **Raised from 2432 by the boundary rule each sheet states** (issue #402). Section 4 told every sheet
+ * that each entry is a severed part, so a rigid object drawn whole, an effect's frames and a font's
+ * glyphs were told to cut up what their inventories asked for whole, and trunk sheets stated the rule
+ * twice. The template now carries a whole-drawing wording beside the pieces one, and the feature cut
+ * and the layer library state where their own pieces end. Measured against `main` at `ae6833f`,
+ * rebuilt from the same lockfile, with the ceiling forced to zero in each tree so both figures are the
+ * ones `assertPrecacheContract` receives: **2431.22 KiB** on `main` and **2432.13** here, a delta of
+ * **0.91** that crossed a ceiling the base sat 0.78 under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed. Comparing the two `dist/assets` listings summed by
+ * chunk name, 0.60 KiB lands in `index`, where the template and its conditions are bundled, and 0.31
+ * in `quantiseDials`, which holds the sheet plans. It is prompt text.
+ *
+ * 2433 leaves **0.87 KiB**, the smallest whole figure over the build.
  */
-export const PRECACHE_CEILING_KIB = 2432;
+export const PRECACHE_CEILING_KIB = 2433;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

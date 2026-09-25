@@ -9,6 +9,7 @@ import { bodySegment } from './bodySegment.ts';
 import { creaturePlansFor } from './creatureBody.ts';
 import type { CreatureBody, LimbSegment } from './creatureBody.ts';
 import type { ModePlans } from './modePlans.ts';
+import { severedPieceOpening } from './severedPieceOpening.ts';
 
 /**
  * The two *Anatomy Base* values that stand on two legs, and the sheets each of them draws (issue #285).
@@ -137,8 +138,7 @@ const AVIAN: CreatureBody = {
   motionNoun: 'movement',
   motions:
     'a perched resting stance with the wings folded; an alert stance with the wings half raised; a two-legged walk; a take-off leap with the wings raised; a flapping flight with the wings raised and lowered in turn; a level glide with the wings spread; and a diving strike with the talons forward',
-  termination: `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
-parts faded or hidden. A head ends at the neck, with no body behind it. A body ends at the neck join,
+  termination: `${severedPieceOpening('animal')}A head ends at the neck, with no body behind it. A body ends at the neck join,
 the two wing roots, the two hip joins and the tail join, and carries **no wings, no legs and no
 tail**: each join is a clean, capped socket, never a stump trailing into a limb. An inner wing ends at
 the wing root and the join to the outer wing, and carries no outer wing. Every wing, leg and tail piece

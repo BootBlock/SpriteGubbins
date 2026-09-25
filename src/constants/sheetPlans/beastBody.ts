@@ -1,6 +1,7 @@
 import { bodySegment } from './bodySegment.ts';
 import type { LimbSegment, TrunkPiece } from './creatureBody.ts';
 import type { PartDrawing } from './partDrawing.ts';
+import { severedPieceOpening } from './severedPieceOpening.ts';
 
 /**
  * A beast's trunk and its forelimb and hindlimb, as the bodies built on them are fitted with them
@@ -23,15 +24,15 @@ export const BEAST_TRUNK: readonly [TrunkPiece, ...TrunkPiece[]] = [
 /**
  * Where each trunk piece ends — the creature spelling of the character plans' own paragraph, and
  * there for the same reason: a generator's prior for "body" is a body *with legs*, so trunk sheets
- * come back wearing limbs the inventory never listed unless the joins are named.
+ * come back wearing limbs the inventory never listed unless the joins are named. It is the trunk
+ * group's `ends`, in place of section 4's generic boundary paragraph, as the character's is.
  *
  * Its closing sentence is about the series rather than about this sheet's own list, for the reason
  * the character spelling records: the directional core's inventory is heads, bodies and
  * hindquarters, so a sentence citing the limbs "the inventory lists separately" named a list that
  * sheet does not have.
  */
-export const BEAST_TERMINATION = `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
-parts faded or hidden. A head ends at the neck, with no body behind it. A body ends at the neck
+export const BEAST_TERMINATION = `${severedPieceOpening('animal')}A head ends at the neck, with no body behind it. A body ends at the neck
 join, the two forelimb shoulder joins and the join to the hindquarters, and carries **no head and no
 limbs**: each join is a clean, capped socket, never a stump trailing into a limb. A hindquarters
 ends at the body join and the two hindlimb hip joins, and carries **no limbs** — and no tail, unless
