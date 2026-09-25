@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { namesOmittingLabels } from '../../test/namesOmittingLabels.ts';
 import { MAX_PALETTE_ENTRIES } from '../../utils/pngPalette.ts';
 import type { Rgba } from '../../types/quantiser.ts';
 import { PaletteDownload } from './PaletteDownload.tsx';
@@ -44,11 +45,28 @@ describe('PaletteDownload', () => {
     show();
 
     expect(screen.getAllByRole('button')).toHaveLength(3);
-    expect(screen.getByRole('button', { name: 'Download the locked palette as a swatch PNG' })).toBeVisible();
     expect(
-      screen.getByRole('button', { name: 'Download the locked palette as a GIMP palette' }),
+      screen.getByRole('button', {
+        name: 'Swatch PNG — download the locked palette as a picture of its colours',
+      }),
     ).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Download the locked palette as a hex list' })).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: '.gpl — download the locked palette as a GIMP palette' }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Hex list — download the locked palette as plain text' }),
+    ).toBeVisible();
+  });
+
+  /**
+   * #385. The names used to open with `Download`, so `.gpl` appeared nowhere in its own button’s name
+   * and a reader saying “click dot G P L” reached nothing. The other two matched only because their
+   * phrases happened to repeat the label.
+   */
+  it('opens every name with the words on the button, for a reader driving it by speech', () => {
+    show();
+
+    expect(namesOmittingLabels()).toStrictEqual([]);
   });
 
   /**
@@ -59,20 +77,20 @@ describe('PaletteDownload', () => {
     show([GREEN], 'armour.png', 'the colours of this sheet');
 
     expect(
-      screen.getByRole('button', { name: 'Download the colours of this sheet as a hex list' }),
+      screen.getByRole('button', { name: 'Hex list — download the colours of this sheet as plain text' }),
     ).toBeVisible();
   });
 
   it('saves each format under the palette’s own name and its own extension', async () => {
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /swatch PNG$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Swatch PNG — / }));
     await waitFor(() => {
       expect(saved).toEqual(['armour-palette.png']);
     });
 
-    await userEvent.click(screen.getByRole('button', { name: /GIMP palette$/ }));
-    await userEvent.click(screen.getByRole('button', { name: /hex list$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^\.gpl — / }));
+    await userEvent.click(screen.getByRole('button', { name: /^Hex list — / }));
     await waitFor(() => {
       expect(saved).toEqual(['armour-palette.png', 'armour-palette.gpl', 'armour-palette.txt']);
     });
@@ -81,7 +99,7 @@ describe('PaletteDownload', () => {
   it('confirms the download by saying how many colours it carries', async () => {
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /hex list$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Hex list — / }));
 
     await waitFor(() => {
       expect(useUIStore.getState().toastMessage).toBe('Downloaded armour-palette.txt — 2 entries');
@@ -102,15 +120,15 @@ describe('PaletteDownload', () => {
     }));
     show(wide);
 
-    expect(screen.queryByRole('button', { name: /swatch PNG$/ })).toBeNull();
-    expect(screen.getByRole('button', { name: /GIMP palette$/ })).toBeVisible();
-    expect(screen.getByRole('button', { name: /hex list$/ })).toBeVisible();
+    expect(screen.queryByRole('button', { name: /^Swatch PNG — / })).toBeNull();
+    expect(screen.getByRole('button', { name: /^\.gpl — / })).toBeVisible();
+    expect(screen.getByRole('button', { name: /^Hex list — / })).toBeVisible();
   });
 
   it('offers the swatch at exactly that count', () => {
     show(Array.from({ length: MAX_PALETTE_ENTRIES }, (_unused, at) => ({ r: at, g: 0, b: 0, a: 255 })));
 
-    expect(screen.getByRole('button', { name: /swatch PNG$/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /^Swatch PNG — / })).toBeVisible();
   });
 
   it('renders nothing at all for a palette with no colours in it', () => {

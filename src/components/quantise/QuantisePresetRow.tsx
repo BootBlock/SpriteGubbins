@@ -86,7 +86,7 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
                 variant="secondary"
                 size="sm"
                 ref={attachCancel}
-                aria-label={`Keep the saved settings “${preset.name}”`}
+                aria-label={`Cancel — keep the saved settings “${preset.name}”`}
                 onClick={cancel}
               >
                 Cancel
