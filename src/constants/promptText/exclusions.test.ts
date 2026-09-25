@@ -27,7 +27,7 @@ import { CATEGORY_AUDIT_TEXT, CATEGORY_EXCLUSION_TEXT } from './exclusions.ts';
  * *prompt*, and a change to the wording has to answer both.
  *
  * **Only `species` is walked**, and that is the whole of the judgement in this file. Every category
- * shares words between its option pools and its exclusion text — CREATURE's `Saddle & Armor Harness`
+ * shares words between its option pools and its exclusion text — CREATURE's `Saddle & Armour Harness`
  * against "any harness section 1 does not name", VEHICLE's `Wheeled Ground Vehicle` against "ground
  * planes", EFFECT's own `Concentrated Point Flare` against "**lens** flare" — and each of those is
  * either already carved out, a different sense of the word, or a ban that carries its own qualifier.

@@ -27,7 +27,7 @@ export const OBJECT: CategoryDefinition = {
         'Interactive Terminal',
         'Loot Chest / Container',
         'Power Generator',
-        'Defense Turret',
+        'Defence Turret',
         'Portal Gate',
         'Healing Station',
         'Vending Machine',

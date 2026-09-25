@@ -108,7 +108,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       species: 'Modular Watchtower',
       gender: 'Fortified Stronghold',
       age: 'Gothic Stone Fortress',
-      role: 'Defense Tower Structure',
+      role: 'Defence Tower Structure',
       setting: 'Snowy Mountain Pass',
       build: 'Tall 3-Tier Tower',
       silhouette: 'Battlements & Machicolations',

@@ -165,7 +165,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       silhouette: 'Broad-Shouldered Fortress',
       face_head: 'Full Enclosed Helmet',
       anatomy: 'Standard Humanoid',
-      clothing: 'Spiked Bone Armor',
+      clothing: 'Spiked Bone Armour',
       worn_details: 'Shoulder Pauldrons & Cloak',
       // The three fields the pass supersedes, written to agree with it rather than against it. They
       // read `Deep Obsidian & Gold`, `Molten Copper` and `Etched Obsidian Plate` until the prompt
