@@ -77,6 +77,14 @@ const COVERAGE_CEILING = 1 / SHEET_CELL_PITCH ** 2;
 describe('the resolution profile against the page it is drawn on', () => {
   const SHARE_BEARING = ['HIGH_RESOLUTION', 'MID_RESOLUTION'] as const;
 
+  /**
+   * 30 seconds, because this compiles every sheet of every category under both share profiles, and
+   * its cost is that product. Measured on 2026-09-25: 1,391ms when the file runs alone, and past the
+   * 5,000ms default under full-suite contention on a cold transform cache, which is the first run
+   * after a merge — so it failed at random rather than outright. The budget is stated here, as
+   * `promptCompiler.test.ts` states its own, rather than raised for the whole suite, so a genuine
+   * hang elsewhere is still reported as one.
+   */
   it('states every share against the largest component’s cell, and leaves room for the spacing', () => {
     const unpriceable: string[] = [];
     const breaches: string[] = [];
@@ -159,5 +167,5 @@ describe('the resolution profile against the page it is drawn on', () => {
       'the rigid object’s states were never scored',
     ).toBe(true);
     expect(breaches, `the stated scale does not fit:\n${breaches.join('\n')}`).toEqual([]);
-  });
+  }, 30_000);
 });
