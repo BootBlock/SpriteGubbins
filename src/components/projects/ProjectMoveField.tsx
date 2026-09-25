@@ -84,7 +84,7 @@ export function ProjectMoveField({
   };
 
   return (
-    <div ref={fieldRef} className="space-y-2">
+    <div ref={fieldRef}>
       <ProjectSelectField
         label="Project"
         tooltip={tooltip}
@@ -93,24 +93,28 @@ export function ProjectMoveField({
         onChange={setDraft}
       />
 
-      <p role="status" className="text-xs leading-relaxed text-ink-muted empty:hidden">
+      {/* Spaced only while it says something, rather than hidden while empty: a live region taken out
+          of the accessibility tree by `display: none` is not reliably announced when it fills. */}
+      <p role="status" className="text-xs leading-relaxed text-ink-muted not-empty:mt-2">
         {refusal}
       </p>
 
       {destination !== undefined && refusal === null && (
-        <ControlTooltip hint={`Move to ${destination.name}`} text={moveTooltip}>
-          <Button
-            variant="secondary"
-            size="sm"
-            ref={moveRef}
-            aria-label={`Move ${subject} to ${destination.name}`}
-            onClick={() => {
-              move(destination.id);
-            }}
-          >
-            Move
-          </Button>
-        </ControlTooltip>
+        <div className="mt-2">
+          <ControlTooltip hint={`Move to ${destination.name}`} text={moveTooltip}>
+            <Button
+              variant="secondary"
+              size="sm"
+              ref={moveRef}
+              aria-label={`Move ${subject} to ${destination.name}`}
+              onClick={() => {
+                move(destination.id);
+              }}
+            >
+              Move
+            </Button>
+          </ControlTooltip>
+        </div>
       )}
     </div>
   );
