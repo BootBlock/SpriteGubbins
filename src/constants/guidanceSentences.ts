@@ -35,7 +35,7 @@
  * value is chosen, so both owe the reader the same reassurance about the option that fills in
  * nothing. It is the same promise in the same words because it is the same behaviour.
  */
-export const NONE_LEAVES_SETTINGS_ALONE = 'NONE writes nothing else and leaves your settings alone.';
+export const NONE_LEAVES_SETTINGS_ALONE = '`NONE` writes nothing else and leaves your settings alone.';
 
 /**
  * What the `CHECK` scope of a quantiser pass does, on the two passes that offer one.

@@ -17,7 +17,7 @@ export const OUTPUT_TOOLTIPS = {
     'Switching resets the subject to that category’s defaults and re-resolves any setting the new category cannot honour. The switch is recorded in the history above the panel, so it is one Undo away from being put back. Choose it before filling anything else in.',
 
   sheetIndex:
-    'Which part of this deliverable’s inventory the prompt below draws. Some sheet contents ask for more components than one generation returns, so the inventory splits: a character’s head, torso and pelvis views are one part, and its thirty-four limb variants are another.\n\n' +
+    'Which part of this deliverable’s inventory the prompt below draws. Some sheet contents ask for more components than one generation returns, so the inventory splits: a character’s head, torso and pelvis views are one part (two on `EIGHT_COMPASS`), and its thirty-four limb variants are another.\n\n' +
     'This list counts parts, not generations, so it is often shorter than the “Sheet N of M” beside the prompt: a part drawn one facing at a time is generated once per direction you asked for.\n\n' +
     'Work through them in the order the preview steps, and set the identity lock from the first sheet you accept so the rest depict the same individual. “Split into sheets” lays the whole batch out in one place.',
   // The option accounts are in `directionalModeTooltips.ts`, read out under the control for the mode
@@ -119,9 +119,9 @@ export const OUTPUT_TOOLTIPS = {
     'Pick `TRANSPARENT` only if the target really returns alpha; most return a flat matte whatever you ask for. On that choice the prompt asks for the file’s own alpha channel and rules out a drawn checkerboard, a grid of grey squares and that flat matte.\n\n' +
     'Any other choice is reserved for the background: the prompt keeps that colour, and any shade near enough to be keyed out with it, off every component and out of a pinned palette’s colours.',
   spriteTargetSize:
-    'Sets an exact pixel size for one component, such as “48 × 96 px”, and is what the `CUSTOM` profile expects. Leave it empty and the prompt omits the line.\n\n' +
-    'On a sheet of parts that assemble into one subject — a cut-out rig, a pose library, an articulation sheet, an item’s part library — the label reads Target Assembled Size and the size describes the whole assembled subject.\n\n' +
-    'Under the `CUSTOM` profile it sets the smallest feature allowed, and 32 px or under on the shorter edge adds sprite-scale rules. On a pixel-art sheet it is read as the native grid, and the prompt asks for hard pixel edges at a whole-number scale.\n\n' +
+    'Sets an exact pixel size for one component, such as “48 × 96 px”. Leave it empty and the prompt omits the line.\n\n' +
+    'On a sheet of parts that assemble into one subject — a cut-out rig, a pose library, an articulation sheet, an item’s part library — the label reads Target Assembled Size, the size describes the whole assembled subject, and the per-component readings below do not apply.\n\n' +
+    'Under the `CUSTOM` profile it sets the smallest feature allowed, and 32 px or under on the shorter edge adds sprite-scale rules. On a pixel-art sheet under that profile it is read as the native grid, and the prompt asks for hard pixel edges at a whole-number scale above 1:1.\n\n' +
     'A loaded rig contract overrides this field on the sheet it describes, and what you type here returns when you remove it.',
 
   rigMode:
