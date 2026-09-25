@@ -44,17 +44,21 @@ const KV_PATTERN = `${KEY_NAME}["' ]*[:=][ ]*["'][^"' ]{8,}`;
 
 /**
  * The `.env` form of the same assignment: `OPENAI_API_KEY=value`, unquoted, the only thing on its
- * line but a trailing `# comment`. `.env.example` is tracked, so this is a line a contributor
- * commits.
+ * line but a trailing ` # comment`. `.gitignore` lets a `.env.example` be committed, so this is a
+ * line a contributor can commit.
  *
  * Each constraint is what separates the file form from code that merely names a credential. The
  * name must open the line, after optional indentation and `export`, so `const token = …` never
- * qualifies. A value that ends in `;` is a statement, and one that opens `$` is an interpolation
- * such as `GH_TOKEN=$GITHUB_TOKEN`, which names a secret rather than holding one. The lookbehind
- * keeps the name's prefix out of the matched span, so the placeholder test judges `API_KEY=…`
- * exactly as it judges the quoted form, and a prefix such as `EXAMPLE_` exempts nothing.
+ * qualifies. The `=` touches both the name and the value, as a shell requires, so a reassignment
+ * or a parameter default that Prettier spaces (`apiKey = config.apiKey`) never qualifies either;
+ * the cost is a spaced `.env` line with an unquoted value, which this does not read. A value that
+ * opens `{` is a JSX prop, one that ends in `;` or `,` is a statement or a list item, and one that
+ * opens `$` is an interpolation such as `GH_TOKEN=$GITHUB_TOKEN`, which names a secret rather than
+ * holding one. The lookbehind keeps the name's prefix out of the matched span, so the placeholder
+ * test judges `API_KEY=…` exactly as it judges the quoted form, and a prefix such as `EXAMPLE_`
+ * exempts nothing. The comment is matched short of a line's `\r`, so a CRLF line ends the same way.
  */
-const ENV_PATTERN = String.raw`(?<=^\s*(?:export\s+)?[A-Za-z0-9_.-]*)${KEY_NAME}\s*=\s*[^\s"'$][^\s"']{6,}[^\s"';](?=\s*(?:#.*)?$)`;
+const ENV_PATTERN = String.raw`(?<=^\s*(?:export\s+)?[A-Za-z0-9_.-]*)${KEY_NAME}=[^\s"'{$][^\s"']{6,}[^\s"',;](?=(?:\s+#[^\r\n]*)?\s*$)`;
 
 /**
  * The credential shapes this blocks. All matched case-insensitively, and all **global**: a line can
@@ -69,14 +73,18 @@ const ENV_PATTERN = String.raw`(?<=^\s*(?:export\s+)?[A-Za-z0-9_.-]*)${KEY_NAME}
  * kind in a segment first: `sk-proj-`, `sk-svcacct-`, `sk-admin-` and `sk-None-` for OpenAI, and
  * `sk-ant-` with a kind and a two-digit version (`api03`, `admin01`, `oat01`) for Anthropic. The
  * body after that segment carries `-` and `_`, which is what ended the legacy pattern's match.
+ *
+ * Because that body runs on through a kebab-case tail, the prefixed pattern must also start a word:
+ * without the lookbehind, `task-admin-settings-panel` is read as a key from its third letter. The
+ * Hugging Face and Replicate prefixes take the same boundary, for the same reason.
  */
 export const SECRET_PATTERNS: readonly RegExp[] = [
   /-----BEGIN[ A-Z]*PRIVATE KEY-----/gi,
   /AKIA[0-9A-Z]{16}/gi,
   /sk-[A-Za-z0-9]{20,}/gi,
-  /sk-(?:proj|svcacct|admin|None|ant-[a-z]+\d\d)-[A-Za-z0-9_-]{20,}/gi,
-  /hf_[A-Za-z0-9]{30,}/gi,
-  /r8_[A-Za-z0-9]{30,}/gi,
+  /(?<![A-Za-z0-9_-])sk-(?:proj|svcacct|admin|None|ant-[a-z]+\d\d)-[A-Za-z0-9_-]{20,}/gi,
+  /(?<![A-Za-z0-9_-])hf_[A-Za-z0-9]{30,}/gi,
+  /(?<![A-Za-z0-9_-])r8_[A-Za-z0-9]{30,}/gi,
   /(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,}/gi,
   /github_pat_[A-Za-z0-9_]{20,}/gi,
   /xox[baprs]-[A-Za-z0-9-]{10,}/gi,

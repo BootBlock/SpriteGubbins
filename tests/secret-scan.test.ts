@@ -54,7 +54,10 @@ function shape(...pieces: string[]): string {
   return pieces.join('');
 }
 
-/** One fixture per shape in `SECRET_PATTERNS`. None is a real credential. */
+/**
+ * One fixture per shape the scanner knew before #443. `MODERN_KEYS` below holds the shapes #443
+ * added, and `ENV_LINE` the `.env` form. None is a real credential.
+ */
 const GITHUB_TOKEN = shape('ghp_', 'a'.repeat(40));
 const GITHUB_PAT = shape('github_pat_', 'b'.repeat(24));
 const OPENAI_KEY = shape('sk-', 'c'.repeat(24));
@@ -85,6 +88,9 @@ const MODERN_KEYS: Record<string, string> = {
   'Hugging Face token': shape('hf_', 'eFgH'.repeat(8), 'ij'),
   'Replicate token': shape('r8_', 'KlMn'.repeat(9), 'o'),
 };
+
+/** An unquoted assignment in the `.env` form, which #443 added a pattern for. */
+const ENV_LINE = shape('TOKEN', '=', 'q7Rt2Lp9Wm4X');
 
 /**
  * Every position #443's probe found a modern key undetected in. The bare line and the Bearer header
@@ -139,6 +145,8 @@ describe('isSuspect', () => {
       `const f = '${AWS_KEY}';`,
       PRIVATE_KEY,
       `const g = { ${KV_ASSIGNMENT} };`,
+      ...Object.values(MODERN_KEYS).map((key) => `const h = '${key}';`),
+      ENV_LINE,
     ];
     expect(caught.filter((line) => !isSuspect(line))).toEqual([]);
   });
@@ -169,11 +177,13 @@ describe('isSuspect', () => {
 
   it('catches an unquoted value in the .env form, whatever the variable is called (#443)', () => {
     const caught = [
-      shape('TOKEN', '=', 'q7Rt2Lp9Wm4X'),
+      ENV_LINE,
       shape('export SERVICE_PASSWORD', '=', 'q7Rt2Lp9Wm4X'),
-      shape('  DATABASE_SECRET', ' = ', 'q7Rt2Lp9Wm4X'),
+      shape('  DATABASE_SECRET', '=', 'q7Rt2Lp9Wm4X'),
       shape('CLIENT_SECRET', '=', 'q7Rt2Lp9Wm4X', ' # rotated monthly'),
       shape('ACCESS_KEY', '=', 'q7Rt2Lp9Wm4X', '\r'),
+      // A CRLF line with a trailing comment: `.` stops short of the `\r`, so the comment must too.
+      shape('ACCESS_KEY', '=', 'q7Rt2Lp9Wm4X', ' # rotated monthly', '\r'),
       shape('spring.datasource.password', '=', 'q7R#t2Lp9Wm4X'),
       // The name's prefix is outside the matched span, so a placeholder word in it exempts nothing.
       shape('EXAMPLE_API_KEY', '=', 'q7Rt2Lp9Wm4X'),
@@ -182,9 +192,15 @@ describe('isSuspect', () => {
   });
 
   it('leaves code that only names a credential alone', () => {
-    // The `.env` form is anchored to the start of the line and to its end, so an assignment in code
-    // (a statement ending `;`, a declaration, an interpolated reference) is not read as a value.
+    // The `.env` form is anchored to the start of the line and to its end, and its `=` touches both
+    // sides, so an assignment in code is not read as a value: a declaration, a spaced reassignment
+    // or parameter default, a JSX prop, a statement ending `;` or an interpolated reference.
     const clean = [
+      shape('    apiKey', ' = ', 'config.apiKey'),
+      shape('token', ' = ', 'compute_token(input)'),
+      shape('  apiKey', ' = ', 'process.env.API_KEY,'),
+      shape('  token', '=', '{colourToken}'),
+      shape('  showPassword', '=', '{showPasswordField}'),
       shape('const token', ' = ', 'buildToken(input);'),
       shape('    apiKey', ' = ', 'config.apiKey;'),
       shape('refreshToken', ' = ', 'response.refreshToken;'),
@@ -194,9 +210,13 @@ describe('isSuspect', () => {
       shape('OPENAI_API_KEY', '=', '<YOUR_API_KEY>'),
       shape('OPENAI_API_KEY', '=', 'sk-', 'xxxxxxxxxxxx'),
       shape('TOKEN', '=', 'q7Rt2Lp9Wm4X', ' and some prose'),
-      // A kebab-case name that contains `sk-` is not a key, however long its tail.
+      // A kebab-case name that contains `sk-` is not a key, however long its tail, and even when the
+      // segment after it is one of the prefixes a current key opens with.
       shape("const className = 'task-card-header-with-a-long-suffix';"),
       shape("const cls = 'disk-usage-monitor-component-heading';"),
+      shape("const cls = 'task-", "admin-dashboard-settings-panel';"),
+      shape('<div className="desk-', 'proj-overview-card-header-wide" />'),
+      shape("const cls = 'mask-", "none-overlay-for-the-sidebar-panel';"),
     ];
     expect(clean.filter((line) => isSuspect(line))).toEqual([]);
   });
@@ -433,8 +453,15 @@ describe('scanBytes', () => {
   });
 
   it('reads an unquoted .env line out of a binary file', () => {
-    const line = shape('TOKEN', '=', 'q7Rt2Lp9Wm4X');
-    expect(scanBytes(bytes(line, 'utf16le'))).toEqual([line]);
+    expect(scanBytes(bytes(ENV_LINE, 'utf16le'))).toEqual([ENV_LINE]);
+  });
+
+  it('reads a run as short as the shortest .env line, which sets the fourteen-byte floor', () => {
+    // `token`, an equals sign and eight is fourteen bytes, one short of every other shape. A floor
+    // of fifteen would drop this run before any pattern saw it.
+    const shortest = shape('token', '=', 'q7Rt2Lp9');
+    expect(shortest).toHaveLength(14);
+    expect(scanBytes(bytes(shortest, 'utf16le'))).toEqual([shortest]);
   });
 
   it('judges a value the same way the line walk does, so a placeholder is let through', () => {
