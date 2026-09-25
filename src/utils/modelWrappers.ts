@@ -106,6 +106,13 @@ export function wrapForModel(
      */
     readonly palette: boolean;
     /**
+     * Whether section 3 emitted its one-sided-feature ledger, from `ONE_SIDED_FEATURES`.
+     *
+     * Read by Sol for the same reason: the ledger is the per-feature statement of which flank each
+     * piece of gear sits on, and a block Sol is not told to protect is prose it is told to cut.
+     */
+    readonly oneSidedFeatures: boolean;
+    /**
      * Every section name this prompt carries and the number its heading landed on, from
      * `sectionNumbers`.
      *
@@ -120,7 +127,13 @@ export function wrapForModel(
 ): string {
   switch (target) {
     case 'CHATGPT_5_6_SOL':
-      return wrapForSol(prompt, options.nativeGrid, options.palette, options.sectionNumbers);
+      return wrapForSol(
+        prompt,
+        options.nativeGrid,
+        options.palette,
+        options.oneSidedFeatures,
+        options.sectionNumbers,
+      );
 
     case 'MIDJOURNEY':
       return wrapForMidjourney(

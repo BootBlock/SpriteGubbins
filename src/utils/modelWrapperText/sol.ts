@@ -1,4 +1,8 @@
-import { NATIVE_GRID_HEADING, SCOPE_AND_PRECEDENCE_HEADING } from '../../constants/promptTemplate.ts';
+import {
+  NATIVE_GRID_HEADING,
+  ONE_SIDED_FEATURES_HEADING,
+  SCOPE_AND_PRECEDENCE_HEADING,
+} from '../../constants/promptTemplate.ts';
 import { citeSection } from '../templateEngine.ts';
 import type { SectionNumbers } from '../templateEngine.ts';
 
@@ -143,6 +147,18 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * tells Sol to act on the rest itself. It says "act on", not "settle", because the tripwire tells
  * Sol to report a malformed specification rather than resolve it. Whether that changes what a delivered sheet holds is not measured (#403).
  *
+ * **The chirality rules are protected too, because the template wrote them for this hand-off.** The
+ * directive once named three blocks and ended "never those three", which made everything it did not
+ * name the prose to cut first — and that included the closing `RENDER-CRITICAL INVARIANTS` section,
+ * which `constants/promptTemplate.ts` says exists because the renderer "never sees anything but what
+ * survived the hand-off", and section 3's ledger of the one-sided features this subject carries. Those
+ * are the left-and-right rules for gear drawn on one flank, and the traced run above is the evidence
+ * that an unnamed block is the one that gets compressed. Both are gated, so both entries are too: the
+ * invariants on `sections.has('INVARIANTS')`, which is the walk that numbered the prompt, and the
+ * ledger on `oneSidedFeatures`. The closing sentence counts nothing — "never anything in that list" —
+ * because a count written beside a list whose length varies is a second statement of one fact.
+ * Whether naming them changes what a delivered sheet holds is not measured (#327).
+ *
  * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
  * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
  * citations out by hand — `section 0`, `section 2`, `section 3` and `section 4`. The numbers were
@@ -152,13 +168,13 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * `applySectionNumbers` numbers the headings by, so the two move together — see `citeSection` for
  * what that does and does not reach.
  *
- * **`nativeGrid` and `palette` are passed rather than worked out here**, for the reason every other
- * wrapper's arguments are: this file holds text and knows nothing about render styles, resolution
- * profiles or palettes. Both are the compiler's own gate answers — the same two values that decide
- * whether the blocks are in the prompt at all — so the directive cannot name a block that is not
- * there, which would read as an instruction and be a fault. They are positional booleans because
- * that is what this directory already does with a conditional flag; `wrapForMidjourney` takes
- * `frameIsAComponent` the same way.
+ * **`nativeGrid`, `palette` and `oneSidedFeatures` are passed rather than worked out here**, for the
+ * reason every other wrapper's arguments are: this file holds text and knows nothing about render
+ * styles, resolution profiles, palettes or option pools. All three are the compiler's own gate
+ * answers — the same values that decide whether the blocks are in the prompt at all — so the
+ * directive cannot name a block that is not there, which would read as an instruction and be a
+ * fault. They are positional booleans because that is what this directory already does with a
+ * conditional flag; `wrapForMidjourney` takes `frameIsAComponent` the same way.
  *
  * **Everything else this wrapper used to say is gone.** It previously opened "High reasoning effort"
  * and then pointed at section 0 as a done-condition and section 9 as a verification pass. Reasoning
@@ -211,8 +227,23 @@ export function wrapForSol(
   prompt: string,
   nativeGrid: boolean,
   palette: boolean,
+  oneSidedFeatures: boolean,
   sections: SectionNumbers,
 ): string {
+  // In the order the prompt states them. Each gated entry reads the answer that gated its block, so
+  // the list never names a block the prompt does not carry.
+  const carried = [
+    `- the numbered items of section ${citeSection(sections, 'CONTRACT')}`,
+    `- the object yaws in section ${citeSection(sections, 'CAMERA')}`,
+    oneSidedFeatures
+      ? `- the block in section ${citeSection(sections, 'CAMERA')} headed “${ONE_SIDED_FEATURES_HEADING}”`
+      : '',
+    `- the inventory in section ${citeSection(sections, 'INVENTORY')}`,
+    sections.has('INVARIANTS')
+      ? `- the render-critical invariants in section ${citeSection(sections, 'INVARIANTS')}`
+      : '',
+  ].filter((entry) => entry !== '');
+
   // A list rather than a clause, because the entries are conditional and their combined length is
   // not knowable here: spliced into a sentence they push one line to half again the width of every
   // other line in the directive, and the line breaks in this file are the breaks the model reads.
@@ -239,9 +270,12 @@ the idea and drops the figure, which leaves the image nothing to be measured aga
   return `[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]
 You are not the model that draws this sheet: you will call an image tool, and a GPT Image model
 renders whatever that call carries. So the call is where a sheet loses its component count, its
-background or its per-component directions. Whatever you send must still carry the numbered items
-of section ${citeSection(sections, 'CONTRACT')}, the object yaws in section ${citeSection(sections, 'CAMERA')} and the inventory in section ${citeSection(sections, 'INVENTORY')} as they are written
-here. If it has to be shortened, shorten the prose elsewhere — never those three.
+background, its per-component directions or which side a feature is on. Whatever you send must
+still carry these as they are written here:
+
+${carried.join('\n')}
+
+If it has to be shortened, shorten the prose elsewhere — never anything in that list.
 
 What section ${citeSection(sections, 'CONTRACT')} states under “${SCOPE_AND_PRECEDENCE_HEADING}” is addressed to you, not to the image model:
 act on it yourself before you make the call, and leave it out of what you send.${sectionTwo}

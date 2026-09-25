@@ -16,7 +16,7 @@ import {
 } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
-import { NATIVE_GRID_HEADING } from '../constants/promptTemplate.ts';
+import { NATIVE_GRID_HEADING, ONE_SIDED_FEATURES_HEADING } from '../constants/promptTemplate.ts';
 import * as promptText from '../constants/promptText/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../constants/promptText/index.ts';
 import { PROJECTIONS } from '../types/rendering.ts';
@@ -2001,7 +2001,7 @@ describe('generatePrompt — the subject’s one-sided features, named rather th
     const prompt = generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), BOTH);
     const camera = sectionOf(prompt, 'PROJECTION, CAMERA AND OBJECT ORIENTATION');
 
-    expect(camera).toContain('### The one-sided features this subject carries');
+    expect(camera).toContain(`### ${ONE_SIDED_FEATURES_HEADING}`);
     for (const feature of ['undercut', 'holstered sidearm and pouch']) {
       expect(camera, feature).toContain(
         `**The subject carries the ${feature} on its left, and nowhere on its right.**`,
@@ -2011,7 +2011,7 @@ describe('generatePrompt — the subject’s one-sided features, named rather th
     // asked for one feature and the second was left unconstrained however well the first was traced.
     // Counted inside this subsection alone — the leading-side ledger elsewhere in this section is a
     // list of the same shape, and a count over the whole section would pass on either of them.
-    const subsection = camera.slice(camera.indexOf('### The one-sided features this subject carries'));
+    const subsection = camera.slice(camera.indexOf(`### ${ONE_SIDED_FEATURES_HEADING}`));
     const lines = subsection.slice(0, subsection.indexOf('\n### ', 1)).split('\n');
     expect(lines.filter((line) => line.startsWith('- **'))).toHaveLength(8);
   });
@@ -2034,7 +2034,7 @@ describe('generatePrompt — the subject’s one-sided features, named rather th
 
     expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')).toContain('**chirality witness**');
     expect(sectionOf(prompt, 'PROJECTION, CAMERA AND OBJECT ORIENTATION')).not.toContain(
-      'The one-sided features this subject carries',
+      ONE_SIDED_FEATURES_HEADING,
     );
   });
 
@@ -2049,7 +2049,7 @@ describe('generatePrompt — the subject’s one-sided features, named rather th
       for (const subject of [defaultSubjectFor('CHARACTER'), TYPED]) {
         const prompt = generatePrompt('CHARACTER', subject, withOutput({ ...BOTH, directions }));
         const named = sectionOf(prompt, 'PROJECTION, CAMERA AND OBJECT ORIENTATION').includes(
-          'The one-sided features this subject carries',
+          ONE_SIDED_FEATURES_HEADING,
         );
         const audit = sectionOf(prompt, 'LAYOUT AND SELF-AUDIT');
         const traced = audit.includes('Trace **every** feature section 3 lists as one-sided');
@@ -2092,7 +2092,7 @@ describe('generatePrompt — the subject’s one-sided features, named rather th
       'PROJECTION, CAMERA AND OBJECT ORIENTATION',
     );
 
-    expect(camera).toContain('The one-sided features this subject carries');
+    expect(camera).toContain(ONE_SIDED_FEATURES_HEADING);
     expect(camera).not.toContain('the lock wins');
   });
 

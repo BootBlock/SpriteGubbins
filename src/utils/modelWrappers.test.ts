@@ -8,7 +8,11 @@ import {
   LETTERING_IS_A_COMPONENT,
   RENDER_STYLE_SURFACE,
 } from '../constants/promptText/index.ts';
-import { NATIVE_GRID_HEADING, SCOPE_AND_PRECEDENCE_HEADING } from '../constants/promptTemplate.ts';
+import {
+  NATIVE_GRID_HEADING,
+  ONE_SIDED_FEATURES_HEADING,
+  SCOPE_AND_PRECEDENCE_HEADING,
+} from '../constants/promptTemplate.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { RENDER_STYLES } from '../types/rendering.ts';
@@ -237,11 +241,50 @@ describe('wrapForModel', () => {
 
     expect(prompt.startsWith('[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]')).toBe(true);
     expect(prompt).toContain('You are not the model that draws this sheet');
-    // Naming the three parts is the point — a bare "do not summarise" gives it nothing to protect
-    // when it does have to shorten something.
-    expect(prompt).toContain(
-      'the numbered items\nof section 0, the object yaws in section 3 and the inventory in section 4',
+    // Naming the parts is the point — a bare "do not summarise" gives it nothing to protect when it
+    // does have to shorten something.
+    expect(prompt).toContain('- the numbered items of section 0\n- the object yaws in section 3\n');
+    expect(prompt).toContain('- the inventory in section 4\n');
+  });
+
+  it('protects the chirality rules the template restates for the renderer', () => {
+    // Issue #327: the directive named three blocks and ended "never those three", which told Sol to
+    // cut everything else first — including the closing invariants, which exist because the renderer
+    // sees only what survives this hand-off, and section 3's ledger of which flank each piece of gear
+    // is on. The default sheet carries both, and the directive names both.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
+    const wrapper = wrapperOnly(prompt);
+    const invariants = /^## (\d+)\. RENDER-CRITICAL INVARIANTS$/m.exec(prompt)?.[1];
+
+    expect(invariants).toBeDefined();
+    expect(wrapper).toContain(`- the render-critical invariants in section ${String(invariants)}\n`);
+    expect(wrapper).toContain(`- the block in section 3 headed “${ONE_SIDED_FEATURES_HEADING}”\n`);
+    expect(sectionOf(prompt, 'PROJECTION, CAMERA AND OBJECT ORIENTATION')).toContain(
+      `### ${ONE_SIDED_FEATURES_HEADING}`,
     );
+    // No count beside a list whose length varies: "never those three" was true of one length only.
+    expect(wrapper).toContain('never anything in that list.');
+    expect(wrapper).not.toMatch(/never those \w+/);
+  });
+
+  it('names neither chirality block on a sheet that does not carry it', () => {
+    // Both entries are gated on the answer that gated their block. An ICON narrows every direction
+    // set to one facing, so it has no invariants section, and free text in the subject fields names
+    // nothing the compiler can enumerate, so a figure described that way has no ledger.
+    const single = wrapperOnly(
+      generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput({ targetModel: 'CHATGPT_5_6_SOL' })),
+    );
+    const typed = wrapperOnly(
+      generatePrompt(
+        'CHARACTER',
+        { ...defaultSubjectFor('CHARACTER'), face_head: 'A neon visor', worn_details: 'A satchel' },
+        withOutput({ targetModel: 'CHATGPT_5_6_SOL' }),
+      ),
+    );
+
+    expect(single).not.toContain('render-critical invariants');
+    expect(typed).not.toContain(ONE_SIDED_FEATURES_HEADING);
+    expect(typed).toContain('render-critical invariants');
   });
 
   it('forwards section 0’s numbered items and keeps the rules addressed to Sol back', () => {
@@ -405,10 +448,10 @@ describe('wrapForModel', () => {
       expect(wrapperOnly(prompt), title).toContain(sentence(headingNumber(prompt, title)));
     };
 
-    cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `\nof section ${n}, the object yaws`);
+    cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `- the numbered items of section ${n}\n`);
     cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `What section ${n} states under`);
-    cites(sol, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `yaws in section ${n} `);
-    cites(sol, 'COMPONENT INVENTORY', (n) => `the inventory in section ${n} `);
+    cites(sol, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `yaws in section ${n}\n`);
+    cites(sol, 'COMPONENT INVENTORY', (n) => `the inventory in section ${n}\n`);
     cites(sol, 'RENDER STYLE', (n) => `Section ${n} states figures as well`);
     cites(seedream, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `stated in section ${n} `);
   });
@@ -426,13 +469,16 @@ describe('wrapForModel', () => {
       ['STYLE', 3],
       ['CAMERA', 4],
       ['INVENTORY', 5],
+      ['INVARIANTS', 11],
     ]);
+    const sol = wrapForSol('body', true, true, true, shifted);
 
-    expect(wrapForSol('body', true, true, shifted)).toContain(
-      'of section 1, the object yaws in section 4 and the inventory in section 5',
+    expect(sol).toContain(
+      '- the numbered items of section 1\n- the object yaws in section 4\n- the block in section 4',
     );
-    expect(wrapForSol('body', true, true, shifted)).toContain('What section 1 states under');
-    expect(wrapForSol('body', true, true, shifted)).toContain('Section 3 states figures as well');
+    expect(sol).toContain('- the inventory in section 5\n- the render-critical invariants in section 11');
+    expect(sol).toContain('What section 1 states under');
+    expect(sol).toContain('Section 3 states figures as well');
     expect(wrapForSeedream('body', shifted)).toContain('precedence order stated in section 1');
   });
 
