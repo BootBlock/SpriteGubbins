@@ -92,6 +92,17 @@ describe('rigContractPlan', () => {
 
     expect(plan.groups[0]?.outro).toBeDefined();
     expect(overridden.groups[0]?.outro).toBe(plan.groups[0]?.outro);
+    expect(overridden.extent).toBe(plan.extent);
+  });
+
+  it('keeps where each piece ends, which stands in for section 4’s boundary paragraph', () => {
+    // The rig sheet states its joins in the trunk's own words, so the compiler drops the generic
+    // paragraph; a rebuild that lost them would leave the sheet with neither statement.
+    const plan = rigSheet();
+    const overridden = rigContractPlan(plan, CONTRACT);
+
+    expect(plan.groups[0]?.ends).toBeDefined();
+    expect(overridden.groups[0]?.ends).toBe(plan.groups[0]?.ends);
   });
 
   it('names the rig in the line above the list', () => {

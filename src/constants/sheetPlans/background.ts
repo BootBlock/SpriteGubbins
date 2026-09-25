@@ -34,6 +34,7 @@ export const BACKGROUND_PARALLAX_SET: SheetPlan = {
   assembly:
     'a scene of any width scrolling behind the playfield — each band looping against its own copy with no visible join, the bands stacked front to back with no gap showing between them, and the loose pieces placed over whichever band they belong to.',
   targetQuantity: 'COMPONENT',
+  extent: 'PIECE',
   // Every ×2 and ×3 entry is a set of distinct pieces — two band profiles, a broad shaft and a
   // narrow one — rather than one piece drawn at the positions it takes.
   posing: 'UNSTATED',
@@ -180,6 +181,7 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // is what a reader typing `640 × 360 px` here is describing. The parallax set above answers
   // `'COMPONENT'` instead: a band loops against its own copy, so the scene it builds has no width.
   targetQuantity: 'ASSEMBLED',
+  extent: 'PIECE',
   // The ×2 and ×3 entries name pieces that differ from each other — the left half of the scene and
   // the right, three sizes of standing feature — rather than one piece at several positions.
   posing: 'UNSTATED',
@@ -250,9 +252,13 @@ the far mass to move less than the near one:`,
           kind: 'structure',
         },
       ],
-      outro: `The pieces overlap where they meet rather than butting: a backdrop is stacked front to back, not laid
-edge to edge, and a piece cut exactly to its neighbour shows a hairline the moment the camera moves.
-Each is drawn full-height within its own bounds so nothing shows through beneath it.`,
+      // Its `ends` rather than an outro, because section 4's generic boundary paragraph would otherwise
+      // tell these pieces to stop at each join with a clean edge, which is the hairline this forbids.
+      ends: `Each of these is a separate piece of one backdrop — never the whole scene with the other pieces
+faded or hidden, and never carrying a neighbouring piece drawn onto it. The pieces overlap where they
+meet rather than butting: a backdrop is stacked front to back, not laid edge to edge, and a piece cut
+exactly to its neighbour shows a hairline the moment the camera moves. Each is drawn full-height within
+its own bounds so nothing shows through beneath it.`,
     },
     {
       heading: 'Set dressing',

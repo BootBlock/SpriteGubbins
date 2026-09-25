@@ -53,6 +53,7 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
   assembly:
     'the complete item as held or stowed, and in each state its parts allow — sheathed, drawn, opened, or expended — without redrawing any part that does not change.',
   targetQuantity: 'ASSEMBLED',
+  extent: 'PIECE',
   // The working end is drawn in two states, and the consumable part full and depleted.
   posing: 'PER_POSITION',
   scaleExample: 'a pommel drawn beside the body or shaft it caps is in proportion to it',
@@ -110,6 +111,7 @@ function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
     assembly:
       'the complete item seen from each facing, reading as one object turned rather than several drawings of it.',
     targetQuantity: 'ASSEMBLED',
+    extent: 'PIECE',
     // A yaw is the camera turning rather than the item moving, so the repeated entries are views.
     posing: 'UNSTATED',
     // No pommel on this sheet — the fittings stay on the part library — so the guard is the

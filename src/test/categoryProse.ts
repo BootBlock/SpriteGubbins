@@ -55,7 +55,7 @@ export function sheetsProseFor(category: SubjectCategory, sheets: readonly Sheet
 
 /**
  * Everything one sheet writes about what is on it — its name, its assembly sentence, and every
- * heading, intro, outro, label and entry line of its own inventory.
+ * heading, intro, ends, outro, label and entry line of its own inventory.
  *
  * The corpus for a claim about a *sheet* rather than about a category, which is the finer of the two
  * questions and the one `SheetPlan.scaleExample` is grounded against: a CHARACTER directional core
@@ -67,7 +67,7 @@ export function sheetsProseFor(category: SubjectCategory, sheets: readonly Sheet
 export function planProseFor(plan: SheetPlan): string {
   const written: string[] = [plan.name, plan.assembly];
   for (const group of plan.groups) {
-    written.push(group.heading ?? '', group.intro ?? '', group.outro ?? '');
+    written.push(group.heading ?? '', group.intro ?? '', group.ends ?? '', group.outro ?? '');
     for (const entry of group.entries) written.push(entry.label, entry.text);
   }
   return written.join('\n');

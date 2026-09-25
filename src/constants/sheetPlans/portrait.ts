@@ -59,6 +59,7 @@ export const PORTRAIT_EXPRESSION_LIBRARY: SheetPlan = {
   assembly:
     'the same person in every mood a conversation needs — at rest, pleased, angry, hurt, afraid — each drawn to the same crop and the same registration, so any one of them can replace any other in a dialogue box without the head shifting on the screen.',
   targetQuantity: 'COMPONENT',
+  extent: 'WHOLE',
   // One face, drawn once for each expression it wears.
   posing: 'PER_POSITION',
   // EFFECT's shape rather than a pair of pieces, and for EFFECT's reason: this sheet's components

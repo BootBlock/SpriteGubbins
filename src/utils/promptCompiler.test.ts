@@ -1045,7 +1045,7 @@ describe('generatePrompt — the assembled whole, named in the sheet’s own wor
           const output = withOutput({ directionalMode });
           const prompt = generatePrompt(category, subject, output);
           // The plan the compiler itself resolved, rather than one looked up beside it.
-          const { assemblyFailure } = sheetFacts(category, subject, output).plan;
+          const { assemblyFailure, extent } = sheetFacts(category, subject, output).plan;
           const where = `${category} / ${subject.anatomy} / ${directionalMode}`;
 
           expect(unwrapped(sectionOf(prompt, 'COMPONENT INVENTORY')), where).toContain(
@@ -1054,8 +1054,11 @@ describe('generatePrompt — the assembled whole, named in the sheet’s own wor
           expect(unwrapped(sectionOf(prompt, 'EXCLUSIONS')), where).toContain(
             `- ${assemblyFailure.exclusion}`,
           );
+          // The clause completes the joins check on a sheet of pieces and the complete-drawing check on a
+          // sheet of whole drawings, which section 9 states in its place (issue #402).
+          const lead = extent === 'WHOLE' ? 'apart from every other, and' : 'attached, and';
           expect(unwrapped(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')), where).toContain(
-            `attached, and ${assemblyFailure.audit}.`,
+            `${lead} ${assemblyFailure.audit}.`,
           );
         }
       }

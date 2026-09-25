@@ -3,6 +3,7 @@ import { creaturePlansFor } from './creatureBody.ts';
 import type { CreatureBody, LimbSegment } from './creatureBody.ts';
 import type { ModePlans } from './modePlans.ts';
 import type { PartDrawing } from './partDrawing.ts';
+import { severedPieceOpening } from './severedPieceOpening.ts';
 
 /**
  * The five *Anatomy Base* values whose bodies have no fore and hind limbs and still turn about pivots,
@@ -44,8 +45,7 @@ const SERPENTINE: CreatureBody = {
   motionNoun: 'movement',
   motions:
     'a coiled resting stance; an alert posture with the front of the body raised; a slithering glide in S-curves; a sidewinding crawl; a striking lunge; and a constricting coil',
-  termination: `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
-parts faded or hidden. The animal has **no limbs** at all. A head ends at the neck join, with no body
+  termination: `${severedPieceOpening('animal')}The animal has **no limbs** at all. A head ends at the neck join, with no body
 behind it. Each body segment ends at the join to the segment before it and the join to the segment
 after it, and the tapered end ends at the join to the hind segment and closes in a blunt taper, with
 **no tail** unless the inventory lists a tail as its own component. Each join is a clean, capped
@@ -95,8 +95,7 @@ const BURROWING_WORM: CreatureBody = {
   motionNoun: 'movement',
   motions:
     'a resting sprawl; a crawl in which the segments bunch and stretch in turn; a burrowing dive, head first and downward; an emergence with the front of the body rising; a rearing strike; and a recoil into a tight curl',
-  termination: `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
-parts faded or hidden. The animal has **no limbs** at all. A head ends at the join to the fore
+  termination: `${severedPieceOpening('animal')}The animal has **no limbs** at all. A head ends at the join to the fore
 segment, with no body behind it. Each body segment ends at the join to the segment before it and the
 join to the segment after it, and the tail end ends at the join to the hind segment and closes the
 body. Each join is a clean, capped socket, never a stump trailing into the next piece. Every segment
@@ -141,8 +140,7 @@ const OCTOPUS: CreatureBody = {
   motionNoun: 'movement',
   motions:
     'a resting sprawl with the tentacles spread; a crawl across the tentacle tips; a jetting dart with the tentacles trailing together; a rearing threat with the tentacles raised; a grasping lunge; and a defensive curl with the tentacles drawn in',
-  termination: `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
-parts faded or hidden. A mantle ends at the join to the head, with nothing else on it. A head ends at
+  termination: `${severedPieceOpening('animal')}A mantle ends at the join to the head, with nothing else on it. A head ends at
 the mantle join and at a ring of eight tentacle sockets beneath it, and carries **no tentacles**: each
 socket is a clean, capped join, never a stump trailing into a tentacle. The tentacle pieces serve all
 eight tentacles — every tentacle is assembled from the same root segments, middle segments and tips,
@@ -220,8 +218,7 @@ const FINNED_AQUATIC: CreatureBody = {
   motionNoun: 'movement',
   motions:
     'a level cruising glide; a slow hover with the pectoral fins sculling; a tail-beat sweep to either side; a banking turn; a darting burst of speed; and a lunge with the jaws forward',
-  termination: `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
-parts faded or hidden. The animal has **no legs** at all. A head ends at the gill line, with no body
+  termination: `${severedPieceOpening('animal')}The animal has **no legs** at all. A head ends at the gill line, with no body
 behind it. A body ends at the gill line, the two pectoral fin roots, the dorsal fin root and the tail
 join, and carries **no fins and no tail**: each join is a clean, capped socket, never a stump
 trailing into a fin. A tail stock ends at the body join and the tail fin join, and carries no tail
@@ -273,8 +270,7 @@ const ROOTED_GROWTH: CreatureBody = {
   motionNoun: 'movement',
   motions:
     'a still, upright rest; a slow sway; a recoil away from a threat; a lunging strike bent hard from the base; a lashing sweep to either side; and a wilted droop',
-  termination: `Each of these is a severed, isolated piece of one growth — never the whole growth with the other
-parts faded or hidden. The growth has **no limbs** and stands where it is rooted. A crown ends at the
+  termination: `${severedPieceOpening('growth')}The growth has **no limbs** and stands where it is rooted. A crown ends at the
 join to the upper section of the stalk, with no stalk below it. A root mass ends at the join to the
 lower section of the stalk, with its roots spread below it and no stalk above it. Each stalk section
 ends at the join below it and the join above it. Each join is a clean, capped socket, never a stump
