@@ -75,9 +75,8 @@ describe('SpriteControls', () => {
   });
 
   it('holds the sprites against the studio’s own target size, read where the panel stands', () => {
-    // The target used to be handed down through three components that had no use for it. Read
-    // through its hook, a size typed in the studio reaches the panel with nothing in between. An icon
-    // library states its size per component, which is what lets the figure through at all.
+    // A size typed in the studio reaches the panel through `useComponentTarget`. An icon library
+    // states its size per component, which is what lets the figure through at all.
     useSubjectStore.setState({ category: 'ICON' });
     useOutputStore.getState().setOutputField('directionalMode', 'SINGLE_DIRECTION_POSE_LIBRARY');
     useOutputStore.getState().setOutputField('spriteTargetSize', '2 × 2 px');

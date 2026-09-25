@@ -340,14 +340,6 @@ describe('ImageComparison', () => {
   });
 });
 
-/**
- * The five ways of reading one result.
- *
- * Two of them exist because the pair of frames cannot answer their question. Side by side says what
- * the sheet *became*; the wipe puts the same screen pixels before and after so a change of one shade
- * is findable at all; and the difference mode says what the reduction *cost*, which is the reading
- * two separate reports of a working dial "doing nothing" turned out to need.
- */
 describe('ImageComparison’s download settings', () => {
   /** The pill pressed in one of the toolbar's rows, by the row's accessible name. */
   function pressedIn(row: string): string | null {
@@ -390,6 +382,14 @@ describe('ImageComparison’s download settings', () => {
   });
 });
 
+/**
+ * The five ways of reading one result.
+ *
+ * Two of them exist because the pair of frames cannot answer their question. Side by side says what
+ * the sheet *became*; the wipe puts the same screen pixels before and after so a change of one shade
+ * is findable at all; and the difference mode says what the reduction *cost*, which is the reading
+ * two separate reports of a working dial "doing nothing" turned out to need.
+ */
 describe('ImageComparison’s preview modes', () => {
   it('opens on the pair, which is the reading that needs no explaining', () => {
     show(8);

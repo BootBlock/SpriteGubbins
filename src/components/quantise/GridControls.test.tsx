@@ -121,10 +121,9 @@ describe('GridControls', () => {
   });
 
   it('offers the studio’s target as a scale to try, and writes the one clicked to the store', () => {
-    // Neither the target nor the override is handed down any more: the panel reads the first from
-    // the studio's stores and writes the second straight to the quantiser's, so the row is only
-    // right if both of those reads are. An icon library states its size per component, which is what
-    // lets the studio's figure through at all — see `componentTargetSize`.
+    // The panel reads the target from the studio's stores and writes the override straight to the
+    // quantiser's, so the row is only right if both of those are. An icon library states its size per
+    // component, which is what lets the studio's figure through at all — see `componentTargetSize`.
     useSubjectStore.setState({ category: 'ICON' });
     useOutputStore.getState().setOutputField('directionalMode', 'SINGLE_DIRECTION_POSE_LIBRARY');
     useQuantiseStore.setState({ source: { name: 'sheet.png', image: createImage(256, 256) } });

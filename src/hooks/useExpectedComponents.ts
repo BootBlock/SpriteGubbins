@@ -6,11 +6,13 @@ import { componentCountFor } from '../utils/componentSet.ts';
 import { useSheetSubject } from './useSheetSubject.ts';
 
 /**
- * How many components this sheet's own prompt contracts for.
+ * How many components the prompt for the sheet the studio is showing contracts for.
  *
- * The figure the Sprites panel holds the segmentation against, and the ceiling the grid suggestion
- * seats. One derivation for both, because two would be two answers to "what did the prompt ask for"
- * on one screen — see `useSuggestedGrid`, which reads it through this hook rather than again.
+ * The figure the studio's budget notice warns against, the atlas calculator lays a grid out for, the
+ * Quantise tab's Sprites panel holds the segmentation against, and the grid suggestion seats. One
+ * derivation for all of them, because two would be two answers to "what did the prompt ask for" —
+ * see `useSuggestedGrid`, which reads it through this hook rather than again. The arithmetic itself
+ * is `componentCountFor`'s, which the prompt's own figures are read through too — see `promptFacts.ts`.
  */
 export function useExpectedComponents(): number {
   const category = useSubjectStore((state) => state.category);
