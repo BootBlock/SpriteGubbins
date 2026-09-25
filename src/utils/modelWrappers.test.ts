@@ -8,7 +8,11 @@ import {
   LETTERING_IS_A_COMPONENT,
   RENDER_STYLE_SURFACE,
 } from '../constants/promptText/index.ts';
-import { NATIVE_GRID_HEADING, SCOPE_AND_PRECEDENCE_HEADING } from '../constants/promptTemplate.ts';
+import {
+  NATIVE_GRID_HEADING,
+  RIG_GEOMETRY_HEADING,
+  SCOPE_AND_PRECEDENCE_HEADING,
+} from '../constants/promptTemplate.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { RENDER_STYLES } from '../types/rendering.ts';
@@ -57,6 +61,18 @@ const NATIVE_GRID_SHEET = {
   spriteTargetSize: '16 × 32 px',
   aspectRatio: 'SQUARE_1_1',
 } as const satisfies Partial<OutputConfig>;
+
+/**
+ * The shipped Unsung Saviour character rig preset, compiled with `overrides` on top of its output.
+ *
+ * The one shipped configuration that loads a rig contract, and it targets Sol through the defaults,
+ * so it is the sheet whose section 5 piece geometry the Sol wrapper has to protect.
+ */
+function characterRigPrompt(overrides: Partial<OutputConfig>): string {
+  const preset = PRESETS.find((candidate) => candidate.id === 'us-character-rig');
+  if (preset === undefined) throw new Error('the Unsung Saviour character rig preset should ship.');
+  return generatePrompt(preset.category, preset.subject, withOutput({ ...preset.output, ...overrides }));
+}
 
 /** The wrapper alone: whatever the target added before the specification, and after it. */
 function wrapperOnly(prompt: string): string {
@@ -274,8 +290,37 @@ describe('wrapForModel', () => {
     const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
 
     expect(wrapperOnly(prompt)).toContain(
-      `Shorten nothing in:\n\n- the block headed “${NATIVE_GRID_HEADING}”`,
+      `Shorten nothing in:\n\n- the block headed “${NATIVE_GRID_HEADING}” in section 2`,
     );
+  });
+
+  it('adds section 5’s piece geometry on a rig-contract sheet, which the native grid points at', () => {
+    // Under a rig contract the native-grid block states no size of its own: it says "The piece sizes
+    // in section 5 are a native pixel grid" and gives the multiple, and the sizes, joints and pivots
+    // are section 5's fifteen lines. Protecting the pointer alone forwarded "6× or more" of a grid
+    // Sol was free to paraphrase away (#397). The shipped preset is the fixture, because it is the
+    // configuration the contract exists for, and it targets Sol.
+    const prompt = characterRigPrompt({});
+    const wrapper = wrapperOnly(prompt);
+    const rig = sectionOf(prompt, 'CUT-OUT RIG REQUIREMENTS');
+
+    expect(wrapper).toContain('You are not the model that draws this sheet');
+    expect(wrapper).toContain(`- the block headed “${NATIVE_GRID_HEADING}” in section 2`);
+    expect(wrapper).toContain(`- the block headed “${RIG_GEOMETRY_HEADING}” in section 5`);
+    // The heading the entry names is one the prompt carries, over the figures it protects.
+    expect(rig).toMatch(/^## 5\./);
+    expect(rig).toContain(`### ${RIG_GEOMETRY_HEADING}`);
+    expect(rig).toMatch(/\*\*pelvis\*\* — \d+ × \d+ px/);
+  });
+
+  it('names no piece geometry on the same sheet once its rig contract is cleared', () => {
+    // Without the engine's rig, section 5 has no geometry block, so the entry would point at a
+    // heading the prompt does not carry — which reads as an instruction rather than as a fault.
+    const prompt = characterRigPrompt({ rigContract: null });
+
+    expect(wrapperOnly(prompt)).toContain('You are not the model that draws this sheet');
+    expect(prompt).toContain('## 5. CUT-OUT RIG REQUIREMENTS');
+    expect(prompt).not.toContain(RIG_GEOMETRY_HEADING);
   });
 
   it('quotes a heading section 2 actually carries', () => {
@@ -325,17 +370,19 @@ describe('wrapForModel', () => {
     expect(wrapper).not.toContain(NATIVE_GRID_HEADING);
   });
 
-  it('says nothing about section 2 where section 2 states no figures', () => {
-    // The clause names blocks, so it can only be written where they were emitted. A painted sheet
-    // with no palette pinned has nothing in section 2 to protect, and a sentence introducing an empty
-    // list is the "repeated statement" OpenAI's own guidance for this family says to cut.
+  it('says nothing about other figures where no other block states any', () => {
+    // The clause names blocks, so it can only be written where they were emitted. A painted
+    // character's core sheet with no palette pinned has no native grid, no palette and no rig
+    // geometry to protect, and a sentence introducing an empty list is the "repeated statement"
+    // OpenAI's own guidance for this family says to cut.
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
       withOutput({ targetModel: 'CHATGPT_5_6_SOL', renderStyle: 'PAINTED_2D', palette: 'FREE' }),
     );
 
-    expect(wrapperOnly(prompt)).not.toContain('Section 2 states figures as well');
+    expect(wrapperOnly(prompt)).not.toContain('Other blocks state figures as well');
+    expect(wrapperOnly(prompt)).not.toContain('Shorten nothing in');
   });
 
   it('does not tell a ChatGPT user about a rewrite OpenAI documents only for the API', () => {
@@ -391,6 +438,7 @@ describe('wrapForModel', () => {
     // the inventory moves the prompt body's own citations and would have left these behind, in the
     // two wrappers whose whole job is saying which blocks may not be shortened.
     const sol = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
+    const rigSheet = characterRigPrompt({});
     const seedream = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'SEEDREAM' }));
 
     // The prompt's own heading is the answer both halves are held to, read back out of the compiled
@@ -409,7 +457,8 @@ describe('wrapForModel', () => {
     cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `What section ${n} states under`);
     cites(sol, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `yaws in section ${n} `);
     cites(sol, 'COMPONENT INVENTORY', (n) => `the inventory in section ${n} `);
-    cites(sol, 'RENDER STYLE', (n) => `Section ${n} states figures as well`);
+    cites(sol, 'RENDER STYLE', (n) => `${NATIVE_GRID_HEADING}” in section ${n}\n`);
+    cites(rigSheet, 'CUT-OUT RIG REQUIREMENTS', (n) => `${RIG_GEOMETRY_HEADING}” in section ${n}\n`);
     cites(seedream, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `stated in section ${n} `);
   });
 
@@ -428,11 +477,17 @@ describe('wrapForModel', () => {
       ['INVENTORY', 5],
     ]);
 
-    expect(wrapForSol('body', true, true, shifted)).toContain(
-      'of section 1, the object yaws in section 4 and the inventory in section 5',
+    const sol = wrapForSol(
+      'body',
+      { nativeGrid: true, palette: true, rigGeometry: true },
+      new Map([...shifted, ['RIG', 6]]),
     );
-    expect(wrapForSol('body', true, true, shifted)).toContain('What section 1 states under');
-    expect(wrapForSol('body', true, true, shifted)).toContain('Section 3 states figures as well');
+
+    expect(sol).toContain('of section 1, the object yaws in section 4 and the inventory in section 5');
+    expect(sol).toContain('What section 1 states under');
+    expect(sol).toContain(`${NATIVE_GRID_HEADING}” in section 3\n`);
+    expect(sol).toContain('- every value in the palette block in section 3\n');
+    expect(sol).toContain(`${RIG_GEOMETRY_HEADING}” in section 6\n`);
     expect(wrapForSeedream('body', shifted)).toContain('precedence order stated in section 1');
   });
 

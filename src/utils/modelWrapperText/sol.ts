@@ -1,4 +1,9 @@
-import { NATIVE_GRID_HEADING, SCOPE_AND_PRECEDENCE_HEADING } from '../../constants/promptTemplate.ts';
+import {
+  NATIVE_GRID_HEADING,
+  RIG_GEOMETRY_HEADING,
+  SCOPE_AND_PRECEDENCE_HEADING,
+} from '../../constants/promptTemplate.ts';
+import type { SolFigureBlocks } from '../../types/solFigureBlocks.ts';
 import { citeSection } from '../templateEngine.ts';
 import type { SectionNumbers } from '../templateEngine.ts';
 
@@ -131,6 +136,16 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * worth the same protection, so the entry protects the block's values rather than describing their
  * shape.
  *
+ * **Under a rig contract the native-grid block is protected with the figures it points at, because
+ * it holds none of its own.** On that sheet it says "The piece sizes in section 5 are a native pixel
+ * grid" and states only the multiple, and the sizes, joints and pivots are the fifteen lines of
+ * section 5's piece-geometry block. Protecting the pointer and not what it points at would forward
+ * "6× or more" of a grid Sol was free to paraphrase away. This is not the symmetry the hardware
+ * paragraph refuses: it is the measured block's own figures, moved to another section by the
+ * contract. That those lines are lost at the call is plausible rather than observed, since no Sol
+ * run of a rig-contract sheet has been traced (#397). The list therefore names a section per entry,
+ * and its lead-in no longer says every figure it protects is in section 2.
+ *
  * **Section 0 is protected by its numbered items, not whole, and what is left of it is Sol's to
  * settle.** The directive used to require all of section 0 "as they are written here". Measured on
  * the default Sol prompt (CHARACTER, eight directions) that section was 639 words, about 91% of the
@@ -152,13 +167,13 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * `applySectionNumbers` numbers the headings by, so the two move together — see `citeSection` for
  * what that does and does not reach.
  *
- * **`nativeGrid` and `palette` are passed rather than worked out here**, for the reason every other
- * wrapper's arguments are: this file holds text and knows nothing about render styles, resolution
- * profiles or palettes. Both are the compiler's own gate answers — the same two values that decide
- * whether the blocks are in the prompt at all — so the directive cannot name a block that is not
- * there, which would read as an instruction and be a fault. They are positional booleans because
- * that is what this directory already does with a conditional flag; `wrapForMidjourney` takes
- * `frameIsAComponent` the same way.
+ * **`SolFigureBlocks` is passed rather than worked out here**, for the reason every other wrapper's
+ * arguments are: this file holds text and knows nothing about render styles, resolution profiles,
+ * palettes or rigs. Each field is the compiler's own gate answer — the same value that decides
+ * whether its block is in the prompt at all — so the directive cannot name a block that is not
+ * there, which would read as an instruction and be a fault. They are named fields rather than the
+ * positional booleans the rest of this directory uses, because three booleans in a row is a call
+ * site that reads the same with any two of them swapped.
  *
  * **Everything else this wrapper used to say is gone.** It previously opened "High reasoning effort"
  * and then pointed at section 0 as a done-condition and section 9 as a verification pass. Reasoning
@@ -207,29 +222,31 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * [GPT Image 2.5 prompting guide](https://developers.openai.com/api/docs/guides/image-prompting),
  * [ChatGPT image prompting](https://learn.chatgpt.com/docs/image-generation).
  */
-export function wrapForSol(
-  prompt: string,
-  nativeGrid: boolean,
-  palette: boolean,
-  sections: SectionNumbers,
-): string {
+export function wrapForSol(prompt: string, figures: SolFigureBlocks, sections: SectionNumbers): string {
   // A list rather than a clause, because the entries are conditional and their combined length is
   // not knowable here: spliced into a sentence they push one line to half again the width of every
   // other line in the directive, and the line breaks in this file are the breaks the model reads.
+  // Each entry cites its own section, because they are no longer all in one. The citation is made
+  // only inside its gate: `citeSection` throws for a section the prompt does not carry.
   const blocks = [
-    nativeGrid ? `- the block headed “${NATIVE_GRID_HEADING}”` : '',
-    palette ? '- every value in the palette block' : '',
+    figures.nativeGrid
+      ? `- the block headed “${NATIVE_GRID_HEADING}” in section ${citeSection(sections, 'STYLE')}`
+      : '',
+    figures.palette ? `- every value in the palette block in section ${citeSection(sections, 'STYLE')}` : '',
+    figures.rigGeometry
+      ? `- the block headed “${RIG_GEOMETRY_HEADING}” in section ${citeSection(sections, 'RIG')}`
+      : '',
   ].filter((block) => block !== '');
 
-  // Nothing at all where neither block was emitted, rather than a sentence about section 2 that
-  // names none of it — which is the studio's own opening configuration, whose `HIGH_RESOLUTION`
-  // profile states its own scale and so has no native grid to enlarge.
-  const sectionTwo =
+  // Nothing at all where no block was emitted, rather than a sentence that names none of them —
+  // which is the studio's own opening configuration, whose `HIGH_RESOLUTION` profile states its own
+  // scale and so has no native grid to enlarge.
+  const otherFigures =
     blocks.length === 0
       ? ''
       : `
 
-Section ${citeSection(sections, 'STYLE')} states figures as well, and they are protected in the same way. Shorten nothing in:
+Other blocks state figures as well, and they are protected in the same way. Shorten nothing in:
 
 ${blocks.join('\n')}
 
@@ -244,7 +261,7 @@ of section ${citeSection(sections, 'CONTRACT')}, the object yaws in section ${ci
 here. If it has to be shortened, shorten the prose elsewhere — never those three.
 
 What section ${citeSection(sections, 'CONTRACT')} states under “${SCOPE_AND_PRECEDENCE_HEADING}” is addressed to you, not to the image model:
-act on it yourself before you make the call, and leave it out of what you send.${sectionTwo}
+act on it yourself before you make the call, and leave it out of what you send.${otherFigures}
 
 ${prompt}`;
 }

@@ -83,10 +83,11 @@ export function generatePrompt(
     surface: RENDER_STYLE_SURFACE[output.renderStyle],
     limbsAreComponents: LIMBS_ARE_COMPONENTS[category],
     assembly: CATEGORY_ASSEMBLY[category],
-    // The same two answers `promptConditions` gave the template's own gates, so a wrapper can never
+    // The same three answers `promptConditions` gave the template's own gates, so a wrapper can never
     // name a block the prompt it wraps does not carry.
     nativeGrid: facts.sizing.nativeScale !== null,
     palette: facts.palette !== null,
+    rigGeometry: facts.rig !== null,
     // The headings' own numbers, from the same walk that resolved the prompt body's citations — so a
     // wrapper naming a section cannot come to name a different one than the prose does.
     sectionNumbers: numbers,

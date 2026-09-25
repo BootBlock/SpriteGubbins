@@ -106,6 +106,14 @@ export function wrapForModel(
      */
     readonly palette: boolean;
     /**
+     * Whether section 5 emitted its piece-geometry block, from the sheet's rig contract.
+     *
+     * Read by Sol because, under a contract, the native-grid block states no size of its own and
+     * points here for every one of them — so protecting that block alone forwards a multiple of a
+     * grid the hand-off was free to paraphrase away.
+     */
+    readonly rigGeometry: boolean;
+    /**
      * Every section name this prompt carries and the number its heading landed on, from
      * `sectionNumbers`.
      *
@@ -120,7 +128,11 @@ export function wrapForModel(
 ): string {
   switch (target) {
     case 'CHATGPT_5_6_SOL':
-      return wrapForSol(prompt, options.nativeGrid, options.palette, options.sectionNumbers);
+      return wrapForSol(
+        prompt,
+        { nativeGrid: options.nativeGrid, palette: options.palette, rigGeometry: options.rigGeometry },
+        options.sectionNumbers,
+      );
 
     case 'MIDJOURNEY':
       return wrapForMidjourney(
