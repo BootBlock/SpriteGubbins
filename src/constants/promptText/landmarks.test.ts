@@ -112,12 +112,13 @@ describe('LANDMARK_TEXT', () => {
     // Held to the sheet's own inventory rather than the category's, because it exists for exactly the
     // case where the two differ.
     const own = SUBJECT_CATEGORIES.flatMap((category) =>
-      everySheetOf(category).flatMap((plan) => (plan.landmark === undefined ? [] : [{ category, plan }])),
+      everySheetOf(category).flatMap((plan) =>
+        plan.landmark === undefined ? [] : [{ category, plan, landmark: plan.landmark }],
+      ),
     );
     expect(own.length).toBeGreaterThan(0);
 
-    for (const { category, plan } of own) {
-      const landmark = plan.landmark ?? '';
+    for (const { category, plan, landmark } of own) {
       const prose = `${planProseFor(plan)} ${plan.componentClass}`;
       const pieces = namedPiecesIn(landmark);
       expect(pieces.length, `${category} / ${plan.name}: the landmark names no piece`).toBeGreaterThan(0);

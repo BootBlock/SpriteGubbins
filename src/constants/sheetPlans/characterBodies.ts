@@ -34,7 +34,11 @@ import type { ModePlans } from './modePlans.ts';
  * is a head, a torso, a pelvis and four limbs with a beast's surface and features.
  */
 
-/** Wings on the back, drawn and rigged as a pair of their own; the poses add the one they are for. */
+/**
+ * Wings on the back, drawn and rigged as a pair of their own; the poses add the one they are for. The
+ * wings' variants take the posed sheets past one generation, so the pose library and the articulation
+ * run each take two sheets: the arms and wings on one, the legs on the other.
+ */
 export const CHARACTER_WINGED_PLANS: ModePlans = characterPlansFor({
   trunk: [
     HEAD,
@@ -119,7 +123,9 @@ shoulder joins, the two hind-leg hip joins and the tail root, and carries
     'a galloping stride with the legs fully extended and gathered',
     'a rearing pose on the hind legs',
   ],
-  chains: [ARM, FORELEG, HIND_LEG, TAIL],
+  // The legs first, so a split series draws all four on one sheet and settles hooves or paws once for
+  // the lower body, rather than on two sheets generated apart.
+  chains: [FORELEG, HIND_LEG, ARM, TAIL],
   landmark: `${HEAD_LANDMARK}; ${TORSO_LANDMARK}; a lower body’s front is the breast between the forelegs, below the waist join, and its rear the hindquarters and the tail root.`,
 });
 

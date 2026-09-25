@@ -155,38 +155,42 @@ export const DIGITIGRADE_LEG: LimbChain = {
   ],
 };
 
-/**
- * A wing drawn whole in each state it opens to, as a hand is drawn relaxed and closed: how far a wing
- * opens is its shape rather than a bend between two rigid segments. The rig swings it at the wing root.
- */
-export const WING: LimbChain = {
-  noun: 'wing',
-  plural: 'wings',
-  sort: 'wing',
-  sides: 'PAIRED',
-  smallest: 'a folded wing',
-  largest: 'a fully spread wing',
-  segments: [
-    {
-      name: 'wing',
-      plural: 'Wings',
-      slug: 'wing',
-      group: 'wings',
-      variants: [
-        { text: 'folded against the back', slug: 'folded' },
-        { text: 'half-spread', slug: 'half-spread' },
-        { text: 'fully spread', slug: 'spread' },
-      ],
-    },
-  ],
-};
-
 /** The three swings a chain's root segment is drawn at, from the joint the trunk carries. */
 const ROOT_SWINGS: LimbSegment['variants'] = [
   { text: 'lowered', slug: 'lowered' },
   { text: 'level', slug: 'level' },
   { text: 'raised', slug: 'raised' },
 ];
+
+/**
+ * A wing, as two rigid segments: an inner wing swung from the wing root on the back, and an outer wing
+ * fitted to fold against it. Section 5 forbids a pre-bent segment, so a folded wing is the outer
+ * segment turned against the inner one rather than one piece drawn folded, and the rig can open it.
+ */
+export const WING: LimbChain = {
+  noun: 'wing',
+  plural: 'wings',
+  sort: 'wing',
+  sides: 'PAIRED',
+  smallest: 'an outer wing',
+  largest: 'an inner wing',
+  segments: [
+    {
+      name: 'inner wing',
+      plural: 'Inner wings',
+      slug: 'inner-wing',
+      group: 'inner-wings',
+      variants: ROOT_SWINGS,
+    },
+    {
+      name: 'outer wing',
+      plural: 'Outer wings',
+      slug: 'outer-wing',
+      group: 'outer-wings',
+      variants: FLEXIONS,
+    },
+  ],
+};
 
 /**
  * A tail on the centreline, as two rigid segments: a base swung from the tail root, and a tip fitted
@@ -229,8 +233,20 @@ function quadrupedLeg(noun: string, stem: string, smallest: string, largest: str
     smallest,
     largest,
     segments: [
-      { ...UPPER_LEG, slug: `upper-${stem}`, group: `upper-${stem}s` },
-      { ...LOWER_LEG, slug: `lower-${stem}`, group: `lower-${stem}s` },
+      {
+        ...UPPER_LEG,
+        name: `upper ${noun}`,
+        plural: `Upper ${noun}s`,
+        slug: `upper-${stem}`,
+        group: `upper-${stem}s`,
+      },
+      {
+        ...LOWER_LEG,
+        name: `lower ${noun}`,
+        plural: `Lower ${noun}s`,
+        slug: `lower-${stem}`,
+        group: `lower-${stem}s`,
+      },
       {
         name: 'hoof or paw',
         plural: 'Hooves or paws',
@@ -261,7 +277,7 @@ export const HIND_LEG: LimbChain = quadrupedLeg(
 export const SERPENT_BODY: LimbChain = {
   noun: 'serpent body',
   plural: 'serpent body',
-  sort: 'tail',
+  sort: 'serpent-body section',
   sides: 'SINGLE',
   smallest: 'a tail tip',
   largest: 'a rising section',

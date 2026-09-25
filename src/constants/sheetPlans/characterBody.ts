@@ -68,7 +68,7 @@ export interface LimbChain {
   /** `arms`, `hind legs`, `tail` — what a split sheet's name calls the chain. */
   readonly plural: string;
   /** What the trunk's closing sentence calls a chain of this sort. */
-  readonly sort: 'limb' | 'wing' | 'tail';
+  readonly sort: 'limb' | 'wing' | 'tail' | 'serpent-body section';
   /** A left and a right, or one on the centreline. */
   readonly sides: 'PAIRED' | 'SINGLE';
   /** `a hand` — its smallest piece, which a sheet's scale example sets beside a larger one. */
@@ -234,29 +234,35 @@ function rigEntry(chain: LimbChain, side: Side): ComponentEntry {
   };
 }
 
+/** The chains one posed sheet draws: never none, because a sheet starts with the chain that opened it. */
+type ChainSheet = readonly [LimbChain, ...LimbChain[]];
+
+/** Every component one chain puts on a posed sheet, both sides of it. */
+function componentsOf(chain: LimbChain): number {
+  return variantCount(chain) * sidesOf(chain).length;
+}
+
 /**
  * The chains divided into the fewest sheets that each stay within `PRACTICAL_COMPONENT_CEILING`,
  * whole chains in the body's order, where the first sheet also carries `firstSheetBase` components.
  */
-function packed(
-  body: CharacterBody,
-  firstSheetBase: number,
-): readonly [readonly LimbChain[], ...(readonly LimbChain[])[]] {
-  const first: LimbChain[] = [];
-  const sheets: [LimbChain[], ...LimbChain[][]] = [first];
-  let current = first;
-  let total = firstSheetBase;
-  for (const chain of body.chains) {
-    const count = variantCount(chain) * sidesOf(chain).length;
-    if (current.length > 0 && total + count > PRACTICAL_COMPONENT_CEILING) {
-      current = [];
-      sheets.push(current);
-      total = 0;
+function packed(body: CharacterBody, firstSheetBase: number): readonly [...ChainSheet[], ChainSheet] {
+  const [firstChain, ...rest] = body.chains;
+  const done: ChainSheet[] = [];
+  let current: [LimbChain, ...LimbChain[]] = [firstChain];
+  let total = firstSheetBase + componentsOf(firstChain);
+  for (const chain of rest) {
+    const count = componentsOf(chain);
+    if (total + count > PRACTICAL_COMPONENT_CEILING) {
+      done.push(current);
+      current = [chain];
+      total = count;
+    } else {
+      current.push(chain);
+      total += count;
     }
-    current.push(chain);
-    total += count;
   }
-  return sheets;
+  return [...done, current];
 }
 
 /** `Articulation`, or `Articulation — hind legs and tail` where the run split. */
@@ -265,9 +271,18 @@ function splitName(base: string, contents: readonly string[], split: boolean): s
 }
 
 /** `a hand drawn beside an upper leg is in proportion to it`, from the first and last chains on a sheet. */
-function scaleBetween(chains: readonly LimbChain[], larger?: string): string {
-  const smallest = chains[0]?.smallest ?? '';
-  return `${smallest} drawn beside ${larger ?? chains.at(-1)?.largest ?? ''} is in proportion to it`;
+function scaleBetween(chains: ChainSheet, larger?: string): string {
+  const last = chains.reduce((_, chain) => chain);
+  return `${chains[0].smallest} drawn beside ${larger ?? last.largest} is in proportion to it`;
+}
+
+/**
+ * `limbs`, or the chains by name — `arms, tail and legs` — where the sheet is one part of a split run or
+ * draws a chain the trunk's closing sentence counts as something other than a limb.
+ */
+function limbsOf(chains: ChainSheet, split: boolean): string {
+  const limbsOnly = chains.every((chain) => chain.sort === 'limb');
+  return split || !limbsOnly ? spokenList(chains.map((chain) => chain.plural)) : 'limbs';
 }
 
 /** The shape every CHARACTER sheet shares, whatever it draws. */
@@ -283,7 +298,7 @@ function poseLibrary(body: CharacterBody): SheetSeries {
   const [first, ...rest] = packed(body, body.trunk.length);
   const split = rest.length > 0;
   const poses = posesOf(body);
-  const chainEntries = (chains: readonly LimbChain[]) =>
+  const chainEntries = (chains: ChainSheet) =>
     chains.flatMap((chain) => sidesOf(chain).map((side) => poseLibraryEntry(chain, side)));
 
   const trunkSheet: SheetPlan = {
@@ -376,7 +391,7 @@ facing the same way are all failures of this entry, however well drawn.`,
 function articulation(body: CharacterBody): SheetSeries {
   const [first, ...rest] = packed(body, 0);
   const split = rest.length > 0;
-  const run = (chains: readonly LimbChain[]): SheetPlan => ({
+  const run = (chains: ChainSheet): SheetPlan => ({
     ...FIGURE_SHEET,
     name: splitName(
       'Articulation',
@@ -384,7 +399,7 @@ function articulation(body: CharacterBody): SheetSeries {
       split,
     ),
     facings: 'run',
-    assembly: `the ${split ? spokenList(chains.map((chain) => chain.plural)) : 'limbs'} of ${posesOf(body)} — each fitted to the trunk drawn on the directional core sheets, one facing per sheet.`,
+    assembly: `the ${limbsOf(chains, split)} of ${posesOf(body)} — each fitted to the trunk drawn on the directional core sheets, one facing per sheet.`,
     // The same orientations as the pose library's limbs, which is what this run is.
     posing: 'PER_POSITION',
     scaleExample: scaleBetween(chains),

@@ -17,7 +17,7 @@ export const OUTPUT_TOOLTIPS = {
     'Switching resets the subject to that category’s defaults and re-resolves any setting the new category cannot honour. The switch is recorded in the history above the panel, so it is one Undo away from being put back. Choose it before filling anything else in.',
 
   sheetIndex:
-    'Which part of this deliverable’s inventory the prompt below draws. Some sheet contents ask for more components than one generation returns, so the inventory splits: a character’s head, torso and pelvis views are one part (two on `EIGHT_COMPASS`), and its thirty-four limb variants are another.\n\n' +
+    'Which part of this deliverable’s inventory the prompt below draws. Some sheet contents ask for more components than one generation returns, so the inventory splits: a standard character’s trunk views are one part (two on `EIGHT_COMPASS`) and its limbs another, and a winged, four-armed or taur body’s limbs take two.\n\n' +
     'This list counts parts, not generations, so it is often shorter than the “Sheet N of M” beside the prompt: a part drawn one facing at a time is generated once per direction you asked for.\n\n' +
     'Work through them in the order the preview steps, and set the identity lock from the first sheet you accept so the rest depict the same individual. “Split into sheets” lays the whole batch out in one place.',
   // The option accounts are in `directionalModeTooltips.ts`, read out under the control for the mode

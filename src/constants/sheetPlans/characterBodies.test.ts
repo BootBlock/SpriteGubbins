@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { planProseFor } from '../../test/categoryProse.ts';
 import type { SheetPlan } from '../../types/components.ts';
 import { DIRECTIONAL_MODES } from '../../types/output.ts';
 import type { DirectionalMode } from '../../types/output.ts';
 import type { DirectionSet } from '../../types/rendering.ts';
 import { defaultSubjectFor } from '../categories/index.ts';
+import { componentTotal } from '../../utils/componentTotal.ts';
 import { PRACTICAL_COMPONENT_CEILING } from '../promptText/inventory.ts';
 import { sheetSeriesFor } from './index.ts';
 
@@ -33,22 +35,12 @@ function partsOf(anatomy: string, mode: DirectionalMode): readonly string[] {
 
 /** Every word of prose the base's sheets write on one mode. */
 function proseOf(anatomy: string, mode: DirectionalMode): string {
-  return sheetsOf(anatomy, mode)
-    .flatMap((plan) => [
-      plan.assembly,
-      ...plan.groups.flatMap((group) => [
-        group.heading ?? '',
-        group.intro ?? '',
-        group.outro ?? '',
-        ...group.entries.map((entry) => entry.text),
-      ]),
-    ])
-    .join('\n');
+  return sheetsOf(anatomy, mode).map(planProseFor).join('\n');
 }
 
 /** The pieces a base names, as patterns one of its component names must match on every mode. */
 const DRAWN: readonly (readonly [string, readonly RegExp[]])[] = [
-  ['Humanoid With Wings', [/^left-wing/, /^right-wing/]],
+  ['Humanoid With Wings', [/^left-inner-wing/, /^right-outer-wing/]],
   ['Tailed Humanoid', [/^tail/]],
   ['Four-Armed Humanoid', [/^left-second-/, /^right-second-/]],
   ['Quadruped Taur', [/^lower-bod(?:y|ies)/, /^left-upper-foreleg/, /^right-hind-leg-hoof/, /^tail/]],
@@ -98,12 +90,15 @@ describe('a declared CHARACTER body', () => {
     // torso is a merged component rather than an unmentioned one.
     expect(proseOf('Humanoid With Wings', 'CUTOUT_RIG_SINGLE_DIRECTION')).toContain('Every limb and wing is');
     expect(proseOf('Tailed Humanoid', 'CUTOUT_RIG_SINGLE_DIRECTION')).toContain('Every limb and tail is');
+    expect(proseOf('Serpent Lower Body', 'CUTOUT_RIG_SINGLE_DIRECTION')).toContain(
+      'Every limb and serpent-body section is',
+    );
     expect(proseOf('Standard Humanoid', 'CUTOUT_RIG_SINGLE_DIRECTION')).toContain('Every limb is');
   });
 });
 
 describe('a body too large for one generation', () => {
-  it.each(['Four-Armed Humanoid', 'Quadruped Taur'])(
+  it.each(['Humanoid With Wings', 'Four-Armed Humanoid', 'Quadruped Taur'])(
     '“%s” splits its posed sheets rather than passing the ceiling',
     (anatomy) => {
       const subject = { ...defaultSubjectFor('CHARACTER'), anatomy };
@@ -119,9 +114,7 @@ describe('a body too large for one generation', () => {
       // One core sheet at five facings, then the articulation run in two halves.
       expect(directional).toHaveLength(3);
       for (const plan of [...poseLibrary, ...directional]) {
-        const count = plan.groups
-          .flatMap((group) => group.entries)
-          .reduce((total, entry) => total + entry.count, 0);
+        const count = componentTotal(plan.groups.flatMap((group) => group.entries));
         expect(count, plan.name).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
       }
       // The trunk is drawn once, on the first pose library sheet, which is the one the subject's
@@ -141,6 +134,16 @@ describe('a body too large for one generation', () => {
     expect(runs.map((plan) => plan.groups.map((group) => group.heading))).toEqual([
       ['Left arm', 'Right arm', 'Left second arm', 'Right second arm'],
       ['Left leg', 'Right leg'],
+    ]);
+  });
+
+  it('draws all four of a taur’s legs on one sheet, so one generation settles hooves or paws', () => {
+    const subject = { ...defaultSubjectFor('CHARACTER'), anatomy: 'Quadruped Taur' };
+    const runs = sheetSeriesFor('CHARACTER', subject, 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC').slice(1);
+
+    expect(runs.map((plan) => plan.groups.map((group) => group.heading))).toEqual([
+      ['Left foreleg', 'Right foreleg', 'Left hind leg', 'Right hind leg'],
+      ['Left arm', 'Right arm', 'Tail'],
     ]);
   });
 });

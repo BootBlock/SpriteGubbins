@@ -260,12 +260,12 @@ export const CHARACTER: CategoryDefinition = {
         'Serpent Lower Body',
         // `Bust — Head, Neck And Shoulders` was here and is not any more. It was added on 2026-08-08,
         // a fortnight before PORTRAIT became a category of its own, and it argued for itself on a
-        // premise that has never been true: that the assembly base reshapes the inventory, so a
-        // portrait base would take the arm and leg entries off the sheet. It does not — see
-        // `sheetPlans/portrait.ts` — so every CHARACTER sheet went on ordering five torsos, five
-        // pelvises and thirty-four arm and leg segments for a subject section 1 called a head, neck
-        // and shoulders. PORTRAIT offers `Framing & Crop: Head Only` and is where that sheet is now
-        // made.
+        // premise that was not true of it: that the base reshapes the inventory, so a portrait base
+        // would take the arm and leg entries off the sheet. A base reshapes it only where
+        // `sheetPlans/assemblyBases.ts` declares a body for it (issue #284), and none was ever
+        // declared for a bust, so every CHARACTER sheet went on ordering five torsos, five pelvises
+        // and thirty-four arm and leg segments for a subject section 1 called a head, neck and
+        // shoulders. PORTRAIT offers `Framing & Crop: Head Only` and is where that sheet is now made.
         'Chibi Super-Deformed',
         'Humanoid With Prosthetic Limb',
         'Hybrid Half-Beast Form',
