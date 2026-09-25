@@ -1,11 +1,13 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { render, renderHook, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, render, renderHook, screen } from '@testing-library/react';
 import { SPRITE_GUIDANCE } from '../../constants/spriteSegmentation.ts';
 import { useExpectedComponents } from '../../hooks/useExpectedComponents.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
+import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import type { SpriteBox, SpriteSegmentation } from '../../types/quantiser.ts';
+import { spritePin } from '../../utils/spritePin.ts';
 import { SpriteControls } from './SpriteControls.tsx';
 
 /**
@@ -47,6 +49,11 @@ describe('SpriteControls', () => {
     useQuantiseStore.getState().clear();
     useOutputStore.setState(useOutputStore.getInitialState());
     useSubjectStore.setState(useSubjectStore.getInitialState());
+    useSpriteAssignmentStore.getState().forget();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('says so when the sheet came back with what was asked for', () => {
@@ -103,5 +110,28 @@ describe('SpriteControls', () => {
 
     expect(screen.queryByText(/asked for/)).not.toBeInTheDocument();
     expect(screen.getByText('Reading the sheet…')).toBeInTheDocument();
+  });
+
+  it('scrolls to the selected sprite’s row once, not again each time a result lands', () => {
+    // The list is withdrawn while a result is on its way and its rows mount afresh when it lands,
+    // with the selection still standing. A row that scrolled on being selected dragged the page
+    // back to itself after every dial move, taking the slider the reader was dragging with it.
+    const sprites = segmented(asked());
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const { rerender } = render(<SpriteControls sprites={sprites} busy={false} />);
+
+    act(() => {
+      // The second sprite along the row `segmented` lays out.
+      useSpriteAssignmentStore.getState().select(spritePin(boxAt(8)));
+    });
+    expect(scroll).toHaveBeenCalledTimes(1);
+
+    for (let cycle = 0; cycle < 3; cycle += 1) {
+      rerender(<SpriteControls sprites={sprites} busy />);
+      rerender(<SpriteControls sprites={sprites} busy={false} />);
+    }
+
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(useSpriteAssignmentStore.getState().selected).not.toBeNull();
   });
 });

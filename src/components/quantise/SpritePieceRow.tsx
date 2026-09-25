@@ -11,6 +11,7 @@ import {
   spriteDecisionOf,
 } from '../../utils/spriteChoice.ts';
 import { spriteLabel } from '../../utils/spriteLabel.ts';
+import { samePin } from '../../utils/spritePin.ts';
 import { Badge } from '../common/Badge.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 
@@ -56,18 +57,27 @@ export function SpritePieceRow({
   selected,
 }: SpritePieceRowProps) {
   const decide = useSpriteAssignmentStore((state) => state.decide);
+  const revealed = useSpriteAssignmentStore((state) => state.revealed);
+  const owed = useSpriteAssignmentStore(
+    (state) => state.reveal !== null && samePin(state.reveal, sprite.pin),
+  );
   const row = useRef<HTMLDivElement>(null);
 
   // Selection is made in the *other* column — the reader clicks a sprite on the preview — so the row
   // it names may be well outside the panel's scrolled view. Scrolling it into view is what makes the
   // two halves one control surface rather than two lists that happen to agree.
   //
+  // **On the click's request, never on `selected`**, which is still true when this row remounts
+  // under a result that landed after a dial move — see `SpriteAssignmentState.reveal`.
+  //
   // `nearest` rather than `center`, so a row already on screen does not jump under the reader; and
   // no focus is taken, because the click that caused this was in another column and moving focus
   // away from it would strand a keyboard user who had merely tabbed to the preview.
   useEffect(() => {
-    if (selected) row.current?.scrollIntoView({ block: 'nearest' });
-  }, [selected]);
+    if (!owed) return;
+    row.current?.scrollIntoView({ block: 'nearest' });
+    revealed();
+  }, [owed, revealed]);
 
   return (
     <div
