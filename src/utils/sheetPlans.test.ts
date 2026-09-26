@@ -857,7 +857,7 @@ describe('section 5’s Mirroring rule describes only the sets the sheet in fron
    * The four categories that can be asked for a cut-out rig, and whether that rig draws any piece
    * twice — once a side.
    *
-   * Written out rather than read off the plans, for the reason `PAIRING_FRAME` above is: an
+   * Written out rather than read off the plans, because an
    * expectation gathered from `planMirrorsPieces` would move with whatever the plans say and assert
    * nothing about which answer is right. CHARACTER and CREATURE's standard sheets draw a left and a
    * right of every limb, so one silhouette is the other reflected — a CREATURE base with no sided

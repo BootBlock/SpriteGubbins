@@ -189,7 +189,7 @@ describe('estimatePixelGrid', () => {
     // measurement was anchored at the origin because `alignToGrid` could only snap from the corner,
     // so these insets came back as `null` or as whatever divisor of 8 happened to sit near the
     // corner-anchored lattice — 4 for an inset of 3, `null` for an inset of 6 — and the panel told
-    // the user to crop the margin off. `bestGridOffset` removed the constraint at its root, and the
+    // the user to crop the margin off. `boundaryMesh` and `bestPhase` removed the constraint at its root, and the
     // margin's own boundary sits on the phased lattice too, so every inset now reads as the scale
     // the art was actually drawn at. **Both forms are checked** because they exercise different
     // readers' fallbacks: a crisp margin reaches this estimator only in fixtures — `detectPixelGrid`

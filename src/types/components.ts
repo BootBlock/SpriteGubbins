@@ -248,7 +248,7 @@ export interface ComponentEntry {
    *
    * **It is declared rather than read out of the labels**, for the reason {@link
    * ComponentEntry.parts} is. `left-arm` and `right-arm` differ by a prefix nobody wrote down, and a
-   * rule keyed on it would answer `MIRRORED_PAIRS` for a tile set's `outer-left` and `outer-right`
+   * rule keyed on it would answer `MIRRORED_SIDES` for a tile set's `outer-left` and `outer-right`
    * wall corners — which are a mirror pair of *tiles* rather than the subject's two sides — and
    * would answer nothing at all for an entry named some other way round.
    *

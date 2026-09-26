@@ -293,7 +293,7 @@ export const TUNE_ALIAS_STRENGTHS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as
  * The union itself rather than a ladder written out beside it, because there are only two positions
  * and a copy of them here would be a second opinion about what the control offers. Swept only where a
  * colour reduction is in force, which is the one state the dial is read in at all — see
- * `AntiAliasPalette`, and the gate `quantiseImage` keeps at the call site.
+ * `AntiAliasPalette`, and the gate `settleSprites` keeps at the call site.
  */
 export const TUNE_ALIAS_PALETTES = ANTI_ALIAS_PALETTES;
 

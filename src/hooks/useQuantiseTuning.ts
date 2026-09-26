@@ -6,9 +6,9 @@ import type { QuantiseTuning } from '../types/quantiser.ts';
  * Every dial the pipeline is tuned by, as one object whose identity only changes when a dial does.
  *
  * A hook rather than a block inside `QuantiseTab` because it is a different responsibility from the
- * tab's layout, and it was two-thirds of the file: twenty-three subscriptions, the object they build
- * and the dependency array that decides when to rebuild it, with the same twenty-three names written
- * out three times.
+ * tab's layout, and it was two-thirds of the file: a subscription per pipeline dial, the object they
+ * build and the dependency array that decides when to rebuild it, with the same names written out
+ * three times.
  *
  * **One call site, deliberately.** CLAUDE.md sends a hook that needs React, the DOM or a store here,
  * and bans one that only wraps a single `useState`. This needs React and the store, so `src/utils/`
@@ -18,7 +18,7 @@ import type { QuantiseTuning } from '../types/quantiser.ts';
  * **Atomic selectors, not one subscription over the store.** A component reading the store wholesale
  * re-renders on every unrelated field, and this store also holds the sheet, the grid and a held
  * palette — three things that change without a dial moving. Each field is subscribed to on its own,
- * and `useMemo` is what turns twenty-three of them back into one stable object.
+ * and `useMemo` is what turns them back into one stable object.
  *
  * **The memo is load-bearing rather than an optimisation.** `useQuantiseWork` keys its debounce on
  * this object's identity, so a fresh object each render would restart the timer each render and the

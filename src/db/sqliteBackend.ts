@@ -92,7 +92,7 @@ export class SqliteBackend implements PersistenceBackend {
    *
    * The refusal is the half that is easy to leave out and the half that matters most. Every caller
    * `await`s {@link request} — but a promise that never settles reaches neither the `catch` around
-   * that `await` nor the `finally` beside it, so `usePresetStore` holds `isExporting` true and
+   * that `await` nor the `finally` beside it, so `useLibraryTransferStore` holds `isTransferring` true and
    * freezes its transfer controls behind a spinner nothing stops, and `useHistoryStore.addLog`
    * records nothing and says nothing. A rejection is what turns both back into the failures they
    * were written to report. `useSessionStore` is unaffected either way, and deliberately: its write

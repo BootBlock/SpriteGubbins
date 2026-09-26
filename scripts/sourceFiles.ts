@@ -130,6 +130,24 @@ export function tailwindScanned(): string[] {
   ];
 }
 
+/** What a script is written in, which is every file a TypeScript or JavaScript comment can sit in. */
+const SCRIPT_SOURCE = /\.(tsx?|jsx?|mjs)$/;
+
+/**
+ * Every script this repository writes — the ones {@link tailwindScanned} walks, plus the root
+ * configs it leaves out.
+ *
+ * The root is read one level deep and no further, which is what keeps the agent worktrees under
+ * `.claude/worktrees/` out of it: each is a full second checkout, and a walk that entered one would
+ * report another agent's half-finished work as this tree's.
+ */
+export function scriptSources(): string[] {
+  const configs = readdirSync(process.cwd(), { withFileTypes: true })
+    .filter((entry) => entry.isFile() && SCRIPT_SOURCE.test(entry.name))
+    .map((entry) => resolve(entry.parentPath, entry.name));
+  return [...tailwindScanned().filter((file) => SCRIPT_SOURCE.test(file)), ...configs];
+}
+
 /** Whether `file` is a test rather than something the app renders. */
 function isTest(file: string): boolean {
   return /\.test\.tsx?$/.test(file) || /[\\/]src[\\/]test[\\/]/.test(file);

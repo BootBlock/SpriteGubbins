@@ -90,7 +90,7 @@ describe('a fixed palette’s entries', () => {
 
   it.each(fixed)('$id round-trips every entry through the quantiser’s own reader', (palette) => {
     if (palette.space.kind !== 'FIXED') return;
-    // The property that actually matters downstream: `colorReductionFor` maps these through
+    // The property that actually matters downstream: `fixedPaletteColors` maps these through
     // `fromHex`, and an entry it cannot read is dropped from the palette without a word.
     for (const entry of palette.space.entries) {
       const color = fromHex(entry);

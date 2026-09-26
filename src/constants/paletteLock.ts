@@ -7,7 +7,7 @@ import { MAX_PALETTE_ENTRIES } from '../utils/pngPalette.ts';
  * this app is: it is content, it ships in the bundle, and it is read by strangers. It sits beside
  * `quantiser.ts`'s own guidance sets rather than in `constants/tooltips/`, because — like
  * `QUANTISE_SCALE_GUIDANCE` — it describes the *state* the tab is in rather than explaining a
- * control. The controls themselves are explained by `QUANTISE_TOOLTIPS.paletteEscape` and the three
+ * control. The controls themselves are explained by `QUANTISE_TOOLTIPS.paletteSnap` and the three
  * lock entries in `QUANTISE_ACTION_TOOLTIPS`.
  */
 
