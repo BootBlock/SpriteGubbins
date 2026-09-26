@@ -200,8 +200,9 @@ export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingCont
           goes, and stop before the sprite does. Where the key has a colour of its own, a field that has been
           shaded darker or washed paler still counts as close, so the setting that clears it stays well short
           of the settings that would reach your artwork — which is why magenta is the recommended key and
-          white and black are not. Above <span className="font-mono">exact</span> it also erodes the pixel
-          touching the field, which is what removes the halo an anti-aliased edge leaves behind.
+          white and black are not. Above <span className="font-mono">exact</span> it also erodes a pixel
+          touching the field where that pixel sits near the key or carries the key&rsquo;s hue, which is what
+          removes the halo an anti-aliased edge leaves behind.
         </p>
       )}
     </section>

@@ -2064,7 +2064,7 @@ export const QUANTISE_TOOLTIPS = {
     'When a preview is larger than its frame, drag it with the left mouse button or a finger, or give it focus with Tab and use the arrow keys.',
   keying:
     'Replaces the background key with transparency, so you can import the sheet without a colour field behind it. The key colour comes from the studio, where the prompt stated it.\n\n' +
-    'At any tolerance above exact, the pixel touching the field is eroded with it. Against a black or white key that takes some of the artwork’s own contour, which is why magenta is the recommended key.',
+    'Above exact, a pixel touching the field goes with it only if it sits near the key or carries the key’s hue, which clears the halo around each sprite. A black or white key has no hue, so nearness alone decides, and a high tolerance reaches into a dark or pale contour. That is why magenta is the recommended key.',
   keyTolerance:
     'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour asked for, so exact usually keys nothing.\n\n' +
     'A key with a colour of its own, such as magenta, discounts its own shading: the key shaded darker or washed paler counts as nearer than a different colour, so the field goes without the sprite. A white or black key is measured straight and needs a closer eye.\n\n' +
