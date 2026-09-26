@@ -107,31 +107,35 @@ describe('the blend weighting’s fixture figures', () => {
     expect(keptAcross({ gap: 32 })).toEqual([8, 8, 11, 17]);
   });
 
-  /**
-   * Every palette the end gap was chosen across: each scattered fixture at a half, three quarters
-   * and all of its own colour count, and the seamed one at 8 to 32.
-   */
-  const endGapPalettes = (over: Partial<Dials>): string[] =>
-    withDials(over, () => [
-      ...scattered.flatMap((fixture) =>
-        [0.5, 0.75, 1].map((share) =>
-          signature(buildPalette(fixture.sheet, Math.round(fixture.art.length * share))),
-        ),
-      ),
-      ...[8, 12, 16, 20, 24, 32].map((budget) => signature(buildPalette(seamed.sheet, budget))),
-    ]);
+  /** Each fixture and budget the end gap was chosen across, as the fixture and the budget. */
+  const END_GAP_READINGS: readonly (readonly [BlendFixture, number])[] = [
+    ...scattered.flatMap((fixture) =>
+      [0.5, 0.75, 1].map((share) => [fixture, Math.round(fixture.art.length * share)] as const),
+    ),
+    ...[8, 12, 16, 20, 24, 32].map((budget) => [seamed, budget] as const),
+  ];
+
+  /** Every reading's palette, and how many art colours each one keeps. */
+  const endGapReadings = (over: Partial<Dials>): { palettes: string[]; kept: number[] } =>
+    withDials(over, () => {
+      const read = END_GAP_READINGS.map(([fixture, budget]) => {
+        const palette = buildPalette(fixture.sheet, budget);
+        return { palette: signature(palette), kept: artKept(fixture, palette) };
+      });
+      return { palettes: read.map(({ palette }) => palette), kept: read.map(({ kept }) => kept) };
+    });
 
   /** Art colours kept on the seamed fixture at `budget`. */
   const seamKept = (over: Partial<Dials>, budget: number): number =>
     withDials(over, () => artKept(seamed, buildPalette(seamed.sheet, budget)));
 
-  it('BLEND_END_GAP: 1 to 5 choose the same palettes, 9 the same art, and 0 and 10 move it', () => {
-    const shipped = endGapPalettes({});
-    for (const end of [1, 5]) expect(endGapPalettes({ end })).toEqual(shipped);
-    for (const end of [6, 9]) {
-      expect(endGapPalettes({ end })).not.toEqual(shipped);
-      expect(keptAcross({ end })).toEqual([8, 11, 16, 22]);
-      expect(seamAt24({ end })).toEqual([24, 0, 0]);
+  it('BLEND_END_GAP: 1 to 5 choose the same palettes, 6 to 9 the same art, and 0 and 10 move it', () => {
+    const shipped = endGapReadings({});
+    for (const end of [1, 2, 3, 5]) expect(endGapReadings({ end }).palettes).toEqual(shipped.palettes);
+    for (const end of [6, 7, 8, 9]) {
+      const reading = endGapReadings({ end });
+      expect(reading.palettes).not.toEqual(shipped.palettes);
+      expect(reading.kept).toEqual(shipped.kept);
     }
     expect(keptAcross({ end: 10 })).toEqual([8, 11, 14, 22]);
     expect(seamAt24({ end: 10 })).toEqual([22, 2, 0.55]);
