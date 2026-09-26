@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { estimatedScaleStatus } from '../constants/quantiser.ts';
 import type { SheetReading } from '../types/quantiser.ts';
 import { statusOf } from './quantiseStatus.ts';
 
@@ -21,11 +22,15 @@ describe('statusOf', () => {
     expect(statusOf(false, SHEET_FAILED, null, null)).toBe('');
   });
 
-  it('asks for the click an estimate is waiting on', () => {
+  it('asks for the click an estimate is waiting on, and only until a scale is in force', () => {
     const reading: SheetReading = {
       kind: 'facts',
       facts: { scale: { grid: 8, measurement: 'EDGE_PERIOD' }, colors: 64 },
     };
-    expect(statusOf(false, reading, null, null)).not.toBe('');
+    // The sentence the badge and the panel take theirs from, naming the reading that answered.
+    expect(statusOf(false, reading, null, null)).toBe(estimatedScaleStatus(8, 'EDGE_PERIOD'));
+    // Applied, with the transform then failing, there is still no result — and the region may not
+    // go on telling the reader to do what they have just done.
+    expect(statusOf(false, reading, 8, null)).toBe('');
   });
 });
