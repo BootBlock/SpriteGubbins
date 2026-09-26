@@ -1,14 +1,16 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { cellDeviation, truthAgreement } from './meshFit.ts';
 import { loadCorpus, type CorpusSheetName } from './sheetCorpus.ts';
-import { DEFAULT_KEY_TOLERANCE, PATCH_MARGIN_CELLS } from '../src/constants/quantiser.ts';
+import {
+  DEFAULT_KEY_TOLERANCE,
+  PATCH_MARGIN_CELLS,
+  SMALLEST_PATCHED_GRID,
+} from '../src/constants/quantiser.ts';
 import { phasedSpriteSheet } from '../src/test/phasedSpriteSheet.ts';
-import { cropImage } from '../src/utils/cropImage.ts';
 import { boundaryMesh } from '../src/utils/gridMesh.ts';
 import { keyBackground } from '../src/utils/keyBackground.ts';
-import { patchAxis } from '../src/utils/patchAxis.ts';
 import { patchSpans } from '../src/utils/patchSpans.ts';
-import { stepProfile } from '../src/utils/stepProfile.ts';
+import { recutSpan } from '../src/utils/recutSpan.ts';
 import type { GridMesh, PixelGrid } from '../src/types/quantiser.ts';
 
 /**
@@ -45,23 +47,11 @@ function unpatched(mesh: GridMesh): GridMesh {
 
 /**
  * `meshPatches` at another margin and without its grid floor — the variants the two constants are
- * argued against, composed from the same two passes it composes.
+ * argued against, composed from the same `patchSpans` and `recutSpan` it composes.
  */
 function patchedAt(image: ImageData, grid: PixelGrid, margin: number): GridMesh {
   const mesh = boundaryMesh(image, grid);
-  const patches = patchSpans(image, mesh, margin).map((span) => {
-    const right = mesh.x[span.columnEnd] ?? image.width;
-    const bottom = mesh.y[span.rowEnd] ?? image.height;
-    const left = mesh.x[span.column] ?? 0;
-    const top = mesh.y[span.row] ?? 0;
-    const profile = stepProfile(cropImage(image, left, top, right - left, bottom - top));
-    return {
-      column: span.column,
-      row: span.row,
-      x: patchAxis(mesh.x.slice(span.column, span.columnEnd), right, profile.columnEvidence, grid),
-      y: patchAxis(mesh.y.slice(span.row, span.rowEnd), bottom, profile.rowEvidence, grid),
-    };
-  });
+  const patches = patchSpans(image, mesh, margin).map((span) => recutSpan(image, mesh, grid, span));
   return { x: mesh.x, y: mesh.y, patches };
 }
 
@@ -102,7 +92,7 @@ describe('the mesh patches — the figures they are argued from', () => {
     return { before, after, fall: ((before.score - after.score) / before.score) * 100 };
   }
 
-  it('lowers the deviation on every pair from grid 3 to 8, without cutting more cells to do it', () => {
+  it('lowers the deviation on every pair from grid 3 to 8, cutting at most 1% more cells to do it', () => {
     for (const [name, grid] of PAIRS) {
       const { before, after } = corpusFall(name, grid);
       const where = `${name} at grid ${String(grid)}`;
@@ -120,7 +110,8 @@ describe('the mesh patches — the figures they are argued from', () => {
     const sums = [0, 1, 2, 3].map((margin) =>
       PAIRS.reduce((sum, [name, grid]) => {
         const image = keyed.get(name);
-        return image === undefined ? sum : sum + cellDeviation(image, patchedAt(image, grid, margin)).score;
+        if (image === undefined) throw new Error(`The corpus did not load ${name}.`);
+        return sum + cellDeviation(image, patchedAt(image, grid, margin)).score;
       }, 0),
     );
     expect(sums.map((sum) => sum.toFixed(1))).toEqual(['472.5', '470.5', '473.5', '477.5']);
@@ -151,6 +142,29 @@ describe('the mesh patches — the figures they are argued from', () => {
     const three = at(3);
     expect([two.before.toFixed(1), two.after.toFixed(1)]).toEqual(['47.6', '37.7']);
     expect([three.before.toFixed(1), three.after.toFixed(1)]).toEqual(['52.0', '62.1']);
+    expect(SMALLEST_PATCHED_GRID).toBe(3);
+  }, 300_000);
+
+  it('makes no sheet of one phase worse, at pitches of 3, 4 and 6', () => {
+    // The sheet one lattice suits: every sprite shares the phase, so the sheet's own cuts can agree
+    // with all of them, and a patch has nothing to correct.
+    const at = (grid: PixelGrid) => [
+      synthetic(
+        () => grid,
+        true,
+        (image) => unpatched(boundaryMesh(image, grid)),
+      ).toFixed(1),
+      synthetic(
+        () => grid,
+        true,
+        (image) => boundaryMesh(image, grid),
+      ).toFixed(1),
+    ];
+    expect([at(3), at(4), at(6)]).toEqual([
+      ['48.1', '61.0'],
+      ['80.2', '81.5'],
+      ['78.0', '88.2'],
+    ]);
   }, 300_000);
 
   it('raises agreement from 52–59% to 62–88% where each sprite has its own phase', () => {

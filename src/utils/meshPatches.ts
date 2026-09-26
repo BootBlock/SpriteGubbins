@@ -1,9 +1,7 @@
 import { PATCH_MARGIN_CELLS, SMALLEST_PATCHED_GRID } from '../constants/quantiser.ts';
 import type { GridMesh, MeshPatch, PixelGrid } from '../types/quantiser.ts';
-import { cropImage } from './cropImage.ts';
-import { patchAxis } from './patchAxis.ts';
 import { patchSpans } from './patchSpans.ts';
-import { stepProfile } from './stepProfile.ts';
+import { recutSpan } from './recutSpan.ts';
 
 /**
  * The cells over each sprite, re-cut on that sprite's own boundaries.
@@ -25,8 +23,8 @@ import { stepProfile } from './stepProfile.ts';
  * count of cells, and the result would stop being one pixel per cell of one mesh — which is what
  * lets every later pass, the comparison view and the difference map place a result pixel over the
  * source it came from. A patch keeps the mesh's count and its outer edges, and moves only the cuts
- * inside: {@link patchSpans} decides which cells each patch covers and `patchAxis` where their cuts
- * go, one axis at a time, from the patch's own step profile.
+ * inside: {@link patchSpans} decides which cells each patch covers and {@link recutSpan} where their
+ * cuts go, from the patch's own step profile.
  *
  * Nothing is re-cut below `SMALLEST_PATCHED_GRID`, where a sprite's phase cannot be read.
  *
@@ -36,17 +34,5 @@ import { stepProfile } from './stepProfile.ts';
  */
 export function meshPatches(image: ImageData, mesh: Pick<GridMesh, 'x' | 'y'>, grid: PixelGrid): MeshPatch[] {
   if (grid < SMALLEST_PATCHED_GRID) return [];
-  return patchSpans(image, mesh, PATCH_MARGIN_CELLS).map((span) => {
-    const left = mesh.x[span.column] ?? 0;
-    const top = mesh.y[span.row] ?? 0;
-    const right = mesh.x[span.columnEnd] ?? image.width;
-    const bottom = mesh.y[span.rowEnd] ?? image.height;
-    const profile = stepProfile(cropImage(image, left, top, right - left, bottom - top));
-    return {
-      column: span.column,
-      row: span.row,
-      x: patchAxis(mesh.x.slice(span.column, span.columnEnd), right, profile.columnEvidence, grid),
-      y: patchAxis(mesh.y.slice(span.row, span.rowEnd), bottom, profile.rowEvidence, grid),
-    };
-  });
+  return patchSpans(image, mesh, PATCH_MARGIN_CELLS).map((span) => recutSpan(image, mesh, grid, span));
 }

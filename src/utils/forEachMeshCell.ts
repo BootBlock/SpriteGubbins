@@ -5,9 +5,9 @@ import type { GridMesh, MeshPatch } from '../types/quantiser.ts';
  * `[left, right) × [top, bottom)`.
  *
  * Positional rather than one object per cell, because this is called once for every cell of a
- * sheet — 4.2 million of them at a grid of 2 on the largest sheet the app admits — and the note at
- * the top of `imageData.ts` records what a small object handed to a hot callback costs once escape
- * analysis stops applying.
+ * sheet — 4.2 million of them at a grid of 2 on the largest sheet the app admits — and
+ * `alignToGrid`'s docblock in `gridAlignment.ts` records what a small per-pixel object costs in the
+ * real pipeline once escape analysis stops applying.
  */
 export type MeshCellVisitor = (
   column: number,

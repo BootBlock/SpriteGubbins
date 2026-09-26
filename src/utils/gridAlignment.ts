@@ -185,9 +185,10 @@ export function downscaleNearest(image: ImageData, mesh: GridMesh): ImageData {
  * `upscaleNearest` is the same idea on a lattice that starts at the corner and never drifts, and
  * that is the one mesh `boundaryMesh` is not guaranteed to return: `boundEndCells` can make the
  * leading cell narrower or wider than the grid, a walk that follows drift moves every boundary
- * after it, and a patch moves the cuts over a sprite to that sprite's own phase. Magnified by the grid instead, a result sits a fixed offset off its source past a phased
- * first cell and a growing one across a drifting sheet, so every comparison made against it is made
- * against art it does not sit over. Painted over its own mesh, each cell covers exactly the source
+ * after it, and a patch moves the cuts over a sprite to that sprite's own phase. Magnified by the
+ * grid instead, a result sits a fixed offset off its source past a phased first cell and a growing
+ * one across a drifting sheet, so every comparison made against it is made against art it does not
+ * sit over. Painted over its own mesh, each cell covers exactly the source
  * pixels it was read from, so `downscaleNearest` of this over the same mesh returns `cells`.
  *
  * `cells` must be one pixel per cell of `mesh`; anything else was not read from it, and is refused

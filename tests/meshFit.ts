@@ -22,7 +22,7 @@ import type { GridMesh } from '../src/types/quantiser.ts';
  */
 
 /** How far, in summed channel steps, a cell mean may sit from the drawn colour and still agree. */
-export const AGREEMENT_DISTANCE = 60;
+const AGREEMENT_DISTANCE = 60;
 
 /** A score, and how many cells hold a pixel it counted. */
 export interface MeshFit {

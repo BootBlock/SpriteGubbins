@@ -105,7 +105,10 @@ export interface LeadingCellShift {
 export interface GridMesh {
   readonly x: readonly number[];
   readonly y: readonly number[];
-  /** Disjoint in result cells, and empty on a sheet that is exact, opaque or scattered. */
+  /**
+   * Disjoint in result cells, and empty on a sheet that is exact, opaque or scattered, and at any grid
+   * below `SMALLEST_PATCHED_GRID`.
+   */
   readonly patches: readonly MeshPatch[];
 }
 

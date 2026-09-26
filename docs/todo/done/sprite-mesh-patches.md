@@ -142,7 +142,8 @@ they may now shrink to half a cell.
 patch covers the cell and the mesh's own everywhere else.
 
 **What does not change.** A sheet exactly drawn on the grid takes its lattice and no patches. An
-opaque sheet (keying off, or no transparency) has nothing to segment and takes the walked cuts
-alone, so an unkeyed sheet at grid 3 or more reduces exactly as it did. A sheet that breaks into
+opaque sheet has nothing to segment and takes the walked cuts alone, so an opaque sheet at grid 3 or
+more reduces exactly as it did. A sheet that arrives with transparency of its own is patched whether
+the key is on or not, because the sprites are found in its alpha. A sheet that breaks into
 more pieces than `SCATTERED_SPRITE_CEILING` takes no patches. `leadingCellShift` reads the sheet's
 own cuts, so the comparison pane places a patched sprite within half a cell of its own phase.

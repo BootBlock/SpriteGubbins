@@ -70,8 +70,9 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * Keyed at the default tolerance against each sheet's corner colour, at the grids the table under
  * {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different sheet, and only
  * `three-quarter-view_tiles1.png`, `cyborg_healer.png` and `cyborg_monk.png` settle on the dials they
- * settle on unkeyed; the other five move the colour merge by one to three rungs, and the reference
- * sheet at `OFF` also leaves the fill cleanup at 0 where unkeyed it takes 20. Every descent takes the
+ * settle on unkeyed; the other five move the colour merge by one to three rungs — the reference sheet
+ * one rung at `OFF` and at `BOTH` alike — and the reference sheet at `OFF` also leaves the fill
+ * cleanup at 0 where unkeyed it takes 20. Every descent takes the
  * same count but three: `three-quarter-view_tiles1.png` ends sooner, at 145 positions rather than
  * 192, the reference sheet at `OFF` at 145 rather than 157, and `ui_elements1.png` runs longer, at
  * 145 rather than 102.
