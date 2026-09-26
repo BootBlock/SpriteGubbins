@@ -470,11 +470,10 @@ describe('the figures the quantiser docblocks state', () => {
      * **Paired by nearest centre, not by list position**, and the difference is not cosmetic. A
      * perturbed sheet meshes differently, so a sprite can gain or lose a row of drawn pixels at its
      * edge — enough to cross a row band, or to change how the merge folds a piece back onto its
-     * neighbour, and either of those renumbers everything after it. Index n is therefore *not* the
-     * same piece of artwork either side. Measured on this sheet, an index pairing scores one sprite against a
-     * neighbour that happens to share its extent and misses the one that genuinely kept it: two
-     * errors that cancel into the right total for the wrong reason, which is a guard that would
-     * certify a wrong figure the moment the perturbation, the grid or the key tolerance changed.
+     * neighbour, and either of those renumbers everything after it. Index n is therefore not
+     * guaranteed to be the same piece of artwork either side. Under the two flat shifts below every
+     * box does keep its index, so the two pairings agree today; an index pairing would still certify
+     * a wrong figure the moment the perturbation, the grid or the key tolerance re-sorted a row.
      *
      * A sprite moves a pixel or two under this perturbation and no further, so its centre identifies
      * it. A pairing that is not one-to-one is not a pairing at all, so this throws rather than
@@ -505,7 +504,7 @@ describe('the figures the quantiser docblocks state', () => {
       return kept;
     };
 
-    it('leaves 3 of the reference sheet 15 sprites with the extent they had, and 6 the other way', () => {
+    it('leaves 3 of the reference sheet 15 sprites with the extent they had, and 1 the other way', () => {
       const before = boxesOf(sheet);
       const up = boxesOf(shifted(sheet, 4));
       const down = boxesOf(shifted(sheet, -4));
@@ -514,7 +513,7 @@ describe('the figures the quantiser docblocks state', () => {
       // about extents changing, not about sprites appearing or vanishing, and the pairing above
       // assumes each sprite has a counterpart to be paired with.
       expect([before.length, up.length, down.length]).toEqual([15, 15, 15]);
-      expect([keptExtent(before, up), keptExtent(before, down)]).toEqual([3, 6]);
+      expect([keptExtent(before, up), keptExtent(before, down)]).toEqual([3, 1]);
     }, 600_000);
 
     it('finds 15 to 42 sprites on the corpus, an order of magnitude under the ceiling', async () => {
@@ -526,7 +525,7 @@ describe('the figures the quantiser docblocks state', () => {
         return sprites.kind === 'SEGMENTED' ? sprites.boxes.length : -1;
       });
 
-      expect(counts).toEqual([15, 15, 15, 42, 33, 24, 25, 27]);
+      expect(counts).toEqual([15, 15, 15, 42, 34, 24, 25, 27]);
       // The claim the timing conclusion rests on, stated as a bound as well as a list. The bound
       // adds nothing while the list holds — 42 is in it — and it is not there for today: a ninth
       // sheet fails the list first, and whoever adds it to the list then has to get it past this
@@ -681,7 +680,7 @@ describe('the figures the quantiser docblocks state', () => {
     const combinedBoxArea = (boxes: readonly SpriteBox[]): number =>
       boxes.reduce((total, box) => total + box.width * box.height, 0);
 
-    it('totals 17,201 pixels of box against 13,827 of artwork, and is not narrowed by the budget', () => {
+    it('totals 17,201 pixels of box against 13,823 of artwork, and is not narrowed by the budget', () => {
       const result = quantiseImage(sheet, AS_STATED());
       expect(result.sprites.kind).toBe('SEGMENTED');
       const boxes = result.sprites.kind === 'SEGMENTED' ? result.sprites.boxes : [];
@@ -696,7 +695,7 @@ describe('the figures the quantiser docblocks state', () => {
       for (let at = 3; at < result.image.data.length; at += CHANNELS_PER_PIXEL) {
         if ((result.image.data[at] ?? 0) > 0) opaque += 1;
       }
-      expect(opaque).toBe(13_827);
+      expect(opaque).toBe(13_823);
 
       // The budget buys 975 sweeps where the full reach costs 33, which is what "the budget narrows
       // this sheet by nothing" means — and the reach is asked of the pass rather than recomputed

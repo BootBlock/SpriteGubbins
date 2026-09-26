@@ -68,6 +68,15 @@ function allZero(pixels: number): number[] {
   return Array.from({ length: pixels * 4 }, () => 0);
 }
 
+/**
+ * Every pixel's alpha, which is all an erosion case asserts: a drawn pixel the key did not take may
+ * still have its colour changed by the despill behind the fringe pass, and `despillKey.test.ts`
+ * states that half.
+ */
+function alphas(image: ImageData): number[] {
+  return channels(image).filter((_, channel) => channel % 4 === 3);
+}
+
 /** A single row, which is enough to state everything about a one-pixel-deep erosion. */
 function row(...pixels: readonly Rgba[]): ImageData {
   return imageFrom(pixels.length, 1, (x) => pixels[x] ?? ART);
@@ -137,15 +146,15 @@ describe('keyBackground', () => {
     // [field] [blend] [blend] [art] [art]
     //
     // The first blend touches the field and goes. The second touches only the *first blend* — which is
-    // not field — so it stays, even though its colour is identical. That is the bound: pass 2 reads
-    // pass 1's mask, never its own output, so the same rule applied to its own results (a flood fill
-    // that would walk down a gradient until the sprite ran out) cannot happen.
+    // not field — so it stays drawn, even though its colour is identical. That is the bound: pass 2
+    // reads pass 1's mask, never its own output, so the same rule applied to its own results (a flood
+    // fill that would walk down a gradient until the sprite ran out) cannot happen.
     const sheet = row(MAGENTA, BLEND, BLEND, ART, ART);
 
     const result = keyBackground(sheet, { color: MAGENTA, tolerance: 16 });
 
     expect(result.keyedPixels).toBe(2);
-    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, TRANSPARENT, BLEND, ART, ART)));
+    expect(alphas(result.image)).toEqual([0, 0, 255, 255, 255]);
   });
 
   it('keys a halo the radius cannot reach, because the sprite behind it is dark', () => {
@@ -209,13 +218,13 @@ describe('keyBackground', () => {
     const result = keyBackground(sheet, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });
 
     expect(result.keyedPixels).toBe(2);
-    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, TRANSPARENT, DARK_BLEND, DARK_ART)));
+    expect(alphas(result.image)).toEqual([0, 0, 255, 255]);
   });
 
-  it('leaves a blend-coloured pixel alone where it touches no field', () => {
+  it('does not key a blend-coloured pixel where it touches no field', () => {
     // [field] [art] [blend] [art] [art]
     //
-    // The blend is well inside the fringe threshold by colour and is untouched, because nothing beside
+    // The blend is well inside the fringe threshold by colour and stays drawn, because nothing beside
     // it is background. This is what makes the wider threshold safe: applied everywhere it would
     // swallow a genuinely magenta-ish sprite colour, and applied at the boundary it cannot.
     const sheet = row(MAGENTA, ART, BLEND, ART, ART);
@@ -223,7 +232,7 @@ describe('keyBackground', () => {
     const result = keyBackground(sheet, { color: MAGENTA, tolerance: 16 });
 
     expect(result.keyedPixels).toBe(1);
-    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, ART, BLEND, ART, ART)));
+    expect(alphas(result.image)).toEqual([0, 255, 255, 255, 255]);
   });
 
   it('runs no fringe pass at tolerance 0, which is the whole of what that rung offers', () => {
@@ -263,9 +272,7 @@ describe('keyBackground', () => {
     // The field pixel itself, plus the two that genuinely touch it: below it, and to its left.
     expect(result.keyedPixels).toBe(3);
     // Bottom-left is the one at neither — diagonal to the field, and 4-adjacency excludes corners.
-    expect(channels(result.image)).toEqual(
-      channels(imageFrom(2, 2, (x, y) => (x === 0 && y === 1 ? BLEND : TRANSPARENT))),
-    );
+    expect(alphas(result.image)).toEqual([0, 0, 255, 0]);
   });
 
   it('leaves a grey ramp alone under a key that has no hue to blend', () => {

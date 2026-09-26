@@ -1601,16 +1601,17 @@ export const WIPE_STEP_COARSE = 0.1;
  * levels and the grid candidates.
  *
  * `0` is on the ladder because "exact match only" is a real request, and it is the one setting that
- * also switches the fringe pass off — stated outright in `keyBackground`, because that pass's hue
- * test is scaled from nothing and would otherwise still reach. The values are scaled-OKLab
- * distances, as `keyDistance.ts` measures. Against the recommended magenta they read: **8** takes a
- * field that only re-encoding moved (about 1.4), **16** takes most of one the generator painted at
- * varying purity (its fixtures run 12 to 21), **24** takes the whole of it — shaded and washed to
- * half included — with a margin, **32** is the last rung short of the artwork, and **64** is past
- * where the nearest hues that are *not* the key begin — rose and purple measure 40 and 49 — so it
- * is a rung to reach for once and check the sprite against, not one to sit at. The top rung is
- * also where a black key does its work: OKLab spreads the dark greys apart, so a drifted black
- * field that RGB called near costs more of the scale to reach — see `DEFAULT_KEY_TOLERANCE`.
+ * also switches the fringe pass and the despill off — stated outright in `keyBackground`, because
+ * the fringe pass's hue test is scaled from nothing and would otherwise still reach. The values are
+ * scaled-OKLab distances, as `keyDistance.ts` measures. Against the recommended magenta they read:
+ * **8** takes a field that only re-encoding moved (about 1.4), **16** takes most of one the
+ * generator painted at varying purity (its fixtures run 12 to 21), **24** takes the whole of it —
+ * shaded and washed to half included — with a margin, **32** is the last rung short of the artwork,
+ * and **64** is past where the nearest hues that are *not* the key begin — rose and purple measure
+ * 40 and 49 — so it is a rung to reach for once and check the sprite against, not one to sit at.
+ * The top rung is also where a black key does its work: OKLab spreads the dark greys apart, so a
+ * drifted black field that RGB called near costs more of the scale to reach — see
+ * `DEFAULT_KEY_TOLERANCE`.
  */
 export const KEY_TOLERANCES = [0, 8, 16, 24, 32, 64] as const;
 
@@ -1768,6 +1769,33 @@ export const FRINGE_TOLERANCE_CEILING = 32;
 export const KEY_TINT_SHARE = 0.1;
 
 /**
+ * How many pixels in from the keyed field `despillKey` takes the key's hue back out of a drawn pixel.
+ *
+ * The fringe pass deletes the one pixel of blend touching the field, and the tint runs further in
+ * than that. Measured on the reference sheet keyed on the recommended magenta at
+ * {@link DEFAULT_KEY_TOLERANCE}, `carriesKeyTint` reports **23.2%** of the drawn pixels one pixel in
+ * from the transparent field (2,465 of 10,640), **8.4%** two in, **1.9%** three in and **0.2%** four
+ * in, which is the sheet's own interior rate. With the despill at 3 those rings read 1, 8 and 13
+ * pixels, under that interior rate, and at a grid of 6 the key-tinted pixels on the outermost ring of
+ * the result fall from 5 to 1 with no reduction and from 39 to 0 under a 64-colour budget. The terrain
+ * sheet, `three-quarter-view_tiles1.png`, is the widest case: 712 of its outermost 2,333 cells were
+ * key-tinted under that budget, and none are.
+ *
+ * **3 because it is where every sheet's edge falls to its own interior, and a deeper band only
+ * reaches artwork.** At 2 the reference sheet keeps its third ring whole, 194 pixels. At 4 its figures
+ * reach zero, and `cyborg_healer.png` shows what the extra ring costs: at 3 its three rings read
+ * 3.2%, 4.2% and 5.1% against 6.5% four in and 4.7% five in, which is a sheet with key-hued artwork
+ * of its own rather than spill, and 4 takes its fourth ring down to 3.5%.
+ *
+ * The guard in `despillKey` is what the band is paired with: a tint that runs past the band is read
+ * as artwork, and the pixels joined to it are left alone. So a region painted in the key's hue keeps
+ * its colour when it is wider than about twice this, and loses its edge's hue when it is narrower —
+ * the same colours `KEY_TINT_OFF_HUE` names, with the same escape: the ladder's `exact` rung runs
+ * neither pass.
+ */
+export const DESPILL_DEPTH = 3;
+
+/**
  * How far off the key's hue a fringe pixel may sit and still count as a blend of it — as a fraction
  * of the chroma the pixel carries *along* the key's hue, which makes it the tangent of an angle.
  *
@@ -1796,8 +1824,8 @@ export const KEY_TINT_SHARE = 0.1;
  * **Three colours are admitted at any usable setting, and no colour test can refuse them.**
  * `#F8B8F8`, `#F8D8F8` and `#A057A3` lie on magenta's hue axis at reduced chroma, which is precisely
  * what the key mixed with white *is* — they are the same colour, so a sprite painted in them cannot
- * be told from a halo. The escape is the ladder's `exact` rung, which runs no fringe pass at all.
- * (`#A057A3` is inside the radius as well, so it was never the hue test's to refuse.)
+ * be told from a halo. The escape is the ladder's `exact` rung, which runs no fringe pass and no
+ * despill. (`#A057A3` is inside the radius as well, so it was never the hue test's to refuse.)
  */
 export const KEY_TINT_OFF_HUE = 0.35;
 
@@ -1842,7 +1870,7 @@ export const MAX_IMAGE_PIXELS = MAX_IMAGE_EDGE * MAX_IMAGE_EDGE;
  *
  * **The quantity divided out is the sprites' combined bounding-box area**, which is what
  * `affordableReach` sums and is not the same as the sheet's drawn pixels: the reference sheet's
- * fifteen boxes total **17,201** where the opaque pixels inside them number 13,827, twenty per cent
+ * fifteen boxes total **17,201** where the opaque pixels inside them number 13,823, twenty per cent
  * fewer. Both are in the coordinates of the reduced result the pass reads rather than the source
  * sheet's. So the budget affords 975 sweeps against the 33 the full reach costs — thirty times over,
  * which is why **this** bound narrows that sheet by nothing, and the quarter-width cap in `bestAxis`
@@ -2066,7 +2094,8 @@ export const QUANTISE_TOOLTIPS = {
     'When a preview is larger than its frame, drag it with the left mouse button or a finger, or give it focus with Tab and use the arrow keys.',
   keying:
     'Replaces the background key with transparency, so you can import the sheet without a colour field behind it. The key colour comes from the studio, where the prompt stated it.\n\n' +
-    'Above exact, a pixel touching the field goes with it only if it sits near the key or carries the key’s hue, which clears the halo around each sprite. A black or white key has no hue, so nearness alone decides, and a high tolerance reaches into a dark or pale contour. That is why magenta is the recommended key.',
+    'Above exact, a pixel touching the field goes with it only if it sits near the key or carries the key’s hue, which clears the halo around each sprite. A black or white key has no hue, so nearness alone decides, and a high tolerance reaches into a dark or pale contour. That is why magenta is the recommended key.\n\n' +
+    `The ${String(DESPILL_DEPTH)} pixels inside that edge stay, and lose only the key’s hue, keeping their lightness, so no tint rings a sprite. Where the key’s hue runs deeper into a sprite, as artwork painted in it does, it keeps its colour.`,
   keyTolerance:
     'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour asked for, so exact usually keys nothing.\n\n' +
     'A key with a colour of its own, such as magenta, discounts its own shading: the key shaded darker or washed paler counts as nearer than a different colour, so the field goes without the sprite. A white or black key is measured straight and needs a closer eye.\n\n' +

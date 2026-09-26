@@ -1,7 +1,9 @@
 import { FRINGE_TOLERANCE_CEILING, FRINGE_TOLERANCE_FACTOR } from '../constants/quantiser.ts';
 import type { BackgroundKeying } from '../types/quantiser.ts';
 import { alphaAt, CHANNELS_PER_PIXEL, copyPixel, createImage, FULLY_TRANSPARENT } from './imageData.ts';
+import { despillKey } from './despillKey.ts';
 import { carriesKeyTint, keyBasis, keyDistanceSquared } from './keyDistance.ts';
+import { touchesField } from './touchesField.ts';
 
 /**
  * Turning a returned sheet's background key into transparency.
@@ -21,7 +23,8 @@ import { carriesKeyTint, keyBasis, keyDistanceSquared } from './keyDistance.ts';
  * That leaves the second half of the problem, which is why this is not a one-line threshold: an
  * anti-aliased silhouette **blends the key colour into the artwork beside it**, so a field removed
  * exactly leaves a halo one to three pixels wide. A halo is worse than an unkeyed sheet, because it is
- * now baked into a file the user believes is clean.
+ * now baked into a file the user believes is clean. The outermost pixel of it is deleted here, and
+ * `despillKey` takes the key's hue out of the rest without deleting anything.
  *
  * Pure, and deliberately so — no canvas, no store, one `ImageData` in and another out.
  * `quantisePrologue` runs this **first**, ahead of the hardening and the mesh and long before
@@ -44,7 +47,8 @@ export interface KeyedImage {
 }
 
 /**
- * The image with its key field — and the fringe of blends around it — replaced by transparency.
+ * The image with its key field — and the fringe of blends around it — replaced by transparency, and
+ * the key's tint taken out of the drawn pixels just inside that.
  *
  * Two passes with a mask between them, and the mask is the whole reason it is two:
  *
@@ -53,13 +57,17 @@ export interface KeyedImage {
  * 2. **The fringe, and the output.** A marked pixel becomes transparent. An *unmarked* pixel becomes
  *    transparent too if it is 4-adjacent to a marked one and is either within `tolerance ×
  *    FRINGE_TOLERANCE_FACTOR` of the key — capped at `FRINGE_TOLERANCE_CEILING` — or carries the
- *    key's own hue, which is what `carriesKeyTint` measures. Everything else is copied through
- *    untouched.
+ *    key's own hue, which is what `carriesKeyTint` measures. Everything else is copied through.
+ *
+ * Then, above `exact`, `despillKey` recolours the tinted pixels within `DESPILL_DEPTH` of the new
+ * edge, in the output this built. It reads the output rather than the mask, so its band starts where
+ * the fringe pass stopped.
  *
  * **Pass 2 reads the mask, never its own output**, so the erosion is exactly one pixel deep and cannot
  * cascade. That bound is the point: the same rule applied to its own results is a flood fill, and it
- * would walk straight down a gradient until the sprite ran out. One pixel is also what anti-aliasing
- * on a downscaled render actually produces at the scale the grid step then votes over.
+ * would walk straight down a gradient until the sprite ran out. The tint does run deeper than one
+ * pixel on a resampled sheet, and that is why the despill exists: past the first pixel, what is
+ * mixed with the key is mostly sprite, so it is recoloured rather than deleted.
  *
  * The adjacency requirement is what makes both of pass 2's thresholds safe — see
  * `FRINGE_TOLERANCE_FACTOR` and `carriesKeyTint`. A pixel touching the field and carrying the field's
@@ -75,7 +83,8 @@ export interface KeyedImage {
  * the finished sheet as 75 pixels of one very dark violet under the dominant vote, and none at all
  * under either averaging reading. Before the hue test those figures were 720, 1010 and 283.
  *
- * `exact` still keys the field and nothing around it: pass 2 does not run at that rung. That used to
+ * `exact` still keys the field and nothing around it: neither pass 2 nor the despill runs at that
+ * rung. That used to
  * follow from the radius being scaled off the tolerance, and is now said outright, because the hue
  * test is scaled off nothing.
  *
@@ -149,24 +158,7 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
     if (alphaAt(data, offset) !== FULLY_TRANSPARENT) keyedPixels += 1;
   }
 
+  if (fringes) despillKey(output, basis);
+
   return { image: output, keyedPixels };
-}
-
-/**
- * Whether any of a pixel's four orthogonal neighbours is part of the field.
- *
- * 4-adjacency rather than 8: a diagonal neighbour touches at a corner, and a corner contact is not
- * where a blend comes from. Edge pixels simply have fewer neighbours to ask — the bounds checks are
- * what stop a row wrapping onto the one above it, which would erode a stripe down the opposite margin.
- */
-function touchesField(field: Uint8Array, width: number, height: number, index: number): boolean {
-  const x = index % width;
-  const y = (index - x) / width;
-
-  return (
-    (x > 0 && field[index - 1] === 1) ||
-    (x < width - 1 && field[index + 1] === 1) ||
-    (y > 0 && field[index - width] === 1) ||
-    (y < height - 1 && field[index + width] === 1)
-  );
 }
