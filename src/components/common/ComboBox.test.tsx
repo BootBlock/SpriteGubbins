@@ -39,7 +39,7 @@ function comboBox() {
 
 describe('ComboBox', () => {
   it('opens on focus and offers the whole pool', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -51,7 +51,7 @@ describe('ComboBox', () => {
   });
 
   it('does not filter the list as the user types', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.click(comboBox());
@@ -64,7 +64,7 @@ describe('ComboBox', () => {
   });
 
   it('accepts a value that is not in the pool', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.type(comboBox(), 'Sentient Filing Cabinet');
@@ -72,7 +72,7 @@ describe('ComboBox', () => {
   });
 
   it('moves the highlight with the arrow keys and takes it with Enter', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.click(comboBox());
@@ -90,7 +90,7 @@ describe('ComboBox', () => {
   });
 
   it('starts an upward move at the last option', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.click(comboBox());
@@ -102,7 +102,7 @@ describe('ComboBox', () => {
   });
 
   it('wraps at both ends rather than stranding the highlight', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.click(comboBox());
@@ -117,7 +117,7 @@ describe('ComboBox', () => {
   });
 
   it('closes on Escape without changing the value', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness initialValue="Human" />);
 
     await user.click(comboBox());
@@ -128,7 +128,7 @@ describe('ComboBox', () => {
   });
 
   it('reopens the list when the field is clicked again after Escape', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness initialValue="Human" />);
 
     await user.click(comboBox());
@@ -146,7 +146,7 @@ describe('ComboBox', () => {
   });
 
   it('takes an option that is clicked', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.click(comboBox());
@@ -157,7 +157,7 @@ describe('ComboBox', () => {
   });
 
   it('drops a highlight that the new option pool cannot hold', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     // Switching category swaps a field's pool wholesale without remounting the control — every
     // category defines the same sixteen field keys, so React reuses the element. A highlight left
     // over from the longer pool would point `aria-activedescendant` at an id that no longer exists,
@@ -176,7 +176,7 @@ describe('ComboBox', () => {
   });
 
   it('floats the list in the top layer rather than inside the panel it drops from', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.click(comboBox());
@@ -190,7 +190,7 @@ describe('ComboBox', () => {
   });
 
   it('marks the current value as the selected option', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness initialValue="Human" />);
 
     await user.click(comboBox());

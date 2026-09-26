@@ -37,6 +37,7 @@ beforeEach(() => {
 
 afterEach(() => {
   useUIStore.getState().dismissToast();
+  vi.unstubAllGlobals();
 });
 
 describe('SettingsContents', () => {
@@ -64,7 +65,7 @@ describe('SettingsContents', () => {
     // There is no Save in this dialog, and that is a decision rather than an omission: every one of
     // these preferences takes effect visibly on the click, so collecting them up and asking for
     // confirmation would put a step after the thing the click already did.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SettingsContents />);
 
     await user.click(await screen.findByRole('button', { name: ACCENT_LABELS.jade }));
@@ -74,7 +75,7 @@ describe('SettingsContents', () => {
   });
 
   it('turns the ambient backdrop off and stores that too', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SettingsContents />);
 
     await user.click(await screen.findByRole('checkbox', { name: /ambient backdrop/i }));
@@ -84,7 +85,7 @@ describe('SettingsContents', () => {
   });
 
   it('puts every preference back at once', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useSettingsStore.setState({
       settings: { ...DEFAULT_SETTINGS, accentHue: 'rose', motion: 'reduced', ambientBackdrop: false },
     });
@@ -123,7 +124,5 @@ describe('SettingsContents', () => {
     expect(control).toBeChecked();
     expect(control).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByText(/system already asks for reduced motion/i)).toBeInTheDocument();
-
-    vi.unstubAllGlobals();
   });
 });

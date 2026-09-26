@@ -40,7 +40,7 @@ describe('TextField', () => {
   });
 
   it('hands every edit to the caller, down to an empty value', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.type(field(), ' Keep');
@@ -51,7 +51,7 @@ describe('TextField', () => {
   });
 
   it('refuses the keystroke past a hard limit, where one is given', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness maxLength={6} />);
 
     await user.type(field(), ' Keep');

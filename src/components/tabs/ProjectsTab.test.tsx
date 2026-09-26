@@ -86,7 +86,7 @@ describe('ProjectsTab', () => {
   });
 
   it('shows the chosen project’s saves, and only those', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     usePresetStore.setState({
       customPresets: [preset(HARBOUR.id), preset(DEFAULT_PROJECT_ID, { id: 'custom-2', name: 'Elsewhere' })],
     });
@@ -117,7 +117,7 @@ describe('ProjectsTab', () => {
   });
 
   it('creates a project from the two boxes beside the button', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const createProject = vi.fn().mockResolvedValue(true);
     useProjectStore.setState({ createProject });
 
@@ -136,7 +136,7 @@ describe('ProjectsTab', () => {
   });
 
   it('opens the project’s name and description for editing, in place of its heading', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<ProjectsTab />);
 
     await user.click(projectButton('Harbour'));
@@ -149,7 +149,7 @@ describe('ProjectsTab', () => {
   });
 
   it('asks before deleting a project, and says how much goes with it', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const deleteProject = vi.fn().mockResolvedValue(undefined);
     useProjectStore.setState({ deleteProject });
     usePresetStore.setState({ customPresets: [preset(HARBOUR.id)] });
@@ -167,7 +167,7 @@ describe('ProjectsTab', () => {
   });
 
   it('puts the header back on Cancel, having deleted nothing', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const deleteProject = vi.fn().mockResolvedValue(undefined);
     useProjectStore.setState({ deleteProject });
 
@@ -198,7 +198,7 @@ describe('ProjectsTab', () => {
     // every typed letter everywhere, and each `selectOptions` below is one of those. A move made on
     // `change` sent the preset to Harbour on the first step and unmounted the row, so the second
     // step went nowhere and focus fell to `<body>`.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const castle: Project = { ...HARBOUR, id: 'castle', name: 'Castle' };
     useProjectStore.setState({ projects: [createDefaultProject(1_000), HARBOUR, castle] });
     const moveCustomPreset = vi.fn((id: string, projectId: string) => {
@@ -239,7 +239,7 @@ describe('ProjectsTab', () => {
   });
 
   it('offers no Move button until a different project is chosen, and takes it away when the choice is undone', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     usePresetStore.setState({ customPresets: [preset(DEFAULT_PROJECT_ID)] });
 
     render(<ProjectsTab />);
@@ -256,7 +256,7 @@ describe('ProjectsTab', () => {
   it('says why a save cannot move to a project that already has its name, in place of the Move button', async () => {
     // Issue #454: two saves with one name in one project leave a save and a rename there acting on
     // whichever the list shows first, so the row does not offer the move the store refuses.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     usePresetStore.setState({
       customPresets: [preset(DEFAULT_PROJECT_ID), preset(HARBOUR.id, { id: 'custom-2', name: 'my knight' })],
     });
@@ -281,7 +281,7 @@ describe('ProjectsTab', () => {
   });
 
   it('names every control in a project after the save it acts on, so no two read alike', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     usePresetStore.setState({
       customPresets: [preset(HARBOUR.id), preset(HARBOUR.id, { id: 'custom-2', name: 'Harbour Guard' })],
     });
@@ -308,7 +308,7 @@ describe('ProjectsTab', () => {
   });
 
   it('keeps every name distinct with an editor open on more than one saved preset', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     usePresetStore.setState({
       customPresets: [preset(HARBOUR.id), preset(HARBOUR.id, { id: 'custom-2', name: 'Harbour Guard' })],
     });
@@ -333,7 +333,7 @@ describe('ProjectsTab', () => {
   });
 
   it('loads a saved preset into the studio from its row', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const loadPreset = vi.fn();
     usePresetStore.setState({ customPresets: [preset(DEFAULT_PROJECT_ID)], loadPreset });
 
@@ -344,7 +344,7 @@ describe('ProjectsTab', () => {
   });
 
   it('asks before deleting a saved preset, and deletes nothing on the first press', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const deleteCustomPreset = vi.fn().mockResolvedValue(undefined);
     usePresetStore.setState({ customPresets: [preset(DEFAULT_PROJECT_ID)], deleteCustomPreset });
 
@@ -369,7 +369,7 @@ describe('ProjectsTab', () => {
     // editor and armed confirmation survived a project switch — and both then acted on the project
     // the reader had just moved to. The editor is the sharper half: its drafts are `useState`
     // initialisers, so it held the previous project's name against the new project's id.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const updateProjectDetails = vi.fn().mockResolvedValue(true);
     useProjectStore.setState({ updateProjectDetails });
 
@@ -388,7 +388,7 @@ describe('ProjectsTab', () => {
   });
 
   it('carries an armed delete confirmation to no other project', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const deleteProject = vi.fn().mockResolvedValue(undefined);
     useProjectStore.setState({ deleteProject });
 
@@ -413,7 +413,7 @@ describe('ProjectsTab', () => {
   });
 
   it('falls back to the first project when the one being shown is deleted', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<ProjectsTab />);
     await user.click(projectButton('Harbour'));
     expect(projectButton('Harbour')).toHaveAttribute('aria-current', 'true');

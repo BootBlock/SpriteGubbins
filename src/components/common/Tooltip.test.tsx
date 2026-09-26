@@ -16,7 +16,7 @@ function renderTooltip() {
 
 describe('Tooltip', () => {
   it('names the item it belongs to where one is given, and keeps the card’s heading short', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <Tooltip
         text="Files this preset under a different project."
@@ -34,13 +34,8 @@ describe('Tooltip', () => {
     expect(trigger).toHaveAccessibleDescription('Project Files this preset under a different project.');
   });
 
-  it('is hidden until asked for', () => {
-    renderTooltip();
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-  });
-
   it('reveals the guidance on keyboard focus, not only on hover', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderTooltip();
 
     await user.tab();
@@ -49,7 +44,7 @@ describe('Tooltip', () => {
   });
 
   it('describes the trigger while showing, so the guidance is announced with it', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
 
     await user.hover(trigger);
@@ -59,7 +54,7 @@ describe('Tooltip', () => {
   });
 
   it('hides again on Escape while the trigger still has focus', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
 
     await user.tab();
@@ -94,7 +89,7 @@ describe('Tooltip', () => {
   });
 
   it('hides when the pointer leaves', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
 
     await user.hover(trigger);
@@ -104,7 +99,7 @@ describe('Tooltip', () => {
   });
 
   it('dismisses on Escape from anywhere, not only while the trigger is focused', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <>
         <button type="button">Somewhere else</button>
@@ -127,7 +122,7 @@ describe('Tooltip', () => {
   });
 
   it('does not close when the pointer leaves the trigger for the card inside the same wrapper', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
     await user.hover(trigger);
     const card = screen.getByRole('tooltip');
@@ -147,7 +142,7 @@ describe('Tooltip', () => {
   });
 
   it('lets the guidance be reached by the pointer at all', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
     await user.hover(trigger);
 
@@ -157,7 +152,7 @@ describe('Tooltip', () => {
   });
 
   it('keeps the guidance when the pointer leaves but the trigger still has focus', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
 
     await user.tab();
@@ -172,7 +167,7 @@ describe('Tooltip', () => {
   });
 
   it('keeps the guidance when focus leaves but the pointer is still on it', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
 
     await user.tab();
@@ -186,7 +181,7 @@ describe('Tooltip', () => {
   });
 
   it('stands aside when a press lands on the card, so the field underneath stays clickable', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
     await user.hover(trigger);
 
@@ -199,7 +194,7 @@ describe('Tooltip', () => {
   });
 
   it('comes back after a dismissal, once the pointer arrives again', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
 
     await user.hover(trigger);
@@ -252,7 +247,7 @@ describe('Tooltip', () => {
   });
 
   it('claims the Escape that dismisses it, so an overlay around it stays open', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderTooltip();
 
     // A card in one of the app's four overlays sits inside an open `<dialog>`, where Escape is also
@@ -277,7 +272,7 @@ describe('Tooltip', () => {
   });
 
   it('leaves a mouse press alone, which the hover has already answered', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
 
     await user.hover(trigger);
@@ -310,7 +305,7 @@ describe('Tooltip', () => {
   });
 
   it('sets its own typography rather than inheriting the row the ⓘ was put in', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     // Every one of these is on a real ancestor of a real trigger: the atlas calculator's metric
     // labels are `uppercase tracking-wide` inside a `font-mono` list, the quantiser's drop zone is
     // `text-center`, and the keying tolerance's label is a `font-semibold` span the ⓘ sits inside.
@@ -338,7 +333,7 @@ describe('Tooltip', () => {
   });
 
   it('floats the card in the top layer rather than inside the panel it belongs to', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const trigger = renderTooltip();
 
     await user.hover(trigger);

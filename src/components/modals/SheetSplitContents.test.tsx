@@ -274,7 +274,7 @@ describe('SheetSplitContents', () => {
   });
 
   it('records eight prompts, not one, each with the configuration that reproduces it', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SheetSplitContents />);
 
     for (const button of copyButtons()) await user.click(button);
@@ -300,7 +300,7 @@ describe('SheetSplitContents', () => {
   });
 
   it('marks a run done once it has actually been copied', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SheetSplitContents />);
 
     expect(screen.getAllByText('Not yet copied')).toHaveLength(FACINGS.length);
@@ -320,7 +320,7 @@ describe('SheetSplitContents', () => {
     // Same rule the history keeps: a run marked done without reaching the clipboard is a false
     // record of where the user has got to.
     vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('not focused'));
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SheetSplitContents />);
 
     const [first] = copyButtons();
@@ -338,7 +338,7 @@ describe('SheetSplitContents', () => {
     // The documented workflow: copy sheet one, accept it, write the identity lock from it, come
     // back. That rewrites every run's prompt, so progress matched on prompt text would reset to
     // zero at precisely the moment the user did what §5 told them to.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { unmount } = render(<SheetSplitContents />);
 
     const [first] = copyButtons();
@@ -390,7 +390,7 @@ describe('SheetSplitContents', () => {
     // "Prompt copied to the clipboard" is no answer at all to which of eight prompts just went, and
     // the header's Copy Prompt is reachable mid-batch too — so the confirmation is derived from the
     // configuration being copied wherever a batch is more than one sheet.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SheetSplitContents />);
 
     const [, second] = copyButtons();

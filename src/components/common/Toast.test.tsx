@@ -101,7 +101,7 @@ describe('Toast', () => {
   });
 
   it('can be dismissed before its time is up', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Toast />);
 
     act(() => {

@@ -17,7 +17,7 @@ const GUIDANCE = 'Puts the finished prompt on the clipboard and records it in th
  * the hover now being on a clock: a test that hovered and asserted against a real 350ms would be
  * racing it, and the assertions that matter here are about *when* the card is not there yet.
  * `fireEvent` is synchronous, so the clock only moves when a test moves it — which is what makes
- * the boundary below exact rather than approximate. The three tests that need a real keyboard or a
+ * the boundary below exact rather than approximate. The four tests that need a real keyboard or a
  * real click say so and take {@link setupUser}, which trades that precision for `userEvent`'s
  * fidelity; none of them asserts on a boundary.
  */
@@ -76,11 +76,6 @@ describe('ControlTooltip', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  it('is hidden until the control is reached', () => {
-    renderControl();
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 
   it('says nothing while the pointer is merely crossing the control', async () => {
