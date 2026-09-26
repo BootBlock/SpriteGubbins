@@ -107,16 +107,37 @@ describe('the blend weighting’s fixture figures', () => {
     expect(keptAcross({ gap: 32 })).toEqual([8, 8, 11, 17]);
   });
 
-  it('BLEND_END_GAP: 2, 4 and 8 keep the same art, and 0 takes nothing from it here', () => {
-    for (const end of [2, 8]) {
+  /**
+   * Every palette the end gap was chosen across: each scattered fixture at a half, three quarters
+   * and all of its own colour count, and the seamed one at 8 to 32.
+   */
+  const endGapPalettes = (over: Partial<Dials>): string[] =>
+    withDials(over, () => [
+      ...scattered.flatMap((fixture) =>
+        [0.5, 0.75, 1].map((share) =>
+          signature(buildPalette(fixture.sheet, Math.round(fixture.art.length * share))),
+        ),
+      ),
+      ...[8, 12, 16, 20, 24, 32].map((budget) => signature(buildPalette(seamed.sheet, budget))),
+    ]);
+
+  /** Art colours kept on the seamed fixture at `budget`. */
+  const seamKept = (over: Partial<Dials>, budget: number): number =>
+    withDials(over, () => artKept(seamed, buildPalette(seamed.sheet, budget)));
+
+  it('BLEND_END_GAP: 1 to 5 choose the same palettes, 9 the same art, and 0 and 10 move it', () => {
+    const shipped = endGapPalettes({});
+    for (const end of [1, 5]) expect(endGapPalettes({ end })).toEqual(shipped);
+    for (const end of [6, 9]) {
+      expect(endGapPalettes({ end })).not.toEqual(shipped);
       expect(keptAcross({ end })).toEqual([8, 11, 16, 22]);
       expect(seamAt24({ end })).toEqual([24, 0, 0]);
     }
-    // No fixture shows the ends being taken: at 0 the scattered palettes are the shipped ones, and
-    // the seamed fixture at 16 spends every slot on art where 4 spends four on blends.
-    expect(palettesAt({ end: 0 }).slice(0, 4)).toEqual(palettesAt({}).slice(0, 4));
-    expect(withDials({ end: 0 }, () => artKept(seamed, buildPalette(seamed.sheet, 16)))).toBe(16);
-    expect(artKept(seamed, buildPalette(seamed.sheet, 16))).toBe(12);
+    expect(keptAcross({ end: 10 })).toEqual([8, 11, 14, 22]);
+    expect(seamAt24({ end: 10 })).toEqual([22, 2, 0.55]);
+    // At 0 the answer moves both ways on the seamed fixture.
+    expect([seamKept({ end: 0 }, 16), seamKept({}, 16)]).toEqual([16, 12]);
+    expect([seamKept({ end: 0 }, 8), seamKept({}, 8)]).toEqual([4, 8]);
   });
 
   it('BLEND_STRAIGHTNESS: nothing at zero slack, and a plateau from 4', () => {
