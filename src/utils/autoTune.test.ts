@@ -3,7 +3,7 @@ import { PROXY_CROP_CELLS, PROXY_CROP_COUNT, TUNE_ROUNDS } from '../constants/au
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import { imageFrom, soften } from '../test/images.ts';
 import { TUNED_DIAL_KEYS, TUNE_STAGE_NAMES } from '../types/autoTune.ts';
-import type { TunedDials } from '../types/autoTune.ts';
+import type { TuneOutcome, TunedDials } from '../types/autoTune.ts';
 import type { GridMesh, QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { autoTune } from './autoTune.ts';
 import { upscaleOverMesh } from './gridAlignment.ts';
@@ -22,8 +22,8 @@ const GRID = 4;
  * Long enough for two whole sweeps of the fixture, which is well past Vitest's own five seconds.
  *
  * The sweep runs the pipeline up to `TUNE_ROUNDS` times over every ladder and every crop, which is
- * the trade `constants/autoTune.ts` argues for — so every test in this file is slow by design rather
- * than by accident. **Set for the whole file rather than on the tests that looked slowest**: a single
+ * the trade `constants/autoTune.ts` argues for — so every test here that sweeps is slow by design
+ * rather than by accident. **Set for the whole file rather than on the tests that looked slowest**: a single
  * sweep of this fixture takes several seconds on an idle machine and more than five under the
  * parallelism of the whole suite, so a per-test figure produced a file that passed on its own and
  * failed intermittently in the gate — which is the worst of the three states it could have been in.
@@ -63,15 +63,31 @@ const BASE: QuantiseSettings = {
 
 const TUNED_KEYS: readonly (keyof TunedDials)[] = TUNED_DIAL_KEYS;
 
+let swept: TuneOutcome | undefined;
+
+/**
+ * The sweep of `SHEET` from `BASE`, run once for every test that reads it.
+ *
+ * A sweep of this fixture takes seconds, and a dozen tests below ask questions of that one answer, so
+ * each running its own sweep was most of this file's time. Sharing it is safe because the sweep is
+ * pure and nothing below writes to what it returns — and **the one claim that sharing could hide,
+ * that the same inputs give the same answer, is the test that runs a sweep of its own** and compares
+ * it with this one.
+ */
+function sweptSheet(): TuneOutcome {
+  swept ??= autoTune(SHEET, BASE);
+  return swept;
+}
+
 describe('autoTune', () => {
   it('reports every stage once, in the order they run', () => {
-    const outcome = autoTune(SHEET, BASE);
+    const outcome = sweptSheet();
 
     expect(outcome.stages.map((stage) => stage.stage)).toEqual([...TUNE_STAGE_NAMES]);
   });
 
   it('counts the positions it ran, including the one the reader arrived with', () => {
-    const outcome = autoTune(SHEET, BASE);
+    const outcome = sweptSheet();
 
     // The ceiling `constants/autoTune.ts` states, and the arithmetic it states it from: every stage
     // is walked at most once a round, and no round can cost more than the dearest branch plus the
@@ -84,7 +100,7 @@ describe('autoTune', () => {
   });
 
   it('says why a stage that could not run did not, and where its dials stand either way', () => {
-    const outcome = autoTune(SHEET, BASE);
+    const outcome = sweptSheet();
 
     for (const stage of outcome.stages) {
       if (stage.skipped === null) expect(stage.candidates).toBeGreaterThan(0);
@@ -104,7 +120,7 @@ describe('autoTune', () => {
   });
 
   it('reads the crops it says it read', () => {
-    const outcome = autoTune(SHEET, BASE);
+    const outcome = sweptSheet();
 
     expect(outcome.crops).toBeGreaterThan(0);
     expect(outcome.crops).toBeLessThanOrEqual(PROXY_CROP_COUNT);
@@ -115,7 +131,7 @@ describe('autoTune', () => {
   });
 
   it('answers with the twelve dials it is allowed to move and nothing else', () => {
-    const outcome = autoTune(SHEET, BASE);
+    const outcome = sweptSheet();
 
     expect(Object.keys(outcome.dials).sort()).toEqual([...TUNED_KEYS].sort());
   });
@@ -123,11 +139,11 @@ describe('autoTune', () => {
   it('gives the same answer twice for the same sheet and the same settings', () => {
     // A reader who presses Auto twice has not asked for two different answers, and the elbow's ties
     // and the crop chooser's are both settled by order rather than by whatever a sort left behind.
-    expect(autoTune(SHEET, BASE)).toEqual(autoTune(SHEET, BASE));
+    expect(autoTune(SHEET, BASE)).toEqual(sweptSheet());
   });
 
   it('lands somewhere that reproduces the artwork', () => {
-    const outcome = autoTune(SHEET, BASE);
+    const outcome = sweptSheet();
 
     expect(outcome.reading.fidelity).toBeGreaterThan(0.5);
     expect(outcome.reading.colors).toBeGreaterThan(0);
@@ -140,7 +156,7 @@ describe('autoTune', () => {
 
     // The baseline is a reading of the positions in force, so a sheet swept from two different
     // starting points reports two different baselines even where the sweep ends in the same place.
-    expect(outcome.baseline).not.toEqual(autoTune(SHEET, BASE).baseline);
+    expect(outcome.baseline).not.toEqual(sweptSheet().baseline);
   });
 
   it('judges a keyed sheet against a keyed reference, not against the key field', () => {
@@ -210,7 +226,7 @@ describe('autoTune', () => {
   });
 
   it('stops on a repeat rather than at the round cap, and looks back further than one round', () => {
-    const outcome = autoTune(SHEET, BASE);
+    const outcome = sweptSheet();
 
     // This fixture's descent does not reach a fixed point — it settles into a two-round loop, which
     // is the case `TUNE_ROUNDS`' own docblock says the cap exists for. Comparing only against the
@@ -226,7 +242,7 @@ describe('autoTune', () => {
     // A loop rather than a fixed point still has to give the reader a stable answer: pressing Auto
     // on the sheet it has just tuned must not walk the dials somewhere new each time. Three presses,
     // because a two-round loop would show up on the second and a longer one on the third.
-    const first = autoTune(SHEET, BASE);
+    const first = sweptSheet();
     const second = autoTune(SHEET, { ...BASE, ...first.dials });
     const third = autoTune(SHEET, { ...BASE, ...second.dials });
 
@@ -257,7 +273,7 @@ describe('autoTune', () => {
   });
 
   it('counts a stage’s positions across every round that reached it, skips included', () => {
-    const outcome = autoTune(SHEET, BASE);
+    const outcome = sweptSheet();
     const reading = outcome.stages.find((stage) => stage.stage === 'READING');
     const inkBlend = outcome.stages.find((stage) => stage.stage === 'INK_BLEND');
 

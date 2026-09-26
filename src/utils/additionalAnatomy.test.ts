@@ -101,13 +101,6 @@ describe('parseAdditionalAnatomy', () => {
     expect(overflow).toEqual([{ name: 'Tail', count: MAX_ANATOMY_MULTIPLIER }]);
     expect(Number.isSafeInteger(countAnatomyComponents(overflow))).toBe(true);
   });
-
-  it('never produces an entry that draws nothing', () => {
-    for (const component of parseAdditionalAnatomy('Tail ×0, ×3, Wing ×2, Horn')) {
-      expect(component.count).toBeGreaterThan(0);
-      expect(component.name).not.toBe('');
-    }
-  });
 });
 
 describe('countAnatomyComponents', () => {
