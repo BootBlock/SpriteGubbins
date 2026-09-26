@@ -9,10 +9,14 @@
  *
  * **A separator is the dangerous case.** `hip/left` nests the piece in a directory the facing-keyed
  * importer never reads, and `x/../../evil` climbs out of the extraction root in any extractor that
- * does not guard against it. A control character, one of the characters Windows refuses in a file
- * name, or a trailing dot or space (which Windows strips, so the file extracts under another name)
- * leaves an entry some reader cannot extract. A leading space is not checked, since the parser trims
- * every name before this sees it.
+ * does not guard against it. A control character or one of the characters Windows refuses in a file
+ * name leaves an entry some reader cannot extract.
+ *
+ * **The rule is a whole segment's, not the one position the pack uses today.** A trailing dot or
+ * space is harmless where `.png` follows the name, but Windows strips one from a name that ends a
+ * file or a directory, so a layout that ever ended a path with the name would extract it under
+ * another. The parser trims every name before this sees it, so only a direct caller reaches the
+ * space check, and a leading space is not checked at all.
  *
  * Refused rather than repaired, as the rest of the contract is: a repaired name is not the name the
  * engine looks up.

@@ -97,8 +97,9 @@ interface DirectoryRecord {
  *
  * **APPNOTE 4.4.17.1 requires a relative, forward-slash path with no drive letter**, and an
  * extractor without zip-slip protection writes `..` segments wherever they climb to. So the writer
- * refuses such a name rather than trusting every caller to have sanitised one, which is how a rig
- * contract's piece name once reached an entry name unchecked. An empty segment is refused too: a
+ * refuses such a name rather than trusting every caller to have sanitised one: a name built from
+ * text another program wrote, as a rig contract's piece names are, is one check away from either. An
+ * empty segment is refused too: a
  * trailing slash declares a directory entry this writer never means, and a doubled one is a name
  * extractors disagree about. A name only a stricter filesystem refuses is the caller's to prevent.
  */

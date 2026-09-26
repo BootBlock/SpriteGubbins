@@ -64,8 +64,7 @@ describe('zipArchive', () => {
     ['./sheet.png', /climbs the tree/],
   ])('refuses the entry name %j, which no caller may pass through to an extractor', (name, fault) => {
     // A name an extractor without zip-slip protection writes outside its root, or one APPNOTE
-    // 4.4.17.1 forbids outright, is refused here so no future caller can repeat the rig contract's
-    // unchecked piece name.
+    // 4.4.17.1 forbids outright, is refused by the writer itself rather than left to every caller.
     expect(() => zipArchive([{ name, bytes: bytes('x') }])).toThrow(fault);
   });
 

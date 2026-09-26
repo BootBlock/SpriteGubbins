@@ -4,7 +4,7 @@ import { rigPieceNameProblem } from './rigPieceNameProblem.ts';
 /**
  * The names a sprite pack can write a rig piece's file under verbatim, and the ones it cannot.
  *
- * **Each refusal is a name that reached an entry name unchecked** before this existed: a nested
+ * **Each refusal is a name the pack would otherwise write verbatim into an entry name**: a nested
  * directory the facing-keyed importer never reads, an entry that climbs out of the extraction root,
  * or one Windows Explorer refuses to extract.
  */

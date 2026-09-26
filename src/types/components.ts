@@ -149,6 +149,9 @@ export interface ComponentEntry {
    * the right side" comes to, and rewording the sentence would silently rename the file.
    *
    * Lower-case, hyphen-separated and unique within its plan — `sheetPlans.test.ts` holds all three.
+   * The one exception is a plan a rig contract rebuilds (`rigContractPlan`), whose labels are the
+   * engine's piece names verbatim: `parseRigContract` holds those unique and safe as a file name,
+   * but not to this spelling.
    * Where an entry is worth more than one component, `componentSlots` takes the names from {@link
    * ComponentEntry.parts}, or suffixes this with the facing or the ordinal where the line has none —
    * so this names the line rather than any one component of it.
