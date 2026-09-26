@@ -275,6 +275,11 @@ export const MIN_CORRELATED_PERIOD = 2;
  * this sheet changes on the lattice", and neither can be nudged into believing a scale twice the
  * truth — which collects about half, whatever the wording.
  *
+ * **Except at 4 and 5, where a scale twice the truth can score 1.** There a window is wide enough to
+ * straddle two boundaries of art at 2 or 2.5, so the doubled scale collects every one of them; no
+ * share can see that, and `oneRampPerLine` in `pixelPeriod.ts` refuses it by where the change sits
+ * inside the window instead.
+ *
  * High, and deliberately so, because the two answers are not symmetric: a scale that is not offered
  * costs the user a number they must type themselves, while a **wrong** scale offered is one they
  * click, and it hands back a sheet reduced by the wrong factor with nothing on screen saying so.
@@ -445,9 +450,10 @@ export const ACF_CORRELATION_FLOOR = 0.5;
  * it.
  *
  * The harmonic question: art at a fractional pitch — six and a half pixels — puts its sharpest
- * integer-lag peak at *twice* the true pitch, and art at four and a third puts it at *three*
- * times, so a settled peak is asked whether its half or its third is nearly as well supported, and
- * descends while one is. Measured on the ±1 window rather than the single lag, because a
+ * integer-lag peak at *twice* the true pitch, art at four and a third at *three* times, and art at
+ * seven and three quarters can peak at *seven* times, so a settled peak is asked whether any whole division
+ * of it is nearly as well supported, and descends to the finest that is, while one is — see
+ * `divisionsOf`. Measured on the ±1 window rather than the single lag, because a
  * fractional pitch splits its evidence between two neighbouring lags and the window is what lets
  * the split fundamental still beat its own unified ghost. When the bar fails but the division is
  * still a prominent peak of its own, the axis reports it as octave-ambiguous instead of keeping
@@ -521,11 +527,11 @@ export const FEWEST_SPACINGS = 6;
  * running right up to the threshold, not a gap it sits in. `three-quarter-view_tiles1.png`, the
  * crispest sheet in the set, misses by one percentage point.
  *
- * **It is not lowered, and the reason is what a lower one would offer.** The median this reading
- * would then hand over disagrees with the pitch measured on the sheet in six of the eight: 4 where
- * the reference sheet's comb sits at 3, 4 where `cyborg_healer.png`'s sits at 2, 5 against ≈3.4,
- * and 26, 7 and 11 against sheets whose pitch is ≈2 or nothing at all. A threshold admitting those
- * buys six confident wrong numbers to gain two right ones, which is the trade
+ * **It is not lowered, and the reason is what a lower one would offer.** The pitch this reading
+ * would then hand over disagrees with the pitch measured on the sheet in five of the eight: 3 where
+ * `cyborg_healer.png`'s comb sits at 2, 4 against ≈3.4, and 26, 7 and 10 against sheets whose pitch
+ * is ≈2 or nothing at all. A threshold admitting those buys five confident wrong numbers to gain
+ * three right ones, which is the trade
  * {@link GRID_ESTIMATION_THRESHOLD} argues against at length and this reading is no exception to.
  * What the reading is *for* is stated in `meshPeriod.ts`, and it is not this corpus.
  */
@@ -1069,7 +1075,9 @@ export const DITHER_SHORTLIST = 2;
  * reported as **32**, a finer, lossless reading of the same lattice that reduces the sheet to twice
  * the size that was asked for, wearing the confidence of a measurement while it does. Neither
  * reader needs the small bound to stay honest: a coarser-than-true candidate collects about half an
- * image's change against thresholds of nine tenths whatever phase it takes, and the sparse shapes
+ * image's change against thresholds of nine tenths whatever phase it takes — bar a doubled 4 or 5,
+ * whose window straddles two boundaries of art at 2 or 2.5 and which `oneRampPerLine` in
+ * `pixelPeriod.ts` refuses instead — and the sparse shapes
  * that could flatter a coarse lattice are refused by the estimator's adjacency guard — see
  * `sawTheSpacing` — while under the exact detector a stray feature in the sheet's interior is *two*
  * transitions, one pixel apart — where it starts and where it ends — which no phase class of any
@@ -2155,12 +2163,12 @@ export const ESTIMATED_SCALE_READING: Record<EstimatedMeasurement, { source: str
   REPEAT_DISTANCE: {
     source: 'from the distance its detail repeats over',
     evidence:
-      'Its detail does repeat over one distance across the sheet, though, wherever each block happens to start — and that distance is the scale offered above.',
+      'Its detail does repeat over one distance across the sheet, though, wherever each block happens to start — and the scale offered above is that distance, or the whole pixel below it where the distance falls between two.',
   },
   BOUNDARY_SPACING: {
     source: 'from the gaps between the boundaries it still shows',
     evidence:
-      'The boundaries it still shows do keep to one typical gap, though, give or take a pixel of drift — and that gap is the scale offered above.',
+      'The boundaries it still shows do keep to one typical gap, though, give or take a pixel of drift — and the scale offered above is that gap, or the whole pixel below it where the gap falls between two.',
   },
 };
 

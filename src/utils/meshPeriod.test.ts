@@ -45,12 +45,31 @@ describe('estimateMeshPeriod', () => {
     // The sheet class this reading stays behind the correlation for: a *small* sheet — eight
     // drifting cells of four-and-five across 35 pixels. The correlation's repeat floor caps its
     // search at floor(35 / 8) = 4, where the drifting pitch has no local peak, so it refuses; the
-    // median of the boundary spacings is what still answers, and the offer keeps the estimate's
-    // hedge because a median carries the drift's own tolerance.
+    // boundary spacings are what still answer, and the offer keeps the estimate's hedge because
+    // the spacings carry the drift's own tolerance. Their median is 5, but they average 27 / 6 =
+    // 4.5, and 4 is the scale that cuts every cell the art has — 5 merges one (#479).
     const small = sheetWithBoundaries(35, [0, 4, 9, 13, 17, 22, 26, 31]);
 
     expect(estimateProfilePeriod(stepProfile(small))).toBeNull();
-    expect(measureSheetScale(small)).toEqual({ grid: 5, measurement: 'BOUNDARY_SPACING' });
+    expect(measureSheetScale(small)).toEqual({ grid: 4, measurement: 'BOUNDARY_SPACING' });
+  });
+
+  it('offers a fractional pitch as the scale below it, never the nearer one above', () => {
+    // Spacings of 5, 5, 5 and 4 — art at 4.75, drifting. Their median is 5 and so was the offer,
+    // which merges a cell in every twenty; the mean of the spacings that keep the habit is the 4.75
+    // the art was drawn at, and the whole scale at or below it is 4.
+    const starts = Array.from({ length: 14 }, (_, cell) => Math.floor(cell * 4.75));
+
+    expect(estimateMeshPeriod(stepProfile(sheetWithBoundaries(64, starts)))).toBe(4);
+  });
+
+  it('keeps a whole pitch whole through one boundary a pixel out of place', () => {
+    // Forty spacings of 6 and one of 5 on each axis: the mean falls 1/41 short of 6, which across
+    // the sheet is a slip of more than a pixel, so the sheet's extent alone would offer 5. Rounding
+    // each boundary to a pixel measures a run of spacings to within one, and this is that pixel.
+    const starts = Array.from({ length: 42 }, (_, cell) => cell * 6 - (cell > 20 ? 1 : 0));
+
+    expect(estimateMeshPeriod(stepProfile(sheetWithBoundaries(252, starts)))).toBe(6);
   });
 
   it('offers nothing for edges at assorted spacings, which are not a drifting grid', () => {

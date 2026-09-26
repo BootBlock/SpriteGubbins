@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { imageFrom, soften } from '../test/images.ts';
+import { jitter } from '../test/jitter.ts';
+import { pitchedCells } from '../test/pitchedCells.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { pixelOffset, readPixel } from './imageData.ts';
@@ -252,5 +254,24 @@ describe('estimatePixelGrid', () => {
 
     expect(estimatePixelGrid(stepProfile(split(false)))).toBeNull();
     expect(estimatePixelGrid(stepProfile(split(true)))).toBeNull();
+  });
+
+  it('refuses the double of art at 2 and 2.5, whose boundaries two to a window fill it', () => {
+    // At 4 the ±1 window over 3, 4 and 5 holds both 4 and 6 of art at 2, and at 5 the one over 0,
+    // 1 and 2 holds both boundaries art at 2.5 puts in every five. Every boundary lands in a window,
+    // the corrected share reaches 1, and the reading offered 4 and 5 — twice the pitch, which merges
+    // the art's cells (#479). The empty position between the two boundaries is what refuses it.
+    expect(estimatePixelGrid(stepProfile(jitter(pitchedCells(256, 2, 11), 0.2, 2, 5)))).toBeNull();
+    expect(estimatePixelGrid(stepProfile(pitchedCells(256, 2.5, 11)))).toBeNull();
+  });
+
+  it('still reads crisp art at 4 and 5 whose noise moves the best window off its boundary', () => {
+    // The guard above must not refuse a single boundary. Re-encode noise decides which of the three
+    // windows over a crisp boundary collects the most, and the winner may sit a pixel off it —
+    // its line then carries nothing, but its change is still one unbroken run.
+    for (const grid of [4, 5]) {
+      const noisy = jitter(pitchedCells(384, grid, 1), 0.3, 6, 1);
+      expect({ grid, measured: estimatePixelGrid(stepProfile(noisy)) }).toEqual({ grid, measured: grid });
+    }
   });
 });

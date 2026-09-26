@@ -154,23 +154,47 @@ export function bestSupportedPeak(
 }
 
 /**
- * The divisions of a settled peak a descent may consider: its half and its third, each with its two
- * neighbours.
+ * The divisions of a settled peak a descent may consider — every whole fraction of it down to
+ * {@link MIN_CORRELATED_PERIOD}, each with its two neighbours — finest first.
  *
- * Halves *and* thirds, because a fractional pitch peaks sharpest at whichever multiple lands nearest
- * an integer — art at four and a third peaks at thirteen, which no halving reaches. The neighbours
- * are there because the division of a fractional pitch is itself fractional.
+ * **Every divisor, not only halves and thirds.** A fractional pitch peaks sharpest at whichever of
+ * its multiples lands nearest an integer, and that multiple may be any of them: art at four and a
+ * third peaks at thirteen, its triple, and art at seven and three quarters can peak at fifty-four,
+ * its seventh — a peak no halving or thirding reaches, which was offered as the pitch (#479). The
+ * neighbours are there because the division of a fractional pitch is itself fractional. Finest
+ * first because the descent takes the finest division that clears its bar, the fundamental being
+ * the first peak rather than the tallest one.
  */
 export function divisionsOf(settled: number, ceiling: number): readonly number[] {
-  const divisions: number[] = [];
-  for (const divisor of [2, 3]) {
+  const divisions = new Set<number>();
+  for (let divisor = 2; settled / divisor >= MIN_CORRELATED_PERIOD - 1; divisor += 1) {
     const divided = Math.round(settled / divisor);
     for (const candidate of [divided - 1, divided, divided + 1]) {
-      if (candidate > ceiling || candidate >= settled) continue;
-      if (!divisions.includes(candidate)) divisions.push(candidate);
+      if (candidate >= MIN_CORRELATED_PERIOD && candidate <= ceiling && candidate < settled) {
+        divisions.add(candidate);
+      }
     }
   }
-  return divisions;
+  return [...divisions].sort((a, b) => a - b);
+}
+
+/**
+ * Where within a peak's ±1 window the correlation sits: the lags weighted by their clamped
+ * correlation, which is the peak's lag to a fraction of a pixel.
+ *
+ * A fractional pitch splits its evidence between the two integers around it in proportion to how
+ * near it sits to each — softened art at six and three quarters correlates three times as strongly
+ * at 7 as at 6 — so the weighted lag recovers the fraction the integer peak rounds away. A genuine
+ * peak's neighbours are otherwise the structural troughs `windowedMass` clamps to zero, and the
+ * offset is written so that two zero neighbours return the lag itself exactly, with no rounding a
+ * floor could then take a whole pixel off.
+ */
+export function windowCentroid(r: Float64Array, lag: number): number {
+  const weight = (at: number) => (at >= LOWEST_READABLE_LAG ? Math.max(0, r[at] ?? 0) : 0);
+  const below = weight(lag - 1);
+  const above = weight(lag + 1);
+  const mass = below + weight(lag) + above;
+  return mass > 0 ? lag + (above - below) / mass : lag;
 }
 
 /**

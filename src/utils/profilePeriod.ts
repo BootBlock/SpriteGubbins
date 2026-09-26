@@ -15,6 +15,8 @@ import {
   divisionsOf,
   windowedMass,
 } from './correlationPeaks.ts';
+import { fractionalPitch } from './fractionalPitch.ts';
+import { spellPitch } from './spellPitch.ts';
 import type { StepProfile } from './stepProfile.ts';
 
 /**
@@ -50,14 +52,16 @@ import type { StepProfile } from './stepProfile.ts';
  * **Harmonics are resolved by descending, not by preferring coarse.** Drift is the disambiguator:
  * phase error accumulates across periods, so a true pitch outweighs its own multiples — and the
  * residual failure is *fractional* pitch, art at six and a half pixels peaking sharpest at
- * thirteen. A settled peak therefore descends to its half-lag while the half carries nearly the
- * peak's own windowed support. When the descent bar fails but the half is still a *prominent* peak
- * of its own, the axis reports the fine candidate as **octave-ambiguous** rather than swallowing
- * the coarse answer: alone, an ambiguous reading refuses — offering the double is the expensive
- * direction — but where the other axis independently lands within a pixel of it, the agreement is
- * the confirmation the descent could not give. The direction of remaining error is chosen on cost
- * throughout: offering too fine under-reduces, which the reader can see and finish; too coarse
- * merges cells for good.
+ * thirteen. A settled peak therefore descends to the finest of its whole divisions that carries
+ * nearly the peak's own windowed support — the first peak of the comb rather than the tallest, as
+ * YIN's first-dip rule takes it. When the descent bar fails but a division is still a *prominent*
+ * peak of its own, the axis reports the fine candidate as **octave-ambiguous** rather than
+ * swallowing the coarse answer: alone, an ambiguous reading refuses — offering the double is the
+ * expensive direction — but where the other axis independently lands within a pixel of it, the
+ * agreement is the confirmation the descent could not give. The direction of remaining error is
+ * chosen on cost throughout: offering too fine under-reduces, which the reader can see and finish;
+ * too coarse merges cells for good. So the pitch a settled peak measures is offered as the whole
+ * scale at or below it, never rounded up to the lag it peaks at — see `fractionalPitch.ts`.
  *
  * Offered under the same hedge as every estimate — a candidate to click and judge, never adopted —
  * and refused outright for profiles with too little structure, too weak a settled peak, or too few
@@ -75,10 +79,10 @@ export function estimateProfilePeriod(profile: StepProfile): PixelGrid | null {
   const across = axisPeriod(profile.columns, ceiling);
   const down = axisPeriod(profile.rows, ceiling);
 
-  // Within a pixel is agreement — drift makes a fractional pitch land on either neighbour, so the
-  // two axes are reading one pitch and the only question left is which integer to spell it with.
-  // The finer is the cheap direction to be wrong in, and it is taken whichever axis holds it: that
-  // is a choice between two spellings of one reading, not one axis overruling the other.
+  // Within a pixel is agreement — each axis measures a fractional pitch through its own drift and
+  // noise, so two readings of one pitch can spell it with neighbouring integers. The finer is the
+  // cheap direction to be wrong in, and it is taken whichever axis holds it: that is a choice
+  // between two spellings of one reading, not one axis overruling the other.
   // **Agreement corroborates an axis that
   // could not vouch for itself, and two that cannot corroborate nothing**: the doubts `sure` folds
   // together are all forms of "this axis is reading weak evidence", and two weak readings landing
@@ -124,8 +128,9 @@ interface AxisReading {
 }
 
 /**
- * One axis's pitch: the most supported prominent local maximum, descended to its half while the
- * half carries nearly its support — through every gate the axis can apply by itself.
+ * One axis's pitch: the most supported prominent local maximum, descended to the finest of its whole
+ * divisions that carries nearly its support, through every gate the axis can apply by itself — and
+ * offered as the whole scale at or below the pitch that peak measures.
  */
 function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
   const { variance, cv } = axisMoments(axis);
@@ -145,22 +150,28 @@ function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
   const best = bestSupportedPeak(r, ceiling, ceiling);
   if (best === null) return null;
 
-  // Descend while a division's window carries nearly the settled peak's own mass. Halves *and*
-  // thirds, because a fractional pitch peaks sharpest at whichever multiple lands nearest an
-  // integer — art at four and a third peaks at thirteen, which no halving reaches.
+  // Descend while a division's window carries nearly the settled peak's own mass, to the *finest*
+  // division that does: the fundamental is the first peak of the comb, not the tallest, and a
+  // fractional pitch puts its tallest at whichever multiple lands nearest an integer — see
+  // `divisionsOf` for which divisions are asked.
   let settled = best;
   let sure = true;
   while (settled >= 2 * MIN_CORRELATED_PERIOD) {
-    const taken = bestSupportedPeak(r, settled - 1, ceiling, divisionsOf(settled, ceiling));
-    if (taken === null) break;
-    if (windowedMass(r, taken) >= ACF_HARMONIC_DESCENT * windowedMass(r, settled)) {
-      settled = taken;
+    const divisions = divisionsOf(settled, ceiling);
+    const bar = ACF_HARMONIC_DESCENT * windowedMass(r, settled);
+    const finest = divisions.find(
+      (lag) => windowedMass(r, lag) >= bar && bestSupportedPeak(r, settled - 1, ceiling, [lag]) !== null,
+    );
+    if (finest !== undefined) {
+      settled = finest;
       continue;
     }
     // The bar failed — but a division that is still a prominent peak of its own is an octave the
     // data cannot settle, not a refuted one. Take it as the tentative fine answer and let the
     // caller demand corroboration; swallowing the coarse peak here is how a doubled — or tripled —
     // ghost gets offered.
+    const taken = bestSupportedPeak(r, settled - 1, ceiling, divisions);
+    if (taken === null) break;
     settled = taken;
     sure = false;
     break;
@@ -173,5 +184,5 @@ function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
     sure = false;
   }
   if (windowedMass(r, settled) < ACF_CORRELATION_FLOOR) sure = false;
-  return { period: settled, sure };
+  return { period: spellPitch(fractionalPitch(r, best, settled), axis.length - 1), sure };
 }

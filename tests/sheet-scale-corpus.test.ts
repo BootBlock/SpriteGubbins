@@ -158,7 +158,7 @@ const EXPECTED: Record<CorpusSheetName, CorpusReadings> = {
     correlated: null,
     drifting: null,
     offered: null,
-    note: 'The rows settle on the true 5 with 0.448 of support against a floor of 0.5, and the columns find no peak to corroborate it.',
+    note: 'The rows peak at 5, measure 4.65 and would offer 4, but with 0.448 of support against a floor of 0.5, and the columns find no peak to corroborate it.',
   },
   'vehicles_and_props.png': {
     detected: null,

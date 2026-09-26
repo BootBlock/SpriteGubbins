@@ -57,6 +57,8 @@ interface LatticeFit {
   readonly available: number;
   /** Whether two **neighbouring** lines both carry change — the spacing itself, observed directly. */
   readonly adjacent: boolean;
+  /** Step magnitude at each offset across the window, summed over the lines — see {@link oneRampPerLine}. */
+  readonly offsets: readonly number[];
 }
 
 /**
@@ -123,9 +125,12 @@ function axisTotal(axis: Float64Array): number {
  *
  * A scale twice the truth *collects* about half the sheet's change at its best phase — half the
  * art's boundaries land between the doubled lattice's lines wherever it sits — but that raw half is
- * not what is compared with the threshold. After the correction it scores 0.17 to 0.38 across these
- * fixtures, and one three times the truth at most 0.24. Both are a long way under any threshold
- * worth having, and the gap is wider than the raw shares suggest.
+ * not what is compared with the threshold. After the correction it scores 0.17 to 0.38 across the
+ * softened fixtures at 4 to 16, and one three times the truth at most 0.24. Both are a long way
+ * under any threshold worth having, and the gap is wider than the raw shares suggest. **The
+ * exception is a doubled scale of 4 or 5**, whose window is wide enough to hold two boundaries of
+ * art at 2 or 2.5, so it collects every one and scores 1; {@link oneRampPerLine} is what refuses
+ * it.
  */
 function fitsLattice(
   profile: StepProfile,
@@ -146,14 +151,54 @@ function fitsLattice(
   // axis's single edge, which no period explains. Requiring the qualifying axis to clear the same
   // corrected threshold on its own change closes that: an axis of noise explains nothing, an axis
   // of stripes explains everything, and the pooled check below still holds the pair to it together.
-  if (!qualifies(down, columnsTotal, grid) && !qualifies(across, rowsTotal, grid)) return false;
+  if (
+    !qualifies(down, profile.columns.length, columnsTotal, grid) &&
+    !qualifies(across, profile.rows.length, rowsTotal, grid)
+  ) {
+    return false;
+  }
 
   return correctedShare(down.within + across.within, profile.total, grid) >= GRID_ESTIMATION_THRESHOLD;
 }
 
 /** Whether one axis both used this spacing and is explained by it — see the note in `fitsLattice`. */
-function qualifies(fit: LatticeFit, total: number, grid: PixelGrid): boolean {
-  return sawTheSpacing(fit) && correctedShare(fit.within, total, grid) >= GRID_ESTIMATION_THRESHOLD;
+function qualifies(fit: LatticeFit, axisLength: number, total: number, grid: PixelGrid): boolean {
+  return (
+    sawTheSpacing(fit) &&
+    oneRampPerLine(fit, axisLength, total, grid) &&
+    correctedShare(fit.within, total, grid) >= GRID_ESTIMATION_THRESHOLD
+  );
+}
+
+/**
+ * Whether each window this scale lays down holds **one boundary's ramp rather than two boundaries**,
+ * where its width allows it to hold two.
+ *
+ * A window is `2 × ramp + 1` positions wide, and at a scale whose half is no wider than `2 × ramp`
+ * it can straddle two lines of the lattice at that half. At 4, phase 1, the window over 3, 4 and 5
+ * holds both 4 and 6 of a pitch-2 sheet; at 5, the pitch-2.5 sheet's boundaries sit on 0 and 2 of
+ * every five, one window apart. Every boundary then lands in a window, the corrected share reaches
+ * 1, and the reading offered twice the pitch — the coarse direction, which merges cells for good
+ * (#479). A share cannot tell those apart from a softened boundary, because both fill the window.
+ * **Where the change sits inside it can**: a ramp is one unbroken run of change, while two
+ * boundaries leave a position between them carrying only the noise every position carries. So the
+ * offsets carrying more than their share of the axis, evenly spread, must be contiguous.
+ *
+ * Read across the offsets rather than at the line, because noise decides which of the windows over
+ * a crisp boundary collects the most: the winner may sit a pixel off it, and its line then carries
+ * nothing while its one carrying offset is still a single run.
+ *
+ * Only where the window can straddle, because that is the only place the two readings coincide: a
+ * window at 6 or wider cannot hold two lines of its half, so the share alone already scores a
+ * doubled scale at a half or less, as `fitsLattice` measures.
+ */
+function oneRampPerLine(fit: LatticeFit, axisLength: number, total: number, grid: PixelGrid): boolean {
+  if (Math.floor(grid / 2) > 2 * SOFTENED_EDGE_RAMP) return true;
+  const chance = (fit.available / Math.max(1, axisLength - 1)) * total;
+  const carrying = fit.offsets.flatMap((mass, offset) => (mass > chance ? [offset] : []));
+  const first = carrying[0] ?? 0;
+  const last = carrying[carrying.length - 1] ?? 0;
+  return last - first + 1 === carrying.length;
 }
 
 /**
@@ -185,7 +230,7 @@ function correctedShare(within: number, total: number, grid: PixelGrid): number 
 function bestLatticeFit(axis: Float64Array, total: number, grid: PixelGrid): LatticeFit {
   const usable = axis.length - 1;
   const carryFloor = usable > 0 ? ((2 * SOFTENED_EDGE_RAMP + 1) / usable) * total : 0;
-  let best: LatticeFit = { within: 0, lines: 0, available: 0, adjacent: false };
+  let best: LatticeFit = { within: 0, lines: 0, available: 0, adjacent: false, offsets: [] };
   for (let phase = 0; phase < grid; phase += 1) {
     const fit = latticeFit(axis, grid, phase, carryFloor);
     if (fit.within > best.within) best = fit;
@@ -216,13 +261,17 @@ function latticeFit(axis: Float64Array, grid: PixelGrid, phase: number, carryFlo
   let lines = 0;
   let available = 0;
   let adjacent = false;
+  const offsets = new Array<number>(2 * SOFTENED_EDGE_RAMP + 1).fill(0);
   let previousCarried = false;
 
   for (let line = phase === 0 ? grid : phase; line <= axis.length - 1; line += grid) {
     available += 1;
     let mass = 0;
-    for (let position = line - SOFTENED_EDGE_RAMP; position <= line + SOFTENED_EDGE_RAMP; position += 1) {
-      if (position >= 1 && position < axis.length) mass += axis[position] ?? 0;
+    for (let offset = 0; offset < offsets.length; offset += 1) {
+      const position = line - SOFTENED_EDGE_RAMP + offset;
+      const step = position >= 1 && position < axis.length ? (axis[position] ?? 0) : 0;
+      offsets[offset] = (offsets[offset] ?? 0) + step;
+      mass += step;
     }
     within += mass;
     // Strictly above the floor, so an axis whose change is spread perfectly evenly — the definition
@@ -236,7 +285,7 @@ function latticeFit(axis: Float64Array, grid: PixelGrid, phase: number, carryFlo
     }
   }
 
-  return { within, lines, available, adjacent };
+  return { within, lines, available, adjacent, offsets };
 }
 
 /**
