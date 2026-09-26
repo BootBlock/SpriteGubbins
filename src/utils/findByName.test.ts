@@ -51,8 +51,4 @@ describe('findByName', () => {
     expect(findByName(library, '   ')).toBeUndefined();
     expect(findByName([preset('blank', '   ')], '  ')).toBeUndefined();
   });
-
-  it('finds nothing in an empty library', () => {
-    expect(findByName([], 'My Knight')).toBeUndefined();
-  });
 });

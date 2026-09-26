@@ -40,7 +40,9 @@ describe('heatmapImage', () => {
 
   it('paints no difference as the page’s own ground and the scale’s top as rose', () => {
     // Both ends exactly, because they are the ramp's claim: a faithful pixel disappears into the
-    // pane and a lost one is the app's own colour for lost. Everything between is interpolation.
+    // pane and a lost one is the app's own colour for lost. Everything between is interpolation —
+    // and an off-by-one in its segment index would end the ramp a stop early, at `gold`, which reads
+    // as a working heatmap that simply never reports anything as lost.
     const image = heatmapImage(mapOf([0, 32]), 32);
 
     expect(readPixel(image.data, 0)).toEqual(stop(0));
@@ -88,17 +90,5 @@ describe('heatmapImage', () => {
     const image = heatmapImage(mapOf([0, 1, 16, 64]), 32);
 
     for (let at = 3; at < image.data.length; at += 4) expect(image.data[at]).toBe(255);
-  });
-
-  it('does not stop the ramp one stop early, whatever the length of it', () => {
-    // The interpolation clamps its segment index so the last step lands on the final stop rather
-    // than one past the end — and an off-by-one the other way would end the ramp at `gold`, which
-    // reads as a working heatmap that simply never reports anything as lost.
-    const image = heatmapImage(mapOf([32]), 32);
-    const last = stop(DIFFERENCE_RAMP.length - 1);
-    const secondLast = stop(DIFFERENCE_RAMP.length - 2);
-
-    expect(readPixel(image.data, 0)).toEqual(last);
-    expect(readPixel(image.data, 0)).not.toEqual(secondLast);
   });
 });

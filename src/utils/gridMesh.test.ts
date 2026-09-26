@@ -298,8 +298,6 @@ describe('boundaryMesh', () => {
 
     expect(mesh.x).toEqual([0]);
     expect(mesh.y).toEqual([0]);
-    // The upper bound the pitch invariant states: a cell plus a band at each end, never `2 × grid`.
-    expect(8).toBeLessThanOrEqual(4 + Math.max(1, Math.floor(4 / 3)) + 2 * (Math.min(3, 4 - 1) - 1));
   });
 
   it('degenerates to one cell per pixel at a grid of 1', () => {

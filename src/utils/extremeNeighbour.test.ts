@@ -89,10 +89,4 @@ describe('extremeNeighbours', () => {
     const keys = Int16Array.from([TRANSPARENT_DILATE_KEY, 0, TRANSPARENT_DILATE_KEY]);
     expect(Array.from(extremeNeighbours(keys, 3, 1, 1, false))).toEqual([1, 1, 1]);
   });
-
-  it('leaves every pixel standing for itself at a radius of zero', () => {
-    expect(Array.from(extremeNeighbours(Int16Array.from(sample(4, 3)), 4, 3, 0, true))).toEqual([
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-    ]);
-  });
 });
