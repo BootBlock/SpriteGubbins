@@ -85,9 +85,9 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * 1. **The morphology is vector-valued, not per-channel.** OpenCV's `erode` on a colour image takes
  *    the minimum of each channel separately, so its output holds colours assembled from three
  *    different pixels. The Quantise panel tells the reader in as many words that under the standard
- *    vote every colour which survives is one the image already contained, and a per-channel minimum
- *    falsifies that sentence. Here the structuring element orders whole pixels by lightness and the
- *    winner is taken entire — see `extremeNeighbour.ts`.
+ *    vote with anti-aliasing off every colour which survives is one the image already contained, and
+ *    a per-channel minimum falsifies that sentence. Here the structuring element orders whole pixels
+ *    by lightness and the winner is taken entire — see `extremeNeighbour.ts`.
  * 2. **The polarity is a decision, not a blend.** The reference forms `eroded × w + dilated × (1 − w)`
  *    against a sigmoid weight, which invents a tone everywhere the two regimes meet and would hand
  *    the vote and the palette colours the sheet never had. Here the score is thresholded. That is not
