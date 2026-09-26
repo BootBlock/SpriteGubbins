@@ -11,8 +11,8 @@ describe('leadingCellShift', () => {
   });
 
   it('reports a leading cell wider than the grid as a positive shift', () => {
-    // The case a placement confined to `[0, grid)` had no value for: an end band folded into the first
-    // cell, as on most of the keyed corpus at a grid of 6.
+    // An end band folded into the first cell, as on most of the keyed corpus at a grid of 6. A
+    // placement confined to `[0, grid)` has no value for it.
     expect(leadingCellShift({ x: [0, 8, 14], y: [0, 7, 13] }, 6)).toEqual({ x: 2, y: 1 });
   });
 

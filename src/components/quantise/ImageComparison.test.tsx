@@ -17,8 +17,8 @@ import { ImageComparison } from './ImageComparison.tsx';
  *
  * The result is one pixel per grid cell, so drawing it at `zoom` — as this did — showed it `grid`
  * times smaller than the sheet beside it, and no amount of linking the two scroll positions could
- * have made that a comparison. The canvases' CSS sizes, the windows clipping them, and the inset a
- * measured grid offset pulls the result back by are where that is decided, and they are what these
+ * have made that a comparison. The canvases' CSS sizes, the windows clipping them, and the inset the
+ * measured leading-cell shift moves the result by are where that is decided, and they are what these
  * tests read.
  */
 class NoopResizeObserver {
@@ -147,12 +147,12 @@ describe('ImageComparison', () => {
     expect(quantised.parentElement?.style.height).toBe(`${String(SOURCE_SIDE)}px`);
   });
 
-  it('pushes a result on by its wide leading cell’s surplus, where no inset used to reach', () => {
+  it('pushes a result on by its wide leading cell’s surplus, inside the source’s window', () => {
     // A leading cell of 10 at a grid of 8, a shift of +2 on each axis — the end band `boundEndCells`
     // folds into the first cell, and most of the keyed corpus at a grid of 6. The result is 16 a side
     // and its canvas 128px at 1×, and drawn as-is its second cell would start at 8 where the source's
-    // starts at 10. Moving it down and right by that surplus is the half of the correction a
-    // placement confined to narrow cells never made.
+    // starts at 10. The canvas is moved down and right by that surplus, the opposite way to the
+    // narrow case above, and the window still clips it to the source's own extent.
     const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
     render(
       <ImageComparison
@@ -174,6 +174,7 @@ describe('ImageComparison', () => {
     expect(quantised.style.marginLeft).toBe('2px');
     expect(quantised.style.marginTop).toBe('2px');
     expect(quantised.parentElement?.style.width).toBe(`${String(SOURCE_SIDE)}px`);
+    expect(quantised.parentElement?.style.height).toBe(`${String(SOURCE_SIDE)}px`);
   });
 
   it('keeps the two matched after the magnification changes', () => {

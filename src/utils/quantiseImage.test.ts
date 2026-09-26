@@ -287,8 +287,8 @@ describe('quantiseImage', () => {
   it('reports a leading cell wider than the grid, where an end band was folded into it', () => {
     // A two-pixel margin is narrower than the three `boundEndCells` keeps as a cell of its own, so it
     // is folded into the first art cell, which comes back ten wide at a grid of 8. The comparison pane
-    // moves the result by this figure, and a placement that only reported narrow leading cells
-    // answered 0 here and left the whole result two source pixels off the source.
+    // moves the result by this figure, so a 0 here would draw the whole result two source pixels off
+    // the source.
     const margin: Rgba = { r: 250, g: 250, b: 250, a: 255 };
     const banded = imageFrom(130, 130, (x, y) => {
       if (x < 2 || y < 2) return margin;
