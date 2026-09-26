@@ -34,11 +34,17 @@ describe('oklabPlanes', () => {
 
     const planes = oklabPlanes(gamut);
 
-    for (const plane of [planes.L, planes.a, planes.b, planes.alpha]) {
+    // Each plane's extremes, which bound every value in it — one pair of assertions per plane rather
+    // than two per pixel.
+    for (const [axis, plane] of Object.entries(planes)) {
+      let lowest = Number.POSITIVE_INFINITY;
+      let highest = Number.NEGATIVE_INFINITY;
       for (const value of plane) {
-        expect(value).toBeGreaterThanOrEqual(0);
-        expect(value).toBeLessThanOrEqual(255);
+        lowest = Math.min(lowest, value);
+        highest = Math.max(highest, value);
       }
+      expect(lowest, axis).toBeGreaterThanOrEqual(0);
+      expect(highest, axis).toBeLessThanOrEqual(255);
     }
   });
 

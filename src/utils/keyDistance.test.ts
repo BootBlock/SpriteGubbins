@@ -141,15 +141,12 @@ describe('keyDistance', () => {
     // measurement is the straight OKLab distance, undiscounted.
     for (const key of [WHITE, BLACK]) {
       for (const sample of ['#DBDBDB', '#808080', '#242424', '#FF6363', '#005300', '#14B43C']) {
+        // Black is also the key with no direction of its own — scaling it toward black leaves it where
+        // it was — so it reaches this answer through a different guard than white does. A division by
+        // its zero-length vector would put NaN here, which no closeness check passes.
         expect(distance(key, rgb(sample))).toBeCloseTo(straightDistance(key, rgb(sample)), 9);
       }
     }
-
-    // Black is also the key with no direction of its own — scaling it toward black leaves it where it
-    // was — so it reaches that answer through a different guard than white does. Same answer, and
-    // neither divides by a zero-length vector on the way.
-    expect(keyBasis(BLACK)).toEqual(keyBasis({ ...BLACK }));
-    expect(distance(BLACK, BLACK)).toBe(0);
   });
 
   it('keeps the fringe ceiling between the halo it must take and the artwork it must not', () => {

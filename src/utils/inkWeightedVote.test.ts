@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { channels, imageFrom } from '../test/images.ts';
-import type { Rgba } from '../types/quantiser.ts';
+import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { packColor } from './imageData.ts';
 import { lumaOf } from './lineVote.ts';
@@ -142,94 +142,46 @@ describe('quantiseImage, ink-weighted', () => {
     return (on(x) && y >= 25 && y < 45) || (on(y) && x >= 25 && x < 45) ? INK : BODY;
   });
 
+  /** Every other pass off, so the reading and the reduction are the only things that differ. */
+  const settings: QuantiseSettings = {
+    grid: 6,
+    key: null,
+    silhouetteThreshold: 0,
+    vote: 'INK_WEIGHTED',
+    lineStrength: 1.5,
+    trimStrength: 0,
+    inkThreshold: 64,
+    fillCleanup: 0,
+    cleanupPasses: 1,
+    spriteGap: 1,
+    symmetry: 'OFF',
+    symmetryTolerance: 8,
+    symmetryConfidence: 90,
+    duplicateTolerance: 0,
+    duplicateSnap: false,
+    frameAlignment: 'OFF',
+    frameDriftTolerance: 0,
+    antiAlias: 'OFF',
+    antiAliasThreshold: 24,
+    antiAliasStrength: 100,
+    antiAliasRun: 2,
+    antiAliasPalette: 'SNAP',
+    dither: 'NONE',
+    outlineExpansion: 0,
+    colorMerge: 0,
+    reduction: null,
+  };
+
   it('differs from the dominant vote on a contour sheet, and honours the colour setting after', () => {
-    const dominant = quantiseImage(ringSheet, {
-      grid: 6,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
-    const weighted = quantiseImage(ringSheet, {
-      grid: 6,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'INK_WEIGHTED',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const dominant = quantiseImage(ringSheet, { ...settings, vote: 'DOMINANT' });
+    const weighted = quantiseImage(ringSheet, settings);
     expect(channels(weighted.image)).not.toEqual(channels(dominant.image));
 
     // The reduction runs on the reading's output: under a three-bit channel depth each channel
     // can take at most eight values, blends included — which the unsnapped blend above does not
     // satisfy, so this is the ordering observed rather than assumed.
     const snapped = quantiseImage(ringSheet, {
-      grid: 6,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'INK_WEIGHTED',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
+      ...settings,
       reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
     });
     for (const channel of [0, 1, 2]) {

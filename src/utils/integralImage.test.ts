@@ -1,28 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { integralImage, rectangleSum } from './integralImage.ts';
 
-/** `1 … 12` laid out three wide, so every rectangle sum can be added up by hand. */
+/** `1 … 12` laid out three wide, small enough to sum every rectangle of it directly. */
 const PLANE = Float64Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
 const WIDTH = 3;
 const HEIGHT = 4;
 
 describe('integralImage', () => {
-  it('answers a rectangle with the sum of the pixels inside it', () => {
-    const table = integralImage(PLANE, WIDTH, HEIGHT);
-
-    // The 2 × 2 block at (1, 1): 5, 6, 8, 9.
-    expect(rectangleSum(table, WIDTH, 1, 1, 2, 2)).toBe(28);
-    // The whole plane, which is 1 + … + 12.
-    expect(rectangleSum(table, WIDTH, 0, 0, WIDTH, HEIGHT)).toBe(78);
-  });
-
-  it('answers a rectangle at the top-left corner without a special case', () => {
-    const table = integralImage(PLANE, WIDTH, HEIGHT);
-
-    expect(rectangleSum(table, WIDTH, 0, 0, 1, 1)).toBe(1);
-    expect(rectangleSum(table, WIDTH, 0, 0, 2, 2)).toBe(1 + 2 + 4 + 5);
-  });
-
   it('answers an empty rectangle with nothing', () => {
     const table = integralImage(PLANE, WIDTH, HEIGHT);
 
@@ -37,7 +21,9 @@ describe('integralImage', () => {
     expect(rectangleSum(table, WIDTH, 1, 1, 2, 2)).toBe(2 * (25 + 36 + 64 + 81));
   });
 
-  it('matches a direct sum over every rectangle of a plane', () => {
+  it('matches a direct sum over every rectangle of a plane, the corner and the whole plane included', () => {
+    // Every rectangle, so the ones touching the top-left corner — where the table has no row or
+    // column before them to subtract — are answered without a special case, and so is the whole plane.
     const table = integralImage(PLANE, WIDTH, HEIGHT);
 
     for (let top = 0; top < HEIGHT; top += 1) {

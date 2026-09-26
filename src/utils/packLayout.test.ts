@@ -2,21 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { FLAT_PACK_LAYOUT, packLayout } from './packLayout.ts';
 
 describe('packLayout', () => {
-  it('names all three entry kinds after the word that tells the sheet apart', () => {
-    expect(packLayout('south-west')).toStrictEqual({
-      sheetFile: 'south-west-sheet.png',
-      manifestFile: 'south-west-manifest.json',
-      spriteDirectory: 'south-west',
-    });
-  });
-
-  it('does the same for a sheet named by its ordinal rather than a facing', () => {
-    // The directional cores of an eight-compass batch draw four facings each, so `sheetToken` names
-    // them by position. They collide with each other on all three names unless it reaches here too.
-    expect(packLayout('sheet-2')).toStrictEqual({
-      sheetFile: 'sheet-2-sheet.png',
-      manifestFile: 'sheet-2-manifest.json',
-      spriteDirectory: 'sheet-2',
+  // A facing, and an ordinal: the directional cores of an eight-compass batch draw four facings
+  // each, so `sheetToken` names them by position, and they collide with each other on all three
+  // names unless the word reaches here too.
+  it.each(['south-west', 'sheet-2'])('names all three entry kinds after the word %s', (word) => {
+    expect(packLayout(word)).toStrictEqual({
+      sheetFile: `${word}-sheet.png`,
+      manifestFile: `${word}-manifest.json`,
+      spriteDirectory: word,
     });
   });
 

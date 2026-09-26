@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { channels, imageFrom } from '../test/images.ts';
-import type { GridMesh, Rgba } from '../types/quantiser.ts';
+import type { GridMesh, QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { applyPalette } from './applyPalette.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { boundaryMesh, regularMesh } from './gridMesh.ts';
@@ -366,43 +366,47 @@ describe('quantiseImage, line-aware', () => {
   const ringArt = (x: number, y: number): Rgba =>
     ((x === 4 || x === 7) && y >= 4 && y <= 7) || ((y === 4 || y === 7) && x >= 4 && x <= 7) ? INK : BODY;
 
+  /** The dominant vote with every other pass off, reduced to four colours. */
+  const settings: QuantiseSettings = {
+    grid: 6,
+    key: null,
+    silhouetteThreshold: 0,
+    vote: 'DOMINANT',
+    lineStrength: 1.5,
+    trimStrength: 0,
+    inkThreshold: 64,
+    fillCleanup: 0,
+    cleanupPasses: 1,
+    spriteGap: 1,
+    symmetry: 'OFF',
+    symmetryTolerance: 8,
+    symmetryConfidence: 90,
+    duplicateTolerance: 0,
+    duplicateSnap: false,
+    frameAlignment: 'OFF',
+    frameDriftTolerance: 0,
+    antiAlias: 'OFF',
+    antiAliasThreshold: 24,
+    antiAliasStrength: 100,
+    antiAliasRun: 2,
+    antiAliasPalette: 'SNAP',
+    dither: 'NONE',
+    outlineExpansion: 0,
+    colorMerge: 0,
+    reduction: { kind: 'MAX_COLORS', maxColors: 4 },
+  };
+
   it('reaches the vote when a reduction ran, and stays out of it when none did', () => {
     const sheet = upscaleDrifting(ringArt, 10);
 
     // Quantised at 5 — against the art's own 6-and-7 rhythm, so the mesh cannot seat a cut on
     // every edge and the ring lands astride cells whatever the walker does. (At 6 the walker
     // follows the drift exactly and nothing straddles, which is the mesh doing its job.)
-    const mismatched = { grid: 5, key: null, vote: 'DOMINANT' } as const;
+    const mismatched = { ...settings, grid: 5 };
 
     // With colours left alone there is no honest tally to read shares from, and the pipeline must
     // be byte-identical to the plain vote it has always run.
-    const unrestricted = quantiseImage(sheet, {
-      ...mismatched,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const unrestricted = quantiseImage(sheet, { ...mismatched, reduction: null });
     const composedPlain = downscaleNearest(
       alignToGrid(sheet, boundaryMesh(sheet, 5)),
       boundaryMesh(sheet, 5),
@@ -416,66 +420,13 @@ describe('quantiseImage, line-aware', () => {
     const voteSource = applyPalette(sheet, buildPalette(sheet, 4));
     const mesh = boundaryMesh(sheet, 5);
     const composedWithoutRescue = downscaleNearest(alignToGrid(voteSource, mesh), mesh);
-    const reduced = quantiseImage(sheet, {
-      ...mismatched,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'MAX_COLORS', maxColors: 4 },
-    });
+    const reduced = quantiseImage(sheet, mismatched);
     expect(channels(reduced.image)).not.toEqual(channels(composedWithoutRescue));
   });
 
   it('is inert at a grid of 1, where every cell is a single pixel', () => {
     const sheet = upscaleDrifting(ringArt, 10);
-    const reduced = quantiseImage(sheet, {
-      grid: 1,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'MAX_COLORS', maxColors: 4 },
-    });
+    const reduced = quantiseImage(sheet, { ...settings, grid: 1 });
     // A one-pixel cell has one bucket, so the palette alone decides — and the sheet is already
     // flat colours the palette holds, so the result is the sheet itself.
     expect(channels(reduced.image)).toEqual(channels(sheet));
@@ -483,38 +434,13 @@ describe('quantiseImage, line-aware', () => {
 
   it('is deterministic — the same sheet and settings give the same bytes twice', () => {
     const sheet = upscaleDrifting(ringArt, 10);
-    const settings = {
-      grid: 6,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'MAX_COLORS', maxColors: 4 },
-    } as const;
     expect(channels(quantiseImage(sheet, settings).image)).toEqual(
       channels(quantiseImage(sheet, settings).image),
     );
   });
+});
+
+describe('lumaOf', () => {
   it('unpacks a packed colour to the channels packColor put in, so the two forms agree', () => {
     // The two exported luma forms share their arithmetic by construction — `lumaOf` calls
     // `lumaOfChannels` — so what is left to check is the half that is *not* shared: that `lumaOf`
