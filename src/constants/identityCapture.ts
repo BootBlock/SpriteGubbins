@@ -48,6 +48,6 @@ export const IDENTITY_CAPTURE_UNAVAILABLE = {
  * separation is total: the border share is **1.000** with keying off and **1.000** with keying on at
  * the `0` rung, against **0.000** with keying on at `DEFAULT_KEY_TOLERANCE`. There is no threshold
  * question between those two figures, which is why `KEY_OFFER_BORDER_SHARE` is reused rather
- * than a second one being fitted.
+ * than a second one being fitted. `tests/identityPaletteKeySuite.ts` pins all three on every sheet.
  */
 export const IDENTITY_KEY_SURVIVAL_TOLERANCE = Math.max(...KEY_TOLERANCES);

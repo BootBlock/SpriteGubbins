@@ -34,10 +34,10 @@ describe('the figures DIFFERENCE_SCALES and differenceMap state', () => {
     const at = (percentile: number): number =>
       (sorted[Math.floor((percentile / 100) * sorted.length)] ?? 0) / DIFFERENCE_PRECISION;
 
-    expect(at(50)).toBeCloseTo(0.66, 2);
-    expect(at(75)).toBeCloseTo(10.2, 1);
-    expect(at(90)).toBeCloseTo(55.0, 1);
-    expect(at(99)).toBeCloseTo(117.9, 1);
+    expect(at(50)).toBeCloseTo(0.47, 2);
+    expect(at(75)).toBeCloseTo(9.5, 1);
+    expect(at(90)).toBeCloseTo(52.2, 1);
+    expect(at(99)).toBeCloseTo(111.4, 1);
     expect(difference.peak).toBeCloseTo(177.4, 1);
   }, 120_000);
 
@@ -57,8 +57,8 @@ describe('the figures DIFFERENCE_SCALES and differenceMap state', () => {
   }
 
   it.each([
-    { vote: 'DOMINANT', moved: 360, largest: 26.84375 },
-    { vote: 'INK_WEIGHTED', moved: 930, largest: 14.375 },
+    { vote: 'DOMINANT', moved: 802, largest: 26.796875 },
+    { vote: 'INK_WEIGHTED', moved: 1_171, largest: 12.890625 },
   ] satisfies readonly { vote: VoteMethod; moved: number; largest: number }[])(
     'DIFFERENCE_SCALES and differenceMap — what a second cleanup pass moves under $vote',
     ({ vote, moved, largest }) => {

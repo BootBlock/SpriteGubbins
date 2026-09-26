@@ -113,7 +113,7 @@ describe('the palette lock — the two populations the snap distance is set from
       ? sheet
       : quantiseImage(sheet, calibrationSettings({ ...over, reduction: null })).image;
 
-  it('measures the drift where the lock runs: 0.49 at the median, 11.15 to 20.40 at the 99th', () => {
+  it('measures the drift where the lock runs: 0.38 at the median, 8.36 to 22.58 at the 99th', () => {
     // The dominant arm hands the lock `sheet` itself only while the outline expansion is off, which
     // is its opening position — a thickened copy is what the budget would otherwise have run on.
     expect(calibrationSettings().outlineExpansion).toBe(0);
@@ -128,29 +128,35 @@ describe('the palette lock — the two populations the snap distance is set from
       );
     });
     expect(figures).toEqual([
-      [0.49, 11.19, 25.72],
-      [0.5, 20.4, 45.36],
-      [0.49, 12.07, 39.12],
-      [0.49, 11.15, 30.55],
+      [0.38, 8.36, 27.06],
+      [0.38, 22.58, 44.09],
+      [0.38, 9.59, 38.88],
+      [0.38, 8.57, 32.4],
     ]);
 
-    // The dominant reading's ninety-ninth percentile is one colour, and it is the source's own
-    // outline black: the averaging reading the lock was taken from blends it into a dark tone, so
-    // pure black is the widest ninety-ninth percentile on this sheet. The opening is the first
-    // integer past it, which is the relationship `DEFAULT_PALETTE_SNAP` argues from.
+    // The source's own outline black sits past the dominant reading's ninety-ninth percentile: the
+    // averaging reading the lock was taken from blends it into a dark tone, and it is further from
+    // the lock than that percentile.
     const black = reachOf(BLACK, lock);
-    expect(round(black)).toBe(figures[1]?.[1]);
-    expect(DEFAULT_PALETTE_SNAP).toBe(Math.floor(black) + 1);
+    expect(round(black)).toBe(23.78);
+    expect(black).toBeGreaterThan(figures[1]?.[1] ?? Infinity);
 
-    // And it is not the widest drift: a sliver of the source still sits past the opening, which
-    // the dominant vote outvotes — the next test is where that shows as 100%.
+    // A share of the source still sits past the opening, which the dominant vote does not all
+    // outvote — the next test is where that shows short of 100%.
     const source = reachesOf(sheet, lock);
     const pixelsOf = (reaches: typeof source): number => reaches.reduce((sum, { pixels }) => sum + pixels, 0);
     const beyond = source.filter(({ reach }) => reach > DEFAULT_PALETTE_SNAP);
-    expect(round((100 * pixelsOf(beyond)) / pixelsOf(source))).toBe(0.36);
+    expect(round((100 * pixelsOf(beyond)) / pixelsOf(source))).toBe(0.99);
+    // Most of that share is the black outline alone.
+    const outline = source.filter(({ reach }) => reach === black);
+    expect(round((100 * pixelsOf(outline)) / pixelsOf(source))).toBe(0.78);
+
+    // The opening is the first integer past the widest ninety-ninth percentile on this sheet, which
+    // is the relationship `DEFAULT_PALETTE_SNAP` argues from.
+    expect(DEFAULT_PALETTE_SNAP).toBe(Math.floor(Math.max(...figures.map((row) => row[1] ?? 0))) + 1);
   }, 300_000);
 
-  it('draws the dominant reading wholly in locked colours at 21, and the locked sheet in 64 only from 26', () => {
+  it('draws the dominant reading 99.03% in locked colours at 23, and the locked sheet in 64 only from 28', () => {
     const entries = lockFrom(sheet);
     const held = new Set(entries.map(packColor));
 
@@ -170,22 +176,24 @@ describe('the palette lock — the two populations the snap distance is set from
     };
 
     expect(REREADINGS.map((over) => underLock(over, DEFAULT_PALETTE_SNAP - 1))).toEqual([
-      [99.96, 81],
-      [99.09, 64],
-      [99.9, 100],
-      [99.96, 88],
+      [99.98, 74],
+      [99.02, 64],
+      [99.93, 88],
+      [99.98, 77],
     ]);
     expect(REREADINGS.map((over) => underLock(over, DEFAULT_PALETTE_SNAP))).toEqual([
-      [99.97, 76],
-      [100, 61],
-      [99.93, 93],
-      [99.97, 80],
+      [99.99, 69],
+      [99.03, 64],
+      [99.94, 86],
+      [99.98, 73],
     ]);
+    // One step further the black is inside the reach, and the dominant reading is wholly locked.
+    expect(underLock({ vote: 'DOMINANT' }, DEFAULT_PALETTE_SNAP + 1)).toEqual([100, 61]);
 
     // The sheet the lock was taken from comes back in its own 64 colours only once its furthest
-    // colour, 25.72, is inside the reach — which is what "a lock does not promise a colour count"
+    // colour, 27.06, is inside the reach — which is what "a lock does not promise a colour count"
     // costs at the opening.
-    expect([25, 26].map((snap) => underLock({ vote: 'INK_WEIGHTED' }, snap)[1])).toEqual([65, 64]);
+    expect([27, 28].map((snap) => underLock({ vote: 'INK_WEIGHTED' }, snap)[1])).toEqual([65, 64]);
   }, 600_000);
 
   /** The twelve fully saturated sRGB hues, 30° apart from red — named by hex so they can be re-read. */
@@ -215,7 +223,7 @@ describe('the palette lock — the two populations the snap distance is set from
     const reaches = HUE_WHEEL.map((hex) => round(reachOf(colorOf(hex), lock)));
 
     expect(reaches).toEqual([
-      51.62, 26.56, 26.94, 48.15, 58.41, 49.74, 50.86, 60.15, 69.95, 46.68, 3.72, 39.11,
+      56.41, 26.56, 33.59, 48.24, 58.53, 49.64, 48.44, 63.92, 71.77, 44.99, 3.72, 41.08,
     ]);
 
     // Magenta is the one hue this sheet holds — it is the key field, and these conditions do not key
@@ -225,7 +233,7 @@ describe('the palette lock — the two populations the snap distance is set from
   }, 300_000);
 
   describe('over the corpus', () => {
-    it('finds colours this sheet has no hue for inside the drift, from 17.79', () => {
+    it('finds colours this sheet has no hue for inside the drift, from 15.13', () => {
       const lock = locateEntries(lockFrom(sheet));
 
       /**
@@ -234,10 +242,10 @@ describe('the palette lock — the two populations the snap distance is set from
        * each in a hue the reference sheet — green and gold, on magenta — has none of.
        */
       const NAMED = [
-        { name: 'character_space_marine_blue.png', hex: '#172136' },
-        { name: 'character_space_marine_blue.png', hex: '#1F2B47' },
-        { name: 'three-quarter-view_tiles1.png', hex: '#036066' },
-        { name: 'cyborg_black_red.png', hex: '#871C20' },
+        { name: 'character_space_marine_blue.png', hex: '#1B2336' },
+        { name: 'character_space_marine_blue.png', hex: '#212E49' },
+        { name: 'three-quarter-view_tiles1.png', hex: '#056E78' },
+        { name: 'cyborg_black_red.png', hex: '#7E191C' },
       ] as const;
 
       const reaches = NAMED.map(({ name, hex }) => {
@@ -250,10 +258,10 @@ describe('the palette lock — the two populations the snap distance is set from
         return round(reachOf(color, lock));
       });
 
-      expect(reaches).toEqual([17.79, 21.56, 25.04, 28.68]);
+      expect(reaches).toEqual([15.13, 22.74, 25.95, 26.66]);
     }, 600_000);
 
-    it('puts each sheet furthest colour under the ceiling, and black as far as 44.74 from its own lock', () => {
+    it('puts each sheet furthest colour under the ceiling, and black as far as 38.11 from its own lock', () => {
       const figures = CORPUS_SHEETS.map((name) => {
         const image = sheetNamed(name);
         const lock = locateEntries(lockFrom(image));
@@ -261,14 +269,14 @@ describe('the palette lock — the two populations the snap distance is set from
       });
 
       expect(figures).toEqual([
-        [45.36, 20.4],
-        [51.28, 34.15],
-        [45.99, 41.88],
-        [43.98, 0],
-        [45.38, 36.11],
-        [42.76, 33.76],
-        [35.03, 33.16],
-        [55.92, 44.74],
+        [44.09, 23.78],
+        [53.17, 32.64],
+        [44.69, 34.92],
+        [44.14, 0],
+        [46.83, 31.34],
+        [38.52, 34.78],
+        [34.27, 31.45],
+        [59.52, 38.11],
       ]);
 
       // The ceiling's claim: at its top the lock reaches every colour any corpus sheet hands it under

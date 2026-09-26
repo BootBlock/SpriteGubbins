@@ -32,15 +32,18 @@ export const PALETTE_COLOR_COUNTS: Readonly<Record<PaletteLimit, number | null>>
  * that exist only where two regions meet, and `buildPalette` counted every one of their pixels
  * exactly as it counted a pixel of the art's own flat colours — so a budget could spend slots on
  * blends and then merge genuine art tones onto shared entries. Measured on softened fixtures at a
- * budget equal to the art's own colour count, the palette held 7 of 8, 8 of 12, 10 of 16 and 14 of
- * 24 of the colours the art was drawn in.
+ * budget equal to the art's own colour count, through the whole search — the Wu cut and the rounds
+ * that refine it — reading an unweighted histogram, the palette held 6 of 8, 8 of 12, 10 of 16 and
+ * 13 of 24 of the colours the art was drawn in. `tests/quantiser-figures-blend-weighting.test.ts`
+ * re-derives every fixture figure in this docblock and the three after it.
  *
  * **A gap is what makes the reading a boundary rather than a gradient.** Soft shading has every pixel
  * partway between the two beside it, and taking those as blends would down-weight the whole of a
  * shaded surface; a threshold on the *span* leaves them, because a shading step between adjacent
  * pixels is small and a region boundary is not. 16 was chosen from where the answer stops moving: 8
- * and 16 give the same palette on both softened fixtures, while 32 is strict enough to miss most of
- * the fringes and gives back most of the defect — 17 of 24 art colours where 16 gives 22.
+ * and 16 keep as many art colours on every softened fixture, while 24 starts to miss fringes — 14 of
+ * 16 and 21 of 24 — and 32 is strict enough to give back most of the defect: 17 of 24 art colours
+ * where 16 gives 22.
  */
 export const BLEND_EDGE_GAP = 16;
 
@@ -55,8 +58,11 @@ export const BLEND_EDGE_GAP = 16;
  * It also decides what the pass declines to touch, and declining is the safe direction. A pixel a
  * tenth of the way across a boundary is nearly the art colour it sits beside, so a slot spent on it
  * costs almost nothing; the blends worth suppressing are the ones near the middle, and they are far
- * from both ends by construction. 4 and 8 give the same palette on both softened fixtures; 0 gives up
- * one art colour of sixteen, which is the ends being taken.
+ * from both ends by construction. 2, 4 and 8 keep the same art colours on every softened fixture.
+ * **The floor rests on that argument rather than on a fixture**: no softened fixture shows the ends
+ * being taken. At 0 the scattered fixtures choose exactly the palettes 4 does, and the seamed one at
+ * a budget of 16 keeps all sixteen art colours where 4 keeps twelve — a flat colour's interior
+ * pixels still carry its whole vote, so reading its edge as a blend costs it nothing there.
  */
 export const BLEND_END_GAP = 4;
 
@@ -69,8 +75,9 @@ export const BLEND_END_GAP = 4;
  * it but the whole of what makes it fire. A real softening kernel is separable and two-dimensional,
  * so a pixel on a vertical edge carries a little of what was above and below it as well, and lands
  * *near* the run rather than on it: at zero slack the pass detects nothing at all and both softened
- * fixtures come back at their unweighted figures. 4, 8 and 16 are indistinguishable on both, so this
- * sits at the bottom of the plateau, which is the value that reads the fewest pixels as blends.
+ * fixtures come back at their unweighted figures. 4, 8 and 16 keep the same art colours on every
+ * fixture, so this sits at the bottom of the plateau, which is the value that reads the fewest pixels
+ * as blends.
  *
  * **What it cannot see, and why that is left alone.** An sRGB blend is a straight run in sRGB and a
  * slightly curved one in OKLab, and how far it bends depends on the two hues — the midpoint of a
@@ -78,8 +85,8 @@ export const BLEND_END_GAP = 4;
  * boundary is softened over a *single* pixel, because the reading asks about a pixel's immediate
  * neighbours: across the three-tap kernel a resampler actually leaves, each step's neighbours are the
  * steps beside it and the run is short enough to be straight. Widening the slack to cover the
- * one-pixel case changed no palette on any fixture, so it is not widened, and the cost of the miss is
- * that such a colour keeps the vote it always had.
+ * one-pixel case kept no further art colour on any fixture, so it is not widened, and the cost of the
+ * miss is that such a colour keeps the vote it always had.
  */
 export const BLEND_STRAIGHTNESS = 4;
 
@@ -90,31 +97,38 @@ export const BLEND_STRAIGHTNESS = 4;
  * **A fraction rather than nothing**, and the difference is what keeps the pass safe on the sheets it
  * has no opinion about. Every colour stays in the histogram, so the set a palette is chosen *from* is
  * exactly the set the image contains, and `buildPalette`'s "already inside the budget" answer is the
- * same one it always gave. And because Wu's criterion and the representative's tally are both
- * scale-invariant, a sheet that is nothing but transitions — a soft gradient with no flat region
- * anywhere — has every weight scaled by the same constant and is quantised exactly as it was before
- * this pass existed. Zero would make that sheet's whole histogram vanish.
+ * same one it always gave. And because Wu's criterion, the representative's tally and the rounds'
+ * weighted means and errors are all scale-invariant, a sheet that is nothing but transitions — a soft
+ * gradient with no flat region anywhere — has every weight scaled by the same constant and is
+ * quantised exactly as it was before this pass existed. Zero would make that sheet's whole histogram
+ * vanish.
  *
  * **A power of two, which is what keeps the palette exactly reproducible.** `wuQuantiser` promises
  * the same image always yields the same palette, and it rests on every tie resolving the same way.
- * A weight of 1/64 makes each colour's total a multiple of 1/64, and 16,777,216 pixels — the tab's
- * ceiling — is 2³⁰ of those, comfortably inside the 2⁵³ where a `Float64Array` still counts exactly.
- * So no sum here rounds, and two colours that weigh the same weigh *exactly* the same. A weight that
- * was not a binary fraction would put that promise on the ordering of a floating-point sum.
+ * A weight of 1/1024 makes each colour's total a multiple of 2⁻¹⁰, and 16,777,216 pixels — the tab's
+ * 2²⁴-pixel ceiling — is 2³⁴ of those, comfortably inside the 2⁵³ where a `Float64Array` still counts
+ * exactly. So no sum here rounds, and two colours that weigh the same weigh *exactly* the same. A
+ * weight that was not a binary fraction would put that promise on the ordering of a floating-point
+ * sum.
  *
- * **1/64 is where the answer stops moving.** On both softened fixtures every value from 1/64 down to
- * 10⁻⁶ chooses the same palette; 1/16 recovers part of the loss and 1/4 recovers little. At the
- * budgets equal to the art's own colour count quoted at {@link BLEND_EDGE_GAP}, this takes 7 of 8 to
- * 8, 8 of 12 to 11, 10 of 16 to 15 and 14 of 24 to 22 — and on a fixture whose 24 colours meet at
- * one-pixel seams it takes the palette from 21 art colours and 3 blends to all 24, and the mean error
- * at the art's own colours from 1.83 to nothing.
+ * **1/1024 is where the answer stops moving.** Through the whole search — the Wu cut and the rounds
+ * that refine it — every value from 1/1024 down to 10⁻⁶ chooses exactly the same palette on both
+ * softened fixtures at every budget measured. Above it the 16-colour fixture keeps one colour fewer
+ * from 1/64 to 1/512, and the loss grows from there: at the budgets equal to the art's own colour
+ * count quoted at {@link BLEND_EDGE_GAP}, 1/32 keeps 8, 11, 14 and 22, 1/16 keeps 8, 10, 13 and 20,
+ * and 1/4 keeps 8, 9, 12 and 17. This takes 6 of 8 to 8, 8 of 12 to 11, 10 of 16 to 16 and 13 of 24
+ * to 22 — and on a fixture whose 24 colours meet at one-pixel seams it takes the palette from 21 art
+ * colours and 3 blends to all 24, and the mean error at the art's own colours from 1.83 to nothing.
  *
  * **What it costs, on a sheet with no flat colour to protect.** End to end on the reference armour
  * sheet — grid 6, budgets of 16 and 64, under all three vote readings — structural similarity moves
- * by less than 0.005 either way, which is inside the run-to-run noise of the measurement. The pass
- * makes the histogram about five times the cost of a plain one and the whole pipeline about five per
- * cent more; absolute timings are stated nowhere here, because they move by several times between
- * runs on one machine.
+ * by less than 0.005 either way, which is inside the run-to-run noise of the measurement. Read per
+ * pixel it costs more, because a per-pixel error prices a fringe at the pixels carrying it: at the
+ * default budget of 64 the palette sits 2.029 from the sheet's pixels on average, against 1.842
+ * unweighted and 1.908 at 1/64 — see `wuQuantiser`'s module note for why that is a reading and not
+ * the score this weight is chosen by. The pass makes the histogram about five times the cost of a
+ * plain one and the whole pipeline about five per cent more; absolute timings are stated nowhere
+ * here, because they move by several times between runs on one machine.
  *
  * **The one thing it cannot tell apart, said plainly.** A deliberate one-pixel shading band drawn
  * between a light body and a dark one is geometrically a blend of the two, and no local reading
@@ -124,7 +138,29 @@ export const BLEND_STRAIGHTNESS = 4;
  * affected: a band two pixels wide or more has interior pixels whose neighbours match, and those are
  * never read as blends.
  */
-export const BLEND_VOTE_WEIGHT = 1 / 64;
+export const BLEND_VOTE_WEIGHT = 1 / 1024;
+
+/**
+ * How many snapped k-means rounds `lloydRefine` may run on the Wu cut's palette before
+ * `buildPalette` takes the best palette it has measured.
+ *
+ * The Wu cut chooses good *groups*, but each group's entry was its heaviest colour, which is often
+ * far from the colours the entry speaks for. The rounds move each entry to the member nearest its
+ * cell's weighted mean. Measured on the reference armour sheet at the default budget of 64, as the
+ * mean OKLab distance from each pixel to the entry it is drawn with: **2.447** for the cut alone,
+ * **2.051** after 4 rounds, **2.042** after 8, **2.047** after 16, and **2.029** after 32 and after
+ * 64. `tests/quantiser-figures-wu-quantiser.test.ts` re-derives the ladder.
+ *
+ * **32 is where the answer stops moving.** A snapped round does not always lower the error, and
+ * the pass keeps the palette with the lowest *weighted* error, which is why 16 reads worse than 8
+ * above on the plain error a reader sees. Across the eight corpus sheets at budgets of 16, 32, 64
+ * and 256, 64 rounds change the result of 32 on three of those 32 pairs, and every sheet has stopped
+ * moving on the rest. Each round is one pass over the sheet's distinct colours, and most palettes
+ * settle well before the cap, so the rounds cost about as much again as the histogram and the cut.
+ * At 32, every one of the 32 pairs is better than the cut alone, by 11% to 35%, which
+ * `tests/palette-refine-corpus-*.test.ts` holds.
+ */
+export const PALETTE_REFINE_ROUNDS = 32;
 
 /**
  * The fraction of an image's colour transitions that must fall on a scale's lattice for that scale to
@@ -619,10 +655,10 @@ export const DEFAULT_CLEANUP_PASSES = 1;
  * folding near-duplicate colours together sheet-wide; `mergeColors` holds the rule, and the
  * distance is scaled OKLab, as every colour-tolerance gate measures. Calibration points, measured on
  * the armour sheet (grid 6, ink-weighted 1.5×, a budget of 64): at 12 its sixty-four colours
- * settle to twenty-seven and every fill reads as one surface with its shading intact; by 24 it
- * reaches fourteen and begins to spend genuine shading. The range runs on to 48 anyway — six
+ * settle to twenty-nine and every fill reads as one surface with its shading intact; by 24 it
+ * reaches sixteen and begins to spend genuine shading. The range runs on to 48 anyway — six
  * colours on that sheet — because a flatter look is a style, not a mistake, and the preview is
- * beside the dial. Half the RGB range it replaced, for the reason `FILL_CLEANUP_RANGE` gives:
+ * beside the dial. `tests/quantiser-figures-color-merge.test.ts` holds the three counts. Half the RGB range it replaced, for the reason `FILL_CLEANUP_RANGE` gives:
  * a perceptual step is about two RGB steps, so the reach is the old dial's, said honestly.
  */
 export const COLOR_MERGE_RANGE = { min: 0, max: 48, step: 1 } as const;
@@ -646,26 +682,26 @@ export const DEFAULT_COLOR_MERGE = 0;
  * colours that reading gives the palette step: the source pixels ahead of the dominant vote, and the
  * blended cell colours after the two averaging readings. Over four re-readings — the ink-weighted one
  * the lock came from, the dominant and k-centroid readings, and the ink-weighted one at a grid of 5
- * — half the pixels sit within 0.49 or 0.50 of a locked entry, ninety-nine per cent within 11.15 to
- * 20.40, and the furthest single colour is 25.72 to 45.36 away. A budget is not among them: at any
+ * — half the pixels sit within 0.38 of a locked entry, ninety-nine per cent within 8.36 to 22.58,
+ * and the furthest single colour is 27.06 to 44.09 away. A budget is not among them: at any
  * snap above 0 a lock supersedes it, so every budget reads the same while one is reaching.
  *
  * **The colours it must not take are named by hex**, because a population described in words cannot
  * be measured again. The first half is the twelve fully saturated sRGB hues 30° apart — `#FF0000`,
  * `#FF8000`, `#FFFF00`, `#80FF00`, `#00FF00`, `#00FF80`, `#00FFFF`, `#0080FF`, `#0000FF`, `#8000FF`,
  * `#FF00FF` and `#FF0080` — less `#FF00FF`, which is the sheet's own key field at 3.72. The other
- * eleven sit from 26.56 (`#FF8000`) to 69.95 (`#0000FF`). The second half is what real generator
+ * eleven sit from 26.56 (`#FF8000`) to 71.77 (`#0000FF`). The second half is what real generator
  * output brings, and nobody picked it: colours from the other corpus sheets' own 16-colour palettes,
- * in hues this sheet has none of, sit well inside the drift — a navy `#172136` from
- * `character_space_marine_blue.png` at 17.79 and a second, `#1F2B47`, at 21.56, a teal `#036066` from
- * `three-quarter-view_tiles1.png` at 25.04, and a red `#871C20` from `cyborg_black_red.png` at 28.68.
+ * in hues this sheet has none of, sit well inside the drift — a navy `#1B2336` from
+ * `character_space_marine_blue.png` at 15.13 and a second, `#212E49`, at 22.74, a teal `#056E78` from
+ * `three-quarter-view_tiles1.png` at 25.95, and a red `#7E191C` from `cyborg_black_red.png` at 26.66.
  * So no distance separates the drift a lock exists to remove from every colour it must keep, which is
  * why this is a dial and not a fixed threshold.
  *
  * The ceiling is 64 rather than the 48 the two cleanup dials stop at, because the drift on real sheets
  * runs past theirs. Locking each corpus sheet from its own ink-weighted reading the same way, the
- * furthest colour the dominant reading hands that lock runs from 35.03 (`ui_elements1.png`) to 55.92
- * (`vehicles_and_props.png`), and two of the eight pass 48 — so only a ceiling past 55.92 lets the top
+ * furthest colour the dominant reading hands that lock runs from 34.27 (`ui_elements1.png`) to 59.52
+ * (`vehicles_and_props.png`), and two of the eight pass 48 — so only a ceiling past 59.52 lets the top
  * of the range take every colour of every one of them. It is a quarter of the 255 that black to white
  * measures.
  *
@@ -681,31 +717,33 @@ export const PALETTE_SNAP_RANGE = { min: 0, max: 64, step: 1 } as const;
  * **It errs towards keeping.** A colour kept that should have been taken costs the result one extra
  * colour; a colour taken that should have been kept costs artwork — a gem or a faction trim redrawn in
  * the locked palette. So the opening takes the drift up to the widest ninety-ninth percentile on the
- * reference sheet and goes no further. That percentile is one colour: the source's pure black
- * outline, 20.40 from the lock, which the dominant reading hands the lock as it stands and the
- * ink-weighted reading the lock was taken from had blended into a dark tone. 21 is the first integer
- * past it. It is not the widest drift, which reaches 45.36: 0.36% of the source's pixels still sit
- * beyond 21, and the dominant vote outvotes every one of them.
+ * reference sheet and goes no further. That percentile is the dominant reading's, 22.58 from the
+ * lock, where the three averaging re-readings reach no further than 9.59: the dominant vote hands the
+ * lock the source's own pixels rather than blended cell colours. 23 is the first integer past it. It
+ * is not the widest drift, which reaches 44.09: 0.99% of the source's pixels still sit beyond 23, and
+ * most of them are one colour — the source's pure black outline, 0.78% of its pixels at 23.78, which
+ * the ink-weighted reading the lock was taken from had blended into a dark tone.
  *
- * At 20 a dominant re-reading keeps that black and comes back 99.09% in locked colours; at 21 it is
- * 100%, in 61 of them. The three averaging re-readings move from between 99.90% and 99.96% to between
- * 99.93% and 99.97%, which leaves at most 0.07% of any re-reading's pixels for every step past 21 to
- * take — while those steps reach the navy at 21.56 and the teal at 25.04. Every saturated hue the
- * sheet does not hold is still kept, the nearest by 5.56. The opening already takes the navy at 17.79,
- * and no opening that took the black could keep it.
+ * At 22 a dominant re-reading comes back 99.02% in locked colours and at 23 99.03%, in 64 colours
+ * either way; only at 24, once the black is inside the reach, is it 100%, in 61. The three averaging
+ * re-readings move from between 99.93% and 99.98% to between 99.94% and 99.99%, which leaves at most
+ * 0.06% of their pixels for every step past 23 to take — while those steps reach the black, the teal
+ * at 25.95, the orange hue `#FF8000` at 26.56 and the red at 26.66. Every saturated hue the sheet does
+ * not hold is still kept, the nearest by 3.56. The opening already takes both navies, at 15.13 and
+ * 22.74, and no opening that took the black could keep either.
  *
- * **The black it is placed past belongs to this sheet.** Each corpus sheet locked from its own
- * ink-weighted reading holds black at a different distance: 0 on `cyborg_monk.png`, and from 33.16 to
- * 44.74 on the other six. On those six a dominant re-reading's black is out of the lock's reach at
- * this opening, and raising the dial is how a reader brings it in.
+ * **The black it stops short of belongs to this sheet.** Each corpus sheet locked from its own
+ * ink-weighted reading holds black at a different distance: 0 on `cyborg_monk.png`, 23.78 on this
+ * one, and from 31.34 to 38.11 on the other six. On all seven a dominant re-reading's black is out of
+ * the lock's reach at this opening, and raising the dial is how a reader brings it in.
  *
  * A lock therefore does **not** promise a colour count, not even for the sheet it was taken from: read
- * again under the lock at 21, the reference sheet comes back in 76 colours, and in its own 64 only
- * from 26, where its furthest colour (25.72) is inside the reach. Nothing but the top of the range
+ * again under the lock at 23, the reference sheet comes back in 69 colours, and in its own 64 only
+ * from 28, where its furthest colour (27.06) is inside the reach. Nothing but the top of the range
  * comes close to promising one, and a setting that snapped a genuinely new colour to keep a number
  * tidy would have the gate failing at the one job it has.
  */
-export const DEFAULT_PALETTE_SNAP = 21;
+export const DEFAULT_PALETTE_SNAP = 23;
 
 /**
  * The outline-expansion slider's range, `0` meaning the pass does not run.
@@ -718,11 +756,11 @@ export const DEFAULT_PALETTE_SNAP = 21;
  *
  * The ceiling is 4 because the useful range ends well before it, and the floor of usefulness is 1.
  * Measured on the reference sheet at a grid of 6 — the full figures and the two metrics are in
- * `outlineExpansion` — thin-line survival climbs 29.6 → 42.7 → 54.1 → 61.4 → 65.4% across 0 to 4
- * while surface loss climbs 0.39 → 2.70 → 5.12 → 7.81 → 10.51%, so the first step buys thirteen
- * points of the first for two and a third of the second and every step after it buys less. The
- * range runs on anyway, because a sheet drawn at a coarser scale or with thinner contours than this
- * one will want more, and the preview is beside the dial.
+ * `outlineExpansion` — thin-line survival climbs 24.4 → 40.1 → 53.4 → 60.9 → 64.6% across 0 to 4
+ * while surface loss climbs 0.25 → 2.35 → 5.10 → 7.69 → 10.07%, so the first step buys nearly
+ * sixteen points of the first for a little over two of the second and every step after it buys
+ * less. The range runs on anyway, because a sheet drawn at a coarser scale or with thinner contours
+ * than this one will want more, and the preview is beside the dial.
  */
 export const OUTLINE_EXPANSION_RANGE = { min: 0, max: 4, step: 1 } as const;
 
@@ -731,7 +769,7 @@ export const OUTLINE_EXPANSION_RANGE = { min: 0, max: 4, step: 1 } as const;
  *
  * **Not the measured knee, which is 1, and the difference is deliberate.** This pass moves pixels
  * the reader did not ask to have moved: even at 1 it thickens every contour on the sheet, and it
- * takes the sheet's ink share from 14.2% to 17.2% where the reduction alone had it at 16.5%. That is
+ * takes the sheet's ink share from 14.2% to 16.6% where the reduction alone had it at 15.4%. That is
  * the right answer for a sheet whose outlines are breaking up and the wrong one for a sheet that came
  * back clean, and nothing here can tell which arrived — the same argument the background keying opens
  * off on. The guidance names the symptom to raise it for, and the preview beside the dial is where
@@ -800,27 +838,32 @@ export const VOTE_METHOD_CHOICES = [
  * column rather than their size.
  *
  * ```
- * budget 64      flat 13.4 / 3.89 / 2.55   BAYER_4 15.4 / 4.27 / 2.95   BAYER_8 15.4 / 4.26 / 2.95   BLUE_NOISE 15.4 / 4.31 / 2.98
- * budget 32      flat 14.3 / 4.73 / 3.38   BAYER_4 15.7 / 4.44 / 3.12   BAYER_8 15.8 / 4.47 / 3.16   BLUE_NOISE 15.8 / 4.48 / 3.13
- * budget 8       flat 21.1 / 7.72 / 6.10   BAYER_4 18.1 / 5.32 / 3.79   BAYER_8 18.1 / 5.34 / 3.82   BLUE_NOISE 18.1 / 5.27 / 3.72
- * Game Boy       flat 92.2 / 90.2 / 92.0   BAYER_4 93.3 / 85.7 / 87.8   BAYER_8 93.4 / 85.7 / 87.8   BLUE_NOISE 93.4 / 85.8 / 87.7
+ * budget 64      flat 12.1 / 3.66 / 2.31   BAYER_4 15.0 / 4.22 / 2.94   BAYER_8 15.0 / 4.23 / 2.94   BLUE_NOISE 15.0 / 4.24 / 2.94
+ * budget 32      flat 13.2 / 4.39 / 3.02   BAYER_4 15.3 / 4.39 / 3.07   BAYER_8 15.5 / 4.56 / 3.15   BLUE_NOISE 15.5 / 4.50 / 3.08
+ * budget 16      flat 13.8 / 4.71 / 3.34   BAYER_4 15.9 / 4.44 / 3.12   BAYER_8 16.0 / 4.50 / 3.17   BLUE_NOISE 16.0 / 4.48 / 3.10
+ * budget 8       flat 15.9 / 6.55 / 5.15   BAYER_4 17.3 / 4.76 / 3.29   BAYER_8 17.3 / 4.81 / 3.35   BLUE_NOISE 17.2 / 4.73 / 3.26
+ * Game Boy       flat 92.2 / 90.2 / 92.0   BAYER_4 91.6 / 85.7 / 87.9   BAYER_8 91.6 / 85.7 / 87.9   BLUE_NOISE 91.6 / 85.8 / 87.9
  * Mega Drive     flat 20.2 / 8.02 / 6.36   BAYER_4 22.2 / 4.65 / 3.29   BAYER_8 22.2 / 4.71 / 3.26   BLUE_NOISE 22.3 / 4.88 / 3.20
  * Master System  flat 24.0 / 9.56 / 7.10   BAYER_4 27.5 / 5.52 / 3.72   BAYER_8 27.8 / 5.65 / 3.59   BLUE_NOISE 27.7 / 5.91 / 3.57
  * ```
  *
- * Three things to read out of that. **The per-pixel figure rises on five of the six cases**,
- * because a pattern moves pixels off their nearest colour on purpose. **The block figures fall on
- * five of the six**, and by most on the two channel-depth machines — about half the flat step's
+ * Three things to read out of that. **The per-pixel figure rises in six of the seven cases**,
+ * because a pattern moves pixels off their nearest colour on purpose. The Game Boy is the seventh,
+ * and by 0.6 of 92 — under 1%, on a palette whose four greens sit outside the sheet's colours
+ * altogether, so that every pixel lies far from its cell's mean whatever it takes.
+ *
+ * **The block figures fall wherever the palette is short of the sheet**: at budgets of 16 and 8 and
+ * on all three machines, and by most on the two channel-depth machines — about half the flat step's
  * error over 8 × 8 blocks — which is unsurprising, since a lattice is what ordered dithering was
- * invented for, and those two take its classic per-channel form. **Both exceptions are on the budget ladder, and they are one fact stated
- * twice**: at 64 the palette is ample, so no colour of the sheet needs expressing as a mixture and
- * the pattern is cost on all three figures; at 8 it is short enough that a mixture lands nearer the
- * truth than the nearest single colour does, and the pattern wins on all three, the per-pixel
- * figure included. A budget's colours are chosen *from this sheet*, so shortening it leaves entries
- * spread through the sheet's own gamut for a mixture to interpolate between — which is why the
- * three machine spaces do not join that second exception however few colours they hold. Their
- * entries are stated rather than chosen, the Game Boy's four greens sit outside the sheet's colours
- * altogether, and all three land on the ordinary reading: per-pixel cost, block gain.
+ * invented for, and those two take its classic per-channel form. At 8 the pattern takes about a
+ * third off the 8 × 8 figure, and at 16 about a twentieth.
+ *
+ * **The two longest budgets are the exception, and they are one fact.** A budget's colours are
+ * chosen *from this sheet*, and at 32 or more they sit close enough to every colour it holds that
+ * a mixture rarely lands nearer a cell's mean than the nearest single colour does. At 64 the pattern
+ * is cost on all three figures; at 32 it draws level with the flat step over 4 × 4 blocks at best
+ * and is still worse over 8 × 8. The machine spaces never reach that point however many colours
+ * they hold, because their entries are stated rather than chosen.
  *
  * The choice between the three patterns is about what each *looks* like rather than about fidelity.
  * They are not identical — the Master System's 4 × 4 figure spreads 0.39 across them — but that
@@ -840,8 +883,10 @@ export const DITHER_CHOICES = [
 /**
  * Where the dither opens — off, as every pass that changes the artwork on this tab opens.
  *
- * A dither is a *style*, and the figures above say so: it costs per-pixel accuracy at every budget
- * but the shortest, and buys a better local average only where the palette is short of the sheet.
+ * A dither is a *style*, and the figures above say so: it costs per-pixel accuracy on every palette
+ * measured but the Game Boy's, where it saves under 1%, and buys a better local average only where
+ * the palette is short of the sheet — at budgets of 16 and 8 and on the three machines, never at 32
+ * or 64.
  * Nothing here can tell which sheet arrived, and the reader is the one who knows whether they want a
  * visible pattern in their artwork at all — the same argument the outline expansion and the
  * background keying open off on.
@@ -919,9 +964,9 @@ export const BLUE_NOISE_MINORITY = 0.1;
  *
  * ```
  *                       2                      3                      4                      6                      8                 unrestricted
- * budget 64     1.82 / 0.75 / 0.47     2.20 / 0.75 / 0.44     2.69 / 0.80 / 0.44     3.35 / 1.00 / 0.54     3.74 / 1.08 / 0.58     7.33 / 2.22 / 1.16
- * budget 16     3.39 / 1.27 / 0.81     4.26 / 1.43 / 0.88     4.59 / 1.58 / 0.94     5.35 / 1.77 / 1.05     6.06 / 2.00 / 1.14     8.67 / 2.42 / 1.33
- * budget 8      5.41 / 2.46 / 1.69     6.11 / 2.52 / 1.64     6.87 / 2.61 / 1.70     7.73 / 2.73 / 1.74     8.47 / 2.83 / 1.81     8.47 / 2.83 / 1.81
+ * budget 64     1.66 / 0.60 / 0.34     2.11 / 0.68 / 0.38     2.63 / 0.76 / 0.41     3.21 / 0.89 / 0.48     3.74 / 1.05 / 0.57     7.47 / 2.11 / 1.13
+ * budget 16     3.34 / 1.26 / 0.78     4.33 / 1.45 / 0.87     5.12 / 1.60 / 0.93     6.46 / 1.97 / 1.11     7.40 / 2.21 / 1.22     9.13 / 2.59 / 1.35
+ * budget 8      4.91 / 1.94 / 1.19     6.71 / 2.35 / 1.34     7.70 / 2.55 / 1.42     8.97 / 2.84 / 1.59    10.91 / 3.11 / 1.74    10.91 / 3.11 / 1.74
  * Game Boy    92.00 / 85.20 / 87.90  93.93 / 84.98 / 87.52  94.36 / 85.03 / 87.54            —                      —            94.36 / 85.03 / 87.54
  * ```
  *
@@ -930,39 +975,47 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * rather than restated.
  *
  * **The unrestricted search is the worst column wherever the palette is large enough for it to
- * matter** — 2.6× to 3.3× worse than a shortlist of 3 on the 64-colour budget, 1.5× to 2.0× at 16,
- * and 1.1× to 1.4× by 8 colours, where three of eight is most of the palette anyway (the Game Boy's
- * four make the two columns the same search). The reason is worth stating because it is not obvious:
- * a plan is optimal for the *whole tile*, and a flat region a few pixels across samples only a few
- * of the tile's positions. So a pair drawn from opposite ends of the palette — whose mixture at some
- * extreme ratio does land nearest the target — spends most of that region on one colour and puts the
- * other down as a stray pixel of something wildly different. A pair drawn from the target's own
- * neighbourhood cannot do that, whatever ratio it takes.
+ * matter** — 3.3× to 4.5× worse than the shipped shortlist of 2 on the 64-colour budget, 1.7× to
+ * 2.7× at 16, and 1.5× to 2.2× at 8, where a shortlist of 8 is already the whole palette. On the
+ * Game Boy's four the columns sit within 3% of one another, since four entries leave no far end to
+ * reach for. The reason is worth stating because it is not obvious: a plan is optimal for the
+ * *whole tile*, and a flat region a few pixels across samples only a few of the tile's positions.
+ * So a pair drawn from opposite ends of the palette — whose mixture at some extreme ratio does land
+ * nearest the target — spends most of that region on one colour and puts the other down as a stray
+ * pixel of something wildly different. A pair drawn from the target's own neighbourhood cannot do
+ * that, whatever ratio it takes.
  *
- * **3 rather than 2 is a genuinely close call, and the figures alone do not settle it.** 2 is the
- * quieter per-pixel figure everywhere and the better 8 × 8 figure at budget 16, by 8%; 3 is the
- * better 8 × 8 figure at budget 64 by 6%, at budget 8 by 3% and on the four-colour Game Boy by 0.4%.
- * What decides it is structural rather than measured: with two candidates there is exactly one pair,
- * so a target whose two nearest entries lie the *same* side of it has no mixture that can reach it
- * and the plan falls back to a flat colour. A third candidate is the smallest shortlist that can
- * straddle, and 3 takes the 8 × 8 figure at every palette measured but one. Budget 16 is that one,
- * and nothing here explains it — so it is recorded rather than reasoned about, and it is 8% rather
- * than a rout.
+ * **2 is what the figures choose, and it is the floor.** Every budget row worsens from each column
+ * to the next on all three figures, and 2 beats 3 over 8 × 8 blocks by 10% at 64 and at 16 and by
+ * 12% at 8, and by 21% to 27% per pixel. The Game Boy is the one row where 3 is the better block
+ * figure, by 0.2% over 4 × 4 and 0.4% over 8 × 8, and 2 is still 2% better per pixel there. Nothing
+ * shorter exists: one candidate is no pair, and so no dither.
+ *
+ * **What 2 gives up is structural, and it is counted here rather than argued away.** With two
+ * candidates there is exactly one pair, so a target whose two nearest entries lie the *same* side
+ * of it has no mixture that can reach it, and the plan draws it flat with its nearest entry. A third
+ * candidate is the smallest list that can straddle. Of the resolved sheet's colours the 64-colour
+ * palette does not hold, 15% are drawn flat under 2 against 6% under 3; at 16 it is 19% against
+ * 11%, at 8 21% against 7%, and on the Game Boy half against 27%. The block figures say the trade
+ * is still worth making: a colour drawn flat takes the nearest entry, which is the flat step's own
+ * answer, while every wider list admits pairs that reach further from the target — the unrestricted
+ * column's failure, in a smaller dose.
  *
  * **What it costs is a scan of the whole ratio ladder per pair**, which for the resolved reference
  * sheet — 43,681 pixels carrying 9,975 distinct colours — is the same order as one of the cleanup
  * passes, and which grows with the *distinct colours* of a sheet rather than with its pixels. A grid
  * of 1 is where that bites: the sheet arrives with 218,978 of them, and the plan search is then the
  * most expensive pass in the pipeline. Wall-clock figures are deliberately not stated — they move by
- * several times between runs on one machine — but the shape is: three pairs, `levels` rungs each,
- * once per distinct colour.
+ * several times between runs on one machine — but the shape is: one pair, `levels` rungs, once per
+ * distinct colour.
  *
- * `tests/quantiser-figures-dither-tables.test.ts` re-derives the column this constant ships, and
- * both colour counts. **The other five are swept by overriding this constant**, which also sizes
- * `mixingPlan`'s scratch arrays at load, so there is no argument to widen it by. The unrestricted
- * column is this constant at **128**, the longest list palette the tab admits.
+ * `tests/quantiser-figures-dither-shortlist.test.ts` and `-unrestricted.test.ts` re-derive every
+ * column, both colour counts, and the colours drawn flat under 2 and 3, **by overriding this
+ * constant** and re-importing the pipeline, since it also sizes `mixingPlan`'s scratch arrays at
+ * load, so there is no argument to widen it by. The unrestricted column is this constant at
+ * **128**, the longest list palette the tab admits.
  */
-export const DITHER_SHORTLIST = 3;
+export const DITHER_SHORTLIST = 2;
 
 /**
  * The coarsest scale the two automatic readers will consider for an image of this size.
@@ -1163,7 +1216,7 @@ export const DEFAULT_SYMMETRY = 'OFF';
  *
  * **What the dial is worth depends entirely on how flat the sheet already is**, and the reference
  * sheet measures both ends of that. Reduced to 64 colours with the colour merge at 24 it settles to
- * ten colours, and every rung from exact to 24 reports the identical **36.8%** — the merge has
+ * eleven colours, and every rung from exact to 24 reports the identical **38.8%** — the merge has
  * already folded everything within 24, so no two mirrored pixels are left sitting between it and
  * exact, and the reading first moves at 25. The same sheet read with no reduction and no merge holds
  * 11,850 colours, where exact reports **0.7%** and the rungs climb smoothly: 8.0% at 2, 14.9% at 4,
@@ -1198,9 +1251,10 @@ export const DEFAULT_SYMMETRY_TOLERANCE = 8;
  * The reference sheet is what this was read against, and it is the awkward case rather than the easy
  * one: fifteen armour pieces drawn at several angles, none of them meant to be symmetric. Read under
  * the conditions {@link SYMMETRY_TOLERANCE_RANGE} states, reduced to 64 colours with the colour
- * merge at 24, and at the default tolerance, they report **18% to 68%** — so nothing is settled at
- * 90 or at 75; one is settled at 65, two at 60 and four at 55, and each of those four places its
- * best axis within a pixel of its own box centre. A sheet of front-facing subjects is the case the
+ * merge at 24, and at the default tolerance, they report **21% to 70%** — so nothing is settled at
+ * 90 or at 75; two are settled at 65, two at 60 and four at 55, and each of those four places its
+ * best axis within a pixel of its own box centre; `tests/quantiser-figures-symmetry-dials.test.ts`
+ * holds these and the tolerance's flat run. A sheet of front-facing subjects is the case the
  * other way round, and the panel lists every share so which one is in front of the reader is
  * legible rather than assumed.
  */
@@ -1408,8 +1462,10 @@ export const ANTI_ALIAS_THRESHOLD_RANGE = { min: 0, max: 96, step: 1 } as const;
  * Where the contrast floor opens — see {@link ANTI_ALIAS_THRESHOLD_RANGE} for the units, and
  * `tests/antiAliasCorpusSuite.ts` for what this figure does to all eight reference sheets.
  *
- * Measured on `test_sprites/armour.png`, quantised at the grid the app reads for it and at the dials
- * as they open. The ladder it was chosen from is in that test.
+ * Measured on `test_sprites/armour.png`, quantised at the grid the app reads for it, at the dials as
+ * they open, keyed on magenta and held to a 64-colour budget. There it refuses two fifths of the
+ * sheet's differing neighbouring pairs as a budget's own shading steps, and the test pins that share
+ * on all eight sheets.
  */
 export const DEFAULT_ANTI_ALIAS_THRESHOLD = 24;
 
@@ -1530,7 +1586,7 @@ export const DIFFERENCE_PRECISION = 64;
  *
  * The rungs are read off the reference sheet (`test_sprites/armour.png`, 1254², grid 6, the
  * standard vote, a budget of 64, no keying, every other dial at its opening position, the mesh
- * 209 × 209), where the per-cell distance runs p50 **0.66**, p75 10.2, p90 55.0, p99 117.9 and
+ * 209 × 209), where the per-cell distance runs p50 **0.47**, p75 9.5, p90 52.2, p99 111.4 and
  * peaks at 177 — roughly seven cells in ten near-exact, and a tail that is the sheet's edges.
  * Against that: **4** grades the near-exact seventy per cent and saturates the rest, **32** is the
  * default because it puts the whole of what a dial moves across the ramp, and **128** is the rung a
@@ -1541,7 +1597,7 @@ export const DIFFERENCE_PRECISION = 64;
  * named: the cleanup passes. They multiply the fill cleanup and nothing else, so both have to be
  * stated — with the fill
  * cleanup at its opening zero, a second pass moves no cell at all. At the top of that slider's
- * range ({@link FILL_CLEANUP_RANGE}, 48) the second pass shifts **360** of the mesh's 43,681 cells,
+ * range ({@link FILL_CLEANUP_RANGE}, 48) the second pass shifts **802** of the mesh's 43,681 cells,
  * by at most **26.8**. That is the whole of it inside 32, and past the 16 below it.
  *
  * `tests/quantiser-figures-difference-scales.test.ts` re-derives the ladder and that pair from the
@@ -1755,8 +1811,8 @@ export const KEY_TINT_SHARE = 0.1;
  * four in, against about 0.01% from five in onward — so four rings of spill, not three, and on
  * several other sheets five. With the despill at 5 none of the reference sheet's five rings carries
  * the tint, and at a grid of 6 the key-tinted pixels on the outermost ring of the result fall from 5
- * to none with no reduction and from 39 to none under a 64-colour budget. The terrain sheet,
- * `three-quarter-view_tiles1.png`, is the widest case: 712 of the 2,333 pixels on its result's
+ * to none, with no reduction and under a 64-colour budget alike. The terrain sheet,
+ * `three-quarter-view_tiles1.png`, is the widest case: 352 of the 2,333 pixels on its result's
  * outermost ring were key-tinted under that budget, and none are.
  *
  * **5 because the guard needs the ring past the band to hold artwork and no spill.** A sheet's

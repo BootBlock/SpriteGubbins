@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { BACKGROUND_KEY_COLORS } from '../src/constants/backgroundKeyColors.ts';
+import { IDENTITY_KEY_SURVIVAL_TOLERANCE } from '../src/constants/identityCapture.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../src/constants/quantiseDials.ts';
 import { DEFAULT_KEY_TOLERANCE } from '../src/constants/quantiser.ts';
 import type {
@@ -9,6 +10,7 @@ import type {
   QuantiseSettings,
   QuantiseTuning,
 } from '../src/types/quantiser.ts';
+import { borderKeyShare } from '../src/utils/borderKeyShare.ts';
 import { identityPalette } from '../src/utils/identityPalette.ts';
 import { quantisedSheetCapture } from '../src/utils/quantisedSheetCapture.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
@@ -30,8 +32,10 @@ import { loadCorpus, type CorpusSheetName } from './sheetCorpus.ts';
  * unkeyed sheet that reduction spent its budget on a field covering half to three-quarters of the
  * image. The colours that come back are therefore coarser and shifted, whatever the digest does with
  * them afterwards: at a 32-colour budget the keyed and unkeyed digests of these eight sheets share
- * between **0 and 4** of their six entries, and on `cyborg_monk.png` they share none at all. So the
- * offer is refused because the answer would be *wrong*, not because it would be magenta.
+ * **none** of their six entries, on every one of the eight. So the offer is refused because the
+ * answer would be *wrong*, not because it would be magenta. (Under the Wu cut alone, before the
+ * rounds that refine it, they shared 4, 3, 1, 0, 0, 2, 4 and 1; the case asserts the count, since a
+ * weaker "they differ" survives a palette builder moving them back most of the way.)
  *
  * All three halves are asserted, because only the set makes the refusal the right call rather than
  * an over-cautious one: the key leads neither digest, the keyed one carries no near-key colour, and
@@ -68,6 +72,13 @@ const nearTheKey = (hex: string): boolean => {
   const key: readonly number[] = [KEY.r, KEY.g, KEY.b];
   return channels.every((value, at) => Math.abs(value - (key[at] ?? 0)) <= NEAR_KEY);
 };
+
+/**
+ * The reference sheet's keyed digest, which `quantisedSheetCapture`'s docblock quotes as its sample of
+ * what the capture reads. A sample rather than a calibration, as that docblock says, but a stated
+ * one: the palette builder moved every entry of it without anything failing.
+ */
+const ARMOUR_KEYED_DIGEST = ['#175B21', '#020302', '#A18445', '#0D3D14', '#F1DD98', '#E8B421'];
 
 /**
  * The three keying positions this suite measures: off, a pass that ran at `0`, and the tab's default.
@@ -161,9 +172,17 @@ export function identityPaletteKeySuite(sheets: readonly CorpusSheetName[]): voi
       (name) => {
         // What the refusal below is actually protecting: the tab reduced the result before handing it
         // over, and on an unkeyed sheet it spent that budget on the field. Six entries each, sharing
-        // between none and four — so an unkeyed offer would be a different palette, not merely a
-        // magenta one.
-        expect(paletteOf(name, false)).not.toEqual(paletteOf(name, true));
+        // none — so an unkeyed offer would be a different palette, not merely a magenta one.
+        const keyed = paletteOf(name, true);
+        expect(paletteOf(name, false).filter((entry) => keyed.includes(entry))).toEqual([]);
+      },
+      300_000,
+    );
+
+    it.runIf(sheets.includes('armour.png'))(
+      'reads the reference sheet’s keyed result as the capture’s docblock quotes it',
+      () => {
+        expect(paletteOf('armour.png', true)).toEqual(ARMOUR_KEYED_DIGEST);
       },
       300_000,
     );
@@ -189,6 +208,15 @@ export function identityPaletteKeySuite(sheets: readonly CorpusSheetName[]): voi
     it.each(sheets)(
       'refuses %s until the tab has actually taken the field out',
       (name) => {
+        // The shares themselves, to the three places `IDENTITY_KEY_SURVIVAL_TOLERANCE` states them:
+        // the outcomes below hold across a whole band of shares, and the docblock claims the extremes.
+        const shareAt = (position: Position): string =>
+          borderKeyShare(
+            settledAt(name, position).result.image,
+            POSITIONS.DEFAULT.color,
+            IDENTITY_KEY_SURVIVAL_TOLERANCE,
+          ).toFixed(3);
+        expect([shareAt('OFF'), shareAt('EXACT'), shareAt('DEFAULT')]).toEqual(['1.000', '1.000', '0.000']);
         expect(offerFor(name, 'OFF')).toBe('UNAVAILABLE');
         expect(offerFor(name, 'EXACT')).toBe('UNAVAILABLE');
         expect(offerFor(name, 'DEFAULT')).toBe('READY');

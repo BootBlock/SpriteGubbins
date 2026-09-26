@@ -238,7 +238,7 @@ describe('colorPlanFor — a locked palette', () => {
   it('supersedes nothing at a snap distance of zero, where it reaches nothing', () => {
     // The cliff this avoids, measured on the reference sheet: a lock that superseded the budget
     // while taking no colour at all left the sheet unreduced, so dragging one dial to its off
-    // position took a 64-colour sheet to 10,031. A dial's off position means its own pass does not
+    // position took a 64-colour sheet to 9,975. A dial's off position means its own pass does not
     // run, never that another one stops running with it.
     expect(colorPlanFor(studioColors('FREE', 'STRICT_32_COLOR'), LOCK, 0)).toEqual(
       colorPlanFor(studioColors('FREE', 'STRICT_32_COLOR'), null, 0),

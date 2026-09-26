@@ -115,7 +115,7 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  * holds both ends of the white case rather than leaving it to be discovered.
  *
  * **{@link DEFAULT_KEY_TOLERANCE} rather than a figure of this function's own**, and the corpus is
- * what chooses it. A rung of 8 leaves a magenta in `cyborg_healer.png`'s digest (`#F803E1`, 8.4 from
+ * what chooses it. A rung of 8 leaves a magenta in `cyborg_healer.png`'s digest (`#E629C2`, 15.8 from
  * the key); 16 clears all eight, and 24 clears them with a rung to spare. Eight sheets are a sample
  * rather than a population, so the figure sits two rungs above a demonstrated failure instead of
  * one — and being the tab's own opening position is what keeps the picker route and the button
@@ -123,11 +123,13 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  *
  * **The one-pixel fringe goes with it, and that is the half a radius could not do.** An anti-aliased
  * edge blends the key with the colour beside it, and those blends are opaque colours the sheet
- * genuinely contains — so a field pass alone leaves them, and on four of the eight sheets one still
- * reaches the digest: `#7A0283` on `armour.png`, `#A60097` on `cyborg_healer.png`, `#62026E` on
- * `ui_elements1.png` and `#660574` on `vehicles_and_props.png`. `keyBackground`'s second pass erodes
+ * genuinely contains — so a field pass alone leaves them, and on five of the eight sheets at least
+ * one still reaches the digest: `#7A0980` on `armour.png`, `#841489` on `cyborg_monk.png`, `#301F30`
+ * and `#931085` on `cyborg_healer.png`, `#780787` on `ui_elements1.png` and `#831088` on
+ * `vehicles_and_props.png`, each a blend by `carriesKeyTint`. `keyBackground`'s second pass erodes
  * them, because it has the geometry to do it safely — one pixel deep, and only where the pixel
- * touches the field. No digest carries a key blend after it.
+ * touches the field. No digest carries a key blend after it. `tests/identityPaletteCorpusSuite.ts`
+ * pins the rungs and the blends.
  *
  * **What that pass costs is a pixel of silhouette, and on one shape of sheet a pixel is a whole
  * entry.** A sheet that arrived already keyed — which is what the button route hands in, and what

@@ -53,15 +53,16 @@ export type QuantisedSheetCapture =
  * the two decisions this function exists to hold in one place. The palette segment states what the
  * accepted sheet is *made of*, and a generator's return is made of a resampler's noise: measured on
  * `test_sprites/armour.png` at a grid of 4 and 32 colours, the six colours read off the raw file are
- * `#185B23`, `#000000`, `#AB8D4E`, `#604928`, `#BDA15E`, `#FFFFFF` — three shades of one gold, spent
+ * `#185820`, `#030803`, `#9A8242`, `#6D5629`, `#C7A44E`, `#F5E081` — four shades of one gold, spent
  * on the resampler's own gradient. Read off the quantised result of the same sheet,
- * keyed at `DEFAULT_KEY_TOLERANCE`, they are `#000000`, `#12461A`, `#8E743C`, `#3B2D14`, `#E7C07B`,
- * `#E4B011`: the colours the reader settled, which are also the colours the palette lock will snap
+ * keyed at `DEFAULT_KEY_TOLERANCE`, they are `#175B21`, `#020302`, `#A18445`, `#0D3D14`, `#F1DD98`,
+ * `#E8B421`: the colours the reader settled, which are also the colours the palette lock will snap
  * the next sheet onto. One statement, twice, rather than a prompt and a pipeline describing the same
  * series differently. (Those twelve are a *sample*, not a calibration — the palette a budget picks
  * moves with the budget, so a figure re-read at another setting is a different reading rather than a
- * contradiction. What is pinned across the whole corpus is the qualitative half, in
- * `tests/identityPaletteKeySuite.ts`.)
+ * contradiction. The twelve are pinned in `tests/identityPaletteCorpusSuite.ts` and
+ * `tests/identityPaletteKeySuite.ts`, and what is pinned across the whole corpus is the qualitative
+ * half, in the second.)
  *
  * **A result that still carries its background key is refused**, which is the second decision, and it
  * is taken by **measuring the result** rather than by reading the settings it was computed at. Asking

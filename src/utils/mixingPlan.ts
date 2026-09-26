@@ -26,11 +26,11 @@ import type { MutableCones, MutableOklab } from './oklab.ts';
  * **One restriction on the published search, and it is an improvement rather than a compromise.**
  * The published version pairs every colour of the palette with every other, which the article
  * applies to a sixteen-colour palette; this one runs against a palette of up to 128, on a sheet that
- * may carry two hundred thousand distinct colours at a grid of 1. So pairs are drawn from the
- * {@link DITHER_SHORTLIST} colours nearest the target instead — which is both what makes it
+ * may carry two hundred thousand distinct colours at a grid of 1. So pairs are drawn only from among
+ * the {@link DITHER_SHORTLIST} entries nearest the target instead — which is both what makes it
  * affordable and what makes it *look* right, because a pair drawn from opposite ends of the palette
  * is optimal only for the whole tile and puts a stray pixel of something wildly different into every
- * small flat region. The measurements are under that constant.
+ * small flat region. The measurements, and what a list that short gives up, are under that constant.
  *
  * **The ratio ladder is walked whole, though, and that is deliberate.** Seeding it from where the
  * target projects onto the straight OKLab line between the two colours looks like the obvious saving

@@ -65,7 +65,9 @@ function sampleOf(tally: ColorTally): Sample {
  *
  * Returns one colour per group: the one the most pixels in it carry, the earliest of equals in
  * whatever order the group holds them. That is the promise the whole quantiser makes — every entry
- * is a colour the image already contained, never an average of several.
+ * is a colour the image already contained, never an average of several. It is where each entry
+ * starts rather than where it ends: `lloydRefine` then refiles every colour under its nearest entry
+ * and moves each entry to the colour of its cell nearest the cell's weighted mean.
  */
 export function refineToPalette(
   groups: readonly (readonly ColorTally[])[],

@@ -24,11 +24,12 @@ import { indexImage } from './pngPalette.ts';
  * also what makes it testable, since the previous path could only be checked by opening the file.
  *
  * The reference sheet at a grid of 6 and a budget of 64, unkeyed and every other dial at its
- * default, comes to 13,649 bytes indexed. The same pixels written truecolour are a 34,570-byte
- * `IDAT`, so 34,627 bytes complete — two and a half times the file, for a sheet whose sixty-four
+ * default, comes to 15,673 bytes indexed. The same pixels written truecolour are a 39,047-byte
+ * `IDAT`, so 39,104 bytes complete — two and a half times the file, for a sheet whose sixty-four
  * colours the format was not being told about. **The keying state is part of the measurement**: key
- * the same sheet on magenta at the default tolerance and the two figures fall to 10,312 and 28,272,
- * because the field the key removes is the largest flat region on the page.
+ * the same sheet on magenta at the default tolerance and the indexed file falls to 10,776 bytes and
+ * the truecolour `IDAT` to 30,118, because the field the key removes is the largest flat region on
+ * the page. `tests/quantiser-figures-encode-png.test.ts` re-derives all of these.
  */
 
 /** Colour type 3: each pixel an index into `PLTE`. */
@@ -58,9 +59,9 @@ export async function encodePng(image: ImageData): Promise<WrittenPng> {
   // Filter 0 alone, and this is measured rather than inherited from the spec's advice: a palette
   // index is a name, so the difference between two of them predicts nothing, and the four
   // difference filters cost four extra passes over the sheet to make the file *larger*. On the
-  // reference sheet at a grid of 6 and a budget of 64, unkeyed, the `IDAT` is 13,388 bytes stored
-  // and 15,313 adaptively filtered — 14.4% worse for five times the filtering work. Keyed on
-  // magenta it is 10,041 and 11,803, which is 17.5% worse: the penalty moves with the sheet, its
+  // reference sheet at a grid of 6 and a budget of 64, unkeyed, the `IDAT` is 15,412 bytes stored
+  // and 17,422 adaptively filtered — 13.0% worse for five times the filtering work. Keyed on
+  // magenta it is 10,499 and 12,067, which is 14.9% worse: the penalty moves with the sheet, its
   // direction does not.
   const filtered = filterScanlines({
     raw: indexed.indices,

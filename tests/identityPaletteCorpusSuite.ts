@@ -5,8 +5,9 @@ import { DEFAULT_KEY_TOLERANCE } from '../src/constants/quantiser.ts';
 import type { Rgba } from '../src/types/quantiser.ts';
 import { BACKGROUND_KEYS } from '../src/types/rendering.ts';
 import { identityPalette } from '../src/utils/identityPalette.ts';
-import { createImage, fromHex, writePixel } from '../src/utils/imageData.ts';
-import { keyBasis, keyDistanceSquared } from '../src/utils/keyDistance.ts';
+import { createImage, fromHex, readPixel, writePixel } from '../src/utils/imageData.ts';
+import { keyBackground } from '../src/utils/keyBackground.ts';
+import { carriesKeyTint, keyBasis, keyDistanceSquared } from '../src/utils/keyDistance.ts';
 import { type CorpusSheetName, loadCorpus } from './sheetCorpus.ts';
 
 /**
@@ -122,5 +123,79 @@ export function identityPaletteCorpusSuite(sheets: readonly CorpusSheetName[]): 
       expect(entries).toBeGreaterThan(3);
       expect(inTheField).toEqual([]);
     });
+
+    /**
+     * The figures `identityPalette`'s docblock chooses its keying from, which are recorded hexes on
+     * purpose where the case above is not: they are the evidence for `DEFAULT_KEY_TOLERANCE` being the
+     * rung, and for the fringe pass being needed, and each names the colour that shows it.
+     *
+     * A narrower rung is read by keying the sheet first and handing the digest a key of `TRANSPARENT`,
+     * which takes out only what arrived transparent — so the function under test is the shipped one,
+     * with the field removed at another rung. The field radius alone is the pass the app does not run,
+     * reconstructed from the distance the pass itself uses; it is what shows the fringe erosion is not
+     * optional. An entry counts as a key blend by `carriesKeyTint`, the fringe pass's own test.
+     */
+    it.each(sheets)('reads %s’s key blends at the narrower rungs as the docblock states', (name) => {
+      const image = sheet(name);
+      const blendsIn = (keyed: ImageData): string[] =>
+        identityPalette(keyed, null).filter((entry) => carriesTint(entry));
+      const atRung = (tolerance: number): ImageData =>
+        keyBackground(image, { color: MAGENTA, tolerance }).image;
+
+      const rung8 = blendsIn(atRung(8)).map(
+        (entry) => `${entry} ${distanceFromKey(entry, MAGENTA).toFixed(1)}`,
+      );
+      expect(rung8).toEqual(name === 'cyborg_healer.png' ? ['#E629C2 15.8'] : []);
+      expect(blendsIn(atRung(16))).toEqual([]);
+      expect(blendsIn(fieldRadiusOnly(image))).toEqual(FIELD_RADIUS_BLENDS[name]);
+    });
+
+    it.runIf(sheets.includes('armour.png'))(
+      'reads the reference sheet as the capture’s docblock quotes it',
+      () => {
+        expect(identityPalette(sheet('armour.png'), MAGENTA)).toEqual(ARMOUR_RAW_DIGEST);
+      },
+    );
   });
+}
+
+const MAGENTA_KEY = BACKGROUND_KEY_COLORS.MAGENTA_FF00FF;
+if (MAGENTA_KEY === null) throw new Error('MAGENTA_FF00FF names no colour');
+/** The key every corpus sheet carries, narrowed once rather than at every use. */
+const MAGENTA: Rgba = MAGENTA_KEY;
+
+/** The key blend each sheet's digest carries when the field is removed by its radius alone. */
+const FIELD_RADIUS_BLENDS: Readonly<Record<CorpusSheetName, readonly string[]>> = {
+  'armour.png': ['#7A0980'],
+  'cyborg_black_red.png': [],
+  'character_space_marine_blue.png': [],
+  'cyborg_monk.png': ['#841489'],
+  'cyborg_healer.png': ['#301F30', '#931085'],
+  'three-quarter-view_tiles1.png': [],
+  'ui_elements1.png': ['#780787'],
+  'vehicles_and_props.png': ['#831088'],
+};
+
+/** The reference sheet's digest read off the raw file, which `quantisedSheetCapture` quotes. */
+const ARMOUR_RAW_DIGEST = ['#185820', '#030803', '#9A8242', '#6D5629', '#C7A44E', '#F5E081'];
+
+/** Whether a digest entry is partly the magenta key, by the fringe pass's own test. */
+function carriesTint(hex: string): boolean {
+  const color = fromHex(hex);
+  if (color === null) throw new Error(`${hex} is not a colour the digest could have written`);
+  const probe = createImage(1, 1);
+  writePixel(probe.data, 0, color);
+  return carriesKeyTint(probe.data, 0, keyBasis(MAGENTA));
+}
+
+/** The sheet with only the pixels inside `DEFAULT_KEY_TOLERANCE` of the key cleared: no fringe pass. */
+function fieldRadiusOnly(image: ImageData): ImageData {
+  const basis = keyBasis(MAGENTA);
+  const radius = DEFAULT_KEY_TOLERANCE * DEFAULT_KEY_TOLERANCE;
+  const output = createImage(image.width, image.height);
+  for (let offset = 0; offset < image.data.length; offset += 4) {
+    if (keyDistanceSquared(image.data, offset, basis) <= radius) continue;
+    writePixel(output.data, offset, readPixel(image.data, offset));
+  }
+  return output;
 }

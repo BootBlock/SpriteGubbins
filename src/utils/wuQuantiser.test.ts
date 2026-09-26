@@ -20,8 +20,9 @@ describe('buildPalette', () => {
   });
 
   it('answers the same palette every run', () => {
-    // The reason neither this nor its predecessor is k-means. A user re-running a batch gets the
-    // same sheet, and this test can assert an exact palette rather than a tolerance.
+    // Why the k-means rounds are seeded by the cut and break every tie in the image's own order,
+    // rather than seeded at random. A user re-running a batch gets the same sheet, and this test can
+    // assert an exact palette rather than a tolerance.
     expect(buildPalette(TWO_HUNDRED_COLORS, 32)).toEqual(buildPalette(TWO_HUNDRED_COLORS, 32));
   });
 
@@ -56,7 +57,8 @@ describe('buildPalette', () => {
     // What a variance-minimising search is *for*, stated as the outcome rather than as a race
     // against the algorithm it replaced: five tight, well-separated clusters at deliberately
     // unequal populations, and a budget of exactly five. Each cluster must take one slot, and the
-    // colour it contributes must be the one most of its pixels carry rather than its satellite.
+    // colour it contributes must be the one most of its pixels carry rather than its satellite,
+    // which the majority's weight pulls the cluster's mean toward.
     //
     // A search that spent a slot splitting one cluster would have to merge two others to afford
     // it, and this fails on both counts at once — the merged pair loses an entry, and the split
@@ -106,8 +108,8 @@ describe('buildPalette', () => {
     // The other side of the alpha test above. Opacities of one colour survive wherever the budget
     // can afford them; where it cannot, something has to merge, and what merges is the *nearest*
     // pair rather than an arbitrary one. The colour that then speaks for the merged group is the
-    // one most of its pixels carry — never an average of the two, which is the promise the whole
-    // quantiser makes.
+    // one nearest the group's mean, which here is the one most of its pixels carry — never an
+    // average of the two, which is the promise the whole quantiser makes.
     //
     // Both fixtures carry more colours than the budget, so the search genuinely partitions rather
     // than short-circuiting to "already inside the budget" and keeping everything by default.
@@ -226,5 +228,27 @@ describe('buildPalette', () => {
     expect([...palette].sort((left, right) => packColor(left) - packColor(right))).toEqual(
       [...ART].sort((left, right) => packColor(left) - packColor(right)),
     );
+  });
+
+  it('speaks for a group with the colour nearest its centre, not with its heaviest colour', () => {
+    // The reason the k-means rounds exist. A shading ramp from 90 to 110 whose darkest step covers
+    // four times the pixels of any other: the cut's group entry is that heaviest step, at one end of
+    // the ramp, and every other step of it is drawn up to twenty levels too dark. The rounds move the
+    // entry to the step nearest the ramp's weighted mean, which is near its middle.
+    const WHITE = { r: 250, g: 250, b: 250, a: 255 };
+    const ramp = imageFrom(30, 20, (x, y) => {
+      if (y >= 16) return WHITE;
+      const n = y * 30 + x;
+      const level = n < 80 ? 90 : 91 + (n % 20);
+      return { r: level, g: level, b: level, a: 255 };
+    });
+
+    expect(countColors(ramp)).toBe(22);
+    const palette = buildPalette(ramp, 2);
+    expect(palette).toContainEqual(WHITE);
+    const grey = palette.find((color) => color.r !== WHITE.r);
+    // The weighted mean is 98.75 in sRGB levels. The rounds take it in OKLab, where lightness is a
+    // cube root of linear light, so it falls a little lower and the nearest step is 98.
+    expect(grey).toEqual({ r: 98, g: 98, b: 98, a: 255 });
   });
 });
