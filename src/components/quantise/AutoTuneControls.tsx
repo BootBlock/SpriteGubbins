@@ -2,7 +2,7 @@ import { AUTO_TUNE_GUIDANCE, TUNE_STAGE_LABELS } from '../../constants/autoTune.
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useAutoTuneStore } from '../../stores/useAutoTuneStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
-import type { TuneOutcome, TuneStageReport } from '../../types/autoTune.ts';
+import type { TuneOutcome, TunePrice, TuneStageReport } from '../../types/autoTune.ts';
 import type { QuantiseSettings } from '../../types/quantiser.ts';
 import { sameSurroundings } from '../../utils/quantiseSettings.ts';
 import { tuneOffThread } from '../../workers/autoTuneSession.ts';
@@ -131,6 +131,7 @@ export function AutoTuneControls({ image, settings }: AutoTuneControlsProps) {
           is coming: these lines name dial positions, and the dials are about to move. */}
       {!tuning && outcome !== null && (
         <ul className="mt-3 space-y-1 font-mono text-2xs text-ink-faint">
+          <li>{priceLine(outcome.price)}</li>
           {outcome.stages.map((stage) => (
             <li key={stage.stage}>{stageLine(stage)}</li>
           ))}
@@ -169,6 +170,22 @@ function stageLine(stage: TuneStageReport): string {
   const label = `${TUNE_STAGE_LABELS[stage.stage]} · ${stage.settled}`;
   const tried = stage.candidates === 0 ? null : `${String(stage.candidates)} positions tried`;
   return [label, tried, stage.skipped].filter((part) => part !== null).join(' · ');
+}
+
+/**
+ * The price every stage ranked its candidates at, as a line above theirs.
+ *
+ * On the list rather than left out, for two reasons. The positions it was read from are in the
+ * chip's total, so without it the lines beneath would not add up to that total. And it is the figure
+ * that explains every stage's choice: a candidate moved the dials only by buying more than this much
+ * likeness for each colour it spent, or by saving colours worth more than it lost. See `colorPrice`.
+ */
+function priceLine(price: TunePrice): string {
+  const worth =
+    price.perColor === 0
+      ? 'none, the readings traded no likeness for colours'
+      : `${price.perColor.toPrecision(2)} likeness`;
+  return `Price of a colour · ${worth} · ${String(price.positions)} positions tried`;
 }
 
 /** What the sweep cost, as one chip: `323 positions · 5 crops of 160 px · 2 rounds`. */

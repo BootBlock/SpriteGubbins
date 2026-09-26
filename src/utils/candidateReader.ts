@@ -9,16 +9,18 @@ import type { TuneCrop } from './tuneCrop.ts';
  *
  * **The descent asks about the same position again as a matter of course.** Every stage ranks the
  * dials in force alongside its own ladder — see `withIncumbent` — and the dials in force are the
- * position the stage before it chose, so its reading is already known. A round that retraces an
- * earlier one's ground asks again too. Measured over the eight corpus sheets at the grids the table
- * under `TUNE_ROUNDS` gives, the descent ranks 1,088 positions and only 811 of them are distinct: 25%
- * of what it used to run was an answer it already had, and 38% on
- * `test_sprites/character_space_marine_blue.png` and `test_sprites/vehicles_and_props.png`.
+ * position the stage before it chose, so its reading is already known. The fifteen positions
+ * `colorPrice` reads are the first round's reading stage wherever the reader starts at the tab's
+ * opening dials with no colour reduction, and a later round asks again about any position an earlier
+ * one already ranked.
+ * Measured over the eight corpus sheets at the grids the table under `TUNE_ROUNDS` gives, the descent
+ * ranks 1,176 positions and only 743 of them are distinct: 37% of what it would run is an answer it
+ * already has, and 46% on `test_sprites/ui_elements1.png`.
  *
  * **Remembering a reading changes no answer**, because a reading is a function of the dials, the
  * crops and the settings, and only the dials vary within one sweep: `autoTune` makes one of these per
- * press, over the crops and settings that press was given. So the ranking every stage makes, the
- * elbow's ties included, is the one it made when each position was run afresh.
+ * press, over the crops and settings that press was given. So the ranking every stage makes, its
+ * ties included, is the one it would make if each position was run afresh.
  *
  * The count `autoTune` reports is still the positions *ranked*, not the ones run — see
  * `TuneOutcome.candidates`.

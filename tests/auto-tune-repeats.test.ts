@@ -13,7 +13,7 @@ import { upscaleNearest } from '../src/utils/upscaleNearest.ts';
  * **A count, not a wall clock**, for the reason `auto-tune-prologue.test.ts` gives. Two things were
  * paid again that did not need to be. The descent ranks the dials in force at every stage, and those
  * are the position the stage before it chose, so it ran positions it had already read: over the eight
- * corpus sheets, 1,088 positions ranked and 811 distinct. And the likeness score converted each crop
+ * corpus sheets, 1,176 positions ranked and 743 distinct. And the likeness score converted each crop
  * into OKLab and built its summed-area tables for every candidate, although neither changes while the
  * crop does not. See `candidateReader` and `TuneCrop`.
  *

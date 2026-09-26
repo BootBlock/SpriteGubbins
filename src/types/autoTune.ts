@@ -101,7 +101,7 @@ export const TUNED_DIAL_KEYS = Object.values(TUNED_DIAL_NAMES);
 export interface TuneReading {
   /** Mean structural similarity against the crops — see `meanSsim`. Higher is closer. */
   readonly fidelity: number;
-  /** Mean colour count of the results. Lower is cheaper, and the two are what the elbow trades. */
+  /** Mean colour count of the results. Lower is cheaper, and `TunePrice` is what trades it against fidelity. */
   readonly colors: number;
 }
 
@@ -152,6 +152,19 @@ export interface TuneStageReport {
   readonly settled: string;
 }
 
+/**
+ * What one colour is worth to the sweep, in likeness, and what it cost to find out.
+ *
+ * One figure for the whole sweep, so every stage ranks its candidates on the same score — see
+ * `colorPrice`, which reads it, and `chooseByPrice`, which spends it.
+ */
+export interface TunePrice {
+  /** The likeness one colour has to buy to be worth spending; `0` where the readings offered no trade. */
+  readonly perColor: number;
+  /** How many positions were read to set it. */
+  readonly positions: number;
+}
+
 /** What the sweep settled on, and enough of how it got there for a reader to judge it. */
 export interface TuneOutcome {
   readonly dials: TunedDials;
@@ -167,7 +180,8 @@ export interface TuneOutcome {
    */
   readonly rounds: number;
   /**
-   * How many candidate positions were ranked, across every stage plus the one the reader arrived with.
+   * How many candidate positions were ranked: the ones that set {@link price}, every stage's, and the
+   * one the reader arrived with.
    *
    * Positions, not runs of the pipeline: each one is read on every crop, so the chip the panel draws
    * states both figures side by side. **A position ranked twice is counted twice and run once** — every
@@ -175,6 +189,8 @@ export interface TuneOutcome {
    * ran at most this many times {@link crops}. See `candidateReader`.
    */
   readonly candidates: number;
+  /** The price every stage ranked its candidates at. */
+  readonly price: TunePrice;
   /** The winner's own reading, which is what the stages were ranked by. */
   readonly reading: TuneReading;
   /**

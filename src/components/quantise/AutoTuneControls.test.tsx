@@ -43,6 +43,7 @@ const OUTCOME: TuneOutcome = {
   cropEdge: 160,
   candidates: 323,
   rounds: 2,
+  price: { perColor: 0.00049, positions: 15 },
   reading: { fidelity: 0.9412, colors: 24 },
   baseline: { fidelity: 0.8137, colors: 31 },
   stages: [
@@ -224,7 +225,9 @@ describe('AutoTuneControls', () => {
     // that was swept and left alone are different facts about the sheet.
     // Every stage the sweep can report has a line, the three anti-aliasing ones included — a label
     // added to `TUNE_STAGE_LABELS` and rendered nowhere would otherwise be invisible to this suite.
-    expect(screen.getAllByRole('listitem')).toHaveLength(OUTCOME.stages.length);
+    // The price is the one line above them, and its positions are in the chip's total too.
+    expect(screen.getAllByRole('listitem')).toHaveLength(OUTCOME.stages.length + 1);
+    expect(screen.getByText('Price of a colour · 0.00049 likeness · 15 positions tried')).toBeInTheDocument();
     expect(
       screen.getByText(`${TUNE_STAGE_LABELS.ALIAS_RUN} · runs of 4 and longer · 8 positions tried`),
     ).toBeInTheDocument();
@@ -241,6 +244,25 @@ describe('AutoTuneControls', () => {
         `${TUNE_STAGE_LABELS.CLEANUP_PASSES} · 1 pass · The fill cleanup settled at off, so a second pass has nothing to run over.`,
       ),
     ).toBeInTheDocument();
+  });
+
+  it('says so where the readings put no price on a colour', async () => {
+    // "0.0 likeness" would read as a figure the sweep measured, where the fact is that it found no
+    // trade to measure and ranked on likeness alone.
+    const user = userEvent.setup({ delay: null });
+    const free: TuneOutcome = { ...OUTCOME, price: { perColor: 0, positions: 15 } };
+    FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: free });
+    show();
+
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Price of a colour · none, the readings traded no likeness for colours · 15 positions tried',
+        ),
+      ).toBeInTheDocument();
+    });
   });
 
   it('shows what went wrong, and offers the sweep again', async () => {

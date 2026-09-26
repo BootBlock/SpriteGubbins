@@ -62,14 +62,15 @@ export function readCandidate(
     // that are true and neither is a reason to hide the pass from the score. A reader with the pass
     // on is going to *get* that fringe, so the two badges the panel reported were figures about a
     // sheet nobody was looking at. Measured on `test_sprites/armour.png` at a grid of 6, unkeyed,
-    // with a budget of 16 and every other dial where it opens, the sweep reports 16.0 → 6.2 colours
-    // with the control at `OFF` and the same 16.0 → 6.2 with it at `BOTH`, where it settles the pass
-    // at a strength of 10% over only the hardest contours, runs of five and longer — a coverage is an
-    // alpha and `SNAP` bounds the hues rather than the count, so every one it writes is a colour the
-    // trade has to pay for, and the sweep pays for as few as it can: at that position the pass
-    // changes a small number of pixels and adds no colour, to the crops' mean or to the whole sheet.
-    // Ranking the candidates on what they actually produce is what puts badge and preview back in
-    // agreement, and the elbow is what stops the fringe being bought at any price.
+    // with a budget of 16 and every other dial where it opens, the sweep reports 16.0 → 16.0 colours
+    // with the control at `OFF` and the same 16.0 → 16.0 with it at `BOTH`, where it settles the pass
+    // at a strength of 10% over only the hardest contours, runs of twelve and longer — a coverage is
+    // an alpha and `SNAP` bounds the hues rather than the count, so every one it writes is a colour
+    // the trade has to pay for, and the sweep pays for as few as it can: at that position the pass
+    // changes 83 of the whole sheet's 43,681 pixels and adds no colour, to the crops' mean or to the
+    // whole sheet. Ranking the candidates on what they actually produce is what puts badge and
+    // preview back in agreement, and the price of a colour is what stops the fringe being bought at
+    // any price.
     //
     // **`quantiseFromPrologue` rather than `quantiseImage`**, because the two fields read below are
     // the only ones this wants and the difference map is the one reading that costs a second walk
