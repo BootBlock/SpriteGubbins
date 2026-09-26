@@ -14,7 +14,8 @@ import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalVi
  * TERRAIN is the other category laid as a tile field, and the two do not overlap: this plan is a
  * floor field with walls *around* it, which is architecture, and a terrain blend set is two materials
  * meeting across open ground. What stays here is the environment art that is a discrete structure —
- * a tree, a parallax band, a bridge span.
+ * a tree, a bridge span. A parallax band is BACKGROUND's, which draws the bands, and no plan here
+ * does.
  *
  * The two non-tile modes describe a building as discrete structural modules, so a subject that is a
  * single structure rather than a repeating field still has an inventory of its own instead of

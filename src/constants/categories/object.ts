@@ -35,9 +35,10 @@ export const OBJECT: CategoryDefinition = {
         'Ancient Relic Shrine',
         // A vehicle does not go here: VEHICLE exists because a hull, a drive and a turning mount do not
         // decompose the way a housing, a footing and a hinged panel do. Neither do the three values
-        // below, and no OBJECT sheet draws them. EFFECT draws an explosion and a weather sheet as the
-        // frames they are, and a silhouette test has no housing, footing or panel to draw. They stay
-        // offered only until issue #287 removes them with the neighbours written for them.
+        // below, and no OBJECT sheet draws them. An explosion and falling weather are sequences of
+        // frames, which is what EFFECT draws, and a silhouette test has no housing, footing or panel
+        // to draw. They stay offered only until issue #287 removes them with the neighbours written
+        // for them.
         'Explosion Burst Effect',
         'Weather Particle Sheet',
         'Silhouette Legibility Test',
