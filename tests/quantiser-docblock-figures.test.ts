@@ -9,14 +9,18 @@ import {
   DEFAULT_KEY_TOLERANCE,
   DEFAULT_PALETTE_SNAP,
   DIFFERENCE_PRECISION,
+  DEFAULT_SPRITE_GAP,
   DUPLICATE_TOLERANCE_RANGE,
   FILL_CLEANUP_RANGE,
+  FRAME_DRIFT_SEARCH,
   PALETTE_SNAP_RANGE,
   SCATTERED_SPRITE_CEILING,
   SYMMETRY_AXIS_SEARCH,
   SYMMETRY_SWEEP_BUDGET,
 } from '../src/constants/quantiser.ts';
+import { affordableDriftReach } from '../src/utils/affordableDriftReach.ts';
 import { nearestColor } from '../src/utils/applyPalette.ts';
+import { coverageMask } from '../src/utils/coverageMask.ts';
 import { duplicateSprites } from '../src/utils/duplicateSprites.ts';
 import { boundaryMesh } from '../src/utils/gridMesh.ts';
 import {
@@ -34,10 +38,13 @@ import { type LocatedEntry, locateEntries, nearestOklab } from '../src/utils/loc
 import { srgbToOklab } from '../src/utils/oklab.ts';
 import { pixelDistanceOf } from '../src/utils/pixelDistance.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
+import { spriteSegments } from '../src/utils/spriteSegments.ts';
+import { spriteStrips } from '../src/utils/spriteStrips.ts';
 import { affordableReach } from '../src/utils/symmetryAxis.ts';
 import { buildPalette } from '../src/utils/wuQuantiser.ts';
 import type {
   ColorReduction,
+  CoverageMask,
   QuantiseSettings,
   Rgba,
   SpriteBox,
@@ -716,6 +723,76 @@ describe('the figures the quantiser docblocks state', () => {
       expect([result.image.width, result.image.height]).toEqual([209, 210]);
       expect(area / (result.image.width * result.image.height)).toBeCloseTo(0.392, 3);
     }, 300_000);
+  });
+
+  describe('the frame registration — the figures its budget is argued from', () => {
+    /**
+     * The sheet `FRAME_SWEEP_BUDGET`'s docblock states its before-and-after on: four discs of
+     * radius 500 on a 4096 × 1100 sheet, the shape issue #470 measured. Synthetic on purpose, because
+     * the figure is about frames far larger than any the corpus holds, which is the case the budget
+     * exists for.
+     */
+    function discs(): ImageData {
+      const width = 4096;
+      const image = createImage(width, 1100);
+      for (const [centreX, centreY] of [
+        [524, 550],
+        [1549, 551],
+        [2572, 549],
+        [3590, 552],
+      ] as const) {
+        for (let y = 0; y < image.height; y += 1) {
+          for (let x = centreX - 500; x < centreX + 500; x += 1) {
+            const across = (x - centreX) / 500;
+            const down = (y - centreY) / 500;
+            if (across * across + down * down > 1) continue;
+            image.data[pixelOffset(width, x, y) + 3] = 255;
+          }
+        }
+      }
+      return image;
+    }
+
+    /** Each strip's frames packed, as `sheetStrips` packs them before it registers anything. */
+    const masksOf = (image: ImageData, boxes: readonly SpriteBox[]): CoverageMask[][] =>
+      spriteStrips(boxes).map((row) => row.map((box) => coverageMask(image, box)));
+
+    it('reads the four discs at a reach of six, 5,413,408 words a frame against 226,965,572 reads', () => {
+      const image = discs();
+      const found = spriteSegments(image, DEFAULT_SPRITE_GAP);
+      const boxes = found.kind === 'SEGMENTED' ? found.boxes : [];
+      expect(boxes.map((box) => [box.width, box.height, box.pixels])).toEqual(
+        Array.from({ length: 4 }, () => [1000, 1001, 785_348]),
+      );
+
+      const masks = masksOf(image, boxes);
+      const reach = affordableDriftReach(masks);
+      expect(reach).toBe(6);
+
+      // The old sweep read the image once per opaque reference pixel for each of the full reach's
+      // candidates; the new one reads each frame's mask words once per candidate the budget affords.
+      const fullReachCandidates = (2 * FRAME_DRIFT_SEARCH + 1) ** 2;
+      const frame = masks[0]?.[1];
+      expect(fullReachCandidates * 785_348).toBe(226_965_572);
+      expect((2 * reach + 1) ** 2 * (frame?.height ?? 0) * (frame?.stride ?? 0)).toBe(5_413_408);
+      expect(Math.round(226_965_572 / 5_413_408)).toBe(42);
+    });
+
+    it('narrows no sheet of the corpus, keyed and read at a grid of 1', async () => {
+      const magenta = fromHex('#FF00FF');
+      if (magenta === null) throw new Error('the key colour no longer parses');
+      for (const name of CORPUS_SHEETS) {
+        const result = quantiseImage(await loadCorpusSheet(name), {
+          ...QUANTISE_DEFAULT_DIALS,
+          grid: 1,
+          key: { color: magenta, tolerance: DEFAULT_KEY_TOLERANCE },
+          reduction: null,
+        });
+        const boxes = result.sprites.kind === 'SEGMENTED' ? result.sprites.boxes : [];
+        expect(spriteStrips(boxes).length, name).toBeGreaterThan(0);
+        expect(affordableDriftReach(masksOf(result.image, boxes)), name).toBe(FRAME_DRIFT_SEARCH);
+      }
+    }, 900_000);
   });
 
   describe('the palette lock — the two populations the snap distance is set from', () => {

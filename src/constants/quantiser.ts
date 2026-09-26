@@ -1870,15 +1870,16 @@ export const SYMMETRY_SWEEP_BUDGET = MAX_IMAGE_PIXELS;
  *
  * **One word per pixel of the largest sheet this tab admits**, which is what {@link MAX_IMAGE_PIXELS}
  * is. A word is thirty-two pixels of one row, compared against the frame's in one AND and one bit
- * count, so the budget is thirty-two comparisons for every pixel of that sheet — and each costs
- * about what one step of a linear pass over the sheet costs, so the whole registration costs at
- * worst about one such pass. `affordableDriftReach` divides this by the frames' combined words to
- * arrive at a reach they all share.
+ * count, so the candidates of the whole registration read at most as many words as that sheet has
+ * pixels, however the frames on it are shaped. `affordableDriftReach` divides this by the frames'
+ * combined words to arrive at a reach they all share.
  *
  * **It narrows only frames the reach was never going to help much.** The reach is eight drawn pixels
  * whatever the frame, so the sheets it narrows hold frames hundreds of pixels across, where a pose
- * that displaced the box by eight is a fraction of a per cent of the drawing. The issue's sheet is
- * read at a reach of six, and `affordableDriftReach.test.ts` pins that figure.
+ * that displaced the box by eight is a fraction of a per cent of the drawing. The four discs above
+ * are read at a reach of six, and none of the eight sheets in `test_sprites/` is narrowed at all,
+ * even keyed and read at a grid of 1, where its frames are largest.
+ * `tests/quantiser-docblock-figures.test.ts` re-derives every figure in this docblock.
  */
 export const FRAME_SWEEP_BUDGET = MAX_IMAGE_PIXELS;
 
