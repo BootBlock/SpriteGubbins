@@ -13,6 +13,7 @@ import { quantiseFromPrologue } from './quantiseImage.ts';
 import { quantisePrologue } from './quantisePrologue.ts';
 import { meanSsim } from './ssim.ts';
 import { readCandidate } from './tuneCandidate.ts';
+import { tuneCrop } from './tuneCrop.ts';
 import { tunedDialsOf } from './tuneStage.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 
@@ -176,11 +177,11 @@ describe('autoTune', () => {
     // the identity and the result is already the sheet's own size — which is why the counterfactual
     // can be taken directly here rather than through a second copy of `readCandidate`'s seam.
     const keyed: QuantiseSettings = { ...BASE, grid: 1, key: { color: MAGENTA, tolerance: 16 } };
-    const prologue = quantisePrologue(KEYED_SHEET, keyed);
+    const crop = tuneCrop(KEYED_SHEET, keyed);
     const dials = tunedDialsOf(keyed);
 
-    const scored = readCandidate(dials, [prologue], keyed).fidelity;
-    const result = quantiseFromPrologue(prologue, { ...keyed, ...dials }).image;
+    const scored = readCandidate(dials, [crop], keyed).fidelity;
+    const result = quantiseFromPrologue(crop.prologue, { ...keyed, ...dials }).image;
     const againstTheField = meanSsim(KEYED_SHEET, result);
 
     // The gap on this fixture is about 0.29, and the floor is a wide band below that rather than a
@@ -292,7 +293,7 @@ describe('autoTune', () => {
     // the pipeline's own gate, so moving a skipped stage's dials cannot change the result — which is
     // what lets `reading` stand while a later skip moves `settled` underneath it. Read through
     // `readCandidate` rather than by hand, so it is the sweep's own scorer that answers.
-    const sample = [quantisePrologue(SHEET, BASE)];
+    const sample = [tuneCrop(SHEET, BASE)];
     const alike = (a: TunedDials, b: TunedDials, settings: QuantiseSettings) => {
       expect(readCandidate(a, sample, settings)).toEqual(readCandidate(b, sample, settings));
     };
@@ -366,9 +367,9 @@ describe('autoTune against the anti-aliasing pass', () => {
   const DIALS: TunedDials = tunedDialsOf(QUANTISE_DEFAULT_DIALS);
 
   it('reads a candidate through the pass the reader asked for', () => {
-    // One prologue for both readings: `softened` differs from `BASE` only in where the reader
-    // pointed the anti-aliasing pass, and none of the prologue's three inputs is on that line.
-    const crop = quantisePrologue(STEPPED_SHEET, BASE);
+    // One crop for both readings: `softened` differs from `BASE` only in where the reader pointed
+    // the anti-aliasing pass, and none of the prologue's three inputs is on that line.
+    const crop = tuneCrop(STEPPED_SHEET, BASE);
 
     // The same dials read two ways, differing only in where the reader pointed the pass. They must
     // not agree: a reader with the pass on gets the fringe, and the two figures the panel reports

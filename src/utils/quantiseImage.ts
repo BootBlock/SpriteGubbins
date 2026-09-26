@@ -182,7 +182,7 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
  *
  * **The narrow answer, for the one caller that reads a narrow part of it.** `readCandidate` reads
  * {@link QuantiseSheet.image} and {@link QuantiseSheet.colors} and nothing else, and it runs this
- * 710 times in a sweep of `test_sprites/armour.png` — so building a difference map for it walked
+ * 575 times in a sweep of `test_sprites/armour.png` — so building a difference map for it walked
  * the whole of every crop's source a second time to produce a value that was dropped on the next
  * line. {@link QuantiseSheet} says why that reading is the only one worth withholding, and why the
  * rest of them are free.

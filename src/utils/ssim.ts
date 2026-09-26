@@ -1,5 +1,5 @@
 import { integralImage, rectangleSum } from './integralImage.ts';
-import { oklabPlanes } from './oklabPlanes.ts';
+import { oklabPlanes, type OklabPlanes } from './oklabPlanes.ts';
 
 /**
  * How alike two images are, structurally — the structural similarity index of Wang, Bovik, Sheikh
@@ -49,23 +49,77 @@ import { oklabPlanes } from './oklabPlanes.ts';
  * real reading rather than an error, and the callers rank it rather than reading its sign.
  */
 export function meanSsim(a: ImageData, b: ImageData): number {
-  if (a.width !== b.width || a.height !== b.height) {
+  return ssimAgainst(ssimReference(a), b);
+}
+
+/**
+ * One side of a comparison, measured once so that many images can be compared against it.
+ *
+ * **Everything the index needs of one image depends on that image alone** — its four planes, and the
+ * summed-area tables of each plane and of its square. Only the table of the *product* needs both. So
+ * a caller that scores many images against one keeps this rather than asking {@link meanSsim} to
+ * measure the same image again for each of them: the auto-tune sweep scores every candidate against
+ * the same crop, and rebuilding that crop's side was one of every comparison's two conversions into
+ * OKLab and two of its five tables.
+ */
+export interface SsimReference {
+  readonly width: number;
+  readonly height: number;
+  readonly channels: { readonly [Channel in keyof OklabPlanes]: ChannelSums };
+}
+
+/** One channel's plane, and the two summed-area tables that depend on it alone. */
+interface ChannelSums {
+  readonly plane: Float64Array;
+  readonly sum: Float64Array;
+  readonly squares: Float64Array;
+}
+
+/** The side of a comparison that depends on `image` alone — see {@link SsimReference}. */
+export function ssimReference(image: ImageData): SsimReference {
+  const { width, height } = image;
+  const planes = oklabPlanes(image);
+  return {
+    width,
+    height,
+    channels: {
+      L: channelSums(planes.L, width, height),
+      a: channelSums(planes.a, width, height),
+      b: channelSums(planes.b, width, height),
+      alpha: channelSums(planes.alpha, width, height),
+    },
+  };
+}
+
+/**
+ * {@link meanSsim} with its first image already measured.
+ *
+ * The same figure to the last bit rather than a close one, because it is the same arithmetic in the
+ * same order: `meanSsim` is this function handed a reference it built a moment before.
+ */
+export function ssimAgainst(reference: SsimReference, image: ImageData): number {
+  const { width, height } = reference;
+  if (image.width !== width || image.height !== height) {
     throw new Error('Structural similarity is only defined between two images of the same size');
   }
 
-  const left = oklabPlanes(a);
-  const right = oklabPlanes(b);
+  const planes = oklabPlanes(image);
+  const channel = (name: keyof OklabPlanes) =>
+    channelSsim(reference.channels[name], channelSums(planes[name], width, height), width, height);
 
   // Averaged rather than weighted, because the four channels are already commensurate: `oklab.ts`
   // scales the three colour axes so a step means the same distance on each, which is the property
   // every colour dial in this tab is calibrated against, and coverage is read on the same 0–255 range.
-  return (
-    (channelSsim(left.L, right.L, a.width, a.height) +
-      channelSsim(left.a, right.a, a.width, a.height) +
-      channelSsim(left.b, right.b, a.width, a.height) +
-      channelSsim(left.alpha, right.alpha, a.width, a.height)) /
-    4
-  );
+  return (channel('L') + channel('a') + channel('b') + channel('alpha')) / 4;
+}
+
+/** A plane with the two tables built from it alone: its sum, and the sum of its square. */
+function channelSums(plane: Float64Array, width: number, height: number): ChannelSums {
+  return {
+    plane,
+    sum: integralImage(plane, width, height),
+    squares: integralImage(plane, width, height, plane),
+  };
 }
 
 /** The square window every quantity is measured over — see the note on the Gaussian above. */
@@ -85,7 +139,7 @@ const C1 = (0.01 * DYNAMIC_RANGE) ** 2;
 const C2 = (0.03 * DYNAMIC_RANGE) ** 2;
 
 /** The index over one channel, averaged across every window position that fits. */
-function channelSsim(left: Float64Array, right: Float64Array, width: number, height: number): number {
+function channelSsim(left: ChannelSums, right: ChannelSums, width: number, height: number): number {
   // The window is shrunk on an image too small to hold one rather than refused: a crop of a sheet at
   // a coarse grid can be a handful of pixels across, and "these seven rows are alike" is still the
   // question being asked.
@@ -95,11 +149,10 @@ function channelSsim(left: Float64Array, right: Float64Array, width: number, hei
   // variance terms are held at zero and the comparison falls back to the luminance term alone.
   const spread = count > 1 ? count - 1 : 1;
 
-  const sumA = integralImage(left, width, height);
-  const sumB = integralImage(right, width, height);
-  const sumAA = integralImage(left, width, height, left);
-  const sumBB = integralImage(right, width, height, right);
-  const sumAB = integralImage(left, width, height, right);
+  const { sum: sumA, squares: sumAA } = left;
+  const { sum: sumB, squares: sumBB } = right;
+  // The one table that needs both images, and so the one a reference cannot build ahead of time.
+  const sumAB = integralImage(left.plane, width, height, right.plane);
 
   let total = 0;
   let windows = 0;

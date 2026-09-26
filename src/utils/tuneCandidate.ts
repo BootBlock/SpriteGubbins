@@ -1,8 +1,9 @@
 import type { TuneReading, TunedDials } from '../types/autoTune.ts';
-import type { QuantisePrologue, QuantiseSettings } from '../types/quantiser.ts';
+import type { QuantiseSettings } from '../types/quantiser.ts';
 import { upscaleOverMesh } from './gridAlignment.ts';
 import { quantiseFromPrologue } from './quantiseImage.ts';
-import { meanSsim } from './ssim.ts';
+import { ssimAgainst } from './ssim.ts';
+import type { TuneCrop } from './tuneCrop.ts';
 
 /**
  * How one set of dial positions does across the crops: how faithfully it reproduces them, and what
@@ -11,16 +12,16 @@ import { meanSsim } from './ssim.ts';
  * The sweep's inner loop, in its own file because it is a second responsibility rather than a helper
  * — `autoTune` decides *which* positions to try, and this decides what one position is worth.
  *
- * **It is handed each crop's prologue rather than the crop**, which is one value doing both of the
- * jobs this function has. The keying, the hardening and the mesh are the same for every candidate —
- * none of their three settings is in {@link TunedDials} — so measuring them per candidate was
- * measuring each crop's one answer once for every position tried: 710 calls to answer five meshes,
- * over a sweep of `test_sprites/armour.png` at a grid of 6. The image they produce is *also* what a
- * candidate is
- * scored against, because a result has been keyed and hardened and a reference that had not been
- * would score every candidate against a field and a fringe none of them produces. Those used to be
- * two values built from the same three settings in two places. {@link QuantisePrologue} is the one
- * that remains, so the pair cannot come apart.
+ * **It is handed each crop already measured rather than the crop**, which is one value doing both of
+ * the jobs this function has. The keying, the hardening and the mesh are the same for every
+ * candidate — none of their three settings is in {@link TunedDials} — so measuring them per
+ * candidate was measuring each crop's one answer once for every position tried: 710 calls to answer
+ * five meshes, over a sweep of `test_sprites/armour.png` at a grid of 6. The image they produce is
+ * *also* what a candidate is scored against, because a result has been keyed and hardened and a
+ * reference that had not been would score every candidate against a field and a fringe none of them
+ * produces. Those used to be two values built from the same three settings in two places; the
+ * prologue is the one that remains, so the pair cannot come apart, and the likeness score's side of
+ * that image is measured once beside it — see {@link TuneCrop}.
  *
  * **Fidelity is measured on the result painted back over the crop's own mesh**, which is what
  * makes a downscale comparable with the artwork it came from at all: the pipeline's output is one
@@ -43,13 +44,13 @@ import { meanSsim } from './ssim.ts';
  */
 export function readCandidate(
   dials: TunedDials,
-  prologues: readonly QuantisePrologue[],
+  crops: readonly TuneCrop[],
   settings: QuantiseSettings,
 ): TuneReading {
   let fidelity = 0;
   let colors = 0;
 
-  for (const prologue of prologues) {
+  for (const { prologue, reference } of crops) {
     // **The anti-aliasing pass runs exactly as the reader pointed it**, which is the one setting on
     // this line that is neither held fixed nor swept. Its four *shaping* dials are in `dials` and are
     // swept like any other; its mode is in `settings` and the sweep may not touch it — see
@@ -73,9 +74,9 @@ export function readCandidate(
     // over the source to produce — see {@link QuantiseSheet}.
     const result = quantiseFromPrologue(prologue, { ...settings, ...dials });
     const { source, mesh } = prologue;
-    fidelity += meanSsim(source, upscaleOverMesh(result.image, mesh, source.width, source.height));
+    fidelity += ssimAgainst(reference, upscaleOverMesh(result.image, mesh, source.width, source.height));
     colors += result.colors;
   }
 
-  return { fidelity: fidelity / prologues.length, colors: colors / prologues.length };
+  return { fidelity: fidelity / crops.length, colors: colors / crops.length };
 }

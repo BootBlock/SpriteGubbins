@@ -2,10 +2,10 @@ import { PROXY_CROP_CELLS, PROXY_CROP_COUNT, TUNE_ROUNDS } from '../constants/au
 import type { TuneOutcome, TuneStageName, TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings } from '../types/quantiser.ts';
 import { proxyCrops } from './proxyCrops.ts';
-import { quantisePrologue } from './quantisePrologue.ts';
-import { readCandidate } from './tuneCandidate.ts';
+import { candidateReader } from './candidateReader.ts';
 import { chooseByElbow } from './tuneScore.ts';
 import { restoreSkipped, sameTunedDials, tunedDialsOf, withIncumbent } from './tuneStage.ts';
+import { tuneCrop } from './tuneCrop.ts';
 import { TUNE_STAGES } from './tuneStages.ts';
 
 /**
@@ -24,7 +24,8 @@ import { TUNE_STAGES } from './tuneStages.ts';
  *
  * **Each candidate is scored on how faithfully its result reproduces the crop and how few colours it
  * spends doing it** — see `readCandidate` — and the two are traded by the elbow rather than by a
- * weight nobody could defend, which is `chooseByElbow`.
+ * weight nobody could defend, which is `chooseByElbow`. A position the descent asks about twice is
+ * run once — see `candidateReader`.
  *
  * **Every stage ranks the positions in force alongside its own**, which is `withIncumbent`: a stage
  * that cannot separate its candidates therefore leaves each dial exactly where the reader had it, and
@@ -70,19 +71,22 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
   // convenience. The prologue is the key, the edge hardening and the mesh — three passes whose only
   // inputs are `key`, `silhouetteThreshold` and `grid`, none of which is in {@link TunedDials}, so
   // every candidate below would measure the same three answers again. A sweep of
-  // `test_sprites/armour.png` at a grid of 6 runs 142 positions over 5 crops, so that was 710
-  // calls to `boundaryMesh` answering the five meshes those crops have.
+  // `test_sprites/armour.png` at a grid of 6 ranked 142 positions over 5 crops and ran every one
+  // of them, so that was 710 calls to `boundaryMesh` answering the five meshes those crops have.
   //
   // **It is also what each candidate is scored against.** A result has been keyed and hardened, so a
   // reference that still carried the key field or the soft outline would score every candidate
   // against something none of them produces. That used to be built here and the identical value
   // built again inside every candidate; now it is one value, handed to `readCandidate` for both
-  // jobs — see {@link QuantisePrologue}.
-  const prologues = crops.map((crop) => quantisePrologue(crop.image, settings));
+  // jobs, with the likeness score's own measurements of it taken once beside it — see `TuneCrop`.
+  const read = candidateReader(
+    crops.map((crop) => tuneCrop(crop.image, settings)),
+    settings,
+  );
 
   const opening = tunedDialsOf(settings);
   let settled = opening;
-  const baseline = readCandidate(settled, prologues, settings);
+  const baseline = read(settled);
   let reading = baseline;
   // The starting position counts: it was run, and every stage below ranks it against its own.
   let candidates = 1;
@@ -124,7 +128,7 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
       }
 
       const tried = withIncumbent(plan.candidates, settled);
-      const readings = tried.map((dials) => readCandidate(dials, prologues, settings));
+      const readings = tried.map(read);
       const chosenFirst = readings[0];
       // `tried` is a non-empty list by its own type, so this holds; the check is what
       // `noUncheckedIndexedAccess` asks of an index rather than a case that arises.

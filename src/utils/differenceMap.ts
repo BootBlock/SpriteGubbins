@@ -19,7 +19,8 @@ import type { MutableOklab } from './oklab.ts';
  * that is doing nothing look identical, which is the reading two separate user reports arrived at.
  * This is the measurement behind that judgement: one number per output pixel, painted where the
  * pixel is, so a change of half a shade in one corner of the sheet is somewhere to look rather than
- * something to find. Both counts are re-derived by `tests/quantiser-docblock-figures.test.ts`.
+ * something to find. Both counts are re-derived by
+ * `tests/quantiser-figures-difference-scales.test.ts`.
  *
  * **One cell, one number: the mean distance from the cell's own source pixels to the colour that
  * replaced them.** Mean rather than worst, because the question a cell answers is how well it

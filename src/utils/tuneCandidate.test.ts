@@ -4,6 +4,7 @@ import { imageFrom } from '../test/images.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { quantisePrologue } from './quantisePrologue.ts';
 import { readCandidate } from './tuneCandidate.ts';
+import { tuneCrop } from './tuneCrop.ts';
 import { tunedDialsOf } from './tuneStage.ts';
 
 const GRID = 4;
@@ -49,8 +50,11 @@ describe('readCandidate', () => {
     // cell is six pixels wide, so everything after it sat two pixels off the art it stood for and
     // this sheet scored 0.19; phases 1 and 3 scored 0.52. Painted over the mesh, each cell covers
     // the pixels it was read from, and a lossless result is a perfect likeness at every phase.
-    const prologue = quantisePrologue(phasedSheet(phase), SETTINGS);
-    const reading = readCandidate(tunedDialsOf(QUANTISE_DEFAULT_DIALS), [prologue], SETTINGS);
+    const reading = readCandidate(
+      tunedDialsOf(QUANTISE_DEFAULT_DIALS),
+      [tuneCrop(phasedSheet(phase), SETTINGS)],
+      SETTINGS,
+    );
 
     expect(reading.colors).toBe(COLOURS.length);
     expect(reading.fidelity).toBeCloseTo(1, 6);

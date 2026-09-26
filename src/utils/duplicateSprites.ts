@@ -58,8 +58,8 @@ import { disjointSet } from './unionFind.ts';
  * key's tint behind the fringe, which moves the mesh the extents are cut on.) The conclusion above
  * survives every one, which is why the design was never in question; but a figure offered as
  * evidence has to be reproducible from what it states, and the number this paragraph carried was
- * reproducible from none of them. `tests/quantiser-docblock-figures.test.ts` pins both directions
- * against the construction named above.
+ * reproducible from none of them. `tests/quantiser-figures-duplicate-sprites.test.ts` pins both
+ * directions against the construction named above.
  *
  * **A sprite is identified across the perturbation by its centre, not by its position in the list.**
  * A shifted sheet meshes differently, and a row whose tops move by different amounts re-sorts — so
@@ -170,8 +170,8 @@ export function duplicateSprites(
   // debounce drops the intermediate values of a drag; neither makes the work itself shorter. What
   // the ceiling buys is that the pathological case is *bounded*, not that it is fast.
   //
-  // `tests/quantiser-docblock-figures.test.ts` holds the deterministic half of all of this: the
-  // corpus's own sprite counts, and this fixture's grouping at four rungs — nothing at the floor,
+  // `tests/quantiser-figures-duplicate-sprites.test.ts` holds the deterministic half of all of this:
+  // the corpus's own sprite counts, and this fixture's grouping at four rungs — nothing at the floor,
   // nothing at the peak, the seven small groups at 23, the 488 at 24 — which is what says the
   // expensive rungs really are walking every pair rather than skipping them.
   for (const [position, left] of representatives.entries()) {

@@ -8,8 +8,8 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  *
  * Its own file rather than more entries in `constants/quantiser.ts`, because these are read against
  * one another rather than against the dial ranges — how many crops times how many candidates times
- * how many rounds is the sweep's whole cost, and that is the figure a change here has to be judged
- * by.
+ * how many rounds bounds the sweep's whole cost, and that is the figure a change here has to be
+ * judged by.
  *
  * **Every ladder below is a subset of the dial's own range, never a second opinion about it.** The
  * ranges in `constants/quantiser.ts` say what a reader may set; these say where the sweep looks. A
@@ -73,7 +73,8 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * **The count of positions is what a change to any ladder here has to be judged by**, not a wall
  * clock — the same code over the same sheet takes several times longer on one host than another, so
  * the guidance's "a minute or two" is stated against the position count rather than against any figure
- * a stopwatch produced.
+ * a stopwatch produced. Every count here is of positions *ranked*: one the descent ranks twice is run
+ * once — see `candidateReader` — so the corpus's 1,041 ranked positions ran as 805.
  *
  * **The reading stage's first round chooses the *cheapest* of the three readings on that sheet
  * rather than the most faithful, and that is the elbow doing what it says rather than a defect.** Of
