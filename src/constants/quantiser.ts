@@ -2,7 +2,7 @@ import { CHECK_CHANGES_NOTHING } from './guidanceSentences.ts';
 import type { PaletteLimit } from '../types/output.ts';
 import type { EstimatedMeasurement, PixelGrid } from '../types/quantiser.ts';
 
-/** The quantiser's fixed numbers and the copy that explains its one control. */
+/** The quantiser's fixed numbers and the guidance that explains the Quantise tab's settings. */
 
 /**
  * How many colours each studio palette limit allows the returned image, or `null` for no budget.
@@ -210,9 +210,10 @@ export const MIN_ESTIMATED_GRID = 2 * SOFTENED_EDGE_RAMP + 2;
  * is the error this reading calls the expensive one, and the floor was manufacturing it.
  *
  * Two hazards the old floor hid rather than answered come with the lower one, and both are fixed at
- * their root in `profilePeriod.ts` rather than held off by a number: lag 1 is a structural artefact
- * of differencing and is not evidence (`LOWEST_READABLE_LAG`), and neither side of the descent's
- * comparison may be weighed by the other's evidence (`exclusiveMass`).
+ * their root in `correlationPeaks.ts`, whose peak reading `profilePeriod.ts` searches with, rather
+ * than held off by a number: lag 1 is a structural artefact of differencing and is not evidence
+ * (`LOWEST_READABLE_LAG`), and neither side of the descent's comparison may be weighed by the
+ * other's evidence, which `bestSupportedPeak` bounds by admitting only prominent local maxima.
  */
 export const MIN_CORRELATED_PERIOD = 2;
 
@@ -1032,12 +1033,13 @@ export function measurableGridCeiling(width: number, height: number): number {
  * The sprite-gap slider's range: how far apart two pieces of artwork may sit and still be counted
  * as one sprite, in drawn pixels.
  *
- * **`0` is not an off position**, which is what most of this tab's zeros mean. Two others depart
- * from it — the symmetry tolerance and the duplicate tolerance — and both depart differently: their
- * zeros are their passes at their strictest, where this is a pass with no off position at all. The segmentation always runs, and at
- * zero it still folds pieces whose bounding boxes overlap — a figure with an outstretched arm passes through its own torso's box
- * without sharing a pixel with it, and a reader would never want those counted as two sprites. What
- * the dial adds above zero is reach into empty space.
+ * **`0` is not an off position**, which is what many of this tab's zeros mean. The tolerances whose
+ * zero is not an off position either are their passes at their strictest or loosest, each switched
+ * off by a control of its own. This one is a pass with no off position at all. The segmentation
+ * always runs, and at zero it still folds pieces whose bounding boxes overlap — a figure with an
+ * outstretched arm passes through its own torso's box without sharing a pixel with it, and a reader
+ * would never want those counted as two sprites. What the dial adds above zero is reach into empty
+ * space.
  *
  * The floor of usefulness is therefore 1, which takes in a piece one clear pixel away — the ordinary
  * result of keying an anti-aliased join, where the blend the fringe pass removed was all that
@@ -1166,11 +1168,11 @@ export const DEFAULT_SYMMETRY = 'OFF';
  * The symmetry tolerance's range: how far two mirrored pixels may sit apart and still count as
  * agreeing, in the scaled-OKLab units every colour dial here is stated in.
  *
- * **`0` is the strictest position rather than an off position**, which the duplicate tolerance's
- * zero also is; the sprite gap's zero is a third departure of a different kind, being a pass that
- * has no off position at all rather than one at its tightest. At zero a pair agrees only where the two pixels are identical,
- * which is what a flat-coloured sheet from a clean generator can actually reach. The Symmetry
- * control's own `OFF` is what stops the pass running.
+ * **`0` is the strictest position rather than an off position**, as it is for the duplicate and
+ * drift tolerances; the sprite gap's zero departs differently, being a pass that has no off position
+ * at all rather than one at its tightest. At zero a pair agrees only where the two pixels are
+ * identical, which is what a flat-coloured sheet from a clean generator can actually reach. The
+ * Symmetry control's own `OFF` is what stops the pass running.
  *
  * **Every figure below is measured on the reference sheet under stated conditions**, because a
  * share is meaningless without them: `test_sprites/armour.png` at grid 6, the ink-weighted reading
@@ -1263,9 +1265,8 @@ export const DUPLICATE_TOLERANCE_RANGE = { min: 0, max: 24, step: 1 } as const;
 /**
  * The tolerance the tab opens at — zero, which reports only sprites whose visible pixels match.
  *
- * One of three dials on this tab whose zero is not the pass being switched off — the symmetry
- * tolerance is the other of its kind, and the sprite gap the odd one, having no off position at all.
- * It opens at zero for the reason the sprite gap can open engaged: the pass that acts on this reading
+ * Its zero is not the pass being switched off, as the symmetry and drift tolerances' zeros are not
+ * — see {@link SPRITE_GAP_RANGE} for a zero that departs differently. It opens at zero for the reason the sprite gap can open engaged: the pass that acts on this reading
  * opens off — see {@link DEFAULT_DUPLICATE_SNAP} — so until a reader turns it on the tolerance
  * changes no pixel of the sheet, and an opening that is wrong costs a number a reader can correct
  * while they watch. (A manifest, and the sprite pack that carries one, records each group as a link
@@ -1280,10 +1281,10 @@ export const DEFAULT_DUPLICATE_TOLERANCE = 0;
 /**
  * Whether the snap opens engaged — it does not.
  *
- * The one dial in this tab's control stack that **deletes artwork**: it overwrites each
- * near-duplicate with the sprite its group is named after, so whatever distinguished the two is
- * gone from the download. Every other dial here transforms the whole sheet by a rule, and this one
- * acts on a finding — a finding the reader has not necessarily looked at yet. Defaulting it on would
+ * The snap **deletes artwork**, as the symmetry pass's `SNAP` and the edge hardening also do: it
+ * overwrites each near-duplicate with the sprite its group is named after, so whatever distinguished
+ * the two is gone from the download. Where most dials here transform the whole sheet by a rule, this
+ * one acts on a finding — a finding the reader has not necessarily looked at yet. Defaulting it on would
  * be the tab deciding that two frames a generator drew separately were a mistake.
  */
 export const DEFAULT_DUPLICATE_SNAP = false;
@@ -1665,12 +1666,13 @@ export const DEFAULT_KEY_TOLERANCE = 24;
  * progressively more of the fringe, so the silhouette tightens back towards the pixels that were
  * nearly solid to begin with.
  *
- * Deliberately not stated as a distance in bytes, which is what every *colour* tolerance on this tab
- * is stated in. Those answer “how far apart are these two colours”; this is a *coverage*, which is a
- * share of one pixel — and a share is what a reader compares against the fringe they can see rather
- * than against the ladder’s other rungs. `FRAME_DRIFT_RANGE` is the other dial stated in neither, and
- * for the same kind of reason: a displacement is counted in drawn pixels because that is the quantity
- * it is.
+ * Deliberately not stated as a scaled-OKLab distance, which is what every *colour* tolerance on this
+ * tab is stated in. Those answer “how far apart are these two colours”; this is a *coverage*, which
+ * is a share of one pixel — and a share is what a reader compares against the fringe they can see
+ * rather than against the ladder’s other rungs. Each dial here is stated in the unit of the quantity
+ * it measures, so a colour distance is only one of several: a displacement such as
+ * `FRAME_DRIFT_RANGE` is counted in drawn pixels, and a count such as `CLEANUP_PASSES_RANGE` in
+ * passes.
  */
 export const SILHOUETTE_THRESHOLDS = [0, 10, 25, 50, 75, 90] as const;
 

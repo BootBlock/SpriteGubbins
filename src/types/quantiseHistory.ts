@@ -38,8 +38,8 @@ export interface DialHistory {
    * Each is a whole set of positions rather than a patch against the one before it. A patch is
    * smaller and is the wrong shape for what this stack is walked for: every step of an undo has to
    * produce a complete set of dial positions, and rebuilding one by replaying patches from the front
-   * makes the cost of a step depend on how long the reader has been tuning. Twenty-five primitives
-   * is nothing to copy.
+   * makes the cost of a step depend on how long the reader has been tuning. A flat record of
+   * primitives is nothing to copy.
    */
   readonly entries: readonly QuantiseDials[];
   /** Which entry the dials are currently at. Undo moves it down, redo moves it up. */

@@ -32,7 +32,7 @@ beforeEach(() => {
 
   // The impure boundary, stubbed so the decode can be held open mid-flight. `createImageBitmap`
   // and a 2D canvas are the two things happy-dom does not provide, and they are precisely what
-  // stands between choosing a file and `handleImport` running.
+  // stands between choosing a file and `useIdentityPaletteCapture`'s capture running.
   vi.stubGlobal(
     'createImageBitmap',
     () =>

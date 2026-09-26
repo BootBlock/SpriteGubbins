@@ -5,8 +5,8 @@ import { REDO_KEYBOARD_SHORTCUTS, WRITE_UNAVAILABLE_UNTIL_SETTLED } from '../gui
  * Guidance for the Quantise tab's actions.
  *
  * Beside `constants/quantiser.ts`'s own `QUANTISE_TOOLTIPS` rather than inside it, and the split is
- * the same one the studio makes: that object explains the tab's three *settings* — the pixel grid,
- * the zoom and the keying — and sits with the numbers those settings are drawn from. These are the
+ * the same one the studio makes: that object explains the tab's *settings* and sits with the numbers
+ * those settings are drawn from. These are the
  * buttons, and what a reader needs from one of those is what pressing it does to the sheet in front
  * of them.
  */

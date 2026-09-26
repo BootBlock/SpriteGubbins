@@ -63,7 +63,7 @@ export const TUNE_ALIAS_STAGES: readonly TuneStage[] = [
     plan: (settled, settings) => {
       if (settings.antiAlias === 'OFF') return { skipped: ALIAS_OFF };
       // The blended-shades position is read only where a reduction states which colours the sheet is
-      // made of — the gate `quantiseImage` keeps at the call site, and the one `AntiAliasPalette`
+      // made of — the gate `settleSprites` keeps at the call site, and the one `AntiAliasPalette`
       // argues for. With none in force both positions produce the same pixels, so sweeping the axis
       // would double the stage to have the elbow choose between two measurements of one image.
       const palettes = settings.reduction === null ? [settled.antiAliasPalette] : TUNE_ALIAS_PALETTES;

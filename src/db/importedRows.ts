@@ -94,7 +94,7 @@ export function parseImportedPreset(value: unknown): CustomArchetype | null {
  * **A `dials` record is required, and that requirement is what tells the two packs apart.** Both
  * files are JSON arrays of objects with an id, a name and a description, so without it a pack of
  * studio archetypes would import here as a collection of presets whose every dial had been
- * repaired to its default — twenty settings nobody chose, under names that promise otherwise.
+ * repaired to its default — a whole set of settings nobody chose, under names that promise otherwise.
  * `parseQuantiseDials` repairs field by field by design, so the discrimination cannot come from
  * inside it. The archetypes refuse a pack of these by the same rule from the other side: a
  * quantiser preset has no `category`, which {@link parseImportedPreset} requires.

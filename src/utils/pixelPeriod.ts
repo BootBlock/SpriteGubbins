@@ -41,8 +41,8 @@ import type { StepProfile } from './stepProfile.ts';
  * transform it fed could only snap from the corner: a scale measured at a phase the alignment could
  * not apply would have resolved every cell over a window straddling two of the art's own, so inset
  * art was refused, or answered with whatever *divisor* of its true scale happened to sit near the
- * corner-anchored lattice, and the panel told the user to crop the margin off. `bestGridOffset`
- * removed the constraint at its root — the alignment now measures where the lattice sits for
+ * corner-anchored lattice, and the panel told the user to crop the margin off. `boundaryMesh` and
+ * `bestPhase` removed the constraint at its root — the alignment now measures where the lattice sits for
  * whatever grid is in force — so the reading is free to answer the true scale wherever the art
  * sits, and the crop-the-margin instruction is gone with it.
  */
