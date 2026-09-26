@@ -204,6 +204,21 @@ describe('antiAlias', () => {
     expect(at(snapped, 5, 2)).toEqual(PAPER);
   });
 
+  it('snaps no blend to the colour of a pixel under the coverage floor', () => {
+    // A faint pixel's channels are rounding noise. Read into the snap's palette at full standing,
+    // this one's grey was a colour the sheet "held", and the contour's blends snapped to it.
+    const source = stepped(PAPER, INK);
+    const faint =
+      (source.height - 1) * source.width * CHANNELS_PER_PIXEL + (source.width - 1) * CHANNELS_PER_PIXEL;
+    source.data.set([MID.r, MID.g, MID.b, 10], faint);
+    const snapped = antiAlias(source, { ...SETTINGS, snap: true });
+
+    for (let offset = 0; offset < snapped.data.length; offset += CHANNELS_PER_PIXEL) {
+      if (offset === faint) continue;
+      expect([PAPER.r, INK.r]).toContain(snapped.data[offset]);
+    }
+  });
+
   /**
    * The stepped contour again, with a block of `shades` distinct colours below it that no claim
    * reaches — so what varies between two of these is the size of the palette a snap would search.

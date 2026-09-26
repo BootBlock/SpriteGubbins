@@ -1,5 +1,6 @@
+import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
-import { createImage, packedColorAt, pixelOffset, writePackedColor } from './imageData.ts';
+import { alphaAt, createImage, packedColorAt, pixelOffset, writePackedColor } from './imageData.ts';
 import { lineAwareWinner } from './lineVote.ts';
 
 /**
@@ -39,6 +40,11 @@ import { lineAwareWinner } from './lineVote.ts';
  * The pixel nearest the cell's centre is the pixel furthest from every boundary, which is what a
  * representative of the cell means; where two colours tie on distance as well, the earlier in scan
  * order keeps the cell, so the result is deterministic on every input.
+ *
+ * **Every pixel under `COVERAGE_FLOOR` votes as one bucket, the keyed field's `{0, 0, 0, 0}`**,
+ * whatever bytes it carries — a fully transparent pixel's leftover RGB and a faint pixel's rounding
+ * noise alike. Counted by their bytes, each such value was a bucket of its own, so a cell that was
+ * mostly field or faint fringe answered one of them at random rather than the field it nearly is.
  *
  * **Idempotent over the same mesh**: after this each cell is already one colour, so running it
  * again changes nothing — the clearest single check that the step did what it claims, and the
@@ -117,7 +123,8 @@ function modalColor(
 
   for (let y = top; y < bottom; y += 1) {
     for (let x = left; x < right; x += 1) {
-      const key = packedColorAt(image.data, pixelOffset(image.width, x, y));
+      const offset = pixelOffset(image.width, x, y);
+      const key = alphaAt(image.data, offset) < COVERAGE_FLOOR ? 0 : packedColorAt(image.data, offset);
       counts.set(key, (counts.get(key) ?? 0) + 1);
       const distance = (x - centreX) * (x - centreX) + (y - centreY) * (y - centreY);
       const nearest = distances.get(key);

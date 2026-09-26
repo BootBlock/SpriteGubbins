@@ -1,4 +1,5 @@
-import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
+import { pixelOffset } from './imageData.ts';
 import { type Oklab, srgbToOklab } from './oklab.ts';
 
 /**
@@ -23,8 +24,9 @@ import { type Oklab, srgbToOklab } from './oklab.ts';
  * **Colour here means RGB; alpha is coverage, and the pass never touches it.** Neighbours tally
  * by their RGB alone — a matte-exported sheet mixing alpha 254 with 255 is one colour, not two —
  * a pixel already matching the modal RGB is left alone whatever its alpha, and a merged pixel
- * takes the modal RGB while keeping its own alpha. Fully transparent pixels are outside all of
- * it: they are the keyed field, they never vote as neighbours, and they are never painted over.
+ * takes the modal RGB while keeping its own alpha. Pixels under `COVERAGE_FLOOR` are outside all
+ * of it: the fully transparent ones are the keyed field and the faint ones carry rounding noise for
+ * channels, so they never vote as neighbours and they are never painted over.
  *
  * Every judgement reads its pass's *input* and writes a copy, so each pass is one simultaneous
  * step rather than a left-to-right smear — a merged pixel cannot recruit the next one within the
@@ -72,7 +74,7 @@ function settleOnce(image: ImageData, tolerance: number, cache: Map<number, Okla
   for (let y = 0; y < image.height; y += 1) {
     for (let x = 0; x < image.width; x += 1) {
       const at = pixelOffset(image.width, x, y);
-      if ((image.data[at + 3] ?? 0) === FULLY_TRANSPARENT) continue;
+      if ((image.data[at + 3] ?? 0) < COVERAGE_FLOOR) continue;
 
       tally.clear();
       let present = 0;
@@ -83,7 +85,7 @@ function settleOnce(image: ImageData, tolerance: number, cache: Map<number, Okla
           const ny = y + dy;
           if (nx < 0 || ny < 0 || nx >= image.width || ny >= image.height) continue;
           const near = pixelOffset(image.width, nx, ny);
-          if ((image.data[near + 3] ?? 0) === FULLY_TRANSPARENT) continue;
+          if ((image.data[near + 3] ?? 0) < COVERAGE_FLOOR) continue;
           present += 1;
           const key =
             ((image.data[near] ?? 0) * 256 + (image.data[near + 1] ?? 0)) * 256 + (image.data[near + 2] ?? 0);

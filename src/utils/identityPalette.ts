@@ -149,9 +149,9 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  * under the coverage floor is dropped rather than promoted.
  */
 function subjectPixels(image: ImageData, exclude: Rgba | null): ImageData {
-  // `TRANSPARENT` is the key with no colour to match, and the loop below already drops what arrived
-  // transparent — so the pass has nothing to exclude, and running it would erode a silhouette for
-  // nothing.
+  // `TRANSPARENT` is the key with no colour to match, and `flattenOpacity` already drops what
+  // arrived transparent — so the pass has nothing to exclude, and running it would erode a
+  // silhouette for nothing.
   const keyed =
     exclude === null
       ? image

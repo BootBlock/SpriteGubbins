@@ -14,8 +14,11 @@
  * Alpha is a channel like the other three rather than a separate concern: it is what the histogram
  * keys on, one of the four axes a group of colours is split across, and what makes two
  * otherwise-identical pixels different colours — which is why a soft edge can hold a palette slot of
- * its own rather than being written opaque. The one place it is privileged is `FULLY_TRANSPARENT`,
- * which is excluded from the palette entirely — see `colorHistogram`.
+ * its own rather than being written opaque. It is privileged in three places. `FULLY_TRANSPARENT` is
+ * excluded from the palette entirely — see `colorHistogram`. An alpha under `COVERAGE_FLOOR` is
+ * absent to every pass that judges a pixel by its colour, since its channels are rounding noise. And
+ * `FULLY_OPAQUE` is matched only against opaque palette entries, since any alpha under it inside a
+ * sprite is a hole — see `nearestColorSearch`.
  */
 export interface Rgba {
   readonly r: number;

@@ -1767,8 +1767,8 @@ export const SILHOUETTE_THRESHOLDS = [0, 10, 25, 50, 75, 90] as const;
 export const DEFAULT_SILHOUETTE_THRESHOLD = 0;
 
 /**
- * The alpha below which a pixel is absent: every pass that reads a pixel's colour treats it exactly
- * as it treats the keyed field.
+ * The alpha below which a pixel is absent to every pass that judges a pixel by its colour — that
+ * votes on it, averages it, ranks it, snaps to it or names it — exactly as the keyed field is.
  *
  * **Below it, a pixel's colour is not a colour.** A browser holds a decoded image premultiplied, at
  * eight bits a channel, so a pixel at alpha `a` comes back from `getImageData` with each channel
@@ -1785,6 +1785,15 @@ export const DEFAULT_SILHOUETTE_THRESHOLD = 0;
  * colour, it averages premultiplied and divides the coverage back out, so a faint pixel tints a cell
  * only as much as it shows; where a pass shares out a cell, a pixel's share is its alpha rather than
  * one vote. `tests/coverage-floor.test.ts` holds the figure to the ladder and to the error bound.
+ *
+ * **Where it applies.** The three readings (`alignToGrid`, `inkWeightedCells`, `kCentroidCells`),
+ * `outlineExpansion` and `outlinePolarity`, `mergeColors`, `despeckle`, the anti-aliasing snap, and
+ * the palette readers through `flattenOpacity` and `paletteEntriesFrom`. A pass asking only whether
+ * a pixel has any coverage at all — segmentation, symmetry, keying's own count — still tests for
+ * zero, because that is a question about the silhouette rather than about colour. So does the
+ * budget palette's histogram: a faint colour stays a candidate there so that `applyPalette` can
+ * give a faint pixel an entry at its own coverage, where leaving it out would draw it with an opaque
+ * one.
  */
 export const COVERAGE_FLOOR = 26;
 

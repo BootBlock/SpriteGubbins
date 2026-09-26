@@ -90,6 +90,18 @@ describe('alignToGrid', () => {
     expect(readPixel(aligned.data, 0)).toEqual(majority);
   });
 
+  it('counts every pixel under the coverage floor as one keyed field, whatever its bytes', () => {
+    // Ten faint pixels, each carrying a different noise colour, beside six of one opaque red. By
+    // their bytes each was a bucket of one and the red won; as the field they are, they win.
+    const red: Rgba = { r: 200, g: 30, b: 30, a: 255 };
+    const cell = imageFrom(4, 4, (x, y) => {
+      const index = y * 4 + x;
+      return index < 6 ? red : { r: index * 20, g: 0, b: 0, a: 10 };
+    });
+    const aligned = alignToGrid(cell, regularMesh(4, 4, 4, CORNER));
+    expect(readPixel(aligned.data, 0)).toEqual({ r: 0, g: 0, b: 0, a: 0 });
+  });
+
   it('aligns the partial cells a sheet cuts short, rather than leaving a ragged edge', () => {
     // 20 × 15 at a grid of 4 leaves a three-row strip at the bottom. Skipping it would leave the
     // only unaligned part of the image exactly where a sprite sheet's last row of components sits.
@@ -97,14 +109,15 @@ describe('alignToGrid', () => {
     // Asserted against the colour the strip should actually hold, not merely against itself: the
     // output buffer starts zero-filled, so "every pixel in the cell matches" is equally true of a
     // cell that was never written at all — which is precisely the implementation this test rules
-    // out. The strip's first cell is 4 × 3 all-distinct pixels, so its modal vote ties and the
-    // centre tie-break resolves it: the cell's centre is (1.5, 13), and nearest-then-earliest takes
-    // the pixel at x = 1, y = 13.
-    const expected = readPixel(NOISY.data, pixelOffset(NOISY.width, 1, 13));
+    // out. The strip's last cell is the one clear of the transparent columns, which vote as one
+    // field: 4 × 3 all-distinct opaque pixels, so its modal vote ties and the centre tie-break
+    // resolves it. The cell's centre is (17.5, 13), and nearest-then-earliest takes the pixel at
+    // x = 17, y = 13.
+    const expected = readPixel(NOISY.data, pixelOffset(NOISY.width, 17, 13));
     const aligned = alignToGrid(NOISY, regularMesh(20, 15, 4, CORNER));
 
     for (let y = 12; y < 15; y += 1) {
-      for (let x = 0; x < 4; x += 1) {
+      for (let x = 16; x < 20; x += 1) {
         expect(readPixel(aligned.data, pixelOffset(aligned.width, x, y))).toEqual(expected);
       }
     }
