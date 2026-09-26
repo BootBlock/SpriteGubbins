@@ -86,7 +86,7 @@ export function readCandidate(
   const colors = new Set<number>();
   crops.forEach(({ prologue, reference }, index) => {
     const image = images[index];
-    if (image === undefined) return;
+    if (image === undefined) throw new Error('Every crop is quantised to one region of its own');
     const { source, mesh } = prologue;
     fidelity += ssimAgainst(reference, upscaleOverMesh(image, mesh, source.width, source.height));
     for (const color of colorHistogram(image).keys()) colors.add(color);
