@@ -167,11 +167,12 @@ export interface TuneOutcome {
    */
   readonly rounds: number;
   /**
-   * How many candidate positions were run, across every stage plus the one the reader arrived with.
+   * How many candidate positions were ranked, across every stage plus the one the reader arrived with.
    *
-   * Positions, not runs of the pipeline: each one is read on every crop, so the pipeline ran this
-   * many times {@link crops}. The chip the panel draws states both figures side by side for that
-   * reason.
+   * Positions, not runs of the pipeline: each one is read on every crop, so the chip the panel draws
+   * states both figures side by side. **A position ranked twice is counted twice and run once** — every
+   * stage ranks the dials in force, whose reading the stage before it already took — so the pipeline
+   * ran at most this many times {@link crops}. See `candidateReader`.
    */
   readonly candidates: number;
   /** The winner's own reading, which is what the stages were ranked by. */

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { imageFrom, soften } from '../test/images.ts';
 import { oklabToSrgb, srgbToOklab } from './oklab.ts';
 import { oklabPlanes } from './oklabPlanes.ts';
-import { meanSsim } from './ssim.ts';
+import { meanSsim, ssimAgainst, ssimReference } from './ssim.ts';
 
 /**
  * The same index computed the slow way — every window summed directly, no summed-area tables.
@@ -117,6 +117,17 @@ describe('meanSsim', () => {
     });
 
     expect(meanSsim(ART, copy)).toBeCloseTo(1, 12);
+  });
+
+  it('answers the same from one reference however many images are scored against it', () => {
+    // What the auto-tune sweep relies on when it measures each crop once: a reference is read and
+    // never written, so the tenth image scored against it gets the figure a fresh one would give.
+    const others = [soften(ART), towardFlat(ART, 1), outlineCleared(ART), ART, soften(ART)];
+    const reference = ssimReference(ART);
+
+    expect(others.map((other) => ssimAgainst(reference, other))).toEqual(
+      others.map((other) => meanSsim(ART, other)),
+    );
   });
 
   it('agrees with the same index summed directly, window by window', () => {
