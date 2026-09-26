@@ -1642,6 +1642,10 @@ export const WIPE_STEP_COARSE = 0.1;
  * shaded and washed to half included — with a margin, **32** is the last rung short of the artwork,
  * and **64** is past where the nearest hues that are *not* the key begin — rose and purple measure
  * 40 and 49 — so it is a rung to reach for once and check the sprite against, not one to sit at.
+ * Greys, greens and teals stay out of every rung: {@link KEY_LATITUDE_FLOOR} measures them straight,
+ * and mid grey reads 86. What 64 does take is the warm and violet artwork near the key's hue — it
+ * leaves `armour.png` 2,481 fewer opaque pixels than the default rung, and `cyborg_black_red.png`,
+ * whose armour is dark red, 48,361 fewer.
  * The top rung is also where a black key does its work: OKLab spreads the dark greys apart, so a
  * drifted black field that RGB called near costs more of the scale to reach — see
  * `DEFAULT_KEY_TOLERANCE`.
@@ -1654,14 +1658,40 @@ export const KEY_TOLERANCES = [0, 8, 16, 24, 32, 64] as const;
  *
  * The whole of `keyDistance.ts` in one number: a difference lying in the plane that holds black, the
  * key and white — shading and washing out, which is what a returned field actually does — is divided
- * by this before it is measured, and a difference standing off that plane is not. The reasoning, and
- * the measurements that fix it at 2 rather than 3, are in that file.
+ * by this before it is measured, and a difference standing off that plane is not. Only a pixel that
+ * still carries the key's hue is measured this way; {@link KEY_LATITUDE_FLOOR} says how much of it.
+ * The reasoning is in that file.
  *
  * Here rather than there because it is the number the tolerance ladder above is calibrated against,
  * and the two cannot be read apart: raising it would move every rung's meaning without changing a
  * digit of them.
  */
 export const KEY_SHADING_LATITUDE = 2;
+
+/**
+ * The least of the key's chroma a pixel must carry along the key's own hue, as a fraction of the
+ * key's, before {@link KEY_SHADING_LATITUDE} discounts its difference from the key.
+ *
+ * The plane the latitude runs along is unbounded, and it holds more than the key's variations: every
+ * grey, and every colour on the far side of the grey axis. Measured with the whole plane discounted,
+ * mid grey sat 43 from the recommended magenta and a mid green 64, so the ladder's top rung took
+ * 107,738 of the 140,608 colours in the RGB cube sampled every fifth step, and on the test sheets it
+ * left `armour.png` 306,490 opaque pixels of the 518,696 the default rung leaves, `cyborg_healer.png`
+ * 182,433 of 480,677 and `three-quarter-view_tiles1.png` 75,898 of 540,022. A grey carries none of
+ * the key's chroma and a green carries less than none, so below this floor a pixel is measured
+ * straight: both of those now read 86 and more, and the top rung takes 41,917 cube colours.
+ *
+ * **0.25 because the key's own variations keep more than that, as far as the ladder reaches.** A
+ * shade reaches it only at 1/64 of the key's light, `#220022`, and a wash at about 63% white in
+ * linear light, `#FFD0FF`. The field fixtures in `keyDistance.test.ts` keep 0.67 to 0.98. So every
+ * rung up to the default keys exactly what it keyed before on all eight test sheets and across the
+ * cube, and 32 keeps 45 more cube colours and at most 21 more pixels on a test sheet, on
+ * `cyborg_monk.png`. **0.35** moves rung 24 by a pixel on `vehicles_and_props.png`, and at 32
+ * leaves 193 more of the monk's pixels standing, dusty mauve such as `#B070A0`, which keeps 0.32 of
+ * the key's chroma along its hue. **0.1** lets 60,349 more pixels of `cyborg_black_red.png`'s dark
+ * red armour go at the top rung. `tests/quantiser-figures-key-latitude.test.ts` pins these figures.
+ */
+export const KEY_LATITUDE_FLOOR = 0.25;
 
 /**
  * Where the tolerance starts: loose enough that the recommended magenta works on the sheets models

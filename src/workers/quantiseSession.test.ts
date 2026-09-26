@@ -51,7 +51,7 @@ function resultOf(side: number): QuantiseResult {
     duplicates: [],
     snapped: false,
     strips: null,
-    offset: { x: 0, y: 0 },
+    leadingShift: { x: 0, y: 0 },
   };
 }
 

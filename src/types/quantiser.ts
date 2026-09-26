@@ -51,14 +51,33 @@ export type PixelGrid = number;
  * cut falls, each in `[0, grid)`.
  *
  * `{x: 0, y: 0}` is a grid anchored at the image's own corner, which returned sheets almost never
- * are — a generator places its art wherever composition puts it. The offset is read off the mesh
- * the transform measured rather than ever being typed, so it appears in no **setting**: a stored
- * offset would be the stale half of a pair the moment the grid beside it was overtyped. It does
- * ride on the {@link QuantiseResult} coming back the other way, because the pane that draws the
- * result against the source has to know how wide the leading cell was — a result's own facts
- * travel with it, exactly as its colour count does.
+ * are — a generator places its art wherever composition puts it. The offset is measured from the
+ * image (`exactGridOffset` in `edgeLattice.ts`) rather than ever being typed, so it appears in no
+ * **setting**: a stored offset would be the stale half of a pair the moment the grid beside it was
+ * overtyped.
  */
 export interface GridOffset {
+  readonly x: number;
+  readonly y: number;
+}
+
+/**
+ * How far the mesh's first interior cut falls from a full cell in, per axis, in source pixels:
+ * `mesh[1] − grid`, and 0 on an axis the mesh does not cut at all.
+ *
+ * **Signed, and not a {@link GridOffset}**, because the leading cell can be wider than the grid as
+ * well as narrower. `boundEndCells` folds an end band of fewer than three pixels into the cell beside
+ * it, so a leading cell of 7 or 8 at a grid of 6 is ordinary. A placement confined to `[0, grid)` has
+ * no value for one, and a pane reading one would draw the whole result a pixel or two off the
+ * source. Negative is a
+ * leading cell narrower than the grid, positive a wider one.
+ *
+ * It rides on the {@link QuantiseResult} rather than any setting, because the pane that draws the
+ * result against the source has to know how wide the leading cell was, and a stored figure would be
+ * stale the moment the grid beside it was overtyped. A result's own facts travel with it, exactly as
+ * its colour count does.
+ */
+export interface LeadingCellShift {
   readonly x: number;
   readonly y: number;
 }
@@ -1048,9 +1067,9 @@ export interface SpriteStrip {
  * reading here is either free or already paid for: the segmentation and the three readings taken
  * over it are what `settleSprites` had to have in order to edit the sheet at all, the colour count
  * and the palette come from one histogram of a result the transform has just written, and the
- * keyed share and the offset are facts the prologue already established. The difference map is the
- * one reading that is a *second* walk, and it is over the source rather than the result — which at
- * a grid of 6 is thirty-six times the pixels of everything above.
+ * keyed share and the leading-cell shift are facts the prologue already established. The difference
+ * map is the one reading that is a *second* walk, and it is over the source rather than the result —
+ * which at a grid of 6 is thirty-six times the pixels of everything above.
  *
  * So the split is a reading, not a knob: `quantiseFromPrologue` answers everything the transform
  * knows, and `quantiseImage` adds the one reading a caller has to ask for by asking for it. The
@@ -1132,14 +1151,14 @@ export interface QuantiseSheet {
    */
   readonly strips: readonly SpriteStrip[] | null;
   /**
-   * Where the grid sat on the source, as the transform measured it.
+   * How far the leading cell on each axis differs from a full cell, as the transform measured it.
    *
-   * Carried because a non-zero offset changes what the first pixel of each axis *is* — a leading
-   * partial cell covering only `offset` source pixels — and the comparison view cannot place the
-   * result against the source without knowing that. See {@link GridOffset} for why it is a fact of
-   * the result rather than a setting.
+   * Carried because a non-zero shift changes what the first pixel of each axis *is* — a leading
+   * cell covering `grid + leadingShift` source pixels rather than `grid` — and the comparison view
+   * cannot place the result against the source without knowing that. See {@link LeadingCellShift}
+   * for why it is signed.
    */
-  readonly offset: GridOffset;
+  readonly leadingShift: LeadingCellShift;
   /**
    * Distinct non-transparent colours in {@link image}.
    *

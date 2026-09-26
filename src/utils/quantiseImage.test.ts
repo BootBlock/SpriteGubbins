@@ -173,7 +173,7 @@ describe('quantiseImage', () => {
     const dilated = quantiseImage(INSET_SHEET, settings({ grid: 8 }));
     const cells = pixels(dilated.image);
 
-    expect(dilated.offset).toEqual({ x: 6, y: 6 });
+    expect(dilated.leadingShift).toEqual({ x: -2, y: -2 });
     expect(dilated.image.width).toBe(5);
     expect(cells[3]?.[3]).toEqual(TRINKET);
     // The sprite fills its four cells exactly — the offset put the lattice on its own boundaries.
@@ -284,6 +284,26 @@ describe('quantiseImage', () => {
     expect(result.colors).toBe(1);
   });
 
+  it('reports a leading cell wider than the grid, where an end band was folded into it', () => {
+    // A two-pixel margin is narrower than the three `boundEndCells` keeps as a cell of its own, so it
+    // is folded into the first art cell, which comes back ten wide at a grid of 8. The comparison pane
+    // moves the result by this figure, so a 0 here would draw the whole result two source pixels off
+    // the source.
+    const margin: Rgba = { r: 250, g: 250, b: 250, a: 255 };
+    const banded = imageFrom(130, 130, (x, y) => {
+      if (x < 2 || y < 2) return margin;
+      const cellX = Math.floor((x - 2) / 8);
+      const cellY = Math.floor((y - 2) / 8);
+      return readPixel(SPRITE.data, pixelOffset(SPRITE.width, cellX, cellY));
+    });
+
+    const result = quantiseImage(banded, settings({ grid: 8 }));
+
+    expect(result.leadingShift).toEqual({ x: 2, y: 2 });
+    expect(result.image.width).toBe(16);
+    expect(result.image.height).toBe(16);
+  });
+
   it('recovers inset art exactly, without the margin being cropped off first', () => {
     // The reported failure this pairs with the ordering test above: a returned sheet's art sits
     // wherever composition put it, and a corner-anchored alignment quantised it at the right scale
@@ -307,7 +327,7 @@ describe('quantiseImage', () => {
 
     const result = quantiseImage(inset, settings({ grid: 8 }));
 
-    expect(result.offset).toEqual({ x: 3, y: 3 });
+    expect(result.leadingShift).toEqual({ x: -5, y: -5 });
     expect(result.image.width).toBe(17);
     expect(result.image.height).toBe(17);
     expect(readPixel(result.image.data, pixelOffset(17, 0, 0))).toEqual(margin);
@@ -565,7 +585,7 @@ describe('quantiseImage', () => {
           channels(first.image),
         );
         expect(again.colors).toBe(first.colors);
-        expect(again.offset).toEqual(first.offset);
+        expect(again.leadingShift).toEqual(first.leadingShift);
         expect(again.keyedShare).toBe(first.keyedShare);
       }
     }

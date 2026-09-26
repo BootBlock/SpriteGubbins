@@ -17,8 +17,8 @@ import { ImageComparison } from './ImageComparison.tsx';
  *
  * The result is one pixel per grid cell, so drawing it at `zoom` — as this did — showed it `grid`
  * times smaller than the sheet beside it, and no amount of linking the two scroll positions could
- * have made that a comparison. The canvases' CSS sizes, the windows clipping them, and the inset a
- * measured grid offset pulls the result back by are where that is decided, and they are what these
+ * have made that a comparison. The canvases' CSS sizes, the windows clipping them, and the inset the
+ * measured leading-cell shift moves the result by are where that is decided, and they are what these
  * tests read.
  */
 class NoopResizeObserver {
@@ -39,13 +39,13 @@ afterEach(() => {
 const SOURCE_SIDE = 128;
 
 /**
- * A result as `quantiseImage` returns one: one pixel per mesh cell — `⌈w / grid⌉` a side for a
- * corner-anchored regular mesh, one more where a non-zero offset opens a leading partial cell.
+ * A result as `quantiseImage` returns one: one pixel per mesh cell — a leading cell of
+ * `grid + leadingShift` source pixels, then full cells to the edge, which is `⌈w / grid⌉` a side for
+ * a corner-anchored regular mesh.
  */
-function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }, distance = 0): QuantiseResult {
-  const lead = (along: number) => (along > 0 ? 1 : 0);
-  const side = (along: number) => lead(along) + Math.ceil((SOURCE_SIDE - along) / grid);
-  const image = createImage(side(offset.x), side(offset.y));
+function resultFor(grid: number, colors = 32, leadingShift = { x: 0, y: 0 }, distance = 0): QuantiseResult {
+  const side = (shift: number) => 1 + Math.ceil((SOURCE_SIDE - grid - shift) / grid);
+  const image = createImage(side(leadingShift.x), side(leadingShift.y));
   return {
     image,
     difference: flatDifference(image.width, image.height, distance),
@@ -57,7 +57,7 @@ function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }, distance 
     duplicates: [],
     snapped: false,
     strips: null,
-    offset,
+    leadingShift,
   };
 }
 
@@ -117,8 +117,8 @@ describe('ImageComparison', () => {
     });
   }
 
-  it('pulls an offset result back by its leading cell’s deficit, inside the source’s window', () => {
-    // A measured offset of {3, 3} at a grid of 8 opens a leading partial cell: the result is 17 a
+  it('pulls a result back by its narrow leading cell’s deficit, inside the source’s window', () => {
+    // A leading cell of 3 at a grid of 8, a shift of −5 on each axis: the result is 17 a
     // side, its canvas 136px at 1× — and drawn as-is, every cell after the first would sit 5px off
     // the source pixels it covers, which on linked panes reads as the transform having moved the
     // art. The canvas is pulled back by exactly that deficit and the window clips it to the source's
@@ -131,7 +131,7 @@ describe('ImageComparison', () => {
         sourceColors={200}
         scale={null}
         grid={8}
-        quantised={{ result: resultFor(8, 32, { x: 3, y: 3 }), grid: 8 }}
+        quantised={{ result: resultFor(8, 32, { x: -5, y: -5 }), grid: 8 }}
         busy={false}
       />,
     );
@@ -143,6 +143,36 @@ describe('ImageComparison', () => {
     expect(quantised.style.width).toBe('136px');
     expect(quantised.style.marginLeft).toBe('-5px');
     expect(quantised.style.marginTop).toBe('-5px');
+    expect(quantised.parentElement?.style.width).toBe(`${String(SOURCE_SIDE)}px`);
+    expect(quantised.parentElement?.style.height).toBe(`${String(SOURCE_SIDE)}px`);
+  });
+
+  it('pushes a result on by its wide leading cell’s surplus, inside the source’s window', () => {
+    // A leading cell of 10 at a grid of 8, a shift of +2 on each axis — the end band `boundEndCells`
+    // folds into the first cell, and most of the keyed corpus at a grid of 6. The result is 16 a side
+    // and its canvas 128px at 1×, and drawn as-is its second cell would start at 8 where the source's
+    // starts at 10. The canvas is moved down and right by that surplus, the opposite way to the
+    // narrow case above, and the window still clips it to the source's own extent.
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    render(
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={null}
+        grid={8}
+        quantised={{ result: resultFor(8, 32, { x: 2, y: 2 }), grid: 8 }}
+        busy={false}
+      />,
+    );
+    const quantised = screen.getByRole('img', {
+      name: 'The sheet after grid alignment and palette reduction',
+    });
+
+    expect(quantised).toHaveAttribute('width', '16');
+    expect(quantised.style.width).toBe('128px');
+    expect(quantised.style.marginLeft).toBe('2px');
+    expect(quantised.style.marginTop).toBe('2px');
     expect(quantised.parentElement?.style.width).toBe(`${String(SOURCE_SIDE)}px`);
     expect(quantised.parentElement?.style.height).toBe(`${String(SOURCE_SIDE)}px`);
   });

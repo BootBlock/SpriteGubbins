@@ -1,6 +1,5 @@
 import type {
   ColorReduction,
-  GridMesh,
   QuantisePrologue,
   QuantiseResult,
   QuantiseSettings,
@@ -21,6 +20,7 @@ import { quantisePrologue } from './quantisePrologue.ts';
 import { settleSprites } from './settleSprites.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { kCentroidCells } from './kCentroidVote.ts';
+import { leadingCellShift } from './leadingCellShift.ts';
 import { applyLockedPalette } from './lockedPalette.ts';
 import { outlineExpansion } from './outlineExpansion.ts';
 import { buildPalette } from './wuQuantiser.ts';
@@ -312,7 +312,7 @@ export function quantiseFromPrologue(prologue: QuantisePrologue, settings: Quant
     // which is where the reason lives, and it is the same one `duplicates` carries.
     strips: settled.strips,
     // The comparison view places the result against the source with this — see `QuantiseResult`.
-    offset: meshOffset(mesh, settings.grid),
+    leadingShift: leadingCellShift(mesh, settings.grid),
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than
     // to any setting, so it is measured once when the sheet loads — see `SheetFacts`.
     //
@@ -326,29 +326,6 @@ export function quantiseFromPrologue(prologue: QuantisePrologue, settings: Quant
     // from a result every pass since has been editing.
     keyedShare: prologue.keyedShare,
   };
-}
-
-/**
- * The mesh's leading-cell placement, in the terms the comparison view draws with.
- *
- * The panes draw the result at one uniform magnification, so what they need from the mesh is how
- * wide its leading partial cell is on each axis — the second start, where the first is the image
- * edge at 0. A mesh whose cells drift can put any interior cut a pixel or two off the uniform
- * position, which a uniformly scaled canvas cannot represent; the leading cell dominates the error,
- * and correcting it keeps the panes within the drift itself, exact whenever the art is regular.
- *
- * **It reads a bound cell, not an arbitrary one**, and that is what keeps the inset a rendering
- * correction rather than a compensation for the result itself. `boundEndCells` in `boundEndCells.ts`
- * merges an end band of fewer than three source pixels into the cell beside it, so what this reports
- * is a cell that genuinely holds a band of the sheet — never the one-pixel band that used to reach
- * here, which this view nudged the pane for while the exported file carried it as an ordinary row.
- */
-function meshOffset(mesh: GridMesh, grid: number): { x: number; y: number } {
-  const leading = (starts: readonly number[]): number => {
-    const second = starts[1];
-    return second !== undefined && second < grid ? second : 0;
-  };
-  return { x: leading(mesh.x), y: leading(mesh.y) };
 }
 
 /**
