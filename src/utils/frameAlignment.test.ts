@@ -1,13 +1,36 @@
-import { describe, expect, it } from 'vitest';
-import { DEFAULT_SPRITE_GAP } from '../constants/quantiser.ts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_SPRITE_GAP, FRAME_DRIFT_SEARCH } from '../constants/quantiser.ts';
 import { imageFrom } from '../test/images.ts';
-import type { PixelShift, SpriteBox } from '../types/quantiser.ts';
+import type { CoverageMask, PixelShift, SpriteBox } from '../types/quantiser.ts';
 import { sheetStrips } from './frameAlignment.ts';
 import { FULLY_OPAQUE, FULLY_TRANSPARENT } from './imageData.ts';
 import { spriteSegments } from './spriteSegments.ts';
 
 const INK = { r: 20, g: 30, b: 40, a: FULLY_OPAQUE };
 const CLEAR = { r: 0, g: 0, b: 0, a: FULLY_TRANSPARENT };
+
+/** Every registration the pass asked for, with the reference and reach it was handed. */
+const registrations = vi.hoisted(() => [] as { reference: CoverageMask; reach: number }[]);
+
+/**
+ * The real `registerFrame`, recorded — which is how a test tells the reach the pass searched at and
+ * whether a strip's reference was packed once or once per frame, neither of which a drift shows on a
+ * sheet whose frames sit within a pixel of their seeds.
+ */
+vi.mock('./frameRegister.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./frameRegister.ts')>();
+  return {
+    ...actual,
+    registerFrame: (reference: CoverageMask, frame: CoverageMask, reach: number) => {
+      registrations.push({ reference, reach });
+      return actual.registerFrame(reference, frame, reach);
+    },
+  };
+});
+
+beforeEach(() => {
+  registrations.length = 0;
+});
 
 const FRAME_SIDE = 6;
 const SHEET_WIDTH = 200;
@@ -176,5 +199,29 @@ describe('sheetStrips', () => {
     // row has enough evidence to name the culprit.
     expect(driftsOf(twoRows)[0]?.map((drift) => drift.x)).toEqual([0, 0, 0]);
     expect(driftsOf(twoRows)[1]?.map((drift) => drift.x)).toEqual([0, -1, 0]);
+  });
+
+  it('packs each strip’s reference once, and searches every frame at the reach the budget affords', () => {
+    const small = rowOf([10, 30, 50, 70]);
+    sheetStrips(small, boxesOf(small), null, GAP);
+
+    expect(registrations.map((call) => call.reach)).toEqual([
+      FRAME_DRIFT_SEARCH,
+      FRAME_DRIFT_SEARCH,
+      FRAME_DRIFT_SEARCH,
+    ]);
+    expect(new Set(registrations.map((call) => call.reference)).size).toBe(1);
+
+    // The shape of issue #470: four painted frames 1000 × 1001 on a 4096 × 1100 sheet, which the
+    // full reach would read 289 times over and the budget reads 169 times — see `affordableDriftReach`.
+    registrations.length = 0;
+    const lefts = [24, 1048, 2072, 3090];
+    const large = imageFrom(4096, 1100, (x, y) =>
+      y >= 50 && y < 1051 && lefts.some((left) => x >= left && x < left + 1000) ? INK : CLEAR,
+    );
+    sheetStrips(large, boxesOf(large), null, GAP);
+
+    expect(registrations.map((call) => call.reach)).toEqual([6, 6, 6]);
+    expect(new Set(registrations.map((call) => call.reference)).size).toBe(1);
   });
 });

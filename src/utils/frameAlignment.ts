@@ -1,7 +1,8 @@
-import { FRAME_DRIFT_SEARCH } from '../constants/quantiser.ts';
 import type { AlignedFrame, PixelShift, SpriteBox, SpriteStrip } from '../types/quantiser.ts';
+import { affordableDriftReach } from './affordableDriftReach.ts';
 import { bordersArtwork } from './bordersArtwork.ts';
 import { reachesAny } from './boxClearance.ts';
+import { coverageMask } from './coverageMask.ts';
 import { driftAt, fitLattice } from './frameLattice.ts';
 import { registerFrame } from './frameRegister.ts';
 import { spriteStrips } from './spriteStrips.ts';
@@ -47,8 +48,9 @@ import { spriteStrips } from './spriteStrips.ts';
  * which they mean anything — a frame that has just been put on its slot has a drift of zero whatever
  * it arrived with — and it is the same rule the symmetry and duplicate readings are taken under.
  *
- * Pure. Linear in the sheet's sprites, and per frame a constant sweep bounded by
- * {@link FRAME_DRIFT_SEARCH} over that frame's own coverage.
+ * Pure. Each sprite's coverage is packed into a mask once, so a strip's reference is read once
+ * however many frames are registered against it, and the registration's whole sweep is bounded by
+ * `FRAME_SWEEP_BUDGET` through the one reach `affordableDriftReach` gives the sheet.
  */
 export function sheetStrips(
   image: ImageData,
@@ -62,14 +64,16 @@ export function sheetStrips(
   /** The regions already spoken for, which each later move must keep clear of. */
   const claimed: SpriteBox[] = [];
 
-  return spriteStrips(boxes).map((row) => {
-    const reference = row[0];
+  const rows = spriteStrips(boxes);
+  const masks = rows.map((row) => row.map((box) => coverageMask(image, box)));
+  const reach = affordableDriftReach(masks);
+
+  return rows.map((row, rowIndex) => {
+    const [reference, ...later] = masks[rowIndex] ?? [];
     const shifts: PixelShift[] =
       reference === undefined
         ? []
-        : row.map((frame, index) =>
-            index === 0 ? ORIGIN : registerFrame(image, reference, frame, FRAME_DRIFT_SEARCH),
-          );
+        : [ORIGIN, ...later.map((frame) => registerFrame(reference, frame, reach))];
     const lattice = fitLattice(shifts);
 
     const drifts = row.map((_, index) => driftAt(lattice, index, shifts[index] ?? ORIGIN));

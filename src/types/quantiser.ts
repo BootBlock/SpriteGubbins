@@ -837,6 +837,24 @@ export interface SpriteBox {
 }
 
 /**
+ * Which pixels of one sprite's box carry coverage, packed one bit per pixel.
+ *
+ * Each row of the box is `stride` 32-bit words, and column `c` of a row is bit `c & 31` of word
+ * `c >>> 5`. The bits past the box's own width in a row's last word are always clear, so a reader
+ * may AND whole words together without masking the tail. `left` and `top` are the box's corner on
+ * the sheet, which is what a shift between two masks is measured from. See `coverageMask`.
+ */
+export interface CoverageMask {
+  readonly left: number;
+  readonly top: number;
+  readonly width: number;
+  readonly height: number;
+  /** Words per row: the width rounded up to a whole number of words. */
+  readonly stride: number;
+  readonly bits: Uint32Array;
+}
+
+/**
  * What the sheet broke into, or why it did not break into anything a reader can act on.
  *
  * Three outcomes rather than a list with a flag beside it, because they are not one answer at
