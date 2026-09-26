@@ -44,10 +44,14 @@ describe('affordableDriftReach', () => {
   });
 
   it('pays for the reference only as far as a frame can reach into it', () => {
-    const small = maskOf(32, 32);
-    const huge = maskOf(4096, 4096);
+    // A reference 4096 rows tall and four hundred frames 32 square laid against it. Each re-pack of
+    // the reference covers only the 40 rows a frame at the full reach can meet, which the budget
+    // affords; paying for all 4096 of them would cost more than four times the budget.
+    const strip = [maskOf(32, 4096), ...Array.from({ length: 400 }, () => maskOf(32, 32))];
+    const uncapped = 400 * ((2 * FRAME_DRIFT_SEARCH + 1) ** 2 * 32 + (2 * FRAME_DRIFT_SEARCH + 1) * 4096);
 
-    expect(affordableDriftReach([[huge, small, small]])).toBe(FRAME_DRIFT_SEARCH);
+    expect(uncapped).toBeGreaterThan(FRAME_SWEEP_BUDGET);
+    expect(affordableDriftReach([strip])).toBe(FRAME_DRIFT_SEARCH);
   });
 
   it('reads a sheet whose frames cannot afford one ring of candidates at their corner differences', () => {

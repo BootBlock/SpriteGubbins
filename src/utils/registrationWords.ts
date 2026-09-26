@@ -1,8 +1,8 @@
 import type { CoverageMask } from '../types/quantiser.ts';
 
 /**
- * The most mask words `registerFrame` touches registering this frame against this reference at
- * this reach — the figure the frame budget is spent in.
+ * The most mask words `registerFrame` writes or compares registering this frame against this
+ * reference at this reach — the unit of work the frame budget is spent in.
  *
  * Two terms, one for each loop there. Every one of the `(2 × reach + 1)²` candidates compares at most
  * each of the frame's `height × stride` words, and once per column of candidates the reference is
