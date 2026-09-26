@@ -1291,9 +1291,11 @@ export const SMALLEST_STRIP_FRAMES = 3;
  *
  * Eight drawn pixels is half the shortest edge anyone draws a sprite at, so a frame whose coverage
  * best matches the reference further out than this is a frame holding a different drawing rather
- * than the same drawing moved. It is a **bound on cost** in the same breath: the sweep is
- * `(2 × reach + 1)²` readings of one frame's coverage, so an unbounded search would be quadratic in
- * the widest sprite on the sheet while a bounded one is linear in the sheet.
+ * than the same drawing moved. It is a **bound on cost** in the same breath, and not the only one:
+ * the sweep is `(2 × reach + 1)²` readings of one frame's coverage, so an unbounded search would be
+ * quadratic in the widest sprite on the sheet while a bounded one is linear in the sheet — but at
+ * 289 readings per frame, which is a constant large enough to matter on a sheet of large frames.
+ * {@link FRAME_SWEEP_BUDGET} is what narrows it there.
  */
 export const FRAME_DRIFT_SEARCH = 8;
 
@@ -1863,6 +1865,37 @@ export const MAX_IMAGE_PIXELS = MAX_IMAGE_EDGE * MAX_IMAGE_EDGE;
  * the reach from `affordableReach` itself.
  */
 export const SYMMETRY_SWEEP_BUDGET = MAX_IMAGE_PIXELS;
+
+/**
+ * The most coverage-mask words the whole frame registration may touch on one sheet, across every
+ * frame on it.
+ *
+ * {@link FRAME_DRIFT_SEARCH} bounds how far the registration *wanders*; this bounds what the
+ * wandering costs, and it is the bound {@link SYMMETRY_SWEEP_BUDGET} is to the mirror sweep. The
+ * sweep is `(2 × reach + 1)²` candidates, each comparing every word of the frame's mask, so a sheet
+ * of large frames pays 289 passes over each of them at the full reach. `registrationWords` states
+ * what one frame touches, and `affordableDriftReach` takes the widest reach whose total across the
+ * sheet stays within this.
+ *
+ * Before this bound existed, and before the masks were packed, a 4096 × 1100 sheet of four painted
+ * frames (discs 1000 × 1001 with 785,348 opaque pixels each) cost up to 289 image reads per opaque
+ * reference pixel, 226,965,572 per frame. It is now read at a reach of five and touches at most
+ * 4,228,224 words per frame: a ratio of about 54 to 1, before counting that one word compares 32
+ * pixels (issue #470).
+ *
+ * **One word per pixel of the largest sheet this tab admits**, which is what {@link MAX_IMAGE_PIXELS}
+ * is. A word is thirty-two pixels of one row, compared against the frame's in one AND and one bit
+ * count, so the whole registration touches at most as many words as that sheet has pixels, however
+ * the frames on it are shaped.
+ *
+ * **It narrows only frames the reach was never going to help much.** The reach is eight drawn pixels
+ * whatever the frame, so the sheets it narrows hold frames hundreds of pixels across, where a pose
+ * that displaced the box by eight is a fraction of a per cent of the drawing. None of the eight
+ * sheets in `test_sprites/` is narrowed at all, even keyed and read at a grid of 1, where its frames
+ * are largest. `tests/quantiser-figures-frame-registration.test.ts` re-derives every figure in
+ * this docblock.
+ */
+export const FRAME_SWEEP_BUDGET = MAX_IMAGE_PIXELS;
 
 /**
  * How long the grid and tolerance controls settle before the transform is asked for.
