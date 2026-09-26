@@ -25,9 +25,20 @@ describe('the palette lock — the two populations the snap distance is set from
     sheet = await loadCorpusSheet('armour.png');
   }, 120_000);
 
-  /** The lock both docblocks are stated against: the ink-weighted reading's own colours. */
-  const lockFrom = (image: ImageData): readonly Rgba[] =>
-    quantiseImage(image, calibrationSettings({ vote: 'INK_WEIGHTED' })).paletteEntries;
+  /**
+   * The lock both docblocks are stated against: the ink-weighted reading's own colours.
+   *
+   * Taken once per image: four cases read the reference sheet's lock, and each is a whole pass of
+   * the pipeline. `quantiseImage` is pure, so a shared lock is the same lock.
+   */
+  const locks = new WeakMap<ImageData, readonly Rgba[]>();
+  const lockFrom = (image: ImageData): readonly Rgba[] => {
+    const known = locks.get(image);
+    if (known !== undefined) return known;
+    const lock = quantiseImage(image, calibrationSettings({ vote: 'INK_WEIGHTED' })).paletteEntries;
+    locks.set(image, lock);
+    return lock;
+  };
 
   /** How far a colour sits from the lock, in the unit the dial is in. */
   const reachOf = (color: Rgba, lock: readonly LocatedEntry[]): number => {

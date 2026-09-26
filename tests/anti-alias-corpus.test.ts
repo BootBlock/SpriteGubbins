@@ -194,11 +194,24 @@ describe('anti-aliasing over the reference sheets', () => {
     return sheet;
   };
 
+  /**
+   * `movedShare` of one loaded sheet, read once however many cases ask for it — the default floor's
+   * `BOTH` reading is both the first case's figure and the first rung of the ladder below.
+   */
+  const shares = new Map<string, number>();
+  const shareOf = (name: CorpusSheetName, mode: AntiAliasMode, threshold: number): number => {
+    const key = `${name} ${mode} ${String(threshold)}`;
+    const known = shares.get(key);
+    if (known !== undefined) return known;
+    const share = movedShare(sheetFor(name), mode, threshold);
+    shares.set(key, share);
+    return share;
+  };
+
   it.each(CORPUS_SHEETS)('moves the recorded share of %s', (name) => {
     const expected = EXPECTED[name];
-    const sheet = sheetFor(name);
-    const both = movedShare(sheet, 'BOTH', DEFAULT_ANTI_ALIAS_THRESHOLD);
-    const interior = movedShare(sheet, 'INTERIOR', DEFAULT_ANTI_ALIAS_THRESHOLD);
+    const both = shareOf(name, 'BOTH', DEFAULT_ANTI_ALIAS_THRESHOLD);
+    const interior = shareOf(name, 'INTERIOR', DEFAULT_ANTI_ALIAS_THRESHOLD);
     expect(both, expected.note).toBeCloseTo(expected.both, 1);
     expect(interior, expected.note).toBeCloseTo(expected.interior, 1);
     // `BOTH` is the union of the two kinds of boundary, so it can only reach more pixels than the
@@ -221,10 +234,9 @@ describe('anti-aliasing over the reference sheets', () => {
     // default, each step of the floor admits strictly fewer boundaries. It is deliberately not
     // claimed below the default, where it is false — see the test below.
     for (const name of CORPUS_SHEETS) {
-      const sheet = sheetFor(name);
       let previous = Infinity;
       for (const threshold of [DEFAULT_ANTI_ALIAS_THRESHOLD, 32, 48, 64, ANTI_ALIAS_THRESHOLD_RANGE.max]) {
-        const share = movedShare(sheet, 'BOTH', threshold);
+        const share = shareOf(name, 'BOTH', threshold);
         expect(share, `${name} at ${String(threshold)}`).toBeLessThan(previous);
         previous = share;
       }
@@ -238,9 +250,7 @@ describe('anti-aliasing over the reference sheets', () => {
     // `walkEdgeRuns` refuses to reconstruct from. Six of the eight sheets therefore soften less at 0
     // than at 8. The two that do not are the flattest of the corpus, where a boundary is either a
     // full palette step or nothing at all.
-    const looser = CORPUS_SHEETS.filter(
-      (name) => movedShare(sheetFor(name), 'BOTH', 0) < movedShare(sheetFor(name), 'BOTH', 8),
-    );
+    const looser = CORPUS_SHEETS.filter((name) => shareOf(name, 'BOTH', 0) < shareOf(name, 'BOTH', 8));
     expect(looser).toEqual([
       'armour.png',
       'cyborg_black_red.png',

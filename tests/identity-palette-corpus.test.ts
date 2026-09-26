@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { BACKGROUND_KEY_COLORS } from '../src/constants/backgroundKeyColors.ts';
 import { DEFAULT_KEY_TOLERANCE } from '../src/constants/quantiser.ts';
 import type { Rgba } from '../src/types/quantiser.ts';
-import { BACKGROUND_KEYS } from '../src/types/rendering.ts';
+import { BACKGROUND_KEYS, type BackgroundKey } from '../src/types/rendering.ts';
 import { identityPalette } from '../src/utils/identityPalette.ts';
 import { createImage, fromHex, writePixel } from '../src/utils/imageData.ts';
 import { keyBasis, keyDistanceSquared } from '../src/utils/keyDistance.ts';
@@ -83,11 +83,27 @@ describe('the identity digest read from a real generator sheet', () => {
     return image;
   }
 
+  /**
+   * One sheet's digest under one key, read once however many cases ask for it.
+   *
+   * Both cases read the magenta digest of every sheet, and a digest is the palette search over a
+   * whole sheet, so computing it afresh per case repeated a fifth of this suite's work.
+   * `identityPalette` is pure, so a shared digest is the same digest.
+   */
+  const digests = new Map<string, readonly string[]>();
+  function digestOf(name: CorpusSheetName, named: BackgroundKey): readonly string[] {
+    const known = digests.get(`${name} ${named}`);
+    if (known !== undefined) return known;
+    const digest = identityPalette(sheet(name), BACKGROUND_KEY_COLORS[named]);
+    digests.set(`${name} ${named}`, digest);
+    return digest;
+  }
+
   it.each(CORPUS_SHEETS)('leads %s with a colour of the subject, never the key field', (name) => {
     const key = BACKGROUND_KEY_COLORS.MAGENTA_FF00FF;
     if (key === null) throw new Error('The recommended key names no colour');
 
-    const digest = identityPalette(sheet(name), key);
+    const digest = digestOf(name, 'MAGENTA_FF00FF');
 
     // Without this an empty digest would satisfy every assertion below by holding nothing.
     expect(digest.length).toBeGreaterThan(1);
@@ -97,13 +113,12 @@ describe('the identity digest read from a real generator sheet', () => {
   });
 
   it.each(CORPUS_SHEETS)('keeps every entry of %s out of the key field, at every offered key', (name) => {
-    const image = sheet(name);
     const inTheField: string[] = [];
     let entries = 0;
 
     for (const named of BACKGROUND_KEYS) {
       const key = BACKGROUND_KEY_COLORS[named];
-      const digest = identityPalette(image, key);
+      const digest = digestOf(name, named);
 
       // A sheet has colours whichever key is stated; `TRANSPARENT` names none to exclude, so this is
       // the whole of what can be asserted for it.

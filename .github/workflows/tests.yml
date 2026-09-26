@@ -214,10 +214,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The order a shard runs its files in. Vitest starts the files it has timed before longest
+      # first, and orders a file it has never timed by its size in bytes — which on a fresh runner
+      # started a minute-long corpus suite last as often as first, and left the other workers idle
+      # while it finished. Vitest keeps these timings in `results.json` under its cache directory,
+      # merging each run's into what it already held, so every shard restores what it saved last
+      # time and falls back to any shard's when it has none. The timings decide the order and
+      # nothing else: every file runs, and passes or fails, the same either way.
+      #
+      # After `npm ci`, because `npm ci` deletes `node_modules`, where Vitest keeps them. The
+      # cache is saved when the job succeeds, under a key unique to the run.
+      - name: Restore the test timings
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/.vite/vitest
+          key: vitest-timings-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            vitest-timings-shard-${{ matrix.shard }}-
+            vitest-timings-
+
       # The pure utilities — the prompt compiler and the atlas maths — are where this app's
       # correctness actually lives.
+      #
+      # `--maxWorkers=100%` because Vitest's own default in a run is one worker fewer than the
+      # machine has cores, which leaves one of a runner's four idle. The main process only
+      # schedules and reports, so four workers keep every core busy.
       - name: Run unit tests
-        run: npm run test:run -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+        run: npm run test:run -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} --maxWorkers=100%
 
   # The check the ruleset on `main` requires is named `Unit tests`, and a matrix names each of its
   # jobs after its own values, so this job carries that name and passes only when every shard did.
