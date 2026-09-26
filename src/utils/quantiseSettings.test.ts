@@ -1,4 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import {
+  ANTI_ALIAS_MODES,
+  ANTI_ALIAS_PALETTES,
+  DITHER_PATTERNS,
+  FRAME_ALIGNMENT_MODES,
+  SYMMETRY_MODES,
+  VOTE_METHODS,
+} from '../types/quantiser.ts';
 import type { QuantiseSettings, QuantiseSurroundings, QuantiseTuning } from '../types/quantiser.ts';
 import { sameQuantiseSettings, sameSurroundings } from './quantiseSettings.ts';
 
@@ -103,6 +111,24 @@ describe('sameQuantiseSettings', () => {
     for (const [dial, move] of Object.entries(MOVED)) {
       expect(sameQuantiseSettings(BASE, move(BASE)), `${dial} did not separate two sheets`).toBe(false);
     }
+  });
+
+  it.each([
+    ['vote', VOTE_METHODS.map((vote) => ({ ...BASE, vote }))],
+    ['dither', DITHER_PATTERNS.map((dither) => ({ ...BASE, dither }))],
+    ['symmetry', SYMMETRY_MODES.map((symmetry) => ({ ...BASE, symmetry }))],
+    ['frameAlignment', FRAME_ALIGNMENT_MODES.map((frameAlignment) => ({ ...BASE, frameAlignment }))],
+    ['antiAlias', ANTI_ALIAS_MODES.map((antiAlias) => ({ ...BASE, antiAlias }))],
+    ['antiAliasPalette', ANTI_ALIAS_PALETTES.map((antiAliasPalette) => ({ ...BASE, antiAliasPalette }))],
+  ])('separates every %s mode from every other', (_dial, positions: readonly QuantiseSettings[]) => {
+    // The walk above moves each of these dials to one other mode, which a comparison that asked only
+    // whether the pass rewrites pixels would still pass. `OFF` and `CHECK` both leave the pixels alone,
+    // but only `CHECK` takes a reading, so a sheet filed under one is not the answer to the other.
+    positions.forEach((left, i) => {
+      positions.slice(i + 1).forEach((right) => {
+        expect(sameQuantiseSettings(left, right)).toBe(false);
+      });
+    });
   });
 
   it('separates the grid, the key and the budget, which the walk above does not reach', () => {

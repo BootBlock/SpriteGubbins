@@ -104,6 +104,15 @@ describe('what each target model says about its own prompt length', () => {
     expect(note, `${model.id}'s budget note carries a straight apostrophe`).not.toMatch(/'/);
     expect(note, `${model.id}'s budget note carries a straight double quote`).not.toMatch(/"/);
   });
+
+  it('says there is no vendor to state a figure for GENERIC, and for no other target', () => {
+    // `NO_VENDOR` is the one state that is about the target rather than its vendor's documents, so
+    // a second target carrying it would claim that target has no vendor at all.
+    const withoutVendor = TARGET_MODELS.filter(
+      (model) => model.capabilities.promptBudget.kind === 'NO_VENDOR',
+    );
+    expect(withoutVendor.map((model) => model.id)).toEqual(['GENERIC']);
+  });
 });
 
 describe('where each target model can be generated with', () => {
