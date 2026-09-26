@@ -1,10 +1,10 @@
-import { presetCollectionLabel } from '../../constants/presets/collections.ts';
-import type { PresetCollectionId } from '../../constants/presets/collections.ts';
+import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
+import type { SubjectCategory } from '../../types/subject.ts';
 import type { PresetEntry } from '../../utils/presetSearch.ts';
 import { PresetCard } from './PresetCard.tsx';
 
 interface PresetCollectionPanelProps {
-  readonly collection: PresetCollectionId;
+  readonly collection: SubjectCategory;
   /** This collection's presets, already narrowed by whatever query is live. */
   readonly entries: readonly PresetEntry[];
   /**
@@ -42,10 +42,12 @@ function emptyMessage(narrowedBy: string | null): string {
  * is a dozen cards rather than the whole library, whatever the library grows to.
  */
 export function PresetCollectionPanel({ collection, entries, narrowedBy }: PresetCollectionPanelProps) {
+  const { label } = CATEGORY_OPTIONS[collection];
+
   return (
-    <section className="space-y-4" aria-label={presetCollectionLabel(collection)}>
+    <section className="space-y-4" aria-label={label}>
       <div className="flex items-baseline gap-2">
-        <h3 className="text-base font-bold text-tab">{presetCollectionLabel(collection)}</h3>
+        <h3 className="text-base font-bold text-tab">{label}</h3>
         <span className="font-mono text-2xs text-ink-faint">
           {entries.length} preset{entries.length === 1 ? '' : 's'}
         </span>

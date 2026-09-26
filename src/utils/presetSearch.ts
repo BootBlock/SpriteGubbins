@@ -1,7 +1,7 @@
-import { presetCollectionLabel } from '../constants/presets/collections.ts';
-import type { PresetCollectionId } from '../constants/presets/collections.ts';
+import { CATEGORY_OPTIONS } from '../constants/categories/index.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
+import type { SubjectCategory } from '../types/subject.ts';
 
 /**
  * Searching the preset library, as a pure function of the library and the query.
@@ -21,7 +21,7 @@ import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 /** One preset, with everything the library view needs to place, colour and match it. */
 export interface PresetEntry {
   readonly preset: PresetArchetype;
-  readonly collection: PresetCollectionId;
+  readonly collection: SubjectCategory;
   /**
    * Position in the whole library, which fixes this preset's stop on the hue wheel.
    *
@@ -60,7 +60,7 @@ function normalise(text: string): string {
  * keys, is the copy that silently stops covering the thing it names. Numbers and booleans are skipped
  * because neither is something anyone types into a search box.
  */
-function haystackFor(preset: PresetArchetype, collection: PresetCollectionId): string {
+function haystackFor(preset: PresetArchetype, collection: SubjectCategory): string {
   const subject = SUBJECT_FIELD_KEYS.map((key) => preset.subject[key]);
   const output = Object.values(preset.output).filter((value): value is string => typeof value === 'string');
 
@@ -72,7 +72,7 @@ function haystackFor(preset: PresetArchetype, collection: PresetCollectionId): s
       // haystack holds identifiers. Empty on a preset that has none, which costs the join nothing.
       preset.description,
       preset.category,
-      presetCollectionLabel(collection),
+      CATEGORY_OPTIONS[collection].label,
       ...subject,
       ...output,
     ].join(' '),
@@ -109,8 +109,8 @@ export function matchPresetEntries(entries: readonly PresetEntry[], query: strin
 }
 
 /** How many of `entries` fall in each collection. Collections with no entries are absent. */
-export function countByCollection(entries: readonly PresetEntry[]): ReadonlyMap<PresetCollectionId, number> {
-  const counts = new Map<PresetCollectionId, number>();
+export function countByCollection(entries: readonly PresetEntry[]): ReadonlyMap<SubjectCategory, number> {
+  const counts = new Map<SubjectCategory, number>();
   for (const entry of entries) counts.set(entry.collection, (counts.get(entry.collection) ?? 0) + 1);
   return counts;
 }
