@@ -71,13 +71,13 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * sheet with the anti-aliasing off every pixel is opaque, so coverage adds nothing to any figure.
  * Keyed at the default tolerance against each sheet's corner colour, at the grids the table under
  * {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different sheet, and only
- * `cyborg_healer.png`, `cyborg_black_red.png` and `character_space_marine_blue.png` settle on the
- * dials they settle on unkeyed. Four more move the colour merge by one or two rungs; the reference
- * sheet keeps its merge at `OFF` and turns the cleanup to 20, and at `BOTH` moves the merge a rung,
- * the cleanup to 20 and the strength to 20%. At `OFF`, four descents take the same count and four do not:
- * `three-quarter-view_tiles1.png` ends sooner, at 102 positions rather than 192, and the reference
- * sheet, `ui_elements1.png` and `cyborg_monk.png` run longer — 157 rather than 145, and 145 rather
- * than 102 for the other two.
+ * the reference sheet at `OFF`, `cyborg_healer.png` and `character_space_marine_blue.png` settle on
+ * the dials they settle on unkeyed. Five more move the colour merge by one or two rungs, and the
+ * reference sheet at `BOTH` moves it two, turns the cleanup to 32 and takes four cleanup passes. At
+ * `OFF`, five descents take the same count and three do not: `three-quarter-view_tiles1.png` ends
+ * sooner, at 145 positions rather than 192, and `ui_elements1.png` and `cyborg_monk.png` run longer,
+ * at 145 rather than 102. At `BOTH` the reference sheet takes 372 positions over four rounds, where
+ * unkeyed it takes 229 over three.
  *
  * **The count of positions is what a change to any ladder here has to be judged by**, not a wall
  * clock — the same code over the same sheet takes several times longer on one host than another, so

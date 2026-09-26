@@ -22,7 +22,9 @@ import { type Bounds, mergeNearby } from './mergeNearbyBoxes.ts';
  * same keyed alpha carried through the mesh, and its coordinates are the ones every consumer states
  * its own question in: the studio's target component size is in drawn pixels, so is the cell an
  * atlas affords, and so is what a reader counts in the preview. A box here maps back to an exact
- * source range through `GridMesh` for anything that wants one.
+ * source range through `GridMesh` — `forEachMeshCell` gives each cell's rectangle — for anything
+ * that wants one. `patchSpans` does label the source, because the mesh needs a sprite's source bounds
+ * before any result exists; this reading, of the result, has no such need.
  *
  * **Eight-connected**, because pixel art is drawn that way: a diagonal stair of single pixels is one
  * line to the eye and to the artist, and four-connectivity reports it as a row of separate sprites.

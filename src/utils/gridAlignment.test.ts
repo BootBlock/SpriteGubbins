@@ -260,7 +260,7 @@ describe('upscaleOverMesh', () => {
 
   it('follows a mesh whose cells drift in width', () => {
     // What `boundaryMesh` returns on a generated sheet: no fixed lattice holds every boundary.
-    const mesh = { x: [0, 3, 7, 12, 16], y: [0, 5, 9, 12] };
+    const mesh = { x: [0, 3, 7, 12, 16], y: [0, 5, 9, 12], patches: [] };
     const aligned = alignToGrid(NOISY, mesh);
     const reduced = downscaleNearest(aligned, mesh);
 

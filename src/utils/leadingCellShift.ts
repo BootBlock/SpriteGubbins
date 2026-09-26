@@ -20,8 +20,13 @@ import type { GridMesh, LeadingCellShift, PixelGrid } from '../types/quantiser.t
  * fewer than three source pixels into the cell beside it, so what this reports is a cell that holds a
  * band of the sheet — never a one-pixel band, which the exported file would carry as an ordinary row
  * while this view moved the pane to hide it.
+ *
+ * **It reads the sheet's own cuts, never a patch's.** A patch re-cuts the cells over one sprite at
+ * that sprite's phase, and a uniformly scaled canvas can take one placement per axis, so the panes
+ * hold the sprites within half a cell of their own phases rather than exactly. The sheet's own
+ * leading cell is the placement every patch meets at its outer edges.
  */
-export function leadingCellShift(mesh: GridMesh, grid: PixelGrid): LeadingCellShift {
+export function leadingCellShift(mesh: Pick<GridMesh, 'x' | 'y'>, grid: PixelGrid): LeadingCellShift {
   const along = (starts: readonly number[]): number => {
     const second = starts[1];
     return second === undefined ? 0 : second - grid;

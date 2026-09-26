@@ -1,6 +1,7 @@
 import type { GridMesh, PixelGrid } from '../types/quantiser.ts';
 import { edgeLattice, exactGridOffset } from './edgeLattice.ts';
 import { meshAxis } from './meshAxis.ts';
+import { meshPatches } from './meshPatches.ts';
 import { regularStarts } from './regularStarts.ts';
 import { stepProfile } from './stepProfile.ts';
 
@@ -40,14 +41,21 @@ import { stepProfile } from './stepProfile.ts';
  * interior cell (#279).
  *
  * **The pitch in force is the prior, not the answer.** Where the sheet is not exact, detected lines
- * are accepted only where they sit close to the position the previous accepted line expects — at most
- * a third of a cell away, never less than one pixel — so a strong edge in the middle of a cell cannot
+ * are accepted only where they sit close to the position the previous accepted line expects — within
+ * `axisTolerance`, a third of a cell rounded down — so a strong edge in the middle of a cell cannot
  * pull a cut off the grid mid-walk, and each accepted line re-anchors the expectation, which is what
  * lets the mesh follow drift instead of accumulating against it. Where no line is found near the
  * expected position the mesh completes one there: a boundary too faint to detect is almost certainly
  * at the spacing, and a *missing* cut would merge two of the art's cells for good. How the walk's own
  * starting point is chosen — the other way interior detail could take the axis — is {@link meshAxis}'s own
  * story.
+ *
+ * **Then each sprite's cells are re-cut on that sprite's own boundaries.** A generated sheet is
+ * resampled sprite by sprite, so its sprites sit at different phases, and the walked cuts can agree
+ * with only some of them. {@link meshPatches} re-cuts the cells around each sprite, keeping their
+ * number, so the result is still one pixel per cell of `x` and `y` while the cells over each sprite
+ * begin where its own do. A sheet with no transparency has no sprites to find and takes the walked
+ * cuts alone, and so does an exact sheet, whose single lattice is every sprite's.
  *
  * On an axis with too few detectable boundaries to anchor a walk at all — a flat field, a gradient,
  * heavy noise, dense detail that never stands clear of its background — it falls back to the regular
@@ -64,16 +72,18 @@ export function boundaryMesh(image: ImageData, grid: PixelGrid): GridMesh {
     return {
       x: Array.from({ length: image.width }, (_, index) => index),
       y: Array.from({ length: image.height }, (_, index) => index),
+      patches: [],
     };
   }
   const exact = exactGridOffset(edgeLattice(image), grid);
   if (exact !== null) return regularMesh(image.width, image.height, grid, exact);
 
   const profile = stepProfile(image);
-  return {
+  const walked = {
     x: meshAxis(profile.columnEvidence, image.width, grid),
     y: meshAxis(profile.rowEvidence, image.height, grid),
   };
+  return { ...walked, patches: meshPatches(image, walked, grid) };
 }
 
 /**
@@ -94,5 +104,5 @@ export function regularMesh(
   grid: PixelGrid,
   offset: { x: number; y: number },
 ): GridMesh {
-  return { x: regularStarts(width, grid, offset.x), y: regularStarts(height, grid, offset.y) };
+  return { x: regularStarts(width, grid, offset.x), y: regularStarts(height, grid, offset.y), patches: [] };
 }

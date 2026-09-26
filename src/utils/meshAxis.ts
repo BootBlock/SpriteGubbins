@@ -1,18 +1,9 @@
 import type { PixelGrid } from '../types/quantiser.ts';
+import { axisTolerance } from './axisTolerance.ts';
 import { bestPhase } from './bestPhase.ts';
 import { type BoundaryLine, boundaryClusters } from './boundaryClusters.ts';
 import { boundEndCells } from './boundEndCells.ts';
 import { regularStarts } from './regularStarts.ts';
-
-/**
- * How far a cut may sit from where the walk expected it.
- *
- * `walkFrom` accepts a detected line within this of the expected position and re-anchors on it, so
- * every interior cell it produces is between `grid − tolerance` and `grid + tolerance` wide.
- */
-function axisTolerance(grid: PixelGrid): number {
-  return Math.max(1, Math.floor(grid / 3));
-}
 
 /**
  * One axis's cell starts: detected boundary lines where they agree with the pitch, completed lines

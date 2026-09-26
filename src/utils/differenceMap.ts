@@ -1,4 +1,5 @@
 import type { DifferenceMap, GridMesh } from '../types/quantiser.ts';
+import { forEachMeshCell } from './forEachMeshCell.ts';
 import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 import { pixelDistance } from './pixelDistance.ts';
 import { DIFFERENCE_PRECISION } from '../constants/quantiser.ts';
@@ -55,53 +56,48 @@ export function differenceMap(source: ImageData, result: ImageData, mesh: GridMe
   let total = 0;
   let peak = 0;
 
-  for (const [row, top] of mesh.y.entries()) {
-    const bottom = Math.min(mesh.y[row + 1] ?? source.height, source.height);
-    for (const [column, left] of mesh.x.entries()) {
-      const right = Math.min(mesh.x[column + 1] ?? source.width, source.width);
+  forEachMeshCell(mesh, source.width, source.height, (column, row, left, top, right, bottom) => {
+    const cell = row * width + column;
+    const at = cell * CHANNELS_PER_PIXEL;
+    const resultAlpha = result.data[at + 3] ?? 0;
+    srgbToOklabInto(cellColor, result.data[at] ?? 0, result.data[at + 1] ?? 0, result.data[at + 2] ?? 0);
 
-      const cell = row * width + column;
-      const at = cell * CHANNELS_PER_PIXEL;
-      const resultAlpha = result.data[at + 3] ?? 0;
-      srgbToOklabInto(cellColor, result.data[at] ?? 0, result.data[at + 1] ?? 0, result.data[at + 2] ?? 0);
+    let sum = 0;
+    let counted = 0;
+    let visible = resultAlpha !== FULLY_TRANSPARENT;
 
-      let sum = 0;
-      let counted = 0;
-      let visible = resultAlpha !== FULLY_TRANSPARENT;
+    for (let y = top; y < bottom; y += 1) {
+      for (let x = left; x < right; x += 1) {
+        const from = pixelOffset(source.width, x, y);
+        const r = source.data[from] ?? 0;
+        const g = source.data[from + 1] ?? 0;
+        const b = source.data[from + 2] ?? 0;
+        const alpha = source.data[from + 3] ?? 0;
+        if (alpha !== FULLY_TRANSPARENT) visible = true;
 
-      for (let y = top; y < bottom; y += 1) {
-        for (let x = left; x < right; x += 1) {
-          const from = pixelOffset(source.width, x, y);
-          const r = source.data[from] ?? 0;
-          const g = source.data[from + 1] ?? 0;
-          const b = source.data[from + 2] ?? 0;
-          const alpha = source.data[from + 3] ?? 0;
-          if (alpha !== FULLY_TRANSPARENT) visible = true;
-
-          const packed = ((r * 256 + g) * 256 + b) * 256 + alpha;
-          if (packed !== cachedColor) {
-            srgbToOklabInto(sourceColor, r, g, b);
-            cachedColor = packed;
-          }
-          sum += pixelDistance(sourceColor, alpha, cellColor, resultAlpha);
-          counted += 1;
+        const packed = ((r * 256 + g) * 256 + b) * 256 + alpha;
+        if (packed !== cachedColor) {
+          srgbToOklabInto(sourceColor, r, g, b);
+          cachedColor = packed;
         }
-      }
-
-      // A mesh cut can land on the image's own edge, which closes a cell over no pixels at all.
-      // Nothing was replaced there, so nothing was lost there.
-      const mean = counted === 0 ? 0 : sum / counted;
-      cells[cell] = Math.round(mean * DIFFERENCE_PRECISION);
-      if (mean > peak) peak = mean;
-      // Empty on both sides is not a faithful cell, it is an absent one — averaged in, the empty
-      // margin around a sprite would drag the sheet's figure towards zero in proportion to how much
-      // empty space the artist left, which is the one thing the figure must not measure.
-      if (visible) {
-        total += mean;
-        carried += 1;
+        sum += pixelDistance(sourceColor, alpha, cellColor, resultAlpha);
+        counted += 1;
       }
     }
-  }
+
+    // A mesh cut can land on the image's own edge, which closes a cell over no pixels at all.
+    // Nothing was replaced there, so nothing was lost there.
+    const mean = counted === 0 ? 0 : sum / counted;
+    cells[cell] = Math.round(mean * DIFFERENCE_PRECISION);
+    if (mean > peak) peak = mean;
+    // Empty on both sides is not a faithful cell, it is an absent one — averaged in, the empty
+    // margin around a sprite would drag the sheet's figure towards zero in proportion to how much
+    // empty space the artist left, which is the one thing the figure must not measure.
+    if (visible) {
+      total += mean;
+      carried += 1;
+    }
+  });
 
   return { width, height, cells, mean: carried === 0 ? 0 : total / carried, peak };
 }

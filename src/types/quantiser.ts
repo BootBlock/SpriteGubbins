@@ -94,11 +94,40 @@ export interface LeadingCellShift {
  * art's own cells the further across the sheet it walks. `boundaryMesh` measures where the
  * boundaries actually are and completes the gaps at the expected spacing — except where the sheet is
  * exactly a grid of the scale in force, which has no drift to follow, and there it takes that grid's
- * lattice outright. The transforms in `gridAlignment.ts` walk
- * whatever this holds, so the two of them cannot disagree about where a cell begins.
+ * lattice outright.
+ *
+ * **`x` and `y` fix the result's size and are the cells everywhere no patch covers; `patches` re-cut
+ * the cells over the sprites.** A sheet's sprites are resampled one by one, so they sit at different
+ * phases, and one list of cuts per axis can agree with only some of them — see {@link MeshPatch}.
+ * Every pass that reads cells walks them through `forEachMeshCell`, which is what keeps them agreeing
+ * about where a cell begins.
  */
 export interface GridMesh {
   readonly x: readonly number[];
+  readonly y: readonly number[];
+  /**
+   * Disjoint in result cells, and empty on a sheet that is exact, opaque or scattered, and at any grid
+   * below `SMALLEST_PATCHED_GRID`.
+   */
+  readonly patches: readonly MeshPatch[];
+}
+
+/**
+ * The cells over one sprite, cut where that sprite's own boundaries are rather than where the sheet's.
+ *
+ * It covers result columns `column` to `column + x.length` and rows `row` to `row + y.length`, the
+ * same cells the mesh's own `x` and `y` cut there, so a patch moves cuts and never changes how many
+ * cells there are: the result keeps its size, and every pass that places the result against the
+ * source keeps working. Its first entries are the mesh's own cuts at `column` and `row`, and its far
+ * edges are the mesh's cuts after its last column and row, so the patches and the mesh's other cells
+ * still cover every source pixel exactly once. `meshPatches` argues how the cuts inside are placed.
+ */
+export interface MeshPatch {
+  readonly column: number;
+  readonly row: number;
+  /** The source column each of the patch's cells begins at, ascending. */
+  readonly x: readonly number[];
+  /** The source row each of the patch's cells begins at, ascending. */
   readonly y: readonly number[];
 }
 
