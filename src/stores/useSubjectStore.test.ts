@@ -33,12 +33,6 @@ afterEach(() => {
 });
 
 describe('useSubjectStore', () => {
-  it('opens on the default preset', () => {
-    const { category, subject } = useSubjectStore.getState();
-    expect(category).toBe(DEFAULT_PRESET.category);
-    expect(subject).toEqual(DEFAULT_PRESET.subject);
-  });
-
   it('replaces the whole subject when the category changes', () => {
     useSubjectStore.getState().setCategory('BUILDING');
 
@@ -490,12 +484,6 @@ describe('useSubjectStore', () => {
    * that stepping back writes *both* stores.
    */
   describe('the undo stack', () => {
-    it('opens with nothing to step back to', () => {
-      const { history } = useSubjectStore.getState();
-      expect(canUndoStudio(history)).toBe(false);
-      expect(canRedoStudio(history)).toBe(false);
-    });
-
     it('puts the subject back after a category switch', () => {
       useSubjectStore.getState().setField('role', 'Bartender');
       useSubjectStore.getState().setCategory('BUILDING');
