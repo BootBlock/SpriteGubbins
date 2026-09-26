@@ -2,9 +2,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DEFAULT_PRESET, PRESETS } from '../../constants/presets/index.ts';
-import { PRESET_COLLECTION_IDS, presetCollectionLabel } from '../../constants/presets/collections.ts';
+import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
 import { DEFAULT_PROJECT_ID } from '../../constants/projects.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
+import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
+import type { SubjectCategory } from '../../types/subject.ts';
 import { PresetLibrary } from './PresetLibrary.tsx';
 
 /**
@@ -19,8 +21,8 @@ import { PresetLibrary } from './PresetLibrary.tsx';
  */
 
 /** A collection button, which is what selects what the panel shows. */
-function collectionButton(collection: Parameters<typeof presetCollectionLabel>[0]) {
-  return screen.getByRole('button', { name: new RegExp(presetCollectionLabel(collection)) });
+function collectionButton(collection: SubjectCategory) {
+  return screen.getByRole('button', { name: new RegExp(CATEGORY_OPTIONS[collection].label) });
 }
 
 /** The card for `name`, reached through its heading — a card's own root carries no queryable role. */
@@ -39,15 +41,15 @@ function cardFor(name: string): HTMLElement {
  * be measuring both lists at once.
  */
 function cards(): readonly HTMLElement[] {
-  const panel = screen.getByRole('region', { name: presetCollectionLabel(activeCollection()) });
+  const panel = screen.getByRole('region', { name: CATEGORY_OPTIONS[activeCollection()].label });
   return within(panel).queryAllByRole('listitem');
 }
 
 /** Which collection the list says is current. */
-function activeCollection(): Parameters<typeof presetCollectionLabel>[0] {
+function activeCollection(): SubjectCategory {
   const current = screen.getByRole('button', { current: true });
-  const found = PRESET_COLLECTION_IDS.find(
-    (collection) => current.textContent?.startsWith(presetCollectionLabel(collection)) === true,
+  const found = SUBJECT_CATEGORIES.find(
+    (collection) => current.textContent?.startsWith(CATEGORY_OPTIONS[collection].label) === true,
   );
   if (found === undefined) throw new Error('exactly one collection should be marked current.');
   return found;

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { DEFAULT_PRESET_COLLECTION, PRESET_COLLECTION_IDS } from '../../constants/presets/collections.ts';
-import type { PresetCollectionId } from '../../constants/presets/collections.ts';
+import { DEFAULT_PRESET_COLLECTION } from '../../constants/presets/collections.ts';
 import { PRESETS } from '../../constants/presets/index.ts';
+import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
+import type { SubjectCategory } from '../../types/subject.ts';
 import { countByCollection, indexPresetLibrary, matchPresetEntries } from '../../utils/presetSearch.ts';
 import { PresetCollectionList } from './PresetCollectionList.tsx';
 import { PresetCollectionPanel } from './PresetCollectionPanel.tsx';
@@ -25,7 +26,7 @@ import { PresetSearchField } from './PresetSearchField.tsx';
  */
 export function PresetLibrary() {
   const [query, setQuery] = useState('');
-  const [chosen, setChosen] = useState<PresetCollectionId>(DEFAULT_PRESET_COLLECTION);
+  const [chosen, setChosen] = useState<SubjectCategory>(DEFAULT_PRESET_COLLECTION);
 
   // Built once for the life of the module rather than per render: `PRESETS` is a compile-time
   // constant, so an empty dependency list is the honest statement of what this reads. It used to
@@ -62,7 +63,7 @@ export function PresetLibrary() {
   const active =
     !isFiltering || counts.has(chosen)
       ? chosen
-      : (PRESET_COLLECTION_IDS.find((collection) => counts.has(collection)) ?? chosen);
+      : (SUBJECT_CATEGORIES.find((collection) => counts.has(collection)) ?? chosen);
 
   const visible = useMemo(() => matches.filter((entry) => entry.collection === active), [matches, active]);
 
