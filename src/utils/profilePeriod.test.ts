@@ -6,8 +6,8 @@ import { estimateProfilePeriod } from './profilePeriod.ts';
 import { measureSheetScale } from './pixelGrid.ts';
 import { stepProfile } from './stepProfile.ts';
 
-/** Art `cells` cells a side at a fractional `pitch`, coloured by cell index and softened as a model returns it. */
-function fractionalSheet(pitch: number, cells: number): ImageData {
+/** Art `cells` cells a side at `pitch`, whole or fractional, coloured by cell index and softened as a model returns it. */
+function softenedSheet(pitch: number, cells: number): ImageData {
   const size = Math.round(cells * pitch);
   return soften(
     imageFrom(size, size, (x, y) => {
@@ -66,7 +66,7 @@ describe('estimateProfilePeriod', () => {
     // truth. The harmonic descent asks whether the half-lag's window carries nearly the peak's own
     // support, which a split fundamental does, and offering either neighbouring integer is right:
     // the mesh snaps cut by cut, so six or seven both follow the art.
-    const sheet = fractionalSheet(6.5, 18);
+    const sheet = softenedSheet(6.5, 18);
 
     const period = estimateProfilePeriod(stepProfile(sheet));
     expect(period === 6 || period === 7, `settled on ${String(period)}`).toBe(true);
@@ -76,7 +76,7 @@ describe('estimateProfilePeriod', () => {
     // Art at four and a third puts its sharpest integer-lag peak at thirteen — *three* times the
     // truth, so a descent that only halves lands on six-and-a-half's neighbours and stops. The
     // divisor-of-three leg is what brings it home; either neighbour of the true pitch is right.
-    const sheet = fractionalSheet(4.35, 28);
+    const sheet = softenedSheet(4.35, 28);
 
     const period = estimateProfilePeriod(stepProfile(sheet));
     expect(period === 4 || period === 5, `settled on ${String(period)}`).toBe(true);
@@ -199,18 +199,6 @@ describe('estimateProfilePeriod', () => {
   });
 
   it('reads plain regular pitch too, where the earlier readings would normally answer first', () => {
-    const sheet = soften(
-      imageFrom(64, 64, (x, y) => {
-        const index = Math.floor(y / 8) * 8 + Math.floor(x / 8);
-        return {
-          r: (index * 71 + 40) % 200,
-          g: (index * 149 + 80) % 200,
-          b: (index * 37 + 120) % 200,
-          a: 255,
-        };
-      }),
-    );
-
-    expect(estimateProfilePeriod(stepProfile(sheet))).toBe(8);
+    expect(estimateProfilePeriod(stepProfile(softenedSheet(8, 8)))).toBe(8);
   });
 });
