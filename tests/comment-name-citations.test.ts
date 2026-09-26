@@ -80,14 +80,16 @@ describe('readSource', () => {
   it('reads no comment out of a template or a regex literal', () => {
     // A scanner that does not know where a literal is reads both of these as line comments.
     const { cited } = readFixture(
-      'const a = `http://example.com/ `TemplateName``;',
-      'const b = /\\/\\/ `RegexName`/u;',
+      'const a = `http://example.com/ \\`TemplateName\\``;',
+      'const b = /[//] `RegexName`/u;',
     );
     expect(cited).toStrictEqual([]);
   });
 
   it('checks each code-shaped segment of a path, and leaves words and files alone', () => {
-    const { cited } = readFixture('/* `OUTER_NAME.innerName`, `despeckle`, `oklab.ts` and `Rgba` */');
+    const { cited } = readFixture(
+      '/* `OUTER_NAME.innerName`, `despeckle`, `useQuantiseStore.ts` and `Rgba` */',
+    );
     expect(cited).toStrictEqual(['1:OUTER_NAME', '1:innerName']);
   });
 
@@ -95,11 +97,18 @@ describe('readSource', () => {
     const { spelled } = readFixture(
       "type Mode = 'UNION_MEMBER';",
       'const token = `[IF:TEMPLATE_TOKEN]`;',
-      'const pattern = /REGEX_WORD/u;',
+      'const pattern = /\\bREGEX_WORD\\b/u;',
       'const node = <p>JSX_WORD</p>;',
     );
     for (const name of ['UNION_MEMBER', 'TEMPLATE_TOKEN', 'REGEX_WORD', 'JSX_WORD']) {
       expect(spelled.has(name), name).toBe(true);
     }
+  });
+
+  it('counts no name as spelled by a docblock that links to it', () => {
+    // A `{@link}` is parsed into the tree as an identifier, so a walk that entered the docblock would
+    // let a stale link excuse itself.
+    const { spelled } = readFixture('/** See {@link LinkedName}. */', 'export const x = 1;');
+    expect(spelled.has('LinkedName')).toBe(false);
   });
 });

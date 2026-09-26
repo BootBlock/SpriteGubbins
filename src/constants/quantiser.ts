@@ -635,7 +635,7 @@ export const DEFAULT_COLOR_MERGE = 0;
  * anything further keeping the colour it arrived with.
  *
  * In scaled OKLab, as every colour tolerance on this tab is — see `oklab.ts` — and `0` is the pass
- * not running at all, as it is on every other dial here: at zero the lock reaches nothing, so it
+ * not running at all, as it is on the other cleanup dials: at zero the lock reaches nothing, so it
  * supersedes nothing either and the studio's own colour setting stands. `colorPlanFor` holds that
  * rule and says what the alternative cost.
  *
@@ -712,7 +712,7 @@ export const DEFAULT_PALETTE_SNAP = 21;
  *
  * In **source pixels**, so a thickness of `n` widens a contour by `n` on each side and the drawn
  * line a cell is asked to resolve becomes `2n + 1` wide. That makes it the one dial on this tab
- * whose unit is the sheet's own resolution rather than a colour distance, and the reason it is a
+ * whose unit is the sheet's own resolution rather than a drawn pixel, and the reason it is a
  * small integer ladder rather than a continuous slider: there is no position between one pixel and
  * two.
  *
@@ -1034,8 +1034,8 @@ export function measurableGridCeiling(width: number, height: number): number {
  * as one sprite, in drawn pixels.
  *
  * **`0` is not an off position**, which is what many of this tab's zeros mean. The tolerances whose
- * zero is not an off position either are their passes at their strictest or loosest, each switched
- * off by a control of its own. This one is a pass with no off position at all. The segmentation
+ * zero is not an off position either are their readings at their strictest or loosest. This one is a
+ * pass with no off position at all. The segmentation
  * always runs, and at zero it still folds pieces whose bounding boxes overlap — a figure with an
  * outstretched arm passes through its own torso's box without sharing a pixel with it, and a reader
  * would never want those counted as two sprites. What the dial adds above zero is reach into empty

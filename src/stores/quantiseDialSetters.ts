@@ -24,7 +24,7 @@ export type DialEdit = (key: DialKey | null, patch: Partial<QuantiseDials>) => v
  * Split out of `useQuantiseStore` because they are a different responsibility from the rest of it.
  * That store owns the sheet, the grid, a held palette and the undo stack, and decides what survives
  * a new image and what a clear takes away — real decisions, each argued at the action it belongs
- * to. These are the mechanical half: twenty-six lines of one shape, which were two-thirds of the
+ * to. These are the mechanical half: a line of one shape per dial, which were two-thirds of the
  * file and the reason none of those decisions could be read together.
  */
 export interface QuantiseDialSetters {

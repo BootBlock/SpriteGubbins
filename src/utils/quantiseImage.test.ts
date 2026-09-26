@@ -1770,7 +1770,7 @@ describe('quantiseImage anti-aliasing', () => {
   });
 
   it('keeps a reduced sheet to the colours the reduction chose', () => {
-    // The gate `quantiseImage` applies: the blended-shades control is read only where a palette has
+    // The gate `settleSprites` applies: the blended-shades control is read only where a palette has
     // been stated. Here one has — eight colours, of which this fixture uses two — so every blend is
     // taken back to one of them, and on a two-colour sheet with no shade between them that means
     // every blend lands on the colour the pixel already had. Nothing changes, which is the honest
