@@ -514,6 +514,19 @@ describe('the figures the quantiser docblocks state', () => {
       // assumes each sprite has a counterpart to be paired with.
       expect([before.length, up.length, down.length]).toEqual([15, 15, 15]);
       expect([keptExtent(before, up), keptExtent(before, down)]).toEqual([3, 1]);
+      // The docblock's claim that list position gives the same answer under these two shifts: each
+      // box's nearest centre on the shifted sheet is the box at its own index.
+      const nearestIndex = (box: SpriteBox, after: readonly SpriteBox[]): number => {
+        const [x, y] = centreOf(box);
+        const distances = after.map((other) => {
+          const [otherX, otherY] = centreOf(other);
+          return (otherX - x) ** 2 + (otherY - y) ** 2;
+        });
+        return distances.indexOf(Math.min(...distances));
+      };
+      for (const after of [up, down]) {
+        expect(before.map((box) => nearestIndex(box, after))).toEqual(before.map((_, index) => index));
+      }
     }, 600_000);
 
     it('finds 15 to 42 sprites on the corpus, an order of magnitude under the ceiling', async () => {

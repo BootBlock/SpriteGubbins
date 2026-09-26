@@ -3,6 +3,7 @@ import { DEFAULT_KEY_TOLERANCE, KEY_TOLERANCES } from '../constants/quantiser.ts
 import { channels, imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { keyBackground } from './keyBackground.ts';
+import { srgbToOklab } from './oklab.ts';
 
 /**
  * The key colour these fixtures are built around — the recommended `MAGENTA_FF00FF`.
@@ -219,6 +220,23 @@ describe('keyBackground', () => {
 
     expect(result.keyedPixels).toBe(2);
     expect(alphas(result.image)).toEqual([0, 0, 255, 255]);
+  });
+
+  it('takes the key’s hue out of the blend it leaves drawn behind the fringe', () => {
+    // The despill half of the edge, asked through `keyBackground` rather than of `despillKey`
+    // alone: the second dark blend stays drawn and keeps its lightness, and loses its magenta.
+    const result = keyBackground(row(MAGENTA, DARK_BLEND, DARK_BLEND, DARK_ART), {
+      color: MAGENTA,
+      tolerance: DEFAULT_KEY_TOLERANCE,
+    });
+
+    const [r = 0, g = 0, b = 0, a = 0] = channels(result.image).slice(8, 12);
+    expect(a).toBe(255);
+    const before = srgbToOklab(DARK_BLEND.r, DARK_BLEND.g, DARK_BLEND.b);
+    const after = srgbToOklab(r, g, b);
+    expect(Math.hypot(before.a, before.b)).toBeGreaterThan(20);
+    expect(Math.hypot(after.a, after.b)).toBeLessThan(2);
+    expect(after.L).toBeCloseTo(before.L, 0);
   });
 
   it('does not key a blend-coloured pixel where it touches no field', () => {

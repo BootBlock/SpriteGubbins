@@ -208,8 +208,8 @@ export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingCont
           white and black are not. Above <span className="font-mono">exact</span> it also erodes a pixel
           touching the field where that pixel sits near the key or carries the key&rsquo;s hue, which is what
           removes the halo an anti-aliased edge leaves behind. The {DESPILL_DEPTH} pixels inside that edge
-          stay and lose only the key&rsquo;s hue, unless the hue runs deeper into the sprite, as artwork
-          painted in it does.
+          stay and lose only the key&rsquo;s hue, unless the hue runs deeper into the sprite than that, as
+          artwork painted in it does.
         </p>
       )}
     </section>

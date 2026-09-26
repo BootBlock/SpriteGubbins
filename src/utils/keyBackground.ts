@@ -79,14 +79,15 @@ export interface KeyedImage {
  * sheet whose subject is near-black the halo lands out among the artwork and no radius separates the
  * two. Measured on the reference sheet at the recommended magenta and the default tolerance, the pass
  * has 11030 candidates, 97.1% of them still visibly magenta, and the radius takes 18.1% of them. With
- * the hue test beside it the pass takes 95.5%, and 251 visibly magenta pixels survive — which reaches
- * the finished sheet as 75 pixels of one very dark violet under the dominant vote, and none at all
- * under either averaging reading. Before the hue test those figures were 720, 1010 and 283.
+ * the hue test beside it the pass takes 95.5%, and 251 visibly magenta pixels survive. When the hue
+ * test landed, those reached the finished sheet as 75 pixels of one very dark violet under the
+ * dominant vote and none at all under either averaging reading, against 720, 1010 and 283 before
+ * it; the pipeline has moved since, so those three are a record of that change, not a reading of
+ * today's result.
  *
  * `exact` still keys the field and nothing around it: neither pass 2 nor the despill runs at that
- * rung. That used to
- * follow from the radius being scaled off the tolerance, and is now said outright, because the hue
- * test is scaled off nothing.
+ * rung. That used to follow from the radius being scaled off the tolerance, and is now said
+ * outright, because the hue test is scaled off nothing.
  *
  * Past the rung where the ceiling binds, the *radius* half of pass 2 stops finding anything on its
  * own: the field's own radius has overtaken the fringe's, so every pixel that test could admit the

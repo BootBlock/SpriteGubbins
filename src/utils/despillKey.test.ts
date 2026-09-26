@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { DESPILL_DEPTH } from '../constants/quantiser.ts';
+import { DEFAULT_KEY_TOLERANCE, DESPILL_DEPTH } from '../constants/quantiser.ts';
 import { channels, imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { despillKey } from './despillKey.ts';
+import { pixelOffset, readPixel } from './imageData.ts';
+import { keyBackground } from './keyBackground.ts';
 import { keyBasis } from './keyDistance.ts';
 import { srgbToOklab } from './oklab.ts';
 
@@ -25,9 +27,7 @@ const BASIS = keyBasis(MAGENTA);
 
 /** The pixel at `x`, `y` of an image. */
 function pixelAt(image: ImageData, x: number, y = 0): Rgba {
-  const at = (y * image.width + x) * 4;
-  const [r = 0, g = 0, b = 0, a = 0] = image.data.subarray(at, at + 4);
-  return { r, g, b, a };
+  return readPixel(image.data, pixelOffset(image.width, x, y));
 }
 
 /** How much chroma a colour carries along the key's hue, on the scaled OKLab axes. */
@@ -67,11 +67,13 @@ describe('despillKey', () => {
   });
 
   it('leaves the field and every pixel past the band as they were', () => {
-    const past = Array.from({ length: 3 }, () => SPILL);
-    const image = row(CLEARED, ART, ART, ART, ...past);
+    // One spill pixel one ring past the band, with nothing tinted behind it for the guard to claim:
+    // a band one ring deeper would correct it.
+    const inside = Array.from({ length: DESPILL_DEPTH }, () => ART);
+    const image = row(CLEARED, ...inside, SPILL, ART, ART);
     despillKey(image, BASIS);
 
-    expect(channels(image)).toEqual(channels(row(CLEARED, ART, ART, ART, ...past)));
+    expect(channels(image)).toEqual(channels(row(CLEARED, ...inside, SPILL, ART, ART)));
   });
 
   it('keeps the key’s hue where it runs past the band, as artwork painted in it does', () => {
@@ -86,17 +88,51 @@ describe('despillKey', () => {
 
   it('lets a deep tint guard only the pixels joined to it on the way out, not the whole edge', () => {
     // Top row: the field. Second row: spill along the whole edge. Column 0: a stripe painted in the
-    // key's hue, running deeper than the band. The stripe keeps its colour, and the spill beside it
-    // loses the key's hue, because the mark only walks outward from a deeper tinted pixel.
+    // key's hue, running deeper than the band. The stripe keeps its colour, and so does the edge
+    // pixel diagonal to it, one ring shallower; the spill further along loses the key's hue, because
+    // the mark only walks outward from a deeper tinted pixel and never along a ring.
+    const width = 7;
     const height = DESPILL_DEPTH + 3;
-    const image = imageFrom(4, height, (x, y) => {
+    const image = imageFrom(width, height, (x, y) => {
       if (y === 0) return CLEARED;
       return x === 0 || y === 1 ? SPILL : ART;
     });
     despillKey(image, BASIS);
 
     for (let y = 1; y < height; y += 1) expect(pixelAt(image, 0, y)).toEqual(SPILL);
-    for (let x = 1; x < 4; x += 1) expect(Math.abs(keyChroma(pixelAt(image, x, 1)))).toBeLessThan(1.5);
+    expect(pixelAt(image, 1, 1)).toEqual(SPILL);
+    for (let x = 2; x < width; x += 1) expect(Math.abs(keyChroma(pixelAt(image, x, 1)))).toBeLessThan(1.5);
+  });
+
+  it('keeps the key’s hue in the corner of a painted region that points into the field', () => {
+    // The rings are measured over 4-adjacency, so a corner's diagonal pixels sit one ring apart with
+    // no orthogonal neighbour deeper than themselves. Guarded over four neighbours, a square
+    // `DESPILL_DEPTH` across at the corner lost its hue; the claim is taken from all eight.
+    const size = DESPILL_DEPTH + 6;
+    const image = imageFrom(size, size, (x, y) => (x === 0 || y === 0 ? CLEARED : SPILL));
+    despillKey(image, BASIS);
+
+    expect(channels(image)).toEqual(
+      channels(imageFrom(size, size, (x, y) => (x === 0 || y === 0 ? CLEARED : SPILL))),
+    );
+  });
+
+  it('keeps a key-hued stripe’s colour from nine pixels across, and greys a narrower one', () => {
+    // Through `keyBackground`, because the width is the two passes together: the fringe pass takes
+    // the stripe's outermost pixel on each side, and the guard needs a tinted pixel one ring past
+    // the band, which the middle of a stripe reaches at `2 × (DESPILL_DEPTH + 1) + 1` pixels across.
+    const keyed = (across: number): ImageData =>
+      keyBackground(row(MAGENTA, ...Array.from({ length: across }, () => SPILL), MAGENTA), {
+        color: MAGENTA,
+        tolerance: DEFAULT_KEY_TOLERANCE,
+      }).image;
+    const wide = 2 * (DESPILL_DEPTH + 1) + 1;
+
+    const kept = keyed(wide);
+    for (let x = 2; x < wide; x += 1) expect(pixelAt(kept, x)).toEqual(SPILL);
+
+    const greyed = keyed(wide - 1);
+    for (let x = 2; x < wide - 1; x += 1) expect(Math.abs(keyChroma(pixelAt(greyed, x)))).toBeLessThan(1.5);
   });
 
   it('does not let the walk wrap from one end of a row onto the other end of the next', () => {

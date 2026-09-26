@@ -67,9 +67,9 @@ const EXPECTED: Record<CorpusSheetName, CorpusReading> = {
     note: 'The reference. Fifteen gear pieces at a pixel scale of 3, so contour is a large share of a small sheet.',
   },
   'cyborg_black_red.png': {
-    both: 7.99,
-    interior: 6.65,
-    refused: 52.0,
+    both: 8.01,
+    interior: 6.67,
+    refused: 51.6,
     note: 'The same layout in a darker palette, whose emissive green puts half its boundaries under the floor.',
   },
   'character_space_marine_blue.png': {
@@ -86,7 +86,7 @@ const EXPECTED: Record<CorpusSheetName, CorpusReading> = {
   },
   'cyborg_healer.png': {
     both: 8.25,
-    interior: 6.22,
+    interior: 6.23,
     refused: 36.8,
     note: 'The widest gap between the two columns: loose accessories are mostly silhouette and little interior.',
   },

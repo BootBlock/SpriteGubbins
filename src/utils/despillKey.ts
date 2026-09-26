@@ -18,9 +18,11 @@ import { touchesField } from './touchesField.ts';
  * **Despill rather than erosion, because no pixel here is background.** These pixels are the
  * sprite with some of the key mixed into them, so the correction keeps each one and removes only
  * what the key added: its OKLab lightness is kept, the part of its chroma lying along the key's hue
- * is removed, and whatever chroma stands off that hue is kept. That is the compositing answer to
- * spill (Smith and Blinn, "Blue Screen Matting", 1996), taken in the space every gate here measures
- * in. It deletes nothing, so it cannot thin a silhouette.
+ * is removed, and whatever chroma stands off that hue is kept. That is the colour correction a
+ * compositor applies to spill beside its matte, taken in the space every gate here measures in,
+ * rather than a matte itself: Smith and Blinn ("Blue Screen Matting", 1996) would read such a pixel
+ * as partly transparent, and this app's keyed output is opaque or empty. It deletes nothing, so it
+ * cannot thin a silhouette.
  *
  * Pure apart from the one image it is handed, which the caller owns: `keyBackground` passes its own
  * freshly built output, so nothing outside that call is written.
@@ -51,7 +53,7 @@ function forEachNeighbour(width: number, height: number, index: number, visit: (
  *    to a colour test — see `KEY_TINT_OFF_HUE`. What tells the two apart is depth: spill fades within
  *    the band, while a painted region carries on past it. So a tinted pixel one ring past the band
  *    marks the region it belongs to as artwork, and that mark walks outward ring by ring through
- *    tinted pixels, each taking it from a neighbour one ring deeper. A tinted pixel reached that way
+ *    tinted pixels, each taking it from any of its eight neighbours one ring deeper. A tinted pixel reached that way
  *    is left alone. Walking only outward is what stops the mark running round a silhouette's whole
  *    spill ring from the one deep pixel it touches.
  * 3. **The correction.** Every other tinted pixel in the band loses the chroma it carries along the
@@ -115,7 +117,16 @@ export function despillKey(image: ImageData, basis: KeyBasis): void {
   }
 }
 
-/** Whether a 4-neighbour one ring deeper has been claimed as artwork. */
+/**
+ * Whether any of the eight neighbours one ring deeper has been claimed as artwork.
+ *
+ * Eight rather than the walk's four because of a region's corners. The rings are measured over
+ * 4-adjacency, so where a region's corner points into the field its diagonal pixels sit one ring
+ * apart and every orthogonal neighbour of each sits in its own ring or a shallower one. Asked of four
+ * neighbours, the claim never reaches that diagonal, and a painted region lost its hue in a square
+ * `DESPILL_DEPTH` across at every convex corner. Only a deeper neighbour can hand the claim on, so
+ * it still walks outward and cannot run along a ring.
+ */
 function deeperArtwork(
   tint: Uint8Array,
   depth: Uint8Array,
@@ -124,11 +135,15 @@ function deeperArtwork(
   index: number,
 ): boolean {
   const deeper = (depth[index] ?? 0) + 1;
-  let claimed = false;
-  forEachNeighbour(width, height, index, (at) => {
-    if (depth[at] === deeper && tint[at] === 2) claimed = true;
-  });
-  return claimed;
+  const x = index % width;
+  const y = (index - x) / width;
+  for (let row = Math.max(0, y - 1); row <= Math.min(height - 1, y + 1); row += 1) {
+    for (let column = Math.max(0, x - 1); column <= Math.min(width - 1, x + 1); column += 1) {
+      const at = row * width + column;
+      if (depth[at] === deeper && tint[at] === 2) return true;
+    }
+  }
+  return false;
 }
 
 /**

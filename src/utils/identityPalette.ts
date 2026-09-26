@@ -137,8 +137,8 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  * digest with it. A violet ring against the recommended magenta is the case; a teal one is
  * untouched, which is what identifies the hue test rather than the radius as the mechanism. An
  * outline up to `DESPILL_DEPTH` pixels wider than that loses its colour the other way: `despillKey`
- * takes the key's hue out of the pixels behind the first, so the digest reads them as the grey of
- * the same lightness.
+ * takes the key's hue out of the pixels behind the first, so the digest reads them as a near-grey
+ * of the same lightness.
  *
  * It is still the right trade, and narrowly. The colour at risk is one an artist chose *close to the
  * key they were keying against*, and the reader who wants it has the ordinary route — read the

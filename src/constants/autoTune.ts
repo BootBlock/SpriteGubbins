@@ -61,10 +61,14 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * **Every likeness above counts coverage as a fourth channel** — see `meanSsim`. On an unkeyed sheet
  * with the anti-aliasing off every pixel is opaque, so that channel scores 1 throughout and the
  * sweep settles every corpus sheet on the dials, rounds and positions it did before coverage was
- * scored. Keyed at the default tolerance against each sheet's corner colour, the eight settle on
- * the same dials too, and three descents end sooner: `cyborg_monk.png` at 95 positions rather than
- * 142, `ui_elements1.png` at 87 rather than 181, and the reference sheet at `BOTH` at 226 rather
- * than 376, where the shortest run settles at 12 rather than 10.
+ * scored. Keyed at the default tolerance against each sheet's corner colour, at the grids the
+ * table under {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different
+ * sheet, and only `three-quarter-view_tiles1.png` and `ui_elements1.png` settle on the dials they
+ * settle on unkeyed. Four descents end sooner — `cyborg_black_red.png` at 134 positions rather than
+ * 189, the reference sheet at `BOTH` at 226 rather than 301, `vehicles_and_props.png` at 95 rather
+ * than 134 and `cyborg_monk.png` at 87 rather than 134 — the reference sheet at `OFF`, the terrain
+ * and the UI sheets take the same count, and two run longer: `character_space_marine_blue.png` at
+ * 138 rather than 130, and `cyborg_healer.png` at 369 rather than 130, settling on `INK_WEIGHTED`.
  *
  * **The count of positions is what a change to any ladder here has to be judged by**, not a wall
  * clock — the same code over the same sheet takes several times longer on one host than another, so

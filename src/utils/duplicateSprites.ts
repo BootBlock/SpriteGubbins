@@ -51,14 +51,15 @@ import { disjointSet } from './unionFind.ts';
  * **Both directions are stated because the sign of the perturbation moves the answer, and the
  * figure recorded here before named neither.** "Four parts in 255 per channel" says how far and
  * neither which way nor with what distribution, and the readings a maintainer might take from it
- * disagree: nine of them — the two flat shifts, per-pixel random of that magnitude at three seeds,
- * alternating by channel, and uniform over that interval at three seeds — run from **0 to 3** of the
- * 15 sprites keeping their extent, and none of them is 4. (They ran from 1 to 6 before `despillKey`
- * began correcting the key's tint behind the fringe, which moves the mesh the extents are cut on.) The conclusion above survives every one,
- * which is why the design was never in question; but a figure offered as evidence has to be
- * reproducible from what it states, and the number this paragraph carried was reproducible from
- * none of them. `tests/quantiser-docblock-figures.test.ts` pins both directions against the
- * construction named above.
+ * disagree: nine of them — the two flat shifts, ±4 at random per channel, +4 and −4 alternating by
+ * channel, and a value uniform over −4 to 4 per channel rounded to the nearest whole number, each
+ * random reading at seeds 1, 2 and 3 of a mulberry32 generator — run from **0 to 3** of the 15 sprites keeping their
+ * extent, and none of them is 4. (They ran from 1 to 6 before `despillKey` began correcting the
+ * key's tint behind the fringe, which moves the mesh the extents are cut on.) The conclusion above
+ * survives every one, which is why the design was never in question; but a figure offered as
+ * evidence has to be reproducible from what it states, and the number this paragraph carried was
+ * reproducible from none of them. `tests/quantiser-docblock-figures.test.ts` pins both directions
+ * against the construction named above.
  *
  * **A sprite is identified across the perturbation by its centre, not by its position in the list.**
  * A shifted sheet meshes differently, and a row whose tops move by different amounts re-sorts — so
