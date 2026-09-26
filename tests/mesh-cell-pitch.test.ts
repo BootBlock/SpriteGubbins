@@ -42,7 +42,7 @@ const MAGENTA = { r: 255, g: 0, b: 255, a: 255 } as const;
 /** The grids swept: the tightest tolerance, the reference grid, and the widest merge. */
 const GRIDS: readonly PixelGrid[] = [4, 6, 12];
 
-/** The same figure `gridMesh.ts` derives its walk tolerance from — restated, never imported. */
+/** The same figure `meshAxis.ts` derives its walk tolerance from — restated, never imported. */
 function tolerance(grid: number): number {
   return Math.max(1, Math.floor(grid / 3));
 }
