@@ -10,7 +10,7 @@ import { AntiAliasControls } from './AntiAliasControls.tsx';
  *
  * The geometry is pinned in `utils/edgeRuns.test.ts`, the pass in `utils/antiAlias.test.ts`, its
  * place in the pipeline in `utils/quantiseImage.test.ts` and what it does to real generator output in
- * `tests/anti-alias-corpus.test.ts`. What can only be checked here is the panel's agreement with the
+ * `tests/antiAliasCorpusSuite.ts`. What can only be checked here is the panel's agreement with the
  * store and with the state it is describing: that every dial appears exactly where it can act, that
  * the palette control is withdrawn where no colour setting is constraining the sheet, and that the
  * paragraph beneath says which of those states the reader is in.

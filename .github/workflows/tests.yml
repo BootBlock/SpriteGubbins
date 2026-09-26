@@ -184,11 +184,14 @@ jobs:
   # The suite in four shards on four runners, because one runner was most of the gate's wall clock:
   # Vitest spent over six minutes there, against under a minute for every other job. Vitest assigns
   # files to shards by a hash of their paths, not by how long they take, so the shards are uneven,
-  # and a shard can finish no sooner than the slowest single file it holds — about a minute for the
-  # corpus suites here. Measured on this workflow, three shards ran the tests in 75 to 125 seconds
-  # and four in 65 to 115 on a larger suite. A file that grows well past a minute on its own is the
-  # next thing to split, since no shard count runs one file faster. Add a value to `shard` to add a
-  # runner: the job name and the `--shard` flag read the total from the matrix.
+  # and a shard can finish no sooner than the slowest single file it holds. The corpus surveys are
+  # split so that no file but `src/utils/autoTune.test.ts` takes much over forty seconds here, and
+  # each shard is now bound by its total work rather than by one file. Measured on this workflow,
+  # four shards ran the tests in 54 to 94 seconds; six ran them in 45 to 78, which saved nine
+  # seconds of a two-minute run for two more of the account's concurrent runners on every push, and
+  # several agents push at once. A file that grows well past a minute on its own is the next thing
+  # to split, since no shard count runs one file faster. Add a value to `shard` to add a runner: the
+  # job name and the `--shard` flag read the total from the matrix.
   #
   # `fail-fast: false` so that one run lists every failing file, as the secret scan does for its two
   # passes. A shard cancelled halfway would hide the failures it had not reached yet.
@@ -214,10 +217,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The order a shard runs its files in. Vitest starts the files it has timed before longest
+      # first, and orders a file it has never timed by its size in bytes — which on a fresh runner
+      # started a minute-long corpus suite last as often as first, and left the other workers idle
+      # while it finished. Vitest keeps these timings in `results.json` under its cache directory,
+      # merging each run's into what it already held, so every shard restores what it saved last
+      # time and falls back to any shard's when it has none. The timings decide the order and
+      # nothing else: every file runs, and passes or fails, the same either way.
+      #
+      # After `npm ci`, because `npm ci` deletes `node_modules`, where Vitest keeps them. The
+      # cache is saved when the job succeeds, under a key unique to the run.
+      - name: Restore the test timings
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/.vite/vitest
+          key: vitest-timings-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            vitest-timings-shard-${{ matrix.shard }}-
+            vitest-timings-
+
       # The pure utilities — the prompt compiler and the atlas maths — are where this app's
       # correctness actually lives.
+      #
+      # `--maxWorkers=100%` because Vitest's own default in a run is one worker fewer than the
+      # machine has cores, which leaves one of a runner's four idle. The main process only
+      # schedules and reports, so four workers keep every core busy.
       - name: Run unit tests
-        run: npm run test:run -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+        run: npm run test:run -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} --maxWorkers=100%
 
   # The check the ruleset on `main` requires is named `Unit tests`, and a matrix names each of its
   # jobs after its own values, so this job carries that name and passes only when every shard did.

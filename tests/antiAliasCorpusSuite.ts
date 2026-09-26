@@ -14,7 +14,7 @@ import { srgbToOklab } from '../src/utils/oklab.ts';
 import { pixelDistanceOf } from '../src/utils/pixelDistance.ts';
 import { measureSheetScale } from '../src/utils/pixelGrid.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
-import { CORPUS_SHEETS, loadCorpusSheet, type CorpusSheetName } from './sheetCorpus.ts';
+import { loadCorpusSheet, type CorpusSheetName } from './sheetCorpus.ts';
 
 /**
  * What the anti-aliasing pass does to the eight reference sheets at the positions its dials open at.
@@ -38,6 +38,9 @@ import { CORPUS_SHEETS, loadCorpusSheet, type CorpusSheetName } from './sheetCor
  * configuration — so `both − interior` understates it. What the pair does say is the one thing worth
  * recording: how much of each sheet the safe half of the pass reaches, and how much more the whole
  * of it does.
+ *
+ * Run as two files, `anti-alias-corpus-first-half.test.ts` and `-second-half.test.ts`, each over one
+ * of `CORPUS_HALVES`, so the two halves can take two workers.
  */
 interface CorpusReading {
   /** The share of the result's pixels the pass moves under `BOTH`, as a percentage. */
@@ -181,86 +184,93 @@ function refusedShare(sheet: ImageData, threshold: number): number {
   return (refused / differing) * 100;
 }
 
-describe('anti-aliasing over the reference sheets', () => {
-  const sheets = new Map<CorpusSheetName, ImageData>();
+/** The six sheets that soften less at a floor of nothing than at a floor of 8, in corpus order. */
+const LOOSER_AT_NOTHING: readonly CorpusSheetName[] = [
+  'armour.png',
+  'cyborg_black_red.png',
+  'character_space_marine_blue.png',
+  'cyborg_monk.png',
+  'cyborg_healer.png',
+  'vehicles_and_props.png',
+];
 
-  beforeAll(async () => {
-    for (const name of CORPUS_SHEETS) sheets.set(name, quantised(await loadCorpusSheet(name)));
-  }, 300_000);
+export function antiAliasCorpusSuite(sheets: readonly CorpusSheetName[]): void {
+  describe('anti-aliasing over the reference sheets', () => {
+    const loaded = new Map<CorpusSheetName, ImageData>();
 
-  const sheetFor = (name: CorpusSheetName): ImageData => {
-    const sheet = sheets.get(name);
-    if (sheet === undefined) throw new Error(`${name} was not loaded`);
-    return sheet;
-  };
+    beforeAll(async () => {
+      for (const name of sheets) loaded.set(name, quantised(await loadCorpusSheet(name)));
+    }, 300_000);
 
-  /**
-   * `movedShare` for one sheet, run once per mode and floor however many cases read it.
-   *
-   * The default floor under `BOTH` is the reading the recorded share, the rising floor and the loose
-   * end all start from, and the pass over a sheet is what this file spends its time on. It is pure,
-   * so a share read twice is the share a second run would measure.
-   */
-  const shares = new Map<string, number>();
-  const shareOf = (name: CorpusSheetName, mode: AntiAliasMode, threshold: number): number => {
-    const key = `${name} ${mode} ${String(threshold)}`;
-    const cached = shares.get(key);
-    if (cached !== undefined) return cached;
-    const share = movedShare(sheetFor(name), mode, threshold);
-    shares.set(key, share);
-    return share;
-  };
+    const sheetFor = (name: CorpusSheetName): ImageData => {
+      const sheet = loaded.get(name);
+      if (sheet === undefined) throw new Error(`${name} was not loaded`);
+      return sheet;
+    };
 
-  it.each(CORPUS_SHEETS)('moves the recorded share of %s', (name) => {
-    const expected = EXPECTED[name];
-    const both = shareOf(name, 'BOTH', DEFAULT_ANTI_ALIAS_THRESHOLD);
-    const interior = shareOf(name, 'INTERIOR', DEFAULT_ANTI_ALIAS_THRESHOLD);
-    expect(both, expected.note).toBeCloseTo(expected.both, 1);
-    expect(interior, expected.note).toBeCloseTo(expected.interior, 1);
-    // `BOTH` is the union of the two kinds of boundary, so it can only reach more pixels than the
-    // interior alone — and on every one of these sheets it reaches strictly more, because all eight
-    // arrive with a field to key and therefore have a silhouette to soften. Measured rather than
-    // read off the table above, which would be the table asserting something about itself.
-    expect(interior, expected.note).toBeLessThan(both);
-  });
+    /**
+     * `movedShare` for one sheet, run once per mode and floor however many cases read it.
+     *
+     * The default floor under `BOTH` is the reading the recorded share, the rising floor and the loose
+     * end all start from, and the pass over a sheet is what this suite spends its time on. It is pure,
+     * so a share read twice is the share a second run would measure.
+     */
+    const shares = new Map<string, number>();
+    const shareOf = (name: CorpusSheetName, mode: AntiAliasMode, threshold: number): number => {
+      const key = `${name} ${mode} ${String(threshold)}`;
+      const cached = shares.get(key);
+      if (cached !== undefined) return cached;
+      const share = movedShare(sheetFor(name), mode, threshold);
+      shares.set(key, share);
+      return share;
+    };
 
-  it.each(CORPUS_SHEETS)('refuses the recorded share of %s’s boundaries', (name) => {
-    const expected = EXPECTED[name];
-    expect(refusedShare(sheetFor(name), DEFAULT_ANTI_ALIAS_THRESHOLD), expected.note).toBeCloseTo(
-      expected.refused,
-      1,
-    );
-  });
+    it.each(sheets)('moves the recorded share of %s', (name) => {
+      const expected = EXPECTED[name];
+      const both = shareOf(name, 'BOTH', DEFAULT_ANTI_ALIAS_THRESHOLD);
+      const interior = shareOf(name, 'INTERIOR', DEFAULT_ANTI_ALIAS_THRESHOLD);
+      expect(both, expected.note).toBeCloseTo(expected.both, 1);
+      expect(interior, expected.note).toBeCloseTo(expected.interior, 1);
+      // `BOTH` is the union of the two kinds of boundary, so it can only reach more pixels than the
+      // interior alone — and on every one of these sheets it reaches strictly more, because all eight
+      // arrive with a field to key and therefore have a silhouette to soften. Measured rather than
+      // read off the table above, which would be the table asserting something about itself.
+      expect(interior, expected.note).toBeLessThan(both);
+    });
 
-  it('softens less of every sheet as the floor rises above its default', () => {
-    // The property the dial is *for*, checked on real output rather than on a fixture: past the
-    // default, each step of the floor admits strictly fewer boundaries. It is deliberately not
-    // claimed below the default, where it is false — see the test below.
-    for (const name of CORPUS_SHEETS) {
-      let previous = Infinity;
-      for (const threshold of [DEFAULT_ANTI_ALIAS_THRESHOLD, 32, 48, 64, ANTI_ALIAS_THRESHOLD_RANGE.max]) {
-        const share = shareOf(name, 'BOTH', threshold);
-        expect(share, `${name} at ${String(threshold)}`).toBeLessThan(previous);
-        previous = share;
+    it.each(sheets)('refuses the recorded share of %s’s boundaries', (name) => {
+      const expected = EXPECTED[name];
+      expect(refusedShare(sheetFor(name), DEFAULT_ANTI_ALIAS_THRESHOLD), expected.note).toBeCloseTo(
+        expected.refused,
+        1,
+      );
+    });
+
+    it('softens less of every sheet as the floor rises above its default', () => {
+      // The property the dial is *for*, checked on real output rather than on a fixture: past the
+      // default, each step of the floor admits strictly fewer boundaries. It is deliberately not
+      // claimed below the default, where it is false — see the test below.
+      for (const name of sheets) {
+        let previous = Infinity;
+        for (const threshold of [DEFAULT_ANTI_ALIAS_THRESHOLD, 32, 48, 64, ANTI_ALIAS_THRESHOLD_RANGE.max]) {
+          const share = shareOf(name, 'BOTH', threshold);
+          expect(share, `${name} at ${String(threshold)}`).toBeLessThan(previous);
+          previous = share;
+        }
       }
-    }
-  }, 180_000);
+    }, 180_000);
 
-  it('softens no more of most sheets at a floor of nothing than at a floor of 8', () => {
-    // The response is **not** monotone at the loose end, and it is worth pinning because it reads as
-    // a defect and is not. At a floor of nothing every neighbouring difference is a contour, so a run
-    // very often finds a crossing edge on *both* sides of an end — which is the ambiguous pattern
-    // `walkEdgeRuns` refuses to reconstruct from. Six of the eight sheets therefore soften less at 0
-    // than at 8. The two that do not are the flattest of the corpus, where a boundary is either a
-    // full palette step or nothing at all.
-    const looser = CORPUS_SHEETS.filter((name) => shareOf(name, 'BOTH', 0) < shareOf(name, 'BOTH', 8));
-    expect(looser).toEqual([
-      'armour.png',
-      'cyborg_black_red.png',
-      'character_space_marine_blue.png',
-      'cyborg_monk.png',
-      'cyborg_healer.png',
-      'vehicles_and_props.png',
-    ]);
-  }, 180_000);
-});
+    it('softens less at a floor of nothing than at a floor of 8 on exactly the six sheets recorded', () => {
+      // The response is **not** monotone at the loose end, and it is worth pinning because it reads as
+      // a defect and is not. At a floor of nothing every neighbouring difference is a contour, so a run
+      // very often finds a crossing edge on *both* sides of an end — which is the ambiguous pattern
+      // `walkEdgeRuns` refuses to reconstruct from. Six of the eight sheets therefore soften less at 0
+      // than at 8. The two that do not are the flattest of the corpus, where a boundary is either a
+      // full palette step or nothing at all.
+      // Each half of the corpus is held to its own part of that list, so the two files together
+      // assert the whole of it.
+      const looser = sheets.filter((name) => shareOf(name, 'BOTH', 0) < shareOf(name, 'BOTH', 8));
+      expect(looser).toEqual(LOOSER_AT_NOTHING.filter((name) => sheets.includes(name)));
+    }, 180_000);
+  });
+}

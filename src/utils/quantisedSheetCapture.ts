@@ -61,7 +61,7 @@ export type QuantisedSheetCapture =
  * series differently. (Those twelve are a *sample*, not a calibration — the palette a budget picks
  * moves with the budget, so a figure re-read at another setting is a different reading rather than a
  * contradiction. What is pinned across the whole corpus is the qualitative half, in
- * `tests/identity-palette-key.test.ts`.)
+ * `tests/identityPaletteKeySuite.ts`.)
  *
  * **A result that still carries its background key is refused**, which is the second decision, and it
  * is taken by **measuring the result** rather than by reading the settings it was computed at. Asking

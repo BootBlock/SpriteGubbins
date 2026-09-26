@@ -7,7 +7,7 @@ import { BACKGROUND_KEYS } from '../src/types/rendering.ts';
 import { identityPalette } from '../src/utils/identityPalette.ts';
 import { createImage, fromHex, writePixel } from '../src/utils/imageData.ts';
 import { keyBasis, keyDistanceSquared } from '../src/utils/keyDistance.ts';
-import { CORPUS_SHEETS, type CorpusSheetName, loadCorpus } from './sheetCorpus.ts';
+import { type CorpusSheetName, loadCorpus } from './sheetCorpus.ts';
 
 /**
  * That an identity digest read off a real generator sheet describes the subject, not the key field.
@@ -24,7 +24,7 @@ import { CORPUS_SHEETS, type CorpusSheetName, loadCorpus } from './sheetCorpus.t
  *
  * **Asserted as a distance rather than as a recorded list.** Pinning the six hexes each sheet
  * produces would fail on any change to the palette builder, the coverage ordering or the keying
- * tolerance — none of which this file is about. What it asserts instead is the claim the control's
+ * tolerance — none of which this suite is about. What it asserts instead is the claim the control's
  * own guidance makes: no colour in a digest is one the keying pass would have called the key. Run
  * against the exact comparison it replaces, all eight sheets fail on the very first entry.
  *
@@ -38,15 +38,18 @@ import { CORPUS_SHEETS, type CorpusSheetName, loadCorpus } from './sheetCorpus.t
  * 53.5%–74.8% it removes for the magenta these sheets actually carry.
  *
  * **It is not the white key's own case, and reading it as one would be the mistake.** Every sheet
- * here is magenta-keyed, so nothing in this file has a white *field* to lose artwork to — and the
+ * here is magenta-keyed, so nothing in this suite has a white *field* to lose artwork to — and the
  * cost that matters for that key is what happens when the field really is white, where the radius
  * takes the top 32 bytes of the value ramp. That is a fixture's question rather than a corpus one,
  * and it is asserted at both ends in `src/utils/identityPalette.test.ts`.
  *
  * `TRANSPARENT` names no colour, and the assertion for it is that a digest still comes back.
+ *
+ * Run as two files, `identity-palette-corpus-first-half.test.ts` and `-second-half.test.ts`, each
+ * over one of `CORPUS_HALVES`, so the two halves can take two workers.
  */
 
-/** The eight sheets are one to two megapixels each, and each key runs the whole keying pass. */
+/** The sheets are one to two megapixels each, and each key runs the whole keying pass. */
 vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 
 /**
@@ -69,53 +72,55 @@ function distanceFromKey(hex: string, key: Rgba): number {
   return Math.sqrt(keyDistanceSquared(probe.data, 0, keyBasis(key)));
 }
 
-describe('the identity digest read from a real generator sheet', () => {
-  let corpus: ReadonlyMap<CorpusSheetName, ImageData>;
+export function identityPaletteCorpusSuite(sheets: readonly CorpusSheetName[]): void {
+  describe('the identity digest read from a real generator sheet', () => {
+    let corpus: ReadonlyMap<CorpusSheetName, ImageData>;
 
-  beforeAll(async () => {
-    corpus = await loadCorpus();
-  });
+    beforeAll(async () => {
+      corpus = await loadCorpus(sheets);
+    });
 
-  /** One sheet, or a failure that names it rather than an undefined a line later. */
-  function sheet(name: CorpusSheetName): ImageData {
-    const image = corpus.get(name);
-    if (image === undefined) throw new Error(`The corpus is missing ${name}`);
-    return image;
-  }
-
-  // The magenta pass of this sweep is the defect itself: the leading entry is the one the prompt reads
-  // as the subject's base colour, and it is where every one of the eight failed. It is held here with
-  // every other entry and every other key rather than in a case of its own, which could only fail
-  // where this one already does.
-  it.each(CORPUS_SHEETS)('keeps every entry of %s out of the key field, at every offered key', (name) => {
-    const image = sheet(name);
-    const inTheField: string[] = [];
-    let entries = 0;
-
-    for (const named of BACKGROUND_KEYS) {
-      const key = BACKGROUND_KEY_COLORS[named];
-      const digest = identityPalette(image, key);
-
-      // A sheet has colours whichever key is stated, and without this an empty digest would satisfy
-      // every assertion below by holding nothing. `TRANSPARENT` names no colour to exclude, so this is
-      // the whole of what can be asserted for it.
-      expect(digest.length).toBeGreaterThan(1);
-      if (key === null) continue;
-
-      entries += digest.length;
-      for (const [index, entry] of digest.entries()) {
-        const distance = distanceFromKey(entry, key);
-        if (distance > DEFAULT_KEY_TOLERANCE) continue;
-        inTheField.push(
-          `${named} entry ${String(index + 1)} is ${entry}, ${distance.toFixed(1)} from the key ` +
-            `(the pass keys anything within ${String(DEFAULT_KEY_TOLERANCE)})`,
-        );
-      }
+    /** One sheet, or a failure that names it rather than an undefined a line later. */
+    function sheet(name: CorpusSheetName): ImageData {
+      const image = corpus.get(name);
+      if (image === undefined) throw new Error(`The corpus is missing ${name}`);
+      return image;
     }
 
-    // Three keys name a colour, six entries each at most, so a run that measured nothing would
-    // report no offenders and pass.
-    expect(entries).toBeGreaterThan(3);
-    expect(inTheField).toEqual([]);
+    // The magenta pass of this sweep is the defect itself: the leading entry is the one the prompt reads
+    // as the subject's base colour, and it is where every one of the eight failed. It is held here with
+    // every other entry and every other key rather than in a case of its own, which could only fail
+    // where this one already does.
+    it.each(sheets)('keeps every entry of %s out of the key field, at every offered key', (name) => {
+      const image = sheet(name);
+      const inTheField: string[] = [];
+      let entries = 0;
+
+      for (const named of BACKGROUND_KEYS) {
+        const key = BACKGROUND_KEY_COLORS[named];
+        const digest = identityPalette(image, key);
+
+        // A sheet has colours whichever key is stated, and without this an empty digest would satisfy
+        // every assertion below by holding nothing. `TRANSPARENT` names no colour to exclude, so this is
+        // the whole of what can be asserted for it.
+        expect(digest.length).toBeGreaterThan(1);
+        if (key === null) continue;
+
+        entries += digest.length;
+        for (const [index, entry] of digest.entries()) {
+          const distance = distanceFromKey(entry, key);
+          if (distance > DEFAULT_KEY_TOLERANCE) continue;
+          inTheField.push(
+            `${named} entry ${String(index + 1)} is ${entry}, ${distance.toFixed(1)} from the key ` +
+              `(the pass keys anything within ${String(DEFAULT_KEY_TOLERANCE)})`,
+          );
+        }
+      }
+
+      // Three keys name a colour, six entries each at most, so a run that measured nothing would
+      // report no offenders and pass.
+      expect(entries).toBeGreaterThan(3);
+      expect(inTheField).toEqual([]);
+    });
   });
-});
+}
