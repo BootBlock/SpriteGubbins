@@ -15,10 +15,10 @@ name: Tests
 # against. This runs it there.
 #
 # It does not replace the local gate. Running it here is what makes the branch's commit landable at
-# all, and running it locally first is what stops four minutes being spent to learn that.
+# all, and running it locally first is what stops a round trip to GitHub being spent to learn that.
 on:
   # Every branch, and no `pull_request` trigger, because a required status check reads the check
-  # runs attached to a COMMIT. A `push` run attaches its four to the commit that was pushed, and
+  # runs attached to a COMMIT. A `push` run attaches the four required ones to the commit it ran, and
   # that one set then answers for the branch, for a pull request opened from it, and for a
   # fast-forward of `main` onto it. Adding `pull_request` back would check the same commit twice.
   #
@@ -181,9 +181,24 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
+  # The suite in four shards on four runners, because one runner was most of the gate's wall clock:
+  # Vitest spent over six minutes there, against under a minute for every other job. Vitest assigns
+  # files to shards by a hash of their paths, not by how long they take, so the shards are uneven,
+  # and a shard can finish no sooner than the slowest single file it holds — about a minute for the
+  # corpus suites here. Measured on this workflow, three shards ran the tests in 75 to 125 seconds
+  # and four in 65 to 115 on a larger suite. A file that grows well past a minute on its own is the
+  # next thing to split, since no shard count runs one file faster. Add a value to `shard` to add a
+  # runner: the job name and the `--shard` flag read the total from the matrix.
+  #
+  # `fail-fast: false` so that one run lists every failing file, as the secret scan does for its two
+  # passes. A shard cancelled halfway would hide the failures it had not reached yet.
   test:
-    name: Unit tests
+    name: Unit tests (shard ${{ matrix.shard }} of ${{ strategy.job-total }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -202,7 +217,30 @@ jobs:
       # The pure utilities — the prompt compiler and the atlas maths — are where this app's
       # correctness actually lives.
       - name: Run unit tests
-        run: npm run test:run
+        run: npm run test:run -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+
+  # The check the ruleset on `main` requires is named `Unit tests`, and a matrix names each of its
+  # jobs after its own values, so this job carries that name and passes only when every shard did.
+  #
+  # `always()`, and never a plain `needs`, because a required check that is SKIPPED counts as
+  # passed. Without it a failed or cancelled shard would skip this job, and the ruleset would read
+  # that as a green `Unit tests`. It checks nothing out and installs nothing, so running it after a
+  # cancellation costs seconds.
+  unit-tests:
+    name: Unit tests
+    needs: test
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every shard to have passed
+        env:
+          SHARDS: ${{ needs.test.result }}
+        run: |
+          if [ "$SHARDS" != success ]; then
+            echo "::error title=Unit tests::The unit-test shards finished as '$SHARDS', not 'success'."
+            exit 1
+          fi
+          echo "Every unit-test shard passed."
 
   # `npm run build` is a check in its own right and not only a way to get a bundle. The build's own
   # `closeBundle` guards — the dead-utility sweep and the precache contract — fail there and nowhere
@@ -211,10 +249,14 @@ jobs:
   # pure half of that guard precisely because the whole question can only be asked at build time.
   #
   # It is also the job that produces the bundle a release publishes. `upload-dist` is how the deploy
-  # asks for it, and the artefact it uploads is the one every check above has just been run against.
+  # asks for it, and the artefact it uploads is built from the same commit every other job checks.
+  #
+  # It runs beside the other jobs rather than after them, because it needs nothing they produce, and
+  # waiting for them added its whole run to the gate's. That costs no safety: the ruleset on `main`
+  # requires every check on its own, and `deploy.yml` publishes the artefact only after the whole
+  # gate has passed, so a bundle built beside a failing test is never shipped.
   build:
     name: Build
-    needs: [secret-scan, quality, test]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -255,9 +297,10 @@ jobs:
 
       # Only for a caller that is going to publish it. A push leaves the input at
       # its default and uploads nothing, so the ordinary gate costs no storage — and a release gets
-      # to deploy the exact bytes every check above was run against, rather than a second build of
-      # the same commit that nothing checked. One day is long enough: the artefact is consumed by
-      # the next job in the same run and is of no use afterwards.
+      # to deploy the bytes built from the commit every other job checked, and only once all of them
+      # have passed, rather than a second build of the same commit that nothing checked. One day is
+      # long enough: the artefact is consumed by the next job in the same run and is of no use
+      # afterwards.
       - name: Upload the built bundle
         if: inputs.upload-dist
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

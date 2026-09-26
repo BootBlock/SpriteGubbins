@@ -60,8 +60,8 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * of this dial needs both numbers and a look at the preview.
  *
  * Every ladder in the three paragraphs above is re-derived by
- * `tests/quantiser-docblock-figures.test.ts`, the no-ink reading included, and the per-step figures
- * are subtractions of them. It fails when a pass upstream of this one moves one — so a
+ * `tests/quantiser-figures-outline-expansion.test.ts`, the no-ink reading included, and the per-step
+ * figures are subtractions of them. It fails when a pass upstream of this one moves one — so a
  * recalibration is told to come back here rather than leaving the ladder stale. Point 5 below is
  * the exception, and cannot be covered: its *carried* half is a variant this app does not ship, so
  * it says how that half was reconstructed instead. (Its other half is this ladder's own t1, t2 and
