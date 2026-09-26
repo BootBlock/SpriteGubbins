@@ -110,13 +110,15 @@ describe('SpriteControls', () => {
     show({ busy: true });
 
     expect(screen.queryByText(/asked for/)).not.toBeInTheDocument();
+    // The list's own finding, how the naming stands, is the same comparison and is held back too.
+    expect(screen.queryByText('named in reading order')).not.toBeInTheDocument();
     expect(screen.getByText('Reading the sheet…')).toBeInTheDocument();
   });
 
   it('scrolls to the selected sprite’s row once, not again each time a result lands', () => {
-    // The list is withdrawn while a result is on its way and its rows mount afresh when it lands,
-    // with the selection still standing. A row that scrolled on being selected dragged the page
-    // back to itself after every dial move, taking the slider the reader was dragging with it.
+    // The selection stands through every dial move. A row that scrolled on being selected dragged
+    // the page back to itself each time it mounted afresh, taking the slider the reader was
+    // dragging with it.
     const sprites = segmented(asked());
     const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
     const { rerender } = render(<SpriteControls sprites={sprites} busy={false} />);
@@ -130,7 +132,9 @@ describe('SpriteControls', () => {
     expect(scroll.mock.contexts[0]).toContainElement(screen.getByRole('combobox', { name: 'Sprite 2' }));
     expect(scroll.mock.contexts[0]).not.toContainElement(screen.getByRole('combobox', { name: 'Sprite 1' }));
 
+    // Through a result that moves every pin and back, so the selected row mounts afresh each time.
     for (let cycle = 0; cycle < 3; cycle += 1) {
+      rerender(<SpriteControls sprites={segmented(asked(), 1)} busy={false} />);
       rerender(<SpriteControls sprites={sprites} busy />);
       rerender(<SpriteControls sprites={sprites} busy={false} />);
     }
@@ -139,10 +143,10 @@ describe('SpriteControls', () => {
     expect(useSpriteAssignmentStore.getState().selected).not.toBeNull();
   });
 
-  it('drops a click made while a result was on its way, once the result that lands has re-cut it', () => {
-    // The preview keeps the previous result's chips while the next is computed, so a reader can
-    // select a box the incoming result no longer has. A request left standing for it would scroll
-    // the page the next time a dial brought that box back, answering no click at all.
+  it('answers a click made while a result is on its way once, and not again once it lands', () => {
+    // The preview keeps the previous result's chips while the next is computed, and the list beside
+    // it keeps the same sheet's rows, so the click is answered at once. A request left standing
+    // would scroll the page the next time a dial brought that box back, answering no click at all.
     const before = segmented(asked());
     const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
     const { rerender } = render(<SpriteControls sprites={before} busy />);
@@ -150,13 +154,31 @@ describe('SpriteControls', () => {
     act(() => {
       useSpriteAssignmentStore.getState().select(spritePin(boxAt(8)));
     });
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(useSpriteAssignmentStore.getState().reveal).toBeNull();
+
     // The same sprites one column over, so no box keeps the pin that was clicked.
     rerender(<SpriteControls sprites={segmented(asked(), 1)} busy={false} />);
-
-    expect(useSpriteAssignmentStore.getState().reveal).toBeNull();
     rerender(<SpriteControls sprites={before} busy />);
     rerender(<SpriteControls sprites={before} busy={false} />);
 
-    expect(scroll).not.toHaveBeenCalled();
+    expect(scroll).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the list mounted while a result is on its way, and out of reach', () => {
+    // Remounting it on every result rebuilt every row after every dial move, which on a sheet of
+    // hundreds of sprites was most of what a move cost.
+    const sprites = segmented(asked());
+    const { rerender } = render(<SpriteControls sprites={sprites} busy={false} />);
+    const first = screen.getByRole('combobox', { name: 'Sprite 1' });
+
+    rerender(<SpriteControls sprites={sprites} busy />);
+    // `inert` rather than withdrawn: a press against the previous result's sprites would pin a
+    // decision to a sheet that may already be gone.
+    expect(first.closest('[inert]')).not.toBeNull();
+
+    rerender(<SpriteControls sprites={sprites} busy={false} />);
+    expect(screen.getByRole('combobox', { name: 'Sprite 1' })).toBe(first);
+    expect(first.closest('[inert]')).toBeNull();
   });
 });

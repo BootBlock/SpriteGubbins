@@ -40,12 +40,12 @@ export interface SpriteAssignmentState {
    * The sprite whose row the panel still owes a scroll into view, or `null` once it has paid it.
    *
    * **A request rather than a reading of {@link selected}**, because the scroll answers the reader's
-   * click and nothing else. The selection outlives every dial move, and the list remounts its rows
-   * whenever a result lands — so a row that scrolled because it *was* selected would pull the page
-   * back to itself after every move, taking the slider the reader is dragging off screen. Only
-   * {@link select} files one, and the list settles it through {@link revealed} the next time it
-   * is shown: scrolling to the row it names where the sheet still holds that sprite, and dropping
-   * it where the result that landed re-cut it.
+   * click and nothing else. The selection outlives every dial move, and a row mounts afresh whenever
+   * a result moves its sprite's pin — so a row that scrolled because it *was* selected would pull
+   * the page back to itself after such a move, taking the slider the reader is dragging off screen.
+   * Only {@link select} files one, and the list settles it through {@link revealed} while it is
+   * mounted: scrolling to the row it names where the sheet holds that sprite, and dropping it where
+   * none does.
    */
   readonly reveal: SpritePin | null;
   /**

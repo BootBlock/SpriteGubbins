@@ -13,7 +13,7 @@
  */
 
 /**
- * The one control each row of the list carries.
+ * The one control each row of the list carries, and the partner a join asks for.
  *
  * One control rather than three, because the reader is making **one** choice about this sprite and
  * the four answers are exclusive: a sprite that is joined to another cannot also be left out, and a
@@ -26,7 +26,11 @@ export const SPRITE_ASSIGNMENT_TOOLTIPS = {
     'Says what this sprite is in the download. Left on “Reading order”, it takes the inventory name its position gives it, which is right when the generator drew the components in the order asked.\n\n' +
     '- **A name**: for a sheet drawn out of order. One that drew the right arm before the left has the right count and two wrong names, and only your eyes can see that.\n' +
     '- **Leave out**: drops it from the download, for something the sheet picked up rather than drew.\n' +
-    '- **Join to**: cuts it and the sprite you choose as one piece, such as a blade and its guard. Anything else inside the box around both is cut in with them.',
+    '- **Join to another sprite**: cuts it and a sprite you name by number as one piece, such as a blade and its guard. Anything else inside the box around both is cut in with them.',
+
+  joinTarget:
+    'The number of the sprite this one is cut with, as its chip in the preview shows it. The join takes effect as you type a number the sheet holds, and the pair downloads as one piece.\n\n' +
+    'Type another number to move the join. Its own number, or one the sheet does not hold, changes nothing, and the field says why.',
 } as const;
 
 /** What the panel says under the list, keyed to what is standing between this sheet and its names. */

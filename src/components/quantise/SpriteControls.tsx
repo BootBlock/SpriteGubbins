@@ -136,13 +136,10 @@ export function SpriteControls({ sprites, busy }: SpriteControlsProps) {
           scattered sheet has no sprites to name, and the paragraph above is already explaining why —
           a list of nothing under it would read as a second, emptier finding about the same state.
 
-          Withdrawn while a newer result is coming, exactly as the badges and the size line above it
-          are. The previous job's sprites are kept on screen for the *preview*, where a sheet beats a
-          blank frame, but a list of controls that act on boxes the next result may not hold is a
-          different thing: a press against it would pin a decision to a place on a sheet that is
-          already gone. */}
-      {!busy && boxes !== null && boxes.length > 0 && (
-        <SpritePieceList assignment={assignment} inventory={identity.names} />
+          **Kept mounted while a newer result is coming**, which `SpritePieceList` says more about:
+          it withdraws what it reports and puts its rows out of reach, rather than going away. */}
+      {boxes !== null && boxes.length > 0 && (
+        <SpritePieceList assignment={assignment} inventory={identity.names} busy={busy} />
       )}
     </section>
   );
