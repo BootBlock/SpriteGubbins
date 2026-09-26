@@ -669,8 +669,8 @@ export const DEFAULT_COLOR_MERGE = 0;
  * of the range take every colour of every one of them. It is a quarter of the 255 that black to white
  * measures.
  *
- * `tests/quantiser-docblock-figures.test.ts` re-derives every measured figure in this note and the
- * next.
+ * `tests/quantiser-figures-palette-lock.test.ts` re-derives every measured figure in this note and
+ * the next.
  */
 export const PALETTE_SNAP_RANGE = { min: 0, max: 64, step: 1 } as const;
 
@@ -957,8 +957,8 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * several times between runs on one machine — but the shape is: three pairs, `levels` rungs each,
  * once per distinct colour.
  *
- * `tests/quantiser-docblock-figures.test.ts` re-derives the column this constant ships, and both
- * colour counts. **The other five are swept by overriding this constant**, which also sizes
+ * `tests/quantiser-figures-dither-tables.test.ts` re-derives the column this constant ships, and
+ * both colour counts. **The other five are swept by overriding this constant**, which also sizes
  * `mixingPlan`'s scratch arrays at load, so there is no argument to widen it by. The unrestricted
  * column is this constant at **128**, the longest list palette the tab admits.
  */
@@ -1542,7 +1542,8 @@ export const DIFFERENCE_PRECISION = 64;
  * range ({@link FILL_CLEANUP_RANGE}, 48) the second pass shifts **360** of the mesh's 43,681 cells,
  * by at most **26.8**. That is the whole of it inside 32, and past the 16 below it.
  *
- * `tests/quantiser-docblock-figures.test.ts` re-derives the ladder and that pair from the sheet.
+ * `tests/quantiser-figures-difference-scales.test.ts` re-derives the ladder and that pair from the
+ * sheet.
  */
 export const DIFFERENCE_SCALES = [4, 8, 16, 32, 64, 128] as const;
 
@@ -1858,8 +1859,8 @@ export const MAX_IMAGE_PIXELS = MAX_IMAGE_EDGE * MAX_IMAGE_EDGE;
  * which is why **this** bound narrows that sheet by nothing, and the quarter-width cap in `bestAxis`
  * is what actually narrows ten of its fifteen. A figure of “18,073 drawn pixels” stood here and
  * reproduced under none of fifteen readings of the conditions its neighbour states (issue #237);
- * `tests/quantiser-docblock-figures.test.ts` now re-derives the area from the segmentation and the
- * reach from `affordableReach` itself.
+ * `tests/quantiser-figures-symmetry-pass.test.ts` now re-derives the area from the segmentation and
+ * the reach from `affordableReach` itself.
  */
 export const SYMMETRY_SWEEP_BUDGET = MAX_IMAGE_PIXELS;
 

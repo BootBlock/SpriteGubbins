@@ -120,8 +120,8 @@ export function sheetSymmetry(
  *
  * **Exported for one reason**, which is the reason `SYMMETRY_SWEEP_BUDGET`'s docblock states a
  * figure at all: that figure — the reference sheet's fifteen boxes totalling 17,201 pixels, and the
- * reach of eight it buys — is asserted in `tests/quantiser-docblock-figures.test.ts`, and a suite
- * that restated this arithmetic instead of calling it would pass with the divisor changed to the
+ * reach of eight it buys — is asserted in `tests/quantiser-figures-symmetry-pass.test.ts`, and a
+ * suite that restated this arithmetic instead of calling it would pass with the divisor changed to the
  * sheet's drawn pixels, which is the mistake that docblock exists to name.
  */
 export function affordableReach(boxes: readonly SpriteBox[]): number {

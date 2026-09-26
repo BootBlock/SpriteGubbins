@@ -5,6 +5,7 @@ import { DEFAULT_KEY_TOLERANCE } from '../src/constants/quantiser.ts';
 import type {
   BackgroundKeying,
   ImportedImage,
+  QuantiseResult,
   QuantiseSettings,
   QuantiseTuning,
 } from '../src/types/quantiser.ts';
@@ -65,31 +66,29 @@ const nearTheKey = (hex: string): boolean => {
   return channels.every((value, at) => Math.abs(value - (key[at] ?? 0)) <= NEAR_KEY);
 };
 
-/** What the tab is asking for, at one of the three keying positions this file measures. */
-const settingsAt = (key: BackgroundKeying | null): QuantiseSettings => {
+/**
+ * The three keying positions this file measures: off, a pass that ran at `0`, and the tab's default.
+ */
+const POSITIONS = {
+  OFF: null,
+  EXACT: { color: KEY, tolerance: 0 },
+  DEFAULT: { color: KEY, tolerance: DEFAULT_KEY_TOLERANCE },
+} as const satisfies Record<string, BackgroundKeying | null>;
+
+type Position = keyof typeof POSITIONS;
+
+/** One quantised result, with the settings that produced it — the pair the capture decides on. */
+type Settled = { settings: QuantiseSettings; result: QuantiseResult };
+
+/** What the tab is asking for at one of those positions. */
+const settingsAt = (position: Position): QuantiseSettings => {
   const tuning: QuantiseTuning = TUNING;
-  return { ...tuning, grid: 4, key, reduction: { kind: 'MAX_COLORS', maxColors: 32 } };
-};
-
-/** The identity palette of one sheet's quantised result, with the tab's keying on or off. */
-const paletteOf = (image: ImageData, keyed: boolean): readonly string[] => {
-  const settings = settingsAt(keyed ? { color: KEY, tolerance: DEFAULT_KEY_TOLERANCE } : null);
-  return identityPalette(quantiseImage(image, settings).image, KEY);
-};
-
-/** What the studio's capture button would decide about one sheet at one keying position. */
-const offerFor = (name: string, image: ImageData, key: BackgroundKeying | null): string => {
-  const settings = settingsAt(key);
-  const source: ImportedImage = { name, image };
-  return quantisedSheetCapture({
-    source,
-    grid: settings.grid,
-    settled: { settings, result: quantiseImage(image, settings) },
-    failed: false,
-    keying: key,
-    reduction: settings.reduction,
-    studioKey: KEY,
-  }).kind;
+  return {
+    ...tuning,
+    grid: 4,
+    key: POSITIONS[position],
+    reduction: { kind: 'MAX_COLORS', maxColors: 32 },
+  };
 };
 
 describe('identityPalette on a quantised result', () => {
@@ -99,16 +98,56 @@ describe('identityPalette on a quantised result', () => {
     corpus = await loadCorpus();
   }, 300_000);
 
+  /**
+   * Each sheet quantised once per position, however many cases read it.
+   *
+   * The four cases below read the same three results of each sheet, and the quantisation is nearly
+   * all of their cost: computed afresh per case, the suite ran each sheet through the pipeline seven
+   * times rather than three, and was the second-slowest file in the gate. `quantiseImage` is pure, so a
+   * shared result is the same result.
+   */
+  const settled = new Map<string, Settled>();
+
+  const sheetNamed = (name: CorpusSheetName): ImageData => {
+    const image = corpus.get(name);
+    if (image === undefined) throw new Error(`${name} is missing from the corpus`);
+    return image;
+  };
+
+  const settledAt = (name: CorpusSheetName, position: Position): Settled => {
+    const known = settled.get(`${name} ${position}`);
+    if (known !== undefined) return known;
+    const settings = settingsAt(position);
+    const fresh = { settings, result: quantiseImage(sheetNamed(name), settings) };
+    settled.set(`${name} ${position}`, fresh);
+    return fresh;
+  };
+
+  /** The identity palette of one sheet's quantised result, with the tab's keying on or off. */
+  const paletteOf = (name: CorpusSheetName, keyed: boolean): readonly string[] =>
+    identityPalette(settledAt(name, keyed ? 'DEFAULT' : 'OFF').result.image, KEY);
+
+  /** What the studio's capture button would decide about one sheet at one keying position. */
+  const offerFor = (name: CorpusSheetName, position: Position): string => {
+    const settings = settingsAt(position);
+    const source: ImportedImage = { name, image: sheetNamed(name) };
+    return quantisedSheetCapture({
+      source,
+      grid: settings.grid,
+      settled: settledAt(name, position),
+      failed: false,
+      keying: POSITIONS[position],
+      reduction: settings.reduction,
+      studioKey: KEY,
+    }).kind;
+  };
+
   it.each(CORPUS_SHEETS)(
     'leads %s with a subject colour even where the tab did not key it',
     (name) => {
-      const image = corpus.get(name);
-      expect(image).toBeDefined();
-      if (image === undefined) return;
-
       // The half that used to fail: an unkeyed result's field is a spread of near-magentas covering
       // most of the sheet, and the digest opened with one of them on all eight.
-      expect(paletteOf(image, false).filter(nearTheKey)).toHaveLength(0);
+      expect(paletteOf(name, false).filter(nearTheKey)).toHaveLength(0);
     },
     300_000,
   );
@@ -116,15 +155,11 @@ describe('identityPalette on a quantised result', () => {
   it.each(CORPUS_SHEETS)(
     'still answers differently for %s depending on whether the tab keyed it',
     (name) => {
-      const image = corpus.get(name);
-      expect(image).toBeDefined();
-      if (image === undefined) return;
-
       // What the refusal below is actually protecting: the tab reduced the result before handing it
       // over, and on an unkeyed sheet it spent that budget on the field. Six entries each, sharing
       // between none and four — so an unkeyed offer would be a different palette, not merely a
       // magenta one.
-      expect(paletteOf(image, false)).not.toEqual(paletteOf(image, true));
+      expect(paletteOf(name, false)).not.toEqual(paletteOf(name, true));
     },
     300_000,
   );
@@ -132,11 +167,7 @@ describe('identityPalette on a quantised result', () => {
   it.each(CORPUS_SHEETS)(
     'drops %s’s key when the tab keyed it',
     (name) => {
-      const image = corpus.get(name);
-      expect(image).toBeDefined();
-      if (image === undefined) return;
-
-      expect(paletteOf(image, true).filter(nearTheKey)).toHaveLength(0);
+      expect(paletteOf(name, true).filter(nearTheKey)).toHaveLength(0);
     },
     300_000,
   );
@@ -154,13 +185,9 @@ describe('identityPalette on a quantised result', () => {
   it.each(CORPUS_SHEETS)(
     'refuses %s until the tab has actually taken the field out',
     (name) => {
-      const image = corpus.get(name);
-      expect(image).toBeDefined();
-      if (image === undefined) return;
-
-      expect(offerFor(name, image, null)).toBe('UNAVAILABLE');
-      expect(offerFor(name, image, { color: KEY, tolerance: 0 })).toBe('UNAVAILABLE');
-      expect(offerFor(name, image, { color: KEY, tolerance: DEFAULT_KEY_TOLERANCE })).toBe('READY');
+      expect(offerFor(name, 'OFF')).toBe('UNAVAILABLE');
+      expect(offerFor(name, 'EXACT')).toBe('UNAVAILABLE');
+      expect(offerFor(name, 'DEFAULT')).toBe('READY');
     },
     600_000,
   );

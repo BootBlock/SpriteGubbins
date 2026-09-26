@@ -22,8 +22,8 @@ import { buildMoments, WU_SIDE, wuCell, wuCellOfKey, type WuBox } from './wuMome
  * distance from each pixel to the entry it is drawn with, each colour weighted by how many pixels
  * carry it: **4.697** at a budget of 16, **3.287** at 32, **2.447** at 64, which is the app's
  * default, and **1.676** at 256, where a palette that large has room to be nearly right everywhere.
- * `tests/quantiser-docblock-figures.test.ts` re-derives all four, because the ladder these replace
- * was read off this search before `blendWeightedHistogram` was put in front of it and every one of
+ * `tests/quantiser-figures-wu-quantiser.test.ts` re-derives all four, because the ladder these
+ * replace was read off this search before `blendWeightedHistogram` was put in front of it and every one of
  * its numbers moved without anything failing.
  *
  * **It is a reading, not a score to minimise**, and the weighting is why. A per-pixel metric prices
