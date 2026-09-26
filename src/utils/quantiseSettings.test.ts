@@ -362,7 +362,7 @@ describe('sameQuantiseSettings', () => {
 
   it('compares a pinned palette by its colours, in order', () => {
     // Two palettes of the same length holding the same colours in a different order are not the same
-    // palette: `nearestColor` breaks a tie on the earliest entry, so the order decides the sheet.
+    // palette: `nearestColorSearch` breaks a tie on the earliest entry, so the order decides the sheet.
     const pinned: QuantiseSettings = {
       ...BASE,
       silhouetteThreshold: 0,

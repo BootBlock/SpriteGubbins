@@ -19,8 +19,8 @@ import type { PixelGrid, QuantiseSettings } from '../src/types/quantiser.ts';
  * band at one end or the other, eight of them at the leading end — and two, `cyborg_monk.png` keyed
  * and `three-quarter-view_tiles1.png` unkeyed, on both axes at once.
  *
- * Nothing asserted the pitch. `gridMesh.test.ts` asserts where the cuts *land* — the ordering its
- * docblock argues for — which a one-pixel leading cell satisfies perfectly.
+ * Nothing asserted the pitch. `gridMesh.test.ts` asserts where the cuts *land* — the ordering
+ * `meshAxis`'s docblock argues for — which a one-pixel leading cell satisfies perfectly.
  *
  * **What is asserted here is what a drifting mesh can honestly promise, and no more.** Interior cells
  * sit within `axisTolerance` of the grid because each accepted cut re-anchors the next; the two end
@@ -42,7 +42,7 @@ const MAGENTA = { r: 255, g: 0, b: 255, a: 255 } as const;
 /** The grids swept: the tightest tolerance, the reference grid, and the widest merge. */
 const GRIDS: readonly PixelGrid[] = [4, 6, 12];
 
-/** The same figure `gridMesh.ts` derives its walk tolerance from — restated, never imported. */
+/** The same figure `meshAxis.ts` derives its walk tolerance from — restated, never imported. */
 function tolerance(grid: number): number {
   return Math.max(1, Math.floor(grid / 3));
 }
