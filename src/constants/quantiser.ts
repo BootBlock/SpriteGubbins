@@ -774,10 +774,11 @@ export const VOTE_METHOD_CHOICES = [
  * position every other control on this tab spells as a zero — the pass does not run at all.
  *
  * **The colour decision is the same under all three patterns, and only the tile differs.** That is
- * not a cheap tier and a quality tier collapsed into one, but the result of measuring both: the classic
- * threshold form was defined for a palette that is a uniform lattice, and a sprite palette is a
- * list, so the arbitrary-palette search (`mixingPlan`) is what every pattern here needs. Memoised
- * per distinct colour it costs the same for all three — see the reference-sheet figures under
+ * not a cheap tier and a quality tier collapsed into one, but the result of measuring both. The
+ * classic threshold form was defined for a palette that is a uniform lattice, which a channel-depth
+ * space is and takes (`ditherChannelDepth`); a budget, a pinned list and a locked palette are lists,
+ * so the arbitrary-palette search (`mixingPlan`) is what every pattern needs for them. Memoised per
+ * distinct colour it costs the same for all three — see the reference-sheet figures under
  * {@link DITHER_SHORTLIST} — so a cheaper tier would have been a worse result at no saving.
  *
  * What separates the patterns is what the eye does with them, measured on the reference sheet
@@ -803,15 +804,15 @@ export const VOTE_METHOD_CHOICES = [
  * budget 32      flat 14.3 / 4.73 / 3.38   BAYER_4 15.7 / 4.44 / 3.12   BAYER_8 15.8 / 4.47 / 3.16   BLUE_NOISE 15.8 / 4.48 / 3.13
  * budget 8       flat 21.1 / 7.72 / 6.10   BAYER_4 18.1 / 5.32 / 3.79   BAYER_8 18.1 / 5.34 / 3.82   BLUE_NOISE 18.1 / 5.27 / 3.72
  * Game Boy       flat 92.2 / 90.2 / 92.0   BAYER_4 93.3 / 85.7 / 87.8   BAYER_8 93.4 / 85.7 / 87.8   BLUE_NOISE 93.4 / 85.8 / 87.7
- * Mega Drive     flat 20.2 / 8.02 / 6.36   BAYER_4 22.0 / 4.94 / 3.56   BAYER_8 22.1 / 5.01 / 3.62   BLUE_NOISE 22.0 / 5.13 / 3.56
- * Master System  flat 24.0 / 9.56 / 7.10   BAYER_4 27.2 / 5.71 / 3.98   BAYER_8 27.2 / 5.93 / 4.10   BLUE_NOISE 27.1 / 6.06 / 3.81
+ * Mega Drive     flat 20.2 / 8.02 / 6.36   BAYER_4 22.2 / 4.65 / 3.29   BAYER_8 22.2 / 4.71 / 3.26   BLUE_NOISE 22.3 / 4.88 / 3.20
+ * Master System  flat 24.0 / 9.56 / 7.10   BAYER_4 27.5 / 5.52 / 3.72   BAYER_8 27.8 / 5.65 / 3.59   BLUE_NOISE 27.7 / 5.91 / 3.57
  * ```
  *
  * Three things to read out of that. **The per-pixel figure rises on five of the six cases**,
  * because a pattern moves pixels off their nearest colour on purpose. **The block figures fall on
- * five of the six**, and by most on the two channel-depth machines — a little over half the flat
- * step's error over 8 × 8 blocks — which is unsurprising, since a lattice is what ordered dithering
- * was invented for. **Both exceptions are on the budget ladder, and they are one fact stated
+ * five of the six**, and by most on the two channel-depth machines — about half the flat step's
+ * error over 8 × 8 blocks — which is unsurprising, since a lattice is what ordered dithering was
+ * invented for, and those two take its classic per-channel form. **Both exceptions are on the budget ladder, and they are one fact stated
  * twice**: at 64 the palette is ample, so no colour of the sheet needs expressing as a mixture and
  * the pattern is cost on all three figures; at 8 it is short enough that a mixture lands nearer the
  * truth than the nearest single colour does, and the pattern wins on all three, the per-pixel
@@ -822,8 +823,8 @@ export const VOTE_METHOD_CHOICES = [
  * altogether, and all three land on the ordinary reading: per-pixel cost, block gain.
  *
  * The choice between the three patterns is about what each *looks* like rather than about fidelity.
- * They are not identical — the Master System's 4 × 4 figure spreads 0.35 across them — but that
- * spread is a tenth of the 3.85 between the flat step and the best of them, so it is not what a
+ * They are not identical — the Master System's 4 × 4 figure spreads 0.39 across them — but that
+ * spread is a tenth of the 4.05 between the flat step and the best of them, so it is not what a
  * reader should be choosing on.
  *
  * The labels' parentheticals carry the choosing half, per the select budget's rule; what each
@@ -957,38 +958,11 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * once per distinct colour.
  *
  * `tests/quantiser-docblock-figures.test.ts` re-derives the column this constant ships, and both
- * colour counts. **The other five are swept by overriding this constant, not by passing
- * `mixingPlan` a wider `pairFrom`** — that argument is clamped to `LONGEST_SHORTLIST`, which is
- * `max(DITHER_SHORTLIST, DITHER_LATTICE_CORNERS)` and sizes the module's scratch arrays at load, so
- * asking for 64 silently returns the 8 column. The unrestricted column is this constant at **128**,
- * the longest list palette the tab admits.
+ * colour counts. **The other five are swept by overriding this constant**, which also sizes
+ * `mixingPlan`'s scratch arrays at load, so there is no argument to widen it by. The unrestricted
+ * column is this constant at **128**, the longest list palette the tab admits.
  */
 export const DITHER_SHORTLIST = 3;
-
-/**
- * How many candidates a channel-depth lattice offers a mixing plan: the corners of the cell the
- * colour falls in, which is two rungs per channel.
- *
- * Both a bound and an override. A lattice has hundreds of thousands of points and no list to search,
- * so the candidates are worked out per colour rather than per palette — and these eight are the only
- * points a mixture could usefully be made from, being exactly the pair per channel that the classic
- * threshold dither for a bit-depth reduction chooses between.
- *
- * **All eight are paired, rather than the nearest {@link DITHER_SHORTLIST} of them**, because
- * nearness is the wrong ordering on a lattice. Measured on a mid grey against the Master System's
- * two bits: of the eight corners around it, the one raising a single channel is much the nearest and
- * the diagonal corner raising all three is the *furthest* — and the diagonal is the only one whose
- * mixture stays neutral. Drawn from the three nearest, a grey of 100 came back dithered between grey
- * and *red*, which is a visible fault rather than a lost fraction of accuracy. Correcting it is what
- * takes the two machine spaces in {@link DITHER_CHOICES}'s table from about four fifths of the flat
- * step's error over 8 × 8 blocks to a little over half of it.
- *
- * Eight candidates is twenty-eight pairs where a list palette's three are three, so the lattice arm
- * costs an order more per distinct colour — which it can afford precisely because its candidate set
- * is worked out per colour and is this small, where a list palette's is up to 128 and could not be
- * paired exhaustively at all.
- */
-export const DITHER_LATTICE_CORNERS = 8;
 
 /**
  * The coarsest scale the two automatic readers will consider for an image of this size.

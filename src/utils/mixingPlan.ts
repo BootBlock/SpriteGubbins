@@ -1,4 +1,4 @@
-import { DITHER_LATTICE_CORNERS, DITHER_SHORTLIST } from '../constants/quantiser.ts';
+import { DITHER_SHORTLIST } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { conesToOklabInto, srgbToConesInto, srgbToOklabInto } from './oklab.ts';
 import type { MutableCones, MutableOklab } from './oklab.ts';
@@ -92,9 +92,8 @@ export function ditherCandidates(entries: readonly Rgba[]): DitherCandidates {
 /** The scratches the search reuses — one set for the life of the module, as `keyDistance.ts` keeps. */
 const MIXED: MutableOklab = { L: 0, a: 0, b: 0 };
 const TARGET: MutableOklab = { L: 0, a: 0, b: 0 };
-const LONGEST_SHORTLIST = Math.max(DITHER_SHORTLIST, DITHER_LATTICE_CORNERS);
-const SHORTLIST = new Int32Array(LONGEST_SHORTLIST);
-const SHORTLIST_DISTANCE = new Float64Array(LONGEST_SHORTLIST);
+const SHORTLIST = new Int32Array(DITHER_SHORTLIST);
+const SHORTLIST_DISTANCE = new Float64Array(DITHER_SHORTLIST);
 
 /**
  * The best plan for one target colour, over `levels` rungs of ratio.
@@ -102,26 +101,10 @@ const SHORTLIST_DISTANCE = new Float64Array(LONGEST_SHORTLIST);
  * The baseline is the nearest entry taken flat, which is what the palette step would have done with
  * no dither at all — so a plan can only improve on it, and a colour the palette already holds comes
  * back as itself with `steps` of zero rather than as a pattern of two colours that average to it.
- *
- * `pairFrom` is how many of the nearest candidates the pairs may be drawn from, and the default is
- * the one a *list* palette wants. **It is clamped to the larger of the two figures the app actually
- * asks for**, because the shortlist is written into module-scoped scratch arrays sized once at load
- * — so a caller asking for more silently gets that ceiling rather than overrunning them. Neither
- * caller is clamped; a third that wanted a wider search would have to widen the arrays with it. A channel-depth lattice overrides it with the whole corner set for
- * a reason worth knowing: nearness is the wrong ordering there. The eight corners around a grey sit
- * at wildly different distances from it — the corner that raises one channel is much the nearest,
- * and the diagonal corner that raises all three is the furthest of the eight — while the diagonal is
- * the only one whose mixture stays neutral. Drawn from the three nearest, a mid grey came back
- * dithered between grey and *red*. See {@link DITHER_LATTICE_CORNERS}.
  */
-export function mixingPlan(
-  target: Rgba,
-  candidates: DitherCandidates,
-  levels: number,
-  pairFrom = DITHER_SHORTLIST,
-): MixingPlan {
+export function mixingPlan(target: Rgba, candidates: DitherCandidates, levels: number): MixingPlan {
   srgbToOklabInto(TARGET, target.r, target.g, target.b);
-  const shortlisted = shortlist(candidates, TARGET, target.a, Math.min(pairFrom, LONGEST_SHORTLIST));
+  const shortlisted = shortlist(candidates, TARGET, target.a, DITHER_SHORTLIST);
   const nearest = SHORTLIST[0] ?? 0;
 
   let bestFirst = nearest;
