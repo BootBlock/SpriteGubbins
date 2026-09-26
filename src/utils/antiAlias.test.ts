@@ -204,6 +204,23 @@ describe('antiAlias', () => {
     expect(at(snapped, 5, 2)).toEqual(PAPER);
   });
 
+  it('snaps a blend to a colour only another region of the sheet holds', () => {
+    // One region of a sheet cut into several holds only some of the sheet's colours. The snap keeps
+    // a blend to the colours the whole sheet holds, so a region whose contour mixes paper and ink
+    // reaches the grey that only its neighbour holds — see `settleRegions`.
+    const region = stepped(PAPER, INK);
+    const neighbour = imageFrom(4, 4, () => MID);
+    const alone = antiAlias(region, { ...SETTINGS, snap: true });
+    const together = antiAlias(region, { ...SETTINGS, snap: true }, [region, neighbour]);
+
+    const holds = (image: ImageData, color: Rgba) =>
+      Array.from({ length: image.width * image.height }).some(
+        (_, pixel) => readPixel(image.data, pixel * CHANNELS_PER_PIXEL).r === color.r,
+      );
+    expect(holds(alone, MID)).toBe(false);
+    expect(holds(together, MID)).toBe(true);
+  });
+
   it('snaps no blend to the colour of a pixel under the coverage floor', () => {
     // A faint pixel's channels are rounding noise. Read into the snap's palette at full standing,
     // this one's grey was a colour the sheet "held", and the contour's blends snapped to it.

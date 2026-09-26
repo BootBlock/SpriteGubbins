@@ -12,8 +12,8 @@ import type { TuneReading } from '../types/autoTune.ts';
  *
  * **The first reading is the dials in force, and they stay unless beaten by the margin.** That is
  * `withIncumbent`'s contract: it puts the incumbent at the head of every stage's list. Without the
- * margin, a stage moves a dial for any gain at all: on `test_sprites/armour.png` the cleanup passes
- * go from 1 to 2 for a gain below 0.00005. Kneedle asks the same of a knee before it declares one
+ * margin, a stage moves a dial for any gain at all: on `test_sprites/ui_elements1.png` the fill
+ * cleanup goes from off to 20 for a gain the margin refuses. Kneedle asks the same of a knee before it declares one
  * (Satopää et al., 2011): a difference has to clear a stated threshold before it counts as one.
  *
  * Ties among the challengers are settled by the earliest, so the answer does not depend on how a

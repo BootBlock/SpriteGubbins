@@ -34,23 +34,25 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * `chooseByPrice`, which spends it — so a dial moves only where it buys more likeness per colour than
  * that price, or saves colours worth more than the likeness it loses, and only by more than
  * {@link TUNE_SCORE_MARGIN}. The price replaced an elbow taken separately in each stage, whose price
- * of a colour was set by that stage's own cheapest and dearest candidates. On the corpus the elbow
- * settled every sheet between 57 and 113 colours; one price settles them between 8.4 and 35.2.
+ * of a colour was set by that stage's own cheapest and dearest candidates. On the corpus, with colours
+ * counted then as a mean over the crops, the elbow settled every sheet between 57 and 113 colours and
+ * one price between 8.4 and 35.2. Counted across the crops, as the sheet spends them — see
+ * `readCandidate` — one price settles them between 26 and 135.
  *
  * **Measured on the reference sheet** (`test_sprites/armour.png`, 1254², a grid of 6, no keying, no
  * colour budget, every dial at its opening position), by running `autoTune` over it directly: five
- * crops of 240 px and **157 positions over three rounds**, the three anti-aliasing stages skipping
- * because the tab opens that control off, at a price of 0.00049 of a likeness a colour, ending at a
- * likeness of **0.5552 for 22.6 colours** where the opening position it started from scored 0.5469
- * for 960. Under a fortieth of the colours for 0.008 *more* likeness, which is better on both counts
- * than where the reader began. The position it settles on is `K_CENTROID` with the merge at 18, the
- * cleanup at 20 and one cleanup pass; the table under {@link TUNE_ROUNDS} carries the other seven
- * sheets, and every one of them settles on `K_CENTROID` too.
+ * crops of 240 px and **145 positions over three rounds**, the three anti-aliasing stages skipping
+ * because the tab opens that control off, at a price of 0.000105 of a likeness a colour, ending at a
+ * likeness of **0.5601 for 58 colours** where the opening position it started from scored 0.5469
+ * for 4292. Under a seventieth of the colours for 0.013 *more* likeness, which is better on both
+ * counts than where the reader began. The position it settles on is `K_CENTROID` with the merge at
+ * 12 and the cleanup off; the table under {@link TUNE_ROUNDS} carries the other seven sheets, and
+ * every one of them settles on `K_CENTROID` too.
  *
  * **What the widening bought, measured rather than assumed.** The narrower sweep this replaced — 35
  * positions, one round, three crops — settled this sheet on `DOMINANT` with the merge at 12 and the
- * cleanup at 48. Scored on the same five crops the widened sweep reads, that position is **0.5389 for
- * 54 colours** against the **0.5552 for 22.6** above, which beats it on both counts. The narrow sweep
+ * cleanup at 48. Scored on the same five crops the widened sweep reads, that position is **0.5377 for
+ * 76 colours** against the **0.5601 for 58** above, which beats it on both counts. The narrow sweep
  * could not reach it, because the reading stage's first round keeps `DOMINANT` (see below) and only a
  * later round, taken against a merge and a cleanup already swept, moves it to `K_CENTROID`. Both
  * figures are on the same sample, which is the only way the pair means anything — the crop count
@@ -62,31 +64,33 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * 96, a shortest run of 12 and a strength of **10%** — the top of the first two ladders and the bottom
  * of the third, so the pass softens only the hardest, longest contours and by the least the ladder
  * offers. That is pixel-art practice's one standing rule about anti-aliasing, to use as little of it
- * as the shape needs, arrived at by measurement. It reaches 0.5549 for 28.8 colours from a baseline of
- * 0.5406 for 1058.2, at a price of 0.00076.
+ * as the shape needs, arrived at by measurement. It reaches 0.5575 for 73 colours from a baseline of
+ * 0.5406 for 4755, at a price of 0.000171.
  *
  * **Every likeness above counts coverage as a fourth component** — see `meanSsim`. On an unkeyed
  * sheet with the anti-aliasing off every pixel is opaque, so coverage adds nothing to any figure.
  * Keyed at the default tolerance against each sheet's corner colour, at the grids the table under
- * {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different sheet, and only the
- * reference sheet — at `OFF` and at `BOTH` — `cyborg_healer.png` and
- * `character_space_marine_blue.png` settle on the dials they settle on unkeyed; the other five move
- * the colour merge by one or two rungs. Every descent takes the same count but two:
- * `three-quarter-view_tiles1.png` ends sooner, at 149 positions rather than 192, and
- * `ui_elements1.png` runs longer, at 145 rather than 102.
+ * {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different sheet, and only
+ * `cyborg_healer.png`, `cyborg_black_red.png` and `character_space_marine_blue.png` settle on the
+ * dials they settle on unkeyed. Four more move the colour merge by one or two rungs; the reference
+ * sheet keeps its merge at `OFF` and turns the cleanup to 20, and at `BOTH` moves the merge a rung,
+ * the cleanup to 20 and the strength to 20%. At `OFF`, four descents take the same count and four do not:
+ * `three-quarter-view_tiles1.png` ends sooner, at 102 positions rather than 192, and the reference
+ * sheet, `ui_elements1.png` and `cyborg_monk.png` run longer — 157 rather than 145, and 145 rather
+ * than 102 for the other two.
  *
  * **The count of positions is what a change to any ladder here has to be judged by**, not a wall
  * clock — the same code over the same sheet takes several times longer on one host than another, so
  * the guidance's "a minute or two" is stated against the position count rather than against any figure
  * a stopwatch produced. Every count here is of positions *ranked*: one the descent ranks twice is run
- * once — see `candidateReader` — so the corpus's 1,176 ranked positions ran as 743.
+ * once — see `candidateReader` — so the corpus's 1,121 ranked positions ran as 685.
  *
  * **The reading stage's first round keeps the *cheapest* of the three readings on that sheet rather
  * than the most faithful, and that is the price doing what it says rather than a defect.** Of the
  * fifteen positions the reading stage tries, `K_CENTROID` at expansion 0 reproduces the crops most
- * closely at 0.5737 for 1128.0 colours and `INK_WEIGHTED` at expansion 0 comes next at 0.5525 for
- * 1128.4; `DOMINANT` at expansion 0 is the least faithful of the three at 0.5469 and spends 960.4.
- * `K_CENTROID`'s extra likeness costs 0.00016 a colour against a price of 0.00049, so the first
+ * closely at 0.5737 for 5109 colours and `INK_WEIGHTED` at expansion 0 comes next at 0.5525 for
+ * 5100; `DOMINANT` at expansion 0 is the least faithful of the three at 0.5469 and spends 4292.
+ * `K_CENTROID`'s extra likeness costs 0.000033 a colour against a price of 0.000105, so the first
  * round keeps `DOMINANT`. Once the merge and the cleanup have folded the averaging readings' extra
  * colours away, a later round ranks readings that spend alike, and `K_CENTROID` wins — which is what
  * a descent of more than one round is for.
@@ -97,8 +101,8 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * `DOMINANT` on likeness above, on a sheet whose contours were softened on the way back from the
  * generator. On `test_sprites/cyborg_healer.png` (a grid of 4, and again a grid the run was given
  * rather than one the sheet reads at) `K_CENTROID` at expansion 0 beats the other averaging reading
- * on **both** counts — 0.5315 for 1433.2 colours against `INK_WEIGHTED`'s 0.5149 for 1451.6 — and
- * the first round keeps `DOMINANT`, at 0.5125 for 1333.2, because it is cheaper than either. The
+ * on **both** counts — 0.5315 for 6618 colours against `INK_WEIGHTED`'s 0.5149 for 6895 — and
+ * the first round keeps `DOMINANT`, at 0.5125 for 6232, because it is cheaper than either. The
  * whole sweep then settles every corpus sheet on `K_CENTROID`, which is the warning stated at its
  * sharpest: a sheet that lives on its contours gets the reading that softens them unless the reader
  * asks for `INK_WEIGHTED` — which is what `AUTO_TUNE_GUIDANCE.settled` tells them to try.
@@ -168,12 +172,12 @@ export const PROXY_CROP_STRIDE = 0.5;
  * | Sheet | Grid the run was given | Rounds | Positions |
  * | --- | --- | --- | --- |
  * | `three-quarter-view_tiles1.png` | 5 | **4** | 192 |
- * | `armour.png` | 6 | 3 | 157 |
+ * | `armour.png` | 6 | 3 | 145 |
  * | `cyborg_black_red.png` | 6 | 3 | 145 |
  * | `cyborg_healer.png` | 4 | 3 | 145 |
  * | `vehicles_and_props.png` | 5 | 3 | 145 |
- * | `cyborg_monk.png` | 4 | 3 | 145 |
  * | `character_space_marine_blue.png` | 5 | 3 | 145 |
+ * | `cyborg_monk.png` | 4 | 2 | 102 |
  * | `ui_elements1.png` | 4 | 2 | 102 |
  *
  * **The grid column is the run's own input, not a reading of the sheet.** Each grid was chosen
@@ -205,11 +209,11 @@ export const TUNE_ROUNDS = 8;
  *
  * **A thousandth of a likeness, which is the smallest step the panel shows.** The likeness badge
  * reads to three places, so a smaller gain moves a dial for a difference the reader cannot see on the
- * figure that justified it, let alone in the preview. Without a margin the sweep does exactly that,
- * on two of the eight corpus sheets at the grids `TUNE_ROUNDS` gives: on `test_sprites/armour.png` it
- * adds a second cleanup pass for a gain below 0.00005, and on
- * `test_sprites/character_space_marine_blue.png` it takes the merge from 12 to 9, spending 16.6 more
- * colours for a net gain of 0.0009 at that sheet's price.
+ * figure that justified it, let alone in the preview. Without a margin the sweep does exactly that
+ * on one of the eight corpus sheets at the grids `TUNE_ROUNDS` gives: on
+ * `test_sprites/ui_elements1.png` it turns the fill cleanup on at 20, a step the margin refuses, and
+ * then raises the cleanup passes to four, for 0.0012 more likeness in all at the same 26 colours. The
+ * other seven settle where they settle with it.
  *
  * The score is `fidelity − price × colors` — see `chooseByPrice` — so the margin is in likeness
  * either way a candidate earns it: by reproducing the crops more closely, or by saving enough colours

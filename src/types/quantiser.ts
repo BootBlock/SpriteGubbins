@@ -1063,24 +1063,8 @@ export interface SpriteStrip {
   readonly pitch: PixelShift;
 }
 
-/**
- * The transformed sheet, and every reading that falls out of producing it.
- *
- * **Separate from {@link QuantiseResult} because of what is missing, which is one field.** Every
- * reading here is either free or already paid for: the segmentation and the three readings taken
- * over it are what `settleSprites` had to have in order to edit the sheet at all, the colour count
- * and the palette come from one histogram of a result the transform has just written, and the
- * keyed share and the leading-cell shift are facts the prologue already established. The difference
- * map is the one reading that is a *second* walk, and it is over the source rather than the result —
- * which at a grid of 6 is thirty-six times the pixels of everything above.
- *
- * So the split is a reading, not a knob: `quantiseFromPrologue` answers everything the transform
- * knows, and `quantiseImage` adds the one reading a caller has to ask for by asking for it. The
- * auto-tune sweep reads {@link image} and {@link colors} and nothing else, and over a sweep of
- * `test_sprites/armour.png` at a grid of 6 that map was built 710 times and dropped 710 times —
- * so it takes the narrower answer. Every other caller wants the map and takes the whole result.
- */
-export interface QuantiseSheet {
+/** What came back: the transformed sheet, the numbers that say what it did, and what it cost. */
+export interface QuantiseResult {
   readonly image: ImageData;
   /**
    * The separate sprites on {@link image}, and how big each of them is.
@@ -1197,21 +1181,18 @@ export interface QuantiseSheet {
    * touched.
    */
   readonly keyedShare: number;
-}
-
-/** What came back: the transformed sheet, the numbers that say what it did, and what it cost. */
-export interface QuantiseResult extends QuantiseSheet {
   /**
-   * What {@link QuantiseSheet.image} cost, pixel by pixel — the preview's difference mode, as data.
+   * What {@link image} cost, pixel by pixel — the preview's difference mode, as data.
    *
    * A fact of the result rather than something asked for separately, and deliberately: a heatmap
    * computed on its own could describe an older result than the one beside it, which is precisely
-   * the failure the mode exists to expose. Travelling with the result, it cannot.
+   * the failure the mode exists to expose. Travelling with the result, it cannot. `quantiseImage`
+   * takes it in the same breath as the sheet it describes, so the pair cannot come apart; there is no
+   * second function offering to measure a map against a result somebody is holding.
    *
-   * **That is why it is the field a caller opts into rather than one it may fetch afterwards.**
-   * `quantiseFromPrologue` leaves it out and `quantiseImage` takes it in the same breath as the sheet it
-   * describes, so the pair cannot come apart; there is no third function offering to measure a map
-   * against a result somebody is holding.
+   * **It is the one reading here that is a second walk**, and over the source rather than the
+   * result, which at a grid of 6 is thirty-six times the pixels. Every other field is free or already
+   * paid for. The auto-tune sweep builds none, because `quantiseRegions` hands back only the images.
    */
   readonly difference: DifferenceMap;
 }

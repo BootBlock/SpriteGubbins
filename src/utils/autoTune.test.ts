@@ -9,7 +9,7 @@ import { autoTune } from './autoTune.ts';
 import { upscaleOverMesh } from './gridAlignment.ts';
 import { oklabPlanes } from './oklabPlanes.ts';
 import { proxyCrops } from './proxyCrops.ts';
-import { quantiseFromPrologue } from './quantiseImage.ts';
+import { quantiseRegions } from './quantiseImage.ts';
 import { quantisePrologue } from './quantisePrologue.ts';
 import { meanSsim } from './ssim.ts';
 import { readCandidate } from './tuneCandidate.ts';
@@ -196,7 +196,8 @@ describe('autoTune', () => {
     const dials = tunedDialsOf(keyed);
 
     const scored = readCandidate(dials, [crop], keyed).fidelity;
-    const result = quantiseFromPrologue(crop.prologue, { ...keyed, ...dials }).image;
+    const [result] = quantiseRegions([crop.prologue], { ...keyed, ...dials });
+    if (result === undefined) throw new Error('One region in, one region out');
     const againstTheField = meanSsim(KEYED_SHEET, result);
 
     // The gap on this fixture is about 0.29, and the floor is a wide band below that rather than a
@@ -223,12 +224,9 @@ describe('autoTune', () => {
       { ...base, vote: 'K_CENTROID', colorMerge: 48, fillCleanup: 48 },
     ];
     const scores = far.map((dials) => {
-      const painted = upscaleOverMesh(
-        quantiseFromPrologue(prologue, { ...BASE, ...dials }).image,
-        prologue.mesh,
-        prologue.source.width,
-        prologue.source.height,
-      );
+      const [result] = quantiseRegions([prologue], { ...BASE, ...dials });
+      if (result === undefined) throw new Error('One region in, one region out');
+      const painted = upscaleOverMesh(result, prologue.mesh, prologue.source.width, prologue.source.height);
       return {
         lattice: offMeshShare(painted, prologue.mesh),
         fidelity: meanSsim(prologue.source, painted),

@@ -21,7 +21,7 @@ import { upscaleNearest } from '../src/utils/upscaleNearest.ts';
  * file, so anything it closes over has to be hoisted with it.
  */
 const seen = vi.hoisted(() => ({
-  runs: [] as { readonly prologue: QuantisePrologue; readonly settings: QuantiseSettings }[],
+  runs: [] as { readonly prologues: readonly QuantisePrologue[]; readonly settings: QuantiseSettings }[],
   converted: [] as ImageData[],
 }));
 
@@ -29,9 +29,9 @@ vi.mock('../src/utils/quantiseImage.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/utils/quantiseImage.ts')>();
   return {
     ...actual,
-    quantiseFromPrologue: (...args: Parameters<typeof actual.quantiseFromPrologue>) => {
-      seen.runs.push({ prologue: args[0], settings: args[1] });
-      return actual.quantiseFromPrologue(...args);
+    quantiseRegions: (...args: Parameters<typeof actual.quantiseRegions>) => {
+      seen.runs.push({ prologues: args[0], settings: args[1] });
+      return actual.quantiseRegions(...args);
     },
   };
 });
@@ -72,11 +72,11 @@ function sweep() {
   seen.runs.length = 0;
   seen.converted.length = 0;
   const outcome = autoTune(SHEET, SETTINGS);
-  return { outcome, prologues: [...new Set(seen.runs.map((run) => run.prologue))] };
+  return { outcome, prologues: [...new Set(seen.runs.flatMap((run) => run.prologues))] };
 }
 
 describe('the auto-tune sweep against work it has already done', () => {
-  it('runs each position once a crop, however often the descent ranks it', () => {
+  it('runs each position once, over every crop, however often the descent ranks it', () => {
     const { outcome, prologues } = sweep();
 
     // The sweep this is a claim about: more than one crop, and a descent that ranked some position
@@ -84,16 +84,13 @@ describe('the auto-tune sweep against work it has already done', () => {
     // repeated itself, and the cache would be untested.
     expect(prologues).toHaveLength(outcome.crops);
     expect(outcome.crops).toBeGreaterThan(1);
-    expect(seen.runs.length).toBeLessThan(outcome.candidates * outcome.crops);
+    expect(seen.runs.length).toBeLessThan(outcome.candidates);
 
-    for (const prologue of prologues) {
-      const positions = seen.runs
-        .filter((run) => run.prologue === prologue)
-        .map((run) => JSON.stringify(tunedDialsOf(run.settings)));
-      // Every crop meets the same positions, and none of them twice.
-      expect(positions).toHaveLength(seen.runs.length / outcome.crops);
-      expect(new Set(positions).size).toBe(positions.length);
-    }
+    // Every run quantises every crop together, as the regions of one sheet — see `quantiseRegions`
+    // — and no position is run twice.
+    for (const run of seen.runs) expect(run.prologues).toEqual(prologues);
+    const positions = seen.runs.map((run) => JSON.stringify(tunedDialsOf(run.settings)));
+    expect(new Set(positions).size).toBe(positions.length);
   });
 
   it('converts each crop into OKLab once for the whole sweep', () => {

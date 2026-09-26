@@ -38,7 +38,7 @@ import { TUNE_STAGES } from './tuneStages.ts';
  * a coordinate descent settles each dial against the ones ahead of it in the pipeline and against the
  * *opening positions* of the ones behind it, which is only half an answer; a second round re-asks
  * every one of those questions from where the first left everything. Measured over the corpus, one
- * sheet stops at the fourth round, six at the third and one at the second — `TUNE_ROUNDS` carries
+ * sheet stops at the fourth round, five at the third and two at the second — `TUNE_ROUNDS` carries
  * that table.
  *
  * **A round that moves nothing is the only way it ends short of the cap, and the descent cannot

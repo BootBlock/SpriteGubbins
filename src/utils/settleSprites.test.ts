@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_SPRITE_GAP, SPRITE_GAP_RANGE } from '../constants/quantiser.ts';
 import { channels, imageFrom } from '../test/images.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
-import { pixelOffset, readPixel } from './imageData.ts';
-import { type SettledSheet, settleSprites } from './settleSprites.ts';
+import { CHANNELS_PER_PIXEL, pixelOffset, readPixel } from './imageData.ts';
+import { type SettledSheet, settleRegions, settleSprites } from './settleSprites.ts';
 
 const CLEAR: Rgba = { r: 0, g: 0, b: 0, a: 0 };
 const FILL: Rgba = { r: 90, g: 110, b: 140, a: 255 };
@@ -261,5 +261,40 @@ describe('settleSprites — a snap keeps the sprite count', () => {
     expect(spriteCount(read)).toBeGreaterThan(0);
     expect(spriteCount(snapped)).toBe(spriteCount(read));
     expect(channels(snapped.image)).toEqual(channels(sheet()));
+  });
+});
+
+describe('settleRegions', () => {
+  const PAPER: Rgba = { r: 235, g: 235, b: 235, a: 255 };
+  const INK: Rgba = { r: 20, g: 20, b: 20, a: 255 };
+  const MID: Rgba = { r: 128, g: 128, b: 128, a: 255 };
+  const SNAPPING: QuantiseSettings = {
+    ...READING_ONLY,
+    symmetry: 'OFF',
+    frameAlignment: 'OFF',
+    antiAlias: 'BOTH',
+    antiAliasPalette: 'SNAP',
+    reduction: { kind: 'MAX_COLORS', maxColors: 16 },
+  };
+  /** One stepped contour between paper and ink, with no grey of its own. */
+  const contour = () => imageFrom(12, 6, (x, y) => (y < (x < 6 ? 2 : 3) ? PAPER : INK));
+  const holds = (image: ImageData, color: Rgba) =>
+    Array.from({ length: image.width * image.height }).some(
+      (_, pixel) => readPixel(image.data, pixel * CHANNELS_PER_PIXEL).r === color.r,
+    );
+
+  it('keeps each region’s blends to the colours every region holds', () => {
+    // The regions of one sheet hold its colours between them, so a blend in one of them may snap to a
+    // grey only its neighbour holds, exactly as it would on the whole sheet.
+    const [region] = settleRegions([contour(), imageFrom(4, 4, () => MID)], SNAPPING);
+
+    expect(holds(settleSprites(contour(), SNAPPING).image, MID)).toBe(false);
+    expect(region !== undefined && holds(region.image, MID)).toBe(true);
+  });
+
+  it('settles one region exactly as the sheet it is', () => {
+    const [region] = settleRegions([contour()], SNAPPING);
+
+    expect(region).toEqual(settleSprites(contour(), SNAPPING));
   });
 });
