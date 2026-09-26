@@ -8,16 +8,16 @@ import { lumaOfChannels } from '../src/utils/lineVote.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
 import type { VoteMethod } from '../src/types/quantiser.ts';
 
-/**
- * The survival and surface-loss ladders `outlineExpansion` states, re-derived from the reference
- * sheet. See `calibrationSettings.ts` for why the docblock-figure suites exist.
- */
 /** Ink is the darkest quarter, which is what the vote's own rescue and these figures both mean. */
 function isInkPixel(data: Uint8ClampedArray, at: number): boolean {
   if ((data[at + 3] ?? 0) === 0) return false;
   return lumaOfChannels(data[at] ?? 0, data[at + 1] ?? 0, data[at + 2] ?? 0) < DEFAULT_INK_THRESHOLD;
 }
 
+/**
+ * The survival and surface-loss ladders `outlineExpansion` states, re-derived from the reference
+ * sheet. See `calibrationSettings.ts` for why the docblock-figure suites exist.
+ */
 describe('outlineExpansion — the survival and surface-loss ladders', () => {
   let sheet: ImageData;
 

@@ -19,8 +19,9 @@ import type { QuantiseSettings } from '../src/types/quantiser.ts';
  *
  * Slow, deliberately: nearly every figure is the real pipeline over a 1.57-megapixel generator
  * sheet, because a synthetic fixture carries none of the resampling being measured through. That is
- * why they are one suite per docblock rather than one file: Vitest schedules by file, so a single
- * file holding every figure was the longest-running job in the gate however many workers ran it.
+ * why they are several suites, each named for the pass or table whose docblocks it pins, rather
+ * than one file: Vitest gives each file to one worker, so a single file holding every figure took
+ * about three minutes in the gate however many workers or shards ran the rest.
  *
  * `test_sprites/armour.png` is where most of them are stated. A figure measured somewhere other than
  * the reference sheet says which sheet it came from, in the suite that pins it.
