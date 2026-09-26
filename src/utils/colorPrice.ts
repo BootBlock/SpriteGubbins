@@ -36,13 +36,12 @@ import { tunedDialsOf } from './tuneStage.ts';
  * `candidateReader` runs each of them once.
  *
  * **With no colour reduction, whatever the reader has set.** A budget or a pinned palette holds every
- * candidate to within a fraction of one colour of the others, so a chord read under one divides a
- * real likeness span by a colour span that is rounding: measured on `test_sprites/armour.png` at a
- * grid of 6 with a budget of 16, it priced a colour at 0.44 of a likeness, and the colour merge then
- * took the sheet from 16 colours to 4.8. Pricing colours at nothing under a budget is wrong the other
- * way: on `test_sprites/cyborg_monk.png` at a grid of 4, a budget of 16 and the anti-aliasing at
- * `BOTH`, the blended shades then cost nothing and the sweep spent 29 colours against the reader's
- * 16. Read without the reduction, the price is what a colour is worth to this artwork, and a stage
+ * candidate to the same few colours, so a chord read under one has no colour span to divide by:
+ * measured on `test_sprites/armour.png` at a grid of 6 with a budget of 16, every one of the fifteen
+ * positions spends exactly 16 colours across the crops, and the chord prices a colour at nothing.
+ * Pricing colours at nothing under a budget is wrong: on `test_sprites/cyborg_monk.png` at a grid of
+ * 4, a budget of 16 and the anti-aliasing at `BOTH`, the blended shades then cost nothing and the
+ * sweep spent 67 colours against the reader's 16. Read without the reduction, the price is what a colour is worth to this artwork, and a stage
  * under a budget spends or saves colours at that rate like any other. Where no reduction is in force
  * the sweep's own reader is used, so nothing is read twice.
  *

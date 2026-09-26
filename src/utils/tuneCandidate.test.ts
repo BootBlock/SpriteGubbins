@@ -67,4 +67,21 @@ describe('readCandidate', () => {
     expect(prologue.mesh.x.slice(0, 3)).toEqual([0, 6, 10]);
     expect(prologue.mesh.y.slice(0, 3)).toEqual([0, 6, 10]);
   });
+
+  it('counts the colours the crops spend between them, once each', () => {
+    // A colour is spent once per sheet. Two crops holding two colours each, none of them shared, cost
+    // the sheet four; a mean over the crops called it two, and called two crops holding the same two
+    // colours two as well.
+    const unreduced = { ...SETTINGS, reduction: null };
+    const flat = (first: Rgba, second: Rgba) =>
+      tuneCrop(
+        imageFrom(CELLS * GRID, CELLS * GRID, (x) => (x < (CELLS * GRID) / 2 ? first : second)),
+        unreduced,
+      );
+    const dials = tunedDialsOf(QUANTISE_DEFAULT_DIALS);
+    const [a, b = a, c = a, d = a] = COLOURS;
+
+    expect(readCandidate(dials, [flat(a, b), flat(c, d)], unreduced).colors).toBe(4);
+    expect(readCandidate(dials, [flat(a, b), flat(a, b)], unreduced).colors).toBe(2);
+  });
 });

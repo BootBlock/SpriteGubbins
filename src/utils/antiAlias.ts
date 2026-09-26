@@ -59,11 +59,18 @@ export interface AntiAliasSettings extends ClaimSettings {
  * nobody should pay for a sheet that did not change. `OFF` leaves before anything is allocated at
  * all.
  *
+ * `held` is where the snap finds the colours the sheet already holds, and it is `image` itself unless
+ * `image` is one region of a sheet cut into several, whose colours the regions hold between them.
+ *
  * Pure. It reads every source pixel out of the input and writes only into its own copy, so a claimed
  * pixel whose neighbour is also claimed blends against the colour that neighbour arrived with rather
  * than the one it is about to become — otherwise the sweep order would be part of the answer.
  */
-export function antiAlias(image: ImageData, settings: AntiAliasSettings): ImageData {
+export function antiAlias(
+  image: ImageData,
+  settings: AntiAliasSettings,
+  held: readonly ImageData[] = [image],
+): ImageData {
   if (settings.mode === 'OFF') return image;
 
   const claims = edgeClaims(image, settings);
@@ -73,7 +80,7 @@ export function antiAlias(image: ImageData, settings: AntiAliasSettings): ImageD
   const output = createImage(width, height);
   output.data.set(data);
 
-  const palette = settings.snap ? sheetColors(image) : null;
+  const palette = settings.snap ? sheetColors(held) : null;
   const located = palette === null ? null : locateEntries(palette);
   const resolved = new Map<number, Rgba>();
 
@@ -135,7 +142,8 @@ function keep(blend: Rgba, located: readonly LocatedEntry[], resolved: Map<numbe
 
 /**
  * Every distinct colour the sheet holds, opaque, in the order it was first met — or `null` where it
- * holds more of them than a palette can name.
+ * holds more of them than a palette can name. The sheet is every image in `images`: one, or each
+ * region of a sheet cut into several — see `settleRegions`.
  *
  * **The `null` is what bounds the snap, and it is the app's own boundary rather than a new one.**
  * `nearestOklab` is a linear scan, so a search set of this size is paid once per distinct blend; on
@@ -156,21 +164,22 @@ function keep(blend: Rgba, located: readonly LocatedEntry[], resolved: Map<numbe
  * of counts this has no use for — and it stops the moment the sheet passes the ceiling, so the
  * refusal costs a partial pass rather than a whole one.
  */
-function sheetColors(image: ImageData): readonly Rgba[] | null {
-  const { data } = image;
+function sheetColors(images: readonly ImageData[]): readonly Rgba[] | null {
   const seen = new Set<number>();
   const entries: Rgba[] = [];
 
-  for (let offset = 0; offset < data.length; offset += CHANNELS_PER_PIXEL) {
-    if ((data[offset + 3] ?? 0) < COVERAGE_FLOOR) continue;
-    const r = data[offset] ?? 0;
-    const g = data[offset + 1] ?? 0;
-    const b = data[offset + 2] ?? 0;
-    const packed = (r * 256 + g) * 256 + b;
-    if (seen.has(packed)) continue;
-    if (seen.size === MAX_PALETTE_ENTRIES) return null;
-    seen.add(packed);
-    entries.push({ r, g, b, a: FULLY_OPAQUE });
+  for (const { data } of images) {
+    for (let offset = 0; offset < data.length; offset += CHANNELS_PER_PIXEL) {
+      if ((data[offset + 3] ?? 0) < COVERAGE_FLOOR) continue;
+      const r = data[offset] ?? 0;
+      const g = data[offset + 1] ?? 0;
+      const b = data[offset + 2] ?? 0;
+      const packed = (r * 256 + g) * 256 + b;
+      if (seen.has(packed)) continue;
+      if (seen.size === MAX_PALETTE_ENTRIES) return null;
+      seen.add(packed);
+      entries.push({ r, g, b, a: FULLY_OPAQUE });
+    }
   }
 
   return entries;

@@ -20,7 +20,7 @@ import { upscaleNearest } from '../src/utils/upscaleNearest.ts';
  * **The three prologue passes are once per crop and the difference map is never**, and both halves
  * follow from the same fact: the key, the edge hardening and the mesh depend on `key`,
  * `silhouetteThreshold` and `grid`, none of which the sweep may move, while the map is the one
- * reading `readCandidate` does not look at. See `quantisePrologue` and `QuantiseSheet`.
+ * reading `readCandidate` does not look at. See `quantisePrologue` and `quantiseRegions`.
  *
  * The counters are `vi.hoisted` because a `vi.mock` factory is hoisted above every import in this
  * file, so anything it closes over has to be hoisted with it.
@@ -124,8 +124,8 @@ describe('the auto-tune sweep against the pipeline prologue', () => {
 
     // And never, where the same restoration reports 620. `readCandidate` reads the image and the
     // colour count and nothing else, and this is the one reading that costs a second walk over the
-    // source rather than falling out of the transform — which is why it is the field
-    // `quantiseFromPrologue` leaves out.
+    // source rather than falling out of the transform — which is why `quantiseRegions` hands back
+    // only the images.
     expect(counts.difference).toBe(0);
   });
 });

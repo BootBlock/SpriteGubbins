@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { withCompanionOutputs } from '../utils/imageConfig.ts';
 import type { ImageOutputConfig, OutputConfig } from '../types/output.ts';
+import { retireOverwrittenReads } from './retireOverwrittenReads.ts';
 
 /**
  * How the sheet should be rendered: the technical half of the prompt.
@@ -9,6 +10,9 @@ import type { ImageOutputConfig, OutputConfig } from '../types/output.ts';
  * Separate from `useSubjectStore` rather than one "studio" store, because the two change on
  * different rhythms — the subject is edited constantly, the output configuration is set once and
  * left — and a component selecting from one should never re-render because the other moved.
+ *
+ * Every write but `setOutputField` replaces settings wholesale, so each of those retires a palette
+ * file still being read into a setting it changed. See `retireOverwrittenReads`.
  */
 export interface OutputState {
   readonly output: OutputConfig;
@@ -45,28 +49,35 @@ export interface OutputState {
   setOutputConfig(config: OutputConfig): void;
 }
 
-export const useOutputStore = create<OutputState>((set) => ({
-  // `DEFAULT_OUTPUT_CONFIG`, not the default preset's own `output`. They hold the same values, but
-  // this is the constant that *means* "the configuration the studio opens on", and it is already
-  // what `db/rows.ts` repairs a malformed stored config from — so there is one default, not two.
-  output: DEFAULT_OUTPUT_CONFIG,
+export const useOutputStore = create<OutputState>((set, get) => {
+  const replace = (output: OutputConfig) => {
+    retireOverwrittenReads(get().output, output);
+    set({ output });
+  };
 
-  setOutputField: (key, value) => {
-    set((state) => ({ output: { ...state.output, [key]: value } }));
-  },
+  return {
+    // `DEFAULT_OUTPUT_CONFIG`, not the default preset's own `output`. They hold the same values, but
+    // this is the constant that *means* "the configuration the studio opens on", and it is already
+    // what `db/rows.ts` repairs a malformed stored config from — so there is one default, not two.
+    output: DEFAULT_OUTPUT_CONFIG,
 
-  applyOutputPatch: (patch) => {
-    set((state) => ({ output: { ...state.output, ...patch } }));
-  },
+    setOutputField: (key, value) => {
+      set((state) => ({ output: { ...state.output, [key]: value } }));
+    },
 
-  applyImageConfig: (config) => {
-    // Merged from the *current* state rather than from a snapshot the caller read, for the same
-    // reason `applyOutputPatch` is: the two companion answers being carried across are the ones in
-    // the store at the moment of the load.
-    set((state) => ({ output: withCompanionOutputs(config, state.output) }));
-  },
+    applyOutputPatch: (patch) => {
+      replace({ ...get().output, ...patch });
+    },
 
-  setOutputConfig: (config) => {
-    set({ output: config });
-  },
-}));
+    applyImageConfig: (config) => {
+      // Merged from the *current* state rather than from a snapshot the caller read, for the same
+      // reason `applyOutputPatch` is: the two companion answers being carried across are the ones in
+      // the store at the moment of the load.
+      replace(withCompanionOutputs(config, get().output));
+    },
+
+    setOutputConfig: (config) => {
+      replace(config);
+    },
+  };
+});

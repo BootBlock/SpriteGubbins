@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { customPaletteRequests } from '../stores/customPaletteRequests.ts';
 import { useOutputStore } from '../stores/useOutputStore.ts';
 import type { CustomPalette } from '../types/customPalette.ts';
 import type { ImportedImage } from '../types/quantiser.ts';
@@ -22,6 +23,10 @@ import { useImageFile } from './useImageFile.ts';
  * palette nobody chose. So the count is reported and the picture is kept just long enough to offer
  * the one thing that would make it a palette: reducing it, deliberately, through the same quantiser
  * the Quantise tab uses.
+ *
+ * **The reader's last choice wins.** Every file is read through `customPaletteRequests`, and a paste,
+ * a reduction and Clear each retire a read still in flight, so a slow file never lands on top of
+ * something the reader did after choosing it.
  *
  * Impure, so `src/hooks/` rather than `src/utils/`: it decodes files and writes to a store. The
  * reading of each form is pure and is tested without a DOM.
@@ -98,7 +103,7 @@ export function useCustomPaletteIntake(): CustomPaletteIntake {
     [pin],
   );
 
-  const acceptImage = useImageFile(readImage);
+  const acceptImage = useImageFile(readImage, customPaletteRequests);
 
   const readText = useCallback(
     (text: string, fallbackName: string, read: string) => {
@@ -147,13 +152,14 @@ export function useCustomPaletteIntake(): CustomPaletteIntake {
         return;
       }
 
+      const current = customPaletteRequests.begin();
       void file
         .text()
         .then((text) => {
-          readText(text, fileStem(file.name), file.name);
+          if (current()) readText(text, fileStem(file.name), file.name);
         })
         .catch(() => {
-          setProblems([`${file.name} could not be read, so the palette is unchanged.`]);
+          if (current()) setProblems([`${file.name} could not be read, so the palette is unchanged.`]);
         });
     },
     [acceptImage, readText],
@@ -167,6 +173,7 @@ export function useCustomPaletteIntake(): CustomPaletteIntake {
         setProblems([]);
         return;
       }
+      customPaletteRequests.supersede();
       readText(text, '', 'the pasted list');
     },
     [readText],
@@ -174,6 +181,7 @@ export function useCustomPaletteIntake(): CustomPaletteIntake {
 
   const reduceOversized = useCallback(() => {
     if (oversized === null) return;
+    customPaletteRequests.supersede();
     const entries = reduceImagePalette(oversized.image, MAX_PALETTE_ENTRIES);
     setOversized(null);
     pin({ name: oversized.name, entries }, `${oversized.name}, reduced`);
@@ -198,6 +206,7 @@ export function useCustomPaletteIntake(): CustomPaletteIntake {
   );
 
   const clear = useCallback(() => {
+    customPaletteRequests.supersede();
     setOutputField('customPalette', null);
     setProblems([]);
     setOversized(null);

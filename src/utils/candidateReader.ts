@@ -14,7 +14,7 @@ import type { TuneCrop } from './tuneCrop.ts';
  * opening dials with no colour reduction, and a later round asks again about any position an earlier
  * one already ranked.
  * Measured over the eight corpus sheets at the grids the table under `TUNE_ROUNDS` gives, the descent
- * ranks 1,176 positions and only 743 of them are distinct: 37% of what it would run is an answer it
+ * ranks 1,121 positions and only 685 of them are distinct: 39% of what it would run is an answer it
  * already has, and 46% on `test_sprites/ui_elements1.png`.
  *
  * **Remembering a reading changes no answer**, because a reading is a function of the dials, the

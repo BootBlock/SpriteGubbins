@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { MAX_IMAGE_PIXELS } from '../constants/quantiser.ts';
 import type { ImportedImage } from '../types/quantiser.ts';
+import type { RequestSequence } from '../utils/requestSequence.ts';
 import { useShowToast } from './useShowToast.ts';
 
 /**
@@ -20,22 +21,33 @@ import { useShowToast } from './useShowToast.ts';
  * `useImageDrop`, which a caller adds where an image arriving anywhere is unambiguously meant for
  * it. A window listener bundled into this hook would fire on the studio's identity-lock control
  * while the user was somewhere else entirely on the page.
+ *
+ * **A decode lands only while it is the latest thing the reader did to its target.** The caller
+ * names the target's `RequestSequence`, which outlives the component because the target does: a
+ * large sheet dropped by mistake and a small one pasted straight after would otherwise finish in
+ * the wrong order, and the mistake would replace the sheet the reader meant. A superseded decode
+ * says nothing at all, even when it failed, because the file it is about is one the reader has
+ * already moved on from.
  */
 export function useImageFile(
   onImport: (imported: ImportedImage) => void,
+  requests: RequestSequence,
 ): (file: File | null | undefined) => void {
   const showToast = useShowToast();
 
   return useCallback(
     (file: File | null | undefined) => {
-      // Nothing dropped, nothing pasted, or a picker dismissed. Not a failure, so not a toast.
+      // Nothing dropped, nothing pasted, or a picker dismissed. Not a failure, so not a toast, and
+      // not a choice either, so a decode already in flight still stands.
       if (!file) return;
+      const current = requests.begin();
       void decodeImage(file).then((decoded) => {
+        if (!current()) return;
         if (decoded.ok) onImport({ name: file.name, image: decoded.image });
         else showToast(decoded.reason);
       });
     },
-    [onImport, showToast],
+    [onImport, requests, showToast],
   );
 }
 

@@ -4,6 +4,7 @@ import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../../constants/quantiseDials.ts';
 import { DEFAULT_KEY_TOLERANCE } from '../../constants/quantiser.ts';
+import { identityPaletteRequests } from '../../stores/identityPaletteRequests.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseAnswerStore } from '../../stores/useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
@@ -102,6 +103,16 @@ describe('QuantisedSheetCaptureButton', () => {
     // One colour, not two: the source carries a charcoal and a near-charcoal, and the grid reading
     // the reader settled voted the second away. Reading the source would have stated both.
     expect(useOutputStore.getState().output.identityLock).toBe('Palette: #1E1E24');
+  });
+
+  it('retires a sheet still decoding beside it, as the later choice', () => {
+    const decoding = identityPaletteRequests.begin();
+    loadTab({ color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });
+    render(<QuantisedSheetCaptureButton />);
+
+    fireEvent.click(theButton());
+
+    expect(decoding()).toBe(false);
   });
 
   it('is unavailable while the tab holds no sheet', () => {

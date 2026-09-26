@@ -95,13 +95,16 @@ export const TUNED_DIAL_KEYS = Object.values(TUNED_DIAL_NAMES);
 /**
  * How one candidate did: how faithfully its result reproduced the crops, and what it spent.
  *
- * Both figures are means over the crops rather than one crop's answer, because a crop is a sample of
- * the sheet and the sweep is choosing dials for the whole of it.
+ * Both figures are taken over all the crops rather than from one crop's answer, because a crop is a
+ * sample of the sheet and the sweep is choosing dials for the whole of it — see `readCandidate`.
  */
 export interface TuneReading {
   /** Mean structural similarity against the crops — see `meanSsim`. Higher is closer. */
   readonly fidelity: number;
-  /** Mean colour count of the results. Lower is cheaper, and `TunePrice` is what trades it against fidelity. */
+  /**
+   * Distinct colours across all the results, each counted once, as the sheet spends them. Lower is
+   * cheaper, and `TunePrice` is what trades it against fidelity.
+   */
   readonly colors: number;
 }
 

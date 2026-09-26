@@ -3,7 +3,6 @@ import type {
   QuantisePrologue,
   QuantiseResult,
   QuantiseSettings,
-  QuantiseSheet,
 } from '../types/quantiser.ts';
 import { applyPalette, applyRgbPalette } from './applyPalette.ts';
 import { snapToChannelDepth } from './channelDepth.ts';
@@ -17,7 +16,8 @@ import { mergeIsExempt } from './mergeIsExempt.ts';
 import { colorHistogram } from './imageData.ts';
 import { paletteEntriesFrom } from './paletteEntries.ts';
 import { quantisePrologue } from './quantisePrologue.ts';
-import { settleSprites } from './settleSprites.ts';
+import { settleRegions, settleSprites } from './settleSprites.ts';
+import { type ImageStack, stackImages, unstackImage } from './imageStack.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { kCentroidCells } from './kCentroidVote.ts';
 import { leadingCellShift } from './leadingCellShift.ts';
@@ -40,21 +40,20 @@ import { buildPalette } from './wuQuantiser.ts';
  * boundaryMesh reads the keyed source, before the expansion — see below.
  * ```
  *
- * **The first three passes are `quantisePrologue` and the last one is the difference map, so this
- * function is three lines.** The split is the pipeline's own seam rather than a filing decision:
- * everything from the outline expansion down is a function of the dials, while the key, the
- * hardening and the mesh are a function of the sheet and three settings — and the difference map is
- * the one reading taken afterwards that nothing above it needs. A caller holding those three
- * settings fixed while it moves the dials — which is what the auto-tune sweep is — therefore has
- * the prologue in hand before it starts and never wants the map at all; see `quantisePrologue` and
- * {@link QuantiseSheet}, which carry what each of those was costing. **Every caller that is not
- * that sweep belongs here**, because this is the composition that cannot hand the transform a
- * prologue measured on a different sheet.
+ * **The first three passes are `quantisePrologue`, and the last reading is the difference map.** The
+ * split is the pipeline's own seam rather than a filing decision: everything from the outline
+ * expansion down is a function of the dials, while the key, the hardening and the mesh are a
+ * function of the sheet and three settings — and the difference map is the one reading taken
+ * afterwards that nothing above it needs. A caller holding those three settings fixed while it moves
+ * the dials — which is what the auto-tune sweep is — therefore has the prologue in hand before it
+ * starts and never wants the map at all; see `quantisePrologue` and {@link quantiseRegions}.
+ * **Every caller that is not that sweep belongs here**, because this is the composition that cannot
+ * hand the transform a prologue measured on a different sheet.
  *
- * **{@link quantiseFromPrologue} shares this file rather than taking one of its own**, because the
- * two are one pipeline: this is the composition and that is its body, and the order stated below is
- * the order of both. Splitting them would leave the argument for every pass in a file holding none
- * of them.
+ * **{@link quantiseRegions} shares this file rather than taking one of its own**, because the two
+ * are one pipeline: both run the same passes in the same order, through `reducedRegions` and then
+ * the passes over the segmentation. Splitting them would leave the argument for every pass in a file
+ * holding none of them.
  *
  * Grid **detection** is not part of it. The grid is a setting because the user can overrule what
  * detection found — and must, when it found nothing — so resolving it belongs to the tab, and this
@@ -159,10 +158,48 @@ import { buildPalette } from './wuQuantiser.ts';
  */
 export function quantiseImage(image: ImageData, settings: QuantiseSettings): QuantiseResult {
   const prologue = quantisePrologue(image, settings);
-  const sheet = quantiseFromPrologue(prologue, settings);
+  // Everything past the palette step needs the sheet segmented first — see `settleSprites`, which
+  // is where those four passes and the re-readings each of them forces now live.
+  const settled = settleSprites(reducedRegions([prologue], settings).image, settings);
+  const output = settled.image;
+
+  // One walk over the finished sheet, read twice below. `colorHistogram` excludes fully transparent
+  // pixels, so a keyed field claims neither a colour of the count nor an entry of the palette.
+  const histogram = colorHistogram(output);
 
   return {
-    ...sheet,
+    image: output,
+    // Read off the finished sheet, so what it counts is what the reader is looking at — and after
+    // the cleanups, which is where a speck that would otherwise have been counted as a sprite goes.
+    // It is here unconditionally because `settleSprites` had to take it in order to edit the sheet
+    // at all, so no caller pays anything to be told: a reading fetched separately could describe an
+    // older result than the one beside it, and this one is compared against a dial that has just
+    // moved. See `spriteSegments` for what it does with each kind of sheet, and `settleSprites` for
+    // which of the four passes above force it to be re-taken and why each one is paid for only by
+    // the reader who asked for that edit.
+    sprites: settled.sprites,
+    symmetry: settled.symmetry,
+    // The finding, always as it stood on the sheet the reading was taken from — see
+    // `QuantiseResult.duplicates` for why the fold does not get to re-take it.
+    duplicates: settled.duplicates,
+    snapped: settled.snapped,
+    // The reading, always as it stood on the sheet it was taken from — see `QuantiseResult.strips`,
+    // which is where the reason lives, and it is the same one `duplicates` carries.
+    strips: settled.strips,
+    // The comparison view places the result against the source with this — see `QuantiseResult`.
+    leadingShift: leadingCellShift(prologue.mesh, settings.grid),
+    // Only the result is counted here. The figure it is read against belongs to the sheet rather than
+    // to any setting, so it is measured once when the sheet loads — see `SheetFacts`.
+    //
+    // One histogram answers both of the next two lines. They are different questions — how many
+    // distinct pixel values the sheet holds, and which colours it is made of, which differ wherever
+    // one colour appears at several coverages — and taking a pass each would be a second walk over
+    // the whole result for an answer already in hand.
+    colors: histogram.size,
+    paletteEntries: paletteEntriesFrom(histogram),
+    // A fact the key established, so carried through from where the key ran rather than re-derived
+    // from a result every pass since has been editing.
+    keyedShare: prologue.keyedShare,
     // Measured here rather than asked for later, and against the prologue's source rather than the
     // image the caller handed in: the reduction this reports on is the one that ran, and the image
     // it ran on is the keyed and hardened one every pass worked from. Keying's own cost is
@@ -172,33 +209,53 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // cost, not a new baseline to measure the rest of it against — a reader turning that dial up is
     // asking what it did to their sheet, and a heatmap that had already accepted the thickened
     // contour as the truth would answer by going darker the harder the pass worked.
-    difference: differenceMap(prologue.source, sheet.image, prologue.mesh),
+    difference: differenceMap(prologue.source, output, prologue.mesh),
   };
 }
 
 /**
- * The transform itself: everything from the outline expansion down, over a sheet whose key,
- * hardening and mesh a caller has already established.
+ * The same transform over several regions of one sheet, as the sheet would treat them: each region
+ * as it would come out of the whole sheet's pipeline, cut to the region.
  *
- * **The narrow answer, for the one caller that reads a narrow part of it.** `readCandidate` reads
- * {@link QuantiseSheet.image} and {@link QuantiseSheet.colors} and nothing else, and it runs this
- * 575 times in a sweep of `test_sprites/armour.png` — so building a difference map for it walked
- * the whole of every crop's source a second time to produce a value that was dropped on the next
- * line. {@link QuantiseSheet} says why that reading is the only one worth withholding, and why the
- * rest of them are free.
+ * **For the auto-tune sweep, which scores a candidate on a handful of crops standing in for the
+ * sheet** — see `readCandidate`. Run through the pipeline one at a time, every crop got a palette of
+ * its own under a colour budget and a colour merge that ranked its own colours, and the sheet gets one
+ * of each across all its art. With a budget of 16 at a grid of 6, unkeyed and every dial where it
+ * opens, the five crops of `test_sprites/armour.png` came to 73 distinct colours between them, and
+ * those of `test_sprites/cyborg_monk.png` at a grid of 4 to 72, so every candidate was ranked against
+ * palettes the reader would never get. Quantised here, each set holds 16.
  *
- * **The prologue has to have been built from these settings.** Its three inputs are
- * {@link QuantiseSettings.key}, `silhouetteThreshold` and {@link QuantiseSettings.grid}, and nothing
- * here re-derives any of them to check — a mesh measured at another grid would cut this sheet into
- * cells it does not have, and every reading below would be right about the wrong image.
- * `quantiseImage` is the composition that gets this right by construction.
+ * **So the passes that read the sheet as a whole read every region at once**: the budget's palette,
+ * the colour merge, the fill cleanup and the dither run over the regions laid into one image, which
+ * `stackImages` builds so that none of those passes can tell a region of it from a sheet of its own.
+ * Everything that reads a region through its mesh — the outline expansion and the vote — runs on each
+ * region alone, since a mesh is measured per region. So do the four passes over the segmentation,
+ * because a region's edge is a cut through the sheet's artwork rather than a contour, and the
+ * transparent border a stack puts round a region would read as one. Of those four, the one whose
+ * answer depends on the sheet's colours still sees all of them — see `settleRegions`.
  *
- * The order of what follows, and the argument for each pass's position in it, is stated on
- * `quantiseImage` — this is the middle of one pipeline rather than a pipeline of its own.
+ * Only the images come back, since they are all the sweep reads: `readCandidate` counts the colours
+ * across the regions itself, which is the sheet's figure rather than any one region's.
  */
-export function quantiseFromPrologue(prologue: QuantisePrologue, settings: QuantiseSettings): QuantiseSheet {
-  const { source, mesh } = prologue;
+export function quantiseRegions(
+  prologues: readonly QuantisePrologue[],
+  settings: QuantiseSettings,
+): readonly ImageData[] {
+  const { image, stack } = reducedRegions(prologues, settings);
+  return settleRegions(unstackImage(image, stack), settings).map((settled) => settled.image);
+}
 
+/**
+ * Every pass from the outline expansion to the palette step, over the regions stacked into one image
+ * — see {@link quantiseRegions} for which passes read the stack and which read one region.
+ *
+ * One region is its own stack, unpadded, which is how {@link quantiseImage} runs a whole sheet
+ * through the same lines at no cost.
+ */
+function reducedRegions(
+  prologues: readonly QuantisePrologue[],
+  settings: QuantiseSettings,
+): { readonly image: ImageData; readonly stack: ImageStack } {
   // The one pass that runs ahead of the vote rather than after it, because it is the only one whose
   // failure the vote cannot undo: a contour one drawn pixel wide is a minority in its own cell under
   // every reading, and by the time a cell has been resolved the ink is already gone.
@@ -207,10 +264,13 @@ export function quantiseFromPrologue(prologue: QuantisePrologue, settings: Quant
   // `reduceColors` is guarded three lines down and for the same reason: the copy alone is 67MB at
   // the ceiling this app admits, and it would be paid on every transform by every reader who never
   // touches this control.
-  const expanded =
-    settings.outlineExpansion <= 0
-      ? source
-      : outlineExpansion(source, settings.grid, settings.outlineExpansion);
+  const regions = prologues.map(({ source, mesh }) => ({
+    mesh,
+    expanded:
+      settings.outlineExpansion <= 0
+        ? source
+        : outlineExpansion(source, settings.grid, settings.outlineExpansion),
+  }));
 
   // **The two averaging readings invert the pipeline's colour order, and the inversion is the
   // point.** The dominant vote selects a colour the cell already contains, so reducing first is
@@ -228,8 +288,18 @@ export function quantiseFromPrologue(prologue: QuantisePrologue, settings: Quant
   // What the *reading* reduces with: nothing at all while a dither is holding the palette step back
   // to the end of the pipeline.
   const reduction = positional === null ? settings.reduction : null;
+  // A budget's palette ahead of the dominant vote is chosen from every region's expanded source at
+  // once, which is the stack's whole purpose; a single transparent row between them is all that
+  // choosing a palette needs, since no dither reads this stack.
+  const paletteFrom =
+    reduction?.kind === 'MAX_COLORS'
+      ? stackImages(
+          regions.map(({ expanded }) => expanded),
+          1,
+        ).image
+      : null;
 
-  const resolved =
+  const cells = regions.map(({ mesh, expanded: image }) =>
     settings.vote === 'DOMINANT'
       ? downscaleNearest(
           alignToGrid(
@@ -238,24 +308,22 @@ export function quantiseFromPrologue(prologue: QuantisePrologue, settings: Quant
             // enforce, and a high cap is still a cap. Line-aware only where a reduction ran: the
             // rescue reads shares out of the tally, and a share means nothing in a raw-colour
             // vote where every pixel is its own bucket — see `alignToGrid`.
-            reduction === null ? expanded : reduceColors(expanded, reduction),
+            reduction === null ? image : reduceColors(image, reduction, paletteFrom ?? image),
             mesh,
             reduction !== null,
           ),
           mesh,
         )
-      : reduceAfter(
-          settings.vote === 'INK_WEIGHTED'
-            ? inkWeightedCells(
-                expanded,
-                mesh,
-                settings.lineStrength,
-                settings.trimStrength,
-                settings.inkThreshold,
-              )
-            : kCentroidCells(expanded, mesh),
-          reduction,
-        );
+      : settings.vote === 'INK_WEIGHTED'
+        ? inkWeightedCells(image, mesh, settings.lineStrength, settings.trimStrength, settings.inkThreshold)
+        : kCentroidCells(image, mesh),
+  );
+
+  // The regions laid into one image from here on, so every pass below reads all of them at once — the
+  // way the sheet's own regions are read — while treating each one's border as the edge of an image.
+  // The pitch keeps a dither's pattern where each region would have it alone.
+  const stack = stackImages(cells, positional?.matrix.size ?? 1);
+  const resolved = settings.vote === 'DOMINANT' ? stack.image : reduceAfter(stack.image, reduction);
 
   // After the reading, whatever the reading: speckle is a property of any reading's output. With no
   // dither in force these two come after the palette step as well, because the cleanup wants to see
@@ -283,49 +351,7 @@ export function quantiseFromPrologue(prologue: QuantisePrologue, settings: Quant
   const reduced =
     positional === null ? cleaned : ditherImage(cleaned, positional.reduction, positional.matrix);
 
-  // Everything past this point needs the sheet segmented first — see `settleSprites`, which is
-  // where those four passes and the re-readings each of them forces now live.
-  const settled = settleSprites(reduced, settings);
-  const output = settled.image;
-
-  // One walk over the finished sheet, read twice below. `colorHistogram` excludes fully transparent
-  // pixels, so a keyed field claims neither a colour of the count nor an entry of the palette.
-  const histogram = colorHistogram(output);
-
-  return {
-    image: output,
-    // Read off the finished sheet, so what it counts is what the reader is looking at — and after
-    // the cleanups, which is where a speck that would otherwise have been counted as a sprite goes.
-    // It is here unconditionally because `settleSprites` had to take it in order to edit the sheet
-    // at all, so no caller pays anything to be told: a reading fetched separately could describe an
-    // older result than the one beside it, and this one is compared against a dial that has just
-    // moved. See `spriteSegments` for what it does with each kind of sheet, and `settleSprites` for
-    // which of the four passes above force it to be re-taken and why each one is paid for only by
-    // the reader who asked for that edit.
-    sprites: settled.sprites,
-    symmetry: settled.symmetry,
-    // The finding, always as it stood on the sheet the reading was taken from — see
-    // `QuantiseResult.duplicates` for why the fold does not get to re-take it.
-    duplicates: settled.duplicates,
-    snapped: settled.snapped,
-    // The reading, always as it stood on the sheet it was taken from — see `QuantiseResult.strips`,
-    // which is where the reason lives, and it is the same one `duplicates` carries.
-    strips: settled.strips,
-    // The comparison view places the result against the source with this — see `QuantiseResult`.
-    leadingShift: leadingCellShift(mesh, settings.grid),
-    // Only the result is counted here. The figure it is read against belongs to the sheet rather than
-    // to any setting, so it is measured once when the sheet loads — see `SheetFacts`.
-    //
-    // One histogram answers both of the next two lines. They are different questions — how many
-    // distinct pixel values the sheet holds, and which colours it is made of, which differ wherever
-    // one colour appears at several coverages — and taking a pass each would be a second walk over
-    // the whole result for an answer already in hand.
-    colors: histogram.size,
-    paletteEntries: paletteEntriesFrom(histogram),
-    // A fact the key established, so carried through from where the key ran rather than re-derived
-    // from a result every pass since has been editing.
-    keyedShare: prologue.keyedShare,
-  };
+  return { image: reduced, stack };
 }
 
 /**
@@ -352,11 +378,14 @@ export function quantiseFromPrologue(prologue: QuantisePrologue, settings: Quant
  * flatten every soft edge to opaque, and a locked palette holds another sheet's colours, whose
  * coverages are facts about that sheet rather than this one. `applyPalette`, `applyRgbPalette` and
  * `applyLockedPalette` say which is which.
+ *
+ * `paletteFrom` is where a budget's palette is chosen, and it is the image being reduced unless the
+ * image is one region of several that share a palette — see `quantiseRegions`.
  */
-function reduceColors(image: ImageData, reduction: ColorReduction): ImageData {
+function reduceColors(image: ImageData, reduction: ColorReduction, paletteFrom = image): ImageData {
   switch (reduction.kind) {
     case 'MAX_COLORS':
-      return applyPalette(image, buildPalette(image, reduction.maxColors));
+      return applyPalette(image, buildPalette(paletteFrom, reduction.maxColors));
     case 'PALETTE':
       return applyRgbPalette(image, reduction.entries);
     case 'LOCKED':

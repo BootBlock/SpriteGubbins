@@ -15,6 +15,7 @@ import {
 import { FakeWorker } from '../test/fakeWorker.ts';
 import { canUndoDials, currentDials } from '../utils/dialHistory.ts';
 import { createImage } from '../utils/imageData.ts';
+import { quantiseSheetRequests } from './quantiseSheetRequests.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
 
@@ -189,6 +190,14 @@ describe('useQuantiseStore', () => {
     store.clear();
 
     expect(started.terminated).toBe(true);
+  });
+
+  it('retires a sheet still decoding when the tab is cleared', () => {
+    const decoding = quantiseSheetRequests.begin();
+
+    useQuantiseStore.getState().clear();
+
+    expect(decoding()).toBe(false);
   });
 });
 

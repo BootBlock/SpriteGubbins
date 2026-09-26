@@ -8,7 +8,7 @@ import { CHANNELS_PER_PIXEL, pixelOffset } from '../src/utils/imageData.ts';
 import { lumaOfChannels } from '../src/utils/lineVote.ts';
 import { outlineExpansion } from '../src/utils/outlineExpansion.ts';
 import { outlinePolarity } from '../src/utils/outlinePolarity.ts';
-import { quantiseFromPrologue } from '../src/utils/quantiseImage.ts';
+import { quantiseRegions } from '../src/utils/quantiseImage.ts';
 import { quantisePrologue } from '../src/utils/quantisePrologue.ts';
 import type { QuantisePrologue, VoteMethod } from '../src/types/quantiser.ts';
 
@@ -34,8 +34,8 @@ const GRID = 6;
  * sheet, and the two variants its docblock and `outlinePolarity`'s compare the shipped pass against.
  * See `calibrationSettings.ts` for why the docblock-figure suites exist.
  *
- * Every run goes through `quantisePrologue` and `quantiseFromPrologue`, which is `quantiseImage`
- * less the difference map. A variant is its expanded sheet handed in as the prologue's source with
+ * Every run goes through `quantisePrologue` and `quantiseRegions` over that one prologue, which is
+ * `quantiseImage` less the difference map. A variant is its expanded sheet handed in as the prologue's source with
  * the dial at 0, so it is voted over the same mesh the shipped pass is — the mesh is measured before
  * the expansion either way.
  */
@@ -99,7 +99,8 @@ describe('outlineExpansion — the survival and surface-loss ladders', () => {
   /** The pipeline over `source` — the prologue's own, or a variant's expansion of it — read four ways. */
   function read(vote: VoteMethod, source: ImageData, thickness = 0): Reading {
     const settings = calibrationSettings({ vote, outlineExpansion: thickness });
-    const { image } = quantiseFromPrologue({ ...prologueFor(vote), source }, settings);
+    const [image] = quantiseRegions([{ ...prologueFor(vote), source }], settings);
+    if (image === undefined) throw new Error('One region in, one region out');
     const inkAt = (cell: number): boolean => isInkPixel(image.data, cell * CHANNELS_PER_PIXEL);
     const shareOf = (set: readonly number[]): number => (100 * set.filter(inkAt).length) / set.length;
 

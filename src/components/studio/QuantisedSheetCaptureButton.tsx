@@ -3,6 +3,7 @@ import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { GUIDANCE_PARAGRAPH_BREAK } from '../../constants/guidanceMarkup.ts';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useIdentityPaletteCapture } from '../../hooks/useIdentityPaletteCapture.ts';
+import { identityPaletteRequests } from '../../stores/identityPaletteRequests.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseAnswerStore } from '../../stores/useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
@@ -111,7 +112,11 @@ export function QuantisedSheetCaptureButton() {
         size="md"
         disabled={offer.kind !== 'READY'}
         onClick={() => {
-          if (offer.kind === 'READY') capture(offer.sheet);
+          if (offer.kind !== 'READY') return;
+          // A later choice than a file still decoding beside this, so that file must not land on
+          // top of it. See `identityPaletteRequests`.
+          identityPaletteRequests.supersede();
+          capture(offer.sheet);
         }}
       >
         Use the quantised sheet

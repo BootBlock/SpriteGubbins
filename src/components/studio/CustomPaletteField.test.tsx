@@ -189,4 +189,57 @@ describe('CustomPaletteField', () => {
     expect(pinned()).toBeNull();
     expect(screen.getByRole('textbox', { name: 'Or paste the colours' })).toHaveValue('');
   });
+
+  it('keeps a .gpl chosen after a picture that finishes decoding later', async () => {
+    const release = holdDecode();
+    render(<CustomPaletteField />);
+    await choose(new File(['sheet'], 'accepted-sheet.png', { type: 'image/png' }));
+    await choose(new File(['#102030\n'], 'dusk.txt', { type: 'text/plain' }));
+    await waitFor(() => {
+      expect(pinned()).toEqual({ name: 'dusk', entries: ['#102030'] });
+    });
+
+    await act(async () => {
+      release();
+      await Promise.resolve();
+    });
+
+    expect(pinned()).toEqual({ name: 'dusk', entries: ['#102030'] });
+    expect(screen.queryByText(/accepted-sheet holds/)).toBeNull();
+  });
+
+  it('stays removed when a picture chosen before Remove finishes decoding', async () => {
+    const release = holdDecode();
+    const user = userEvent.setup({ delay: null });
+    render(<CustomPaletteField />);
+    await user.click(screen.getByRole('textbox', { name: 'Or paste the colours' }));
+    await user.paste('#102030');
+    await choose(new File(['sheet'], 'accepted-sheet.png', { type: 'image/png' }));
+
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    await act(async () => {
+      release();
+      await Promise.resolve();
+    });
+
+    expect(pinned()).toBeNull();
+    expect(screen.queryByText(/accepted-sheet holds/)).toBeNull();
+  });
 });
+
+/** Holds the next decode open, and returns what settles it. */
+function holdDecode(): () => void {
+  let release = () => undefined as void;
+  vi.stubGlobal(
+    'createImageBitmap',
+    () =>
+      new Promise((resolve) => {
+        release = () => {
+          resolve({ width: SHEET.width, height: SHEET.height, close: () => undefined });
+        };
+      }),
+  );
+  return () => {
+    release();
+  };
+}
