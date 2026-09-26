@@ -24,8 +24,9 @@
        A guard that indexes an array wrongly asserts the wrong thing quietly. Both configs declared
        `"strict": true`, which is why the gap read as no gap at all.
 
-       `tests/tsconfig-strictness.test.ts` compares the two blocks and fails on any key present in
-       one and absent from the other, so a flag added to either has to be added to both. */
+       `tests/tsconfig-strictness.test.ts` compares this block with `tsconfig.app.json`'s and
+       `tsconfig.public.json`'s, and fails on any key present in one and absent from another, so a
+       flag added to any of them has to be added to all three. */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

@@ -1,10 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { relative, resolve, sep } from 'node:path';
 import { ESLint } from 'eslint';
+import * as ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Every rule that needs type information must run on every TypeScript file the repository lints.
+ * Every rule that needs type information must run on every file a TypeScript program checks, and
+ * lint must reach every script file the repository holds.
  *
  * `@typescript-eslint/no-floating-promises`, `no-misused-promises` and `await-thenable` are the
  * spec's "NO Fire-and-Forget Async Logic" ban made mechanical, and for as long as they existed they
@@ -45,20 +48,55 @@ const ASYNC_SAFETY: readonly string[] = [
   '@typescript-eslint/await-thenable',
 ];
 
-/** Every extension TypeScript compiles, and so every file a type-aware rule could run on. */
-const TYPESCRIPT = /\.[cm]?tsx?$/;
+/**
+ * Every extension a script can be written with, TypeScript or JavaScript.
+ *
+ * Lint must reach every such file: `public/**` once sat in ESLint's ignores beside the build output,
+ * so `public/coi-bootstrap.js` — the one script that runs before the app, on every visit — was read
+ * by Prettier alone, and a mistyped global in it would have passed the whole gate (issue #449).
+ */
+const SCRIPT = /\.[cm]?[jt]sx?$/;
 
 /**
- * The files `eslint .` lints that TypeScript does not compile, and so no type-aware rule can reach.
+ * The files the TypeScript programs check, relative to the root, as the compiler resolves them.
+ *
+ * Asked of the compiler rather than matched by extension, because the programs are what decide it:
+ * `tsconfig.public.json` checks JavaScript with `checkJs`, and a `.ts` file in no program is checked
+ * by nothing whatever its name. The programs are the ones `tsconfig.json` references, which are what
+ * `tsc -b` builds.
+ */
+function checkedFiles(): Set<string> {
+  const host: ts.ParseConfigFileHost = {
+    ...ts.sys,
+    onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
+      throw new Error(ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '));
+    },
+  };
+  const solution = ts.getParsedCommandLineOfConfigFile('tsconfig.json', undefined, host);
+  const programs = solution?.projectReferences ?? [];
+  if (programs.length === 0) throw new Error('tsconfig.json references no program');
+  const root = process.cwd();
+  return new Set(
+    programs.flatMap(({ path }) => {
+      const program = ts.getParsedCommandLineOfConfigFile(path, undefined, host);
+      if (!program) throw new Error(`${path} does not parse`);
+      return program.fileNames.map((file) => relative(root, resolve(file)).split(sep).join('/'));
+    }),
+  );
+}
+
+/**
+ * The files `eslint .` lints that no TypeScript program checks, and so no type-aware rule can reach.
  *
  * Each is a tool's own configuration, loaded by that tool before anything else in the repository
  * runs, and neither holds a line of logic that could leave a promise floating. The list is compared
- * whole, in both directions: a `.js` or `.mjs` file lint picks up anywhere else fails, which is the
- * prompt to write it in TypeScript — the conclusion `tsconfig.node.json` already reached about
- * `scripts/` — and an entry naming a file lint no longer visits fails too, so the list cannot rot
- * into a permission covering nothing.
+ * whole, in both directions: a script lint picks up anywhere else fails, which is the prompt to write
+ * it in TypeScript — the conclusion `tsconfig.node.json` already reached about `scripts/` — or, for a
+ * file the host must serve as written, to bring it into a program as `tsconfig.public.json` does. An
+ * entry naming a file lint no longer visits fails too, so the list cannot rot into a permission
+ * covering nothing.
  */
-const OUTSIDE_TYPESCRIPT: readonly string[] = ['eslint.config.js', 'prettier.config.js'];
+const OUTSIDE_PROGRAMS: readonly string[] = ['eslint.config.js', 'prettier.config.js'];
 
 /** Narrowed rather than cast, because a cast here would assert the shape this suite is reading. */
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -138,11 +176,13 @@ async function enabledRules(eslint: ESLint, file: string): Promise<Map<string, E
 }
 
 const eslint = new ESLint({ cwd: process.cwd() });
+const files = repositoryFiles();
 const resolved = await Promise.all(
-  repositoryFiles().map(async (file) => ({ file, rules: await enabledRules(eslint, file) })),
+  files.map(async (file) => ({ file, rules: await enabledRules(eslint, file) })),
 );
 const linted = new Map(resolved.flatMap(({ file, rules }) => (rules ? [[file, rules] as const] : [])));
-const typescriptFiles = [...linted.keys()].filter((file) => TYPESCRIPT.test(file));
+const checked = checkedFiles();
+const checkedAndLinted = [...linted.keys()].filter((file) => checked.has(file));
 const typeAware = [
   ...new Set(
     [...linted.values()].flatMap((rules) =>
@@ -153,24 +193,31 @@ const typeAware = [
 
 describe('type-aware lint scope', () => {
   it('reads the files a lint run visits, rather than agreeing perfectly on none', () => {
-    for (const root of ['src/', 'tests/', 'scripts/']) {
+    for (const root of ['src/', 'tests/', 'scripts/', 'public/']) {
       expect(
-        typescriptFiles.some((file) => file.startsWith(root)),
-        `lint visits no TypeScript file under ${root}`,
+        checkedAndLinted.some((file) => file.startsWith(root)),
+        `lint visits no type-checked file under ${root}`,
       ).toBe(true);
     }
-    expect(typescriptFiles, 'lint does not visit vite.config.ts').toContain('vite.config.ts');
+    expect(checkedAndLinted, 'lint does not visit vite.config.ts').toContain('vite.config.ts');
     expect(typeAware, 'a named async-safety rule is not enabled as a type-aware rule anywhere').toStrictEqual(
       expect.arrayContaining([...ASYNC_SAFETY]),
     );
   });
 
-  it('enables every type-aware rule on every TypeScript file it lints, set the same way', () => {
+  it('lints every script file the repository holds', () => {
+    expect(
+      files.filter((file) => SCRIPT.test(file) && !linted.has(file)),
+      'these scripts are in no lint run',
+    ).toStrictEqual([]);
+  });
+
+  it('enables every type-aware rule on every type-checked file it lints, set the same way', () => {
     for (const id of typeAware) {
-      const rules = typescriptFiles.map((file) => ({ file, rule: linted.get(file)?.get(id) }));
+      const rules = checkedAndLinted.map((file) => ({ file, rule: linted.get(file)?.get(id) }));
       expect(
         rules.filter(({ rule }) => rule === undefined).map(({ file }) => file),
-        `${id} is enabled on some TypeScript files and not these`,
+        `${id} is enabled on some type-checked files and not these`,
       ).toStrictEqual([]);
       const settings = new Set(rules.map(({ rule }) => rule?.setting));
       expect([...settings], `${id} is configured differently across the tree`).toHaveLength(1);
@@ -179,13 +226,13 @@ describe('type-aware lint scope', () => {
 
   it('holds the async-safety ban at error, not at warning', () => {
     for (const id of ASYNC_SAFETY) {
-      const severities = new Set(typescriptFiles.map((file) => linted.get(file)?.get(id)?.severity));
-      expect([...severities], `${id} is not an error on every TypeScript file`).toStrictEqual([2]);
+      const severities = new Set(checkedAndLinted.map((file) => linted.get(file)?.get(id)?.severity));
+      expect([...severities], `${id} is not an error on every type-checked file`).toStrictEqual([2]);
     }
   });
 
-  it('lints nothing TypeScript does not compile except the named configuration files', () => {
-    const outside = [...linted.keys()].filter((file) => !TYPESCRIPT.test(file)).sort();
-    expect(outside).toStrictEqual([...OUTSIDE_TYPESCRIPT].sort());
+  it('lints nothing a TypeScript program does not check except the named configuration files', () => {
+    const outside = [...linted.keys()].filter((file) => !checked.has(file)).sort();
+    expect(outside).toStrictEqual([...OUTSIDE_PROGRAMS].sort());
   });
 });

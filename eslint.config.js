@@ -12,7 +12,8 @@ import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default tseslint.config(
-  // Never lint build output, deps, or generated service-worker scaffolding.
+  // Never lint build output, deps, or generated service-worker scaffolding. `public/` is *not*
+  // here: its script ships to every visitor as written, and ESLint reads no image or icon beside it.
   //
   // `.claude/**` is here because these ignore patterns are anchored to this file's directory, so
   // `dist/**` only ever meant the *root* `dist`. Worktrees live under `.claude/worktrees/`, and a
@@ -20,15 +21,7 @@ export default tseslint.config(
   // walks into its `dist/` and reports thousands of errors from a minified bundle — while also
   // quietly linting another branch's `src/` as though it were this one's.
   {
-    ignores: [
-      'dist/**',
-      'dist-ssr/**',
-      'dev-dist/**',
-      'coverage/**',
-      'node_modules/**',
-      'public/**',
-      '.claude/**',
-    ],
+    ignores: ['dist/**', 'dist-ssr/**', 'dev-dist/**', 'coverage/**', 'node_modules/**', '.claude/**'],
   },
 
   // Base: ESLint core + typescript-eslint (syntactic — fast, no type information needed).
@@ -70,11 +63,11 @@ export default tseslint.config(
     },
   },
 
-  // Every TypeScript file the repository lints — `src/`, `tests/`, `scripts/` and `vite.config.ts`
-  // alike: type information, and the rules that cannot run without it. The parser is pointed at the
-  // nearest tsconfig through the project service, which finds `src/` in `tsconfig.app.json` and the
-  // rest in `tsconfig.node.json`; a TypeScript file in neither program fails to parse rather than
-  // being linted without types.
+  // Every file a TypeScript program checks — `src/`, `tests/`, `scripts/`, `vite.config.ts` and the
+  // hand-written scripts in `public/` alike: type information, and the rules that cannot run without
+  // it. The parser is pointed at the nearest tsconfig through the project service, which finds `src/`
+  // in `tsconfig.app.json`, `public/` in `tsconfig.public.json` and the rest in `tsconfig.node.json`;
+  // a file in no program fails to parse rather than being linted without types.
   //
   // These rules sat in the `src/` block below until issue #257, because both sets were written
   // beside the one parser config there was — and so a floating promise in `tests/` or `scripts/`
@@ -84,7 +77,7 @@ export default tseslint.config(
   // on any rule declaring that it needs type information which is missing from, or set differently
   // on, one of them.
   {
-    files: ['**/*.{ts,tsx,mts,cts}'],
+    files: ['**/*.{ts,tsx,mts,cts}', 'public/**/*.js'],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -134,6 +127,16 @@ export default tseslint.config(
       // Accessibility linting at the recommended preset's severities (errors).
       ...jsxA11y.flatConfigs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    },
+  },
+
+  // The scripts in `public/`, which the host serves as they are written: classic `<script>` files,
+  // not modules, run by the page before the app. `tsconfig.public.json` type-checks them.
+  {
+    files: ['public/**/*.js'],
+    languageOptions: {
+      sourceType: 'script',
+      globals: { ...globals.browser },
     },
   },
 

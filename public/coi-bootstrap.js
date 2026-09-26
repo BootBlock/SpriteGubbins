@@ -15,6 +15,9 @@
  *
  * Deliberately a separate same-origin file rather than an inline <script>, so a Content-
  * Security-Policy forbidding inline script stays possible.
+ *
+ * It ships as written, so nothing compiles it: `tsconfig.public.json` type-checks it with
+ * `checkJs`, and ESLint lints it as a classic script with the browser's globals.
  */
 (function () {
   if (window.crossOriginIsolated) return;
