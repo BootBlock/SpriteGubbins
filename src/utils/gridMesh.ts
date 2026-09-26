@@ -50,9 +50,9 @@ import { stepProfile } from './stepProfile.ts';
  * story.
  *
  * On an axis with too few detectable boundaries to anchor a walk at all — a flat field, a gradient,
- * heavy noise — it falls back to the regular lattice at `bestPhase`'s answer, which is the best single
- * placement the profile supports; the phase is computed from the one profile this function already
- * walked, and only for an axis that actually needs it.
+ * heavy noise, dense detail that never stands clear of its background — it falls back to the regular
+ * lattice at `bestPhase`'s answer, the phase the axis's change is centred on; the phase is computed
+ * from the one profile this function already walked, and only for an axis that actually needs it.
  *
  * **The transition count is taken first because it can answer before the profile is needed.** An
  * exact sheet pays for that one cheap pass and never for the step profile; any other sheet pays for
