@@ -1,12 +1,12 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { QUANTISE_DEFAULT_DIALS } from '../src/constants/quantiseDials.ts';
-import { DEFAULT_KEY_TOLERANCE } from '../src/constants/quantiser.ts';
+import { DEFAULT_KEY_TOLERANCE, DESPILL_DEPTH } from '../src/constants/quantiser.ts';
 import type { QuantiseSettings } from '../src/types/quantiser.ts';
 import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, fromHex } from '../src/utils/imageData.ts';
 import { keyBackground } from '../src/utils/keyBackground.ts';
 import { carriesKeyTint, keyBasis } from '../src/utils/keyDistance.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
-import { loadCorpusSheet } from './sheetCorpus.ts';
+import { CORPUS_SHEETS, type CorpusSheetName, loadCorpus } from './sheetCorpus.ts';
 
 /**
  * The figures `DESPILL_DEPTH`'s docblock states, measured on the corpus sheets they name.
@@ -78,42 +78,89 @@ function outerRingAtGrid6(sheet: ImageData, maxColors: number | null): [number, 
   return ring;
 }
 
+/**
+ * Each sheet's tint, as a percentage of the drawn pixels in a ring: rings 4 and 5 before the despill,
+ * the most any ring inside the band keeps after it, and the sheet's interior — the mean of rings 6
+ * to 10, which the despill never reaches and where no sheet's spill is left.
+ */
+interface Calibration {
+  readonly ring4: number;
+  readonly ring5: number;
+  readonly band: number;
+  readonly interior: number;
+}
+const CALIBRATION: Readonly<Record<CorpusSheetName, Calibration>> = {
+  'armour.png': { ring4: 0.21, ring5: 0.01, band: 0, interior: 0.01 },
+  'cyborg_black_red.png': { ring4: 0.89, ring5: 0.26, band: 0.04, interior: 0.15 },
+  'character_space_marine_blue.png': { ring4: 1.72, ring5: 1.38, band: 0.63, interior: 1.11 },
+  'cyborg_monk.png': { ring4: 1.96, ring5: 1.12, band: 0.51, interior: 0.52 },
+  'cyborg_healer.png': { ring4: 6.54, ring5: 4.67, band: 2.85, interior: 3.59 },
+  'three-quarter-view_tiles1.png': { ring4: 0, ring5: 0, band: 0, interior: 0 },
+  'ui_elements1.png': { ring4: 0.95, ring5: 0.12, band: 0.02, interior: 0.07 },
+  'vehicles_and_props.png': { ring4: 1.95, ring5: 0.96, band: 0.39, interior: 0.35 },
+};
+
+/** A percentage, to the two places the table above states. */
+const percent = ([tinted, drawn]: [number, number]): number => Math.round((tinted / drawn) * 10_000) / 100;
+
 describe('the figures DESPILL_DEPTH states', () => {
-  let armour: ImageData;
-  let tiles: ImageData;
+  let corpus: ReadonlyMap<CorpusSheetName, ImageData>;
+  const sheet = (name: CorpusSheetName): ImageData => {
+    const image = corpus.get(name);
+    if (image === undefined) throw new Error(`${name} is missing from the corpus`);
+    return image;
+  };
 
   beforeAll(async () => {
-    armour = await loadCorpusSheet('armour.png');
-    tiles = await loadCorpusSheet('three-quarter-view_tiles1.png');
-  }, 120_000);
+    corpus = await loadCorpus();
+  }, 300_000);
 
-  it('leaves 23.2%, 8.4% and 1.9% of the reference sheet’s edge tinted without it, and 7, 19 and 18 pixels with it', () => {
+  it('leaves 23.2%, 8.4%, 1.9% and 0.2% of the reference sheet’s edge tinted without it, and none with it', () => {
     despill.off = true;
-    const before = tintByRing(keyBackground(armour, KEYING).image, 4);
+    const before = tintByRing(keyBackground(sheet('armour.png'), KEYING).image, 5);
     despill.off = false;
-    const after = tintByRing(keyBackground(armour, KEYING).image, 4);
+    const after = tintByRing(keyBackground(sheet('armour.png'), KEYING).image, 5);
 
     expect(before[0]).toEqual([2_465, 10_640]);
-    expect(before.map(([tinted, drawn]) => ((tinted / drawn) * 100).toFixed(1))).toEqual([
+    expect(before.slice(0, 4).map(([tinted, drawn]) => ((tinted / drawn) * 100).toFixed(1))).toEqual([
       '23.2',
       '8.4',
       '1.9',
       '0.2',
     ]);
-    expect(after.map(([tinted]) => tinted)).toEqual([7, 19, 18, 21]);
+    expect(after.map(([tinted]) => tinted)).toEqual([0, 0, 0, 0, 0]);
   });
 
-  it('takes the reference sheet’s tinted outer ring at a grid of 6 from 5 to 1, and from 39 to 0 under 64 colours', () => {
+  it.each(CORPUS_SHEETS)('brings %s’s band to the table’s figure against its interior', (name) => {
     despill.off = true;
-    const before = [outerRingAtGrid6(armour, null)[0], outerRingAtGrid6(armour, 64)[0]];
+    const [ring4 = [0, 1], ring5 = [0, 1]] = tintByRing(keyBackground(sheet(name), KEYING).image, 5).slice(3);
     despill.off = false;
-    const after = [outerRingAtGrid6(armour, null)[0], outerRingAtGrid6(armour, 64)[0]];
+    const rings = tintByRing(keyBackground(sheet(name), KEYING).image, 10);
+    const band = Math.max(...rings.slice(0, DESPILL_DEPTH).map(percent));
+    const interior =
+      Math.round((rings.slice(5).reduce((total, ring) => total + percent(ring), 0) / 5) * 100) / 100;
+
+    expect({ ring4: percent(ring4), ring5: percent(ring5), band, interior }).toEqual(CALIBRATION[name]);
+  });
+
+  it('takes the reference sheet’s tinted outer ring at a grid of 6 from 5 to none, and from 39 to none under 64 colours', () => {
+    despill.off = true;
+    const before = [
+      outerRingAtGrid6(sheet('armour.png'), null)[0],
+      outerRingAtGrid6(sheet('armour.png'), 64)[0],
+    ];
+    despill.off = false;
+    const after = [
+      outerRingAtGrid6(sheet('armour.png'), null)[0],
+      outerRingAtGrid6(sheet('armour.png'), 64)[0],
+    ];
 
     expect(before).toEqual([5, 39]);
-    expect(after).toEqual([1, 0]);
+    expect(after).toEqual([0, 0]);
   }, 300_000);
 
   it('takes 712 of the terrain sheet’s 2,333 outer-ring pixels under 64 colours to none', () => {
+    const tiles = sheet('three-quarter-view_tiles1.png');
     despill.off = true;
     const before = outerRingAtGrid6(tiles, 64);
     despill.off = false;

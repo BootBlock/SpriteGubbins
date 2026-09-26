@@ -1192,8 +1192,8 @@ export const DEFAULT_SYMMETRY = 'OFF';
  * ten colours, and every rung from exact to 24 reports the identical **36.8%** — the merge has
  * already folded everything within 24, so no two mirrored pixels are left sitting between it and
  * exact, and the reading first moves at 25. The same sheet read with no reduction and no merge holds
- * 11,852 colours, where exact reports **0.7%** and the rungs climb smoothly: 8.0% at 2, 14.9% at 4,
- * 24.2% at 8, 35.7% at 16, 52.9% at 32.
+ * 11,850 colours, where exact reports **0.7%** and the rungs climb smoothly: 8.0% at 2, 14.9% at 4,
+ * 24.2% at 8, 35.6% at 16, 52.9% at 32.
  */
 export const SYMMETRY_TOLERANCE_RANGE = { min: 0, max: 64, step: 1 } as const;
 
@@ -1774,29 +1774,34 @@ export const KEY_TINT_SHARE = 0.1;
  * The fringe pass deletes the one pixel of blend touching the field, and the tint runs further in
  * than that. Measured on the reference sheet keyed on the recommended magenta at
  * {@link DEFAULT_KEY_TOLERANCE}, `carriesKeyTint` reports **23.2%** of the drawn pixels one pixel in
- * from the transparent field (2,465 of 10,640), **8.4%** two in and **1.9%** three in, against
- * **0.2%** four in, which is the sheet's own interior rate. With the despill at 3 those rings read 7,
- * 19 and 18 pixels, each at or under that interior rate, and at a grid of 6 the key-tinted pixels on
- * the outermost ring of the result fall from 5 to 1 with no reduction and from 39 to 0 under a
- * 64-colour budget. The terrain sheet, `three-quarter-view_tiles1.png`, is the widest case: 712 of
- * the 2,333 pixels on its result's outermost ring were key-tinted under that budget, and none are.
- * `tests/despill-corpus.test.ts` pins these.
+ * from the transparent field (2,465 of 10,640), **8.4%** two in, **1.9%** three in and **0.2%**
+ * four in, against about 0.01% from five in onward — so four rings of spill, not three, and on
+ * several other sheets five. With the despill at 5 none of the reference sheet's five rings carries
+ * the tint, and at a grid of 6 the key-tinted pixels on the outermost ring of the result fall from 5
+ * to none with no reduction and from 39 to none under a 64-colour budget. The terrain sheet,
+ * `three-quarter-view_tiles1.png`, is the widest case: 712 of the 2,333 pixels on its result's
+ * outermost ring were key-tinted under that budget, and none are.
  *
- * **3 because it is where every sheet's edge falls to its own interior, and a deeper band only
- * reaches artwork.** At 2 the reference sheet keeps its third ring whole, 194 pixels. At 4 its figures
- * reach zero, and `cyborg_healer.png` shows what the extra ring costs: at 3 its three rings read
- * 4.5%, 5.3% and 5.8% against 6.5% four in, which is a sheet with key-hued artwork of its own rather
- * than spill, and 4 takes its fourth ring down to 3.8%.
+ * **5 because the guard needs the ring past the band to hold artwork and no spill.** A sheet's
+ * interior rate — the mean of rings 6 to 10, which no sheet's spill reaches — is what its own
+ * artwork carries, and at 5 every sheet's band ends at or under it but one: `armour.png` 0 against
+ * 0.01%, `cyborg_black_red.png` 0.04% against 0.15%, `character_space_marine_blue.png` 0.63% against
+ * 1.11%, `cyborg_monk.png` 0.51% against 0.52%, `cyborg_healer.png` 2.85% against 3.59%, the terrain
+ * sheet none against none and `ui_elements1.png` 0.02% against 0.07%, while
+ * `vehicles_and_props.png` ends at 0.39% against 0.35%. At 4 the guard reads ring 5, which still
+ * holds spill on six of the eight — 0.96% against 0.35% on the vehicles — and protects what it
+ * touches; at 3 it reads ring 4, which holds spill on seven. `tests/despill-corpus.test.ts` pins
+ * every figure in this docblock.
  *
  * The guard in `despillKey` is what the band is paired with: a tint that runs past the band is read
  * as artwork, and the pixels joined to it on the way out are left alone. So a region painted in the
  * key's hue keeps its colour where it reaches {@link DESPILL_DEPTH} + 2 pixels in from the field —
  * the fringe pass takes its outermost pixel, and the guard needs one past the band — which a stripe
- * with the field on both sides reaches at nine pixels across. A narrower one loses the key's hue
- * throughout, the same colours `KEY_TINT_OFF_HUE` names, with the same escape: the ladder's `exact`
- * rung runs neither pass.
+ * with the field on both sides reaches at thirteen pixels across. A narrower one loses the key's hue
+ * throughout. That is the price of the depth, and it falls on the colours `KEY_TINT_OFF_HUE` names,
+ * which the prompt already steers a palette away from; the ladder's `exact` rung runs neither pass.
  */
-export const DESPILL_DEPTH = 3;
+export const DESPILL_DEPTH = 5;
 
 /**
  * How far off the key's hue a fringe pixel may sit and still count as a blend of it — as a fraction

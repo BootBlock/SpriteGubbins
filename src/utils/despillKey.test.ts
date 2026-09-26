@@ -43,7 +43,7 @@ function row(...pixels: readonly Rgba[]): ImageData {
 
 describe('despillKey', () => {
   it('removes the key’s hue from spill inside the band, and keeps its lightness and alpha', () => {
-    const image = row(CLEARED, SPILL, SPILL, SPILL, ART);
+    const image = row(CLEARED, ...Array.from({ length: DESPILL_DEPTH }, () => SPILL), ART);
     despillKey(image, BASIS);
 
     for (let x = 1; x <= DESPILL_DEPTH; x += 1) {

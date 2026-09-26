@@ -11,9 +11,9 @@ import { touchesField } from './touchesField.ts';
  * purpose: its answer is deletion, and a deletion repeated inward is a flood fill. But an
  * anti-aliased, resampled edge carries the key further than one pixel. Measured on the reference
  * sheet after keying at the default tolerance, `carriesKeyTint` reports 23% of the opaque pixels one
- * pixel in from the transparent field, 8.4% two in and 1.9% three in, against 0.2% four in — the
- * sheet's own baseline. That ring reaches the output whole at a grid of 1, and the cell reading
- * carries part of it into edge cells at every other grid.
+ * pixel in from the transparent field, 8.4% two in, 1.9% three in and 0.2% four in, against about
+ * 0.01% further in — see `DESPILL_DEPTH` for the other sheets. That ring reaches the output whole at
+ * a grid of 1, and the cell reading carries part of it into edge cells at every other grid.
  *
  * **Despill rather than erosion, because no pixel here is background.** These pixels are the
  * sprite with some of the key mixed into them, so the correction keeps each one and removes only

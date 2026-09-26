@@ -62,14 +62,14 @@ interface CorpusReading {
 const EXPECTED: Record<CorpusSheetName, CorpusReading> = {
   'armour.png': {
     both: 9.18,
-    interior: 7.63,
+    interior: 7.64,
     refused: 36.4,
     note: 'The reference. Fifteen gear pieces at a pixel scale of 3, so contour is a large share of a small sheet.',
   },
   'cyborg_black_red.png': {
-    both: 8.01,
-    interior: 6.67,
-    refused: 51.6,
+    both: 7.99,
+    interior: 6.65,
+    refused: 52.0,
     note: 'The same layout in a darker palette, whose emissive green puts half its boundaries under the floor.',
   },
   'character_space_marine_blue.png': {
@@ -79,15 +79,15 @@ const EXPECTED: Record<CorpusSheetName, CorpusReading> = {
     note: 'Large soft cloth areas, which a budget renders as many near-identical shades the floor then refuses.',
   },
   'cyborg_monk.png': {
-    both: 4.8,
-    interior: 3.76,
+    both: 4.79,
+    interior: 3.75,
     refused: 56.7,
     note: 'A whole character in parts, at no measurable pixel scale — so the pass runs on the sheet’s own pixels.',
   },
   'cyborg_healer.png': {
-    both: 8.25,
-    interior: 6.23,
-    refused: 36.8,
+    both: 8.28,
+    interior: 6.26,
+    refused: 36.9,
     note: 'The widest gap between the two columns: loose accessories are mostly silhouette and little interior.',
   },
   'three-quarter-view_tiles1.png': {
@@ -103,9 +103,9 @@ const EXPECTED: Record<CorpusSheetName, CorpusReading> = {
     note: 'Thin strokes over wide empty margins — the least contour of the eight, and the sheet a loose floor mushes.',
   },
   'vehicles_and_props.png': {
-    both: 4.35,
-    interior: 3.57,
-    refused: 57.6,
+    both: 4.36,
+    interior: 3.58,
+    refused: 57.5,
     note: 'Dense rust texture, whose boundaries cluster just above the floor rather than far above it.',
   },
 };
