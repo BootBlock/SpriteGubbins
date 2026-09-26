@@ -200,17 +200,17 @@ describe('sheetIdentity', () => {
     });
 
     it('withholds it from a sheet that draws several facings', () => {
-      // The two core sheets above. A sheet covering four facings is not any one of them, so the
-      // download falls back to the ordinal rather than claiming the first.
-      const { facing, sheet } = sheetIdentity(
-        'CHARACTER',
-        standardSubject(),
-        config({ directions: 'EIGHT_COMPASS', sheetIndex: 0 }),
-        '',
+      // A sheet covering four facings is not any one of them, so the download falls back to the
+      // ordinal rather than claiming the first. An OBJECT's eight-compass views, because that batch
+      // is two such sheets and no run: on the character above, each core sheet's first facing is also
+      // a run's, so the shared-facing rule withholds the name there whether or not this one holds.
+      const sheets = [0, 1].map((sheetIndex) =>
+        sheetIdentity('OBJECT', standardSubject(), config({ directions: 'EIGHT_COMPASS', sheetIndex }), ''),
       );
 
-      expect(sheet?.facings).toHaveLength(4);
-      expect(facing).toBeNull();
+      expect(sheets.map((entry) => entry.sheet?.total)).toStrictEqual([2, 2]);
+      expect(sheets.map((entry) => entry.sheet?.facings?.length)).toStrictEqual([4, 4]);
+      expect(sheets.map((entry) => entry.facing)).toStrictEqual([null, null]);
     });
 
     it('withholds it where the batch is one sheet, which has nothing to be told apart from', () => {

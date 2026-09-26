@@ -165,10 +165,10 @@ describe('the rig table itself', () => {
     expect(CATEGORY_RIG_MODES[category]).toContain('NONE');
   });
 
-  it.each(SUBJECT_CATEGORIES)('%s names each rig at most once, and only real ones', (category) => {
+  it.each(SUBJECT_CATEGORIES)('%s names each rig at most once', (category) => {
+    // Only real ones is the table's type, `readonly RigMode[]`; a repeat is the half nothing else checks.
     const modes = CATEGORY_RIG_MODES[category];
     expect(new Set(modes).size).toBe(modes.length);
-    expect(modes.every((mode) => RIG_MODES.includes(mode))).toBe(true);
   });
 
   it('gives a rig to exactly the categories that have a cut-out rig sheet', () => {
@@ -291,6 +291,9 @@ describe('the sheet whose inventory is the rig', () => {
 
 describe('the reported failure: a rig section on a sheet with no joints', () => {
   it.each(UNARTICULATED)('%s emits neither rig section, whatever the configuration asks', (category) => {
+    // `POSE_LIBRARY` on the default mode is the studio's own opening configuration, so on BUILDING,
+    // EFFECT and INTERFACE this shipped with nothing selected rather than being a corner to find.
+    expect(DEFAULT_OUTPUT_CONFIG.rigMode).toBe('POSE_LIBRARY');
     for (const rigMode of ['POSE_LIBRARY', 'CUTOUT_RIG'] as const) {
       const prompt = promptFor(category, DEFAULT_MODE, rigMode);
 
@@ -304,15 +307,6 @@ describe('the reported failure: a rig section on a sheet with no joints', () => 
       // absence above a dropped block rather than a prompt that stopped early — and it now carries
       // the number the rig section would have taken, which is the gap this closes.
       expect(prompt).toContain('## 5. REQUIRED ASSEMBLY CAPABILITY');
-    }
-  });
-
-  it('is what the studio opens on for three of them, with nothing selected', () => {
-    // The default configuration is `POSE_LIBRARY`, and these three reach it on their own default
-    // sheet mode — which is why this shipped rather than being a corner a user had to find.
-    expect(DEFAULT_OUTPUT_CONFIG.rigMode).toBe('POSE_LIBRARY');
-    for (const category of ['BUILDING', 'EFFECT', 'INTERFACE'] as const) {
-      expectNoRigSection(generatePrompt(category, standardSubjectOf(category), DEFAULT_OUTPUT_CONFIG));
     }
   });
 

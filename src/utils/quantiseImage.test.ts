@@ -32,6 +32,44 @@ const EDGE: Rgba = { r: 210, g: 180, b: 60, a: 255 };
 const KEYING = { color: MAGENTA, tolerance: 16 };
 
 /**
+ * The pipeline at a grid of 1 with every optional pass off, and `overrides` written over it.
+ *
+ * Each case below states only the dials it turns, so what a case is about is what its call names —
+ * the rest is the one baseline every case in this file starts from.
+ */
+function settings(overrides: Partial<QuantiseSettings> = {}): QuantiseSettings {
+  return {
+    grid: 1,
+    key: null,
+    silhouetteThreshold: 0,
+    vote: 'DOMINANT',
+    lineStrength: 1.5,
+    trimStrength: 0,
+    inkThreshold: 64,
+    fillCleanup: 0,
+    cleanupPasses: 1,
+    spriteGap: 1,
+    symmetry: 'OFF',
+    symmetryTolerance: 8,
+    symmetryConfidence: 90,
+    duplicateTolerance: 0,
+    duplicateSnap: false,
+    frameAlignment: 'OFF',
+    frameDriftTolerance: 0,
+    antiAlias: 'OFF',
+    antiAliasThreshold: 24,
+    antiAliasStrength: 100,
+    antiAliasRun: 2,
+    antiAliasPalette: 'SNAP',
+    dither: 'NONE',
+    outlineExpansion: 0,
+    colorMerge: 0,
+    reduction: null,
+    ...overrides,
+  };
+}
+
+/**
  * A 32 × 32 sheet whose art sits **six pixels in from the corner**: a 16 × 16 sprite at [6, 22), and
  * a 4 × 4 trinket at [24, 28) — smaller than one cell of the grid of 8 the sheet is quantised at.
  *
@@ -80,34 +118,7 @@ describe('quantiseImage', () => {
   it('recovers the art a sheet was drawn at from the sheet it came back on', () => {
     // The whole feature in one assertion: 16 × 16 art returned on a 128 × 128 canvas comes back as
     // the 16 × 16 art, pixel for pixel, with nothing invented and nothing lost.
-    const result = quantiseImage(upscaleNearest(SPRITE, 8), {
-      grid: 8,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const result = quantiseImage(upscaleNearest(SPRITE, 8), settings({ grid: 8 }));
 
     expect(result.image.width).toBe(16);
     expect(result.image.height).toBe(16);
@@ -115,34 +126,10 @@ describe('quantiseImage', () => {
   });
 
   it('reduces the palette to the colour count it is given', () => {
-    const result = quantiseImage(TWO_HUNDRED_COLORS, {
-      grid: 1,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'MAX_COLORS', maxColors: 32 },
-    });
+    const result = quantiseImage(
+      TWO_HUNDRED_COLORS,
+      settings({ reduction: { kind: 'MAX_COLORS', maxColors: 32 } }),
+    );
 
     expect(countColors(TWO_HUNDRED_COLORS)).toBe(200);
     expect(result.colors).toBe(32);
@@ -152,34 +139,10 @@ describe('quantiseImage', () => {
     // `UNRESTRICTED` is `null` rather than a generous cap, and this is what that buys: a painted or
     // 3D-rendered sheet passes through the palette step untouched instead of being reduced to some
     // figure nobody chose. A grid of 1 is the identity for the two steps before it.
-    const result = quantiseImage(TWO_HUNDRED_COLORS, {
-      grid: 1,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: colorPlanFor(studioColors('FREE', 'UNRESTRICTED'), null, 0).reduction,
-    });
+    const result = quantiseImage(
+      TWO_HUNDRED_COLORS,
+      settings({ reduction: colorPlanFor(studioColors('FREE', 'UNRESTRICTED'), null, 0).reduction }),
+    );
 
     expect(PALETTE_COLOR_COUNTS.UNRESTRICTED).toBeNull();
     expect(result.colors).toBe(countColors(TWO_HUNDRED_COLORS));
@@ -191,34 +154,10 @@ describe('quantiseImage', () => {
     // `SheetFacts.colors`, measured once when the sheet loads rather than again on every settings
     // change — so the two are read off different values and both have to mean what they say.
     const source = upscaleNearest(SPRITE, 8);
-    const result = quantiseImage(source, {
-      grid: 8,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'MAX_COLORS', maxColors: 32 },
-    });
+    const result = quantiseImage(
+      source,
+      settings({ grid: 8, reduction: { kind: 'MAX_COLORS', maxColors: 32 } }),
+    );
 
     expect(countColors(source)).toBe(256);
     expect(result.colors).toBe(32);
@@ -231,34 +170,7 @@ describe('quantiseImage', () => {
     // its sixteen pixels of one colour outvote twenty drifting magentas polling one vote each, and a
     // 4 × 4 piece comes back as a whole cell of solid colour standing for 36 source pixels — dilated
     // to more than twice its own area.
-    const dilated = quantiseImage(INSET_SHEET, {
-      grid: 8,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const dilated = quantiseImage(INSET_SHEET, settings({ grid: 8 }));
     const cells = pixels(dilated.image);
 
     expect(dilated.offset).toEqual({ x: 6, y: 6 });
@@ -272,34 +184,7 @@ describe('quantiseImage', () => {
     // field outnumbers the trinket in the cell it dominates. The sprite lands on the 2 × 2 it
     // genuinely fills, and everything else is empty — the trinket's cell included, which is [22, 32)
     // each way on this sheet and holds 84 pixels of field against the trinket's sixteen.
-    const keyed = quantiseImage(INSET_SHEET, {
-      grid: 8,
-      key: KEYING,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const keyed = quantiseImage(INSET_SHEET, settings({ grid: 8, key: KEYING }));
 
     expect(pixels(keyed.image)).toEqual([
       [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
@@ -314,36 +199,7 @@ describe('quantiseImage', () => {
     // is a no-op and every soft pixel it arrived with survives to the end of the pipeline.
     const soft = imageFrom(4, 1, (x) => ({ ...ART, a: [255, 192, 64, 0][x] ?? 0 }));
     const at = (silhouetteThreshold: number) =>
-      pixels(
-        quantiseImage(soft, {
-          grid: 1,
-          key: null,
-          silhouetteThreshold,
-          vote: 'DOMINANT',
-          lineStrength: 1.5,
-          trimStrength: 0,
-          inkThreshold: 64,
-          fillCleanup: 0,
-          cleanupPasses: 1,
-          spriteGap: 1,
-          symmetry: 'OFF' as const,
-          symmetryTolerance: 8,
-          symmetryConfidence: 90,
-          duplicateTolerance: 0,
-          duplicateSnap: false,
-          frameAlignment: 'OFF' as const,
-          frameDriftTolerance: 0,
-          antiAlias: 'OFF' as const,
-          antiAliasThreshold: 24,
-          antiAliasStrength: 100,
-          antiAliasRun: 2,
-          antiAliasPalette: 'SNAP' as const,
-          dither: 'NONE' as const,
-          outlineExpansion: 0,
-          colorMerge: 0,
-          reduction: null,
-        }).image,
-      );
+      pixels(quantiseImage(soft, settings({ silhouetteThreshold })).image);
 
     // Off, the ramp comes through exactly as it arrived — which is the defect this dial answers.
     // The clear pixel keeps the colour it was written with, because nothing has touched it.
@@ -369,34 +225,7 @@ describe('quantiseImage', () => {
       return { ...TINTED, a: x === 1 ? 64 : 255 };
     });
 
-    const result = quantiseImage(sheet, {
-      grid: 1,
-      key: KEYING,
-      silhouetteThreshold: 50,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const result = quantiseImage(sheet, settings({ key: KEYING, silhouetteThreshold: 50 }));
 
     // The third pixel is the assertion. Hardening first would clear the second, hand it to the key as
     // field, and the fringe pass would take this one with it — a pixel of silhouette neither dial
@@ -414,34 +243,7 @@ describe('quantiseImage', () => {
     // in drawn pixels — the 2 × 2 the sprite resolved to above, not the 16 × 16 it occupied on the
     // sheet. That is the whole reason it travels back with the result: the studio's target size and
     // the atlas cell are stated in the same unit.
-    const result = quantiseImage(INSET_SHEET, {
-      grid: 8,
-      key: KEYING,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const result = quantiseImage(INSET_SHEET, settings({ grid: 8, key: KEYING }));
 
     expect(result.sprites).toEqual({
       kind: 'SEGMENTED',
@@ -454,67 +256,13 @@ describe('quantiseImage', () => {
     // Nothing has been keyed, so there is no transparency to separate anything by — and the honest
     // answer is that no sprite was found, rather than one box filling the sheet that the atlas
     // calculator would then compare against a component count.
-    const result = quantiseImage(INSET_SHEET, {
-      grid: 8,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const result = quantiseImage(INSET_SHEET, settings({ grid: 8 }));
 
     expect(result.sprites).toEqual({ kind: 'SOLID' });
   });
 
   it('reports the share of the sheet the key removed', () => {
-    const result = quantiseImage(INSET_SHEET, {
-      grid: 8,
-      key: KEYING,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const result = quantiseImage(INSET_SHEET, settings({ grid: 8, key: KEYING }));
 
     // 32 × 32 less the 16 × 16 sprite and the 4 × 4 trinket: 752 of 1024. Both art colours are far
     // outside the fringe threshold, so nothing is eroded off them and the figure is exactly the
@@ -525,34 +273,10 @@ describe('quantiseImage', () => {
   it('spends no palette slots on the keyed field, and none on the colours it removed', () => {
     // `colorHistogram` excludes fully transparent pixels, which is why nothing downstream needed
     // changing: the field claims no slots, so a strict budget buys the subject's own colours.
-    const result = quantiseImage(INSET_SHEET, {
-      grid: 8,
-      key: KEYING,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'MAX_COLORS', maxColors: 32 },
-    });
+    const result = quantiseImage(
+      INSET_SHEET,
+      settings({ grid: 8, key: KEYING, reduction: { kind: 'MAX_COLORS', maxColors: 32 } }),
+    );
 
     // 64 drifting magentas plus the two art colours went in; one colour survives — the sprite's,
     // since the trinket's cell resolved to the field around it a step earlier.
@@ -581,34 +305,7 @@ describe('quantiseImage', () => {
       return readPixel(SPRITE.data, pixelOffset(SPRITE.width, cellX, cellY));
     });
 
-    const result = quantiseImage(inset, {
-      grid: 8,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const result = quantiseImage(inset, settings({ grid: 8 }));
 
     expect(result.offset).toEqual({ x: 3, y: 3 });
     expect(result.image.width).toBe(17);
@@ -627,34 +324,7 @@ describe('quantiseImage', () => {
     // The difference a pinned palette makes, stated as the thing a budget cannot do: 200 arbitrary
     // colours come back as four *named* ones, and every pixel is one of exactly those four.
     const gameBoy = colorPlanFor(studioColors('GAME_BOY_DMG', 'UNRESTRICTED'), null, 0).reduction;
-    const result = quantiseImage(TWO_HUNDRED_COLORS, {
-      grid: 1,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: gameBoy,
-    });
+    const result = quantiseImage(TWO_HUNDRED_COLORS, settings({ reduction: gameBoy }));
 
     expect(gameBoy?.kind).toBe('PALETTE');
     const survivors = new Set(pixels(result.image).flat().map(toHex));
@@ -666,34 +336,7 @@ describe('quantiseImage', () => {
     // counted: the Mega Drive's 512 colours barely reduce a 200-colour image, but every channel that
     // survives is a value the machine could actually output.
     const megaDrive = colorPlanFor(studioColors('MEGA_DRIVE', 'UNRESTRICTED'), null, 0).reduction;
-    const result = quantiseImage(TWO_HUNDRED_COLORS, {
-      grid: 1,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: megaDrive,
-    });
+    const result = quantiseImage(TWO_HUNDRED_COLORS, settings({ reduction: megaDrive }));
 
     expect(megaDrive).toEqual({ kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 });
     const rungs = new Set(channelLevels(3));
@@ -726,34 +369,10 @@ describe('quantiseImage', () => {
     const soft = imageFrom(1, 1, () => ({ r: 20, g: 60, b: 20, a: 128 }));
 
     for (const palette of ['GAME_BOY_DMG', 'MEGA_DRIVE'] as const) {
-      const result = quantiseImage(soft, {
-        grid: 1,
-        key: null,
-        silhouetteThreshold: 0,
-        vote: 'DOMINANT',
-        lineStrength: 1.5,
-        trimStrength: 0,
-        inkThreshold: 64,
-        fillCleanup: 0,
-        cleanupPasses: 1,
-        spriteGap: 1,
-        symmetry: 'OFF' as const,
-        symmetryTolerance: 8,
-        symmetryConfidence: 90,
-        duplicateTolerance: 0,
-        duplicateSnap: false,
-        frameAlignment: 'OFF' as const,
-        frameDriftTolerance: 0,
-        antiAlias: 'OFF' as const,
-        antiAliasThreshold: 24,
-        antiAliasStrength: 100,
-        antiAliasRun: 2,
-        antiAliasPalette: 'SNAP' as const,
-        dither: 'NONE' as const,
-        outlineExpansion: 0,
-        colorMerge: 0,
-        reduction: colorPlanFor(studioColors(palette, 'UNRESTRICTED'), null, 0).reduction,
-      });
+      const result = quantiseImage(
+        soft,
+        settings({ reduction: colorPlanFor(studioColors(palette, 'UNRESTRICTED'), null, 0).reduction }),
+      );
       expect(readPixel(result.image.data, 0).a, `${palette} flattened a soft edge`).toBe(128);
     }
   });
@@ -789,34 +408,7 @@ describe('quantiseImage', () => {
       };
     });
 
-    const result = quantiseImage(drifting, {
-      grid: 6,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const result = quantiseImage(drifting, settings({ grid: 6 }));
 
     // One output pixel per drifting cell on each axis, and every interior cell resolves to a colour
     // within the wobble of its own block — no cell inherits a neighbouring block's colour, which is
@@ -856,34 +448,10 @@ describe('quantiseImage', () => {
       };
     });
 
-    const result = quantiseImage(noisy, {
-      grid: 6,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'MAX_COLORS', maxColors: 2 },
-    });
+    const result = quantiseImage(
+      noisy,
+      settings({ grid: 6, reduction: { kind: 'MAX_COLORS', maxColors: 2 } }),
+    );
 
     expect(result.colors).toBe(2);
     const cells = pixels(result.image);
@@ -937,34 +505,10 @@ describe('quantiseImage', () => {
     // 17 exactly — the fifteen crisp block colours plus the two wobbled clouds — so the reduction
     // stops with each cloud held in one box: its next split would have to carve a cloud in two, and
     // a majority split across sub-buckets is how a generous budget lets the minority win after all.
-    const result = quantiseImage(sheet, {
-      grid: 6,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'MAX_COLORS', maxColors: 17 },
-    });
+    const result = quantiseImage(
+      sheet,
+      settings({ grid: 6, reduction: { kind: 'MAX_COLORS', maxColors: 17 } }),
+    );
 
     const cell = readPixel(result.image.data, pixelOffset(result.image.width, 1, 1));
     const errorToA = Math.abs(cell.r - A.r) + Math.abs(cell.g - A.g) + Math.abs(cell.b - A.b);
@@ -976,34 +520,7 @@ describe('quantiseImage', () => {
     // *entirely* the key colour comes back untouched, and the share is zero rather than unreported.
     const field = imageFrom(4, 4, () => MAGENTA);
 
-    const result = quantiseImage(field, {
-      grid: 1,
-      key: null,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE' as const,
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    });
+    const result = quantiseImage(field, settings());
 
     expect(channels(result.image)).toEqual(channels(field));
     expect(result.keyedShare).toBe(0);
@@ -1028,40 +545,22 @@ describe('quantiseImage', () => {
 
     for (const key of [KEYING, null]) {
       for (const vote of VOTE_METHODS) {
-        const settings = {
+        const engaged = settings({
           grid: 8,
           key,
-          silhouetteThreshold: 0,
           vote,
-          lineStrength: 1.5,
           trimStrength: 0.5,
-          inkThreshold: 64,
           fillCleanup: 8,
           cleanupPasses: 2,
-          spriteGap: 1,
-          symmetry: 'OFF' as const,
-          symmetryTolerance: 8,
-          symmetryConfidence: 90,
-          duplicateTolerance: 0,
-          duplicateSnap: false,
-          frameAlignment: 'OFF' as const,
-          frameDriftTolerance: 0,
-          antiAlias: 'OFF' as const,
-          antiAliasThreshold: 24,
-          antiAliasStrength: 100,
-          antiAliasRun: 2,
-          antiAliasPalette: 'SNAP' as const,
-          dither: 'NONE' as const,
-          outlineExpansion: 0,
           colorMerge: 8,
-          reduction: { kind: 'MAX_COLORS', maxColors: 8 } as const,
-        };
+          reduction: { kind: 'MAX_COLORS', maxColors: 8 },
+        });
         const arm = `the ${key === null ? 'unkeyed' : 'keyed'} ${vote} pipeline`;
 
-        const first = quantiseImage(INSET_SHEET, settings);
+        const first = quantiseImage(INSET_SHEET, engaged);
         expect(channels(INSET_SHEET), `${arm} rewrote its input`).toEqual(before);
 
-        const again = quantiseImage(INSET_SHEET, settings);
+        const again = quantiseImage(INSET_SHEET, engaged);
         expect(channels(again.image), `${arm} answered the same settings differently`).toEqual(
           channels(first.image),
         );
@@ -1097,34 +596,8 @@ describe('quantiseImage — a locked palette', () => {
     return { r: entry.r + nudge, g: entry.g - nudge, b: entry.b + nudge, a: 255 };
   });
 
-  const settingsFor = (vote: (typeof VOTE_METHODS)[number], colorMerge: number) => ({
-    grid: 1,
-    key: null,
-    silhouetteThreshold: 0,
-    vote,
-    lineStrength: 1.5,
-    trimStrength: 0,
-    inkThreshold: 64,
-    fillCleanup: 0,
-    cleanupPasses: 1,
-    spriteGap: 1,
-    symmetry: 'OFF' as const,
-    symmetryTolerance: 8,
-    symmetryConfidence: 90,
-    duplicateTolerance: 0,
-    duplicateSnap: false,
-    frameAlignment: 'OFF' as const,
-    frameDriftTolerance: 0,
-    antiAlias: 'OFF' as const,
-    antiAliasThreshold: 24,
-    antiAliasStrength: 100,
-    antiAliasRun: 2,
-    antiAliasPalette: 'SNAP' as const,
-    dither: 'NONE' as const,
-    outlineExpansion: 0,
-    colorMerge,
-    reduction: { kind: 'LOCKED', entries: ENTRIES, snap: 20 } as const,
-  });
+  const settingsFor = (vote: (typeof VOTE_METHODS)[number], colorMerge: number) =>
+    settings({ vote, colorMerge, reduction: { kind: 'LOCKED', entries: ENTRIES, snap: 20 } });
 
   it.each(VOTE_METHODS)('draws %s in the locked colours, whichever side of the vote it runs on', (vote) => {
     const result = quantiseImage(DRIFTED, settingsFor(vote, 0));
@@ -1179,34 +652,8 @@ describe('quantiseImage — a dither', () => {
     ],
   } as const;
 
-  const settingsFor = (dither: 'NONE' | 'BAYER_4', reduction: typeof TWO_TONE | null, cleanup: number) => ({
-    grid: 2,
-    key: null,
-    silhouetteThreshold: 0,
-    vote: 'DOMINANT' as const,
-    lineStrength: 1.5,
-    trimStrength: 0,
-    inkThreshold: 64,
-    fillCleanup: cleanup,
-    cleanupPasses: 4,
-    spriteGap: 1,
-    symmetry: 'OFF' as const,
-    symmetryTolerance: 8,
-    symmetryConfidence: 90,
-    duplicateTolerance: 0,
-    duplicateSnap: false,
-    frameAlignment: 'OFF' as const,
-    frameDriftTolerance: 0,
-    antiAlias: 'OFF' as const,
-    antiAliasThreshold: 24,
-    antiAliasStrength: 100,
-    antiAliasRun: 2,
-    antiAliasPalette: 'SNAP' as const,
-    colorMerge: cleanup,
-    outlineExpansion: 0,
-    dither,
-    reduction,
-  });
+  const settingsFor = (dither: 'NONE' | 'BAYER_4', reduction: typeof TWO_TONE | null, cleanup: number) =>
+    settings({ grid: 2, fillCleanup: cleanup, cleanupPasses: 4, colorMerge: cleanup, dither, reduction });
 
   it('spreads a colour the palette cannot hold, where the flat step could only round it', () => {
     expect(quantiseImage(FLAT, settingsFor('NONE', TWO_TONE, 0)).colors).toBe(1);
@@ -1286,34 +733,7 @@ const SYMMETRIC = imageFrom(12, 8, (x, y) =>
 
 /** The settings the symmetry fixtures share — a grid of 1, no keying, and nothing else engaged. */
 function symmetrySettings(symmetry: 'OFF' | 'CHECK' | 'SNAP', symmetryConfidence = 90): QuantiseSettings {
-  return {
-    grid: 1,
-    key: null,
-    silhouetteThreshold: 0,
-    vote: 'DOMINANT',
-    lineStrength: 1.5,
-    trimStrength: 0,
-    inkThreshold: 64,
-    fillCleanup: 0,
-    cleanupPasses: 1,
-    spriteGap: 1,
-    symmetry,
-    symmetryTolerance: 0,
-    symmetryConfidence,
-    duplicateTolerance: 0,
-    duplicateSnap: false,
-    frameAlignment: 'OFF' as const,
-    frameDriftTolerance: 0,
-    antiAlias: 'OFF' as const,
-    antiAliasThreshold: 24,
-    antiAliasStrength: 100,
-    antiAliasRun: 2,
-    antiAliasPalette: 'SNAP' as const,
-    dither: 'NONE',
-    outlineExpansion: 0,
-    colorMerge: 0,
-    reduction: null,
-  };
+  return settings({ symmetry, symmetryTolerance: 0, symmetryConfidence });
 }
 
 describe('quantiseImage symmetry', () => {
@@ -1443,34 +863,8 @@ describe('quantiseImage — duplicate sprites', () => {
     return CLEAR;
   });
 
-  const settingsFor = (duplicateTolerance: number, duplicateSnap: boolean) => ({
-    grid: 1,
-    key: null,
-    silhouetteThreshold: 0,
-    vote: 'DOMINANT' as const,
-    outlineExpansion: 0,
-    lineStrength: 1.5,
-    trimStrength: 0,
-    inkThreshold: 64,
-    fillCleanup: 0,
-    colorMerge: 0,
-    cleanupPasses: 1,
-    dither: 'NONE' as const,
-    spriteGap: 0,
-    symmetry: 'OFF' as const,
-    symmetryTolerance: 8,
-    symmetryConfidence: 90,
-    duplicateTolerance,
-    duplicateSnap,
-    frameAlignment: 'OFF' as const,
-    frameDriftTolerance: 0,
-    antiAlias: 'OFF' as const,
-    antiAliasThreshold: 24,
-    antiAliasStrength: 100,
-    antiAliasRun: 2,
-    antiAliasPalette: 'SNAP' as const,
-    reduction: null,
-  });
+  const settingsFor = (duplicateTolerance: number, duplicateSnap: boolean) =>
+    settings({ spriteGap: 0, duplicateTolerance, duplicateSnap });
 
   it('reports the finding whether or not the fold is asked for', () => {
     const read = quantiseImage(PAIR, settingsFor(24, false));
@@ -1491,20 +885,14 @@ describe('quantiseImage — duplicate sprites', () => {
     expect(on.duplicates).toHaveLength(1);
   });
 
-  it('folds the repeats into the delivered image when the snap is on', () => {
-    const folded = quantiseImage(PAIR, settingsFor(24, true));
-
-    expect(folded.snapped).toBe(true);
-    // The spot that told the two sprites apart is gone, so the sheet is down to one ink.
-    expect(folded.colors).toBe(1);
-  });
-
-  it('counts the colours of the folded sheet, not of the one the reading was taken from', () => {
-    // The ordering claim in one assertion: the fold has to land before the colour count, or the
-    // figure beside the preview describes a sheet the reader was never shown.
+  it('folds the repeats when the snap is on, and counts the colours of the folded sheet', () => {
+    // The ordering claim: the fold has to land before the colour count, or the figure beside the
+    // preview describes a sheet the reader was never shown. The spot that told the two sprites apart
+    // is gone, so the folded sheet is down to one ink where the one the reading was taken from has two.
     const read = quantiseImage(PAIR, settingsFor(24, false));
     const folded = quantiseImage(PAIR, settingsFor(24, true));
 
+    expect(folded.snapped).toBe(true);
     expect(read.colors).toBe(2);
     expect(folded.colors).toBe(1);
   });
@@ -1572,37 +960,8 @@ describe('quantiseImage frame alignment', () => {
     return [2, 16, 26].some((left) => x >= left && x < left + 4) ? ART : TRANSPARENT;
   });
 
-  const settingsFor = (
-    frameAlignment: 'OFF' | 'CHECK' | 'SNAP',
-    frameDriftTolerance: number,
-  ): QuantiseSettings => ({
-    grid: 1,
-    key: null,
-    silhouetteThreshold: 0,
-    vote: 'DOMINANT' as const,
-    outlineExpansion: 0,
-    lineStrength: 1.5,
-    trimStrength: 0,
-    inkThreshold: 64,
-    fillCleanup: 0,
-    colorMerge: 0,
-    cleanupPasses: 1,
-    dither: 'NONE' as const,
-    spriteGap: 1,
-    symmetry: 'OFF' as const,
-    symmetryTolerance: 8,
-    symmetryConfidence: 90,
-    duplicateTolerance: 0,
-    duplicateSnap: false,
-    frameAlignment,
-    frameDriftTolerance,
-    antiAlias: 'OFF' as const,
-    antiAliasThreshold: 24,
-    antiAliasStrength: 100,
-    antiAliasRun: 2,
-    antiAliasPalette: 'SNAP' as const,
-    reduction: null,
-  });
+  const settingsFor = (frameAlignment: 'OFF' | 'CHECK' | 'SNAP', frameDriftTolerance: number) =>
+    settings({ frameAlignment, frameDriftTolerance });
 
   it('reports nothing at all while the pass is off', () => {
     // `null` is the control's OFF position and nothing else — an empty array would say the pass ran
@@ -1698,34 +1057,8 @@ describe('quantiseImage anti-aliasing', () => {
     return y < top + 5 ? ART : TRINKET;
   });
 
-  const settingsFor = (antiAlias: 'OFF' | 'INTERIOR' | 'SILHOUETTE' | 'BOTH'): QuantiseSettings => ({
-    grid: 1,
-    key: KEYING,
-    silhouetteThreshold: 0,
-    vote: 'DOMINANT' as const,
-    outlineExpansion: 0,
-    lineStrength: 1.5,
-    trimStrength: 0,
-    inkThreshold: 64,
-    fillCleanup: 0,
-    colorMerge: 0,
-    cleanupPasses: 1,
-    dither: 'NONE' as const,
-    spriteGap: 1,
-    symmetry: 'OFF' as const,
-    symmetryTolerance: 8,
-    symmetryConfidence: 90,
-    duplicateTolerance: 0,
-    duplicateSnap: false,
-    frameAlignment: 'OFF' as const,
-    frameDriftTolerance: 0,
-    antiAlias,
-    antiAliasThreshold: 24,
-    antiAliasStrength: 100,
-    antiAliasRun: 2,
-    antiAliasPalette: 'SNAP' as const,
-    reduction: null,
-  });
+  const settingsFor = (antiAlias: 'OFF' | 'INTERIOR' | 'SILHOUETTE' | 'BOTH') =>
+    settings({ key: KEYING, antiAlias });
 
   it('softens the sheet once the pass is on, and leaves it alone while it is off', () => {
     const off = quantiseImage(WEDGE, settingsFor('OFF'));
