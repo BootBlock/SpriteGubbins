@@ -28,13 +28,13 @@ import { buildPalette } from './wuQuantiser.ts';
  * sheet that has no colours left to express.
  *
  * **For a list it is not the undithered step with a pattern laid over the top, and the difference
- * is the metric.** `nearestColor`, which `applyPalette` and `applyRgbPalette` both use, measures
- * squared distance across raw RGBA. This measures in the scaled OKLab every colour *tolerance* on
- * this tab now uses, with coverage as a fourth axis on the same scale — the metric `mixingPlan` needs
- * to compare a mixture with a target at all, and the one every other colour gate in this tab already
- * speaks. So a colour whose plan comes back flat can land on a different entry than the undithered
- * step would have chosen. Only the locked palette's escape is decided identically both ways, because
- * both arms read `lockedPalette.lockedEntryFor`.
+ * is the metric.** `nearestColorSearch`, which `applyPalette` and `applyRgbPalette` both use,
+ * measures squared distance across raw RGBA. This measures in the scaled OKLab every colour
+ * *tolerance* on this tab now uses, with coverage as a fourth axis on the same scale — the metric
+ * `mixingPlan` needs to compare a mixture with a target at all, and the one every other colour gate
+ * in this tab already speaks. So a colour whose plan comes back flat can land on a different entry
+ * than the undithered step would have chosen. Only the locked palette's escape is decided
+ * identically both ways, because both arms read `lockedPalette.lockedEntryFor`.
  *
  * **A channel-depth space takes the classic form instead, and it is the one reduction that can.** A
  * budget, a pinned list and a locked palette are all lists, and there is no next rung in a list for a

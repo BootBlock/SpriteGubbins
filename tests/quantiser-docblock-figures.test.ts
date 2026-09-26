@@ -16,7 +16,6 @@ import {
   SYMMETRY_AXIS_SEARCH,
   SYMMETRY_SWEEP_BUDGET,
 } from '../src/constants/quantiser.ts';
-import { nearestColor } from '../src/utils/applyPalette.ts';
 import { duplicateSprites } from '../src/utils/duplicateSprites.ts';
 import { boundaryMesh } from '../src/utils/gridMesh.ts';
 import {
@@ -30,6 +29,7 @@ import {
   unpackColor,
 } from '../src/utils/imageData.ts';
 import { lumaOfChannels } from '../src/utils/lineVote.ts';
+import { nearestColorSearch } from '../src/utils/nearestColorSearch.ts';
 import { type LocatedEntry, locateEntries, nearestOklab } from '../src/utils/lockedPalette.ts';
 import { srgbToOklab } from '../src/utils/oklab.ts';
 import { pixelDistanceOf } from '../src/utils/pixelDistance.ts';
@@ -306,11 +306,12 @@ describe('the figures the quantiser docblocks state', () => {
      * returns is a colour the sheet holds.
      */
     function meanPaletteError(image: ImageData, palette: readonly Rgba[]): number {
+      const nearest = nearestColorSearch(palette);
       let total = 0;
       let pixels = 0;
       for (const [key, count] of colorHistogram(image)) {
         const color = unpackColor(key);
-        const entry = nearestColor(color, palette);
+        const entry = nearest(color);
         if (entry === null) throw new Error('an empty palette has no entry to measure against');
         const from = srgbToOklab(color.r, color.g, color.b);
         const to = srgbToOklab(entry.r, entry.g, entry.b);

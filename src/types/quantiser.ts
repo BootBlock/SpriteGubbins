@@ -193,7 +193,7 @@ export interface BackgroundKeying {
   /**
    * How far a pixel may sit in scaled OKLab, as `keyDistanceSquared` measures it — alpha ignored.
    *
-   * **Not the plain Euclidean distance `nearestColor` uses, and the difference is the feature.** That
+   * **Not the plain Euclidean distance `nearestColorSearch` uses, and the difference is the feature.** That
    * metric answers "how far apart are these two colours" across raw RGBA, which is the right question
    * when picking the nearest palette entry and the wrong one here: a key field varies by being shaded
    * and washed out, and measured plainly that variation costs more than a change of hue does. So this
