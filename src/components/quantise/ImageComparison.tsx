@@ -56,11 +56,12 @@ interface ImageComparisonProps {
  * Linking is unconditional and has no toggle: a comparison view whose halves show different places is
  * not comparing anything, so the alternative is not a preference, it is the defect.
  *
- * **The grid's offset is the second half of that placement.** The lattice sits where the art put it,
- * so the result can open with a *leading partial cell* — one pixel standing for only `offset` source
- * pixels — and a uniformly magnified canvas draws it a full cell wide, pushing everything after it
- * out of register by the deficit. Each pane therefore hands `PaneWindow` a clipping window sized
- * to the source's extent and, for the result, the deficit to pull the canvas back by, so every cell
+ * **The leading cell's width is the second half of that placement.** The lattice sits where the art
+ * put it, so the result can open with a leading cell narrower or wider than the grid — one pixel
+ * standing for `grid + leadingShift` source pixels — and a uniformly magnified canvas draws it one
+ * cell wide, pushing everything after it out of register by the difference. Each pane therefore hands
+ * `PaneWindow` a clipping window sized to the source's extent and, for the result, the difference to
+ * move the canvas by, so every cell
  * lands on the source pixels it covers and both panes measure as the same content. The reasoning
  * lives on `PaneContent`.
  *

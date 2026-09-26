@@ -24,7 +24,7 @@ function quantisedTo(width: number, height: number, colors: number): Quantised {
       duplicates: [],
       snapped: false,
       strips: null,
-      offset: { x: 0, y: 0 },
+      leadingShift: { x: 0, y: 0 },
     },
   };
 }

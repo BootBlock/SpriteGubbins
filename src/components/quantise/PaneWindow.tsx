@@ -11,11 +11,11 @@ import { PanViewport } from './PanViewport.tsx';
  * number for both panes. This is the other side of that identity — the two differ by exactly the
  * factor that makes the two canvases cover the same extent of the same artwork.
  *
- * **`window` and `inset` are what hold that identity once the mesh has a leading partial cell.**
- * The cells are measured from the art rather than the corner, so the quantised image's first pixel
- * on an axis can stand for fewer source pixels than a full cell — and a canvas drawn at a uniform
- * magnification renders it full width, displacing everything after it by the deficit. The pane
- * therefore draws the canvas pulled back by exactly that deficit (`inset`) inside a clipping
+ * **`window` and `inset` are what hold that identity once the mesh has a leading cell of another
+ * width.** The cells are measured from the art rather than the corner, so the quantised image's first
+ * pixel on an axis can stand for fewer source pixels than a full cell, or more — and a canvas drawn at
+ * a uniform magnification renders it one cell wide, displacing everything after it by the difference.
+ * The pane therefore draws the canvas moved by exactly that difference (`inset`) inside a clipping
  * `window` sized to the source's own extent. Both panes carry the same window, which is also what
  * `useLinkedPanes` measures — two contents of identical extent to convert between. On regular art
  * the placement is exact; on a drifting sheet the mesh's interior cells can sit a pixel or two off
@@ -34,7 +34,10 @@ export interface PaneContent {
   readonly magnification: number;
   /** The content extent in screen pixels — the source's size at the shared per-source-pixel scale. */
   readonly window: { readonly width: number; readonly height: number };
-  /** How far the canvas is pulled up and left, in screen pixels, to land its cells on the source. */
+  /**
+   * How far the canvas is pulled up and left, in screen pixels, to land its cells on the source —
+   * negative where a leading cell wider than the grid pushes it down and right instead.
+   */
   readonly inset: { readonly x: number; readonly y: number };
   /**
    * Elements drawn over the canvas, in the canvas's own coordinate space, or `null` for none.
@@ -46,7 +49,7 @@ export interface PaneContent {
    * **It shares the canvas's placement rather than repeating it.** The overlay box is laid over the
    * canvas and takes the same `inset` displacement, so an element positioned at a result coordinate
    * times the magnification lands on the artwork at that coordinate — including on a mesh with a
-   * leading partial cell, which is the case a second placement would get wrong.
+   * leading cell of another width, which is the case a second placement would get wrong.
    */
   readonly overlay?: ReactNode;
 }
