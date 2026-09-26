@@ -28,7 +28,7 @@ import { buildPalette } from './wuQuantiser.ts';
  * sheet that has no colours left to express.
  *
  * **It is not only those four with a pattern laid over the top, and the difference is the metric.**
- * `nearestColor`, which `applyPalette` and `applyRgbPalette` both use, measures squared distance
+ * `nearestColorSearch`, which `applyPalette` and `applyRgbPalette` both use, measures squared distance
  * across raw RGBA; `snapToChannelDepth` rounds each channel independently. This measures in the
  * scaled OKLab every colour *tolerance* on this tab now uses, with coverage as a fourth axis on the
  * same scale — the metric `mixingPlan` needs to compare a mixture with a target at all, and the one
