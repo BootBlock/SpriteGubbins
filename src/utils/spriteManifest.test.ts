@@ -148,7 +148,11 @@ describe('buildManifest', () => {
     const manifest = buildManifest({
       ...input,
       duplicates: [
-        { canonical: BOXES[0] as SpriteBox, duplicates: [{ box: BOXES[2] as SpriteBox, exact: true }] },
+        {
+          canonical: BOXES[0] as SpriteBox,
+          source: BOXES[0] as SpriteBox,
+          duplicates: [{ box: BOXES[2] as SpriteBox, exact: true }],
+        },
       ],
     });
 
@@ -160,7 +164,13 @@ describe('buildManifest', () => {
     // split or join a region. Guessing at the nearest box would point a packer at the wrong artwork.
     const manifest = buildManifest({
       ...input,
-      duplicates: [{ canonical: box(99, 99), duplicates: [{ box: BOXES[1] as SpriteBox, exact: false }] }],
+      duplicates: [
+        {
+          canonical: box(99, 99),
+          source: box(99, 99),
+          duplicates: [{ box: BOXES[1] as SpriteBox, exact: false }],
+        },
+      ],
     });
 
     expect(manifest.sprites.every((sprite) => sprite.duplicateOf === null)).toBe(true);
@@ -315,7 +325,11 @@ describe('buildManifest, cut into a cell', () => {
       ...input,
       cell,
       duplicates: [
-        { canonical: BOXES[0] as SpriteBox, duplicates: [{ box: BOXES[1] as SpriteBox, exact: true }] },
+        {
+          canonical: BOXES[0] as SpriteBox,
+          source: BOXES[0] as SpriteBox,
+          duplicates: [{ box: BOXES[1] as SpriteBox, exact: true }],
+        },
       ],
     });
 

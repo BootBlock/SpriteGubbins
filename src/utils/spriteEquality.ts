@@ -6,7 +6,7 @@ import { pixelDistance } from './pixelDistance.ts';
 
 /**
  * When two sprites on a sheet are the same sprite: the bucketing hash, the exact test and the
- * tolerated one.
+ * distance the tolerance is stated in.
  *
  * The relation `duplicateSprites` groups by, kept apart from the grouping itself. Nothing here knows
  * what a group is or which sprite names one — each function answers one question about a pair (or,
@@ -26,7 +26,7 @@ import { pixelDistance } from './pixelDistance.ts';
  * show nothing can hold different rubbish — and comparing those bytes would report a difference
  * between two things nobody can see. Collapsing them to {@link CLEAR} is the same rule
  * {@link spriteHash} applies, stated for one cell instead of a whole sprite, and it is what lets one
- * equality test in {@link withinTolerance} dispose of a cell neither sprite covers, a cell both
+ * equality test in {@link spriteDistance} dispose of a cell neither sprite covers, a cell both
  * cleared, and two cells of one colour.
  */
 function visibleColorAt(data: Uint8ClampedArray, offset: number): number {
@@ -38,7 +38,7 @@ function visibleColorAt(data: Uint8ClampedArray, offset: number): number {
  * The packed colour of a cell no sprite covers, and of a cleared one: four zero bytes.
  *
  * What `packedColorAt` returns for a fully transparent pixel whose colour bytes are zero, and the
- * value {@link withinTolerance} substitutes for a cell outside a sprite's box. Both are the same
+ * value {@link spriteDistance} substitutes for a cell outside a sprite's box. Both are the same
  * thing — nothing there — and packing them the same way is what lets one comparison dispose of a
  * cell neither sprite covers, a cell both cleared, and two cells of one colour.
  */
@@ -129,7 +129,7 @@ export function sameSprite(image: ImageData, left: SpriteBox | undefined, right:
 }
 
 /**
- * Whether the mean per-cell distance between two sprites comes in under `tolerance`.
+ * The mean per-cell distance between two sprites, or `Infinity` once it is known to pass `limit`.
  *
  * The two are laid over one another by their top-left corners and read across the box that covers
  * both — see the module docblock for why the bounding box is the registration, and why the cells
@@ -145,35 +145,36 @@ export function sameSprite(image: ImageData, left: SpriteBox | undefined, right:
  * them in would make the answer a measure of how much empty space the sprites' boxes hold — so a
  * sprawling figure with a lot of margin would pass a threshold a compact one failed.
  *
- * **The early exit is exact, not a heuristic, and it is what makes the walk above affordable.** The
- * running sum only grows and the divisor can never exceed the union box's cell count, so a sum
- * already past `tolerance × those cells` means the final mean is past `tolerance` whatever the rest
- * of the sprites hold. A pair that is not a duplicate is usually rejected within the first few rows,
- * and at a tolerance of `0` it is rejected at the first cell that differs.
+ * **The early exit is exact, not a heuristic, and it is what makes the grouping walk affordable.**
+ * The running sum only grows and the divisor can never exceed the union box's cell count, so a sum
+ * already past `limit × those cells` means the final mean is past `limit` whatever the rest of the
+ * sprites hold. A pair that is not a duplicate is usually rejected within the first few rows, and at
+ * a limit of `0` it is rejected at the first cell that differs. The medoid in `groupMedoid` needs
+ * every distance in full, and leaves `limit` at its default.
  *
  * **The box's cell count is the only sound bound available here**, and the tempting tighter one is
  * wrong: `SpriteBox.pixels` counts the opaque pixels of the *connected region*, not of the box that
  * bounds it, so a speck sitting in a sprite's notch is inside the box and absent from the figure.
  * Bounding the divisor by the two sprites' `pixels` added together therefore under-counts on exactly
- * those sheets, which would make this reject a pair whose true mean is under the tolerance — an
- * early exit that changes the answer, which is the one thing it may not do.
+ * those sheets, which would make this reject a pair whose true mean is under the limit — an early
+ * exit that changes the answer, which is the one thing it may not do.
  *
- * Returns `false` for a pair with no visible cell between them — two sprites both entirely
+ * `Infinity` too for a pair with no visible cell between them — two sprites both entirely
  * transparent, which the speck floor makes unreachable from a real segmentation and which is a
  * comparison with nothing in it either way.
  */
-export function withinTolerance(
+export function spriteDistance(
   image: ImageData,
   left: SpriteBox | undefined,
   right: SpriteBox | undefined,
-  tolerance: number,
-): boolean {
-  if (left === undefined || right === undefined) return false;
+  limit = Infinity,
+): number {
+  if (left === undefined || right === undefined) return Infinity;
 
   const { data } = image;
   const width = Math.max(left.width, right.width);
   const height = Math.max(left.height, right.height);
-  const budget = tolerance * width * height;
+  const budget = limit * width * height;
   const leftColor: MutableOklab = { L: 0, a: 0, b: 0 };
   const rightColor: MutableOklab = { L: 0, a: 0, b: 0 };
   let sum = 0;
@@ -222,9 +223,11 @@ export function withinTolerance(
         cachedRight = rightPacked;
       }
       sum += cachedDistance;
-      if (sum > budget) return false;
+      if (sum > budget) return Infinity;
     }
   }
 
-  return counted > 0 && sum / counted <= tolerance;
+  if (counted === 0) return Infinity;
+  const mean = sum / counted;
+  return mean > limit ? Infinity : mean;
 }

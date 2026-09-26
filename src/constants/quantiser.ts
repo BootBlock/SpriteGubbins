@@ -2343,7 +2343,8 @@ export const QUANTISE_TOOLTIPS = {
     'At `0` only sprites whose visible pixels match outright are grouped. Raise it to catch a pair that came back a shade apart; lower it when genuinely different poses are called the same.\n\n' +
     'It changes no pixel: a PNG and an Aseprite document download the same, while a manifest, and the sprite pack that carries one, records each repeat as a link. Switch the preview to Sprites to see the bounds it works from.',
   duplicateSnap:
-    'Rewrites every sprite grouped above as the first sprite of its group, so a pose that came back three times slightly differently is written three times identically. That saves colours and atlas cells, and stops an animation flickering.\n\n' +
+    'Rewrites every sprite grouped above as the most typical sprite of its group, the one closest to all the others, so a pose that came back three times slightly differently is written three times identically. That saves colours and atlas cells, and stops an animation flickering.\n\n' +
+    'A flaw that only one copy has is not copied into the rest. A group of two has no majority, so it takes its first sprite.\n\n' +
     '**It changes the sheet by deleting artwork:** whatever made each copy different is gone from the download. Check the count above first, and raise the tolerance slowly with this on to see which sprites fold. It does nothing while the tolerance finds no groups.',
   frameAlignment:
     'Whether each row of sprites is checked for frames that have wandered off the row’s spacing, and whether anything is done about it. Each frame is measured by its artwork rather than its bounding box, so an outstretched arm does not read as drift.\n\n' +

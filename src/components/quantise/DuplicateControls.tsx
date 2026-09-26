@@ -2,6 +2,7 @@ import { DUPLICATE_TOLERANCE_RANGE, QUANTISE_TOOLTIPS } from '../../constants/qu
 import { DUPLICATE_GUIDANCE } from '../../constants/spriteDuplicates.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
+import { sameBox } from '../../utils/sameBox.ts';
 import { Badge } from '../common/Badge.tsx';
 import { CheckboxField } from '../common/CheckboxField.tsx';
 import { RangeField } from '../common/RangeField.tsx';
@@ -44,7 +45,9 @@ interface DuplicateControlsProps {
  *
  * The group list is the panel's answer to a count nobody can act on. "Three groups" says a sheet has
  * repeats and not *which*, and the preview's Sprites mode draws every box alike — so each group
- * names its size and where its first sprite sits, which is enough to find it at 1:1.
+ * names its size and where its first sprite sits, which is enough to find it at 1:1. Where the snap
+ * folds the group onto a different sprite (its most typical, see `groupMedoid`), the line names that
+ * one too, since it is the drawing every repeat becomes.
  */
 export function DuplicateControls({ sprites, duplicates, snapped, busy }: DuplicateControlsProps) {
   const duplicateTolerance = useQuantiseStore((state) => state.duplicateTolerance);
@@ -91,6 +94,8 @@ export function DuplicateControls({ sprites, duplicates, snapped, busy }: Duplic
               {group.duplicates.every((member) => member.exact)
                 ? 'all identical'
                 : `${String(group.duplicates.filter((member) => member.exact).length)} identical`}
+              {!sameBox(group.source, group.canonical) &&
+                ` · most typical at ${String(group.source.left)}, ${String(group.source.top)}`}
             </li>
           ))}
         </ul>
@@ -111,7 +116,7 @@ export function DuplicateControls({ sprites, duplicates, snapped, busy }: Duplic
           onChange={setDuplicateTolerance}
         />
         <CheckboxField
-          label="Snap duplicates to the first of each group"
+          label="Snap each group to its most typical sprite"
           tooltip={QUANTISE_TOOLTIPS.duplicateSnap}
           checked={duplicateSnap}
           // Named rather than merely greyed, and the two reasons are different actions: no sheet is

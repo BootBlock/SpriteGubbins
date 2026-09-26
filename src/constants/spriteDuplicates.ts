@@ -37,7 +37,7 @@ export const DUPLICATE_GUIDANCE = {
    * otherwise conclude that nothing happened.
    */
   snapped:
-    'Each of these sprites has been rewritten with the first sprite of its group, so the sheet on screen and the file you download hold one drawing of each repeated pose. The reading itself still describes the sheet as it arrived at this step, which is why the counts have not changed — it is the record of what was folded. Whatever made each copy different is gone, so switch the snap off if a sprite you wanted has been taken with them, and use the preview at 1:1 to check what the fold left behind.',
+    'Each of these sprites has been rewritten with the most typical sprite of its group, the one closest to all the others, so the sheet on screen and the file you download hold one drawing of each repeated pose. Where that is not the group’s first sprite, the list names where it sits. The reading itself still describes the sheet as it arrived at this step, which is why the counts have not changed — it is the record of what was folded. Whatever made each copy different is gone, so switch the snap off if a sprite you wanted has been taken with them, and use the preview at 1:1 to check what the fold left behind.',
 
   /**
    * The segmentation found nothing this reading can be taken over.

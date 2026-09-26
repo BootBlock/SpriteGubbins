@@ -83,8 +83,9 @@ describe('duplicateSprites — the grouping of its cost fixture', () => {
    *
    * The noise's spread brings the closest pairs under the threshold here — seven small groups
    * holding 15 sprites between them — and one rung later those chain into a single group of 488.
-   * Both are worth pinning: the docblock's account of why the top rung is *cheaper* than the peak
-   * turns on grouping arriving suddenly at the very end of the dial rather than creeping in.
+   * Both are worth pinning: the docblock's account of why the walk is *cheaper* at the top rung
+   * than at the peak turns on grouping arriving suddenly at the very end of the dial rather than
+   * creeping in.
    */
   const FIRST_GROUPING_RUNG = 23;
 
@@ -106,7 +107,7 @@ describe('duplicateSprites — the grouping of its cost fixture', () => {
     // At the peak nothing groups either, so `find(left) === find(right)` never short-circuits a
     // pair and every one of them really is measured until its running sum passes the budget. That
     // is the whole of the docblock's claim that the expensive rungs are the ones walking, and it
-    // is why the top of the dial is not the worst case.
+    // is why the top of the dial is not the walk's worst case.
     expect(sizes(PEAK_RUNG)).toEqual([]);
 
     // Two rungs later the closest pairs start coming under the threshold — suddenly, and only
@@ -115,7 +116,8 @@ describe('duplicateSprites — the grouping of its cost fixture', () => {
     expect(sizes(FIRST_GROUPING_RUNG)).toEqual([3, 2, 2, 2, 2, 2, 2]);
 
     // And at the top rung those chain into one group of 488, after which the skip disposes of most
-    // of the remaining pairs unmeasured. That is what makes the top rung cheaper than the peak.
+    // of the remaining pairs unmeasured. That is what makes the walk cheaper here than at the peak,
+    // and the group of 488 all-different members is what the medoid then measures in full.
     //
     // **Counted in members, never in groups.** A group count *falls* as grouping rises — total
     // collapse is one group — so it cannot tell this case from the floor's, and an assertion

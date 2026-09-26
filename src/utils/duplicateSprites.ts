@@ -1,5 +1,6 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
-import { sameSprite, spriteHash, withinTolerance } from './spriteEquality.ts';
+import { groupMedoid } from './groupMedoid.ts';
+import { sameSprite, spriteDistance, spriteHash } from './spriteEquality.ts';
 import { disjointSet } from './unionFind.ts';
 
 /**
@@ -77,6 +78,10 @@ import { disjointSet } from './unionFind.ts';
  * order in the only way this is called — the sprite panel, the group list and the preview then agree
  * about which sprite is which without any of them sorting anything a second time.
  *
+ * **The name is not the source.** What the snap folds every member onto is the group's medoid, the
+ * member the others agree with most (see `groupMedoid`), because the earliest member is only the
+ * first to be drawn and a flaw in it would otherwise be copied into every repeat.
+ *
  * Pure. `tolerance` is the mean per-cell distance under which two sprites are one, in the scaled
  * OKLab units every colour dial on this tab uses; `0` admits only sprites whose visible pixels
  * match outright, which is the exact grouping in all but the invisible bytes.
@@ -133,21 +138,27 @@ export function duplicateSprites(
   // 512 boxes, so this walk is at most a hundred and thirty thousand comparisons, and each of them
   // abandons as soon as the running sum can no longer come under the tolerance.
   //
-  // **At that ceiling the pass costs seconds, and the top of the dial is not where it is worst.**
-  // Built to the ceiling — 512 sprites of 20 × 20 drawn pixels filled with per-channel noise, so no
-  // pair is byte-identical and the hash pass collapses none of them — the cost climbs steadily with
-  // the dial and then falls off its last rung. Against the dial's floor, where a pair is rejected at
-  // its first differing cell, it is roughly **60× at tolerance 6, 130× at 12, and 230× at its peak
-  // around 21** — then about **100× at the top rung**, which is well under half the peak.
+  // **At that ceiling the pass costs seconds.** Built to the ceiling — 512 sprites of 20 × 20 drawn
+  // pixels filled with per-channel noise, so no pair is byte-identical and the hash pass collapses
+  // none of them — this walk's cost climbs steadily with the dial and then falls off its last rung.
+  // Against the dial's floor, where a pair is rejected at its first differing cell, it is roughly
+  // **60× at tolerance 6, 130× at 12, and 230× at its peak around 21** — then about **100× at the
+  // top rung**, which is well under half the peak.
   //
-  // **The top rung is cheaper than the peak, and the reason is this walk's own machinery.** The
-  // expensive case is a pair close enough to be walked a long way before its running sum passes the
-  // budget and not close enough to group. Nothing at all groups from the floor to tolerance 22; at
-  // 23 the noise's spread starts bringing pairs under the threshold, in seven small groups holding
-  // 15 sprites between them; and at 24 those chain into a single group of 488, after which
-  // `find(left) === find(right)` disposes of most of the remaining pairs without measuring them. So
-  // grouping is what makes the top rung affordable rather than the absence of it, and a sheet whose
-  // sprites sat astride the threshold *at* the top rung would cost there what this one costs at 22.
+  // **The walk is cheaper at the top rung than at the peak, and the reason is its own machinery.**
+  // The expensive case is a pair close enough to be walked a long way before its running sum passes
+  // the budget and not close enough to group. Nothing at all groups from the floor to tolerance 22;
+  // at 23 the noise's spread starts bringing pairs under the threshold, in seven small groups
+  // holding 15 sprites between them; and at 24 those chain into a single group of 488, after which
+  // `find(left) === find(right)` disposes of most of the remaining pairs without measuring them. A
+  // sheet whose sprites sat astride the threshold *at* the top rung would cost there what this one
+  // costs at 22.
+  //
+  // **The whole pass is dearest at the top rung all the same, because of the medoid.** That group of
+  // 488 holds no two byte-identical members, so `groupMedoid` measures every pair of them in full,
+  // with no budget to abandon at: about as much work again as the walk at its peak, which puts the
+  // top rung at about one and a half times the peak. The consensus is what keeps a flawed first copy
+  // out of every repeat, and a real group is a handful of frames, most of them byte-identical.
   //
   // **The figures are ratios because absolute wall-clock does not reproduce, and this fixture is
   // where that was measured rather than assumed.** The same rung on the same fixture on this machine
@@ -185,7 +196,7 @@ export function duplicateSprites(
       // `spriteSegments`: a chain is one group. The tolerance is small enough that a chain long
       // enough to matter is a sheet whose sprites are all one sprite anyway.
       if (find(left) === find(right)) continue;
-      if (withinTolerance(image, boxes[left], boxes[right], tolerance)) union(left, right);
+      if (spriteDistance(image, boxes[left], boxes[right], tolerance) <= tolerance) union(left, right);
     }
   }
 
@@ -207,9 +218,12 @@ export function duplicateSprites(
     if (members.length < 2) continue;
     const canonical = boxes[root];
     if (canonical === undefined) continue;
+    const source = boxes[groupMedoid(image, boxes, members, identical)];
+    if (source === undefined) continue;
     const canonicalClass = identical[root] ?? root;
     found.push({
       canonical,
+      source,
       duplicates: members
         .filter((index) => index !== root)
         .flatMap((index) => {

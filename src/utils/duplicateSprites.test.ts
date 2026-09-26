@@ -108,6 +108,32 @@ describe('duplicateSprites', () => {
     expect(groups[0]?.duplicates).toEqual([{ box: boxes[1], exact: true }]);
   });
 
+  it('names a group after its first sprite and sources it from the most typical', () => {
+    // The first of four copies carries a flaw. It still names the group, since that is reading
+    // order, but the snap must copy one of the three the others agree with.
+    const { image, boxes } = sheetOf(80, 20, [
+      { left: 2, top: 2, cells: blockWith(8, 8, INK, OTHER, 1) },
+      { left: 20, top: 2, cells: block(8, 8, INK) },
+      { left: 40, top: 2, cells: block(8, 8, INK) },
+      { left: 60, top: 2, cells: block(8, 8, INK) },
+    ]);
+
+    const groups = duplicateSprites(image, boxes, 2);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.canonical).toBe(boxes[0]);
+    expect(groups[0]?.source).toBe(boxes[1]);
+  });
+
+  it('sources a group of two from its first sprite', () => {
+    const { image, boxes } = sheetOf(40, 20, [
+      { left: 2, top: 2, cells: blockWith(8, 8, INK, OTHER, 1) },
+      { left: 20, top: 2, cells: block(8, 8, INK) },
+    ]);
+
+    expect(duplicateSprites(image, boxes, 2)[0]?.source).toBe(boxes[0]);
+  });
+
   it('compares sprites of different sizes, charging the cells only one of them covers', () => {
     // Two drawings a column apart, laid over one another by their top-left corners. The column only
     // the wider one has is clear on the other side, so it scores the full 255 — over the 21 × 20
@@ -325,7 +351,7 @@ describe('duplicateSprites', () => {
 /**
  * The early exit against a plain reading of the same question.
  *
- * `withinTolerance` abandons a pair as soon as its running sum can no longer come under the
+ * `spriteDistance` abandons a pair as soon as its running sum can no longer come under the
  * tolerance, which is what makes the quadratic walk affordable — and an exit that abandons one cell
  * too early is a pair silently not reported, with nothing on screen to say so. The bound it uses is
  * therefore the whole of its correctness, and the way to hold it is an oracle: compute the mean the

@@ -88,7 +88,28 @@ function fold(image: ImageData, tolerance: number, gap = TOUCHING) {
 }
 
 describe('snapDuplicates', () => {
-  it('writes the canonical over each near-duplicate', () => {
+  it('folds four copies onto a clean one when the first carries a flaw', () => {
+    // Four copies of one frame, the first with a single cell drawn in another colour. Folding from
+    // the first sprite wrote that cell into all four; folding from the group's most typical copy
+    // writes it into none, and rewrites the first sprite with the rest.
+    const clean = block(8, 8, INK);
+    const flawed = blockWith(8, 8, INK, FAR, 1);
+    const image = sheetOf(80, 20, [
+      { left: 2, top: 2, cells: flawed },
+      { left: 20, top: 2, cells: clean },
+      { left: 40, top: 2, cells: clean },
+      { left: 60, top: 2, cells: clean },
+    ]);
+
+    const { boxes, image: snapped, folded } = fold(image, 2);
+
+    expect(folded).toBe(3);
+    for (const index of [0, 1, 2, 3]) {
+      expect(cellsOf(snapped, boxAt(boxes, index))).toEqual(clean.flat());
+    }
+  });
+
+  it('writes the source of a group over each other member', () => {
     const image = sheetOf(40, 20, [
       { left: 2, top: 2, cells: block(4, 4, INK) },
       { left: 20, top: 2, cells: blockWith(4, 4, INK, SPOT, 2) },

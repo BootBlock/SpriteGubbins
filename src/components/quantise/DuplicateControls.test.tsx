@@ -27,7 +27,7 @@ const SEGMENTED: SpriteSegmentation = {
 };
 
 const ONE_GROUP: readonly SpriteDuplicateGroup[] = [
-  { canonical: boxAt(2, 2), duplicates: [{ box: boxAt(20, 2), exact: true }] },
+  { canonical: boxAt(2, 2), source: boxAt(2, 2), duplicates: [{ box: boxAt(20, 2), exact: true }] },
 ];
 
 function show(overrides: Partial<Parameters<typeof DuplicateControls>[0]> = {}) {
@@ -62,6 +62,7 @@ describe('DuplicateControls', () => {
       duplicates: [
         {
           canonical: boxAt(2, 2),
+          source: boxAt(2, 2),
           duplicates: [
             { box: boxAt(20, 2), exact: true },
             { box: boxAt(40, 2), exact: false },
@@ -81,12 +82,37 @@ describe('DuplicateControls', () => {
     expect(screen.getByText(/4 × 4 at 2, 2 · 2 sprites · all identical/)).toBeInTheDocument();
   });
 
+  it('names the sprite the snap folds onto where it is not the first', () => {
+    // The fold copies the group's most typical sprite, and a reader checking the result at 1:1 has
+    // to know which one that is. Where it is the first sprite the line already names it.
+    show({
+      duplicates: [
+        {
+          canonical: boxAt(2, 2),
+          source: boxAt(40, 2),
+          duplicates: [
+            { box: boxAt(20, 2), exact: false },
+            { box: boxAt(40, 2), exact: false },
+          ],
+        },
+      ],
+    });
+
+    expect(screen.getByText(/· most typical at 40, 2$/)).toBeInTheDocument();
+  });
+
+  it('names no other sprite where the first is the most typical', () => {
+    show({ duplicates: ONE_GROUP });
+
+    expect(screen.queryByText(/most typical at/)).not.toBeInTheDocument();
+  });
+
   it('reports the fold from the result rather than from the dial', async () => {
     // The two part company for as long as a job is in flight, and this is the direction that
     // misleads: the dial is on, and the sheet on screen is what the position before it produced.
     const user = userEvent.setup({ delay: null });
     show({ duplicates: ONE_GROUP });
-    await user.click(screen.getByRole('checkbox', { name: /snap duplicates/i }));
+    await user.click(screen.getByRole('checkbox', { name: /snap each group/i }));
 
     expect(useQuantiseStore.getState().duplicateSnap).toBe(true);
     expect(screen.queryByText('Folded into one drawing')).not.toBeInTheDocument();
@@ -104,7 +130,7 @@ describe('DuplicateControls', () => {
     const user = userEvent.setup({ delay: null });
     show();
 
-    const snap = screen.getByRole('checkbox', { name: /snap duplicates/i });
+    const snap = screen.getByRole('checkbox', { name: /snap each group/i });
     expect(snap).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByText(/nothing was grouped at the tolerance in force/i)).toBeInTheDocument();
 

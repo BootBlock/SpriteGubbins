@@ -2,9 +2,10 @@ import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
 import { bordersArtwork } from './bordersArtwork.ts';
 import { reachesAny } from './boxClearance.ts';
 import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { sameBox } from './sameBox.ts';
 
 /**
- * Every near-duplicate sprite rewritten with the sprite its group is named after.
+ * Every member of a duplicate group rewritten with the group's source.
  *
  * The other half of what `duplicateSprites` finds: a reader who has just been told that three of
  * their eight facings are the same drawing usually wants them to *be* the same drawing. Two frames a
@@ -12,11 +13,15 @@ import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.
  * animation strip — a flicker as the sheet plays. Snapping settles them onto one artwork, so what is
  * downloaded holds one drawing of each pose rather than several near-misses.
  *
+ * **The source is the group's medoid, not the sprite it is named after** — see `groupMedoid`. The
+ * earliest sprite is only the first one drawn, and folding from it wrote any flaw it carried into
+ * every copy. So the canonical is rewritten like any other member wherever it is not the source.
+ *
  * **Each member is cleared and redrawn rather than block-copied**, because the relation admits
  * sprites of different extents and the member's own silhouette has to go with the rest of it. The
- * region written is the box covering both — the member's box and the canonical's extent laid at the
+ * region written is the box covering both — the member's box and the source's extent laid at the
  * member's top-left corner, which is the same registration the comparison used. Inside it the
- * canonical's pixels are written where the canonical reaches, and transparency where it does not.
+ * source's pixels are written where the source reaches, and transparency where it does not.
  *
  * **A member whose region would reach anything else on the sheet is left exactly as it was.** That
  * region can be larger than the box it replaces, so it can cross into a neighbour — and overwriting
@@ -27,12 +32,12 @@ import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.
  * it — the separation the segmentation already found between those boxes, since it would otherwise
  * have merged them — and no drawn pixel may sit directly against it, since a speck the fold joined
  * would carry the member's box past the region (see `bordersArtwork`). Anything closer is skipped, so the sheet keeps a repeat rather than losing a
- * neighbour. On a real sheet it does not arise — sprites sit in a gutter, and a canonical is at most
- * a pixel or two larger than the member it is folding.
+ * neighbour. On a real sheet it does not arise — sprites sit in a gutter, and a source is at most a
+ * pixel or two larger than the member it is folding.
  *
  * The result's own facts are re-read from what this returns rather than carried over from the sheet
  * it was measured on — see `quantiseImage`, which does the re-reading. That matters more here than
- * it would after a plain copy: a member that took a larger canonical has a larger box afterwards,
+ * it would after a plain copy: a member that took a larger source has a larger box afterwards,
  * so the bounds the panel reports would otherwise describe a silhouette that is gone.
  *
  * **What comes back says how many members were actually folded**, not merely that the pass ran. A
@@ -56,27 +61,30 @@ export function snapDuplicates(
   const written: SpriteBox[] = [];
 
   for (const group of groups) {
-    const { canonical } = group;
-    for (const member of group.duplicates) {
+    const { source } = group;
+    // Every member but the source, the canonical included, in reading order.
+    const members = [group.canonical, ...group.duplicates.map((member) => member.box)].filter(
+      (box) => !sameBox(box, source),
+    );
+    for (const box of members) {
       const region: SpriteBox = {
-        left: member.box.left,
-        top: member.box.top,
-        width: Math.max(member.box.width, canonical.width),
-        height: Math.max(member.box.height, canonical.height),
+        left: box.left,
+        top: box.top,
+        width: Math.max(box.width, source.width),
+        height: Math.max(box.height, source.height),
         pixels: 0,
       };
       if (region.left + region.width > image.width || region.top + region.height > image.height) continue;
       if (bordersArtwork(image, region)) continue;
-      if (reachesAny(region, boxes, member.box, gap) || reachesAny(region, written, null, gap)) continue;
+      if (reachesAny(region, boxes, box, gap) || reachesAny(region, written, null, gap)) continue;
 
       for (let row = 0; row < region.height; row += 1) {
         const to = pixelOffset(image.width, region.left, region.top + row);
-        const from =
-          row < canonical.height ? pixelOffset(image.width, canonical.left, canonical.top + row) : -1;
+        const from = row < source.height ? pixelOffset(image.width, source.left, source.top + row) : -1;
         for (let column = 0; column < region.width; column += 1) {
           const at = to + column * CHANNELS_PER_PIXEL;
-          if (from < 0 || column >= canonical.width) {
-            // Past what the canonical covers: the member's own artwork is cleared rather than left,
+          if (from < 0 || column >= source.width) {
+            // Past what the source covers: the member's own artwork is cleared rather than left,
             // or the fold would leave a fringe of the drawing it was meant to replace.
             data[at] = 0;
             data[at + 1] = 0;
@@ -84,11 +92,11 @@ export function snapDuplicates(
             data[at + 3] = FULLY_TRANSPARENT;
             continue;
           }
-          const source = from + column * CHANNELS_PER_PIXEL;
-          data[at] = image.data[source] ?? 0;
-          data[at + 1] = image.data[source + 1] ?? 0;
-          data[at + 2] = image.data[source + 2] ?? 0;
-          data[at + 3] = image.data[source + 3] ?? 0;
+          const read = from + column * CHANNELS_PER_PIXEL;
+          data[at] = image.data[read] ?? 0;
+          data[at + 1] = image.data[read + 1] ?? 0;
+          data[at + 2] = image.data[read + 2] ?? 0;
+          data[at + 3] = image.data[read + 3] ?? 0;
         }
       }
       written.push(region);

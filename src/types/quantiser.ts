@@ -1013,10 +1013,17 @@ export interface SpriteDuplicateMember {
  *
  * The canonical is the group's earliest sprite in the list the reading was handed — reading order,
  * because that is the order `spriteSegments` returns its boxes in. So it is stable across two runs
- * at the same settings, and it is the one a reader meets first in the preview.
+ * at the same settings, and it is the one a reader meets first in the preview. It names the group;
+ * {@link source} is what the snap copies.
  */
 export interface SpriteDuplicateGroup {
   readonly canonical: SpriteBox;
+  /**
+   * The member every other one is rewritten with when the snap is on: the group's medoid, which is
+   * the canonical itself where no member is closer to the rest. Chosen by consensus rather than by
+   * position, so a flaw one copy carries is not copied into all of them. See `groupMedoid`.
+   */
+  readonly source: SpriteBox;
   /** Every other member, in the same order — never empty, since a group of one is not a group. */
   readonly duplicates: readonly SpriteDuplicateMember[];
 }
@@ -1127,14 +1134,14 @@ export interface QuantiseResult {
    * where it says.
    *
    * **It always describes the sheet as it was read, never the sheet after a snap.** Where
-   * `duplicateSnap` is in force the members have been rewritten with the canonical by the time
+   * `duplicateSnap` is in force the members have been rewritten with each group's source by the time
    * {@link image} is returned, so measuring again would report a set of exact groups and lose the
    * only record of what the dial actually did. Empty where the segmentation found no sprites to
    * compare.
    */
   readonly duplicates: readonly SpriteDuplicateGroup[];
   /**
-   * Whether {@link duplicates} was acted on — every member rewritten with its group's canonical.
+   * Whether {@link duplicates} was acted on — every member rewritten with its group's source.
    *
    * A fact of the result rather than something read back off the dial that asked for it, because
    * those two are not the same thing while a transform is in flight: the dial is where the reader

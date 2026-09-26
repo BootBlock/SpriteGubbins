@@ -92,7 +92,7 @@ function alignSprites(reduced: ImageData, settings: QuantiseSettings): AlignedSh
   // Each reading therefore describes the sheet as it stood immediately before *its own* edit, which
   // is the only state in which either means anything: a sprite that has just been made symmetric
   // reports perfect confidence whatever it arrived as, and a member that has just been overwritten
-  // with its canonical is an exact duplicate of it by construction.
+  // with its group's source is an exact duplicate of it by construction.
   const segmented = spriteSegments(reduced, settings.spriteGap);
 
   // `OFF` skips the sweep outright rather than scoring and discarding, which is how the outline
