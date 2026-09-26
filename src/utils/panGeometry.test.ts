@@ -145,16 +145,14 @@ describe('the two panes seen through the same centre', () => {
     return metrics({ x: covered, y: covered }, { x: box, y: box }, zoom);
   }
 
-  for (const grid of [1, 8, 3]) {
-    it(`shows the same source region in both panes at a grid of ${String(grid)}`, () => {
-      const source = metrics({ x: 384, y: 384 }, { x: 100, y: 100 }, 4, { left: 300, top: 300 });
-      const centre = viewCentre(source, 4);
+  it.each([1, 8, 3])('shows the same source region in both panes at a grid of %i', (grid) => {
+    const source = metrics({ x: 384, y: 384 }, { x: 100, y: 100 }, 4, { left: 300, top: 300 });
+    const centre = viewCentre(source, 4);
 
-      // 384 is a whole multiple of all three grids, so the two panes cover exactly the same extent
-      // and the offsets coincide — which is the check that the scales were matched at all.
-      expect(scrollForCentre(centre, resultPane(384, grid, 4, 100), 4)).toEqual({ left: 300, top: 300 });
-    });
-  }
+    // 384 is a whole multiple of all three grids, so the two panes cover exactly the same extent
+    // and the offsets coincide — which is the check that the scales were matched at all.
+    expect(scrollForCentre(centre, resultPane(384, grid, 4, 100), 4)).toEqual({ left: 300, top: 300 });
+  });
 
   it('still agrees where the grid does not divide the image, which is where the extents differ', () => {
     // 100 source pixels at a grid of 8 is 13 result pixels covering 104 — four more than exist. The
@@ -167,23 +165,13 @@ describe('the two panes seen through the same centre', () => {
 });
 
 describe('clampOffset', () => {
-  it('passes an offset already inside the range straight through', () => {
-    expect(clampOffset(120, 300)).toBe(120);
-  });
-
-  it('holds a negative offset at the start of the range', () => {
-    expect(clampOffset(-40, 300)).toBe(0);
-  });
-
-  it('holds an offset past the end at the overflow', () => {
-    expect(clampOffset(900, 300)).toBe(300);
-  });
-
-  it('answers zero where there is no overflow to travel through', () => {
-    expect(clampOffset(50, 0)).toBe(0);
-  });
-
-  it('answers zero where the box is larger than its content and the overflow is negative', () => {
-    expect(clampOffset(50, -80)).toBe(0);
+  it.each([
+    ['passes an offset already inside the range straight through', 120, 300, 120],
+    ['holds a negative offset at the start of the range', -40, 300, 0],
+    ['holds an offset past the end at the overflow', 900, 300, 300],
+    ['answers zero where there is no overflow to travel through', 50, 0, 0],
+    ['answers zero where the box is larger than its content and the overflow is negative', 50, -80, 0],
+  ])('%s', (_name, offset, overflow, expected) => {
+    expect(clampOffset(offset, overflow)).toBe(expected);
   });
 });

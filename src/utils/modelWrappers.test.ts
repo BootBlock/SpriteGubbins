@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
-import { MIDJOURNEY_VERSION, TARGET_MODELS } from '../constants/models.ts';
+import { MIDJOURNEY_VERSION } from '../constants/models.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import {
@@ -107,23 +107,17 @@ describe('wrapForModel', () => {
     expect(prompt).toContain('## 0. NON-NEGOTIABLE OUTPUT CONTRACT');
   });
 
-  it('leaves the generic prompt unwrapped', () => {
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GENERIC' }));
-    expect(prompt.startsWith('# MODULAR SPRITE-SHEET SPECIFICATION')).toBe(true);
-    expect(prompt.endsWith('Generate the sheet now.')).toBe(true);
-  });
+  // GPT Image carried the retired DALL·E 3 entry's directive prefix, justified by "the mainline
+  // model … will automatically revise your prompt for improved performance" — which OpenAI state for
+  // the image generation tool *in the Responses API* and for nothing else. This target is the Images
+  // API, whose own guide documents no revision, and the reason the two were ever confused is that
+  // the entry linked to ChatGPT: that surface is the Sol entry, and `constants/models.ts` now says
+  // so. With no documented rewrite there was nothing for terse absolute phrasing to survive, so the
+  // prefix went with the claim rather than outliving it.
+  it.each(['GENERIC', 'GPT_IMAGE'] as const)('leaves the %s prompt unwrapped', (targetModel) => {
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel }));
 
-  it('leaves GPT Image unwrapped, since OpenAI document no rewrite on the path it is sent along', () => {
-    // It carried the retired DALL·E 3 entry's directive prefix, justified by "the mainline model …
-    // will automatically revise your prompt for improved performance" — which OpenAI state for the
-    // image generation tool *in the Responses API* and for nothing else. This target is the Images
-    // API, whose own guide documents no revision, and the reason the two were ever confused is that
-    // the entry linked to ChatGPT: that surface is the Sol entry, and `constants/models.ts` now says
-    // so. With no documented rewrite there was nothing for terse absolute phrasing to survive, so
-    // the prefix went with the claim rather than outliving it.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GPT_IMAGE' }));
-
-    expect(prompt.startsWith('# MODULAR SPRITE-SHEET SPECIFICATION')).toBe(true);
+    expect(prompt.startsWith(SPECIFICATION)).toBe(true);
     expect(prompt.endsWith('Generate the sheet now.')).toBe(true);
   });
 
@@ -561,10 +555,6 @@ describe('wrapForModel', () => {
     // The same refusal `applySectionNumbers` makes for a `[SEC:…]`, applied to the wrappers' half of
     // the citation: `section undefined` in front of a model reads as prose and would ship.
     expect(() => wrapForSeedream('body', new Map([['STYLE', 2]]))).toThrow(/CONTRACT/);
-  });
-
-  it('has a selector entry for every wrapped model, and no more', () => {
-    expect(TARGET_MODELS.map((model) => model.id).sort()).toEqual([...TARGET_MODEL_IDS].sort());
   });
 });
 

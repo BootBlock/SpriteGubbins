@@ -95,14 +95,20 @@ describe('oklabToSrgb', () => {
     // The round trip is the whole claim the inverse makes, and the only check that can catch a
     // transposed digit in the second matrix: the forward direction is pinned above against
     // published figures, so a matrix that undoes it exactly is by construction the right one.
-    // Every eleventh byte on each channel, which is 24³ colours through both directions.
+    // Every eleventh byte on each channel, which is 24³ colours through both directions. Collected
+    // and asserted once, so a failure names every colour that drifted rather than the first.
+    const drifted: string[] = [];
     for (let r = 0; r < 256; r += 11) {
       for (let g = 0; g < 256; g += 11) {
         for (let b = 0; b < 256; b += 11) {
-          expect(oklabToSrgb(srgbToOklab(r, g, b))).toEqual({ r, g, b, a: 255 });
+          const back = oklabToSrgb(srgbToOklab(r, g, b));
+          if (back.r !== r || back.g !== g || back.b !== b || back.a !== 255) {
+            drifted.push(`${String(r)},${String(g)},${String(b)} → ${JSON.stringify(back)}`);
+          }
         }
       }
     }
+    expect(drifted).toEqual([]);
   });
 
   it('clamps a colour sRGB cannot show rather than wrapping it', () => {

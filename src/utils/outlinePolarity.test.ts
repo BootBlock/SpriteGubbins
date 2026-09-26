@@ -28,18 +28,14 @@ describe('outlinePolarity', () => {
   });
 
   it('reads a light line on a dark ground as the bright side growing', () => {
-    const field = outlinePolarity(ruled(12, DARK, LIGHT), 4);
-    expect(polarityAt(field, 6, 6)).toBeLessThan(0);
-    expect(polarityAt(field, 5, 6)).toBeLessThan(0);
-  });
-
-  it('grows whichever tone is locally in the minority, which is what a contour is', () => {
-    // The same two tones, swapped. There is no prior about which colour a ground is: the score is
+    // The same two tones as above, swapped — so whichever tone is locally in the minority grows,
+    // which is what a contour is. There is no prior about which colour a ground is: the score is
     // decided entirely by which of the two reaches further from the local median, and the median is
     // the majority. This is the property the reference's ground term overrides, and the reason it
     // is not carried over.
-    expect(polarityAt(outlinePolarity(ruled(12, LIGHT, DARK), 4), 6, 6)).toBeGreaterThan(0);
-    expect(polarityAt(outlinePolarity(ruled(12, DARK, LIGHT), 4), 6, 6)).toBeLessThan(0);
+    const field = outlinePolarity(ruled(12, DARK, LIGHT), 4);
+    expect(polarityAt(field, 6, 6)).toBeLessThan(0);
+    expect(polarityAt(field, 5, 6)).toBeLessThan(0);
   });
 
   it('scores a flat neighbourhood at zero, where neither side has anywhere to reach', () => {
