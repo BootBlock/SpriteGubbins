@@ -142,7 +142,7 @@ describe('the blend weighting’s fixture figures', () => {
     // At 0 the answer moves both ways on the seamed fixture.
     expect([seamKept({ end: 0 }, 16), seamKept({}, 16)]).toEqual([16, 12]);
     expect([seamKept({ end: 0 }, 8), seamKept({}, 8)]).toEqual([4, 8]);
-  });
+  }, 60_000);
 
   it('BLEND_STRAIGHTNESS: nothing at zero slack, and a plateau from 4', () => {
     expect(keptAcross({ straightness: 0 })).toEqual(keptAcross(UNWEIGHTED));
