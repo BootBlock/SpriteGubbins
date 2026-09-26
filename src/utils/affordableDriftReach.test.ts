@@ -2,19 +2,23 @@ import { describe, expect, it } from 'vitest';
 import { FRAME_DRIFT_SEARCH, FRAME_SWEEP_BUDGET } from '../constants/quantiser.ts';
 import type { CoverageMask } from '../types/quantiser.ts';
 import { affordableDriftReach } from './affordableDriftReach.ts';
+import { registrationWords } from './registrationWords.ts';
 
 /** A mask of the given box size. Only its extent is read, so its bits are left empty. */
 function maskOf(width: number, height: number): CoverageMask {
   const stride = Math.ceil(width / 32);
-  return { left: 0, top: 0, width, height, stride, bits: new Uint32Array(stride * height) };
+  return { left: 0, top: 0, height, stride, bits: new Uint32Array(stride * height) };
 }
 
-/** The words every candidate reads across the sheet, at a reach: what the budget bounds. */
+/** Every registration on the sheet at a reach, in the words `registrationWords` says each touches. */
 function sweepWords(strips: readonly (readonly CoverageMask[])[], reach: number): number {
-  const words = strips
-    .flatMap((strip) => strip.slice(1))
-    .reduce((sum, frame) => sum + frame.height * frame.stride, 0);
-  return (2 * reach + 1) ** 2 * words;
+  return strips.reduce(
+    (total, [reference, ...frames]) =>
+      reference === undefined
+        ? total
+        : frames.reduce((sum, frame) => sum + registrationWords(reference, frame, reach), total),
+    0,
+  );
 }
 
 describe('affordableDriftReach', () => {
@@ -28,18 +32,18 @@ describe('affordableDriftReach', () => {
     expect(affordableDriftReach([])).toBe(FRAME_DRIFT_SEARCH);
   });
 
-  it('reads the sheet of issue #470 at a reach of six, inside the budget, where seven would cross it', () => {
+  it('reads the sheet of issue #470 at a reach of five, inside the budget, where six would cross it', () => {
     // Four painted frames 1000 × 1001 in one strip: the first is the reference and is never searched,
-    // so three frames of 1001 rows of 32 words each are what every candidate reads.
+    // so three registrations of 1001 rows of 32 words each are what the budget pays for.
     const strip = Array.from({ length: 4 }, () => maskOf(1000, 1001));
 
-    expect(affordableDriftReach([strip])).toBe(6);
-    expect(sweepWords([strip], 6)).toBe(3 * 5_413_408);
-    expect(sweepWords([strip], 6)).toBeLessThanOrEqual(FRAME_SWEEP_BUDGET);
-    expect(sweepWords([strip], 7)).toBeGreaterThan(FRAME_SWEEP_BUDGET);
+    expect(affordableDriftReach([strip])).toBe(5);
+    expect(sweepWords([strip], 5)).toBe(3 * 4_228_224);
+    expect(sweepWords([strip], 5)).toBeLessThanOrEqual(FRAME_SWEEP_BUDGET);
+    expect(sweepWords([strip], 6)).toBeGreaterThan(FRAME_SWEEP_BUDGET);
   });
 
-  it('never counts the reference frame, which is never searched', () => {
+  it('pays for the reference only as far as a frame can reach into it', () => {
     const small = maskOf(32, 32);
     const huge = maskOf(4096, 4096);
 

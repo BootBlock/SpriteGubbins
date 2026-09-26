@@ -41,7 +41,8 @@ import { bitCount } from './bitCount.ts';
  * gives. **The cost is stated in mask words, not in time.** Each of the `(2 × reach + 1)²`
  * candidates reads at most `frame.height × frame.stride` words, so one word compares thirty-two
  * pixels. The reference is shifted once per column of candidates, which adds one pass over at most
- * `frame.height + reach` of its rows for every `2 × reach + 1` candidates.
+ * `frame.height + reach` of its rows for every `2 × reach + 1` candidates. `registrationWords`
+ * states the two together, and it is what the frame budget is spent in.
  */
 export function registerFrame(reference: CoverageMask, frame: CoverageMask, reach: number): PixelShift {
   const side = 2 * reach + 1;

@@ -48,9 +48,9 @@ import { spriteStrips } from './spriteStrips.ts';
  * which they mean anything — a frame that has just been put on its slot has a drift of zero whatever
  * it arrived with — and it is the same rule the symmetry and duplicate readings are taken under.
  *
- * Pure. Each sprite's coverage is packed into a mask once, so a strip's reference is read once
- * however many frames are registered against it, and the registration's whole sweep is bounded by
- * `FRAME_SWEEP_BUDGET` through the one reach `affordableDriftReach` gives the sheet.
+ * Pure. Each sprite's coverage is packed into a mask once, so a strip's reference is packed once
+ * however many frames are registered against it, and every mask word the registrations touch is
+ * bounded by `FRAME_SWEEP_BUDGET` through the one reach `affordableDriftReach` gives the sheet.
  */
 export function sheetStrips(
   image: ImageData,

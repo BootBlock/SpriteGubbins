@@ -38,6 +38,7 @@ import { type LocatedEntry, locateEntries, nearestOklab } from '../src/utils/loc
 import { srgbToOklab } from '../src/utils/oklab.ts';
 import { pixelDistanceOf } from '../src/utils/pixelDistance.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
+import { registrationWords } from '../src/utils/registrationWords.ts';
 import { spriteSegments } from '../src/utils/spriteSegments.ts';
 import { spriteStrips } from '../src/utils/spriteStrips.ts';
 import { affordableReach } from '../src/utils/symmetryAxis.ts';
@@ -757,7 +758,7 @@ describe('the figures the quantiser docblocks state', () => {
     const masksOf = (image: ImageData, boxes: readonly SpriteBox[]): CoverageMask[][] =>
       spriteStrips(boxes).map((row) => row.map((box) => coverageMask(image, box)));
 
-    it('reads the four discs at a reach of six, 5,413,408 words a frame against 226,965,572 reads', () => {
+    it('reads the four discs at a reach of five, 4,228,224 words a frame against 226,965,572 reads', () => {
       const image = discs();
       const found = spriteSegments(image, DEFAULT_SPRITE_GAP);
       const boxes = found.kind === 'SEGMENTED' ? found.boxes : [];
@@ -767,15 +768,16 @@ describe('the figures the quantiser docblocks state', () => {
 
       const masks = masksOf(image, boxes);
       const reach = affordableDriftReach(masks);
-      expect(reach).toBe(6);
+      expect(reach).toBe(5);
 
-      // The old sweep read the image once per opaque reference pixel for each of the full reach's
-      // candidates; the new one reads each frame's mask words once per candidate the budget affords.
+      // The old sweep read the image up to once per opaque reference pixel for each of the full
+      // reach's candidates; the new one touches at most `registrationWords` of each frame's mask.
       const fullReachCandidates = (2 * FRAME_DRIFT_SEARCH + 1) ** 2;
-      const frame = masks[0]?.[1];
+      const [reference, frame] = masks[0] ?? [];
+      if (reference === undefined || frame === undefined) throw new Error('the discs form no strip');
       expect(fullReachCandidates * 785_348).toBe(226_965_572);
-      expect((2 * reach + 1) ** 2 * (frame?.height ?? 0) * (frame?.stride ?? 0)).toBe(5_413_408);
-      expect(Math.round(226_965_572 / 5_413_408)).toBe(42);
+      expect(registrationWords(reference, frame, reach)).toBe(4_228_224);
+      expect(Math.round(226_965_572 / 4_228_224)).toBe(54);
     });
 
     it('narrows no sheet of the corpus, keyed and read at a grid of 1', async () => {

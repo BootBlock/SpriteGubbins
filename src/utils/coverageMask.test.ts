@@ -43,11 +43,11 @@ describe('coverageMask', () => {
     const mask = coverageMask(sheet, { left: 2, top: 2, width: 10, height: 6, pixels: 0 });
 
     expect(Array.from(mask.bits)).toEqual([0, 0, 0, 0, 0, 0]);
-    expect({ left: mask.left, top: mask.top, width: mask.width, height: mask.height }).toEqual({
+    expect({ left: mask.left, top: mask.top, height: mask.height, stride: mask.stride }).toEqual({
       left: 2,
       top: 2,
-      width: 10,
       height: 6,
+      stride: 1,
     });
   });
 });

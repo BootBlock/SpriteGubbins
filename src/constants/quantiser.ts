@@ -1856,30 +1856,32 @@ export const MAX_IMAGE_PIXELS = MAX_IMAGE_EDGE * MAX_IMAGE_EDGE;
 export const SYMMETRY_SWEEP_BUDGET = MAX_IMAGE_PIXELS;
 
 /**
- * The most coverage-mask words the whole frame registration may read on one sheet, across every
+ * The most coverage-mask words the whole frame registration may touch on one sheet, across every
  * frame on it.
  *
  * {@link FRAME_DRIFT_SEARCH} bounds how far the registration *wanders*; this bounds what the
  * wandering costs, and it is the bound {@link SYMMETRY_SWEEP_BUDGET} is to the mirror sweep. The
- * sweep is `(2 × reach + 1)²` candidates, each reading every word of the frame's mask, so a sheet of
- * large frames pays 289 passes over each of them at the full reach. Before this bound existed, and
- * before the masks were packed, a 4096 × 1100 sheet of four painted frames — discs 1000 × 1001 with
- * 785,348 opaque pixels each — cost 289 image reads per opaque reference pixel, 226,965,572 per
- * frame. It now costs 169 candidates of 1001 rows of 32 words, 5,413,408 word reads per frame: a
- * ratio of about 42 to 1 in reads, before counting that one word read compares 32 pixels (issue #470).
+ * sweep is `(2 × reach + 1)²` candidates, each comparing every word of the frame's mask, so a sheet
+ * of large frames pays 289 passes over each of them at the full reach. `registrationWords` states
+ * what one frame touches, and `affordableDriftReach` takes the widest reach whose total across the
+ * sheet stays within this.
+ *
+ * Before this bound existed, and before the masks were packed, a 4096 × 1100 sheet of four painted
+ * frames (discs 1000 × 1001 with 785,348 opaque pixels each) cost up to 289 image reads per opaque
+ * reference pixel, 226,965,572 per frame. It is now read at a reach of five and touches at most
+ * 4,228,224 words per frame: a ratio of about 54 to 1, before counting that one word compares 32
+ * pixels (issue #470).
  *
  * **One word per pixel of the largest sheet this tab admits**, which is what {@link MAX_IMAGE_PIXELS}
  * is. A word is thirty-two pixels of one row, compared against the frame's in one AND and one bit
- * count, so the candidates of the whole registration read at most as many words as that sheet has
- * pixels, however the frames on it are shaped. `affordableDriftReach` divides this by the frames'
- * combined words to arrive at a reach they all share.
+ * count, so the whole registration touches at most as many words as that sheet has pixels, however
+ * the frames on it are shaped.
  *
  * **It narrows only frames the reach was never going to help much.** The reach is eight drawn pixels
  * whatever the frame, so the sheets it narrows hold frames hundreds of pixels across, where a pose
- * that displaced the box by eight is a fraction of a per cent of the drawing. The four discs above
- * are read at a reach of six, and none of the eight sheets in `test_sprites/` is narrowed at all,
- * even keyed and read at a grid of 1, where its frames are largest.
- * `tests/quantiser-docblock-figures.test.ts` re-derives every figure in this docblock.
+ * that displaced the box by eight is a fraction of a per cent of the drawing. None of the eight
+ * sheets in `test_sprites/` is narrowed at all, even keyed and read at a grid of 1, where its frames
+ * are largest. `tests/quantiser-docblock-figures.test.ts` re-derives every figure in this docblock.
  */
 export const FRAME_SWEEP_BUDGET = MAX_IMAGE_PIXELS;
 

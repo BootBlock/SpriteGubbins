@@ -9,8 +9,8 @@ const WORD_BITS = 32;
  *
  * Packed rather than listed, because the reader of a mask is a search that lays two of them over one
  * another hundreds of times: one AND of two words compares thirty-two pixels, where a list of the
- * opaque ones costs a read of the image per pixel per candidate. That read per pixel is what once
- * made the frame registration spend ten seconds on a sheet of four large painted frames (issue #470).
+ * opaque ones costs a read of the image per pixel per candidate, which is how the frame
+ * registration once came to read the image up to 289 times per opaque reference pixel (issue #470).
  *
  * Only the box is read, so a mask never carries a neighbouring sprite's pixels. Pure.
  */
@@ -27,5 +27,5 @@ export function coverageMask(image: ImageData, box: SpriteBox): CoverageMask {
     }
   }
 
-  return { left: box.left, top: box.top, width: box.width, height: box.height, stride, bits };
+  return { left: box.left, top: box.top, height: box.height, stride, bits };
 }

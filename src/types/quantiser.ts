@@ -847,9 +847,8 @@ export interface SpriteBox {
 export interface CoverageMask {
   readonly left: number;
   readonly top: number;
-  readonly width: number;
   readonly height: number;
-  /** Words per row: the width rounded up to a whole number of words. */
+  /** Words per row: the box's width rounded up to a whole number of words. */
   readonly stride: number;
   readonly bits: Uint32Array;
 }

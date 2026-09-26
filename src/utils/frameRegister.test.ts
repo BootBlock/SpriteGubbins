@@ -1,9 +1,32 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { imageFrom } from '../test/images.ts';
 import type { PixelShift, SpriteBox } from '../types/quantiser.ts';
 import { coverageMask } from './coverageMask.ts';
 import { registerFrame } from './frameRegister.ts';
 import { FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { registrationWords } from './registrationWords.ts';
+
+/** How many word comparisons the search made, one per `bitCount` it asked for. */
+const comparisons = vi.hoisted(() => ({ made: 0 }));
+
+/**
+ * The real `bitCount`, counted — which is how a test holds the search to the work
+ * `registrationWords` says it does, rather than restating that function's arithmetic.
+ */
+vi.mock('./bitCount.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./bitCount.ts')>();
+  return {
+    ...actual,
+    bitCount: (word: number) => {
+      comparisons.made += 1;
+      return actual.bitCount(word);
+    },
+  };
+});
+
+beforeEach(() => {
+  comparisons.made = 0;
+});
 
 const INK = { r: 20, g: 30, b: 40, a: FULLY_OPAQUE };
 const CLEAR = { r: 0, g: 0, b: 0, a: FULLY_TRANSPARENT };
@@ -182,5 +205,22 @@ describe('registerFrame', () => {
         );
       }
     }
+  });
+
+  it('compares each candidate over only the rows the two masks share, within what the budget pays for', () => {
+    // Two frames 70 wide — three words a row — and 11 rows tall. A candidate moved `s` rows up or down
+    // shares `11 − |s|` rows with the frame, so the search at a reach of four makes
+    // `9 × 3 × (9 × 11 − 4 × 5)` comparisons: counted here, and held under the candidates' share of
+    // `registrationWords`, which is the figure the frame budget is spent in.
+    const reference = { left: 1, top: 1, width: 70, height: 11 };
+    const frame = { left: 80, top: 2, width: 70, height: 11 };
+    const sheet = sheetOf(160, 16, [reference, frame]);
+    const masks = [coverageMask(sheet, boxOf(reference)), coverageMask(sheet, boxOf(frame))] as const;
+    comparisons.made = 0;
+
+    registerFrame(masks[0], masks[1], 4);
+
+    expect(comparisons.made).toBe(9 * 3 * (9 * 11 - 4 * 5));
+    expect(comparisons.made).toBeLessThanOrEqual(registrationWords(masks[0], masks[1], 4) - 9 * 11 * 3);
   });
 });

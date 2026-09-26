@@ -213,7 +213,7 @@ describe('sheetStrips', () => {
     expect(new Set(registrations.map((call) => call.reference)).size).toBe(1);
 
     // The shape of issue #470: four painted frames 1000 × 1001 on a 4096 × 1100 sheet, which the
-    // full reach would read 289 times over and the budget reads 169 times — see `affordableDriftReach`.
+    // full reach would read 289 times over and the budget reads 121 times — see `affordableDriftReach`.
     registrations.length = 0;
     const lefts = [24, 1048, 2072, 3090];
     const large = imageFrom(4096, 1100, (x, y) =>
@@ -221,7 +221,7 @@ describe('sheetStrips', () => {
     );
     sheetStrips(large, boxesOf(large), null, GAP);
 
-    expect(registrations.map((call) => call.reach)).toEqual([6, 6, 6]);
+    expect(registrations.map((call) => call.reach)).toEqual([5, 5, 5]);
     expect(new Set(registrations.map((call) => call.reference)).size).toBe(1);
   });
 });
