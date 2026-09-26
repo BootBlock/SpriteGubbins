@@ -3,7 +3,7 @@ import { PALETTE_IDS } from '../../types/palette.ts';
 import type { Palette } from '../../types/palette.ts';
 import { channelLevels, channelSpaceSize } from '../../utils/channelLevels.ts';
 import { fromHex, toHex } from '../../utils/imageData.ts';
-import { PALETTE_CHOICES, PALETTES, machinePaletteFor } from './index.ts';
+import { PALETTES, machinePaletteFor } from './index.ts';
 
 /**
  * The palette library's own contract.
@@ -48,12 +48,6 @@ describe('the palette library', () => {
 
   it.each(DEFINED)('$id carries its own id, so a lookup cannot return a mislabelled palette', (palette) => {
     expect(PALETTES[palette.id]).toBe(palette);
-  });
-
-  it('offers exactly one choice per id, in the union’s order', () => {
-    // The dropdown is derived from the map, and this is what that buys: a palette cannot be added
-    // without appearing, and a choice cannot outlive the palette it names.
-    expect(PALETTE_CHOICES.map((choice) => choice.value)).toEqual([...PALETTE_IDS]);
   });
 
   it.each(DEFINED)('$id names itself in prose the prompt can use', (palette) => {

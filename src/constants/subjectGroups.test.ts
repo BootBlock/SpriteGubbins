@@ -16,11 +16,9 @@ const groupedKeys = SUBJECT_FIELD_GROUPS.flatMap((group) => group.keys);
 
 describe('SUBJECT_FIELD_GROUPS', () => {
   it('covers every subject field exactly once', () => {
+    // A sorted comparison against the unique key list, so a key grouped twice fails here as surely
+    // as one grouped nowhere.
     expect([...groupedKeys].sort()).toStrictEqual([...SUBJECT_FIELD_KEYS].sort());
-  });
-
-  it('names no field twice', () => {
-    expect(new Set(groupedKeys).size).toBe(groupedKeys.length);
   });
 
   it('gives every group a unique, namespaced id', () => {
