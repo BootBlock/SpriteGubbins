@@ -115,11 +115,32 @@ describe('the figures DESPILL_DEPTH states', () => {
     corpus = await loadCorpus();
   }, 300_000);
 
+  /**
+   * One sheet keyed with the despill on or off, computed once for each however many cases read it.
+   *
+   * The reference sheet's two keyings are read by the case stating its ring figures and again by its
+   * row of the table, and a keying pass over 1.57 megapixels is most of what either costs. The pass is
+   * pure, so the image read twice is the one a second run would return. The switch is put back
+   * whatever happens, so no later case can inherit a despill somebody turned off.
+   */
+  const keyings = new Map<string, ImageData>();
+  const keyed = (name: CorpusSheetName, withDespill: boolean): ImageData => {
+    const id = `${name} ${withDespill ? 'with' : 'without'} the despill`;
+    const cached = keyings.get(id);
+    if (cached !== undefined) return cached;
+    despill.off = !withDespill;
+    try {
+      const image = keyBackground(sheet(name), KEYING).image;
+      keyings.set(id, image);
+      return image;
+    } finally {
+      despill.off = false;
+    }
+  };
+
   it('leaves 23.2%, 8.4%, 1.9% and 0.2% of the reference sheet’s edge tinted without it, and none with it', () => {
-    despill.off = true;
-    const before = tintByRing(keyBackground(sheet('armour.png'), KEYING).image, 5);
-    despill.off = false;
-    const after = tintByRing(keyBackground(sheet('armour.png'), KEYING).image, 5);
+    const before = tintByRing(keyed('armour.png', false), 5);
+    const after = tintByRing(keyed('armour.png', true), 5);
 
     expect(before[0]).toEqual([2_465, 10_640]);
     expect(before.slice(0, 4).map(([tinted, drawn]) => ((tinted / drawn) * 100).toFixed(1))).toEqual([
@@ -132,10 +153,8 @@ describe('the figures DESPILL_DEPTH states', () => {
   });
 
   it.each(CORPUS_SHEETS)('brings %s’s band to the table’s figure against its interior', (name) => {
-    despill.off = true;
-    const [ring4 = [0, 1], ring5 = [0, 1]] = tintByRing(keyBackground(sheet(name), KEYING).image, 5).slice(3);
-    despill.off = false;
-    const rings = tintByRing(keyBackground(sheet(name), KEYING).image, 10);
+    const [ring4 = [0, 1], ring5 = [0, 1]] = tintByRing(keyed(name, false), 5).slice(3);
+    const rings = tintByRing(keyed(name, true), 10);
     const band = Math.max(...rings.slice(0, DESPILL_DEPTH).map(percent));
     const interior =
       Math.round((rings.slice(5).reduce((total, ring) => total + percent(ring), 0) / 5) * 100) / 100;

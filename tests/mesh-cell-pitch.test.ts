@@ -60,14 +60,16 @@ describe('mesh cell pitch', () => {
   }, 120_000);
 
   it('cuts no cell narrower than the grid’s own tolerance allows, on any sheet at any grid', () => {
-    for (const grid of GRIDS) {
-      const floor = shortest(grid);
-      for (const name of CORPUS_SHEETS) {
-        const sheet = corpus.get(name);
-        expect(sheet, name).toBeDefined();
-        if (sheet === undefined) continue;
-        const keyed = keyBackground(sheet, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE }).image;
+    for (const name of CORPUS_SHEETS) {
+      const sheet = corpus.get(name);
+      expect(sheet, name).toBeDefined();
+      if (sheet === undefined) continue;
+      // Keyed once per sheet rather than once per grid: the key does not depend on the grid, and a
+      // keying pass over one to two megapixels is most of what this case costs.
+      const keyed = keyBackground(sheet, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE }).image;
 
+      for (const grid of GRIDS) {
+        const floor = shortest(grid);
         for (const [keying, image] of [
           ['unkeyed', sheet],
           ['keyed', keyed],

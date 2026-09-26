@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadCorpusSheet } from './sheetCorpus.ts';
 import { bruteForceNearest } from '../src/test/bruteForceNearest.ts';
+import type { Rgba } from '../src/types/quantiser.ts';
 import { colorHistogram, unpackColor } from '../src/utils/imageData.ts';
 import { nearestColorSearch } from '../src/utils/nearestColorSearch.ts';
 import { buildPalette } from '../src/utils/wuQuantiser.ts';
@@ -17,8 +18,11 @@ import { buildPalette } from '../src/utils/wuQuantiser.ts';
  */
 describe('nearestColorSearch on armour.png', () => {
   let sheet: ImageData;
+  /** Every distinct colour of the sheet, read once: the same list at every budget. */
+  let colors: readonly Rgba[];
   beforeAll(async () => {
     sheet = await loadCorpusSheet('armour.png');
+    colors = [...colorHistogram(sheet).keys()].map(unpackColor);
   }, 120_000);
 
   it.each([16, 64, 256])(
@@ -27,10 +31,12 @@ describe('nearestColorSearch on armour.png', () => {
       const palette = buildPalette(sheet, budget);
       const nearest = nearestColorSearch(palette);
       let mismatches = 0;
-      for (const key of colorHistogram(sheet).keys()) {
-        const color = unpackColor(key);
+      for (const color of colors) {
         if (nearest(color) !== bruteForceNearest(color, palette)) mismatches += 1;
       }
+      // Every colour the docblock counts, so a histogram that read less of the sheet cannot pass by
+      // comparing fewer answers.
+      expect(colors).toHaveLength(218_978);
       expect(mismatches).toBe(0);
     },
     120_000,

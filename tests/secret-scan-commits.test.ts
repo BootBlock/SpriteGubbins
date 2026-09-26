@@ -23,6 +23,14 @@ import { shape } from './credentialShape.ts';
  * `GIT_DIR` and `GIT_WORK_TREE`, which git honours wherever it runs. The inherited `GIT_*` variables
  * are dropped and the global and system configuration are switched off, so neither a hook's
  * environment nor the machine's own git settings can change what the history looks like.
+ *
+ * **Every process this file starts is one more chance for the machine to refuse to start it**, and
+ * under a full parallel run on Windows it sometimes does: a `git` the runner spawns fails with
+ * `spawnSync git EPERM` before it has run at all, the runner dies of the uncaught error, and its
+ * stderr holds a stack trace rather than a report. So the history is walked once and read by both
+ * cases that ask about it, and the commit ids are read back in one `git log` rather than one
+ * `rev-parse` per commit. The rarer the spawn, the rarer that refusal; it is the runner's to survive,
+ * not this suite's to retry.
  */
 
 const RUNNER = resolve(process.cwd(), 'scripts/secret-scan.ts');
@@ -36,15 +44,25 @@ let repo: string;
 let env: NodeJS.ProcessEnv;
 const commits: Record<string, string> = {};
 
+/** The runner's walk of the whole history the fixture builds, run once for the cases that read it. */
+let history: { status: number | null; stderr: string };
+
 function git(...args: string[]): string {
   return execFileSync('git', args, { cwd: repo, env, encoding: 'utf8', stdio: 'pipe' }).trim();
 }
 
-/** Commit everything in the work tree and remember the new commit's id under `name`. */
+/** Commit everything in the work tree, with `name` as the message its id is read back under. */
 function commit(name: string): void {
   git('add', '-A');
   git('commit', '-q', '--no-verify', '-m', name);
-  commits[name] = git('rev-parse', 'HEAD');
+}
+
+/** Remember every commit's id under its message, read back in one walk once the history is built. */
+function rememberCommits(): void {
+  for (const line of git('log', '--all', '--format=%H %s').split('\n')) {
+    const [id = '', ...subject] = line.split(' ');
+    commits[subject.join(' ')] = id;
+  }
 }
 
 /** The id of the commit remembered under `name`. */
@@ -96,8 +114,7 @@ beforeAll(() => {
   git('checkout', '-q', 'main');
   write('notes.md', 'Main moved on.\n');
   commit('main moves');
-  git('merge', '-q', '--no-ff', '--no-edit', 'side');
-  commits['clean merge'] = git('rev-parse', 'HEAD');
+  git('merge', '-q', '--no-ff', '-m', 'clean merge', 'side');
 
   // A merge that adds a value of its own while it is being made.
   git('checkout', '-q', '-b', 'second-side');
@@ -117,6 +134,9 @@ beforeAll(() => {
   unlinkSync(join(repo, 'side.ts'));
   unlinkSync(join(repo, 'evil.ts'));
   commit('cleans up');
+
+  rememberCommits();
+  history = scan('--commits', `${idOf('base')}..HEAD`);
 }, 60_000);
 
 afterAll(() => {
@@ -135,7 +155,7 @@ describe('secret-scan --commits', () => {
   }, 60_000);
 
   it('reports each value at the commit that added it, however soon it was deleted', () => {
-    const { status, stderr } = scan('--commits', `${idOf('base')}..HEAD`);
+    const { status, stderr } = history;
     expect(status).toBe(1);
     expect(stderr).toContain('4 suspect entries');
     expect(stderr).toContain(`${idOf('adds')}: export const added = '${TOKEN}';`);
@@ -147,7 +167,10 @@ describe('secret-scan --commits', () => {
   }, 60_000);
 
   it('holds a clean merge to nothing, because the side it brought in answered already', () => {
-    expect(scan('--commits', `${idOf('base')}..HEAD`).stderr).not.toContain(idOf('clean merge'));
+    // Only worth asserting over a walk that reported at all: a runner that died before printing
+    // anything would hold every commit to nothing.
+    expect(history.stderr).toContain('4 suspect entries');
+    expect(history.stderr).not.toContain(idOf('clean merge'));
   }, 60_000);
 
   it('reads an empty range as clean', () => {

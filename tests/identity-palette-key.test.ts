@@ -5,6 +5,7 @@ import { DEFAULT_KEY_TOLERANCE } from '../src/constants/quantiser.ts';
 import type {
   BackgroundKeying,
   ImportedImage,
+  QuantiseResult,
   QuantiseSettings,
   QuantiseTuning,
 } from '../src/types/quantiser.ts';
@@ -71,20 +72,40 @@ const settingsAt = (key: BackgroundKeying | null): QuantiseSettings => {
   return { ...tuning, grid: 4, key, reduction: { kind: 'MAX_COLORS', maxColors: 32 } };
 };
 
-/** The identity palette of one sheet's quantised result, with the tab's keying on or off. */
-const paletteOf = (image: ImageData, keyed: boolean): readonly string[] => {
-  const settings = settingsAt(keyed ? { color: KEY, tolerance: DEFAULT_KEY_TOLERANCE } : null);
-  return identityPalette(quantiseImage(image, settings).image, KEY);
+/**
+ * One sheet quantised at one keying position, computed once however many cases read it.
+ *
+ * The four cases below ask for seven reductions of each sheet between them but only three distinct
+ * ones — unkeyed, keyed at `0`, keyed at `DEFAULT_KEY_TOLERANCE` — and a reduction of a 1.57-megapixel
+ * sheet is the whole cost of this file. `quantiseImage` is pure, so a result read twice is the result
+ * computed twice, and every case still asserts on the pipeline's own output.
+ */
+const results = new Map<string, QuantiseResult>();
+
+const resultAt = (name: CorpusSheetName, image: ImageData, key: BackgroundKeying | null): QuantiseResult => {
+  const id = `${name} ${key === null ? 'unkeyed' : `keyed at ${String(key.tolerance)}`}`;
+  const cached = results.get(id);
+  if (cached !== undefined) return cached;
+  const result = quantiseImage(image, settingsAt(key));
+  results.set(id, result);
+  return result;
 };
 
+/** The tab's own keying, which is what a reader lands on with the switch on. */
+const TAB_KEYING: BackgroundKeying = { color: KEY, tolerance: DEFAULT_KEY_TOLERANCE };
+
+/** The identity palette of one sheet's quantised result, with the tab's keying on or off. */
+const paletteOf = (name: CorpusSheetName, image: ImageData, keyed: boolean): readonly string[] =>
+  identityPalette(resultAt(name, image, keyed ? TAB_KEYING : null).image, KEY);
+
 /** What the studio's capture button would decide about one sheet at one keying position. */
-const offerFor = (name: string, image: ImageData, key: BackgroundKeying | null): string => {
+const offerFor = (name: CorpusSheetName, image: ImageData, key: BackgroundKeying | null): string => {
   const settings = settingsAt(key);
   const source: ImportedImage = { name, image };
   return quantisedSheetCapture({
     source,
     grid: settings.grid,
-    settled: { settings, result: quantiseImage(image, settings) },
+    settled: { settings, result: resultAt(name, image, key) },
     failed: false,
     keying: key,
     reduction: settings.reduction,
@@ -108,7 +129,7 @@ describe('identityPalette on a quantised result', () => {
 
       // The half that used to fail: an unkeyed result's field is a spread of near-magentas covering
       // most of the sheet, and the digest opened with one of them on all eight.
-      expect(paletteOf(image, false).filter(nearTheKey)).toHaveLength(0);
+      expect(paletteOf(name, image, false).filter(nearTheKey)).toHaveLength(0);
     },
     300_000,
   );
@@ -124,7 +145,7 @@ describe('identityPalette on a quantised result', () => {
       // over, and on an unkeyed sheet it spent that budget on the field. Six entries each, sharing
       // between none and four — so an unkeyed offer would be a different palette, not merely a
       // magenta one.
-      expect(paletteOf(image, false)).not.toEqual(paletteOf(image, true));
+      expect(paletteOf(name, image, false)).not.toEqual(paletteOf(name, image, true));
     },
     300_000,
   );
@@ -136,7 +157,7 @@ describe('identityPalette on a quantised result', () => {
       expect(image).toBeDefined();
       if (image === undefined) return;
 
-      expect(paletteOf(image, true).filter(nearTheKey)).toHaveLength(0);
+      expect(paletteOf(name, image, true).filter(nearTheKey)).toHaveLength(0);
     },
     300_000,
   );
@@ -160,7 +181,7 @@ describe('identityPalette on a quantised result', () => {
 
       expect(offerFor(name, image, null)).toBe('UNAVAILABLE');
       expect(offerFor(name, image, { color: KEY, tolerance: 0 })).toBe('UNAVAILABLE');
-      expect(offerFor(name, image, { color: KEY, tolerance: DEFAULT_KEY_TOLERANCE })).toBe('READY');
+      expect(offerFor(name, image, TAB_KEYING)).toBe('READY');
     },
     600_000,
   );
