@@ -58,11 +58,23 @@ export const BLEND_EDGE_GAP = 16;
  * It also decides what the pass declines to touch, and declining is the safe direction. A pixel a
  * tenth of the way across a boundary is nearly the art colour it sits beside, so a slot spent on it
  * costs almost nothing; the blends worth suppressing are the ones near the middle, and they are far
- * from both ends by construction. 2, 4 and 8 keep the same art colours on every softened fixture.
- * **The floor rests on that argument rather than on a fixture**: no softened fixture shows the ends
- * being taken. At 0 the scattered fixtures choose exactly the palettes 4 does, and the seamed one at
- * a budget of 16 keeps all sixteen art colours where 4 keeps twelve — a flat colour's interior
- * pixels still carry its whole vote, so reading its edge as a blend costs it nothing there.
+ * from both ends by construction.
+ *
+ * **4 sits inside the range where the answer stops moving**, read on both softened fixtures at
+ * budgets of a half, three quarters and all of each scattered fixture's colours, and at 8, 12, 16,
+ * 20, 24 and 32 on the seamed one. Every value from 1 to 5 chooses exactly the palettes 4 does, and
+ * 6 to 9 keep as many art colours as 4 does, differing only in which blend fills a slot the art
+ * does not need. From 10 the floor starts to miss fringes: the 16-colour fixture keeps 14 of its
+ * colours, and the seamed one at 24 keeps 22. At 0 the answer moves both ways: the seamed fixture
+ * at a budget of 16 keeps sixteen art colours where 4 keeps twelve, but at a budget of 8 it spends
+ * four of its eight slots on blends where 4 spends none.
+ *
+ * **The corpus cannot place it, so the fixtures do.** A generated sheet has no known art colours to
+ * count, and there is no range where its answer stands still: on all eight sheets at a budget of
+ * 16, 3 and 5 each choose a different palette from the one 4 chooses. The mean error zigzags with
+ * the floor rather than trending: on `armour.png` at 64, 2 gives 2.066, 4 gives 2.029, 6 gives
+ * 2.097 and 8 gives 2.038. `tests/quantiser-figures-blend-weighting.test.ts` re-derives the fixture
+ * figures here, and `tests/quantiser-figures-blend-end-gap.test.ts` the corpus ones.
  */
 export const BLEND_END_GAP = 4;
 
