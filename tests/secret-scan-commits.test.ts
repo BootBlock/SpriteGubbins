@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { retryRefusedStart } from '../scripts/retryRefusedStart.ts';
 import { shape } from './credentialShape.ts';
 
 /**
@@ -26,11 +27,12 @@ import { shape } from './credentialShape.ts';
  *
  * **Every process this file starts is one more chance for the machine to refuse to start it**, and
  * under a full parallel run on Windows it sometimes does: a `git` the runner spawns fails with
- * `spawnSync git EPERM` before it has run at all, the runner dies of the uncaught error, and its
- * stderr holds a stack trace rather than a report. So the history is walked once and read by both
+ * `spawnSync git EPERM` before it has run at all. The runner used to die of that uncaught error,
+ * leaving a stack trace on stderr rather than a report. So the history is walked once and read by both
  * cases that ask about it, and the commit ids are read back in one `git log` rather than one
- * `rev-parse` per commit. The rarer the spawn, the rarer that refusal; it is the runner's to survive,
- * not this suite's to retry.
+ * `rev-parse` per commit. And every start, the runner's own git's and this suite's alike, goes
+ * through `retryRefusedStart` (`tests/retry-refused-start.test.ts`), which starts a refused process
+ * again rather than letting the refusal stand in for an answer.
  */
 
 const RUNNER = resolve(process.cwd(), 'scripts/secret-scan.ts');
@@ -48,7 +50,20 @@ const commits: Record<string, string> = {};
 let history: { status: number | null; stderr: string };
 
 function git(...args: string[]): string {
-  return execFileSync('git', args, { cwd: repo, env, encoding: 'utf8', stdio: 'pipe' }).trim();
+  return gitWithInput(undefined, ...args);
+}
+
+/** {@link git}, with `input` on its standard input. */
+function gitWithInput(input: string | undefined, ...args: string[]): string {
+  return retryRefusedStart(() =>
+    execFileSync('git', args, {
+      cwd: repo,
+      env,
+      encoding: 'utf8',
+      stdio: 'pipe',
+      ...(input === undefined ? {} : { input }),
+    }),
+  ).trim();
 }
 
 /** Commit everything in the work tree, with `name` as the message its id is read back under. */
@@ -77,7 +92,11 @@ function write(path: string, content: string | Uint8Array): void {
 }
 
 function scan(...args: string[]): { status: number | null; stderr: string } {
-  const run = spawnSync(process.execPath, [RUNNER, ...args], { env, encoding: 'utf8' });
+  const run = retryRefusedStart(() => {
+    const started = spawnSync(process.execPath, [RUNNER, ...args], { env, encoding: 'utf8' });
+    if (started.error) throw started.error;
+    return started;
+  });
   return { status: run.status, stderr: run.stderr };
 }
 
@@ -145,12 +164,7 @@ afterAll(() => {
 
 describe('secret-scan --commits', () => {
   it('reads a clean tip as clean, which is the whole of what the tree pass can see', () => {
-    const emptyTree = execFileSync('git', ['hash-object', '-t', 'tree', '--stdin'], {
-      cwd: repo,
-      env,
-      encoding: 'utf8',
-      input: '',
-    }).trim();
+    const emptyTree = gitWithInput('', 'hash-object', '-t', 'tree', '--stdin');
     expect(scan('--diff', emptyTree).status).toBe(0);
   }, 60_000);
 
