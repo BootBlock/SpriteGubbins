@@ -5,7 +5,7 @@ import { sameBox } from './sameBox.ts';
 const BOX: SpriteBox = { left: 4, top: 6, width: 10, height: 12, pixels: 80 };
 
 describe('sameBox', () => {
-  it('matches a copy of a box, which is what a structured clone hands back', () => {
+  it('matches an equal box that is a separate object', () => {
     expect(sameBox(BOX, structuredClone(BOX))).toBe(true);
   });
 

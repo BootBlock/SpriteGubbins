@@ -1354,8 +1354,8 @@ export const DEFAULT_DUPLICATE_TOLERANCE = 0;
  * Whether the snap opens engaged — it does not.
  *
  * The snap **deletes artwork**, as the symmetry pass's `SNAP` and the edge hardening also do: it
- * overwrites each near-duplicate with the sprite its group is named after, so whatever distinguished
- * the two is gone from the download. Where most dials here transform the whole sheet by a rule, this
+ * overwrites every member of a duplicate group with the group's most typical sprite, so whatever
+ * distinguished them is gone from the download. Where most dials here transform the whole sheet by a rule, this
  * one acts on a finding — a finding the reader has not necessarily looked at yet. Defaulting it on would
  * be the tab deciding that two frames a generator drew separately were a mistake.
  */

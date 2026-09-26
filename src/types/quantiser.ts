@@ -669,7 +669,8 @@ export interface QuantiseTuning {
    */
   readonly duplicateTolerance: number;
   /**
-   * Whether each near-duplicate is rewritten with the sprite its group is named after.
+   * Whether every member of each duplicate group is rewritten with the group's source, its most
+   * typical sprite (see `SpriteDuplicateGroup.source`).
    *
    * The one dial on this shape that is a boolean rather than a strength, because it is not a
    * strength: {@link duplicateTolerance} already decides how alike two sprites must be, and this

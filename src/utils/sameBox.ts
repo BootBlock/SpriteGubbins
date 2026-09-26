@@ -4,10 +4,11 @@ import type { SpriteBox } from '../types/quantiser.ts';
  * Whether two boxes from one segmentation name the same sprite: the same extent at the same place,
  * holding the same number of pixels.
  *
- * Compared field by field rather than by object, because a duplicate group crosses the worker
- * boundary as a structured clone, where its `source` and its `canonical` arrive as two objects even
- * when they were one. Two different sprites can share a bounding box only by interleaving, and then
- * the pixel count is what tells them apart.
+ * Compared by value rather than by object, because a duplicate group is a value: it carries boxes
+ * so that it answers on its own, and a group built anywhere but `duplicateSprites`, as a test builds
+ * one, can hold equal boxes as separate objects. Identity would then call a group's source and its
+ * canonical two sprites when they are one. Two different sprites can share a bounding box only by
+ * interleaving, and then the pixel count is what tells them apart.
  */
 export function sameBox(left: SpriteBox, right: SpriteBox): boolean {
   return (
