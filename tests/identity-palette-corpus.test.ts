@@ -83,19 +83,10 @@ describe('the identity digest read from a real generator sheet', () => {
     return image;
   }
 
-  it.each(CORPUS_SHEETS)('leads %s with a colour of the subject, never the key field', (name) => {
-    const key = BACKGROUND_KEY_COLORS.MAGENTA_FF00FF;
-    if (key === null) throw new Error('The recommended key names no colour');
-
-    const digest = identityPalette(sheet(name), key);
-
-    // Without this an empty digest would satisfy every assertion below by holding nothing.
-    expect(digest.length).toBeGreaterThan(1);
-    // The leading entry is the one the prompt reads as the subject's base colour, and it is where
-    // every one of the eight failed.
-    expect(distanceFromKey(digest[0] ?? '#000000', key)).toBeGreaterThan(DEFAULT_KEY_TOLERANCE);
-  });
-
+  // The magenta pass of this sweep is the defect itself: the leading entry is the one the prompt reads
+  // as the subject's base colour, and it is where every one of the eight failed. It is held here with
+  // every other entry and every other key rather than in a case of its own, which could only fail
+  // where this one already does.
   it.each(CORPUS_SHEETS)('keeps every entry of %s out of the key field, at every offered key', (name) => {
     const image = sheet(name);
     const inTheField: string[] = [];
@@ -105,7 +96,8 @@ describe('the identity digest read from a real generator sheet', () => {
       const key = BACKGROUND_KEY_COLORS[named];
       const digest = identityPalette(image, key);
 
-      // A sheet has colours whichever key is stated; `TRANSPARENT` names none to exclude, so this is
+      // A sheet has colours whichever key is stated, and without this an empty digest would satisfy
+      // every assertion below by holding nothing. `TRANSPARENT` names no colour to exclude, so this is
       // the whole of what can be asserted for it.
       expect(digest.length).toBeGreaterThan(1);
       if (key === null) continue;

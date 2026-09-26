@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { CORPUS_SHEETS, loadCorpus, loadCorpusSheet } from './sheetCorpus.ts';
+import { CORPUS_SHEETS, type CorpusSheetName, loadCorpus } from './sheetCorpus.ts';
 import { cellMeanField, meanCellDistance, toConeField } from './cellDistance.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../src/constants/quantiseDials.ts';
 import {
@@ -46,6 +46,7 @@ import { buildPalette } from '../src/utils/wuQuantiser.ts';
 import type {
   ColorReduction,
   CoverageMask,
+  QuantiseResult,
   QuantiseSettings,
   Rgba,
   SpriteBox,
@@ -111,6 +112,33 @@ const CALIBRATION = (over: Partial<QuantiseSettings> = {}): QuantiseSettings => 
   ...over,
 });
 
+/**
+ * `quantiseImage`, run once for each sheet and settings however many figures read the result.
+ *
+ * Several figures below are stated at the same conditions: the opening dials are the reading the
+ * `DIFFERENCE_SCALES` percentiles come from, the one-pass rung of the cleanup comparison and the zero
+ * rung of the dominant outline ladder, and the ink-weighted reading is the zero rung of its own ladder
+ * and the lock five cases take. A reduction of a 1.57-megapixel sheet is what this file spends its
+ * time on, and the pipeline is pure, so a result read a second time is the one a second run would
+ * return. Keyed by the settings' own serialisation, so a figure stated at other conditions can never
+ * be handed another's result.
+ */
+const reductions = new WeakMap<ImageData, Map<string, QuantiseResult>>();
+
+function quantised(image: ImageData, settings: QuantiseSettings): QuantiseResult {
+  let byImage = reductions.get(image);
+  if (byImage === undefined) {
+    byImage = new Map();
+    reductions.set(image, byImage);
+  }
+  const key = JSON.stringify(settings);
+  const cached = byImage.get(key);
+  if (cached !== undefined) return cached;
+  const result = quantiseImage(image, settings);
+  byImage.set(key, result);
+  return result;
+}
+
 /** Ink is the darkest quarter, which is what the vote's own rescue and these figures both mean. */
 function isInkPixel(data: Uint8ClampedArray, at: number): boolean {
   if ((data[at + 3] ?? 0) === 0) return false;
@@ -118,11 +146,25 @@ function isInkPixel(data: Uint8ClampedArray, at: number): boolean {
 }
 
 describe('the figures the quantiser docblocks state', () => {
+  /**
+   * The eight sheets, decoded once for every case that reads them — the reference among them.
+   *
+   * Once for the whole file rather than per case, because three cases read all eight and a decode of
+   * the corpus is several seconds of inflating PNGs in JavaScript.
+   */
+  let corpus: ReadonlyMap<CorpusSheetName, ImageData>;
   let sheet: ImageData;
 
+  const sheetNamed = (name: CorpusSheetName): ImageData => {
+    const image = corpus.get(name);
+    if (image === undefined) throw new Error(`${name} is missing from the corpus`);
+    return image;
+  };
+
   beforeAll(async () => {
-    sheet = await loadCorpusSheet('armour.png');
-  }, 120_000);
+    corpus = await loadCorpus();
+    sheet = sheetNamed('armour.png');
+  }, 300_000);
 
   it('lays 209 x 209 cells over the reference sheet at a grid of 6', () => {
     const mesh = boundaryMesh(sheet, 6);
@@ -131,7 +173,7 @@ describe('the figures the quantiser docblocks state', () => {
   });
 
   it('DIFFERENCE_SCALES — the per-cell distance ladder the rungs are read off', () => {
-    const { difference } = quantiseImage(sheet, CALIBRATION());
+    const { difference } = quantised(sheet, CALIBRATION());
     const sorted = Array.from(difference.cells).sort((left, right) => left - right);
     const at = (percentile: number): number =>
       (sorted[Math.floor((percentile / 100) * sorted.length)] ?? 0) / DIFFERENCE_PRECISION;
@@ -145,8 +187,8 @@ describe('the figures the quantiser docblocks state', () => {
 
   /** What a second cleanup pass moves: how many cells, and the largest step any one of them took. */
   function cleanupPassShift(vote: VoteMethod, fillCleanup: number): { cells: number; largest: number } {
-    const once = quantiseImage(sheet, CALIBRATION({ vote, fillCleanup, cleanupPasses: 1 }));
-    const twice = quantiseImage(sheet, CALIBRATION({ vote, fillCleanup, cleanupPasses: 2 }));
+    const once = quantised(sheet, CALIBRATION({ vote, fillCleanup, cleanupPasses: 1 }));
+    const twice = quantised(sheet, CALIBRATION({ vote, fillCleanup, cleanupPasses: 2 }));
 
     let cells = 0;
     let peak = 0;
@@ -267,7 +309,7 @@ describe('the figures the quantiser docblocks state', () => {
         const noInk = cellsWhere(shares, (share) => share === 0);
 
         for (const [thickness, expected] of survival.entries()) {
-          const { image } = quantiseImage(sheet, CALIBRATION({ vote, outlineExpansion: thickness }));
+          const { image } = quantised(sheet, CALIBRATION({ vote, outlineExpansion: thickness }));
           const inkAt = (cell: number): boolean => isInkPixel(image.data, cell * CHANNELS_PER_PIXEL);
           const shareOf = (set: readonly number[]): number => (100 * set.filter(inkAt).length) / set.length;
 
@@ -372,7 +414,7 @@ describe('the figures the quantiser docblocks state', () => {
       const rows = (['NONE', 'BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as const).map((dither) =>
         rowOf(
           reference,
-          quantiseImage(sheet, CALIBRATION({ dither, reduction })).image,
+          quantised(sheet, CALIBRATION({ dither, reduction })).image,
           mesh.x.length,
           mesh.y.length,
         ),
@@ -397,10 +439,8 @@ describe('the figures the quantiser docblocks state', () => {
         (['NONE', 'BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as const).map((dither) =>
           rowOf(
             reference,
-            quantiseImage(
-              sheet,
-              CALIBRATION({ dither, reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel } }),
-            ).image,
+            quantised(sheet, CALIBRATION({ dither, reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel } }))
+              .image,
             mesh.x.length,
             mesh.y.length,
           ),
@@ -424,7 +464,7 @@ describe('the figures the quantiser docblocks state', () => {
     }, 240_000);
 
     it('DITHER_SHORTLIST — the column the constant ships, against the sheet with no palette step', () => {
-      const flat = quantiseImage(sheet, CALIBRATION({ reduction: null }));
+      const flat = quantised(sheet, CALIBRATION({ reduction: null }));
       const reference = toConeField(flat.image);
       const { width, height } = flat.image;
 
@@ -443,7 +483,7 @@ describe('the figures the quantiser docblocks state', () => {
         budgets.map((reduction) =>
           rowOf(
             reference,
-            quantiseImage(sheet, CALIBRATION({ dither: 'BLUE_NOISE', reduction })).image,
+            quantised(sheet, CALIBRATION({ dither: 'BLUE_NOISE', reduction })).image,
             width,
             height,
           ),
@@ -498,7 +538,7 @@ describe('the figures the quantiser docblocks state', () => {
 
     /** The sprites this sheet holds under those settings, in the order `spriteSegments` answers in. */
     const boxesOf = (image: ImageData): readonly SpriteBox[] => {
-      const { sprites } = quantiseImage(image, KEYED());
+      const { sprites } = quantised(image, KEYED());
       return sprites.kind === 'SEGMENTED' ? sprites.boxes : [];
     };
 
@@ -573,12 +613,9 @@ describe('the figures the quantiser docblocks state', () => {
       }
     }, 600_000);
 
-    it('finds 15 to 42 sprites on the corpus, an order of magnitude under the ceiling', async () => {
-      const corpus = await loadCorpus();
+    it('finds 15 to 42 sprites on the corpus, an order of magnitude under the ceiling', () => {
       const counts = CORPUS_SHEETS.map((name) => {
-        const image = corpus.get(name);
-        if (image === undefined) throw new Error(`${name} is missing from the corpus`);
-        const { sprites } = quantiseImage(image, KEYED());
+        const { sprites } = quantised(sheetNamed(name), KEYED());
         return sprites.kind === 'SEGMENTED' ? sprites.boxes.length : -1;
       });
 
@@ -738,7 +775,7 @@ describe('the figures the quantiser docblocks state', () => {
       boxes.reduce((total, box) => total + box.width * box.height, 0);
 
     it('totals 17,201 pixels of box against 13,823 of artwork, and is not narrowed by the budget', () => {
-      const result = quantiseImage(sheet, AS_STATED());
+      const result = quantised(sheet, AS_STATED());
       expect(result.sprites.kind).toBe('SEGMENTED');
       const boxes = result.sprites.kind === 'SEGMENTED' ? result.sprites.boxes : [];
       expect(boxes).toHaveLength(15);
@@ -828,11 +865,14 @@ describe('the figures the quantiser docblocks state', () => {
       expect(Math.round(226_965_572 / 4_228_224)).toBe(54);
     });
 
-    it('narrows no sheet of the corpus, keyed and read at a grid of 1', async () => {
+    it('narrows no sheet of the corpus, keyed and read at a grid of 1', () => {
       const magenta = fromHex('#FF00FF');
       if (magenta === null) throw new Error('the key colour no longer parses');
       for (const name of CORPUS_SHEETS) {
-        const result = quantiseImage(await loadCorpusSheet(name), {
+        // Straight through the pipeline rather than `quantised`: nothing else reads a sheet at a grid
+        // of 1, and eight full-resolution results kept for the rest of the file would be kept for
+        // nothing.
+        const result = quantiseImage(sheetNamed(name), {
           ...QUANTISE_DEFAULT_DIALS,
           grid: 1,
           key: { color: magenta, tolerance: DEFAULT_KEY_TOLERANCE },
@@ -848,7 +888,7 @@ describe('the figures the quantiser docblocks state', () => {
   describe('the palette lock — the two populations the snap distance is set from', () => {
     /** The lock both docblocks are stated against: the ink-weighted reading's own colours. */
     const lockFrom = (image: ImageData): readonly Rgba[] =>
-      quantiseImage(image, CALIBRATION({ vote: 'INK_WEIGHTED' })).paletteEntries;
+      quantised(image, CALIBRATION({ vote: 'INK_WEIGHTED' })).paletteEntries;
 
     /** How far a colour sits from the lock, in the unit the dial is in. */
     const reachOf = (color: Rgba, lock: readonly LocatedEntry[]): number => {
@@ -910,9 +950,7 @@ describe('the figures the quantiser docblocks state', () => {
      * second quantisation no locked sheet goes through.
      */
     const handedToTheLock = (over: Partial<QuantiseSettings>): ImageData =>
-      over.vote === 'DOMINANT'
-        ? sheet
-        : quantiseImage(sheet, CALIBRATION({ ...over, reduction: null })).image;
+      over.vote === 'DOMINANT' ? sheet : quantised(sheet, CALIBRATION({ ...over, reduction: null })).image;
 
     it('measures the drift where the lock runs: 0.49 at the median, 11.15 to 20.40 at the 99th', () => {
       // The dominant arm hands the lock `sheet` itself only while the outline expansion is off, which
@@ -960,7 +998,7 @@ describe('the figures the quantiser docblocks state', () => {
 
       /** The share of the result's pixels drawn in a held colour, and how many colours it has. */
       const underLock = (over: Partial<QuantiseSettings>, snap: number): [number, number] => {
-        const result = quantiseImage(
+        const result = quantised(
           sheet,
           CALIBRATION({ ...over, reduction: { kind: 'LOCKED', entries, snap } }),
         );
@@ -1029,18 +1067,6 @@ describe('the figures the quantiser docblocks state', () => {
     }, 300_000);
 
     describe('over the corpus', () => {
-      let corpus: ReadonlyMap<string, ImageData>;
-
-      beforeAll(async () => {
-        corpus = await loadCorpus();
-      }, 300_000);
-
-      const sheetNamed = (name: string): ImageData => {
-        const image = corpus.get(name);
-        if (image === undefined) throw new Error(`${name} is missing from the corpus`);
-        return image;
-      };
-
       it('finds colours this sheet has no hue for inside the drift, from 17.79', () => {
         const lock = locateEntries(lockFrom(sheet));
 
