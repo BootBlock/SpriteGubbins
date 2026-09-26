@@ -31,8 +31,10 @@ export const ITEM: CategoryDefinition = {
         'Armour Piece (Helmet/Shield)',
         'Keycard / Quest Item',
         'Energy Shield Unit',
-        // Nine-slice frames and buttons are inventory-scale flat art with rarity-free rules, so they
-        // belong to the icon category rather than to props: the field labels here are the right ones.
+        // An interface kit is INTERFACE's subject, which draws the nine-slice frame, and no ITEM sheet
+        // draws one: both ITEM sheets split the item into a grip, a body, a working end and a guard.
+        // It stays offered only until issue #289 removes it with `Nine-Slice Panel Corners` and the
+        // panel-kit Detachable Parts value.
         'Interface Frame & Button Kit',
         'Crafting Material / Salvage',
         'Map / Chart Scroll',

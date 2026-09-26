@@ -14,8 +14,9 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * inner corners of each. That is a room with walls around it, and the thing it cannot express is the
  * one a terrain sheet is entirely about — *two materials meeting*, and the edge and corner tiles that
  * let one wash into the other across open ground. BUILDING keeps the environment art that is a
- * discrete object placed on a field — a tree, a parallax band, a bridge span — because those
- * decompose as structures; the field itself decomposes as a blend set and comes here.
+ * discrete object placed on a field — a tree, a bridge span — because those decompose as
+ * structures; the field itself decomposes as a blend set and comes here. The scenery behind the
+ * playfield, a parallax band among it, is BACKGROUND's.
  *
  * **No option in these pools states a tile count**, and `Tile Assembly Base` is where that costs
  * something. The autotiling families are conventionally named by their size — a 47-tile blob set, a

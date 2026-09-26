@@ -33,10 +33,12 @@ export const OBJECT: CategoryDefinition = {
         'Vending Machine',
         'Control Console',
         'Ancient Relic Shrine',
-        // Not every prop is a machine to interact with. An effect and a legibility test both want the
-        // hard-surface field labels this category gives them and have nowhere else to live. A vehicle
-        // does have somewhere — VEHICLE, which exists because a hull, a drive and a turning mount do
-        // not decompose the way a housing, a footing and a hinged panel do — so it does not go here.
+        // A vehicle does not go here: VEHICLE exists because a hull, a drive and a turning mount do not
+        // decompose the way a housing, a footing and a hinged panel do. Neither do the three values
+        // below, and no OBJECT sheet draws them. An explosion and falling weather are sequences of
+        // frames, which is what EFFECT draws, and a silhouette test has no housing, footing or panel
+        // to draw. They stay offered only until issue #287 removes them with the neighbours written
+        // for them.
         'Explosion Burst Effect',
         'Weather Particle Sheet',
         'Silhouette Legibility Test',
@@ -193,8 +195,9 @@ export const OBJECT: CategoryDefinition = {
         'White-Hot Core Flash',
         'Painted Cargo Panel',
         'Open Flame & Cook Pot',
-        // For a sheet whose subject has no focal element at all — an effect, a particle set, a
-        // silhouette pass — because leaving the field empty would invite one to be invented.
+        // For a prop with no display or control face, because leaving the field empty would invite one
+        // to be invented. The part library still orders `Interface or control face: inactive, active`
+        // whatever this says, until issue #291 declares it an absent option that drops the entry.
         'No Focal Feature',
         'Glass Lantern Housing & Wick',
         'Carved Stone Face & Offering Bowl',
