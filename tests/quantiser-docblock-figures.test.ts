@@ -380,6 +380,41 @@ describe('the figures the quantiser docblocks state', () => {
       ]);
     }, 240_000);
 
+    it('DITHER_CHOICES — the two channel-depth rows, against the source cell means', () => {
+      // The machines that take the classic per-channel threshold rather than a mixing plan, so the
+      // budget row above cannot stand for them: a change to either dither moves only its own rows.
+      const mesh = boundaryMesh(sheet, 6);
+      const reference = cellMeanField(sheet, mesh);
+      const rows = [3, 2].map((bitsPerChannel) =>
+        (['NONE', 'BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as const).map((dither) =>
+          rowOf(
+            reference,
+            quantiseImage(
+              sheet,
+              CALIBRATION({ dither, reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel } }),
+            ).image,
+            mesh.x.length,
+            mesh.y.length,
+          ),
+        ),
+      );
+
+      expect(rows).toEqual([
+        [
+          [20.214, 8.019, 6.362],
+          [22.24, 4.649, 3.29],
+          [22.222, 4.709, 3.261],
+          [22.257, 4.879, 3.198],
+        ],
+        [
+          [24.039, 9.564, 7.099],
+          [27.518, 5.517, 3.716],
+          [27.771, 5.65, 3.587],
+          [27.713, 5.905, 3.572],
+        ],
+      ]);
+    }, 240_000);
+
     it('DITHER_SHORTLIST — the column the constant ships, against the sheet with no palette step', () => {
       const flat = quantiseImage(sheet, CALIBRATION({ reduction: null }));
       const reference = toConeField(flat.image);
