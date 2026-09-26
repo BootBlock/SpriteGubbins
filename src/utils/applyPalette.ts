@@ -19,12 +19,14 @@ import { nearestColorSearch } from './nearestColorSearch.ts';
 
 /**
  * The image with every pixel taking its nearest palette entry, by squared distance across all four
- * channels.
+ * channels — an opaque pixel choosing among the opaque entries alone.
  *
  * For a palette **derived from this image**, which is what `buildPalette` returns: every entry is a
  * pixel the sheet actually holds, so an entry's opacity is as much a part of it as its hue, and the
  * entry is written whole. That is what keeps the promise the colour count makes — reduce to N and
- * at most N distinct RGBA colours survive.
+ * at most N distinct RGBA colours survive. Written whole is also why an opaque pixel may not take a
+ * translucent entry, however near its colour: it would leave a hole in the sprite, and
+ * `nearestColorSearch` states the rule.
  */
 export function applyPalette(image: ImageData, palette: readonly Rgba[]): ImageData {
   // An empty palette means an image with no opaque pixels, none of which reach `resolve` at all.

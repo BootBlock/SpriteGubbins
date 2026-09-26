@@ -1,4 +1,5 @@
-import { colorHistogram, FULLY_OPAQUE, toHex, unpackColor } from './imageData.ts';
+import { flattenOpacity } from './flattenOpacity.ts';
+import { colorHistogram, toHex, unpackColor } from './imageData.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
 /**
@@ -13,7 +14,8 @@ import { buildPalette } from './wuQuantiser.ts';
  *
  * **Deduplicated across alpha, and returned opaque**, for the reason `paletteEntriesFrom` is: a
  * palette is a statement about colour, and the same fill at a dozen edge coverages is one colour.
- * Fully transparent pixels take no part at all, because `colorHistogram` leaves them out.
+ * Both readings flatten the image first with `flattenOpacity`, so a pixel under the coverage floor —
+ * whose channels are rounding noise — takes no part at all.
  *
  * Pure, as everything in this directory is. The decoding that produces the `ImageData` is the impure
  * half and lives in `src/hooks/`.
@@ -37,14 +39,8 @@ export interface ImagePaletteReading {
  * deliberately.
  */
 export function imagePalette(image: ImageData, max: number): ImagePaletteReading {
-  const seen = new Set<number>();
-
-  for (const key of colorHistogram(image).keys()) {
-    // The alpha byte off the end of the packing, leaving `0xRRGGBB`.
-    seen.add(Math.floor(key / 256));
-  }
-
-  const entries = [...seen].map((color) => toHex(unpackColor(color * 256 + FULLY_OPAQUE)));
+  // Flattened, every key is one opaque colour, so the histogram's keys are already one per colour.
+  const entries = [...colorHistogram(flattenOpacity(image)).keys()].map((key) => toHex(unpackColor(key)));
   return { entries: entries.length > max ? null : entries, colors: entries.length };
 }
 
@@ -55,10 +51,14 @@ export function imagePalette(image: ImageData, max: number): ImagePaletteReading
  * for the same budget — and every one of them is a colour the image actually contained, never a
  * mean of two. `identityPalette` takes the same route for the same reason.
  *
+ * **Flattened before it is reduced**, because `toHex` drops alpha: two entries the quantiser split on
+ * opacity alone, one fill at two coverages, would come back as the same hex, and a reader asking
+ * for two colours would be handed one twice.
+ *
  * **Ordered by the reduction, not by the image.** There is no author's order left to keep: the
  * colours here are a measurement rather than a list somebody wrote, so they arrive in the order the
  * quantiser settled them.
  */
 export function reduceImagePalette(image: ImageData, max: number): readonly string[] {
-  return buildPalette(image, max).map(toHex);
+  return buildPalette(flattenOpacity(image), max).map(toHex);
 }

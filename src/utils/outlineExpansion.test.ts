@@ -126,6 +126,17 @@ describe('outlineExpansion', () => {
     }
   });
 
+  it('never hands a near-invisible pixel’s channels to the opaque artwork beside it', () => {
+    // A pixel at alpha 1 carries the browser's premultiplication rounding rather than a colour. Read
+    // by its lightness it was the darkest pixel on a light field, and its red went onto all eight
+    // of its opaque neighbours.
+    const image = createImage(7, 7);
+    for (let offset = 0; offset < image.data.length; offset += 4) writePixel(image.data, offset, LIGHT);
+    writePixel(image.data, pixelOffset(7, 3, 3), { r: 255, g: 0, b: 0, a: 1 });
+
+    expect(Array.from(outlineExpansion(image, 3, 1).data)).toEqual(Array.from(image.data));
+  });
+
   it('is deterministic — the same sheet expands to the same bytes twice', () => {
     const image = ruled(21, LIGHT, DARK);
     expect(Array.from(outlineExpansion(image, 4, 2).data)).toEqual(

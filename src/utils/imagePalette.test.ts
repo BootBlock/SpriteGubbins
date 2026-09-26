@@ -49,6 +49,12 @@ describe('imagePalette', () => {
     expect(imagePalette(image, 256).entries).toEqual(['#102030']);
   });
 
+  it('takes no colour from a pixel under the coverage floor', () => {
+    const image = imageFrom(2, 1, (x) => (x === 0 ? rgb(16, 32, 48) : { r: 255, g: 0, b: 255, a: 10 }));
+
+    expect(imagePalette(image, 256).entries).toEqual(['#102030']);
+  });
+
   it('refuses a picture holding more colours than the cap, and says how many', () => {
     // A sheet dropped where a swatch was meant. Nothing is pinned, and the count is what makes the
     // refusal actionable rather than a shrug.
@@ -81,5 +87,16 @@ describe('reduceImagePalette', () => {
 
   it('leaves a picture already under the cap alone', () => {
     expect(reduceImagePalette(swatchImage(RAMP, BLOCK), 256)).toHaveLength(3);
+  });
+
+  it('spends no slot on one colour at two coverages', () => {
+    // Unflattened, the quantiser split the two reds on alpha alone and both came back as #C80000,
+    // leaving the reader one usable colour of the two they asked for.
+    const image = imageFrom(2001, 1, (x) => {
+      if (x === 2000) return rgb(201, 0, 0);
+      return x % 2 === 0 ? rgb(200, 0, 0) : { ...rgb(200, 0, 0), a: 128 };
+    });
+
+    expect(reduceImagePalette(image, 2)).toEqual(['#C80000', '#C90000']);
   });
 });

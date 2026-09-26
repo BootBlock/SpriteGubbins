@@ -96,6 +96,14 @@ describe('identityPalette', () => {
     expect(identityPalette(softShadow, MAGENTA)).toEqual(['#1E1E24', '#28282E', '#323238']);
   });
 
+  it('names no colour for a pixel under the coverage floor, whose channels are rounding noise', () => {
+    // A faint fringe of pure red around a slate sprite: made opaque with the rest, its noise was a
+    // colour of the digest.
+    const fringed = imageFrom(10, 1, (x) => (x < 7 ? SLATE : { r: 255, g: 0, b: 0, a: 12 }));
+
+    expect(identityPalette(fringed, null)).toEqual(['#334155']);
+  });
+
   it('keeps the key colour when nothing is being keyed out', () => {
     expect(identityPalette(KEYED_SHEET, null).at(0)).toBe('#FF00FF');
   });
