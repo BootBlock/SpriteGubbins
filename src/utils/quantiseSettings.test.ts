@@ -1,4 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import {
+  ANTI_ALIAS_MODES,
+  ANTI_ALIAS_PALETTES,
+  DITHER_PATTERNS,
+  FRAME_ALIGNMENT_MODES,
+  SYMMETRY_MODES,
+  VOTE_METHODS,
+} from '../types/quantiser.ts';
 import type { QuantiseSettings, QuantiseSurroundings, QuantiseTuning } from '../types/quantiser.ts';
 import { sameQuantiseSettings, sameSurroundings } from './quantiseSettings.ts';
 
@@ -85,34 +93,12 @@ const MOVED: { readonly [K in keyof QuantiseTuning]: (from: QuantiseSettings) =>
 describe('sameQuantiseSettings', () => {
   it('holds for two separately-built copies of the same settings', () => {
     // The case reference equality would get wrong. Both sides come from one `useMemo` in one hook and
-    // would usually *be* the same object — usually is not a guarantee React makes about a memo.
+    // would usually *be* the same object — usually is not a guarantee React makes about a memo. The
+    // two fields that hold objects are rebuilt, which is where an identity comparison would part them.
     expect(
       sameQuantiseSettings(BASE, {
-        grid: 8,
+        ...BASE,
         key: { color: { ...MAGENTA }, tolerance: 32 },
-        silhouetteThreshold: 0,
-        vote: 'DOMINANT',
-        lineStrength: 1.5,
-        trimStrength: 0,
-        inkThreshold: 64,
-        fillCleanup: 0,
-        cleanupPasses: 1,
-        spriteGap: 1,
-        symmetry: 'OFF' as const,
-        symmetryTolerance: 8,
-        symmetryConfidence: 90,
-        duplicateTolerance: 0,
-        duplicateSnap: false,
-        frameAlignment: 'OFF' as const,
-        frameDriftTolerance: 0,
-        antiAlias: 'OFF' as const,
-        antiAliasThreshold: 24,
-        antiAliasStrength: 100,
-        antiAliasRun: 2,
-        antiAliasPalette: 'SNAP' as const,
-        dither: 'NONE',
-        outlineExpansion: 0,
-        colorMerge: 0,
         reduction: { kind: 'MAX_COLORS', maxColors: 32 },
       }),
     ).toBe(true);
@@ -127,72 +113,35 @@ describe('sameQuantiseSettings', () => {
     }
   });
 
-  it('separates every field that changes the sheet', () => {
+  it.each([
+    ['vote', VOTE_METHODS.map((vote) => ({ ...BASE, vote }))],
+    ['dither', DITHER_PATTERNS.map((dither) => ({ ...BASE, dither }))],
+    ['symmetry', SYMMETRY_MODES.map((symmetry) => ({ ...BASE, symmetry }))],
+    ['frameAlignment', FRAME_ALIGNMENT_MODES.map((frameAlignment) => ({ ...BASE, frameAlignment }))],
+    ['antiAlias', ANTI_ALIAS_MODES.map((antiAlias) => ({ ...BASE, antiAlias }))],
+    ['antiAliasPalette', ANTI_ALIAS_PALETTES.map((antiAliasPalette) => ({ ...BASE, antiAliasPalette }))],
+  ])('separates every %s mode from every other', (_dial, positions: readonly QuantiseSettings[]) => {
+    // The walk above moves each of these dials to one other mode, which a comparison that asked only
+    // whether the pass rewrites pixels would still pass. `OFF` and `CHECK` both leave the pixels alone,
+    // but only `CHECK` takes a reading, so a sheet filed under one is not the answer to the other.
+    positions.forEach((left, i) => {
+      positions.slice(i + 1).forEach((right) => {
+        expect(sameQuantiseSettings(left, right)).toBe(false);
+      });
+    });
+  });
+
+  it('separates the grid, the key and the budget, which the walk above does not reach', () => {
+    // The three surroundings are outside `QuantiseTuning`, so `MOVED` never moves them — and each one
+    // changes the sheet as surely as a dial does.
     expect(sameQuantiseSettings(BASE, { ...BASE, grid: 4 })).toBe(false);
-    // The Downscale reading alone changes the sheet, and this comparison is what makes changing
-    // the control recompute rather than re-caption a stale result.
-    expect(sameQuantiseSettings(BASE, { ...BASE, vote: 'INK_WEIGHTED' })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, vote: 'K_CENTROID' })).toBe(false);
-    // The two dials change the sheet too, and each alone must force a recompute.
-    expect(sameQuantiseSettings(BASE, { ...BASE, lineStrength: 2.5 })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, fillCleanup: 32 })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, colorMerge: 24 })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, trimStrength: 1 })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, inkThreshold: 80 })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, cleanupPasses: 2 })).toBe(false);
-    // The dither moves the whole palette step as well as patterning the result, so a change of
-    // pattern is as much a different sheet as a change of reading is — and without this arm nothing
-    // would catch its comparison being dropped, which presents as a stale result behind a spinner
-    // that never clears.
-    expect(sameQuantiseSettings(BASE, { ...BASE, dither: 'BAYER_8' })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, dither: 'BLUE_NOISE' })).toBe(false);
-    // The sprite gap changes the *reading* of the result that travels back with the pixels, and
-    // reaches the pixels themselves only through a snap that acts on that reading — every one of
-    // which `BASE` leaves off. So here this arm is the only thing making a sheet re-read when it
-    // moves: without it the tab would keep the previous segmentation, and the count beside a gap the
-    // reader had just changed would be the count for the gap before it.
-    expect(sameQuantiseSettings(BASE, { ...BASE, spriteGap: 4 })).toBe(false);
-    // The three symmetry dials, for the same reason and one step further: the mode decides whether
-    // a reading is taken at all, the tolerance decides what that reading says, and the floor decides
-    // whether the pass then rewrites the artwork. Without these arms a sheet snapped at one floor
-    // would stay on screen while the panel described another.
-    expect(sameQuantiseSettings(BASE, { ...BASE, symmetry: 'CHECK' })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, symmetry: 'SNAP' })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, symmetryTolerance: 24 })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, symmetryConfidence: 75 })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, key: { color: MAGENTA, tolerance: 64 } })).toBe(false);
     expect(
       sameQuantiseSettings(BASE, { ...BASE, key: { color: { ...MAGENTA, g: 40 }, tolerance: 32 } }),
     ).toBe(false);
-    expect(
-      sameQuantiseSettings(BASE, {
-        ...BASE,
-        silhouetteThreshold: 0,
-        vote: 'DOMINANT',
-        lineStrength: 1.5,
-        trimStrength: 0,
-        inkThreshold: 64,
-        fillCleanup: 0,
-        cleanupPasses: 1,
-        spriteGap: 1,
-        symmetry: 'OFF' as const,
-        symmetryTolerance: 8,
-        symmetryConfidence: 90,
-        duplicateTolerance: 0,
-        duplicateSnap: false,
-        frameAlignment: 'OFF' as const,
-        frameDriftTolerance: 0,
-        antiAlias: 'OFF' as const,
-        antiAliasThreshold: 24,
-        antiAliasStrength: 100,
-        antiAliasRun: 2,
-        antiAliasPalette: 'SNAP' as const,
-        dither: 'NONE',
-        outlineExpansion: 0,
-        colorMerge: 0,
-        reduction: { kind: 'MAX_COLORS', maxColors: 64 },
-      }),
-    ).toBe(false);
+    expect(sameQuantiseSettings(BASE, { ...BASE, reduction: { kind: 'MAX_COLORS', maxColors: 64 } })).toBe(
+      false,
+    );
   });
 
   it('separates keying that runs from keying that does not', () => {
@@ -207,87 +156,9 @@ describe('sameQuantiseSettings', () => {
     // `UNRESTRICTED` is the palette step not running at all. None of them is a variant of another, so
     // moving between any two has to count as a change.
     const budget: QuantiseSettings = BASE;
-    const pinned: QuantiseSettings = {
-      ...BASE,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE',
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] },
-    };
-    const depth: QuantiseSettings = {
-      ...BASE,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE',
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
-    };
-    const none: QuantiseSettings = {
-      ...BASE,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE',
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: null,
-    };
+    const pinned: QuantiseSettings = { ...BASE, reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] } };
+    const depth: QuantiseSettings = { ...BASE, reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 } };
+    const none: QuantiseSettings = { ...BASE, reduction: null };
 
     for (const [left, right] of [
       [budget, pinned],
@@ -300,184 +171,29 @@ describe('sameQuantiseSettings', () => {
       expect(sameQuantiseSettings(left, right)).toBe(false);
     }
 
+    expect(sameQuantiseSettings(none, { ...BASE, reduction: null })).toBe(true);
     expect(
-      sameQuantiseSettings(none, {
-        ...BASE,
-        silhouetteThreshold: 0,
-        vote: 'DOMINANT',
-        lineStrength: 1.5,
-        trimStrength: 0,
-        inkThreshold: 64,
-        fillCleanup: 0,
-        cleanupPasses: 1,
-        spriteGap: 1,
-        symmetry: 'OFF' as const,
-        symmetryTolerance: 8,
-        symmetryConfidence: 90,
-        duplicateTolerance: 0,
-        duplicateSnap: false,
-        frameAlignment: 'OFF' as const,
-        frameDriftTolerance: 0,
-        antiAlias: 'OFF' as const,
-        antiAliasThreshold: 24,
-        antiAliasStrength: 100,
-        antiAliasRun: 2,
-        antiAliasPalette: 'SNAP' as const,
-        dither: 'NONE',
-        outlineExpansion: 0,
-        colorMerge: 0,
-        reduction: null,
-      }),
-    ).toBe(true);
-    expect(
-      sameQuantiseSettings(depth, {
-        ...BASE,
-        silhouetteThreshold: 0,
-        vote: 'DOMINANT',
-        lineStrength: 1.5,
-        trimStrength: 0,
-        inkThreshold: 64,
-        fillCleanup: 0,
-        cleanupPasses: 1,
-        spriteGap: 1,
-        symmetry: 'OFF' as const,
-        symmetryTolerance: 8,
-        symmetryConfidence: 90,
-        duplicateTolerance: 0,
-        duplicateSnap: false,
-        frameAlignment: 'OFF' as const,
-        frameDriftTolerance: 0,
-        antiAlias: 'OFF' as const,
-        antiAliasThreshold: 24,
-        antiAliasStrength: 100,
-        antiAliasRun: 2,
-        antiAliasPalette: 'SNAP' as const,
-        dither: 'NONE',
-        outlineExpansion: 0,
-        colorMerge: 0,
-        reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
-      }),
+      sameQuantiseSettings(depth, { ...BASE, reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 } }),
     ).toBe(true);
   });
 
   it('compares a pinned palette by its colours, in order', () => {
     // Two palettes of the same length holding the same colours in a different order are not the same
     // palette: `nearestColorSearch` breaks a tie on the earliest entry, so the order decides the sheet.
-    const pinned: QuantiseSettings = {
-      ...BASE,
-      silhouetteThreshold: 0,
-      vote: 'DOMINANT',
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-      spriteGap: 1,
-      symmetry: 'OFF' as const,
-      symmetryTolerance: 8,
-      symmetryConfidence: 90,
-      duplicateTolerance: 0,
-      duplicateSnap: false,
-      frameAlignment: 'OFF' as const,
-      frameDriftTolerance: 0,
-      antiAlias: 'OFF' as const,
-      antiAliasThreshold: 24,
-      antiAliasStrength: 100,
-      antiAliasRun: 2,
-      antiAliasPalette: 'SNAP' as const,
-      dither: 'NONE',
-      outlineExpansion: 0,
-      colorMerge: 0,
-      reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] },
-    };
+    const pinned: QuantiseSettings = { ...BASE, reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] } };
 
     expect(
       sameQuantiseSettings(pinned, {
         ...BASE,
-        silhouetteThreshold: 0,
-        vote: 'DOMINANT',
-        lineStrength: 1.5,
-        trimStrength: 0,
-        inkThreshold: 64,
-        fillCleanup: 0,
-        cleanupPasses: 1,
-        spriteGap: 1,
-        symmetry: 'OFF' as const,
-        symmetryTolerance: 8,
-        symmetryConfidence: 90,
-        duplicateTolerance: 0,
-        duplicateSnap: false,
-        frameAlignment: 'OFF' as const,
-        frameDriftTolerance: 0,
-        antiAlias: 'OFF' as const,
-        antiAliasThreshold: 24,
-        antiAliasStrength: 100,
-        antiAliasRun: 2,
-        antiAliasPalette: 'SNAP' as const,
-        dither: 'NONE',
-        outlineExpansion: 0,
-        colorMerge: 0,
         reduction: { kind: 'PALETTE', entries: [{ ...BLACK }, WHITE] },
       }),
     ).toBe(true);
     expect(
-      sameQuantiseSettings(pinned, {
-        ...BASE,
-        silhouetteThreshold: 0,
-        vote: 'DOMINANT',
-        lineStrength: 1.5,
-        trimStrength: 0,
-        inkThreshold: 64,
-        fillCleanup: 0,
-        cleanupPasses: 1,
-        spriteGap: 1,
-        symmetry: 'OFF' as const,
-        symmetryTolerance: 8,
-        symmetryConfidence: 90,
-        duplicateTolerance: 0,
-        duplicateSnap: false,
-        frameAlignment: 'OFF' as const,
-        frameDriftTolerance: 0,
-        antiAlias: 'OFF' as const,
-        antiAliasThreshold: 24,
-        antiAliasStrength: 100,
-        antiAliasRun: 2,
-        antiAliasPalette: 'SNAP' as const,
-        dither: 'NONE',
-        outlineExpansion: 0,
-        colorMerge: 0,
-        reduction: { kind: 'PALETTE', entries: [WHITE, BLACK] },
-      }),
+      sameQuantiseSettings(pinned, { ...BASE, reduction: { kind: 'PALETTE', entries: [WHITE, BLACK] } }),
     ).toBe(false);
-    expect(
-      sameQuantiseSettings(pinned, {
-        ...BASE,
-        silhouetteThreshold: 0,
-        vote: 'DOMINANT',
-        lineStrength: 1.5,
-        trimStrength: 0,
-        inkThreshold: 64,
-        fillCleanup: 0,
-        cleanupPasses: 1,
-        spriteGap: 1,
-        symmetry: 'OFF' as const,
-        symmetryTolerance: 8,
-        symmetryConfidence: 90,
-        duplicateTolerance: 0,
-        duplicateSnap: false,
-        frameAlignment: 'OFF' as const,
-        frameDriftTolerance: 0,
-        antiAlias: 'OFF' as const,
-        antiAliasThreshold: 24,
-        antiAliasStrength: 100,
-        antiAliasRun: 2,
-        antiAliasPalette: 'SNAP' as const,
-        dither: 'NONE',
-        outlineExpansion: 0,
-        colorMerge: 0,
-        reduction: { kind: 'PALETTE', entries: [BLACK] },
-      }),
-    ).toBe(false);
+    expect(sameQuantiseSettings(pinned, { ...BASE, reduction: { kind: 'PALETTE', entries: [BLACK] } })).toBe(
+      false,
+    );
   });
 });
 

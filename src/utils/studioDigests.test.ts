@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
+import { DEFAULT_MODE_FOR } from '../constants/sheetPlans/index.ts';
 import { standardSubject } from '../test/sheetSubject.ts';
 import type { OutputConfig } from '../types/output.ts';
 import {
@@ -92,6 +93,9 @@ describe('sheetDigest', () => {
       standardSubject(),
       withOutput({ directionalMode: 'TILESET_MODULAR' }),
     );
+    // Named positively as well, because the absence alone would pass on a digest that had stopped
+    // naming a mode at all.
+    expect(digest.split(' · ')[0]).toBe(DEFAULT_MODE_FOR.CHARACTER);
     expect(digest).not.toContain('TILESET_MODULAR');
   });
 

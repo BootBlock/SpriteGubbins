@@ -152,16 +152,10 @@ describe('updateProjectDetails', () => {
     expect(stored?.description).toBe('Everything.');
     // The whole point of addressing a project by id: the preset filed under it is untouched.
     expect((await backend.listPresets())[0]?.projectId).toBe(DEFAULT_PROJECT_ID);
-    expect(useUIStore.getState().toastMessage).toBe('Updated “My Game”');
-  });
-
-  it('renames the Default project, which is the one thing it may have done to it', async () => {
-    await seedDefault();
-
-    await expect(
-      useProjectStore.getState().updateProjectDetails(DEFAULT_PROJECT_ID, 'My Game', ''),
-    ).resolves.toBe(true);
+    // The Default project, which a rename is the one thing that may be done to — and on screen as
+    // well as in storage.
     expect(useProjectStore.getState().projects[0]?.name).toBe('My Game');
+    expect(useUIStore.getState().toastMessage).toBe('Updated “My Game”');
   });
 
   it('keeps the creation date, because a rename is not a new project', async () => {

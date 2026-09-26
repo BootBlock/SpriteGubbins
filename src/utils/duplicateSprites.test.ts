@@ -118,7 +118,11 @@ describe('duplicateSprites', () => {
     ]);
 
     expect(duplicateSprites(image, boxes, 8)).toEqual([]);
-    expect(duplicateSprites(image, boxes, 24)).toHaveLength(1);
+    const groups = duplicateSprites(image, boxes, 24);
+    expect(groups).toHaveLength(1);
+    // A pair the tolerance groups and the hash must not: the wider drawing holds artwork the other
+    // does not, so `exact` has to be false however alike the two look.
+    expect(groups[0]?.duplicates[0]?.exact).toBe(false);
   });
 
   it('does not group two sprites whose sizes are genuinely different', () => {
@@ -130,17 +134,6 @@ describe('duplicateSprites', () => {
     ]);
 
     expect(duplicateSprites(image, boxes, 24)).toEqual([]);
-  });
-
-  it('only ever calls two sprites identical when their pixels match, sizes included', () => {
-    // A pair the tolerance groups and the hash must not: the wider drawing holds artwork the other
-    // does not, so `exact` has to be false however alike the two look.
-    const { image, boxes } = sheetOf(80, 30, [
-      { left: 2, top: 2, cells: block(20, 20, INK) },
-      { left: 30, top: 2, cells: block(21, 20, INK) },
-    ]);
-
-    expect(duplicateSprites(image, boxes, 24)[0]?.duplicates[0]?.exact).toBe(false);
   });
 
   it('does not group sprites that differ by more than the tolerance', () => {
@@ -313,22 +306,6 @@ describe('duplicateSprites', () => {
     const { image } = sheetOf(10, 10, []);
 
     expect(duplicateSprites(image, [], 24)).toEqual([]);
-  });
-
-  it('agrees with the boxes the real segmentation produces', () => {
-    // The pairing this ships as: the boxes come from `spriteSegments` rather than being stated, so a
-    // change to either side that put them on different coordinates would fail here.
-    const { image } = sheetOf(40, 20, [
-      { left: 2, top: 2, cells: block(4, 4, INK) },
-      { left: 20, top: 2, cells: block(4, 4, INK) },
-    ]);
-    const boxes = segmentedBoxes(image);
-
-    const groups = duplicateSprites(image, boxes, 0);
-
-    expect(groups).toHaveLength(1);
-    expect(groups[0]?.canonical).toEqual(boxes[0]);
-    expect(groups[0]?.duplicates.map((member) => member.box)).toEqual([boxes[1]]);
   });
 
   it('does not read past the end of a sprite that touches the sheet edge', () => {

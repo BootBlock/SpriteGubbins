@@ -361,7 +361,9 @@ describe('ImageComparison', () => {
     let before = allPaints();
     rerender(panel(4));
     expect(allPaints()).toBeGreaterThan(before);
-    // A new difference scale, which repaints the heatmap and nothing else.
+    // A new difference scale, which repaints the heatmap and nothing else. The scale is applied where
+    // the map is painted rather than where it is measured, and nothing else about the result moves —
+    // so a missing repaint here would be invisible rather than obviously wrong.
     choose('Difference');
     before = allPaints();
     fireEvent.click(
@@ -488,22 +490,6 @@ describe('ImageComparison’s preview modes', () => {
 
     choose('Wipe');
     expect(screen.queryByRole('group', { name: 'Difference scale' })).toBeNull();
-  });
-
-  it('repaints the heatmap when the scale changes, because that is all the control does', () => {
-    // The scale is applied where the map is painted rather than where it is measured, so a rung is
-    // one pass over an image the size of the result. Nothing else about the result moves — which is
-    // also why a stale repaint here would be invisible rather than obviously wrong.
-    const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
-    show(8, 32, false, null, 8, 20);
-    choose('Difference');
-    const painted = context.mock.calls.length;
-
-    const scale = screen.getByRole('group', { name: 'Difference scale' });
-    fireEvent.click(within(scale).getByRole('button', { name: '4' }));
-
-    expect(context.mock.calls.length).toBeGreaterThan(painted);
-    context.mockRestore();
   });
 
   it('lays both frames over one another under a divider, in the wipe', () => {

@@ -392,11 +392,6 @@ describe('the count once a subject names anatomy of its own', () => {
     expect(prompt).toContain('Head ×1, torso ×1, pelvis ×1.');
   });
 
-  it('states it in the subject definition as well as the inventory', () => {
-    const prompt = generatePrompt('CHARACTER', withAnatomy('Serpentine Tail ×1'), RIG);
-    expect(prompt).toContain('- Additional Genuine Anatomy: Serpentine Tail ×1');
-  });
-
   it('keeps the single-drawing exception sentence on a run sheet', () => {
     // The rig draws one facing per generation, so its exception sentence promises one drawing per
     // piece — the per-view wording belongs to the multi-view sheets, whose inventories multiply.

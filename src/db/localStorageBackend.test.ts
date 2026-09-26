@@ -5,6 +5,7 @@ import { createBoundedStorage, createRefusingStorage } from '../test/storageDoub
 import { HISTORY_LIMIT } from './backend.ts';
 import { HISTORY_STORAGE_BUDGET } from './historyEviction.ts';
 import { STORAGE_KEYS } from './schema.ts';
+import { toHistoryRow } from './localStorageRows.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
@@ -144,13 +145,28 @@ describe('LocalStorageBackend — history', () => {
   });
 
   it('caps the history so it cannot grow without bound across sessions', async () => {
-    for (let i = 0; i < HISTORY_LIMIT + 25; i += 1) {
-      await backend.addHistoryLog(log({ id: `log-${i}`, createdAt: i }));
-    }
-    const logs = await backend.listHistoryLogs();
-    expect(logs).toHaveLength(HISTORY_LIMIT);
+    // A full history left by earlier sessions, seeded as raw storage in the newest-first order the
+    // backend keeps it in — filling it through `addHistoryLog` would re-read and re-parse the whole
+    // collection once per entry, which is all this case's running time and none of its claim.
+    storage.setItem(
+      STORAGE_KEYS.promptHistory,
+      JSON.stringify(
+        Array.from({ length: HISTORY_LIMIT }, (_, index) =>
+          toHistoryRow(log({ id: `log-${HISTORY_LIMIT - 1 - index}`, createdAt: HISTORY_LIMIT - 1 - index })),
+        ),
+      ),
+    );
+
+    await backend.addHistoryLog(log({ id: `log-${HISTORY_LIMIT}`, createdAt: HISTORY_LIMIT }));
+    await backend.addHistoryLog(log({ id: `log-${HISTORY_LIMIT + 1}`, createdAt: HISTORY_LIMIT + 1 }));
+
+    const ids = (await backend.listHistoryLogs()).map((entry) => entry.id);
+    expect(ids).toHaveLength(HISTORY_LIMIT);
     // The cap must drop the oldest, not the newest.
-    expect(logs[0]?.id).toBe(`log-${HISTORY_LIMIT + 24}`);
+    expect(ids[0]).toBe(`log-${HISTORY_LIMIT + 1}`);
+    expect(ids).not.toContain('log-0');
+    expect(ids).not.toContain('log-1');
+    expect(ids).toContain('log-2');
   });
 
   it('deletes one entry without touching the others', async () => {
@@ -270,15 +286,23 @@ describe('LocalStorageBackend — a full store', () => {
     expect((await backend.listHistoryLogs()).map((entry) => entry.id)).toEqual(['kept']);
   });
 
-  it('leaves room for the settings and the session, which the history may not crowd out', async () => {
+  it('keeps the history inside its budget, leaving room for the settings and the session', async () => {
     // The reason the budget exists at all. A history allowed to fill the quota takes the app's own
     // preferences down with it, and losing the oldest prompt is recoverable where that is not.
-    backend = new LocalStorageBackend(createBoundedStorage(HISTORY_STORAGE_BUDGET + 200_000));
+    //
+    // The store has a megabyte more than the budget, so it is the budget and not the quota that has
+    // to stop the history: twelve half-megabyte prompts are six megabytes offered, and without the
+    // budget the history would go on growing until the store refused it. Its stored length is the assertion
+    // that tells the two apart — the two saves below would find room in either case.
+    const bounded = createBoundedStorage(HISTORY_STORAGE_BUDGET + 1_000_000);
+    backend = new LocalStorageBackend(bounded);
 
-    for (let i = 0; i < 200; i += 1) {
-      await backend.addHistoryLog(bigLog(`log-${i}`, i, 30_000));
+    for (let i = 0; i < 12; i += 1) {
+      await backend.addHistoryLog(bigLog(`log-${i}`, i, 500_000));
     }
 
+    expect(bounded.getItem(STORAGE_KEYS.promptHistory)?.length).toBeLessThanOrEqual(HISTORY_STORAGE_BUDGET);
+    expect((await backend.listHistoryLogs())[0]?.id).toBe('log-11');
     await expect(backend.saveSettings(DEFAULT_SETTINGS)).resolves.toBeUndefined();
     await expect(backend.saveSession(session())).resolves.toBeUndefined();
   });

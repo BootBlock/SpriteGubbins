@@ -38,7 +38,7 @@ describe('AntiAliasControls', () => {
 
   it('offers all four dials once the pass is on', async () => {
     show();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.selectOptions(screen.getByRole('combobox', { name: /^Anti-aliasing/ }), 'INTERIOR');
 
@@ -51,7 +51,7 @@ describe('AntiAliasControls', () => {
 
   it('withdraws the palette control where no colour setting is constraining the sheet', async () => {
     show(false);
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.selectOptions(screen.getByRole('combobox', { name: /^Anti-aliasing/ }), 'BOTH');
 
@@ -69,7 +69,7 @@ describe('AntiAliasControls', () => {
 
   it('describes whichever half of the sheet the reader has pointed the pass at', async () => {
     show();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const control = screen.getByRole('combobox', { name: /^Anti-aliasing/ });
 
     await user.selectOptions(control, 'INTERIOR');
@@ -84,7 +84,7 @@ describe('AntiAliasControls', () => {
 
   it('writes every dial through the store, so an undo steps back through them', async () => {
     show();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.selectOptions(screen.getByRole('combobox', { name: /^Anti-aliasing/ }), 'BOTH');
     await user.selectOptions(screen.getByRole('combobox', { name: /Blended shades/ }), 'BLEND');
@@ -98,7 +98,7 @@ describe('AntiAliasControls', () => {
 
   it('names the neutral position of the shortest run rather than its number', async () => {
     show();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.selectOptions(screen.getByRole('combobox', { name: /^Anti-aliasing/ }), 'BOTH');
 

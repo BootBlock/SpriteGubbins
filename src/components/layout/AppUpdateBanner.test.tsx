@@ -33,7 +33,7 @@ describe('AppUpdateBanner', () => {
   });
 
   it('starts a waiting build only when the reader asks', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderWith('waiting');
 
     expect(screen.getByRole('status')).toHaveTextContent('A new version of Sprite Gubbins is ready.');
@@ -45,7 +45,7 @@ describe('AppUpdateBanner', () => {
   });
 
   it('reloads a tab another tab moved to a new build, when the reader asks', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const reload = vi.fn();
     vi.stubGlobal('location', { ...window.location, reload });
     renderWith('elsewhere');
@@ -66,7 +66,7 @@ describe('AppUpdateBanner', () => {
   });
 
   it('puts the notice away without starting anything', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderWith('waiting');
 
     await user.click(screen.getByRole('button', { name: 'Not now' }));

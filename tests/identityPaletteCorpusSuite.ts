@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { BACKGROUND_KEY_COLORS } from '../src/constants/backgroundKeyColors.ts';
 import { DEFAULT_KEY_TOLERANCE } from '../src/constants/quantiser.ts';
 import type { Rgba } from '../src/types/quantiser.ts';
-import { BACKGROUND_KEYS, type BackgroundKey } from '../src/types/rendering.ts';
+import { BACKGROUND_KEYS } from '../src/types/rendering.ts';
 import { identityPalette } from '../src/utils/identityPalette.ts';
 import { createImage, fromHex, writePixel } from '../src/utils/imageData.ts';
 import { keyBasis, keyDistanceSquared } from '../src/utils/keyDistance.ts';
@@ -87,44 +87,21 @@ export function identityPaletteCorpusSuite(sheets: readonly CorpusSheetName[]): 
       return image;
     }
 
-    /**
-     * One sheet's digest under one key, read once however many cases ask for it.
-     *
-     * Both cases read the magenta digest of every sheet, and a digest is the palette search over a
-     * whole sheet, so computing it afresh per case repeated a fifth of this suite's work.
-     * `identityPalette` is pure, so a shared digest is the same digest.
-     */
-    const digests = new Map<string, readonly string[]>();
-    function digestOf(name: CorpusSheetName, named: BackgroundKey): readonly string[] {
-      const known = digests.get(`${name} ${named}`);
-      if (known !== undefined) return known;
-      const digest = identityPalette(sheet(name), BACKGROUND_KEY_COLORS[named]);
-      digests.set(`${name} ${named}`, digest);
-      return digest;
-    }
-
-    it.each(sheets)('leads %s with a colour of the subject, never the key field', (name) => {
-      const key = BACKGROUND_KEY_COLORS.MAGENTA_FF00FF;
-      if (key === null) throw new Error('The recommended key names no colour');
-
-      const digest = digestOf(name, 'MAGENTA_FF00FF');
-
-      // Without this an empty digest would satisfy every assertion below by holding nothing.
-      expect(digest.length).toBeGreaterThan(1);
-      // The leading entry is the one the prompt reads as the subject's base colour, and it is where
-      // every one of the eight failed.
-      expect(distanceFromKey(digest[0] ?? '#000000', key)).toBeGreaterThan(DEFAULT_KEY_TOLERANCE);
-    });
-
+    // The magenta pass of this sweep is the defect itself: the leading entry is the one the prompt reads
+    // as the subject's base colour, and it is where every one of the eight failed. It is held here with
+    // every other entry and every other key rather than in a case of its own, which could only fail
+    // where this one already does.
     it.each(sheets)('keeps every entry of %s out of the key field, at every offered key', (name) => {
+      const image = sheet(name);
       const inTheField: string[] = [];
       let entries = 0;
 
       for (const named of BACKGROUND_KEYS) {
         const key = BACKGROUND_KEY_COLORS[named];
-        const digest = digestOf(name, named);
+        const digest = identityPalette(image, key);
 
-        // A sheet has colours whichever key is stated; `TRANSPARENT` names none to exclude, so this is
+        // A sheet has colours whichever key is stated, and without this an empty digest would satisfy
+        // every assertion below by holding nothing. `TRANSPARENT` names no colour to exclude, so this is
         // the whole of what can be asserted for it.
         expect(digest.length).toBeGreaterThan(1);
         if (key === null) continue;

@@ -209,14 +209,17 @@ export function antiAliasCorpusSuite(sheets: readonly CorpusSheetName[]): void {
     };
 
     /**
-     * `movedShare` of one loaded sheet, read once however many cases ask for it — the default floor's
-     * `BOTH` reading is both the first case's figure and the first rung of the ladder below.
+     * `movedShare` for one sheet, run once per mode and floor however many cases read it.
+     *
+     * The default floor under `BOTH` is the reading the recorded share, the rising floor and the loose
+     * end all start from, and the pass over a sheet is what this suite spends its time on. It is pure,
+     * so a share read twice is the share a second run would measure.
      */
     const shares = new Map<string, number>();
     const shareOf = (name: CorpusSheetName, mode: AntiAliasMode, threshold: number): number => {
       const key = `${name} ${mode} ${String(threshold)}`;
-      const known = shares.get(key);
-      if (known !== undefined) return known;
+      const cached = shares.get(key);
+      if (cached !== undefined) return cached;
       const share = movedShare(sheetFor(name), mode, threshold);
       shares.set(key, share);
       return share;

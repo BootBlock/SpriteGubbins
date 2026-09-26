@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSectionStore } from '../../stores/useSectionStore.ts';
@@ -49,7 +49,7 @@ describe('CollapsibleSection', () => {
   });
 
   it('opens and closes from the summary, and records it in the store', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderSection(false);
 
     await user.click(screen.getByRole('heading', { name: 'Render style' }));
@@ -126,16 +126,18 @@ describe('CollapsibleSection', () => {
    */
   it('watches its own content so the reveal has a height to animate towards', () => {
     const observed: Element[] = [];
-    const original = globalThis.ResizeObserver;
-    globalThis.ResizeObserver = class {
-      constructor(private readonly callback: ResizeObserverCallback) {}
-      observe(target: Element) {
-        observed.push(target);
-        this.callback([], this as unknown as ResizeObserver);
-      }
-      unobserve() {}
-      disconnect() {}
-    } as unknown as typeof ResizeObserver;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class implements ResizeObserver {
+        constructor(private readonly callback: ResizeObserverCallback) {}
+        observe(target: Element) {
+          observed.push(target);
+          this.callback([], this);
+        }
+        unobserve() {}
+        disconnect() {}
+      },
+    );
 
     try {
       renderSection(true);
@@ -147,7 +149,7 @@ describe('CollapsibleSection', () => {
         '',
       );
     } finally {
-      globalThis.ResizeObserver = original;
+      vi.unstubAllGlobals();
     }
   });
 

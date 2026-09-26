@@ -47,7 +47,7 @@ describe('DownscaleControls', () => {
 
   it('offers the merge again once a dither applies the palette last', async () => {
     render(<DownscaleControls reduction={LOCKED} />);
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.selectOptions(screen.getByRole('combobox', { name: /^Dither/ }), 'BAYER_4');
 

@@ -141,37 +141,21 @@ describe('parseQuantiseDials', () => {
     expect(parsed).toEqual({ ...STORED, inkThreshold: QUANTISE_DEFAULT_DIALS.inkThreshold });
   });
 
-  it('refuses a value outside the range its own control offers', () => {
-    for (const outside of [COLOR_MERGE_RANGE.min - 1, COLOR_MERGE_RANGE.max + 1]) {
-      expect(parseQuantiseDials({ colorMerge: outside }).colorMerge).toBe(QUANTISE_DEFAULT_DIALS.colorMerge);
+  it('refuses a position a step past either end of the range its own control offers, dial by dial', () => {
+    // A stored confidence floor of 10% would be a position the slider has no notch for, and one that
+    // offers to settle a sprite whose halves agree a tenth of the time. Both ends are kept, too: a
+    // bound checked with `<` where `<=` was meant would refuse the slider's own last notch.
+    for (const [key, range] of Object.entries(RANGED_DIALS)) {
+      const fallback = QUANTISE_DEFAULT_DIALS[key as keyof QuantiseDials];
+      const read = (stored: number) => ({
+        [key]: parseQuantiseDials({ [key]: stored })[key as keyof QuantiseDials],
+      });
+
+      expect(read(range.min - range.step)).toEqual({ [key]: fallback });
+      expect(read(range.max + range.step)).toEqual({ [key]: fallback });
+      expect(read(range.min)).toEqual({ [key]: range.min });
+      expect(read(range.max)).toEqual({ [key]: range.max });
     }
-    expect(parseQuantiseDials({ colorMerge: COLOR_MERGE_RANGE.max }).colorMerge).toBe(COLOR_MERGE_RANGE.max);
-  });
-
-  it('refuses a symmetry mode this build does not have', () => {
-    // No translation into a replacement, which is what this layer is not: a mode that has been
-    // retired simply falls back to the default, and the default is the pass switched off.
-    expect(parseQuantiseDials({ ...STORED, symmetry: 'MIRROR' }).symmetry).toBe(
-      QUANTISE_DEFAULT_DIALS.symmetry,
-    );
-  });
-
-  it('refuses a confidence floor below the one its own control offers', () => {
-    // The floor under the floor: a stored 10% would be a position the slider has no notch for, and
-    // one that offers to settle a sprite whose halves agree a tenth of the time.
-    expect(
-      parseQuantiseDials({ symmetryConfidence: SYMMETRY_CONFIDENCE_RANGE.min - 1 }).symmetryConfidence,
-    ).toBe(QUANTISE_DEFAULT_DIALS.symmetryConfidence);
-    expect(parseQuantiseDials({ symmetryConfidence: SYMMETRY_CONFIDENCE_RANGE.min }).symmetryConfidence).toBe(
-      SYMMETRY_CONFIDENCE_RANGE.min,
-    );
-  });
-
-  it('refuses a fractional value for a dial that counts in whole steps', () => {
-    // Rejected rather than rounded: rounding is a translation, which this layer does not do.
-    expect(parseQuantiseDials({ inkThreshold: INK_THRESHOLD_RANGE.min + 0.5 }).inkThreshold).toBe(
-      QUANTISE_DEFAULT_DIALS.inkThreshold,
-    );
   });
 
   it('keeps a fractional value for the two dials that move in tenths', () => {
@@ -197,7 +181,10 @@ describe('parseQuantiseDials', () => {
 
   it('falls back for a union value this build no longer has', () => {
     // Not translated into a replacement: the parser is not a compatibility layer, and a retired
-    // identifier simply falls to the default.
+    // identifier simply falls to the default — for symmetry, the pass switched off.
+    expect(parseQuantiseDials({ ...STORED, symmetry: 'MIRROR' }).symmetry).toBe(
+      QUANTISE_DEFAULT_DIALS.symmetry,
+    );
     expect(parseQuantiseDials({ vote: 'MEDIAN' }).vote).toBe(QUANTISE_DEFAULT_DIALS.vote);
     expect(parseQuantiseDials({ dither: 'FLOYD_STEINBERG' }).dither).toBe(QUANTISE_DEFAULT_DIALS.dither);
   });
@@ -213,7 +200,9 @@ describe('parseQuantiseDials', () => {
   it('refuses a position off the grid its own control moves on, dial by dial', () => {
     // The defect this replaced: bounds were checked and the step beside them was not, so an
     // imported pack could name a line strength of 2.34567 that the panel then reported as `2.3×`
-    // and no drag of the slider could return to.
+    // and no drag of the slider could return to. Refused rather than rounded — half a step past a
+    // dial's floor included, for the dials that count in ones: rounding is a translation, which
+    // this layer does not do.
     for (const [key, range] of Object.entries(RANGED_DIALS)) {
       const fallback = QUANTISE_DEFAULT_DIALS[key as keyof QuantiseDials];
       const offGrid = range.min + range.step / 2;

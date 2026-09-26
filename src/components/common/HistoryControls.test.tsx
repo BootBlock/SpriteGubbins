@@ -51,7 +51,7 @@ describe('HistoryControls', () => {
   });
 
   it('offers each step only where there is somewhere for it to go, and takes it on a press', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { undo, redo } = renderControls(2, true);
 
     await user.click(screen.getByRole('button', { name: 'Undo' }));
@@ -69,7 +69,7 @@ describe('HistoryControls', () => {
   });
 
   it('answers the keyboard shortcut on the stack’s behalf', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { undo, redo } = renderControls(2, true);
 
     await user.keyboard('{Control>}z{/Control}');

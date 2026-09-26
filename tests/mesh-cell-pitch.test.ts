@@ -64,7 +64,8 @@ describe('mesh cell pitch', () => {
       const sheet = corpus.get(name);
       expect(sheet, name).toBeDefined();
       if (sheet === undefined) continue;
-      // Keyed once per sheet rather than once per grid: the keying pass does not read the grid.
+      // Keyed once per sheet rather than once per grid: the key does not depend on the grid, and a
+      // keying pass over one to two megapixels is most of what this case costs.
       const keyed = keyBackground(sheet, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE }).image;
 
       for (const grid of GRIDS) {

@@ -36,6 +36,9 @@ const EIGHT_WAY_RIG = withOutput({
 
 const runsCount = DIRECTION_LISTS.EIGHT_COMPASS.length;
 
+/** The eight-way rig's runs, compiled once: every test below reads this batch without changing it. */
+const RIG_RUNS = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
+
 /**
  * What a compiled prompt says its own sheet contracts for — section 0's first line.
  *
@@ -51,20 +54,18 @@ function statedCount(promptText: string): number {
 
 describe('sheetRuns', () => {
   it('turns eight facings into eight distinct prompts', () => {
-    const runs = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
-
-    expect(runs).toHaveLength(DIRECTION_LISTS.EIGHT_COMPASS.length);
-    expect(runs.map((run) => run.assembly)).toEqual([...DIRECTION_LISTS.EIGHT_COMPASS]);
+    expect(RIG_RUNS).toHaveLength(DIRECTION_LISTS.EIGHT_COMPASS.length);
+    expect(RIG_RUNS.map((run) => run.assembly)).toEqual([...DIRECTION_LISTS.EIGHT_COMPASS]);
     // Distinct *text*, not merely distinct labels: a split that produced the same prompt eight times
     // would be the manual workflow with extra steps.
-    expect(new Set(runs.map((run) => run.promptText)).size).toBe(runs.length);
+    expect(new Set(RIG_RUNS.map((run) => run.promptText)).size).toBe(RIG_RUNS.length);
   });
 
   it('names its own facing and its own depth order in each prompt', () => {
     // Depth order is the thing that actually differs. The pieces are identical across the eight, and
     // which side renders in front of the body is what stops a west-facing sheet being a mirrored
     // east-facing one.
-    for (const run of sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG)) {
+    for (const run of RIG_RUNS) {
       expect(run.promptText).toContain(`- Primary assembly direction: ${describeDirections([run.assembly])}`);
       expect(run.promptText).toContain(DEPTH_ORDER_TEXT[run.assembly]);
       expect(run.promptText).toContain(
@@ -76,7 +77,7 @@ describe('sheetRuns', () => {
   it('carries one identity lock across all eight', () => {
     // §5: the hardest part is not sheet one, it is sheet two matching sheet one. Eight sheets that
     // did not share the lock would return eight different characters in similar colours.
-    for (const run of sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG)) {
+    for (const run of RIG_RUNS) {
       expect(run.output.identityLock).toBe(EIGHT_WAY_RIG.identityLock);
       expect(run.promptText).toContain(EIGHT_WAY_RIG.identityLock);
     }
@@ -89,7 +90,7 @@ describe('sheetRuns', () => {
     //
     // Restoring one does *not* collapse the batch: the direction set is still the run list, so the
     // splitter reopens on all eight with this facing pinned as the studio's current sheet.
-    for (const run of sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG)) {
+    for (const run of RIG_RUNS) {
       expect(run.output.primaryDirection).toBe(run.assembly);
       expect(generatePrompt('CHARACTER', SUBJECT, run.output)).toBe(run.promptText);
       expect(sheetRuns('CHARACTER', SUBJECT, run.output)).toHaveLength(runsCount);
@@ -102,7 +103,7 @@ describe('sheetRuns', () => {
     // text declared all eight runs unstarted at exactly the moment the user followed that advice.
     const unlocked = withOutput({ ...EIGHT_WAY_RIG, identityLock: '' });
     const [firstUnlocked] = sheetRuns('CHARACTER', SUBJECT, unlocked);
-    const [firstLocked] = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
+    const [firstLocked] = RIG_RUNS;
     if (!firstUnlocked || !firstLocked) throw new Error('the rig should split into runs.');
 
     // The prompts genuinely differ...
@@ -114,14 +115,12 @@ describe('sheetRuns', () => {
   });
 
   it('gives every facing its own identity, and a different subject a different one', () => {
-    const identities = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG).map((run) =>
-      sheetIdentity('CHARACTER', SUBJECT, run.output),
-    );
+    const identities = RIG_RUNS.map((run) => sheetIdentity('CHARACTER', SUBJECT, run.output));
     expect(new Set(identities).size).toBe(runsCount);
 
     // Editing the subject makes these different sheets of a different character, and progress
     // against them should not carry over.
-    const [first] = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
+    const [first] = RIG_RUNS;
     if (!first) throw new Error('the rig should split into runs.');
     expect(sheetIdentity('CHARACTER', { ...SUBJECT, species: 'Something else' }, first.output)).not.toBe(
       sheetIdentity('CHARACTER', SUBJECT, first.output),
@@ -194,11 +193,10 @@ describe('sheetRuns', () => {
     // The half a run used to leave unsaid: eight prompts that differed only in their facing, each
     // describing its own fifteen components as the whole deliverable. The ordinal has to be the row
     // number the drawer shows, so it is asserted here against the position in this very list.
-    const runs = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
 
-    for (const [index, run] of runs.entries()) {
+    for (const [index, run] of RIG_RUNS.entries()) {
       expect(run.promptText, run.assembly).toContain(
-        `**This is sheet ${String(index + 1)} of ${String(runs.length)} of one deliverable`,
+        `**This is sheet ${String(index + 1)} of ${String(RIG_RUNS.length)} of one deliverable`,
       );
       expect(run.promptText, run.assembly).toContain('### The sheets in this series');
     }
@@ -208,12 +206,11 @@ describe('sheetRuns', () => {
     // The figure the app produced and never stated. It is asserted against the prompts rather than
     // against an arithmetic of its own, because that is the claim the drawer makes when it shows it:
     // this is what you are about to ask for, across these runs.
-    const runs = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
-    const stated = runs.reduce((total, run) => total + statedCount(run.promptText), 0);
-    const [first] = runs;
+    const stated = RIG_RUNS.reduce((total, run) => total + statedCount(run.promptText), 0);
+    const [first] = RIG_RUNS;
     if (!first) throw new Error('the rig should split into runs.');
 
-    expect(batchComponentCount('CHARACTER', SUBJECT, runs, [])).toBe(stated);
+    expect(batchComponentCount('CHARACTER', SUBJECT, RIG_RUNS, [])).toBe(stated);
     // And it is emphatically not the per-sheet figure the studio reports beside the prompt, which is
     // the whole of the gap: "this sheet asks for 15" is true of all eight of them.
     expect(stated).toBeGreaterThan(statedCount(first.promptText));

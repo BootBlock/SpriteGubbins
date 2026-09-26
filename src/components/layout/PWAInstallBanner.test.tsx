@@ -43,7 +43,7 @@ describe('PWAInstallBanner', () => {
   });
 
   it('spends the offer once, taking the banner down before the browser’s dialogue is answered', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     // A dialogue the reader has not answered yet, and never will in this test.
     const prompt = vi.fn(() => new Promise<void>(() => undefined));
     renderOffering(prompt);
@@ -56,7 +56,7 @@ describe('PWAInstallBanner', () => {
   });
 
   it('says so when the browser will not open its dialogue', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderOffering(() => Promise.reject(new DOMException('The prompt has already been used.')));
 
     await user.click(screen.getByRole('button', { name: 'Install' }));
@@ -67,7 +67,7 @@ describe('PWAInstallBanner', () => {
   });
 
   it('lets the offer go on “Not now” without opening anything', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const prompt = vi.fn(() => Promise.resolve());
     renderOffering(prompt);
 

@@ -86,22 +86,19 @@ describe('precacheShape', () => {
 });
 
 describe('urlFor', () => {
-  it('refuses a shape no single hash can stand in for', () => {
-    // No substitution is faithful here, because `precacheShape` strips one hash and this shape
-    // asks for two. The guard is what turns that into a stopped suite rather than a fixture the
-    // contract quietly reads as a third shape.
-    expect(() => urlFor('assets/index-*-*.js')).toThrow(/reads back as/);
-  });
-
-  it('substitutes every placeholder, and names the whole URL when it refuses one', () => {
-    // The CodeQL alert this helper was fixed for, and the only assertion that can see it. The
-    // refusal above fires under a first-occurrence `replace` too — a URL with a literal `*` left
-    // in it does not read back as its shape either — so the throw alone separates nothing. What
-    // separates them is the URL the refusal names: `replaceAll` reports a name with no `*` in it,
-    // where `replace` reports one still carrying the second placeholder, which is a diagnostic a
-    // reader would have to see through.
+  it('refuses a shape no single hash can stand in for, naming the URL with every placeholder filled', () => {
+    // No substitution is faithful here, because `precacheShape` strips one hash and this shape asks
+    // for two. The guard is what turns that into a stopped suite rather than a fixture the contract
+    // quietly reads as a third shape.
+    //
+    // The URL the refusal names is the CodeQL alert this helper was fixed for, and the only thing
+    // that can see it. A first-occurrence `replace` refuses this shape too — a URL with a literal `*`
+    // left in it does not read back as its shape either — so the throw alone separates nothing.
+    // `replaceAll` reports a name with no `*` in it, where `replace` reports one still carrying the
+    // second placeholder, which is a diagnostic a reader would have to see through.
     expect(() => urlFor('assets/index-*-*.js')).toThrow(
-      `urlFor built assets/index-${STAND_IN_HASH}-${STAND_IN_HASH}.js from assets/index-*-*.js`,
+      `urlFor built assets/index-${STAND_IN_HASH}-${STAND_IN_HASH}.js from assets/index-*-*.js, ` +
+        'which precacheShape reads back as',
     );
   });
 });

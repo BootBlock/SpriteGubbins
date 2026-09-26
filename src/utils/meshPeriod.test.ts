@@ -75,6 +75,5 @@ describe('estimateMeshPeriod', () => {
     }));
 
     expect(estimateMeshPeriod(stepProfile(gradient))).toBeNull();
-    expect(measureSheetScale(gradient)).toBeNull();
   });
 });

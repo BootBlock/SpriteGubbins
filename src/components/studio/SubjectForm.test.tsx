@@ -64,7 +64,7 @@ describe('SubjectForm', () => {
   });
 
   it('folds a group away without losing what it is set to', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useSubjectStore.setState({ category: 'CHARACTER', subject: defaultSubjectFor('CHARACTER') });
     render(<SubjectForm />);
 
@@ -82,7 +82,7 @@ describe('SubjectForm', () => {
   });
 
   it('collapses and re-expands the whole panel from one control', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useSubjectStore.setState({ category: 'CHARACTER', subject: defaultSubjectFor('CHARACTER') });
     render(<SubjectForm />);
 

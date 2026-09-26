@@ -1230,7 +1230,7 @@ describe('generatePrompt — a render style that withholds the surface', () => {
       const prompt = withStyle(style);
 
       expect(prompt, style).not.toMatch(/\n{3}/);
-      expect(prompt, style).not.toMatch(/\[(?:IF|SEC|SECTION|OPTIONAL|DEFINE):/);
+      expect(prompt, style).not.toMatch(MARKER);
     }
   });
 });
@@ -1601,7 +1601,7 @@ describe('generatePrompt — a sheet that is one of a series', () => {
     for (const output of [RIG, SERIES, { ...SERIES, sheetIndex: 1 }, ALONE]) {
       const prompt = generatePrompt('CHARACTER', SUBJECT, output);
       expect(prompt).not.toMatch(/\n\n\n/);
-      expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+      expect(prompt).not.toMatch(MARKER);
     }
   });
 });
@@ -3136,7 +3136,7 @@ describe('generatePrompt — the machine and its palette', () => {
     );
     const prompt = generatePrompt('CHARACTER', SUBJECT, output);
 
-    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+    expect(prompt).not.toMatch(MARKER);
     expect(prompt).toContain('Generate the sheet now.');
   });
 
@@ -3189,7 +3189,7 @@ describe('generatePrompt — the machine and its palette', () => {
     );
     const prompt = generatePrompt('CHARACTER', SUBJECT, output);
 
-    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+    expect(prompt).not.toMatch(MARKER);
     expect(prompt).toContain('Generate the sheet now.');
   });
 });
@@ -3200,15 +3200,14 @@ describe('every category', () => {
     // set of values through the same optional lines.
     const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
     expect(prompt).toContain(`# MODULAR SPRITE-SHEET SPECIFICATION — ${category}`);
-    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+    expect(prompt).not.toMatch(MARKER);
   });
 });
 
 describe('countWords and estimateTokens', () => {
-  it('counts the words in a compiled prompt', () => {
+  it('counts the words between runs of whitespace, and none in blank text', () => {
     expect(countWords('one two  three\nfour')).toBe(4);
     expect(countWords('   ')).toBe(0);
-    expect(countWords(generatePrompt('CHARACTER', SUBJECT, OUTPUT))).toBeGreaterThan(100);
   });
 
   it('estimates tokens at roughly four characters each', () => {

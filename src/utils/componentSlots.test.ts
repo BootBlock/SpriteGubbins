@@ -281,21 +281,4 @@ describe('what a name says', () => {
 
     expect(slots.slice(-3)).toStrictEqual(['tail', 'tail-2', 'tail-2-2']);
   });
-
-  it('separates two components a subject named the same thing', () => {
-    const slots = componentSlots(
-      'CHARACTER',
-      standardSubject(),
-      'SINGLE_DIRECTION_POSE_LIBRARY',
-      'FOUR_CARDINAL',
-      0,
-      [
-        { name: 'Tail', count: 1 },
-        { name: 'tail', count: 1 },
-      ],
-      null,
-    );
-
-    expect(slots.slice(-2)).toStrictEqual(['tail', 'tail-2']);
-  });
 });

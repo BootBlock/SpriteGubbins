@@ -67,7 +67,7 @@ describe('TabSwitcher', () => {
   });
 
   it('moves to a view when it is pressed', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<TabSwitcher />);
 
     await user.click(viewButton('Projects'));
@@ -78,7 +78,7 @@ describe('TabSwitcher', () => {
   });
 
   it('slides one indicator to the current view’s slot, without measuring anything', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<TabSwitcher />);
     const pill = views().querySelector('[aria-hidden="true"] > span');
     if (!(pill instanceof HTMLElement)) throw new Error('the switcher should draw a selection pill.');

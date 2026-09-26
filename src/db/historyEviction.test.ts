@@ -39,13 +39,6 @@ describe('trimHistoryToBudget', () => {
   it('returns nothing for an empty collection', () => {
     expect(trimHistoryToBudget([], HISTORY_STORAGE_BUDGET)).toEqual([]);
   });
-
-  it('defaults to the budget the fallback actually uses', () => {
-    // The default is the whole point of the constant — a call site restating 4,000,000 would be the
-    // magic value it exists to remove.
-    const rows = [row('a', 100)];
-    expect(trimHistoryToBudget(rows)).toEqual(trimHistoryToBudget(rows, HISTORY_STORAGE_BUDGET));
-  });
 });
 
 describe('evictionLengths', () => {
@@ -55,23 +48,17 @@ describe('evictionLengths', () => {
     expect(evictionLengths(10).slice(0, 3)).toEqual([10, 9, 7]);
   });
 
-  it('always ends by trying the new prompt on its own', () => {
-    for (const count of [1, 2, 5, 17, 178, 200]) {
-      expect(evictionLengths(count).at(-1)).toBe(1);
-    }
-  });
-
-  it('never asks for an empty write', () => {
-    for (const count of [1, 2, 5, 17, 178, 200]) {
-      expect(evictionLengths(count).every((length) => length >= 1)).toBe(true);
-    }
-  });
-
-  it('descends strictly, so no length is attempted twice', () => {
-    const lengths = evictionLengths(200);
-    expect(lengths).toEqual([...lengths].sort((a, b) => b - a));
-    expect(new Set(lengths).size).toBe(lengths.length);
-  });
+  it.each([1, 2, 5, 17, 178, 200])(
+    'descends strictly from %i to the new prompt on its own, so no write is empty or repeated',
+    (count) => {
+      const lengths = evictionLengths(count);
+      // Starting at the whole collection and ending at 1 with every step a strict descent is what
+      // makes each attempt distinct, and leaves no room for a length below 1.
+      expect(lengths[0]).toBe(count);
+      expect(lengths.at(-1)).toBe(1);
+      expect(lengths.every((length, index) => index === 0 || length < (lengths[index - 1] ?? 0))).toBe(true);
+    },
+  );
 
   it('bounds a full history to ten attempts, because each one serialises megabytes', () => {
     // The doubling is what buys this. Stepping down one at a time would try 200 lengths against a

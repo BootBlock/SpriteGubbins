@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { retryRefusedStart } from '../scripts/retryRefusedStart.ts';
 import { shape } from './credentialShape.ts';
 
 /**
@@ -23,6 +24,15 @@ import { shape } from './credentialShape.ts';
  * `GIT_DIR` and `GIT_WORK_TREE`, which git honours wherever it runs. The inherited `GIT_*` variables
  * are dropped and the global and system configuration are switched off, so neither a hook's
  * environment nor the machine's own git settings can change what the history looks like.
+ *
+ * **Every process this file starts is one more chance for the machine to refuse to start it**, and
+ * under a full parallel run on Windows it sometimes does: a `git` the runner spawns fails with
+ * `spawnSync git EPERM` before it has run at all. The runner used to die of that uncaught error,
+ * leaving a stack trace on stderr rather than a report. So the history is walked once and read by both
+ * cases that ask about it, and the commit ids are read back in one `git log` rather than one
+ * `rev-parse` per commit. And every start, the runner's own git's and this suite's alike, goes
+ * through `retryRefusedStart` (`tests/retry-refused-start.test.ts`), which starts a refused process
+ * again rather than letting the refusal stand in for an answer.
  */
 
 const RUNNER = resolve(process.cwd(), 'scripts/secret-scan.ts');
@@ -36,15 +46,38 @@ let repo: string;
 let env: NodeJS.ProcessEnv;
 const commits: Record<string, string> = {};
 
+/** The runner's walk of the whole history the fixture builds, run once for the cases that read it. */
+let history: { status: number | null; stderr: string };
+
 function git(...args: string[]): string {
-  return execFileSync('git', args, { cwd: repo, env, encoding: 'utf8', stdio: 'pipe' }).trim();
+  return gitWithInput(undefined, ...args);
 }
 
-/** Commit everything in the work tree and remember the new commit's id under `name`. */
+/** {@link git}, with `input` on its standard input. */
+function gitWithInput(input: string | undefined, ...args: string[]): string {
+  return retryRefusedStart(() =>
+    execFileSync('git', args, {
+      cwd: repo,
+      env,
+      encoding: 'utf8',
+      stdio: 'pipe',
+      ...(input === undefined ? {} : { input }),
+    }),
+  ).trim();
+}
+
+/** Commit everything in the work tree, with `name` as the message its id is read back under. */
 function commit(name: string): void {
   git('add', '-A');
   git('commit', '-q', '--no-verify', '-m', name);
-  commits[name] = git('rev-parse', 'HEAD');
+}
+
+/** Remember every commit's id under its message, read back in one walk once the history is built. */
+function rememberCommits(): void {
+  for (const line of git('log', '--all', '--format=%H %s').split('\n')) {
+    const [id = '', ...subject] = line.split(' ');
+    commits[subject.join(' ')] = id;
+  }
 }
 
 /** The id of the commit remembered under `name`. */
@@ -59,7 +92,11 @@ function write(path: string, content: string | Uint8Array): void {
 }
 
 function scan(...args: string[]): { status: number | null; stderr: string } {
-  const run = spawnSync(process.execPath, [RUNNER, ...args], { env, encoding: 'utf8' });
+  const run = retryRefusedStart(() => {
+    const started = spawnSync(process.execPath, [RUNNER, ...args], { env, encoding: 'utf8' });
+    if (started.error) throw started.error;
+    return started;
+  });
   return { status: run.status, stderr: run.stderr };
 }
 
@@ -96,8 +133,7 @@ beforeAll(() => {
   git('checkout', '-q', 'main');
   write('notes.md', 'Main moved on.\n');
   commit('main moves');
-  git('merge', '-q', '--no-ff', '--no-edit', 'side');
-  commits['clean merge'] = git('rev-parse', 'HEAD');
+  git('merge', '-q', '--no-ff', '-m', 'clean merge', 'side');
 
   // A merge that adds a value of its own while it is being made.
   git('checkout', '-q', '-b', 'second-side');
@@ -117,6 +153,9 @@ beforeAll(() => {
   unlinkSync(join(repo, 'side.ts'));
   unlinkSync(join(repo, 'evil.ts'));
   commit('cleans up');
+
+  rememberCommits();
+  history = scan('--commits', `${idOf('base')}..HEAD`);
 }, 60_000);
 
 afterAll(() => {
@@ -125,17 +164,12 @@ afterAll(() => {
 
 describe('secret-scan --commits', () => {
   it('reads a clean tip as clean, which is the whole of what the tree pass can see', () => {
-    const emptyTree = execFileSync('git', ['hash-object', '-t', 'tree', '--stdin'], {
-      cwd: repo,
-      env,
-      encoding: 'utf8',
-      input: '',
-    }).trim();
+    const emptyTree = gitWithInput('', 'hash-object', '-t', 'tree', '--stdin');
     expect(scan('--diff', emptyTree).status).toBe(0);
   }, 60_000);
 
   it('reports each value at the commit that added it, however soon it was deleted', () => {
-    const { status, stderr } = scan('--commits', `${idOf('base')}..HEAD`);
+    const { status, stderr } = history;
     expect(status).toBe(1);
     expect(stderr).toContain('4 suspect entries');
     expect(stderr).toContain(`${idOf('adds')}: export const added = '${TOKEN}';`);
@@ -147,7 +181,10 @@ describe('secret-scan --commits', () => {
   }, 60_000);
 
   it('holds a clean merge to nothing, because the side it brought in answered already', () => {
-    expect(scan('--commits', `${idOf('base')}..HEAD`).stderr).not.toContain(idOf('clean merge'));
+    // Only worth asserting over a walk that reported at all: a runner that died before printing
+    // anything would hold every commit to nothing.
+    expect(history.stderr).toContain('4 suspect entries');
+    expect(history.stderr).not.toContain(idOf('clean merge'));
   }, 60_000);
 
   it('reads an empty range as clean', () => {

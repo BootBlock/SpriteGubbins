@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
 import type { SpriteBox } from '../../types/quantiser.ts';
@@ -62,28 +62,30 @@ describe('SpriteLabelOverlay', () => {
   });
 
   it('selects the sprite it is pressed on, and lets a second press let go', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
     const second = screen.getByRole('button', { name: '2 · arm-right' });
 
-    await userEvent.click(second);
+    await user.click(second);
     expect(useSpriteAssignmentStore.getState().selected).toStrictEqual({ x: 12, y: 2 });
 
-    await userEvent.click(second);
+    await user.click(second);
     expect(useSpriteAssignmentStore.getState().selected).toBeNull();
   });
 
   it('says which chip is selected as a pressed state, not only as a fill', async () => {
     // The fill is all a sighted reader gets. A screen reader hears the pressed state, and the
     // forced-colours rule in `index.css` paints `Highlight` on `[aria-pressed='true']` alone.
+    const user = userEvent.setup({ delay: null });
     show();
     const second = screen.getByRole('button', { name: '2 · arm-right' });
     expect(second).toHaveAttribute('aria-pressed', 'false');
 
-    await userEvent.click(second);
+    await user.click(second);
     expect(second).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: '1 · arm-left' })).toHaveAttribute('aria-pressed', 'false');
 
-    await userEvent.click(second);
+    await user.click(second);
     expect(second).toHaveAttribute('aria-pressed', 'false');
   });
 
@@ -111,6 +113,7 @@ describe('SpriteLabelOverlay', () => {
     // `preventDefault` and capturing the pointer, which suppresses the compatibility mouse events —
     // `click` among them. So a mouse press on a chip did nothing at all, while this suite's own
     // `userEvent.click` went on passing, because a synthetic click does not travel that path.
+    const user = userEvent.setup({ delay: null });
     const ancestor = vi.fn();
     const { edits } = useSpriteAssignmentStore.getState();
     render(
@@ -119,7 +122,7 @@ describe('SpriteLabelOverlay', () => {
       </div>,
     );
 
-    await userEvent.click(screen.getAllByRole('button', { name: '1 · arm-left' })[0] as HTMLElement);
+    await user.click(screen.getAllByRole('button', { name: '1 · arm-left' })[0] as HTMLElement);
 
     expect(ancestor).not.toHaveBeenCalled();
     expect(useSpriteAssignmentStore.getState().selected).toStrictEqual({ x: 2, y: 2 });
@@ -128,10 +131,11 @@ describe('SpriteLabelOverlay', () => {
   it('ignores a press that travelled, which is a pan and not a click', async () => {
     // The pane is panned by dragging the image and the scrollport captures the pointer, so a drag
     // beginning on a chip still ends as a `click` on it.
+    const user = userEvent.setup({ delay: null });
     show();
     const chip = screen.getByRole('button', { name: '1 · arm-left' });
 
-    await userEvent.pointer([
+    await user.pointer([
       { keys: '[MouseLeft>]', target: chip, coords: { clientX: 10, clientY: 10 } },
       { target: chip, coords: { clientX: 60, clientY: 34 } },
       { keys: '[/MouseLeft]', target: chip, coords: { clientX: 60, clientY: 34 } },
@@ -144,16 +148,18 @@ describe('SpriteLabelOverlay', () => {
     // A touch drag that lifts off the chip fires a `pointerup` here and no `click`, so the "that was
     // a drag" flag survives the gesture. Without the keyboard's own test it would then swallow the
     // next Enter on any chip in the layer.
+    //
+    // Dispatched by hand rather than through `user.pointer`, which follows a touch released on the
+    // chip with a `click` — and that click clears the flag, so the gesture this test is about never
+    // happens and the keyboard's own test goes unexercised.
+    const user = userEvent.setup({ delay: null });
     show();
     const chip = screen.getByRole('button', { name: '1 · arm-left' });
-    await userEvent.pointer([
-      { keys: '[TouchA>]', target: chip, coords: { clientX: 10, clientY: 10 } },
-      { target: chip, coords: { clientX: 80, clientY: 60 } },
-      { keys: '[/TouchA]', target: chip, coords: { clientX: 80, clientY: 60 } },
-    ]);
+    fireEvent.pointerDown(chip, { pointerId: 1, pointerType: 'touch', clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(chip, { pointerId: 1, pointerType: 'touch', clientX: 80, clientY: 60 });
 
     screen.getByRole('button', { name: '2 · arm-right' }).focus();
-    await userEvent.keyboard('{Enter}');
+    await user.keyboard('{Enter}');
 
     expect(useSpriteAssignmentStore.getState().selected).toStrictEqual({ x: 12, y: 2 });
   });

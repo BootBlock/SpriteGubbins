@@ -3,7 +3,7 @@ import { HARDWARE_PROFILE_IDS } from '../../types/hardware.ts';
 import type { HardwareProfile } from '../../types/hardware.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { machinePaletteFor } from '../palettes/index.ts';
-import { HARDWARE_PROFILE_CHOICES, HARDWARE_PROFILES, hardwareProfileFor } from './index.ts';
+import { HARDWARE_PROFILES, hardwareProfileFor } from './index.ts';
 
 /**
  * The hardware library's own contract, and the boundary between it and the palette library.
@@ -30,10 +30,6 @@ describe('the hardware library', () => {
 
   it.each(DEFINED)('$id carries its own id, so a lookup cannot return a mislabelled machine', (profile) => {
     expect(HARDWARE_PROFILES[profile.id]).toBe(profile);
-  });
-
-  it('offers exactly one choice per id, in the union’s order', () => {
-    expect(HARDWARE_PROFILE_CHOICES.map((choice) => choice.value)).toEqual([...HARDWARE_PROFILE_IDS]);
   });
 
   it.each(DEFINED)('$id names itself in prose the prompt can use', (profile) => {

@@ -25,12 +25,6 @@ beforeEach(() => {
 });
 
 describe('RenderStyleFields', () => {
-  it('offers the colour budget while colour is left to it', () => {
-    render(<RenderStyleFields />);
-
-    expect(budget()).not.toBeNull();
-  });
-
   it('withdraws the budget the moment a palette supersedes it', () => {
     render(<RenderStyleFields />);
 

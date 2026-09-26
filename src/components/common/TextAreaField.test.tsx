@@ -41,7 +41,7 @@ describe('TextAreaField', () => {
   });
 
   it('keeps the line breaks in what it is given', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.type(field(), '\n#405060');
@@ -50,7 +50,7 @@ describe('TextAreaField', () => {
   });
 
   it('hands every edit to the caller, down to an empty value', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.clear(field());

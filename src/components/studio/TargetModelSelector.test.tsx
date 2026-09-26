@@ -33,30 +33,22 @@ describe('TargetModelSelector', () => {
     expect(screen.getByText(model.description)).toBeInTheDocument();
   });
 
-  it('describes the select with the chosen target’s explanation, not with loose text beside it', () => {
+  it('describes the select with the chosen target’s explanation, and swaps it when the target changes', () => {
     // The association is the whole point of putting it in `SelectField` rather than in the panel: a
     // paragraph that merely follows the control says nothing, to a reader who cannot see the two
-    // together, about *which* option it is describing.
-    const midjourney = TARGET_MODELS.find((model) => model.id === 'MIDJOURNEY');
+    // together, about *which* option it is describing. The swap catches a description captured once
+    // at mount — which looks correct on first paint and goes stale on the first change, exactly as a
+    // mirrored derivation does.
+    //
     // Resolved before rendering, and thrown on rather than passed along: `toHaveAccessibleDescription`
     // called with `undefined` asserts only that *some* description exists, so a missing entry would
     // turn this into a test that passes for the wrong reason.
-    if (!midjourney) throw new Error('the table should carry an entry for Midjourney.');
-
-    useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, targetModel: midjourney.id } });
-    render(<TargetModelSelector />);
-
-    expect(selector()).toHaveAccessibleDescription(midjourney.description);
-  });
-
-  it('swaps the explanation when the target changes', () => {
-    // The failure this catches is a description captured once at mount — which looks correct on
-    // first paint and goes stale on the first change, exactly as a mirrored derivation does.
     const [first, second] = [TARGET_MODELS[0], TARGET_MODELS[1]];
     if (!first || !second) throw new Error('the table should offer at least two targets.');
 
     useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, targetModel: first.id } });
     render(<TargetModelSelector />);
+    expect(selector()).toHaveAccessibleDescription(first.description);
 
     act(() => {
       useOutputStore.getState().setOutputField('targetModel', second.id);

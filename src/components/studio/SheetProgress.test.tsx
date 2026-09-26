@@ -106,7 +106,7 @@ describe('SheetProgress', () => {
   it('names the sheet a step lands on', async () => {
     // What the step writes is `SheetStepButtons.test.tsx`'s. What is this strip's is that its label
     // follows, since a press leaves focus on a button whose own name has not changed.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SheetProgress />);
 
     await user.click(stepButton('Next sheet'));
@@ -137,7 +137,7 @@ describe('SheetProgress', () => {
     // the strip is indistinguishable from a constant — two mutations survive the test above:
     // reading `sheets[0].output` in place of `current.output`, and returning `isCopied(current) ? 1
     // : 0` in place of the filter. Stepping is what separates them.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SheetProgress />);
     const total = batch().sheets.length;
 

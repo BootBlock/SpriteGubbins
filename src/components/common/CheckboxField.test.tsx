@@ -39,7 +39,7 @@ describe('CheckboxField', () => {
   });
 
   it('says why it is unavailable, and keeps its place in the tab order to say it', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { checkbox } = renderCheckbox(REASON);
 
     expect(checkbox).toHaveAttribute('aria-disabled', 'true');

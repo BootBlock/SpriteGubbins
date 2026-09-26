@@ -55,7 +55,7 @@ describe('FrameAlignmentControls', () => {
 
   it('offers the tolerance only once something is being moved', async () => {
     show();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.selectOptions(screen.getByRole('combobox', { name: /Frame alignment/ }), 'CHECK');
     expect(screen.queryByRole('slider', { name: /Drift tolerance/ })).not.toBeInTheDocument();

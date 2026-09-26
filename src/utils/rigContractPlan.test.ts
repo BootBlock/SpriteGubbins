@@ -51,7 +51,8 @@ describe('rigContractPlan', () => {
   it('draws one component per slot, named exactly as the engine names it', () => {
     // Verbatim, including a spelling this app would not have chosen: `pack_piece_name` is the key
     // the engine's importer looks a returned piece up by, so a tidier name is a piece with no
-    // socket — and the hand-maintained mapping straight back.
+    // socket — and the hand-maintained mapping straight back. The two names and nothing else, so this
+    // is also what fails if the shipped fifteen were kept and the contract's appended to them.
     const plan = rigContractPlan(rigSheet(), CONTRACT);
 
     expect(planSlots(plan)).toEqual(['pelvis', 'left-upper-arm']);
@@ -61,17 +62,6 @@ describe('rigContractPlan', () => {
     const reversed: RigContract = { ...CONTRACT, slots: [...CONTRACT.slots].reverse() };
 
     expect(planSlots(rigContractPlan(rigSheet(), reversed))).toEqual(['left-upper-arm', 'pelvis']);
-  });
-
-  it('replaces the shipped inventory rather than adding to it', () => {
-    // The shipped rig plan draws fifteen humanoid pieces, as five entries of three in one group. A
-    // contract that appended would contract for seventeen components and list two of them twice —
-    // and the single group is why keeping the first one's closing prose keeps all of it.
-    const before = planSlots(rigSheet());
-    const after = planSlots(rigContractPlan(rigSheet(), CONTRACT));
-
-    expect(before.length).toBeGreaterThan(after.length);
-    expect(after).toHaveLength(CONTRACT.slots.length);
   });
 
   it('leaves everything the contract has no opinion about', () => {
@@ -87,6 +77,7 @@ describe('rigContractPlan', () => {
   });
 
   it('keeps the group’s closing prose, which is about rig pieces rather than about these pieces', () => {
+    // The shipped rig plan is a single group, which is why keeping the first one's prose keeps all of it.
     const plan = rigSheet();
     const overridden = rigContractPlan(plan, CONTRACT);
 

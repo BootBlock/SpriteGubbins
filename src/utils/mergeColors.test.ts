@@ -59,7 +59,6 @@ describe('mergeColors', () => {
 
   it('leaves transparency alone and keeps a repainted pixel’s own alpha', () => {
     const sheet = imageFrom(6, 6, (x, y) => {
-      void y;
       if (x === 0) return { r: 0, g: 0, b: 0, a: 0 };
       return (x + y) % 2 === 0 ? { ...GREEN, a: 254 } : NEAR;
     });

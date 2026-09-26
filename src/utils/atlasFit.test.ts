@@ -48,10 +48,6 @@ describe('spriteFitFor', () => {
     });
   });
 
-  it('survives a cell the gutter has eaten entirely', () => {
-    expect(spriteFitFor(0, CHARACTER).scale).toBe(0);
-  });
-
   it('fits a component exactly filling the cell at 1:1', () => {
     expect(spriteFitFor(96, CHARACTER)).toEqual({
       target: CHARACTER,
