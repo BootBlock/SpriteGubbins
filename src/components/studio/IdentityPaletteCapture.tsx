@@ -2,6 +2,7 @@ import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useFileDropTarget } from '../../hooks/useFileDropTarget.ts';
 import { useIdentityPaletteCapture } from '../../hooks/useIdentityPaletteCapture.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
+import { identityPaletteRequests } from '../../stores/identityPaletteRequests.ts';
 import { FilePickerField } from '../common/FilePickerField.tsx';
 import { QuantisedSheetCaptureButton } from './QuantisedSheetCaptureButton.tsx';
 
@@ -34,7 +35,7 @@ import { QuantisedSheetCaptureButton } from './QuantisedSheetCaptureButton.tsx';
  */
 export function IdentityPaletteCapture() {
   const capture = useIdentityPaletteCapture();
-  const acceptFile = useImageFile(capture);
+  const acceptFile = useImageFile(capture, identityPaletteRequests);
   const { isDraggedOver, dropHandlers } = useFileDropTarget(acceptFile);
 
   return (

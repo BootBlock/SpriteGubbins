@@ -8,6 +8,7 @@ import { useImagePaste } from '../../hooks/useImagePaste.ts';
 import { useQuantiseTuning } from '../../hooks/useQuantiseTuning.ts';
 import { useQuantiseWork } from '../../hooks/useQuantiseWork.ts';
 import { useSuggestedGrid } from '../../hooks/useSuggestedGrid.ts';
+import { quantiseSheetRequests } from '../../stores/quantiseSheetRequests.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { borderKeyShare } from '../../utils/borderKeyShare.ts';
@@ -79,7 +80,7 @@ export function QuantiseTab() {
   const setSource = useQuantiseStore((state) => state.setSource);
   const clear = useQuantiseStore((state) => state.clear);
 
-  const acceptFile = useImageFile(setSource);
+  const acceptFile = useImageFile(setSource, quantiseSheetRequests);
   // Both claimed for the whole page, which is right here and nowhere else: this tab's only input is
   // an image, so a paste or a drop anywhere in it is unambiguously meant for the drop zone. The two
   // hooks stay apart because the gestures are not alike — a drop has to say where it will land while

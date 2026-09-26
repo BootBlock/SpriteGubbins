@@ -8,6 +8,7 @@ import { currentDials, openHistory, recordDials, redoDials, undoDials } from '..
 import { abandonSweep } from '../workers/autoTuneSession.ts';
 import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
 import { quantiseDialSetters, type QuantiseDialSetters } from './quantiseDialSetters.ts';
+import { quantiseSheetRequests } from './quantiseSheetRequests.ts';
 import { useAutoTuneStore } from './useAutoTuneStore.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 import { useSpriteAssignmentStore } from './useSpriteAssignmentStore.ts';
@@ -259,6 +260,9 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
     // would arrive already keyed by a decision made about the last one. A stack left behind would be
     // stranger still: a way back to positions belonging to a sheet that is no longer here.
     clear: () => {
+      // First, so a sheet still decoding is dropped when it settles rather than arriving after the
+      // reader cleared the tab. See `quantiseSheetRequests`.
+      quantiseSheetRequests.supersede();
       set({ ...EMPTY });
       // `reset` rather than `forget`, and the pair below is why: the thread goes with the sheet — it
       // is holding the only other copy of the image, plus whatever a transform still running had

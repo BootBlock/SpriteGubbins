@@ -3,6 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { MAX_IMAGE_PIXELS } from '../constants/quantiser.ts';
 import { useUIStore } from '../stores/useUIStore.ts';
 import type { ImportedImage } from '../types/quantiser.ts';
+import { createRequestSequence } from '../utils/requestSequence.ts';
 import { useImageFile } from './useImageFile.ts';
 
 /**
@@ -49,7 +50,8 @@ function outOfMemory(): never {
 
 function accept(file: File) {
   const onImport = vi.fn<(imported: ImportedImage) => void>();
-  const { result } = renderHook(() => useImageFile(onImport));
+  const requests = createRequestSequence();
+  const { result } = renderHook(() => useImageFile(onImport, requests));
   act(() => {
     result.current(file);
   });
@@ -126,7 +128,7 @@ describe('useImageFile', () => {
 
   it('does nothing at all when a picker is dismissed', () => {
     const onImport = vi.fn<(imported: ImportedImage) => void>();
-    const { result } = renderHook(() => useImageFile(onImport));
+    const { result } = renderHook(() => useImageFile(onImport, createRequestSequence()));
 
     act(() => {
       result.current(null);
@@ -135,4 +137,65 @@ describe('useImageFile', () => {
     expect(useUIStore.getState().toastMessage).toBeNull();
     expect(onImport).not.toHaveBeenCalled();
   });
+
+  it('keeps the file chosen last when an earlier one finishes decoding after it', async () => {
+    const decodes = holdDecodes();
+    stubContext(() => new ImageData(1, 1));
+    const onImport = vi.fn<(imported: ImportedImage) => void>();
+    const { result } = renderHook(() => useImageFile(onImport, createRequestSequence()));
+
+    act(() => {
+      result.current(new File([], 'mistake.png', { type: 'image/png' }));
+      result.current(SHEET);
+    });
+    await act(async () => {
+      decodes.release('armour.png');
+      decodes.release('mistake.png');
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(onImport).toHaveBeenCalledOnce();
+    });
+    expect(onImport.mock.lastCall?.[0].name).toBe('armour.png');
+  });
+
+  it('says nothing about a file the reader has since moved on from, even one that failed', async () => {
+    const decodes = holdDecodes();
+    const onImport = vi.fn<(imported: ImportedImage) => void>();
+    const requests = createRequestSequence();
+    const { result } = renderHook(() => useImageFile(onImport, requests));
+
+    act(() => {
+      result.current(SHEET);
+    });
+    requests.supersede();
+    await act(async () => {
+      decodes.fail('armour.png');
+      await Promise.resolve();
+    });
+
+    expect(useUIStore.getState().toastMessage).toBeNull();
+    expect(onImport).not.toHaveBeenCalled();
+  });
 });
+
+/** Decodes held open per file, so a test can settle them in whichever order it needs. */
+function holdDecodes() {
+  const pending = new Map<string, { resolve: (bitmap: object) => void; reject: (error: Error) => void }>();
+  vi.stubGlobal(
+    'createImageBitmap',
+    (file: File) =>
+      new Promise((resolve, reject) => {
+        pending.set(file.name, { resolve, reject });
+      }),
+  );
+  return {
+    release: (name: string) => {
+      pending.get(name)?.resolve({ width: 1, height: 1, close: () => undefined });
+    },
+    fail: (name: string) => {
+      pending.get(name)?.reject(new Error('unsupported'));
+    },
+  };
+}
