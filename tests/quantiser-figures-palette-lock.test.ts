@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { CORPUS_SHEETS, loadCorpus, loadCorpusSheet } from './sheetCorpus.ts';
+import { CORPUS_SHEETS, loadCorpus } from './sheetCorpus.ts';
 import { calibrationSettings } from './calibrationSettings.ts';
 import { COLOR_MERGE_RANGE, DEFAULT_PALETTE_SNAP, PALETTE_SNAP_RANGE } from '../src/constants/quantiser.ts';
 import { colorHistogram, fromHex, packColor, unpackColor } from '../src/utils/imageData.ts';
@@ -19,16 +19,28 @@ import type { QuantiseSettings, Rgba } from '../src/types/quantiser.ts';
  * ceiling and each lock's distance from black are taken from all eight.
  */
 describe('the palette lock — the two populations the snap distance is set from', () => {
+  let corpus: ReadonlyMap<string, ImageData>;
   let sheet: ImageData;
 
+  /**
+   * The whole corpus, and the reference sheet as the corpus's own copy of it rather than a second
+   * decoding — so the lock taken from `sheet` is the one the corpus survey below reads for it too.
+   */
   beforeAll(async () => {
-    sheet = await loadCorpusSheet('armour.png');
-  }, 120_000);
+    corpus = await loadCorpus();
+    sheet = sheetNamed('armour.png');
+  }, 300_000);
+
+  const sheetNamed = (name: string): ImageData => {
+    const image = corpus.get(name);
+    if (image === undefined) throw new Error(`${name} is missing from the corpus`);
+    return image;
+  };
 
   /**
    * The lock both docblocks are stated against: the ink-weighted reading's own colours.
    *
-   * Taken once per image: four cases read the reference sheet's lock, and each is a whole pass of
+   * Taken once per image: five cases read the reference sheet's lock, and each is a whole pass of
    * the pipeline. `quantiseImage` is pure, so a shared lock is the same lock.
    */
   const locks = new WeakMap<ImageData, readonly Rgba[]>();
@@ -213,18 +225,6 @@ describe('the palette lock — the two populations the snap distance is set from
   }, 300_000);
 
   describe('over the corpus', () => {
-    let corpus: ReadonlyMap<string, ImageData>;
-
-    beforeAll(async () => {
-      corpus = await loadCorpus();
-    }, 300_000);
-
-    const sheetNamed = (name: string): ImageData => {
-      const image = corpus.get(name);
-      if (image === undefined) throw new Error(`${name} is missing from the corpus`);
-      return image;
-    };
-
     it('finds colours this sheet has no hue for inside the drift, from 17.79', () => {
       const lock = locateEntries(lockFrom(sheet));
 
