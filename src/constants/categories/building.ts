@@ -33,8 +33,10 @@ export const BUILDING: CategoryDefinition = {
         'Sci-Fi Landing Pad',
         'Tavern Inn',
         'Alchemist Lab',
-        // A tree and a distance band are environment art, which is what this category's second half of
-        // its name is for — the field labels read as architecture and still fit both.
+        // A tree is environment art, which is what the second half of this category's name is for, and
+        // the field labels read as architecture and still fit it. A parallax band is not BUILDING's:
+        // BACKGROUND draws the bands and no BUILDING sheet does. It stays offered only until issue #290
+        // removes it with `Far Band ×1, Middle Band ×1, Near Band ×1`.
         'Broadleaf Canopy Tree',
         'Parallax Background Band',
         'Windmill / Water Mill',

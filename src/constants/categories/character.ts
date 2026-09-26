@@ -471,9 +471,10 @@ export const CHARACTER: CategoryDefinition = {
         'Antler Rack ×2',
         'Floating Rune Sigil ×3',
         'Mainspring Escapement ×1, Satchel ×1',
-        // The portrait case: a dialogue sheet's components are the *readings* of one face, and this is
-        // the field that makes the count and the inventory say so.
-        'Neutral Expression ×1, Joyful ×1, Angry ×1, Afraid ×1, Wounded ×1, Sceptical ×1',
+        // `Neutral Expression ×1, Joyful ×1, Angry ×1, Afraid ×1, Wounded ×1, Sceptical ×1` was here
+        // (issue #428). It ordered six readings of one face as extra slots, each drawn at every facing
+        // the sheet covers, beside a body no reading changes. A sheet of one face's readings is what
+        // PORTRAIT draws.
         'Beast Ear ×2, Bushy Tail ×1',
         'Ivy Vine Wrap ×2',
         'Mechadendrite Arm ×3',
