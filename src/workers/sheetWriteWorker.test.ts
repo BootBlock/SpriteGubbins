@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { decodeAseprite } from '../test/decodeAseprite.ts';
+import { decodePng } from '../test/decodePng.ts';
 import { imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { sheetWriteJob } from '../test/sheetWriteJob.ts';
@@ -45,9 +46,13 @@ describe('write', () => {
 
     expect(posted).toHaveLength(1);
     const reply = posted[0];
-    expect(reply?.kind).toBe('written');
-    // 3 × 2 at a factor of 4 is 12 × 8, and one colour is one palette entry whatever the size.
-    expect(reply?.kind === 'written' && reply.file.format === 'PNG' && reply.file.paletteEntries).toBe(1);
+    expect(reply?.kind === 'written' && reply.file.format).toBe('PNG');
+    if (reply?.kind !== 'written') return;
+    // One colour is one palette entry whatever the size, so it is the decoded file that says the
+    // factor was applied: 3 × 2 at a factor of 4 is 12 × 8.
+    expect(reply.file.format === 'PNG' && reply.file.paletteEntries).toBe(1);
+    const decoded = await decodePng(reply.file.bytes);
+    expect([decoded.width, decoded.height]).toEqual([12, 8]);
   });
 
   it('writes the format it was asked for, with the boxes magnified beside the sheet', async () => {

@@ -30,24 +30,19 @@ afterEach(() => {
 });
 
 describe('openSqliteBackend', () => {
-  it('reports an absent database as the refusal the fallback answers', async () => {
-    const opening = openSqliteBackend();
-    thread().handshake(false, 'ABSENT');
+  // A database held by another tab is carried through as its own refusal rather than flattened to a
+  // boolean: it is the one refusal the localStorage fallback is the wrong answer to, and
+  // `database.ts` cannot tell it apart from an absent database unless it arrives distinguished.
+  it.each(['ABSENT', 'HELD_ELSEWHERE'] as const)(
+    'carries the worker’s %s refusal through as its own, and ends the thread',
+    async (refusal) => {
+      const opening = openSqliteBackend();
+      thread().handshake(false, refusal);
 
-    expect(await opening).toEqual({ kind: 'REFUSED', refusal: 'ABSENT' });
-    expect(thread().terminated).toBe(true);
-  });
-
-  it('carries a database held by another tab through as its own refusal', async () => {
-    // The whole point of the reason being here rather than being flattened to a boolean: this is
-    // the one refusal the localStorage fallback is the wrong answer to, and `database.ts` cannot
-    // tell it apart from the others unless it arrives distinguished.
-    const opening = openSqliteBackend();
-    thread().handshake(false, 'HELD_ELSEWHERE');
-
-    expect(await opening).toEqual({ kind: 'REFUSED', refusal: 'HELD_ELSEWHERE' });
-    expect(thread().terminated).toBe(true);
-  });
+      expect(await opening).toEqual({ kind: 'REFUSED', refusal });
+      expect(thread().terminated).toBe(true);
+    },
+  );
 
   it('reports a thread that died during the handshake as absent, not as held', async () => {
     // A worker that never reached its handshake carries no evidence about *why*, and only the

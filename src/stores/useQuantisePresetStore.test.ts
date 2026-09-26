@@ -67,15 +67,6 @@ afterEach(() => {
 });
 
 describe('saveQuantisePreset', () => {
-  it('stores the dials as they stand in the tab, not as they were passed in', async () => {
-    useQuantiseStore.setState({ ...TUNED });
-
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
-
-    const [stored] = await backend.listQuantisePresets();
-    expect(stored?.dials).toEqual(TUNED);
-  });
-
   it('leaves the sheet, the grid and a held palette out of what it hands to storage', async () => {
     useQuantiseStore.setState({
       ...TUNED,

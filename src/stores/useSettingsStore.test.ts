@@ -117,7 +117,6 @@ describe('useSettingsStore — changing a preference', () => {
     await useSettingsStore.getState().updateSettings({ accentHue: 'azure' });
 
     expect(useSettingsStore.getState().settings.accentHue).toBe('azure');
-    expect(useUIStore.getState().toastMessage).toMatch(/could not be saved/i);
     // And nothing more: a refusal with no cause the app can name gets the sentence alone.
     expect(useUIStore.getState().toastMessage).toBe('Applied, but that setting could not be saved');
   });

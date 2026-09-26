@@ -56,25 +56,46 @@ function harness() {
   return { acceptFile, ...rendered };
 }
 
+/** Where a refused drag lands: the page itself, or one of the harness's three inputs by its name. */
+function landing(target: 'page' | 'field' | 'locked' | 'dial'): Element {
+  if (target === 'page') return document.body;
+  return screen.getByRole(target === 'dial' ? 'slider' : 'textbox', { name: target });
+}
+
 describe('useFileDropGuard', () => {
-  it('refuses a file dragged over anywhere the app draws no target', () => {
+  // Every case here is a drag whose default action would navigate the page away — to the file, or
+  // to the link — over something that will not take it. Each is cancelled, and each is answered
+  // with `'none'`, on the drop as well as the drag: the model reads the drop's value back as what
+  // the drag source is told happened, and the inherited `'copy'` would report a copy nothing did.
+  //
+  // A field is no exception for a file, which navigates from there just as it does anywhere else.
+  // Nor is a read-only field for a link: `NumberField` renders its unavailable state as `readOnly`
+  // and keeps the control in the tab order, so it is a box the Quantise tab really shows and a drag
+  // can really land on. A slider is a control with nowhere to put a link at all.
+  it.each([
+    { what: 'a file dragged over the page', type: 'dragover', types: ['Files'], target: 'page' },
+    { what: 'a file dropped on the page', type: 'drop', types: ['Files'], target: 'page' },
+    {
+      what: 'a link dragged over the page',
+      type: 'dragover',
+      types: ['text/uri-list', 'text/plain'],
+      target: 'page',
+    },
+    { what: 'a link dropped on the page', type: 'drop', types: ['text/uri-list'], target: 'page' },
+    { what: 'a file dragged into a field', type: 'dragover', types: ['Files'], target: 'field' },
+    {
+      what: 'a link dragged onto a read-only field',
+      type: 'dragover',
+      types: ['text/uri-list'],
+      target: 'locked',
+    },
+    { what: 'a link dragged onto a slider', type: 'dragover', types: ['text/uri-list'], target: 'dial' },
+  ] as const)('refuses $what', ({ type, types, target }) => {
     harness();
-    const { event, transfer } = dragEvent('dragover', ['Files']);
+    const { event, transfer } = dragEvent(type, types);
 
-    fireEvent(document.body, event);
+    fireEvent(landing(target), event);
 
-    expect(event.defaultPrevented).toBe(true);
-    expect(transfer.dropEffect).toBe('none');
-  });
-
-  it('cancels a stray drop as well, so a delivered one still navigates nowhere', () => {
-    harness();
-    const { event, transfer } = dragEvent('drop', ['Files']);
-
-    fireEvent(document.body, event);
-
-    // Set on the drop too: the model reads it back as what the drag source is told happened, and
-    // the inherited `'copy'` would report a copy nothing performed.
     expect(event.defaultPrevented).toBe(true);
     expect(transfer.dropEffect).toBe('none');
   });
@@ -115,62 +136,6 @@ describe('useFileDropGuard', () => {
     // for, and `'copy'` is left as it arrived so the cursor still says the field will take it.
     expect(event.defaultPrevented).toBe(false);
     expect(transfer.dropEffect).toBe('copy');
-  });
-
-  it('refuses a link dragged onto anything that cannot use it, which would navigate the page away', () => {
-    harness();
-    const { event, transfer } = dragEvent('dragover', ['text/uri-list', 'text/plain']);
-
-    fireEvent(document.body, event);
-
-    expect(event.defaultPrevented).toBe(true);
-    expect(transfer.dropEffect).toBe('none');
-  });
-
-  it('cancels a link drop as well, so a delivered one navigates nowhere', () => {
-    harness();
-    const { event, transfer } = dragEvent('drop', ['text/uri-list']);
-
-    fireEvent(document.body, event);
-
-    expect(event.defaultPrevented).toBe(true);
-    expect(transfer.dropEffect).toBe('none');
-  });
-
-  it('refuses a file dragged into a field, which navigates just as it does anywhere else', () => {
-    harness();
-    const field = screen.getByRole('textbox', { name: 'field' });
-    const sheet = new File([new Uint8Array([1])], 'sheet.png', { type: 'image/png' });
-    const { event, transfer } = dragEvent('dragover', ['Files'], sheet);
-
-    fireEvent(field, event);
-
-    expect(event.defaultPrevented).toBe(true);
-    expect(transfer.dropEffect).toBe('none');
-  });
-
-  it('refuses a link dragged onto a read-only field, which will not take it either', () => {
-    harness();
-    const locked = screen.getByRole('textbox', { name: 'locked' });
-    const { event, transfer } = dragEvent('dragover', ['text/uri-list']);
-
-    fireEvent(locked, event);
-
-    // `NumberField` renders its unavailable state as `readOnly` and keeps the control in the tab
-    // order, so this is a box the Quantise tab really shows and a drag can really land on.
-    expect(event.defaultPrevented).toBe(true);
-    expect(transfer.dropEffect).toBe('none');
-  });
-
-  it('refuses a link dragged onto a slider, which is a control with nowhere to put it', () => {
-    harness();
-    const dial = screen.getByRole('slider', { name: 'dial' });
-    const { event, transfer } = dragEvent('dragover', ['text/uri-list']);
-
-    fireEvent(dial, event);
-
-    expect(event.defaultPrevented).toBe(true);
-    expect(transfer.dropEffect).toBe('none');
   });
 
   it('leaves a drag carrying no transfer at all alone', () => {

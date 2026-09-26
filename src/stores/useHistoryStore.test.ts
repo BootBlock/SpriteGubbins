@@ -73,9 +73,16 @@ describe('addLog', () => {
     expect(useHistoryStore.getState().historyLogs.map((log) => log.promptText)).toEqual(['newer', 'older']);
   });
 
-  it('writes through to storage', async () => {
-    await useHistoryStore.getState().addLog(entry());
-    await expect(backend.listHistoryLogs()).resolves.toHaveLength(1);
+  it('writes the entry through to storage, with the studio state a restore reads back', async () => {
+    const creature = { ...defaultSubjectFor('CREATURE'), species: 'Mechanical Automaton' };
+    await useHistoryStore.getState().addLog(entry({ category: 'CREATURE', subject: creature }));
+
+    // Read back from the backend rather than from the store, so what is asserted is what the row
+    // actually holds — the studio state has to survive being serialised into the payload columns.
+    const stored = await backend.listHistoryLogs();
+    expect(stored).toHaveLength(1);
+    expect(stored[0]?.subject).toEqual(creature);
+    expect(stored[0]?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
   });
 
   it('reports a failed write and shows nothing that was not stored', async () => {
@@ -144,17 +151,6 @@ describe('restoreLog', () => {
     expect(useOutputStore.getState().output.targetModel).toBe('MIDJOURNEY');
     expect(useUIStore.getState().isHistoryModalOpen).toBe(false);
     expect(useUIStore.getState().activeTab).toBe('studio');
-  });
-
-  it('restores state that survived a round trip through storage', async () => {
-    const creature = { ...defaultSubjectFor('CREATURE'), species: 'Mechanical Automaton' };
-    await useHistoryStore.getState().addLog(entry({ category: 'CREATURE', subject: creature }));
-
-    // Read back from the backend rather than from the store, so what is asserted is what the row
-    // actually holds — the studio state has to survive being serialised into the payload columns.
-    const [stored] = await backend.listHistoryLogs();
-    expect(stored?.subject).toEqual(creature);
-    expect(stored?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
   });
 });
 

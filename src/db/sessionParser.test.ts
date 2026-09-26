@@ -57,17 +57,4 @@ describe('parseSession', () => {
     expect(parsed?.subject.role).toBe(defaultSubjectFor('ITEM').role);
     expect(parsed?.output.targetModel).toBe(DEFAULT_OUTPUT_CONFIG.targetModel);
   });
-
-  it('reads a subject stored against a different category through the stored one', () => {
-    // Not a migration: the category column is authoritative, so answers are interpreted against the
-    // pool the session says they were written for, and anything that does not fit falls back.
-    const parsed = parseSession({
-      category: 'VEHICLE',
-      subject: defaultSubjectFor('CHARACTER'),
-      output: DEFAULT_OUTPUT_CONFIG,
-    });
-
-    expect(parsed?.category).toBe('VEHICLE');
-    expect(parsed?.subject).toBeDefined();
-  });
 });

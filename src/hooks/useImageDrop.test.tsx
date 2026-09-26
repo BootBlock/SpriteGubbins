@@ -140,22 +140,13 @@ describe('useImageDrop', () => {
     expect(acceptFile).toHaveBeenCalledWith(SHEET);
   });
 
-  it('reports a file over the window while one is in the air', async () => {
+  it('reports a file over the window, and holds the veil for a frame after a `dragleave`', async () => {
     const { tab } = harness();
 
     dispatch(() => {
       fireEvent(document.body, dragEvent('dragenter', ['Files']).event);
     });
-
     expect(tab).toHaveAttribute('data-over', 'true');
-  });
-
-  it('holds the veil for a frame after a `dragleave`, then clears it', async () => {
-    const { tab } = harness();
-
-    dispatch(() => {
-      fireEvent(document.body, dragEvent('dragenter', ['Files']).event);
-    });
     dispatch(() => {
       fireEvent(document.body, dragEvent('dragleave', ['Files']).event);
     });

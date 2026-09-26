@@ -19,13 +19,13 @@ import { useScrollableRegion } from './useScrollableRegion.ts';
  */
 let deliverObservation: () => void = () => undefined;
 
-class StubResizeObserver {
+class StubResizeObserver implements ResizeObserver {
   static constructed = 0;
   static disconnected = 0;
   constructor(private readonly callback: ResizeObserverCallback) {
     StubResizeObserver.constructed += 1;
     deliverObservation = () => {
-      this.callback([], this as unknown as ResizeObserver);
+      this.callback([], this);
     };
   }
   observe() {
