@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { imageFrom } from '../test/images.ts';
+import { createImage } from './imageData.ts';
 import { targetSizeGrid } from './targetSizeGrid.ts';
 
-/** Only the dimensions matter here, so every pixel can be the same colour. */
+/** Only the dimensions matter here, so the pixels are left as allocated rather than painted. */
 function sheet(width: number, height: number): ImageData {
-  return imageFrom(width, height, () => ({ r: 1, g: 2, b: 3, a: 255 }));
+  return createImage(width, height);
 }
 
 describe('targetSizeGrid', () => {

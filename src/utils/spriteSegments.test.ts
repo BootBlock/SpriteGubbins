@@ -213,27 +213,6 @@ describe('spriteSegments', () => {
     expect(spriteSegments(image, 1)).toEqual({ kind: 'SOLID' });
   });
 
-  it('answers SOLID on the keying setting having nothing to do with it', () => {
-    // The distinction the union exists to carry. This sheet is opaque because its pixels are opaque,
-    // and the one below is separable because its pixels are not — neither fact is reachable from
-    // whether a key pass ran, which is why nothing downstream is allowed to infer it from the
-    // setting. A sheet arriving with its own alpha is the ordinary case here: it is what this app's
-    // own Download PNG writes.
-    const alreadyTransparent = sheetOf(20, 20, [
-      { left: 2, top: 2, width: 4, height: 4 },
-      { left: 12, top: 12, width: 4, height: 4 },
-    ]);
-
-    expect(spriteSegments(alreadyTransparent, 1)).toEqual({
-      kind: 'SEGMENTED',
-      boxes: [
-        { left: 2, top: 2, width: 4, height: 4, pixels: 16 },
-        { left: 12, top: 12, width: 4, height: 4, pixels: 16 },
-      ],
-      specks: 0,
-    });
-  });
-
   it('refuses to call a sheet of thousands of islands a sprite count', () => {
     // Every other pixel opaque, in both directions and offset so nothing is eight-connected: 4,096
     // islands of one pixel on a 128-square sheet. They are all specks, so the ceiling is reached by

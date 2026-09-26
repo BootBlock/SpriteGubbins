@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
 import {
   absentOptionFor,
@@ -85,17 +86,44 @@ function pooledValue(category: SubjectCategory, key: DeclinableFieldKey): string
 }
 
 describe('section 1 excepts from its paint rule exactly what section 4 draws', () => {
+  const SUBJECT_SECTIONS = new Map<string, string>();
+
+  /**
+   * Section 1 of one sheet, compiled with the clothing value and additional anatomy given — once,
+   * however many of the sweeps below read it.
+   *
+   * The three sweeps compile the same sheets from overlapping subjects: the paint-rule sweep walks
+   * both values of each field, and the other two each take one of its corners. Sharing the compile
+   * leaves each sweep reading exactly the section it read before, at a third less work.
+   */
+  function subjectSectionAt(
+    category: SubjectCategory,
+    { subject, mode, directions, sheetIndex }: ReturnType<typeof sheetsOf>[number],
+    clothing: string,
+    additional: string,
+  ): string {
+    const key = [category, subject.anatomy, mode, directions, String(sheetIndex), clothing, additional].join(
+      '|',
+    );
+    const cached = SUBJECT_SECTIONS.get(key);
+    if (cached !== undefined) return cached;
+    const prompt = generatePrompt(
+      category,
+      { ...subject, clothing, additional_anatomy: additional },
+      { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
+    );
+    const section = sectionOf(prompt, 'SUBJECT DEFINITION');
+    SUBJECT_SECTIONS.set(key, section);
+    return section;
+  }
+
   it.each(SUBJECT_CATEGORIES)('holds on every %s sheet', (category) => {
     const label = fieldLabelFor(category, 'clothing');
     const clothing = pooledValue(category, 'clothing');
 
-    for (const { subject, mode, directions, sheetIndex, plan } of sheetsOf(category)) {
-      const prompt = generatePrompt(
-        category,
-        { ...subject, clothing },
-        { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
-      );
-      const subjectSection = sectionOf(prompt, 'SUBJECT DEFINITION');
+    for (const sheet of sheetsOf(category)) {
+      const { mode, directions, sheetIndex, plan } = sheet;
+      const subjectSection = subjectSectionAt(category, sheet, clothing, NO_ADDITIONAL_ANATOMY);
       const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
 
       expect(subjectSection, where).toContain(`- ${label}: ${clothing}`);
@@ -109,13 +137,8 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
     // additional-anatomy paragraph is gated on its own rendered value rather than on the plan.
     const label = fieldLabelFor(category, 'clothing');
 
-    for (const { subject, mode, directions, sheetIndex } of sheetsOf(category)) {
-      const prompt = generatePrompt(
-        category,
-        { ...subject, clothing: '' },
-        { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
-      );
-      const subjectSection = sectionOf(prompt, 'SUBJECT DEFINITION');
+    for (const sheet of sheetsOf(category)) {
+      const subjectSection = subjectSectionAt(category, sheet, '', NO_ADDITIONAL_ANATOMY);
 
       expect(subjectSection).not.toContain(`- ${label}:`);
       expect(subjectSection).not.toContain(`**${label}** is excepted`);
@@ -130,15 +153,15 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
       // can compile promised a named exception and named none — leaving "Do not infer props, weapons or
       // equipment from the role", the next line, as the only candidate for the exemption it had just
       // announced. The full stop is what makes the sentence true whether or not a paragraph follows.
-      for (const { subject, mode, directions, sheetIndex } of sheetsOf(category)) {
-        for (const anatomy of ['', 'Extra Piece ×2']) {
+      //
+      // The anatomy paragraph's off position is the field's own `NONE`, which is what every category's
+      // subject opens on, rather than a cleared field: both render no paragraph, and this is the one a
+      // reader who touches nothing actually gets.
+      for (const sheet of sheetsOf(category)) {
+        const { mode, sheetIndex } = sheet;
+        for (const anatomy of [NO_ADDITIONAL_ANATOMY, 'Extra Piece ×2']) {
           for (const clothing of ['', pooledValue(category, 'clothing')]) {
-            const prompt = generatePrompt(
-              category,
-              { ...subject, clothing, additional_anatomy: anatomy },
-              { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
-            );
-            const section = sectionOf(prompt, 'SUBJECT DEFINITION');
+            const section = subjectSectionAt(category, sheet, clothing, anatomy);
             const where = `${category} / ${mode} / sheet ${String(sheetIndex + 1)}`;
 
             expect(section, where).toContain('never drawn as a separate piece.\n');

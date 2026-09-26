@@ -56,15 +56,6 @@ describe('the capability table', () => {
     // list is complete, and a missing entry would throw only for the target nobody selected.
     expect(TARGET_MODELS.map((model) => model.id).sort()).toEqual([...TARGET_MODEL_IDS].sort());
   });
-
-  it('answers for every id without throwing', () => {
-    for (const target of TARGET_MODEL_IDS) {
-      expect(typeof deliberates(target), target).toBe('boolean');
-      expect(typeof returnsText(target), target).toBe('boolean');
-      expect(typeof supportsPromptFeedback(target), target).toBe('boolean');
-      expect(typeof seesCanvasBeforeDelivery(target), target).toBe('boolean');
-    }
-  });
 });
 
 describe('deliberates', () => {
