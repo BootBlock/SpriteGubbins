@@ -1,11 +1,12 @@
 import {
+  COVERAGE_FLOOR,
   LINE_BRIGHT_SHARE,
   LINE_DARK_SHARE,
   LINE_LUMA_RANGE,
   LINE_TRIM_FLOOR,
 } from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
-import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { createImage, pixelOffset } from './imageData.ts';
 import { lumaOfChannels } from './lineVote.ts';
 
 /**
@@ -32,12 +33,18 @@ import { lumaOfChannels } from './lineVote.ts';
  * runs on unreduced colours and `quantiseImage` applies the palette step to its output, where the
  * darkened line tones it exists to create are real colours a palette can keep.
  *
- * Every pixel that carries any colour takes part: transparency here means the keyed field, and a
- * cell more than half keyed resolves to transparency — but art is art however soft its alpha, and
- * a matte-exported sheet sitting at 254 must not vanish. That is a broader gate than the dominant
- * vote's line *rescue* uses, deliberately: the rescue replaces a whole cell with one colour
- * verbatim, where a mean merely leans, so a soft pixel that would be dangerous there is dilution
- * here. Pure, deterministic, and one pass over the image.
+ * **Every pixel at or above {@link COVERAGE_FLOOR} takes part, in proportion to its coverage.** A
+ * pixel under the floor is absent, as the keyed field is, and a cell whose present pixels are fewer
+ * than half of it resolves to transparency — but art is art however soft its alpha, so a
+ * matte-exported sheet sitting at 254 must not vanish. A present pixel weighs its alpha in every sum
+ * and every share: the means are premultiplied with the coverage divided back out, so a faint black
+ * pixel beside an opaque body darkens it only as much as it shows, and a line's share is the share
+ * of the cell's coverage it holds. The cell is written at its own coverage, each present pixel's
+ * alpha weighted by itself, so a cell of faint shadow stays a faint shadow and a pixel at the floor
+ * can barely thin a solid one. That is a broader gate than the dominant vote's line *rescue* uses,
+ * deliberately: the rescue replaces a whole cell with one colour verbatim, where a mean merely
+ * leans, so a soft pixel that would be dangerous there is dilution here. Pure, deterministic, and
+ * one pass over the image.
  */
 export function inkWeightedCells(
   image: ImageData,
@@ -53,18 +60,20 @@ export function inkWeightedCells(
     for (const [cellX, left] of mesh.x.entries()) {
       const right = Math.min(mesh.x[cellX + 1] ?? image.width, image.width);
 
-      let opaque = 0;
-      let inkCount = 0;
+      let present = 0;
+      let coverage = 0;
+      let opacity = 0;
+      let inkCoverage = 0;
       let inkLuma = 0;
       let inkR = 0;
       let inkG = 0;
       let inkB = 0;
-      let bodyCount = 0;
+      let bodyCoverage = 0;
       let bodyLuma = 0;
       let bodyR = 0;
       let bodyG = 0;
       let bodyB = 0;
-      let trimCount = 0;
+      let trimCoverage = 0;
       let trimLuma = 0;
       let trimR = 0;
       let trimG = 0;
@@ -72,48 +81,53 @@ export function inkWeightedCells(
       for (let y = top; y < bottom; y += 1) {
         for (let x = left; x < right; x += 1) {
           const offset = pixelOffset(image.width, x, y);
-          if ((image.data[offset + 3] ?? 0) === FULLY_TRANSPARENT) continue;
+          // The coverage is the pixel's weight in every sum below, so each tally is premultiplied
+          // and every tally of a kind of pixel is a share of coverage rather than of pixels.
+          const alpha = image.data[offset + 3] ?? 0;
+          if (alpha < COVERAGE_FLOOR) continue;
           const r = image.data[offset] ?? 0;
           const g = image.data[offset + 1] ?? 0;
           const b = image.data[offset + 2] ?? 0;
-          opaque += 1;
+          present += 1;
+          coverage += alpha;
+          opacity += alpha * alpha;
           // The same Rec. 601 integer luma `lineVote.ts` reads from a packed colour, in the form
           // that takes the channels this loop already has in hand rather than packing them first.
           const luma = lumaOfChannels(r, g, b);
           if (luma < inkCeiling) {
-            inkCount += 1;
-            inkLuma += luma;
-            inkR += r;
-            inkG += g;
-            inkB += b;
+            inkCoverage += alpha;
+            inkLuma += luma * alpha;
+            inkR += r * alpha;
+            inkG += g * alpha;
+            inkB += b * alpha;
           } else if (luma >= LINE_TRIM_FLOOR) {
-            trimCount += 1;
-            trimLuma += luma;
-            trimR += r;
-            trimG += g;
-            trimB += b;
+            trimCoverage += alpha;
+            trimLuma += luma * alpha;
+            trimR += r * alpha;
+            trimG += g * alpha;
+            trimB += b * alpha;
           } else {
-            bodyCount += 1;
-            bodyLuma += luma;
-            bodyR += r;
-            bodyG += g;
-            bodyB += b;
+            bodyCoverage += alpha;
+            bodyLuma += luma * alpha;
+            bodyR += r * alpha;
+            bodyG += g * alpha;
+            bodyB += b * alpha;
           }
         }
       }
 
       const out = pixelOffset(mesh.x.length, cellX, cellY);
       const area = (right - left) * (bottom - top);
-      if (opaque * 2 < area) continue;
+      if (present * 2 < area) continue;
 
       // The base is the mean of everything that is not ink — bright pixels included, so a pale
       // sheet with the trim dial off reads exactly as it did before the dial existed. The
       // trim-exclusive body tally exists only for the trim *gate*, which judges the tonal gap
       // between the trim and the surface under it.
-      const nonInkCount = bodyCount + trimCount;
-      const baseR = nonInkCount > 0 ? (bodyR + trimR) / nonInkCount : inkR / inkCount;
-      const baseG = nonInkCount > 0 ? (bodyG + trimG) / nonInkCount : inkG / inkCount;
-      const baseB = nonInkCount > 0 ? (bodyB + trimB) / nonInkCount : inkB / inkCount;
+      const nonInkCoverage = bodyCoverage + trimCoverage;
+      const baseR = nonInkCoverage > 0 ? (bodyR + trimR) / nonInkCoverage : inkR / inkCoverage;
+      const baseG = nonInkCoverage > 0 ? (bodyG + trimG) / nonInkCoverage : inkG / inkCoverage;
+      const baseB = nonInkCoverage > 0 ? (bodyB + trimB) / nonInkCoverage : inkB / inkCoverage;
       // A pull fires only for a genuine line: it must hold a drawn stroke's share of the cell,
       // **and** sit line-far — a full tonal range — from the body it crosses. The absolute
       // threshold alone called any dark shading "ink", so the line dial darkened shaded fills;
@@ -121,21 +135,21 @@ export function inkWeightedCells(
       // cell first where both a line and a trim cross it, the same precedence the dominant
       // vote's rescue keeps.
       const inkQualifies =
-        inkCount > 0 &&
-        inkCount * LINE_DARK_SHARE >= opaque &&
-        nonInkCount > 0 &&
-        (bodyLuma + trimLuma) / nonInkCount - inkLuma / inkCount >= LINE_LUMA_RANGE;
+        inkCoverage > 0 &&
+        inkCoverage * LINE_DARK_SHARE >= coverage &&
+        nonInkCoverage > 0 &&
+        (bodyLuma + trimLuma) / nonInkCoverage - inkLuma / inkCoverage >= LINE_LUMA_RANGE;
       const trimQualifies =
         !inkQualifies &&
         trimEmphasis > 0 &&
-        trimCount > 0 &&
-        trimCount * LINE_BRIGHT_SHARE >= opaque &&
-        bodyCount > 0 &&
-        trimLuma / trimCount - bodyLuma / bodyCount >= LINE_LUMA_RANGE;
+        trimCoverage > 0 &&
+        trimCoverage * LINE_BRIGHT_SHARE >= coverage &&
+        bodyCoverage > 0 &&
+        trimLuma / trimCoverage - bodyLuma / bodyCoverage >= LINE_LUMA_RANGE;
       const pull = inkQualifies
-        ? Math.min(1, (inkCount / opaque) * emphasis)
+        ? Math.min(1, (inkCoverage / coverage) * emphasis)
         : trimQualifies
-          ? Math.min(1, (trimCount / opaque) * trimEmphasis)
+          ? Math.min(1, (trimCoverage / coverage) * trimEmphasis)
           : 0;
       // Both pulls lean from the same inclusive base toward their line's own mean, and for the
       // trim that is what makes the dial continuous: the base already carries the trim at its
@@ -143,14 +157,14 @@ export function inkWeightedCells(
       // off state, and every notch upward is more trim than the last — a pull that instead leant
       // from the trim-free surface dimmed the trim below off for every strength under one, with
       // a visible cliff at the first notch.
-      const towardR = inkQualifies ? inkR / inkCount : trimQualifies ? trimR / trimCount : baseR;
-      const towardG = inkQualifies ? inkG / inkCount : trimQualifies ? trimG / trimCount : baseG;
-      const towardB = inkQualifies ? inkB / inkCount : trimQualifies ? trimB / trimCount : baseB;
+      const towardR = inkQualifies ? inkR / inkCoverage : trimQualifies ? trimR / trimCoverage : baseR;
+      const towardG = inkQualifies ? inkG / inkCoverage : trimQualifies ? trimG / trimCoverage : baseG;
+      const towardB = inkQualifies ? inkB / inkCoverage : trimQualifies ? trimB / trimCoverage : baseB;
 
       output.data[out] = Math.round(baseR * (1 - pull) + towardR * pull);
       output.data[out + 1] = Math.round(baseG * (1 - pull) + towardG * pull);
       output.data[out + 2] = Math.round(baseB * (1 - pull) + towardB * pull);
-      output.data[out + 3] = FULLY_OPAQUE;
+      output.data[out + 3] = Math.round(opacity / coverage);
     }
   }
 

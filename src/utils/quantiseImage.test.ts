@@ -202,13 +202,12 @@ describe('quantiseImage', () => {
       pixels(quantiseImage(soft, settings({ silhouetteThreshold })).image);
 
     // Off, the ramp comes through exactly as it arrived — which is the defect this dial answers.
-    // The clear pixel keeps the colour it was written with, because nothing has touched it.
-    expect(at(0)).toEqual([[ART, { ...ART, a: 192 }, { ...ART, a: 64 }, { ...ART, a: 0 }]]);
+    // The clear pixel comes out as the canonical `{0, 0, 0, 0}` whatever bytes it arrived with,
+    // because the cell vote counts every absent pixel as the keyed field.
+    expect(at(0)).toEqual([[ART, { ...ART, a: 192 }, { ...ART, a: 64 }, TRANSPARENT]]);
     // On, every partial pixel has gone one way or the other: 192 is above half a pixel and 64 is not.
-    // What the pass *clears* is written the canonical `{0, 0, 0, 0}`, as `keyBackground` writes it
-    // and for the same reason — a transparent pixel that kept its own RGB is its own colour to the
-    // cell vote. The pixel that arrived clear is not one the pass cleared, so it keeps its colour.
-    expect(at(50)).toEqual([[ART, ART, TRANSPARENT, { ...ART, a: 0 }]]);
+    // What the pass *clears* is written the canonical `{0, 0, 0, 0}`, as `keyBackground` writes it.
+    expect(at(50)).toEqual([[ART, ART, TRANSPARENT, TRANSPARENT]]);
   });
 
   it('hardens behind the key, so the two erosions cannot compound', () => {

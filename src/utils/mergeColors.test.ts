@@ -19,6 +19,13 @@ describe('mergeColors', () => {
     expect(channels(mergeColors(sheet, 24))).toEqual(channels(imageFrom(6, 6, () => GREEN)));
   });
 
+  it('neither ranks nor repaints a pixel under the coverage floor', () => {
+    // Thirty faint pixels whose channels read as the near-green, beside six opaque greens. Ranked by
+    // their count they outnumbered the green and it was folded onto their noise.
+    const sheet = imageFrom(6, 6, (_x, y) => (y === 0 ? GREEN : { ...NEAR, a: 10 }));
+    expect(channels(mergeColors(sheet, 24))).toEqual(channels(sheet));
+  });
+
   it('keeps genuinely distinct tones apart, linework above all', () => {
     const sheet = imageFrom(6, 6, (x, y) => (y < 2 ? INK : (x + y) % 2 === 0 ? GREEN : NEAR));
     const merged = mergeColors(sheet, 24);

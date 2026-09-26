@@ -1767,6 +1767,37 @@ export const SILHOUETTE_THRESHOLDS = [0, 10, 25, 50, 75, 90] as const;
 export const DEFAULT_SILHOUETTE_THRESHOLD = 0;
 
 /**
+ * The alpha below which a pixel is absent to every pass that judges a pixel by its colour — that
+ * votes on it, averages it, ranks it, snaps to it or names it — exactly as the keyed field is.
+ *
+ * **Below it, a pixel's colour is not a colour.** A browser holds a decoded image premultiplied, at
+ * eight bits a channel, so a pixel at alpha `a` comes back from `getImageData` with each channel
+ * rounded to a step of `255 / a`. At an alpha of 1 a channel can be off by 127, and at 8 by 16 —
+ * so a pass that judged such a pixel by its lightness, or copied its RGB onto an opaque neighbour,
+ * was reading rounding noise. At this floor the worst error is 5, a sixth of {@link LINE_LUMA_GAP}.
+ *
+ * **The figure is the first rung of {@link SILHOUETTE_THRESHOLDS} past its off position**: 10% of a
+ * pixel, the lowest alpha the edge hardening keeps at its most permissive. A pixel under it is one
+ * the tab's own hardening already calls fringe rather than artwork, so the passes that run while
+ * the hardening is off agree with what it would say were it on.
+ *
+ * **At or above the floor a pixel takes part, in proportion to its coverage.** Where a pass averages
+ * colour, it averages premultiplied and divides the coverage back out, so a faint pixel tints a cell
+ * only as much as it shows; where a pass shares out a cell, a pixel's share is its alpha rather than
+ * one vote. `tests/coverage-floor.test.ts` holds the figure to the ladder and to the error bound.
+ *
+ * **Where it applies.** The three readings (`alignToGrid`, `inkWeightedCells`, `kCentroidCells`),
+ * `outlineExpansion` and `outlinePolarity`, `mergeColors`, `despeckle`, the anti-aliasing snap, and
+ * the palette readers through `flattenOpacity` and `paletteEntriesFrom`. A pass asking only whether
+ * a pixel has any coverage at all — segmentation, symmetry, keying's own count — still tests for
+ * zero, because that is a question about the silhouette rather than about colour. So does the
+ * budget palette's histogram: a faint colour stays a candidate there so that `applyPalette` can
+ * give a faint pixel an entry at its own coverage, where leaving it out would draw it with an opaque
+ * one.
+ */
+export const COVERAGE_FLOOR = 26;
+
+/**
  * How much further than {@link KEY_TOLERANCES} the one-pixel fringe pass reaches.
  *
  * A pixel on an anti-aliased edge is a blend of the key colour and the artwork beside it, so it sits

@@ -1,5 +1,6 @@
 import { extremeNeighbours, TRANSPARENT_DILATE_KEY, TRANSPARENT_ERODE_KEY } from './extremeNeighbour.ts';
-import { alphaAt, CHANNELS_PER_PIXEL, copyPixel, createImage, FULLY_TRANSPARENT } from './imageData.ts';
+import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
+import { alphaAt, CHANNELS_PER_PIXEL, copyPixel, createImage } from './imageData.ts';
 import { lumaOfChannels } from './lineVote.ts';
 import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolarity.ts';
 
@@ -98,10 +99,12 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  *    the full range and a decision has no range to span. It also sidesteps the legacy
  *    implementation's normalisation, which divides by the maximum rather than by the spread.
  * 3. **The silhouette is left exactly where keying left it.** The reference has no alpha channel to
- *    consider. Here a fully transparent pixel takes the identity element of whichever operation is
- *    running, so it can never win a neighbourhood, and it is copied through untouched — the artwork
- *    neither grows into the field the reader asked to delete nor drags that field's undefined bytes
- *    into itself. Alpha is never morphed, and the pass therefore cannot change `keyedShare`.
+ *    consider. Here a pixel under `COVERAGE_FLOOR` — the keyed field, and the faint fringe whose
+ *    channels are rounding noise — takes the identity element of whichever operation is running, so
+ *    it can never win a neighbourhood, and it is copied through untouched — the artwork neither
+ *    grows into the field the reader asked to delete nor drags that field's undefined bytes, or a
+ *    near-invisible pixel's noise, into itself. Alpha is never morphed, and the pass therefore
+ *    cannot change `keyedShare`.
  * 4. **The polarity has no ground term.** `outlinePolarity` records why: the reference's prior about
  *    what colour a neighbourhood is drawn on outweighs the measurement it is a prior for, and on a
  *    sprite sheet it inverts the answer.
@@ -129,8 +132,8 @@ export function outlineExpansion(image: ImageData, block: number, thickness: num
 }
 
 /**
- * Every opaque pixel replaced by its darkest or lightest neighbour, whichever the local polarity
- * asks for.
+ * Every pixel at or above the coverage floor replaced by its darkest or lightest neighbour,
+ * whichever the local polarity asks for.
  *
  * The two neighbourhoods are resolved **one after the other rather than together**, and the pixels
  * each is responsible for are written before the next is asked for. Holding both answers at once
@@ -161,7 +164,7 @@ function paint(
 ): void {
   for (let pixel = 0; pixel < winners.length; pixel += 1) {
     const offset = pixel * CHANNELS_PER_PIXEL;
-    if (alphaAt(image.data, offset) === FULLY_TRANSPARENT) {
+    if (alphaAt(image.data, offset) < COVERAGE_FLOOR) {
       // Written on the dark pass alone, so the bright pass does not copy it a second time.
       if (darkSide) copyPixel(image.data, output.data, offset);
       continue;
@@ -191,7 +194,7 @@ function writeKeys(image: ImageData, keys: Int16Array, absent: number): void {
   for (let pixel = 0; pixel < keys.length; pixel += 1) {
     const offset = pixel * CHANNELS_PER_PIXEL;
     keys[pixel] =
-      alphaAt(data, offset) === FULLY_TRANSPARENT
+      alphaAt(data, offset) < COVERAGE_FLOOR
         ? absent
         : lumaOfChannels(data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0);
   }

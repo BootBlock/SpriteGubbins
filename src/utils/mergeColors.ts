@@ -1,4 +1,5 @@
-import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
+import { pixelOffset } from './imageData.ts';
 import { srgbToOklab } from './oklab.ts';
 import { oklabLattice } from './oklabLattice.ts';
 
@@ -40,9 +41,9 @@ interface Keeper {
  * top rungs can still reach from near-black ink to a dark shadow fill and will fold whichever of
  * the two the sheet uses less. That is offered knowingly: it is the flattening a heavy merge
  * *is*, and the preview sits beside the dial. Colour means RGB bytes and alpha is coverage,
- * untouched: colours tally across their alphas, and a repainted pixel keeps its own. Fully
- * transparent pixels are outside it entirely. A tolerance of zero returns the input's bytes
- * unchanged.
+ * untouched: colours tally across their alphas, and a repainted pixel keeps its own. Pixels under
+ * `COVERAGE_FLOOR` are outside it entirely, because their channels are rounding noise rather than a
+ * colour to rank or repaint. A tolerance of zero returns the input's bytes unchanged.
  *
  * The keeper search is bucketed on `oklabLattice`, a lattice of tolerance-sized cells over the
  * OKLab axes, so each colour consults only the twenty-seven cells that could hold a keeper within
@@ -59,7 +60,7 @@ export function mergeColors(image: ImageData, tolerance: number): ImageData {
   for (let y = 0; y < image.height; y += 1) {
     for (let x = 0; x < image.width; x += 1) {
       const at = pixelOffset(image.width, x, y);
-      if ((image.data[at + 3] ?? 0) === FULLY_TRANSPARENT) continue;
+      if ((image.data[at + 3] ?? 0) < COVERAGE_FLOOR) continue;
       const key = ((image.data[at] ?? 0) * 256 + (image.data[at + 1] ?? 0)) * 256 + (image.data[at + 2] ?? 0);
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
@@ -100,7 +101,7 @@ export function mergeColors(image: ImageData, tolerance: number): ImageData {
   for (let y = 0; y < image.height; y += 1) {
     for (let x = 0; x < image.width; x += 1) {
       const at = pixelOffset(image.width, x, y);
-      if ((output.data[at + 3] ?? 0) === FULLY_TRANSPARENT) continue;
+      if ((output.data[at + 3] ?? 0) < COVERAGE_FLOOR) continue;
       const key =
         ((output.data[at] ?? 0) * 256 + (output.data[at + 1] ?? 0)) * 256 + (output.data[at + 2] ?? 0);
       const home = target.get(key);

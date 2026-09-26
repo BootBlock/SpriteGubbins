@@ -15,9 +15,10 @@ import { nearestPointSearch, type Point4 } from './nearestPointSearch.ts';
  *
  * Measured in scaled OKLab with coverage as a fourth axis, the space and scale of `pixelDistance`,
  * because that is the error the docblocks' ladders report. `applyPalette` then draws each pixel with
- * its nearest entry by RGBA distance, so the cells drawn are not exactly the cells refined here; the
- * ladders are measured on the drawn result, and they are where that difference would show. A fully
- * transparent colour has no place in the space, and `blendWeightedHistogram` leaves every one out.
+ * its nearest entry by RGBA distance, an opaque pixel among the opaque entries alone, so the cells
+ * drawn are not exactly the cells refined here; the ladders are measured on the drawn result, and
+ * they are where that difference would show. A fully transparent colour has no place in the space,
+ * and `blendWeightedHistogram` leaves every one out.
  *
  * **It keeps the best palette it measured**, by the weighted distance from every colour to its
  * entry, the earlier palette taking a tie. A snapped round does not always lower that error, because

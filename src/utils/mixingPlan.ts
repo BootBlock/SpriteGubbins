@@ -1,6 +1,7 @@
 import { DITHER_SHORTLIST } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { conesToOklabInto, srgbToConesInto, srgbToOklabInto } from './oklab.ts';
+import { FULLY_OPAQUE } from './imageData.ts';
 import type { MutableCones, MutableOklab } from './oklab.ts';
 
 /**
@@ -65,6 +66,8 @@ export interface DitherCandidates {
   readonly lab: Float64Array;
   /** Three per entry: the linear cone responses `srgbToConesInto` leaves. */
   readonly cones: Float64Array;
+  /** Whether any entry is opaque, which is what holds an opaque target to the opaque entries. */
+  readonly holdsOpaque: boolean;
 }
 
 /** The palette, converted once — the form {@link mixingPlan} searches. */
@@ -86,7 +89,7 @@ export function ditherCandidates(entries: readonly Rgba[]): DitherCandidates {
     cones[index * 3 + 2] = light.short;
   }
 
-  return { entries, lab, cones };
+  return { entries, lab, cones, holdsOpaque: entries.some((entry) => entry.a === FULLY_OPAQUE) };
 }
 
 /** The scratches the search reuses — one set for the life of the module, as `keyDistance.ts` keeps. */
@@ -146,6 +149,10 @@ export function mixingPlan(target: Rgba, candidates: DitherCandidates, levels: n
  * up to 128 entries and this runs once per distinct colour of the sheet, so the scan is the cost
  * and the ordering is not. Ties keep the earlier entry, which under `buildPalette`'s ordering is
  * the more-used of two equidistant colours.
+ *
+ * **An opaque target shortlists only opaque entries**, wherever the palette holds one, for the
+ * reason `nearestColorSearch` gives: a budget's entries are written whole, and a translucent one
+ * written into a sprite's interior, flat or as half of a pattern, is a hole in it.
  */
 function shortlist(
   candidates: DitherCandidates,
@@ -154,7 +161,9 @@ function shortlist(
   wanted: number,
 ): number {
   let held = 0;
+  const opaqueOnly = alpha === FULLY_OPAQUE && candidates.holdsOpaque;
   for (let index = 0; index < candidates.entries.length; index += 1) {
+    if (opaqueOnly && candidates.lab[index * 4 + 3] !== FULLY_OPAQUE) continue;
     const distance = entryPenalty(candidates, index, target, alpha);
     if (held === wanted && distance >= (SHORTLIST_DISTANCE[held - 1] ?? Infinity)) continue;
 

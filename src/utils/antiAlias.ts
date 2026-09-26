@@ -1,3 +1,4 @@
+import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { coverageBlend } from './coverageBlend.ts';
 import {
@@ -8,14 +9,7 @@ import {
   edgeClaims,
   type ClaimSettings,
 } from './edgeClaims.ts';
-import {
-  CHANNELS_PER_PIXEL,
-  FULLY_OPAQUE,
-  FULLY_TRANSPARENT,
-  createImage,
-  readPixel,
-  writePixel,
-} from './imageData.ts';
+import { CHANNELS_PER_PIXEL, FULLY_OPAQUE, createImage, readPixel, writePixel } from './imageData.ts';
 import { locateEntries, nearestOklab, type LocatedEntry } from './lockedPalette.ts';
 import { MAX_PALETTE_ENTRIES } from './pngPalette.ts';
 
@@ -154,7 +148,8 @@ function keep(blend: Rgba, located: readonly LocatedEntry[], resolved: Map<numbe
  * not a list anything can be kept to.
  *
  * Alpha is dropped on the way in: a palette is a list of colours, and a soft pixel's own coverage is
- * a fact about that pixel. First-met order is what settles a tie in `nearestOklab`, which takes the
+ * a fact about that pixel. A pixel under `COVERAGE_FLOOR` is left out, since its channels are
+ * rounding noise rather than a colour the sheet holds. First-met order is what settles a tie in `nearestOklab`, which takes the
  * earliest entry, so the answer is stable across two runs over the same sheet.
  *
  * It reads the channel array directly rather than through `colorHistogram`, which would build a Map
@@ -167,7 +162,7 @@ function sheetColors(image: ImageData): readonly Rgba[] | null {
   const entries: Rgba[] = [];
 
   for (let offset = 0; offset < data.length; offset += CHANNELS_PER_PIXEL) {
-    if ((data[offset + 3] ?? 0) === FULLY_TRANSPARENT) continue;
+    if ((data[offset + 3] ?? 0) < COVERAGE_FLOOR) continue;
     const r = data[offset] ?? 0;
     const g = data[offset + 1] ?? 0;
     const b = data[offset + 2] ?? 0;

@@ -59,6 +59,23 @@ describe('nearestColorSearch', () => {
     expect(nearestColorSearch(palette)({ r: 110, g: 0, b: 0, a: 50 })).toBe(palette[1]);
   });
 
+  it('holds an opaque colour to the opaque entries, however near a translucent one sits', () => {
+    const palette = [
+      { r: 200, g: 0, b: 0, a: 255 },
+      { r: 0, g: 0, b: 200, a: 255 },
+      { r: 140, g: 0, b: 0, a: 230 },
+    ];
+    expect(nearestColorSearch(palette)({ r: 140, g: 0, b: 0, a: 255 })).toBe(palette[0]);
+  });
+
+  it('gives an opaque colour the nearest entry of any coverage when no entry is opaque', () => {
+    const palette = [
+      { r: 0, g: 0, b: 200, a: 200 },
+      { r: 140, g: 0, b: 0, a: 230 },
+    ];
+    expect(nearestColorSearch(palette)({ r: 140, g: 0, b: 0, a: 255 })).toBe(palette[1]);
+  });
+
   it('agrees with every entry scored, on palettes crowded with ties', () => {
     const next = channelStream(473);
     for (const size of [1, 2, 3, 8, 17, 64, 256]) {

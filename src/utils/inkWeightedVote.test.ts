@@ -82,9 +82,30 @@ describe('inkWeightedCells', () => {
   });
 
   it('reads art at a soft alpha as art — a matte-exported sheet must not vanish', () => {
-    // Exporters write 254 where they mean opaque; only true transparency is the keyed field.
+    // Exporters write 254 where they mean opaque; the cell keeps its colour and its own coverage.
     const soft = imageFrom(6, 6, () => ({ r: 150, g: 110, b: 70, a: 254 }));
-    expect(Array.from(inkWeightedCells(soft, single, 1.5, 0, 64).data)).toEqual([150, 110, 70, 255]);
+    expect(Array.from(inkWeightedCells(soft, single, 1.5, 0, 64).data)).toEqual([150, 110, 70, 254]);
+  });
+
+  it('keeps a faint shadow faint rather than writing it opaque', () => {
+    const shadow = imageFrom(6, 6, () => ({ r: 0, g: 0, b: 0, a: 40 }));
+    expect(Array.from(inkWeightedCells(shadow, single, 1.5, 0, 64).data)).toEqual([0, 0, 0, 40]);
+  });
+
+  it('treats a pixel under the coverage floor as absent, not as ink', () => {
+    // Half the cell is black at alpha 8, whose channels are rounding noise. Counted at full weight
+    // it was half the cell's ink and dragged the red to 50, 8, 8.
+    const red: Rgba = { r: 200, g: 30, b: 30, a: 255 };
+    const noisy = imageFrom(6, 6, (x, y) => ((y * 6 + x) % 2 === 0 ? red : { r: 0, g: 0, b: 0, a: 8 }));
+    expect(Array.from(inkWeightedCells(noisy, single, 1.5, 0, 64).data)).toEqual([200, 30, 30, 255]);
+  });
+
+  it('weighs a faint stroke by its coverage, so it cannot pass for a drawn line', () => {
+    // A third of the pixels are ink at alpha 40: counted by pixel, a third of the cell and a line;
+    // counted by coverage, 7% of it and speckle. The body stands, thinned only as much as the
+    // faint pixels show.
+    const faint = imageFrom(6, 6, (x, y) => (y * 6 + x < 12 ? { ...INK, a: 40 } : BODY));
+    expect(Array.from(inkWeightedCells(faint, single, 1.5, 0, 64).data)).toEqual([150, 110, 70, 239]);
   });
 
   it('pulls toward a bright trim only when asked, mirrored and ink-first', () => {

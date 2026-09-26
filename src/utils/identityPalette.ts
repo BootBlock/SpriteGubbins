@@ -1,18 +1,8 @@
 import { IDENTITY_PALETTE_SIZE } from '../constants/identityLock.ts';
 import { DEFAULT_KEY_TOLERANCE } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
-import {
-  CHANNELS_PER_PIXEL,
-  colorHistogram,
-  createImage,
-  FULLY_OPAQUE,
-  FULLY_TRANSPARENT,
-  packColor,
-  readPixel,
-  toHex,
-  unpackColor,
-  writePixel,
-} from './imageData.ts';
+import { flattenOpacity } from './flattenOpacity.ts';
+import { colorHistogram, packColor, toHex, unpackColor } from './imageData.ts';
 import { keyBackground } from './keyBackground.ts';
 import { nearestColorSearch } from './nearestColorSearch.ts';
 import { buildPalette } from './wuQuantiser.ts';
@@ -71,8 +61,8 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
 }
 
 /**
- * The subject's pixels alone, at one opacity: the key field and fully transparent pixels dropped,
- * and everything that survives made opaque.
+ * The subject's pixels alone, at one opacity: the key field and every pixel under the coverage floor
+ * dropped, and everything that survives made opaque.
  *
  * Transparency is how a pixel leaves the histogram, and therefore the palette, so removing the key
  * field is the same operation as one that arrived transparent already.
@@ -155,22 +145,17 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  * quantiser, and it will spend the digest's six slots separating them. Each is then ranked by its
  * own share rather than their combined one, so a 14%-coverage colour can lead a 72% one, and the
  * ordering is the whole point of this function. Flattened first, every slot buys a distinct colour
- * and coverage totals per colour by construction.
+ * and coverage totals per colour by construction. `flattenOpacity` does it, and says why a pixel
+ * under the coverage floor is dropped rather than promoted.
  */
 function subjectPixels(image: ImageData, exclude: Rgba | null): ImageData {
-  // `TRANSPARENT` is the key with no colour to match, and the loop below already drops what arrived
-  // transparent — so the pass has nothing to exclude, and running it would erode a silhouette for
-  // nothing.
+  // `TRANSPARENT` is the key with no colour to match, and `flattenOpacity` already drops what
+  // arrived transparent — so the pass has nothing to exclude, and running it would erode a
+  // silhouette for nothing.
   const keyed =
     exclude === null
       ? image
       : keyBackground(image, { color: exclude, tolerance: DEFAULT_KEY_TOLERANCE }).image;
 
-  const output = createImage(image.width, image.height);
-  for (let offset = 0; offset < keyed.data.length; offset += CHANNELS_PER_PIXEL) {
-    const color = readPixel(keyed.data, offset);
-    if (color.a === FULLY_TRANSPARENT) continue;
-    writePixel(output.data, offset, { ...color, a: FULLY_OPAQUE });
-  }
-  return output;
+  return flattenOpacity(keyed);
 }

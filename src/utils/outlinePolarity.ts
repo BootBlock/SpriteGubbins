@@ -1,4 +1,5 @@
-import { alphaAt, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
+import { alphaAt, pixelOffset } from './imageData.ts';
 import { lumaOfChannels } from './lineVote.ts';
 
 /**
@@ -57,18 +58,19 @@ import { lumaOfChannels } from './lineVote.ts';
  * pixel would be another sixty-seven megabytes, where the lattice is that divided by the block
  * squared.
  *
- * **Fully transparent pixels take no part in any of the three statistics.** They are the keyed
- * field: they carry whatever bytes sat under them, none of it visible, and a window that counted
+ * **Pixels under {@link COVERAGE_FLOOR} take no part in any of the three statistics.** The fully
+ * transparent ones are the keyed field and carry whatever bytes sat under them, and the faint ones
+ * above it carry channels that are rounding noise; none of it is visible, and a window that counted
  * them would report the artwork as sitting on a ground it does not sit on. A lattice point whose
  * whole window is empty scores `NaN` and is skipped by the interpolation — which can never leave a
- * pixel with no answer, because the window of the lattice point nearest any *opaque* pixel reaches
- * a block in each direction and therefore contains that pixel itself.
+ * pixel with no answer, because the window of the lattice point nearest any *present* pixel
+ * reaches a block in each direction and therefore contains that pixel itself.
  *
  * Pure.
  */
 export interface PolarityField {
   /**
-   * One score per lattice point, row-major, or `NaN` where the point's window held nothing opaque.
+   * One score per lattice point, row-major, or `NaN` where the point's window held nothing present.
    *
    * In whole luma steps, and positive where the dark side should grow. The magnitude carries no
    * meaning downstream — the pass thresholds it — and is carried as a number only because the sign
@@ -117,8 +119,8 @@ export function outlinePolarity(image: ImageData, block: number): PolarityField 
  *
  * Lattice points that scored `NaN` are dropped and the remaining weights renormalised, rather than
  * poisoning the result — a block of empty margin beside a sprite must not decide the sprite's
- * polarity. All four being absent would mean the pixel has no opaque lattice point within a block
- * in any direction, which an opaque pixel cannot be; the caller never asks about a transparent one.
+ * polarity. All four being absent would mean the pixel has no present lattice point within a block
+ * in any direction, which a present pixel cannot be; the caller never asks about an absent one.
  */
 export function polarityAt(field: PolarityField, x: number, y: number): number {
   const { scores, columns, rows, block, origin } = field;
@@ -157,7 +159,7 @@ export function polarityAt(field: PolarityField, x: number, y: number): number {
  *
  * Both windows are walked together, because the wide one contains the narrow one and walking twice
  * would read every pixel of the block a second time to learn nothing new. Where the block itself
- * holds nothing opaque but the wide window does, the wide window's own extremes stand in — the
+ * holds nothing present but the wide window does, the wide window's own extremes stand in — the
  * point still has a ground to measure against, and dropping it would punch a hole in the lattice
  * beside every sprite's edge.
  */
@@ -192,7 +194,7 @@ function scoreBlock(
     const insideRows = y >= blockFromY && y <= blockToY;
     for (let x = fromX; x <= toX; x += 1) {
       const offset = pixelOffset(width, x, y);
-      if (alphaAt(data, offset) === FULLY_TRANSPARENT) continue;
+      if (alphaAt(data, offset) < COVERAGE_FLOOR) continue;
       const luma = lumaOfChannels(data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0);
       tally[luma] = (tally[luma] ?? 0) + 1;
       counted += 1;

@@ -43,8 +43,30 @@ describe('kCentroidCells', () => {
   });
 
   it('reads art at a soft alpha as art — a matte-exported sheet must not vanish', () => {
+    // The cell keeps its colour and its own coverage.
     const soft = imageFrom(6, 6, () => ({ r: 120, g: 100, b: 80, a: 254 }));
-    expect(Array.from(kCentroidCells(soft, single).data)).toEqual([120, 100, 80, 255]);
+    expect(Array.from(kCentroidCells(soft, single).data)).toEqual([120, 100, 80, 254]);
+  });
+
+  it('keeps a faint shadow faint rather than writing it opaque', () => {
+    const shadow = imageFrom(6, 6, () => ({ r: 0, g: 0, b: 0, a: 40 }));
+    expect(Array.from(kCentroidCells(shadow, single).data)).toEqual([0, 0, 0, 40]);
+  });
+
+  it('treats a pixel under the coverage floor as absent, not as a cluster', () => {
+    // Half the cell is black at alpha 8. Counted at full weight it tied the red and took the cell,
+    // because a tie goes to the darker cluster.
+    const red: Rgba = { r: 200, g: 30, b: 30, a: 255 };
+    const noisy = imageFrom(6, 6, (x, y) => ((y * 6 + x) % 2 === 0 ? red : { r: 0, g: 0, b: 0, a: 8 }));
+    expect(Array.from(kCentroidCells(noisy, single).data)).toEqual([200, 30, 30, 255]);
+  });
+
+  it('decides the dominant cluster by coverage, so faint pixels cannot outvote opaque ones', () => {
+    // Eighteen pixels each way, the dark ones at alpha 100: by count a tie the dark cluster takes,
+    // by coverage the opaque red's cell.
+    const red: Rgba = { r: 200, g: 30, b: 30, a: 255 };
+    const faint = imageFrom(6, 6, (x, y) => ((y * 6 + x) % 2 === 0 ? red : { r: 20, g: 20, b: 20, a: 100 }));
+    expect(Array.from(kCentroidCells(faint, single).data)).toEqual([200, 30, 30, 255]);
   });
 
   it('separates two tones that read equally light, and still answers a cluster centre', () => {

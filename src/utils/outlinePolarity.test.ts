@@ -79,6 +79,22 @@ describe('outlinePolarity', () => {
     expect(polarityAt(to, 6, 6)).toBeCloseTo(polarityAt(from, 6, 6), 5);
   });
 
+  it('ignores pixels under the coverage floor when reading the ground, as it ignores cleared ones', () => {
+    // The same margin as above, but faint black at alpha 10 rather than cleared: channels that are
+    // rounding noise, which read as black would flip the ground just as cleared zero bytes would.
+    const solid = ruled(12, LIGHT, DARK);
+    const faint = ruled(12, LIGHT, DARK);
+    for (let y = 0; y < 12; y += 1) {
+      for (let x = 0; x < 12; x += 1) {
+        if (x < 3 || x > 8) writePixel(faint.data, pixelOffset(12, x, y), { r: 0, g: 0, b: 0, a: 10 });
+      }
+    }
+    expect(polarityAt(outlinePolarity(faint, 4), 6, 6)).toBeCloseTo(
+      polarityAt(outlinePolarity(solid, 4), 6, 6),
+      5,
+    );
+  });
+
   it('interpolates between lattice points rather than stepping at every block edge', () => {
     // One dark mark, so a single lattice point scores and its neighbours do not. A block-constant
     // field would hold the point's own score flat across its block and drop to zero at the edge;
