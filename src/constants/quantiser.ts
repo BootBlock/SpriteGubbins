@@ -1406,7 +1406,7 @@ export const ANTI_ALIAS_THRESHOLD_RANGE = { min: 0, max: 96, step: 1 } as const;
 
 /**
  * Where the contrast floor opens — see {@link ANTI_ALIAS_THRESHOLD_RANGE} for the units, and
- * `tests/anti-alias-corpus.test.ts` for what this figure does to all eight reference sheets.
+ * `tests/antiAliasCorpusSuite.ts` for what this figure does to all eight reference sheets.
  *
  * Measured on `test_sprites/armour.png`, quantised at the grid the app reads for it and at the dials
  * as they open. The ladder it was chosen from is in that test.

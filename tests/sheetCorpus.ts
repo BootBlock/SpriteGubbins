@@ -51,6 +51,18 @@ export const CORPUS_SHEETS: readonly CorpusSheetName[] = [
 ];
 
 /**
+ * The corpus in two halves of four, the reference sheet in the first, for a survey run as two files.
+ *
+ * Vitest gives each file to one worker, so a survey over all eight sheets takes as long as one
+ * worker needs for the whole corpus, however many others are idle. Run as two files over a half
+ * each, the same survey can take two workers — and, once the gate shards the suite, two runners.
+ */
+export const CORPUS_HALVES: readonly [readonly CorpusSheetName[], readonly CorpusSheetName[]] = [
+  CORPUS_SHEETS.slice(0, 4),
+  CORPUS_SHEETS.slice(4),
+];
+
+/**
  * One sheet, decoded. Truecolour, so every pixel comes back opaque — see `decodePng`.
  *
  * Resolved from `process.cwd()`, which Vitest sets to the project root, rather than from
@@ -65,10 +77,12 @@ export async function loadCorpusSheet(name: CorpusSheetName): Promise<ImageData>
   return image;
 }
 
-/** The whole corpus, decoded once — what a survey over all eight loads in `beforeAll`. */
-export async function loadCorpus(): Promise<ReadonlyMap<CorpusSheetName, ImageData>> {
-  const sheets = await Promise.all(
-    CORPUS_SHEETS.map(async (name) => [name, await loadCorpusSheet(name)] as const),
-  );
+/**
+ * The corpus, or the named part of it, decoded once — what a survey loads in `beforeAll`.
+ */
+export async function loadCorpus(
+  names: readonly CorpusSheetName[] = CORPUS_SHEETS,
+): Promise<ReadonlyMap<CorpusSheetName, ImageData>> {
+  const sheets = await Promise.all(names.map(async (name) => [name, await loadCorpusSheet(name)] as const));
   return new Map(sheets);
 }

@@ -170,10 +170,11 @@ export function duplicateSprites(
   // debounce drops the intermediate values of a drag; neither makes the work itself shorter. What
   // the ceiling buys is that the pathological case is *bounded*, not that it is fast.
   //
-  // `tests/quantiser-figures-duplicate-sprites.test.ts` holds the deterministic half of all of this:
-  // the corpus's own sprite counts, and this fixture's grouping at four rungs — nothing at the floor,
-  // nothing at the peak, the seven small groups at 23, the 488 at 24 — which is what says the
-  // expensive rungs really are walking every pair rather than skipping them.
+  // Two suites hold the deterministic half of all of this. The corpus's own sprite counts are in
+  // `tests/quantiser-figures-duplicate-sprites.test.ts`, and this fixture's grouping at four rungs
+  // is in `tests/quantiser-figures-duplicate-sprites-ceiling.test.ts`: nothing at the floor,
+  // nothing at the peak, the seven small groups at 23, the 488 at 24. That grouping is what says
+  // the expensive rungs really are walking every pair rather than skipping them.
   for (const [position, left] of representatives.entries()) {
     for (let step = position + 1; step < representatives.length; step += 1) {
       const right = representatives[step];
