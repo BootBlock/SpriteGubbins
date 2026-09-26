@@ -4,8 +4,9 @@ import { boundEndCells } from './boundEndCells.ts';
 /**
  * Cell starts for one axis at a regular pitch and phase — the exact case, and the fallback.
  *
- * A module of its own because both `regularMesh` and `meshAxis` build it, and `boundaryMesh` asks
- * `meshAxis` for its walked axes: filed inside either, it would make the two import each other.
+ * A module of its own because both `regularMesh` and `meshAxis` build it. Filed in `gridMesh.ts`, it
+ * would make that module and `meshAxis.ts` import each other, since `boundaryMesh` asks `meshAxis`
+ * for its walked axes; filed in `meshAxis.ts`, it would be a second export there.
  */
 export function regularStarts(extent: number, grid: PixelGrid, offset: number): number[] {
   const starts: number[] = [];
