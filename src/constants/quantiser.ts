@@ -774,10 +774,11 @@ export const VOTE_METHOD_CHOICES = [
  * position every other control on this tab spells as a zero — the pass does not run at all.
  *
  * **The colour decision is the same under all three patterns, and only the tile differs.** That is
- * not a cheap tier and a quality tier collapsed into one, but the result of measuring both: the classic
- * threshold form was defined for a palette that is a uniform lattice, and a sprite palette is a
- * list, so the arbitrary-palette search (`mixingPlan`) is what every pattern here needs. Memoised
- * per distinct colour it costs the same for all three — see the reference-sheet figures under
+ * not a cheap tier and a quality tier collapsed into one, but the result of measuring both. The
+ * classic threshold form was defined for a palette that is a uniform lattice, which a channel-depth
+ * space is and takes (`ditherChannelDepth`); a budget, a pinned list and a locked palette are lists,
+ * so the arbitrary-palette search (`mixingPlan`) is what every pattern needs for them. Memoised per
+ * distinct colour it costs the same for all three — see the reference-sheet figures under
  * {@link DITHER_SHORTLIST} — so a cheaper tier would have been a worse result at no saving.
  *
  * What separates the patterns is what the eye does with them, measured on the reference sheet
@@ -803,15 +804,15 @@ export const VOTE_METHOD_CHOICES = [
  * budget 32      flat 14.3 / 4.73 / 3.38   BAYER_4 15.7 / 4.44 / 3.12   BAYER_8 15.8 / 4.47 / 3.16   BLUE_NOISE 15.8 / 4.48 / 3.13
  * budget 8       flat 21.1 / 7.72 / 6.10   BAYER_4 18.1 / 5.32 / 3.79   BAYER_8 18.1 / 5.34 / 3.82   BLUE_NOISE 18.1 / 5.27 / 3.72
  * Game Boy       flat 92.2 / 90.2 / 92.0   BAYER_4 93.3 / 85.7 / 87.8   BAYER_8 93.4 / 85.7 / 87.8   BLUE_NOISE 93.4 / 85.8 / 87.7
- * Mega Drive     flat 20.2 / 8.02 / 6.36   BAYER_4 22.0 / 4.94 / 3.56   BAYER_8 22.1 / 5.01 / 3.62   BLUE_NOISE 22.0 / 5.13 / 3.56
- * Master System  flat 24.0 / 9.56 / 7.10   BAYER_4 27.2 / 5.71 / 3.98   BAYER_8 27.2 / 5.93 / 4.10   BLUE_NOISE 27.1 / 6.06 / 3.81
+ * Mega Drive     flat 20.2 / 8.02 / 6.36   BAYER_4 22.2 / 4.65 / 3.29   BAYER_8 22.2 / 4.71 / 3.26   BLUE_NOISE 22.3 / 4.88 / 3.20
+ * Master System  flat 24.0 / 9.56 / 7.10   BAYER_4 27.5 / 5.52 / 3.72   BAYER_8 27.8 / 5.65 / 3.59   BLUE_NOISE 27.7 / 5.91 / 3.57
  * ```
  *
  * Three things to read out of that. **The per-pixel figure rises on five of the six cases**,
  * because a pattern moves pixels off their nearest colour on purpose. **The block figures fall on
- * five of the six**, and by most on the two channel-depth machines — a little over half the flat
- * step's error over 8 × 8 blocks — which is unsurprising, since a lattice is what ordered dithering
- * was invented for. **Both exceptions are on the budget ladder, and they are one fact stated
+ * five of the six**, and by most on the two channel-depth machines — about half the flat step's
+ * error over 8 × 8 blocks — which is unsurprising, since a lattice is what ordered dithering was
+ * invented for, and those two take its classic per-channel form. **Both exceptions are on the budget ladder, and they are one fact stated
  * twice**: at 64 the palette is ample, so no colour of the sheet needs expressing as a mixture and
  * the pattern is cost on all three figures; at 8 it is short enough that a mixture lands nearer the
  * truth than the nearest single colour does, and the pattern wins on all three, the per-pixel
@@ -822,8 +823,8 @@ export const VOTE_METHOD_CHOICES = [
  * altogether, and all three land on the ordinary reading: per-pixel cost, block gain.
  *
  * The choice between the three patterns is about what each *looks* like rather than about fidelity.
- * They are not identical — the Master System's 4 × 4 figure spreads 0.35 across them — but that
- * spread is a tenth of the 3.85 between the flat step and the best of them, so it is not what a
+ * They are not identical — the Master System's 4 × 4 figure spreads 0.39 across them — but that
+ * spread is a tenth of the 4.05 between the flat step and the best of them, so it is not what a
  * reader should be choosing on.
  *
  * The labels' parentheticals carry the choosing half, per the select budget's rule; what each
@@ -957,38 +958,11 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * once per distinct colour.
  *
  * `tests/quantiser-docblock-figures.test.ts` re-derives the column this constant ships, and both
- * colour counts. **The other five are swept by overriding this constant, not by passing
- * `mixingPlan` a wider `pairFrom`** — that argument is clamped to `LONGEST_SHORTLIST`, which is
- * `max(DITHER_SHORTLIST, DITHER_LATTICE_CORNERS)` and sizes the module's scratch arrays at load, so
- * asking for 64 silently returns the 8 column. The unrestricted column is this constant at **128**,
- * the longest list palette the tab admits.
+ * colour counts. **The other five are swept by overriding this constant**, which also sizes
+ * `mixingPlan`'s scratch arrays at load, so there is no argument to widen it by. The unrestricted
+ * column is this constant at **128**, the longest list palette the tab admits.
  */
 export const DITHER_SHORTLIST = 3;
-
-/**
- * How many candidates a channel-depth lattice offers a mixing plan: the corners of the cell the
- * colour falls in, which is two rungs per channel.
- *
- * Both a bound and an override. A lattice has hundreds of thousands of points and no list to search,
- * so the candidates are worked out per colour rather than per palette — and these eight are the only
- * points a mixture could usefully be made from, being exactly the pair per channel that the classic
- * threshold dither for a bit-depth reduction chooses between.
- *
- * **All eight are paired, rather than the nearest {@link DITHER_SHORTLIST} of them**, because
- * nearness is the wrong ordering on a lattice. Measured on a mid grey against the Master System's
- * two bits: of the eight corners around it, the one raising a single channel is much the nearest and
- * the diagonal corner raising all three is the *furthest* — and the diagonal is the only one whose
- * mixture stays neutral. Drawn from the three nearest, a grey of 100 came back dithered between grey
- * and *red*, which is a visible fault rather than a lost fraction of accuracy. Correcting it is what
- * takes the two machine spaces in {@link DITHER_CHOICES}'s table from about four fifths of the flat
- * step's error over 8 × 8 blocks to a little over half of it.
- *
- * Eight candidates is twenty-eight pairs where a list palette's three are three, so the lattice arm
- * costs an order more per distinct colour — which it can afford precisely because its candidate set
- * is worked out per colour and is this small, where a list palette's is up to 128 and could not be
- * paired exhaustively at all.
- */
-export const DITHER_LATTICE_CORNERS = 8;
 
 /**
  * The coarsest scale the two automatic readers will consider for an image of this size.
@@ -1184,16 +1158,16 @@ export const DEFAULT_SYMMETRY = 'OFF';
  * black-to-white span already admits a mid-tone against its own shadow, and a tolerance that admits
  * a shadow admits most of what a returned sprite's two halves disagree about. Those fifteen pieces
  * are drawn at several angles and are asymmetric by subject, and with the colour dials left where
- * they open the mean share rises from **0.7%** at exact to **77.1%** at 64 — near-symmetry
+ * they open the mean share rises from **0.7%** at exact to **77.2%** at 64 — near-symmetry
  * claimed for a sheet that holds none, which is what would leave the floor below nothing to refuse.
  *
  * **What the dial is worth depends entirely on how flat the sheet already is**, and the reference
  * sheet measures both ends of that. Reduced to 64 colours with the colour merge at 24 it settles to
- * eleven colours, and every rung from exact to 24 reports the identical **36.9%** — the merge has
+ * ten colours, and every rung from exact to 24 reports the identical **36.8%** — the merge has
  * already folded everything within 24, so no two mirrored pixels are left sitting between it and
  * exact, and the reading first moves at 25. The same sheet read with no reduction and no merge holds
- * 11,912 colours, where exact reports **0.7%** and the rungs climb smoothly: 8.0% at 2, 14.8% at 4,
- * 24.2% at 8, 35.6% at 16, 52.7% at 32.
+ * 11,850 colours, where exact reports **0.7%** and the rungs climb smoothly: 8.0% at 2, 14.9% at 4,
+ * 24.2% at 8, 35.6% at 16, 52.9% at 32.
  */
 export const SYMMETRY_TOLERANCE_RANGE = { min: 0, max: 64, step: 1 } as const;
 
@@ -1206,7 +1180,7 @@ export const SYMMETRY_TOLERANCE_RANGE = { min: 0, max: 64, step: 1 } as const;
  * asking and anything short of the gap between two palette entries changes no answer. On an
  * **unreduced** one it turns a reading of 0.7% — which says nothing about the artwork and everything
  * about the resampling — into 24.2%, without reaching the 32 and above where a surface starts
- * matching its own shading, which is 52.7% by that rung.
+ * matching its own shading, which is 52.9% by that rung.
  */
 export const DEFAULT_SYMMETRY_TOLERANCE = 8;
 
@@ -1603,16 +1577,17 @@ export const WIPE_STEP_COARSE = 0.1;
  * levels and the grid candidates.
  *
  * `0` is on the ladder because "exact match only" is a real request, and it is the one setting that
- * also switches the fringe pass off — stated outright in `keyBackground`, because that pass's hue
- * test is scaled from nothing and would otherwise still reach. The values are scaled-OKLab
- * distances, as `keyDistance.ts` measures. Against the recommended magenta they read: **8** takes a
- * field that only re-encoding moved (about 1.4), **16** takes most of one the generator painted at
- * varying purity (its fixtures run 12 to 21), **24** takes the whole of it — shaded and washed to
- * half included — with a margin, **32** is the last rung short of the artwork, and **64** is past
- * where the nearest hues that are *not* the key begin — rose and purple measure 40 and 49 — so it
- * is a rung to reach for once and check the sprite against, not one to sit at. The top rung is
- * also where a black key does its work: OKLab spreads the dark greys apart, so a drifted black
- * field that RGB called near costs more of the scale to reach — see `DEFAULT_KEY_TOLERANCE`.
+ * also switches the fringe pass and the despill off — stated outright in `keyBackground`, because
+ * the fringe pass's hue test is scaled from nothing and would otherwise still reach. The values are
+ * scaled-OKLab distances, as `keyDistance.ts` measures. Against the recommended magenta they read:
+ * **8** takes a field that only re-encoding moved (about 1.4), **16** takes most of one the
+ * generator painted at varying purity (its fixtures run 12 to 21), **24** takes the whole of it —
+ * shaded and washed to half included — with a margin, **32** is the last rung short of the artwork,
+ * and **64** is past where the nearest hues that are *not* the key begin — rose and purple measure
+ * 40 and 49 — so it is a rung to reach for once and check the sprite against, not one to sit at.
+ * The top rung is also where a black key does its work: OKLab spreads the dark greys apart, so a
+ * drifted black field that RGB called near costs more of the scale to reach — see
+ * `DEFAULT_KEY_TOLERANCE`.
  */
 export const KEY_TOLERANCES = [0, 8, 16, 24, 32, 64] as const;
 
@@ -1770,6 +1745,41 @@ export const FRINGE_TOLERANCE_CEILING = 32;
 export const KEY_TINT_SHARE = 0.1;
 
 /**
+ * How many pixels in from the keyed field `despillKey` takes the key's hue back out of a drawn pixel.
+ *
+ * The fringe pass deletes the one pixel of blend touching the field, and the tint runs further in
+ * than that. Measured on the reference sheet keyed on the recommended magenta at
+ * {@link DEFAULT_KEY_TOLERANCE}, `carriesKeyTint` reports **23.2%** of the drawn pixels one pixel in
+ * from the transparent field (2,465 of 10,640), **8.4%** two in, **1.9%** three in and **0.2%**
+ * four in, against about 0.01% from five in onward — so four rings of spill, not three, and on
+ * several other sheets five. With the despill at 5 none of the reference sheet's five rings carries
+ * the tint, and at a grid of 6 the key-tinted pixels on the outermost ring of the result fall from 5
+ * to none with no reduction and from 39 to none under a 64-colour budget. The terrain sheet,
+ * `three-quarter-view_tiles1.png`, is the widest case: 712 of the 2,333 pixels on its result's
+ * outermost ring were key-tinted under that budget, and none are.
+ *
+ * **5 because the guard needs the ring past the band to hold artwork and no spill.** A sheet's
+ * interior rate — the mean of rings 6 to 10, which no sheet's spill reaches — is what its own
+ * artwork carries, and at 5 every sheet's band ends at or under it but one: `armour.png` 0 against
+ * 0.01%, `cyborg_black_red.png` 0.04% against 0.15%, `character_space_marine_blue.png` 0.63% against
+ * 1.11%, `cyborg_monk.png` 0.51% against 0.52%, `cyborg_healer.png` 2.85% against 3.59%, the terrain
+ * sheet none against none and `ui_elements1.png` 0.02% against 0.07%, while
+ * `vehicles_and_props.png` ends at 0.39% against 0.35%. At 4 the guard reads ring 5, which still
+ * holds spill on six of the eight — 0.96% against 0.35% on the vehicles — and protects what it
+ * touches; at 3 it reads ring 4, which holds spill on seven. `tests/despill-corpus.test.ts` pins
+ * every figure in this docblock.
+ *
+ * The guard in `despillKey` is what the band is paired with: a tint that runs past the band is read
+ * as artwork, and the pixels joined to it on the way out are left alone. So a region painted in the
+ * key's hue keeps its colour where it reaches {@link DESPILL_DEPTH} + 2 pixels in from the field —
+ * the fringe pass takes its outermost pixel, and the guard needs one past the band — which a stripe
+ * with the field on both sides reaches at thirteen pixels across. A narrower one loses the key's hue
+ * throughout. That is the price of the depth, and it falls on the colours `KEY_TINT_OFF_HUE` names,
+ * which the prompt already steers a palette away from; the ladder's `exact` rung runs neither pass.
+ */
+export const DESPILL_DEPTH = 5;
+
+/**
  * How far off the key's hue a fringe pixel may sit and still count as a blend of it — as a fraction
  * of the chroma the pixel carries *along* the key's hue, which makes it the tangent of an angle.
  *
@@ -1798,8 +1808,8 @@ export const KEY_TINT_SHARE = 0.1;
  * **Three colours are admitted at any usable setting, and no colour test can refuse them.**
  * `#F8B8F8`, `#F8D8F8` and `#A057A3` lie on magenta's hue axis at reduced chroma, which is precisely
  * what the key mixed with white *is* — they are the same colour, so a sprite painted in them cannot
- * be told from a halo. The escape is the ladder's `exact` rung, which runs no fringe pass at all.
- * (`#A057A3` is inside the radius as well, so it was never the hue test's to refuse.)
+ * be told from a halo. The escape is the ladder's `exact` rung, which runs no fringe pass and no
+ * despill. (`#A057A3` is inside the radius as well, so it was never the hue test's to refuse.)
  */
 export const KEY_TINT_OFF_HUE = 0.35;
 
@@ -1844,7 +1854,7 @@ export const MAX_IMAGE_PIXELS = MAX_IMAGE_EDGE * MAX_IMAGE_EDGE;
  *
  * **The quantity divided out is the sprites' combined bounding-box area**, which is what
  * `affordableReach` sums and is not the same as the sheet's drawn pixels: the reference sheet's
- * fifteen boxes total **17,201** where the opaque pixels inside them number 13,827, twenty per cent
+ * fifteen boxes total **17,201** where the opaque pixels inside them number 13,823, twenty per cent
  * fewer. Both are in the coordinates of the reduced result the pass reads rather than the source
  * sheet's. So the budget affords 975 sweeps against the 33 the full reach costs — thirty times over,
  * which is why **this** bound narrows that sheet by nothing, and the quarter-width cap in `bestAxis`
@@ -2098,7 +2108,8 @@ export const QUANTISE_TOOLTIPS = {
     'When a preview is larger than its frame, drag it with the left mouse button or a finger, or give it focus with Tab and use the arrow keys.',
   keying:
     'Replaces the background key with transparency, so you can import the sheet without a colour field behind it. The key colour comes from the studio, where the prompt stated it.\n\n' +
-    'Above exact, a pixel touching the field goes with it only if it sits near the key or carries the key’s hue, which clears the halo around each sprite. A black or white key has no hue, so nearness alone decides, and a high tolerance reaches into a dark or pale contour. That is why magenta is the recommended key.',
+    'Above exact, a pixel touching the field goes with it only if it sits near the key or carries the key’s hue, which clears the halo around each sprite. A black or white key has no hue, so nearness alone decides, and a high tolerance reaches into a dark or pale contour. That is why magenta is the recommended key.\n\n' +
+    `The ${String(DESPILL_DEPTH)} pixels inside that edge stay, and lose only the key’s hue, keeping their lightness, which clears most of the tint inside the halo. Where the key’s hue runs deeper into a sprite than that, as artwork painted in it does, it keeps its colour.`,
   keyTolerance:
     'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour asked for, so exact usually keys nothing.\n\n' +
     'A key with a colour of its own, such as magenta, discounts its own shading: the key shaded darker or washed paler counts as nearer than a different colour, so the field goes without the sprite. A white or black key is measured straight and needs a closer eye.\n\n' +

@@ -400,8 +400,13 @@ describe('quantiseImage', () => {
 
     // The third pixel is the assertion. Hardening first would clear the second, hand it to the key as
     // field, and the fringe pass would take this one with it — a pixel of silhouette neither dial
-    // asked for.
-    expect(pixels(result.image)).toEqual([[TRANSPARENT, TRANSPARENT, TINTED, TINTED, TINTED]]);
+    // asked for. Alpha alone, because the three that stay are inside the despill's band and lose the
+    // key's hue there, which is `despillKey`'s to state.
+    expect(
+      pixels(result.image)
+        .flat()
+        .map((pixel) => pixel.a),
+    ).toEqual([0, 0, 255, 255, 255]);
   });
 
   it('reports the sprites on the keyed result, in the result’s own pixels', () => {

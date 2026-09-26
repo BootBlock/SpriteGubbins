@@ -209,7 +209,8 @@ export function keyBasis(color: Rgba): KeyBasis {
  * re-enter. **Two functions share it** — {@link keyDistanceSquared} and {@link carriesKeyTint} — and
  * that costs nothing beyond the same rule: each writes it and reads it back inside its own call, so
  * neither can be looking at the other's pixel. `keyBackground` calls the two in one short-circuit
- * `||` on a single offset, strictly in sequence. What the scratch buys is real — the pair runs up to
+ * `||` on a single offset, strictly in sequence, and `despillKey` keeps a scratch of its own for the
+ * pixel it rewrites. What the scratch buys is real — the pair runs up to
  * three times per pixel of a sixteen-megapixel sheet, and an allocation per call is fifty million
  * short-lived objects fed to the collector mid-pass.
  */
@@ -272,8 +273,9 @@ export function keyDistanceSquared(data: Uint8ClampedArray, offset: number, basi
  *   the pixel's own on-axis chroma rather than against the key's.
  *
  * **It is not a licence to erode, and it is not asked everywhere.** `keyBackground` asks it only of
- * a pixel that is 4-adjacent to the keyed field, and the erosion is one pixel deep. Asked of the
- * whole sheet it would take every faintly key-tinted pixel of the artwork with it.
+ * a pixel that is 4-adjacent to the keyed field, and the erosion is one pixel deep. `despillKey`
+ * asks it a few pixels further in, and only to recolour. Asked of the whole sheet it would take
+ * every faintly key-tinted pixel of the artwork with it.
  *
  * **Adjacency is a bound and not a proof, which is the honest limit here.** On a keyed sheet every
  * silhouette pixel touches the field, so the restriction stops the pass reaching *into* a sprite but

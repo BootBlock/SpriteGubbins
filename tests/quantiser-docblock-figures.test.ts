@@ -19,7 +19,6 @@ import {
   SYMMETRY_SWEEP_BUDGET,
 } from '../src/constants/quantiser.ts';
 import { affordableDriftReach } from '../src/utils/affordableDriftReach.ts';
-import { nearestColor } from '../src/utils/applyPalette.ts';
 import { coverageMask } from '../src/utils/coverageMask.ts';
 import { duplicateSprites } from '../src/utils/duplicateSprites.ts';
 import { boundaryMesh } from '../src/utils/gridMesh.ts';
@@ -34,6 +33,7 @@ import {
   unpackColor,
 } from '../src/utils/imageData.ts';
 import { lumaOfChannels } from '../src/utils/lineVote.ts';
+import { nearestColorSearch } from '../src/utils/nearestColorSearch.ts';
 import { type LocatedEntry, locateEntries, nearestOklab } from '../src/utils/lockedPalette.ts';
 import { srgbToOklab } from '../src/utils/oklab.ts';
 import { pixelDistanceOf } from '../src/utils/pixelDistance.ts';
@@ -314,11 +314,12 @@ describe('the figures the quantiser docblocks state', () => {
      * returns is a colour the sheet holds.
      */
     function meanPaletteError(image: ImageData, palette: readonly Rgba[]): number {
+      const nearest = nearestColorSearch(palette);
       let total = 0;
       let pixels = 0;
       for (const [key, count] of colorHistogram(image)) {
         const color = unpackColor(key);
-        const entry = nearestColor(color, palette);
+        const entry = nearest(color);
         if (entry === null) throw new Error('an empty palette has no entry to measure against');
         const from = srgbToOklab(color.r, color.g, color.b);
         const to = srgbToOklab(entry.r, entry.g, entry.b);
@@ -384,6 +385,41 @@ describe('the figures the quantiser docblocks state', () => {
         [15.747, 4.44, 3.116],
         [15.812, 4.472, 3.158],
         [15.757, 4.476, 3.133],
+      ]);
+    }, 240_000);
+
+    it('DITHER_CHOICES — the two channel-depth rows, against the source cell means', () => {
+      // The machines that take the classic per-channel threshold rather than a mixing plan, so the
+      // budget row above cannot stand for them: a change to either dither moves only its own rows.
+      const mesh = boundaryMesh(sheet, 6);
+      const reference = cellMeanField(sheet, mesh);
+      const rows = [3, 2].map((bitsPerChannel) =>
+        (['NONE', 'BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as const).map((dither) =>
+          rowOf(
+            reference,
+            quantiseImage(
+              sheet,
+              CALIBRATION({ dither, reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel } }),
+            ).image,
+            mesh.x.length,
+            mesh.y.length,
+          ),
+        ),
+      );
+
+      expect(rows).toEqual([
+        [
+          [20.214, 8.019, 6.362],
+          [22.24, 4.649, 3.29],
+          [22.222, 4.709, 3.261],
+          [22.257, 4.879, 3.198],
+        ],
+        [
+          [24.039, 9.564, 7.099],
+          [27.518, 5.517, 3.716],
+          [27.771, 5.65, 3.587],
+          [27.713, 5.905, 3.572],
+        ],
       ]);
     }, 240_000);
 
@@ -478,11 +514,10 @@ describe('the figures the quantiser docblocks state', () => {
      * **Paired by nearest centre, not by list position**, and the difference is not cosmetic. A
      * perturbed sheet meshes differently, so a sprite can gain or lose a row of drawn pixels at its
      * edge — enough to cross a row band, or to change how the merge folds a piece back onto its
-     * neighbour, and either of those renumbers everything after it. Index n is therefore *not* the
-     * same piece of artwork either side. Measured on this sheet, an index pairing scores one sprite against a
-     * neighbour that happens to share its extent and misses the one that genuinely kept it: two
-     * errors that cancel into the right total for the wrong reason, which is a guard that would
-     * certify a wrong figure the moment the perturbation, the grid or the key tolerance changed.
+     * neighbour, and either of those renumbers everything after it. Index n is therefore not
+     * guaranteed to be the same piece of artwork either side. Under the two flat shifts below every
+     * box does keep its index, so the two pairings agree today; an index pairing would still certify
+     * a wrong figure the moment the perturbation, the grid or the key tolerance re-sorted a row.
      *
      * A sprite moves a pixel or two under this perturbation and no further, so its centre identifies
      * it. A pairing that is not one-to-one is not a pairing at all, so this throws rather than
@@ -513,7 +548,7 @@ describe('the figures the quantiser docblocks state', () => {
       return kept;
     };
 
-    it('leaves 3 of the reference sheet 15 sprites with the extent they had, and 6 the other way', () => {
+    it('leaves 3 of the reference sheet 15 sprites with the extent they had, and 1 the other way', () => {
       const before = boxesOf(sheet);
       const up = boxesOf(shifted(sheet, 4));
       const down = boxesOf(shifted(sheet, -4));
@@ -522,7 +557,20 @@ describe('the figures the quantiser docblocks state', () => {
       // about extents changing, not about sprites appearing or vanishing, and the pairing above
       // assumes each sprite has a counterpart to be paired with.
       expect([before.length, up.length, down.length]).toEqual([15, 15, 15]);
-      expect([keptExtent(before, up), keptExtent(before, down)]).toEqual([3, 6]);
+      expect([keptExtent(before, up), keptExtent(before, down)]).toEqual([3, 1]);
+      // The docblock's claim that list position gives the same answer under these two shifts: each
+      // box's nearest centre on the shifted sheet is the box at its own index.
+      const nearestIndex = (box: SpriteBox, after: readonly SpriteBox[]): number => {
+        const [x, y] = centreOf(box);
+        const distances = after.map((other) => {
+          const [otherX, otherY] = centreOf(other);
+          return (otherX - x) ** 2 + (otherY - y) ** 2;
+        });
+        return distances.indexOf(Math.min(...distances));
+      };
+      for (const after of [up, down]) {
+        expect(before.map((box) => nearestIndex(box, after))).toEqual(before.map((_, index) => index));
+      }
     }, 600_000);
 
     it('finds 15 to 42 sprites on the corpus, an order of magnitude under the ceiling', async () => {
@@ -534,7 +582,7 @@ describe('the figures the quantiser docblocks state', () => {
         return sprites.kind === 'SEGMENTED' ? sprites.boxes.length : -1;
       });
 
-      expect(counts).toEqual([15, 15, 15, 42, 33, 24, 25, 27]);
+      expect(counts).toEqual([15, 15, 15, 42, 34, 24, 25, 27]);
       // The claim the timing conclusion rests on, stated as a bound as well as a list. The bound
       // adds nothing while the list holds — 42 is in it — and it is not there for today: a ninth
       // sheet fails the list first, and whoever adds it to the list then has to get it past this
@@ -689,7 +737,7 @@ describe('the figures the quantiser docblocks state', () => {
     const combinedBoxArea = (boxes: readonly SpriteBox[]): number =>
       boxes.reduce((total, box) => total + box.width * box.height, 0);
 
-    it('totals 17,201 pixels of box against 13,827 of artwork, and is not narrowed by the budget', () => {
+    it('totals 17,201 pixels of box against 13,823 of artwork, and is not narrowed by the budget', () => {
       const result = quantiseImage(sheet, AS_STATED());
       expect(result.sprites.kind).toBe('SEGMENTED');
       const boxes = result.sprites.kind === 'SEGMENTED' ? result.sprites.boxes : [];
@@ -704,7 +752,7 @@ describe('the figures the quantiser docblocks state', () => {
       for (let at = 3; at < result.image.data.length; at += CHANNELS_PER_PIXEL) {
         if ((result.image.data[at] ?? 0) > 0) opaque += 1;
       }
-      expect(opaque).toBe(13_827);
+      expect(opaque).toBe(13_823);
 
       // The budget buys 975 sweeps where the full reach costs 33, which is what "the budget narrows
       // this sheet by nothing" means — and the reach is asked of the pass rather than recomputed

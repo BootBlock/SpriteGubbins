@@ -134,33 +134,24 @@ describe('ditherImage', () => {
     expect([...out.data]).toEqual([...sheet.data]);
   });
 
-  it('dithers a channel-depth space between the rungs either side of the colour', () => {
+  it('dithers a channel-depth space per channel rather than between two colours', () => {
+    // Three different fractions between the rungs either side, so no two corners of the colour's cell
+    // mix to it. A mixing plan writes two colours whatever it chose; the classic per-channel
+    // threshold `ditherChannelDepth` applies walks up to four corners across the tile.
     const levels = channelLevels(2);
-    const between: Rgba = { r: 100, g: 100, b: 100, a: 255 };
     const out = ditherImage(
-      imageFrom(16, 16, () => between),
+      imageFrom(16, 16, () => ({ r: 40, g: 120, b: 200, a: 255 })),
       { kind: 'CHANNEL_DEPTH', bitsPerChannel: 2 },
       BAYER_4,
     );
 
-    // Every colour written is on the lattice, and the two it alternates between are the rungs the
-    // source colour falls between — which is what the classic threshold dither for a bit-depth
-    // reduction chooses, arrived at here by the same search every other palette uses.
     const written = [...colorHistogram(out).keys()].map(unpackColor);
-    expect(written.length).toBe(2);
+    expect(written.length).toBeGreaterThan(2);
     for (const entry of written) {
       expect(levels).toContain(entry.r);
       expect(levels).toContain(entry.g);
       expect(levels).toContain(entry.b);
     }
-    // The rungs either side on *every* channel, which is the corner a neutral colour needs and the
-    // furthest of the eight from it — see `DITHER_LATTICE_CORNERS`.
-    expect(written).toEqual(
-      expect.arrayContaining([
-        { r: 85, g: 85, b: 85, a: 255 },
-        { r: 170, g: 170, b: 170, a: 255 },
-      ]),
-    );
   });
 
   it('returns the sheet unchanged where the palette is empty', () => {

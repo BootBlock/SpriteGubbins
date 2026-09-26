@@ -193,7 +193,7 @@ export interface BackgroundKeying {
   /**
    * How far a pixel may sit in scaled OKLab, as `keyDistanceSquared` measures it — alpha ignored.
    *
-   * **Not the plain Euclidean distance `nearestColor` uses, and the difference is the feature.** That
+   * **Not the plain Euclidean distance `nearestColorSearch` uses, and the difference is the feature.** That
    * metric answers "how far apart are these two colours" across raw RGBA, which is the right question
    * when picking the nearest palette entry and the wrong one here: a key field varies by being shaded
    * and washed out, and measured plainly that variation costs more than a change of hue does. So this
@@ -405,7 +405,8 @@ export const DITHER_PATTERNS = ['NONE', 'BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as c
 
 /**
  * One of the four — which threshold pattern decides, at each position, whether a pixel takes its
- * mixing plan's first colour or its second.
+ * mixing plan's first colour or its second, or under a channel-depth space, whether each channel
+ * takes the rung below it or the rung above.
  *
  * **Positional, never error-diffusion, and that is the constraint the whole feature rests on.** A
  * sprite sheet is source artwork for frames that are later animated and tiled, and error diffusion
@@ -503,7 +504,7 @@ export type AntiAliasPalette = (typeof ANTI_ALIAS_PALETTES)[number];
 export interface ThresholdMatrix {
   /** The tile's edge, in pixels — it repeats across the sheet from the image's own origin. */
   readonly size: number;
-  /** How many distinct ranks the tile holds, and the denominator every mixing ratio is stated over. */
+  /** How many distinct ranks the tile holds: the denominator of every mixing ratio and channel fraction. */
   readonly levels: number;
   /** Row-major, `size × size`, each entry `0 … levels − 1`. */
   readonly ranks: Uint16Array;

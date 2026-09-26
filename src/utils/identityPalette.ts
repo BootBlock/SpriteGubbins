@@ -1,7 +1,6 @@
 import { IDENTITY_PALETTE_SIZE } from '../constants/identityLock.ts';
 import { DEFAULT_KEY_TOLERANCE } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
-import { nearestColor } from './applyPalette.ts';
 import {
   CHANNELS_PER_PIXEL,
   colorHistogram,
@@ -15,6 +14,7 @@ import {
   writePixel,
 } from './imageData.ts';
 import { keyBackground } from './keyBackground.ts';
+import { nearestColorSearch } from './nearestColorSearch.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
 /**
@@ -36,7 +36,7 @@ import { buildPalette } from './wuQuantiser.ts';
  * Order is the point. `buildPalette` returns its entries in the order the boxes were split, which
  * says nothing about which colour the sheet is mostly made of — so each entry is totalled over every
  * colour that maps to it, and the list leads with the base colour the way §5's worked example does.
- * Coverage is measured through `nearestColor`, the same assignment `applyPalette` draws with, so the
+ * Coverage is measured through `nearestColorSearch`, the same assignment `applyPalette` draws with, so the
  * totals describe the palette as it would actually be used.
  *
  * `backgroundKey` is the key field's colour, excluded so the digest describes the subject rather
@@ -50,9 +50,10 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
   const subject = subjectPixels(image, backgroundKey);
   const palette = buildPalette(subject, IDENTITY_PALETTE_SIZE);
 
+  const nearest = nearestColorSearch(palette);
   const coverage = new Map<number, number>();
   for (const [key, count] of colorHistogram(subject)) {
-    const entry = nearestColor(unpackColor(key), palette);
+    const entry = nearest(unpackColor(key));
     // Only when the palette is empty, which means a sheet with nothing on it but its key field.
     if (entry === null) continue;
     const entryKey = packColor(entry);
@@ -135,7 +136,10 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  * within that one pixel: every one of its pixels touches the field, so where its hue sits within
  * `KEY_TINT_OFF_HUE` of the key, `carriesKeyTint` takes the lot and the outline's colour leaves the
  * digest with it. A violet ring against the recommended magenta is the case; a teal one is
- * untouched, which is what identifies the hue test rather than the radius as the mechanism.
+ * untouched, which is what identifies the hue test rather than the radius as the mechanism. An
+ * outline up to `DESPILL_DEPTH` pixels wider than that loses its colour the other way: `despillKey`
+ * takes the key's hue out of the pixels behind the first, so the digest reads them as a near-grey
+ * of the same lightness.
  *
  * It is still the right trade, and narrowly. The colour at risk is one an artist chose *close to the
  * key they were keying against*, and the reader who wants it has the ordinary route — read the

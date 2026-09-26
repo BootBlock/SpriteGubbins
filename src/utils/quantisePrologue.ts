@@ -27,10 +27,11 @@ import { keyBackground } from './keyBackground.ts';
  * already-transparent pixel into its field and erodes one pixel inward from it, so a hardening that
  * ran first would hand the key a wider field than the sheet has and the two erosions would compound
  * into a silhouette neither dial asked for. Behind it, the key never sees a pixel this cleared.
- * Nothing is lost by the order either: `keyBackground` writes only full transparency or the pixel it
- * was handed, so there is no partial alpha of its own for this to threshold — the coverage it reads
- * is always the sheet's own. The hardening then goes ahead of the mesh so the step profile weighs a
- * hard boundary rather than a ramp, which is the same reason the key goes ahead of it.
+ * Nothing is lost by the order either: `keyBackground` writes only full transparency or the pixel
+ * it was handed at its own alpha — the despill changes a pixel's colour and never its alpha — so
+ * there is no partial alpha of its own for this to threshold, and the coverage it reads is always
+ * the sheet's own. The hardening then goes ahead of the mesh so the step profile weighs a hard
+ * boundary rather than a ramp, which is the same reason the key goes ahead of it.
  *
  * **The mesh is measured here rather than by whoever wants one, and that is the point of carrying
  * it.** It is what makes every reading in `gridAlignment.ts` agree about where a cell begins — so a
