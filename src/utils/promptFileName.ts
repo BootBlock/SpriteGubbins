@@ -9,9 +9,11 @@ import { slugify } from './slugify.ts';
  *
  * Lower-cased and reduced to `a-z0-9-` because this crosses a filesystem: a species field is free
  * text and may hold a slash, a colon or a quotation mark, each of which is illegal on at least one
- * platform. That reduction is `slugify`, which the sprite pack's entry names take too — one answer
- * to "this phrase as an identifier", rather than two spellings of one regular expression that could
- * come to disagree about a character. An empty stem — a blank species, or one written entirely in
+ * platform. That reduction is `slugify`, which the sprite pack's plan-derived entry names take too —
+ * one answer to "this phrase as an identifier", rather than two spellings of one regular expression
+ * that could come to disagree about a character. A rig contract's piece names are the exception: the
+ * engine looks a piece up by its name as written, so those are kept verbatim and
+ * `rigPieceNameProblem` refuses one that cannot be a file name instead. An empty stem — a blank species, or one written entirely in
  * punctuation — falls back to `sprite` rather than producing a file called `-prompt.md`.
  */
 export function promptFileName(species: string): string {

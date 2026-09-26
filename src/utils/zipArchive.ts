@@ -50,7 +50,10 @@ import { crc32 } from './crc32.ts';
 
 /** One file in the archive: the name it takes, and the bytes it holds. */
 export interface ZipEntry {
-  /** A path relative to the archive root — `sprites/04-left-upper-arm.png`. Forward slashes only. */
+  /**
+   * A path relative to the archive root — `sprites/04-left-upper-arm.png`. Forward slashes only, and
+   * every segment a name: `zipArchive` refuses anything else (see `entryNameFault`).
+   */
   readonly name: string;
   readonly bytes: Uint8Array;
 }
@@ -89,6 +92,26 @@ interface DirectoryRecord {
   readonly offset: number;
 }
 
+/**
+ * Why an entry name is not a relative path this archive may carry, or nothing.
+ *
+ * **APPNOTE 4.4.17.1 requires a relative, forward-slash path with no drive letter**, and an
+ * extractor without zip-slip protection writes `..` segments wherever they climb to. So the writer
+ * refuses such a name rather than trusting every caller to have sanitised one, which is how a rig
+ * contract's piece name once reached an entry name unchecked. An empty segment is refused too: a
+ * trailing slash declares a directory entry this writer never means, and a doubled one is a name
+ * extractors disagree about. A name only a stricter filesystem refuses is the caller's to prevent.
+ */
+function entryNameFault(name: string): string | null {
+  if (name === '') return 'is empty';
+  if (name.startsWith('/') || /^[a-z]:/iu.test(name)) return 'is absolute';
+  if (name.includes('\\')) return 'holds a backslash';
+  const segments = name.split('/');
+  if (segments.includes('')) return 'has an empty segment';
+  if (segments.some((segment) => segment === '.' || segment === '..')) return 'climbs the tree';
+  return null;
+}
+
 export function zipArchive(entries: readonly ZipEntry[]): Uint8Array<ArrayBuffer> {
   if (entries.length > MAX_ENTRIES) {
     throw new Error(`An archive of ${String(entries.length)} files is more than the format can list`);
@@ -99,6 +122,8 @@ export function zipArchive(entries: readonly ZipEntry[]): Uint8Array<ArrayBuffer
   const directory: DirectoryRecord[] = [];
 
   for (const entry of entries) {
+    const fault = entryNameFault(entry.name);
+    if (fault !== null) throw new Error(`The entry name ‘${entry.name}’ ${fault}`);
     const name = encoder.encode(entry.name);
     const check = crc32(entry.bytes);
     const offset = archive.length;

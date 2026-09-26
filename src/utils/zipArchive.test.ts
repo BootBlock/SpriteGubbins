@@ -53,6 +53,26 @@ describe('zipArchive', () => {
     expect(readZip(zipArchive([]))).toStrictEqual([]);
   });
 
+  it.each([
+    ['', /is empty/],
+    ['/etc/evil.png', /is absolute/],
+    ['C:/evil.png', /is absolute/],
+    ['sprites\\01-evil.png', /holds a backslash/],
+    ['sprites//01-evil.png', /has an empty segment/],
+    ['sprites/', /has an empty segment/],
+    ['sprites/01-../../../evil.png', /climbs the tree/],
+    ['./sheet.png', /climbs the tree/],
+  ])('refuses the entry name %j, which no caller may pass through to an extractor', (name, fault) => {
+    // A name an extractor without zip-slip protection writes outside its root, or one APPNOTE
+    // 4.4.17.1 forbids outright, is refused here so no future caller can repeat the rig contract's
+    // unchecked piece name.
+    expect(() => zipArchive([{ name, bytes: bytes('x') }])).toThrow(fault);
+  });
+
+  it('accepts a dot inside a segment, which climbs nothing', () => {
+    expect(() => zipArchive([{ name: 'sprites/01-a..b.png', bytes: bytes('x') }])).not.toThrow();
+  });
+
   it('refuses more entries than the format can list', () => {
     const many = Array.from({ length: 0x10000 }, (_, index) => ({
       name: `${String(index)}.txt`,
