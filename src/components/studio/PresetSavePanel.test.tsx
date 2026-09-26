@@ -52,7 +52,7 @@ afterEach(() => {
 
 describe('PresetSavePanel', () => {
   it('shows the description of the preset it is about to update', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     usePresetStore.setState({ customPresets: [EXISTING] });
     render(<PresetSavePanel />);
 
@@ -66,7 +66,7 @@ describe('PresetSavePanel', () => {
   });
 
   it('adopts it again after the box was typed in and then cleared', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     usePresetStore.setState({ customPresets: [EXISTING] });
     render(<PresetSavePanel />);
 
@@ -83,7 +83,7 @@ describe('PresetSavePanel', () => {
   });
 
   it('adopts once per preset, not once per keystroke', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     usePresetStore.setState({ customPresets: [EXISTING] });
     render(<PresetSavePanel />);
 
@@ -99,7 +99,7 @@ describe('PresetSavePanel', () => {
   });
 
   it('stores an empty box when the reader cleared it deliberately', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const saveCustomPreset = vi.fn().mockResolvedValue(true);
     usePresetStore.setState({ customPresets: [EXISTING], saveCustomPreset });
     render(<PresetSavePanel />);
@@ -114,7 +114,7 @@ describe('PresetSavePanel', () => {
   });
 
   it('saves the name and the description together, and clears both on success', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const saveCustomPreset = vi.fn().mockResolvedValue(true);
     usePresetStore.setState({ saveCustomPreset });
     render(<PresetSavePanel />);
@@ -129,7 +129,7 @@ describe('PresetSavePanel', () => {
   });
 
   it('files the save into the project the dropdown names', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const saveCustomPreset = vi.fn().mockResolvedValue(true);
     useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });
     usePresetStore.setState({ saveCustomPreset });
@@ -145,7 +145,7 @@ describe('PresetSavePanel', () => {
   it('judges Update against the chosen project, not the whole library', async () => {
     // A name is unique inside one project, so the same name in another project is a new preset
     // rather than an overwrite — and the button has to answer by the rule the store saves by.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });
     usePresetStore.setState({ customPresets: [EXISTING] });
     render(<PresetSavePanel />);
@@ -162,7 +162,7 @@ describe('PresetSavePanel', () => {
     // The adoption lived in the name box's handler alone, so switching project moved the target
     // without moving what the box held: the button read Update over the *other* project's sentence,
     // and pressing it wrote that sentence onto this project's preset.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });
     usePresetStore.setState({
       customPresets: [
@@ -181,7 +181,7 @@ describe('PresetSavePanel', () => {
   });
 
   it('leaves the box alone when the new project holds nothing under that name', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });
     usePresetStore.setState({ customPresets: [EXISTING] });
     render(<PresetSavePanel />);
@@ -196,7 +196,7 @@ describe('PresetSavePanel', () => {
   });
 
   it('keeps the project chosen after a save, since two saves in a row share one', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });
     usePresetStore.setState({ saveCustomPreset: vi.fn().mockResolvedValue(true) });
     render(<PresetSavePanel />);
@@ -209,9 +209,9 @@ describe('PresetSavePanel', () => {
   });
 
   it('keeps both boxes when the write was refused', async () => {
-    const user = userEvent.setup();
     // The store reports a failed write with a toast and resolves normally, so clearing the boxes
     // unconditionally would make the user retype a description that was never stored.
+    const user = userEvent.setup({ delay: null });
     usePresetStore.setState({ saveCustomPreset: vi.fn().mockResolvedValue(false) });
     render(<PresetSavePanel />);
 

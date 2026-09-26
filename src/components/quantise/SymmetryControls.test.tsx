@@ -47,7 +47,7 @@ describe('SymmetryControls', () => {
 
   it('offers the tolerance once a reading is being taken, and the floor only once one is acted on', async () => {
     show();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.selectOptions(screen.getByRole('combobox', { name: /Symmetry/ }), 'CHECK');
     expect(screen.getByRole('slider', { name: /Symmetry tolerance/ })).toBeInTheDocument();

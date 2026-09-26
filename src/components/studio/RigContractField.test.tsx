@@ -37,7 +37,8 @@ function fileOf(text: string): File {
 }
 
 async function choose(text: string): Promise<void> {
-  await userEvent.upload(screen.getByLabelText('Rig Contract'), fileOf(text));
+  const user = userEvent.setup({ delay: null });
+  await user.upload(screen.getByLabelText('Rig Contract'), fileOf(text));
 }
 
 beforeEach(() => {
@@ -88,13 +89,14 @@ describe('RigContractField', () => {
   });
 
   it('gives the sheet back its own inventory when the contract is removed', async () => {
+    const user = userEvent.setup({ delay: null });
     render(<RigContractField appliesToSheet />);
     await choose(JSON.stringify(CONTRACT));
     await waitFor(() => {
       expect(useOutputStore.getState().output.rigContract).not.toBeNull();
     });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
 
     expect(useOutputStore.getState().output.rigContract).toBeNull();
   });

@@ -43,7 +43,7 @@ describe('SubjectHistoryControls', () => {
   });
 
   it('counts the steps back and walks them on a press', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useSubjectStore.getState().setCategory('BUILDING');
     useSubjectStore.getState().setCategory('CREATURE');
     render(<SubjectHistoryControls />);
@@ -60,7 +60,7 @@ describe('SubjectHistoryControls', () => {
   });
 
   it('steps back on Ctrl+Z from anywhere on the page', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useSubjectStore.getState().setCategory('BUILDING');
     render(<SubjectHistoryControls />);
 
@@ -73,7 +73,7 @@ describe('SubjectHistoryControls', () => {
     // A modal `<dialog>` makes the page behind it inert, so this listener is the only thing back
     // there that still answers. A reader on the settings dialog's accent select — not a text box —
     // would otherwise rewrite the studio underneath a surface that cannot show it happening.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useSubjectStore.getState().setCategory('BUILDING');
     render(
       <>
@@ -93,7 +93,7 @@ describe('SubjectHistoryControls', () => {
   });
 
   it('leaves Ctrl+Z alone inside a text box, which has an undo of its own', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useSubjectStore.getState().setCategory('BUILDING');
     render(
       <>

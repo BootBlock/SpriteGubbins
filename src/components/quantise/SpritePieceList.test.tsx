@@ -78,8 +78,9 @@ describe('SpritePieceList', () => {
   });
 
   it('records a name the reader chooses against that sprite', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'name:torso');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'name:torso');
 
     expect(useSpriteAssignmentStore.getState().edits).toStrictEqual([
       // Pinned to the centre of the box it was made on, so the decision survives a dial that re-cuts
@@ -89,23 +90,25 @@ describe('SpritePieceList', () => {
   });
 
   it('offers leaving a sprite out from the same control', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
     const second = screen.getByRole('combobox', { name: 'Sprite 2' });
 
     // One per row, because every sprite can be left out.
     expect(screen.getAllByRole('option', { name: 'Leave out' })).toHaveLength(BOXES.length);
-    await userEvent.selectOptions(second, 'leave-out');
+    await user.selectOptions(second, 'leave-out');
 
     expect(useSpriteAssignmentStore.getState().edits[0]?.decision).toStrictEqual({ kind: 'LEAVE_OUT' });
   });
 
   it('joins a sprite to the one whose number the reader types', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'join');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'join');
 
     // Choosing to join names no partner yet, so nothing is recorded until one is typed.
     expect(useSpriteAssignmentStore.getState().edits).toStrictEqual([]);
-    await userEvent.type(screen.getByRole('spinbutton', { name: 'Sprite 2 joined to' }), '3');
+    await user.type(screen.getByRole('spinbutton', { name: 'Sprite 2 joined to' }), '3');
 
     expect(useSpriteAssignmentStore.getState().edits).toStrictEqual([
       // Pinned to the centre of sprite 3's box, not to the number, so the join survives a re-cut
@@ -125,8 +128,9 @@ describe('SpritePieceList', () => {
   });
 
   it('takes the reader to the partner field as soon as they choose to join', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'join');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'join');
 
     expect(screen.getByRole('spinbutton', { name: 'Sprite 2 joined to' })).toHaveFocus();
   });
@@ -135,11 +139,12 @@ describe('SpritePieceList', () => {
     // Choosing to join records nothing, so a name or a leave-out stands until a partner is typed. A
     // select still saying “join” after the reader moved on would be describing a decision the
     // download is not applying.
+    const user = userEvent.setup({ delay: null });
     useSpriteAssignmentStore.getState().decide({ x: 12, y: 2 }, { kind: 'LEAVE_OUT' });
     show();
     const second = screen.getByRole('combobox', { name: 'Sprite 2' });
-    await userEvent.selectOptions(second, 'join');
-    await userEvent.click(document.body);
+    await user.selectOptions(second, 'join');
+    await user.click(document.body);
 
     expect(second).toHaveValue('leave-out');
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
@@ -147,20 +152,22 @@ describe('SpritePieceList', () => {
   });
 
   it('keeps a join waiting while the reader opens the partner field’s own guidance', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'join');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'join');
     // The ⓘ sits before the field, in its label row.
-    await userEvent.tab({ shift: true });
+    await user.tab({ shift: true });
 
     expect(screen.getByRole('button', { name: 'Guidance: Sprite 2 joined to' })).toHaveFocus();
     expect(screen.getByRole('spinbutton', { name: 'Sprite 2 joined to' })).toBeInTheDocument();
   });
 
   it('refuses a join to the sprite itself, and says why rather than reverting', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'join');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sprite 2' }), 'join');
     const partner = screen.getByRole('spinbutton', { name: 'Sprite 2 joined to' });
-    await userEvent.type(partner, '2');
+    await user.type(partner, '2');
 
     expect(useSpriteAssignmentStore.getState().edits).toStrictEqual([]);
     expect(partner).toHaveValue(2);
@@ -170,9 +177,10 @@ describe('SpritePieceList', () => {
   it('takes a number whose first digit is the sprite’s own', async () => {
     // A field bound to the stored number refuses the `1` of `15` on sprite 1 as a self-join and
     // snaps back, so the `5` has nothing to follow and sprite 15 can never be typed.
+    const user = userEvent.setup({ delay: null });
     show(INVENTORY, row(15));
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sprite 1' }), 'join');
-    await userEvent.type(screen.getByRole('spinbutton', { name: 'Sprite 1 joined to' }), '15');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sprite 1' }), 'join');
+    await user.type(screen.getByRole('spinbutton', { name: 'Sprite 1 joined to' }), '15');
 
     expect(useSpriteAssignmentStore.getState().edits).toStrictEqual([
       { pin: { x: 2, y: 2 }, decision: { kind: 'JOIN', to: { x: 142, y: 2 } } },
@@ -218,12 +226,13 @@ describe('SpritePieceList', () => {
   });
 
   it('offers nothing to clear until there is something to take back', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
     expect(screen.queryByRole('button', { name: 'Clear the choices' })).not.toBeInTheDocument();
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sprite 1' }), 'leave-out');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sprite 1' }), 'leave-out');
     show();
-    await userEvent.click(screen.getAllByRole('button', { name: 'Clear the choices' })[0] as HTMLElement);
+    await user.click(screen.getAllByRole('button', { name: 'Clear the choices' })[0] as HTMLElement);
 
     expect(useSpriteAssignmentStore.getState().edits).toStrictEqual([]);
   });

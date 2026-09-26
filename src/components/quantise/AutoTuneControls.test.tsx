@@ -89,10 +89,11 @@ const WHITE = { r: 255, g: 255, b: 255, a: 255 };
  * studio's colour budget on another tab.
  */
 async function swept(settings: QuantiseSettings = SETTINGS) {
+  const user = userEvent.setup({ delay: null });
   FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
   const { rerender } = render(<AutoTuneControls image={createImage(8, 8)} settings={settings} />);
 
-  await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+  await user.click(screen.getByRole('button', { name: /Auto/ }));
   await waitFor(() => {
     expect(screen.getByText(COST)).toBeInTheDocument();
   });
@@ -132,10 +133,11 @@ describe('AutoTuneControls', () => {
   });
 
   it('moves the dials the sweep swept, and leaves every other dial alone', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
@@ -161,10 +163,11 @@ describe('AutoTuneControls', () => {
   });
 
   it('lands the whole answer as one step a single undo reverses', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
     await waitFor(() => {
       expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
     });
@@ -179,9 +182,10 @@ describe('AutoTuneControls', () => {
   });
 
   it('says what it is doing while it runs, and disables the button', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     expect(screen.getByRole('button', { name: /Tuning/ })).toBeDisabled();
     expect(screen.getByText('Sweeping the dials…')).toBeInTheDocument();
@@ -190,10 +194,11 @@ describe('AutoTuneControls', () => {
   });
 
   it('reports what the sweep cost and what it was worth', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
@@ -204,10 +209,11 @@ describe('AutoTuneControls', () => {
   });
 
   it('names each stage, and says which of them had nothing to try', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(
@@ -238,11 +244,12 @@ describe('AutoTuneControls', () => {
   });
 
   it('shows what went wrong, and offers the sweep again', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () =>
       Promise.resolve({ kind: 'failed', reason: 'Array buffer allocation failed' });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent('Array buffer allocation failed');
@@ -252,9 +259,10 @@ describe('AutoTuneControls', () => {
   });
 
   it('leaves the dials where they were when the sweep is disowned by a new sheet', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
     // What `setSource` does while a sweep is in flight: the thread ends and the answer is dropped.
     abandonSweep();
     thread().answer({ kind: 'tuned', outcome: OUTCOME });
@@ -270,10 +278,11 @@ describe('AutoTuneControls', () => {
     // Every line of the report is a statement about where the dials stand, and the paragraph beside
     // it says they have just moved and that one undo puts them back. An undo — or a hand on a
     // slider — makes all of that false while it is still on screen.
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
     await waitFor(() => {
       expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
     });
@@ -287,10 +296,11 @@ describe('AutoTuneControls', () => {
   });
 
   it('keeps its own report when the sweep applies it, which is the one write that must not retire it', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
@@ -361,10 +371,11 @@ describe('AutoTuneControls', () => {
   });
 
   it('withdraws a refusal the same way, rather than blaming the settings now in force', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () =>
       Promise.resolve({ kind: 'failed', reason: 'Array buffer allocation failed' });
     const { rerender } = render(<AutoTuneControls image={createImage(8, 8)} settings={SETTINGS} />);
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent('Array buffer allocation failed');
     });
@@ -393,10 +404,11 @@ describe('AutoTuneControls', () => {
   it('says why the button is unavailable beside the report rather than instead of it', async () => {
     // Reachable by clearing the grid box after a sweep: the report is still true about the dials,
     // and the button is still unavailable, and both sentences are needed.
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     const { rerender } = render(<AutoTuneControls image={createImage(8, 8)} settings={SETTINGS} />);
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
     await waitFor(() => {
       expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
     });
@@ -410,11 +422,12 @@ describe('AutoTuneControls', () => {
 
   it('does not repeat the failure text its alert already carries', async () => {
     // Both regions change in one render, so a reason in each is announced twice.
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () =>
       Promise.resolve({ kind: 'failed', reason: 'Array buffer allocation failed' });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent('Array buffer allocation failed');

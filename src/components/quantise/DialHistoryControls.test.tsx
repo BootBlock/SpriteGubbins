@@ -28,7 +28,7 @@ describe('DialHistoryControls', () => {
   });
 
   it('counts the steps back and walks them on a press', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useQuantiseStore.getState().setColorMerge(24);
     useQuantiseStore.getState().setCleanupPasses(3);
     render(<DialHistoryControls />);
@@ -44,7 +44,7 @@ describe('DialHistoryControls', () => {
   });
 
   it('undoes and redoes from the keyboard, wherever the focus is', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useQuantiseStore.getState().setColorMerge(24);
     render(<DialHistoryControls />);
 
@@ -63,7 +63,7 @@ describe('DialHistoryControls', () => {
     // The grid box and the two preset name fields. A reader pressing Ctrl+Z while typing in one
     // means their typing, and a window-wide binding that took it would delete a name they were
     // halfway through instead.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useQuantiseStore.getState().setColorMerge(24);
     render(
       <>
@@ -82,7 +82,7 @@ describe('DialHistoryControls', () => {
     // The other half of that rule, and the half that decides it: most of the dials are a slider or a
     // select, so a guard written as "an input has focus" would turn the shortcut
     // off exactly where a reader has just used it.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useQuantiseStore.getState().setColorMerge(24);
     render(
       <>

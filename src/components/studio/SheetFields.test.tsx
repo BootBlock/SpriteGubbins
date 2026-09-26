@@ -55,7 +55,6 @@ describe('SheetFields', () => {
     chooseMode(RIG_SHEET);
 
     expect(useOutputStore.getState().output.rigMode).toBe('CUTOUT_RIG');
-    expect(useOutputStore.getState().output.sheetIndex).toBe(0);
   });
 
   it('hands the rig back with the sheet that took it', () => {

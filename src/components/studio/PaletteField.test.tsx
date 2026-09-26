@@ -19,7 +19,11 @@ describe('PaletteField', () => {
     useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, palette: 'FREE' } });
   });
 
-  it('offers no palette file while nothing is pinned', () => {
+  it.each([
+    ['offers no palette file while nothing is pinned', 'FREE'],
+    ['offers nothing for a machine whose palette is a ladder rather than a list', 'MEGA_DRIVE'],
+  ] as const)('%s', (_, palette) => {
+    useOutputStore.getState().setOutputField('palette', palette);
     render(<PaletteField />);
 
     // By name, because the label carries a guidance ⓘ that is a button too.
@@ -63,14 +67,6 @@ describe('PaletteField', () => {
     render(<PaletteField />);
 
     expect(screen.getByLabelText('Palette file')).toBeVisible();
-    // By name, because the label carries a guidance ⓘ that is a button too.
-    expect(screen.queryByRole('button', { name: / — download / })).toBeNull();
-  });
-
-  it('offers nothing for a machine whose palette is a ladder rather than a list', () => {
-    useOutputStore.getState().setOutputField('palette', 'MEGA_DRIVE');
-    render(<PaletteField />);
-
     // By name, because the label carries a guidance ⓘ that is a button too.
     expect(screen.queryByRole('button', { name: / — download / })).toBeNull();
   });
