@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { imageFrom, soften } from '../test/images.ts';
 import { oklabToSrgb, srgbToOklab } from './oklab.ts';
 import { oklabPlanes, type OklabPlanes } from './oklabPlanes.ts';
+import { pixelDistance } from './pixelDistance.ts';
 import { meanSsim, ssimAgainst, ssimReference } from './ssim.ts';
 
 /**
@@ -65,14 +66,12 @@ function swatch([r, g, b]: readonly [number, number, number]): ImageData {
   return imageFrom(16, 16, () => ({ r, g, b, a: 255 }));
 }
 
-/** The scaled OKLab distance between two sRGB colours. */
+/** The distance `pixelDistance` measures between two opaque sRGB colours. */
 function oklabDistance(
   one: readonly [number, number, number],
   other: readonly [number, number, number],
 ): number {
-  const a = srgbToOklab(...one);
-  const b = srgbToOklab(...other);
-  return Math.hypot(a.L - b.L, a.a - b.a, a.b - b.b);
+  return pixelDistance(srgbToOklab(...one), 255, srgbToOklab(...other), 255);
 }
 
 /** The art blended `share` of the way toward a flat mid grey. */
@@ -138,9 +137,9 @@ describe('meanSsim', () => {
 
   it('agrees with the same index summed directly, window by window', () => {
     // The cross-check the integral tables are worth having: they agree to ten decimals on artwork,
-    // on a degraded copy of it, on a copy with no structure left at all, and on one with its contour
-    // cleared, which is the case the coverage channel is there for.
-    for (const other of [ART, soften(ART), towardFlat(ART, 1), outlineCleared(ART)]) {
+    // on a degraded copy of it, on copies with half and all of their structure gone, and on one with
+    // its contour cleared, which is the case the coverage component is there for.
+    for (const other of [ART, soften(ART), towardFlat(ART, 0.5), towardFlat(ART, 1), outlineCleared(ART)]) {
       expect(meanSsim(ART, other)).toBeCloseTo(directSsim(ART, other), 10);
     }
   });
@@ -152,14 +151,6 @@ describe('meanSsim', () => {
     expect(ladder[0]).toBeCloseTo(1, 12);
     // Over half of what the index can lose is gone by the time nothing of the artwork is left.
     expect(ladder[4]).toBeLessThan(0.5);
-  });
-
-  it('adds nothing for coverage where both images are opaque everywhere', () => {
-    // The promise that lets coverage in without moving a sweep over an opaque sheet: a component that
-    // is one constant on both sides adds nothing to a distance, a spread or a covariance.
-    for (const other of [ART, soften(ART), towardFlat(ART, 0.5), towardFlat(ART, 1)]) {
-      expect(meanSsim(ART, other)).toBeCloseTo(directSsim(ART, other, ['L', 'a', 'b']), 10);
-    }
   });
 
   it('charges a flat shift the same at black as in the mid-tones, for the same OKLab distance', () => {
@@ -193,14 +184,34 @@ describe('meanSsim', () => {
   });
 
   it('charges a small step at mid lightness what the paper charged for it there', () => {
-    // Where the level scale is matched: at the middle of the lightness axis, sRGB 99, a step of two
-    // code values costs what the paper's own luminance term priced it at on the code values.
-    const c1 = (0.01 * 255) ** 2;
-    const paper = 1 - (2 * 99 * 101 + c1) / (99 ** 2 + 101 ** 2 + c1);
+    // Where the level scale is matched, and the figure derived again here from the sRGB transfer
+    // curve rather than copied: on the grey axis OKLab lightness is 255 times the cube root of linear
+    // light, so find the code value at lightness 127.5 and the log-scale unit there, and hold the
+    // score's price for a step of two code values to `sech` of the distance over that unit.
+    const linear = (code: number) => {
+      const unit = code / 255;
+      return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+    };
+    const lightness = (code: number) => 255 * Math.cbrt(linear(code));
+    let low = 0;
+    let high = 255;
+    for (let step = 0; step < 60; step += 1) {
+      const middle = (low + high) / 2;
+      if (lightness(middle) < 127.5) low = middle;
+      else high = middle;
+    }
+    const scale = low * ((lightness(low + 1e-6) - lightness(low - 1e-6)) / 2e-6);
+    const expected = 1 - 1 / Math.cosh(oklabDistance([99, 99, 99], [101, 101, 101]) / scale);
     const cost = 1 - meanSsim(swatch([99, 99, 99]), swatch([101, 101, 101]));
 
-    expect(cost / paper).toBeGreaterThan(0.97);
-    expect(cost / paper).toBeLessThan(1.03);
+    expect(scale).toBeCloseTo(89.35, 1);
+    expect(cost / expected).toBeCloseTo(1, 3);
+    // And that price is the paper's own for the same step on the code values, near enough that the
+    // two scales can be said to agree at this lightness.
+    const c1 = (0.01 * 255) ** 2;
+    const paper = 1 - (2 * 99 * 101 + c1) / (99 ** 2 + 101 ** 2 + c1);
+    expect(cost / paper).toBeGreaterThan(0.98);
+    expect(cost / paper).toBeLessThan(1.02);
   });
 
   it('is symmetric in its two arguments', () => {

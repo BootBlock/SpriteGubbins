@@ -169,10 +169,10 @@ export const PROXY_CROP_STRIDE = 0.5;
  * | --- | --- | --- | --- |
  * | `cyborg_black_red.png` | 6 | **5** | 236 |
  * | `armour.png` | 6 | 3 | 142 |
- * | `vehicles_and_props.png` | 5 | 3 | 134 |
- * | `cyborg_monk.png` | 4 | 3 | 134 |
- * | `character_space_marine_blue.png` | 5 | 3 | 130 |
  * | `cyborg_healer.png` | 4 | 3 | 138 |
+ * | `vehicles_and_props.png` | 5 | 3 | 130 |
+ * | `cyborg_monk.png` | 4 | 3 | 130 |
+ * | `character_space_marine_blue.png` | 5 | 3 | 130 |
  * | `three-quarter-view_tiles1.png` | 5 | 2 | 95 |
  * | `ui_elements1.png` | 4 | 2 | 87 |
  *

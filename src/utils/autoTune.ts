@@ -110,12 +110,13 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
         // **And its dials go back where the reader had them, here rather than at the end.** Rounds
         // are what make this necessary at all: a stage can sweep under one reading and then be
         // skipped because a later round moved off it, which leaves positions chosen under a reading
-        // the sweep has abandoned — measured on `test_sprites/cyborg_healer.png` at a grid of 4, keyed
-        // against its corner colour, the cleanup-pass count is swept while the fill cleanup is on and
-        // set aside once a later round turns the cleanup off. A dial left where that sweep put it reaches no pixel of the
-        // result, because each skip predicate is exactly the pipeline's own gate; it reaches the
-        // *tab*, where it is a slider the reader never touched sitting somewhere new, ready to take
-        // effect the moment they change the control that was gating it.
+        // the sweep has abandoned — measured on `test_sprites/cyborg_healer.png` at a grid of 4,
+        // keyed against its corner colour, the cleanup-pass count is swept while the fill cleanup
+        // is on and set aside once a later round turns the cleanup off. A dial left where that
+        // sweep put it reaches no pixel of the result, because each skip predicate is exactly the
+        // pipeline's own gate; it reaches the *tab*, where it is a slider the reader never touched
+        // sitting somewhere new, ready to take effect the moment they change the control that was
+        // gating it.
         //
         // **Inside the round rather than after the last one**, so the position the descent carries
         // is one it would report — which is what keeps the fixed point `visited` looks for a fixed

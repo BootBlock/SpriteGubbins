@@ -34,10 +34,11 @@ import { oklabPlanes } from './oklabPlanes.ts';
  * as the other three. Where both images are opaque everywhere it is one constant on both sides, adds
  * nothing to any of them, and so moves no figure at all.
  *
- * **The paper's luminance term is replaced, because it measures in the wrong space.** It compares two
- * window means as `(2μxμy + C1) / (μx² + μy² + C1)`, which with C1 set aside is `sech(ln(μy / μx))`:
- * the distance between the two means on a *logarithmic* scale. That is the paper's reading of Weber's
- * law for raw brightness (§III.B, eqs. 6–8), and it is wrong twice over here. OKLab lightness is
+ * **The paper's luminance term is replaced, because it measures in the wrong space.** It compares
+ * two window means as `(2μxμy + C1) / (μx² + μy² + C1)`, which with C1 set aside is
+ * `sech(ln(μy / μx))`: the distance between the two means on a *logarithmic* scale. That is the
+ * paper's reading of Weber's law for raw brightness (§III.B, eqs. 6–8), and it is wrong twice over
+ * here. OKLab lightness is
  * already perceptually even, so a logarithm on top of it charges a step near black many times what
  * the same step costs in the mid-tones; and a chroma axis has no zero to take a ratio from at all.
  * Run once per channel, it scored a flat black swatch against one a single sRGB step lighter at
@@ -221,7 +222,7 @@ const C2 = (0.03 * 255) ** 2;
  * point. On the grey axis, lightness 127.5 is sRGB 99.09, where one code value moves lightness by
  * 0.9018, so one unit of the logarithm of the code value there is 99.09 × 0.9018 = 89.35. A small
  * step at mid lightness therefore costs what the paper charged for it, and costs the same anywhere
- * else. `ssim.test.ts` recomputes the figure from the sRGB transfer curve.
+ * else. `ssim.test.ts` derives the figure again from the sRGB transfer curve.
  */
 const LEVEL_SCALE = 89.35;
 
