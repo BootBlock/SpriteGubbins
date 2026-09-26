@@ -5,7 +5,7 @@ import { boundaryMesh } from '../src/utils/gridMesh.ts';
 import { keyBackground } from '../src/utils/keyBackground.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../src/constants/quantiseDials.ts';
-import type { PixelGrid, QuantiseSettings } from '../src/types/quantiser.ts';
+import type { GridMesh, PixelGrid, QuantiseSettings } from '../src/types/quantiser.ts';
 
 /**
  * Every cell the mesh cuts is within tolerance of the grid — on the eight real sheets, keyed and not.
@@ -39,17 +39,52 @@ import type { PixelGrid, QuantiseSettings } from '../src/types/quantiser.ts';
 
 const MAGENTA = { r: 255, g: 0, b: 255, a: 255 } as const;
 
-/** The grids swept: the tightest tolerance, the reference grid, and the widest merge. */
-const GRIDS: readonly PixelGrid[] = [4, 6, 12];
+/**
+ * The grids swept: the one grid with no window at all, the tightest window, the reference grid, and
+ * the widest merge. A grid of 2 is also the one grid no patch is cut at.
+ */
+const GRIDS: readonly PixelGrid[] = [2, 4, 6, 12];
 
-/** The same figure `meshAxis.ts` derives its walk tolerance from — restated, never imported. */
+/** The same figure `axisTolerance.ts` states for the walk and the patches — restated, never imported. */
 function tolerance(grid: number): number {
-  return Math.max(1, Math.floor(grid / 3));
+  return Math.floor(grid / 3);
 }
 
 /** And the end-cell floor `boundEndCells.ts` holds every mesh to, restated the same way — see `shortestEndCell`. */
 function shortest(grid: number): number {
   return Math.min(3, grid - 1);
+}
+
+/**
+ * Every patch's cells, held to what a patch may do to the cells it re-cuts.
+ *
+ * Inside a patch a cell is cut the way the walk cuts one, within `tolerance` of the grid. The two
+ * edge cells take up the patch's shift, which is at most half a cell, and the snap of the cut beside
+ * them: each is the mesh's own cell before the patch, so it may shrink to half a cell (or stay as
+ * narrow as the mesh's end cell already was) and grow by half a cell and the window. A patch never
+ * adds or removes a cell, and it opens on the mesh's own cut.
+ */
+function expectPatchCellsFit(mesh: GridMesh, image: ImageData, grid: PixelGrid, where: string): void {
+  if (grid === 2) expect(mesh.patches, `${where}: no patch is cut at a grid of 2`).toEqual([]);
+  const narrowest = Math.min(shortest(grid), Math.ceil(grid / 2));
+  const widest = grid + tolerance(grid) + 2 * (shortest(grid) - 1) + Math.floor(grid / 2) + tolerance(grid);
+  for (const patch of mesh.patches) {
+    for (const [axis, starts, first, cuts, extent] of [
+      ['x', patch.x, patch.column, mesh.x, image.width],
+      ['y', patch.y, patch.row, mesh.y, image.height],
+    ] as const) {
+      const at = `${where}: the patch at ${String(patch.column)}, ${String(patch.row)} on ${axis}`;
+      expect(starts[0], `${at} must open on the mesh’s own cut`).toBe(cuts[first]);
+      const end = cuts[first + starts.length] ?? extent;
+      for (const [index, start] of starts.entries()) {
+        const width = (starts[index + 1] ?? end) - start;
+        const edge = index === 0 || index === starts.length - 1;
+        const cell = `${at}, cell ${String(index)}, is ${String(width)} wide`;
+        expect(width, cell).toBeGreaterThanOrEqual(edge ? narrowest : grid - tolerance(grid));
+        expect(width, cell).toBeLessThanOrEqual(edge ? widest : grid + tolerance(grid));
+      }
+    }
+  }
 }
 
 describe('mesh cell pitch', () => {
@@ -96,8 +131,15 @@ describe('mesh cell pitch', () => {
               expect(width, `${where}: cell ${String(index)} is ${String(width)} wide`).toBeLessThanOrEqual(
                 widest,
               );
+              if (interior) {
+                expect(
+                  width,
+                  `${where}: cell ${String(index)} is ${String(width)} wide`,
+                ).toBeGreaterThanOrEqual(grid - tolerance(grid));
+              }
             }
           }
+          expectPatchCellsFit(mesh, image, grid, `${name} ${keying} at grid ${String(grid)}`);
         }
       }
     }

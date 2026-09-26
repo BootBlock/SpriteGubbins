@@ -1,4 +1,5 @@
 import { COVERAGE_FLOOR, K_CENTROID_PASSES } from '../constants/quantiser.ts';
+import { forEachMeshCell } from './forEachMeshCell.ts';
 import type { GridMesh, Rgba } from '../types/quantiser.ts';
 import { createImage, pixelOffset } from './imageData.ts';
 
@@ -34,63 +35,58 @@ export function kCentroidCells(image: ImageData, mesh: GridMesh): ImageData {
   const blues: number[] = [];
   const alphas: number[] = [];
 
-  for (const [cellY, top] of mesh.y.entries()) {
-    const bottom = Math.min(mesh.y[cellY + 1] ?? image.height, image.height);
-    for (const [cellX, left] of mesh.x.entries()) {
-      const right = Math.min(mesh.x[cellX + 1] ?? image.width, image.width);
-
-      reds.length = 0;
-      greens.length = 0;
-      blues.length = 0;
-      alphas.length = 0;
-      let darkest = 0;
-      let brightest = 0;
-      let darkestLuma = 256;
-      let brightestLuma = -1;
-      let darkestPacked = Infinity;
-      let brightestPacked = -1;
-      for (let y = top; y < bottom; y += 1) {
-        for (let x = left; x < right; x += 1) {
-          const offset = pixelOffset(image.width, x, y);
-          const alpha = image.data[offset + 3] ?? 0;
-          if (alpha < COVERAGE_FLOOR) continue;
-          const r = image.data[offset] ?? 0;
-          const g = image.data[offset + 1] ?? 0;
-          const b = image.data[offset + 2] ?? 0;
-          const index = reds.length;
-          reds.push(r);
-          greens.push(g);
-          blues.push(b);
-          alphas.push(alpha);
-          const luma = (54 * r + 183 * g + 19 * b) >> 8;
-          // Ties on luma break by packed value, so two different colours that happen to read
-          // equally light still seed two clusters — without this a 50/50 red-and-blue cell
-          // collapsed both seeds onto its first pixel and answered a raw colour, not a centre.
-          const packed = (r * 256 + g) * 256 + b;
-          if (luma < darkestLuma || (luma === darkestLuma && packed < darkestPacked)) {
-            darkestLuma = luma;
-            darkestPacked = packed;
-            darkest = index;
-          }
-          if (luma > brightestLuma || (luma === brightestLuma && packed > brightestPacked)) {
-            brightestLuma = luma;
-            brightestPacked = packed;
-            brightest = index;
-          }
+  forEachMeshCell(mesh, image.width, image.height, (cellX, cellY, left, top, right, bottom) => {
+    reds.length = 0;
+    greens.length = 0;
+    blues.length = 0;
+    alphas.length = 0;
+    let darkest = 0;
+    let brightest = 0;
+    let darkestLuma = 256;
+    let brightestLuma = -1;
+    let darkestPacked = Infinity;
+    let brightestPacked = -1;
+    for (let y = top; y < bottom; y += 1) {
+      for (let x = left; x < right; x += 1) {
+        const offset = pixelOffset(image.width, x, y);
+        const alpha = image.data[offset + 3] ?? 0;
+        if (alpha < COVERAGE_FLOOR) continue;
+        const r = image.data[offset] ?? 0;
+        const g = image.data[offset + 1] ?? 0;
+        const b = image.data[offset + 2] ?? 0;
+        const index = reds.length;
+        reds.push(r);
+        greens.push(g);
+        blues.push(b);
+        alphas.push(alpha);
+        const luma = (54 * r + 183 * g + 19 * b) >> 8;
+        // Ties on luma break by packed value, so two different colours that happen to read
+        // equally light still seed two clusters — without this a 50/50 red-and-blue cell
+        // collapsed both seeds onto its first pixel and answered a raw colour, not a centre.
+        const packed = (r * 256 + g) * 256 + b;
+        if (luma < darkestLuma || (luma === darkestLuma && packed < darkestPacked)) {
+          darkestLuma = luma;
+          darkestPacked = packed;
+          darkest = index;
+        }
+        if (luma > brightestLuma || (luma === brightestLuma && packed > brightestPacked)) {
+          brightestLuma = luma;
+          brightestPacked = packed;
+          brightest = index;
         }
       }
-
-      const out = pixelOffset(mesh.x.length, cellX, cellY);
-      const area = (right - left) * (bottom - top);
-      if (reds.length * 2 < area) continue;
-
-      const centre = dominantCentroid({ reds, greens, blues, alphas }, darkest, brightest);
-      output.data[out] = centre.r;
-      output.data[out + 1] = centre.g;
-      output.data[out + 2] = centre.b;
-      output.data[out + 3] = centre.a;
     }
-  }
+
+    const out = pixelOffset(mesh.x.length, cellX, cellY);
+    const area = (right - left) * (bottom - top);
+    if (reds.length * 2 < area) return;
+
+    const centre = dominantCentroid({ reds, greens, blues, alphas }, darkest, brightest);
+    output.data[out] = centre.r;
+    output.data[out + 1] = centre.g;
+    output.data[out + 2] = centre.b;
+    output.data[out + 3] = centre.a;
+  });
 
   return output;
 }

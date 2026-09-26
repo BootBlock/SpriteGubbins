@@ -68,12 +68,13 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * **Every likeness above counts coverage as a fourth component** — see `meanSsim`. On an unkeyed
  * sheet with the anti-aliasing off every pixel is opaque, so coverage adds nothing to any figure.
  * Keyed at the default tolerance against each sheet's corner colour, at the grids the table under
- * {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different sheet, and only the
- * reference sheet — at `OFF` and at `BOTH` — `cyborg_healer.png` and
- * `character_space_marine_blue.png` settle on the dials they settle on unkeyed; the other five move
- * the colour merge by one or two rungs. Every descent takes the same count but two:
- * `three-quarter-view_tiles1.png` ends sooner, at 149 positions rather than 192, and
- * `ui_elements1.png` runs longer, at 145 rather than 102.
+ * {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different sheet, and only
+ * `three-quarter-view_tiles1.png`, `cyborg_healer.png` and `cyborg_monk.png` settle on the dials they
+ * settle on unkeyed; the other five move the colour merge by one to three rungs, and the reference
+ * sheet at `OFF` also leaves the fill cleanup at 0 where unkeyed it takes 20. Every descent takes the
+ * same count but three: `three-quarter-view_tiles1.png` ends sooner, at 145 positions rather than
+ * 192, the reference sheet at `OFF` at 145 rather than 157, and `ui_elements1.png` runs longer, at
+ * 145 rather than 102.
  *
  * **The count of positions is what a change to any ladder here has to be judged by**, not a wall
  * clock — the same code over the same sheet takes several times longer on one host than another, so

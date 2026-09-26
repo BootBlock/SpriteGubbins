@@ -52,34 +52,34 @@ describe('the symmetry dials — the reduced reference sheet', () => {
   const meanShare = (readings: readonly SpriteSymmetry[]): number =>
     readings.reduce((total, reading) => total + reading.confidence, 0) / readings.length;
 
-  it('settles to 11 colours and reads 38.8% at every tolerance from exact to 24, first moving at 25', () => {
-    expect(quantiseImage(sheet, REDUCED()).colors).toBe(11);
+  it('settles to 10 colours and reads 39.9% at every tolerance from exact to 24, first moving at 25', () => {
+    expect(quantiseImage(sheet, REDUCED()).colors).toBe(10);
 
     const exact = readingsAt({ symmetryTolerance: 0 });
     expect(exact).toHaveLength(15);
-    expect(Number((meanShare(exact) * 100).toFixed(1))).toBe(38.8);
+    expect(Number((meanShare(exact) * 100).toFixed(1))).toBe(39.9);
     // Every rung, not a sample of them: the claim is that none of them moves, and the merge at 24 is
     // what makes it exactly true, so a rung in the middle moving is the failure to catch.
     for (let tolerance = 1; tolerance <= 24; tolerance += 1) {
       expect(meanShare(readingsAt({ symmetryTolerance: tolerance }))).toBe(meanShare(exact));
     }
-    expect(Number((meanShare(readingsAt({ symmetryTolerance: 25 })) * 100).toFixed(1))).toBe(40);
+    expect(Number((meanShare(readingsAt({ symmetryTolerance: 25 })) * 100).toFixed(1))).toBe(44.3);
   }, 600_000);
 
-  it('reports 21% to 70% at the default tolerance, and settles two at 65, two at 60 and four at 55', () => {
+  it('reports 19% to 74% at the default tolerance, and settles three at 65, three at 60 and four at 55', () => {
     expect(DEFAULT_SYMMETRY_TOLERANCE).toBe(8);
     const shares = readingsAt({ symmetryTolerance: DEFAULT_SYMMETRY_TOLERANCE }).map(
       (reading) => reading.confidence,
     );
-    expect(Math.round(Math.min(...shares) * 100)).toBe(21);
-    expect(Math.round(Math.max(...shares) * 100)).toBe(70);
+    expect(Math.round(Math.min(...shares) * 100)).toBe(19);
+    expect(Math.round(Math.max(...shares) * 100)).toBe(74);
 
     // Counted from the snap itself rather than from the shares, because whether a sprite is settled
     // is the pass's decision and a share at the floor is only half of it.
     const settledAt = (floor: number) =>
       readingsAt({ symmetry: 'SNAP', symmetryConfidence: floor }).filter((reading) => reading.snapped);
     expect([DEFAULT_SYMMETRY_CONFIDENCE, 75, 65, 60].map((floor) => settledAt(floor).length)).toEqual([
-      0, 0, 2, 2,
+      0, 0, 3, 3,
     ]);
 
     // The four at 55 each place their best axis within a pixel of their own box's centre.

@@ -365,6 +365,38 @@ export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE
 export const BOUNDARY_THRESHOLD_OVER_CHANCE = 2;
 
 /**
+ * How many cells of field a mesh patch keeps around its sprite on every side.
+ *
+ * `patchSpans` grows each sprite's box by this many cells before snapping it out to the mesh's cuts.
+ * A patch's edge cells are the ones that take up its shift, so they must lie in the empty field
+ * around the sprite rather than across its outline: at 0 the sprite's outermost cells would be the
+ * edge cells, and a shift would stretch or squeeze exactly the cells holding its silhouette.
+ *
+ * **One cell, because a wider margin reaches into the next sprite's field.** Measured as the
+ * within-cell deviation of the keyed corpus, summed over the eight sheet-and-grid pairs from 3 to 8
+ * that `meshPatches` names, a margin of 0 scores 472.5, 1 scores 470.5, 2 scores 473.5 and 3 scores
+ * 477.5. Past one cell, two sprites' margins meet and split the gap between them, so a wider margin
+ * mostly moves where the split falls. Below one cell the silhouette's own cells take up the shift:
+ * `three-quarter-view_tiles1.png` at grid 4 goes from 27.55 at a margin of 1 to 28.71 at 0.
+ */
+export const PATCH_MARGIN_CELLS = 1;
+
+/**
+ * The smallest grid the mesh re-cuts per sprite. Below it, `meshPatches` answers no patches.
+ *
+ * A patch takes its sprite's phase from where that sprite's boundaries sit between the mesh's cuts,
+ * and at a grid of 2 the art cannot say. Every position is at most one pixel from a boundary, so a
+ * resampler's three-tap softening spreads each boundary evenly over both phase classes, and what is
+ * left to decide the phase is noise and the key's one-pixel erosion of the silhouette. On
+ * `phasedSpriteSheet`'s sprites drawn at 2 pixels a cell, re-cutting them lowered the share of pixels
+ * resolving to the colour they were drawn in from 47.6% to 37.7%, where at a grid of 3 it raised it
+ * from 52.0% to 62.1%. None of the corpus sheets is drawn at 2 pixels a cell, so the corpus cannot
+ * speak for this grid. The figures are pinned in `tests/quantiser-figures-mesh-patches.test.ts`, with
+ * `PATCH_MARGIN_CELLS`'s.
+ */
+export const SMALLEST_PATCHED_GRID = 3;
+
+/**
  * The prominence a correlation peak must stand above its flanking valleys to be a candidate pitch.
  *
  * The step profile carries a low-frequency envelope — art here, gutter there — that mean removal
@@ -1163,7 +1195,7 @@ export const SCATTERED_SPRITE_CEILING = 512;
  * a weapon or a cloak extending sixteen drawn pixels past what the other side holds, which is well
  * past anything a sprite drawn at 16 to 64 pixels a side can carry. The reference sheet
  * (`test_sprites/armour.png`, 1254², grid 6, keyed on `#FF00FF` at `DEFAULT_KEY_TOLERANCE`)
- * separates into fifteen pieces measuring 23 to 34 drawn pixels across, where the quarter-width
+ * separates into fifteen pieces measuring 24 to 34 drawn pixels across, where the quarter-width
  * bound below is the binding one on all but the five widest of them.
  *
  * It is a **bound on cost as much as on the claim**: the sweep is `(4 × reach + 1)` scorings of a
@@ -1223,16 +1255,16 @@ export const DEFAULT_SYMMETRY = 'OFF';
  * black-to-white span already admits a mid-tone against its own shadow, and a tolerance that admits
  * a shadow admits most of what a returned sprite's two halves disagree about. Those fifteen pieces
  * are drawn at several angles and are asymmetric by subject, and with the colour dials left where
- * they open the mean share rises from **0.7%** at exact to **77.2%** at 64 — near-symmetry
+ * they open the mean share rises from **0.8%** at exact to **77.6%** at 64 — near-symmetry
  * claimed for a sheet that holds none, which is what would leave the floor below nothing to refuse.
  *
  * **What the dial is worth depends entirely on how flat the sheet already is**, and the reference
  * sheet measures both ends of that. Reduced to 64 colours with the colour merge at 24 it settles to
- * eleven colours, and every rung from exact to 24 reports the identical **38.8%** — the merge has
+ * ten colours, and every rung from exact to 24 reports the identical **39.9%** — the merge has
  * already folded everything within 24, so no two mirrored pixels are left sitting between it and
  * exact, and the reading first moves at 25. The same sheet read with no reduction and no merge holds
- * 11,850 colours, where exact reports **0.7%** and the rungs climb smoothly: 8.0% at 2, 14.9% at 4,
- * 24.2% at 8, 35.6% at 16, 52.9% at 32.
+ * 11,873 colours, where exact reports **0.8%** and the rungs climb smoothly: 8.7% at 2, 16.4% at 4,
+ * 27.0% at 8, 38.4% at 16, 55.1% at 32.
  */
 export const SYMMETRY_TOLERANCE_RANGE = { min: 0, max: 64, step: 1 } as const;
 
@@ -1243,9 +1275,9 @@ export const SYMMETRY_TOLERANCE_RANGE = { min: 0, max: 64, step: 1 } as const;
  * Eight is the rung that behaves sensibly at both ends of that sweep. On a **reduced** sheet it is a
  * no-op, and rightly so: the colours are flat and far apart, so exact equality is the question worth
  * asking and anything short of the gap between two palette entries changes no answer. On an
- * **unreduced** one it turns a reading of 0.7% — which says nothing about the artwork and everything
- * about the resampling — into 24.2%, without reaching the 32 and above where a surface starts
- * matching its own shading, which is 52.9% by that rung.
+ * **unreduced** one it turns a reading of 0.8% — which says nothing about the artwork and everything
+ * about the resampling — into 27.0%, without reaching the 32 and above where a surface starts
+ * matching its own shading, which is 55.1% by that rung.
  */
 export const DEFAULT_SYMMETRY_TOLERANCE = 8;
 
@@ -1263,9 +1295,9 @@ export const DEFAULT_SYMMETRY_TOLERANCE = 8;
  * The reference sheet is what this was read against, and it is the awkward case rather than the easy
  * one: fifteen armour pieces drawn at several angles, none of them meant to be symmetric. Read under
  * the conditions {@link SYMMETRY_TOLERANCE_RANGE} states, reduced to 64 colours with the colour
- * merge at 24, and at the default tolerance, they report **21% to 70%** — so nothing is settled at
- * 90 or at 75; two are settled at 65, two at 60 and four at 55, and each of those four places its
- * best axis within a pixel of its own box centre; `tests/quantiser-figures-symmetry-dials.test.ts`
+ * merge at 24, and at the default tolerance, they report **19% to 74%** — so nothing is settled at
+ * 90 or at 75; three are settled at 65, three at 60 and four at 55, and each of those four places
+ * its best axis within a pixel of its own box centre; `tests/quantiser-figures-symmetry-dials.test.ts`
  * holds these and the tolerance's flat run. A sheet of front-facing subjects is the case the
  * other way round, and the panel lists every share so which one is in front of the reader is
  * legible rather than assumed.
@@ -1883,9 +1915,9 @@ export const KEY_TINT_SHARE = 0.1;
  * from the transparent field (2,465 of 10,640), **8.4%** two in, **1.9%** three in and **0.2%**
  * four in, against about 0.01% from five in onward — so four rings of spill, not three, and on
  * several other sheets five. With the despill at 5 none of the reference sheet's five rings carries
- * the tint, and at a grid of 6 the key-tinted pixels on the outermost ring of the result fall from 5
- * to none, with no reduction and under a 64-colour budget alike. The terrain sheet,
- * `three-quarter-view_tiles1.png`, is the widest case: 352 of the 2,333 pixels on its result's
+ * the tint, and at a grid of 6 the key-tinted pixels on the outermost ring of the result fall to none
+ * from 10 with no reduction and from 4 under a 64-colour budget. The terrain sheet,
+ * `three-quarter-view_tiles1.png`, is the widest case: 300 of the 2,339 pixels on its result's
  * outermost ring were key-tinted under that budget, and none are.
  *
  * **5 because the guard needs the ring past the band to hold artwork and no spill.** A sheet's
@@ -1984,9 +2016,9 @@ export const MAX_IMAGE_PIXELS = MAX_IMAGE_EDGE * MAX_IMAGE_EDGE;
  *
  * **The quantity divided out is the sprites' combined bounding-box area**, which is what
  * `affordableReach` sums and is not the same as the sheet's drawn pixels: the reference sheet's
- * fifteen boxes total **17,201** where the opaque pixels inside them number 13,823, twenty per cent
+ * fifteen boxes total **17,391** where the opaque pixels inside them number 13,875, twenty per cent
  * fewer. Both are in the coordinates of the reduced result the pass reads rather than the source
- * sheet's. So the budget affords 975 sweeps against the 33 the full reach costs — thirty times over,
+ * sheet's. So the budget affords 964 sweeps against the 33 the full reach costs — 29 times over,
  * which is why **this** bound narrows that sheet by nothing, and the quarter-width cap in `bestAxis`
  * is what actually narrows ten of its fifteen. A figure of “18,073 drawn pixels” stood here and
  * reproduced under none of fifteen readings of the conditions its neighbour states (issue #237);

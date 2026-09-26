@@ -64,15 +64,15 @@ interface CorpusReading {
 
 const EXPECTED: Record<CorpusSheetName, CorpusReading> = {
   'armour.png': {
-    both: 9.3,
-    interior: 7.78,
-    refused: 40.2,
+    both: 9.45,
+    interior: 7.89,
+    refused: 39.7,
     note: 'The reference. Fifteen gear pieces at a pixel scale of 3, so contour is a large share of a small sheet.',
   },
   'cyborg_black_red.png': {
-    both: 7.71,
-    interior: 6.3,
-    refused: 56.5,
+    both: 7.98,
+    interior: 6.57,
+    refused: 55.8,
     note: 'The same layout in a darker palette, whose emissive green puts more than half its boundaries under the floor.',
   },
   'character_space_marine_blue.png': {
@@ -88,9 +88,9 @@ const EXPECTED: Record<CorpusSheetName, CorpusReading> = {
     note: 'A whole character in parts, at no measurable pixel scale — so the pass runs on the sheet’s own pixels.',
   },
   'cyborg_healer.png': {
-    both: 8.24,
-    interior: 6.23,
-    refused: 42.2,
+    both: 8.28,
+    interior: 6.32,
+    refused: 42.4,
     note: 'The widest gap between the two columns: loose accessories are mostly silhouette and little interior.',
   },
   'three-quarter-view_tiles1.png': {

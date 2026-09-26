@@ -14,7 +14,7 @@ const CLEAR = { r: 0, g: 0, b: 0, a: 0 };
 function lattice(side: number, grid: number): GridMesh {
   const starts = [];
   for (let at = 0; at < side; at += grid) starts.push(at);
-  return { x: starts, y: starts };
+  return { x: starts, y: starts, patches: [] };
 }
 
 /** One result pixel of a single colour, for a mesh with one cell. */
@@ -34,7 +34,7 @@ describe('differenceMap', () => {
     const source = imageFrom(4, 4, () => WHITE);
     const result = imageFrom(1, 1, () => WHITE);
 
-    const map = differenceMap(source, result, { x: [0], y: [0] });
+    const map = differenceMap(source, result, { x: [0], y: [0], patches: [] });
 
     expect([...map.cells]).toEqual([0]);
     expect(map.mean).toBe(0);
@@ -50,7 +50,7 @@ describe('differenceMap', () => {
     const source = imageFrom(2, 2, (x) => (x === 0 ? BLACK : WHITE));
     const middle = { r: 128, g: 128, b: 128, a: 255 };
 
-    const map = differenceMap(source, cell(middle), { x: [0], y: [0] });
+    const map = differenceMap(source, cell(middle), { x: [0], y: [0], patches: [] });
 
     // Half of white is what the mean of the per-pixel distances comes to, and it is the assertion
     // that carries this test: the source averages to exactly `middle`, so the rejected definition
@@ -66,7 +66,7 @@ describe('differenceMap', () => {
     const opaque = differenceMap(
       imageFrom(2, 2, () => WHITE),
       cell(CLEAR),
-      { x: [0], y: [0] },
+      { x: [0], y: [0], patches: [] },
     );
     expect(distanceAt(opaque.cells, 0)).toBe(255);
 
@@ -75,7 +75,7 @@ describe('differenceMap', () => {
     const empty = differenceMap(
       imageFrom(2, 2, () => CLEAR),
       cell(WHITE),
-      { x: [0], y: [0] },
+      { x: [0], y: [0], patches: [] },
     );
     expect(distanceAt(empty.cells, 0)).toBe(255);
   });
@@ -88,7 +88,7 @@ describe('differenceMap', () => {
     const source = imageFrom(3, 1, (x) => (x === 1 ? WHITE : CLEAR));
     const result = imageFrom(3, 1, (x) => (x === 1 ? BLACK : CLEAR));
 
-    const map = differenceMap(source, result, { x: [0, 1, 2], y: [0] });
+    const map = differenceMap(source, result, { x: [0, 1, 2], y: [0], patches: [] });
 
     expect(distanceAt(map.cells, 0)).toBe(0);
     expect(map.mean).toBeCloseTo(distanceAt(map.cells, 1), 5);
@@ -117,7 +117,7 @@ describe('differenceMap', () => {
     const source = imageFrom(6, 4, () => WHITE);
     const result = imageFrom(2, 1, () => BLACK);
 
-    const map = differenceMap(source, result, { x: [0, 4], y: [0] });
+    const map = differenceMap(source, result, { x: [0, 4], y: [0], patches: [] });
 
     expect(distanceAt(map.cells, 0)).toBeCloseTo(distanceAt(map.cells, 1), 5);
   });

@@ -61,6 +61,6 @@ describe("encodePng's file sizes", () => {
   }, 240_000);
 
   it('the same sheet keyed on magenta at the default tolerance', async () => {
-    expect(await sizesOf(true)).toEqual([10_776, 30_118, 10_499, 12_067]);
+    expect(await sizesOf(true)).toEqual([10_829, 30_431, 10_552, 12_154]);
   }, 240_000);
 });

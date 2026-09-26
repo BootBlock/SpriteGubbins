@@ -119,7 +119,7 @@ describe('duplicateSprites — the two figures its docblock states', () => {
     return kept;
   };
 
-  it('leaves 3 of the reference sheet 15 sprites with the extent they had, and 1 the other way', () => {
+  it('leaves 4 of the reference sheet 15 sprites with the extent they had, and 2 the other way', () => {
     const before = boxesOf(sheet);
     const up = boxesOf(shifted(sheet, 4));
     const down = boxesOf(shifted(sheet, -4));
@@ -128,7 +128,7 @@ describe('duplicateSprites — the two figures its docblock states', () => {
     // about extents changing, not about sprites appearing or vanishing, and the pairing above
     // assumes each sprite has a counterpart to be paired with.
     expect([before.length, up.length, down.length]).toEqual([15, 15, 15]);
-    expect([keptExtent(before, up), keptExtent(before, down)]).toEqual([3, 1]);
+    expect([keptExtent(before, up), keptExtent(before, down)]).toEqual([4, 2]);
     // The docblock's claim that list position gives the same answer under these two shifts: each
     // box's nearest centre on the shifted sheet is the box at its own index.
     const nearestIndex = (box: SpriteBox, after: readonly SpriteBox[]): number => {
@@ -144,7 +144,7 @@ describe('duplicateSprites — the two figures its docblock states', () => {
     }
   }, 600_000);
 
-  it('finds 15 to 42 sprites on the corpus, an order of magnitude under the ceiling', async () => {
+  it('finds 15 to 43 sprites on the corpus, an order of magnitude under the ceiling', async () => {
     const corpus = await loadCorpus();
     const counts = CORPUS_SHEETS.map((name) => {
       const image = corpus.get(name);
@@ -153,9 +153,9 @@ describe('duplicateSprites — the two figures its docblock states', () => {
       return sprites.kind === 'SEGMENTED' ? sprites.boxes.length : -1;
     });
 
-    expect(counts).toEqual([15, 15, 15, 42, 34, 24, 25, 27]);
+    expect(counts).toEqual([15, 15, 15, 43, 36, 24, 25, 27]);
     // The claim the timing conclusion rests on, stated as a bound as well as a list. The bound
-    // adds nothing while the list holds — 42 is in it — and it is not there for today: a ninth
+    // adds nothing while the list holds — 43 is in it — and it is not there for today: a ninth
     // sheet fails the list first, and whoever adds it to the list then has to get it past this
     // too. The walk is quadratic in this count, so the corpus's worst sheet does under a
     // hundredth of the work the ceiling admits, and that is the property a new sheet must keep.

@@ -34,7 +34,7 @@ function denseAxis(extent: number, pitch: number, seed: number): Float64Array {
  * `meshAxis` finds the same lines far faster; this is the answer it must keep giving.
  */
 function bruteForceAxis(lines: readonly BoundaryLine[], extent: number, grid: PixelGrid): number[] {
-  const tolerance = Math.max(1, Math.floor(grid / 3));
+  const tolerance = Math.floor(grid / 3);
   const nearest = (expected: number): BoundaryLine | null => {
     let found: BoundaryLine | null = null;
     for (const line of lines) {

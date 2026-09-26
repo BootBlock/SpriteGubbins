@@ -41,8 +41,8 @@ import { disjointSet } from './unionFind.ts';
  * rejected.** It makes the comparison a straight per-cell reading with nothing invented, and it
  * makes the snap a plain block copy. But on the reference sheet — `test_sprites/armour.png`,
  * quantised at a grid of 6, keyed on `#FF00FF` at tolerance 24, with no palette step — adding four
- * to every colour channel of every pixel left only **3 of its 15** sprites with the drawn extent
- * they had before, and subtracting four left **1**. A sprite thirty drawn pixels across loses or
+ * to every colour channel of every pixel left only **4 of its 15** sprites with the drawn extent
+ * they had before, and subtracting four left **2**. A sprite thirty drawn pixels across loses or
  * gains one the moment a single contour pixel crosses the keying threshold — so a rule turning on
  * exact extents would fire on repeats that came back byte-identical and on almost nothing else,
  * which is a dial that appears not to work. The union box costs an extra row about one unit of the
@@ -53,12 +53,12 @@ import { disjointSet } from './unionFind.ts';
  * neither which way nor with what distribution, and the readings a maintainer might take from it
  * disagree: nine of them — the two flat shifts, ±4 at random per channel, +4 and −4 alternating by
  * channel, and a value uniform over −4 to 4 per channel rounded to the nearest whole number, each
- * random reading at seeds 1, 2 and 3 of a mulberry32 generator — run from **0 to 3** of the 15 sprites keeping their
- * extent, and none of them is 4. (They ran from 1 to 6 before `despillKey` began correcting the
- * key's tint behind the fringe, which moves the mesh the extents are cut on.) The conclusion above
- * survives every one, which is why the design was never in question; but a figure offered as
- * evidence has to be reproducible from what it states, and the number this paragraph carried was
- * reproducible from none of them. `tests/quantiser-figures-duplicate-sprites.test.ts` pins both
+ * random reading at seeds 1, 2 and 3 of a mulberry32 generator — run from **0 to 4** of the 15 sprites keeping their
+ * extent. (They ran from 1 to 6 before `despillKey` began correcting the key's tint behind the
+ * fringe, and from 0 to 3 before the mesh cut each sprite on its own phase; both move the mesh the
+ * extents are cut on.) The conclusion above survives every one, which is why the design was never in
+ * question; but a figure offered as evidence has to be reproducible from what it states, which is
+ * why the construction is named. `tests/quantiser-figures-duplicate-sprites.test.ts` pins both
  * directions against the construction named above.
  *
  * **A sprite is identified across the perturbation by its centre, not by its position in the list.**
@@ -157,7 +157,7 @@ export function duplicateSprites(
   // of magnitude is what survives: seconds at the ceiling, not a fraction of one.
   //
   // **No sheet this project has comes near it.** All eight in `test_sprites/`, quantised at a grid of
-  // 6 and keyed on `#FF00FF` at tolerance 24 with no palette step, segment into between 15 and 42
+  // 6 and keyed on `#FF00FF` at tolerance 24 with no palette step, segment into between 15 and 43
   // sprites, and the pass costs single-digit to low-tens of milliseconds on each — two to three
   // orders of magnitude under the fixture, because the pair count is quadratic in a figure an order
   // of magnitude smaller and because a real sprite's margins are transparent on both sides and cost

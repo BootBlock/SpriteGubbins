@@ -1,5 +1,6 @@
 import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
+import { forEachMeshCell } from './forEachMeshCell.ts';
 import { alphaAt, createImage, packedColorAt, pixelOffset, writePackedColor } from './imageData.ts';
 import { lineAwareWinner } from './lineVote.ts';
 
@@ -21,7 +22,8 @@ import { lineAwareWinner } from './lineVote.ts';
  * in `boundEndCells.ts` merges an end band of fewer than three source pixels into the cell beside it, so
  * nothing here has to ask whether the cell it is reducing to one pixel stands for a real band or a
  * one-pixel sliver. None of the three may start deciding that for itself: they walk the mesh they
- * are given, which is the whole of what keeps them agreeing about where a cell begins.
+ * are given through `forEachMeshCell`, which is the whole of what keeps them agreeing about where a
+ * cell begins — a patch's cells included.
  */
 
 /**
@@ -76,19 +78,14 @@ export function alignToGrid(image: ImageData, mesh: GridMesh, lineAware = false)
   const counts = new Map<number, number>();
   const distances = new Map<number, number>();
 
-  for (const [rowIndex, top] of mesh.y.entries()) {
-    const bottom = Math.min(mesh.y[rowIndex + 1] ?? image.height, image.height);
-    for (const [columnIndex, left] of mesh.x.entries()) {
-      const right = Math.min(mesh.x[columnIndex + 1] ?? image.width, image.width);
-      const color = modalColor(image, counts, distances, left, top, right, bottom, lineAware);
-
-      for (let y = top; y < bottom; y += 1) {
-        for (let x = left; x < right; x += 1) {
-          writePackedColor(output.data, pixelOffset(image.width, x, y), color);
-        }
+  forEachMeshCell(mesh, image.width, image.height, (_column, _row, left, top, right, bottom) => {
+    const color = modalColor(image, counts, distances, left, top, right, bottom, lineAware);
+    for (let y = top; y < bottom; y += 1) {
+      for (let x = left; x < right; x += 1) {
+        writePackedColor(output.data, pixelOffset(image.width, x, y), color);
       }
     }
-  }
+  });
 
   return output;
 }
@@ -173,12 +170,10 @@ function modalColor(
 export function downscaleNearest(image: ImageData, mesh: GridMesh): ImageData {
   const output = createImage(mesh.x.length, mesh.y.length);
 
-  for (const [y, top] of mesh.y.entries()) {
-    for (const [x, left] of mesh.x.entries()) {
-      const color = packedColorAt(image.data, pixelOffset(image.width, left, top));
-      writePackedColor(output.data, pixelOffset(mesh.x.length, x, y), color);
-    }
-  }
+  forEachMeshCell(mesh, image.width, image.height, (column, row, left, top) => {
+    const color = packedColorAt(image.data, pixelOffset(image.width, left, top));
+    writePackedColor(output.data, pixelOffset(mesh.x.length, column, row), color);
+  });
 
   return output;
 }
@@ -189,8 +184,8 @@ export function downscaleNearest(image: ImageData, mesh: GridMesh): ImageData {
  *
  * `upscaleNearest` is the same idea on a lattice that starts at the corner and never drifts, and
  * that is the one mesh `boundaryMesh` is not guaranteed to return: `boundEndCells` can make the
- * leading cell narrower or wider than the grid, and a walk that follows drift moves every boundary
- * after it. Magnified by the grid instead, a result sits a fixed offset off its source past a phased
+ * leading cell narrower or wider than the grid, a walk that follows drift moves every boundary
+ * after it, and a patch moves the cuts over a sprite to that sprite's own phase. Magnified by the grid instead, a result sits a fixed offset off its source past a phased
  * first cell and a growing one across a drifting sheet, so every comparison made against it is made
  * against art it does not sit over. Painted over its own mesh, each cell covers exactly the source
  * pixels it was read from, so `downscaleNearest` of this over the same mesh returns `cells`.
@@ -204,18 +199,14 @@ export function upscaleOverMesh(cells: ImageData, mesh: GridMesh, width: number,
   }
   const output = createImage(width, height);
 
-  for (const [row, top] of mesh.y.entries()) {
-    const bottom = Math.min(mesh.y[row + 1] ?? height, height);
-    for (const [column, left] of mesh.x.entries()) {
-      const right = Math.min(mesh.x[column + 1] ?? width, width);
-      const color = packedColorAt(cells.data, pixelOffset(cells.width, column, row));
-      for (let y = top; y < bottom; y += 1) {
-        for (let x = left; x < right; x += 1) {
-          writePackedColor(output.data, pixelOffset(width, x, y), color);
-        }
+  forEachMeshCell(mesh, width, height, (column, row, left, top, right, bottom) => {
+    const color = packedColorAt(cells.data, pixelOffset(cells.width, column, row));
+    for (let y = top; y < bottom; y += 1) {
+      for (let x = left; x < right; x += 1) {
+        writePackedColor(output.data, pixelOffset(width, x, y), color);
       }
     }
-  }
+  });
 
   return output;
 }
