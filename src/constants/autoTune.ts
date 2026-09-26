@@ -25,7 +25,7 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * carry one. With the anti-aliasing control at its own `OFF`, which is where the tab opens, those
  * three stages skip and the two figures are **857** and **889**. Those are ceilings rather than
  * ordinary costs, because the descent stops as soon as a round retraces a position it has already
- * stood at: measured over the eight corpus sheets the real figures run from 87 to 189 positions, and
+ * stood at: measured over the eight corpus sheets the real figures run from 87 to 236 positions, and
  * {@link TUNE_ROUNDS} carries that table. Every stage also ranks the positions
  * already in force, which costs nothing where its ladder already holds them; see `withIncumbent` for
  * why the incumbent is in the set at all.
@@ -33,17 +33,17 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * **Measured on the reference sheet** (`test_sprites/armour.png`, 1254², a grid of 6, no keying, no
  * colour budget, every dial at its opening position), by running `autoTune` over it directly: five
  * crops of 240 px and **142 positions over three rounds**, the three anti-aliasing stages skipping
- * because the tab opens that control off, ending at a likeness of **0.8071 for 113 colours** where
- * the opening position it started from scored 0.7907 for 960. An eighth of the colours for nearly
- * two hundredths *more* likeness, which is the elbow finding a knee that is better on both counts than
+ * because the tab opens that control off, ending at a likeness of **0.5675 for 113 colours** where
+ * the opening position it started from scored 0.5469 for 960. An eighth of the colours for two
+ * hundredths *more* likeness, which is the elbow finding a knee that is better on both counts than
  * where the reader began. The position it settles on is `K_CENTROID` with the merge at 6, the
- * cleanup at 16 and two cleanup passes; the table under {@link TUNE_ROUNDS} carries the other seven
+ * cleanup at 12 and two cleanup passes; the table under {@link TUNE_ROUNDS} carries the other seven
  * sheets, and every one of them settles on `K_CENTROID` too.
  *
  * **What the widening bought, measured rather than assumed.** The narrower sweep this replaced — 35
  * positions, one round, three crops — settled this sheet on `DOMINANT` with the merge at 12 and the
- * cleanup at 48. Scored on the same five crops the widened sweep reads, that position is **0.7836 for
- * 54 colours** against the **0.8071 for 113** above: the two are a genuine trade rather than one
+ * cleanup at 48. Scored on the same five crops the widened sweep reads, that position is **0.5389 for
+ * 54 colours** against the **0.5675 for 113** above: the two are a genuine trade rather than one
  * strictly beating the other, and it is a trade the narrow sweep could not offer at all, because the
  * reading stage's first round chooses `DOMINANT` (see below) and only a later round, taken against a
  * merge and a cleanup already swept, moves it to `K_CENTROID`. Both figures are on the same sample,
@@ -55,32 +55,32 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * a shortest run of 12 and a strength of **10%** — the top of the first two ladders and the bottom of
  * the third, so the pass softens only the hardest, longest contours and by the least the ladder
  * offers. That is pixel-art practice's one standing rule about anti-aliasing, to use as little of it
- * as the shape needs, arrived at by measurement. It reaches 0.8069 for 117 colours from a baseline of
- * 0.7913 for 1058.
+ * as the shape needs, arrived at by measurement. It reaches 0.5674 for 117 colours from a baseline of
+ * 0.5406 for 1058.
  *
- * **Every likeness above counts coverage as a fourth channel** — see `meanSsim`. On an unkeyed sheet
- * with the anti-aliasing off every pixel is opaque, so that channel scores 1 throughout and the
- * sweep settles every corpus sheet on the dials, rounds and positions it did before coverage was
- * scored. Keyed at the default tolerance against each sheet's corner colour, at the grids the
- * table under {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different
- * sheet, and only `three-quarter-view_tiles1.png` and `ui_elements1.png` settle on the dials they
- * settle on unkeyed. Four descents end sooner — `cyborg_black_red.png` at 134 positions rather than
- * 189, the reference sheet at `BOTH` at 226 rather than 301, `vehicles_and_props.png` at 95 rather
- * than 134 and `cyborg_monk.png` at 87 rather than 134 — the reference sheet at `OFF`, the terrain
- * and the UI sheets take the same count, and two run longer: `character_space_marine_blue.png` at
- * 138 rather than 130, and `cyborg_healer.png` at 369 rather than 130, settling on `INK_WEIGHTED`.
+ * **Every likeness above counts coverage as a fourth component** — see `meanSsim`. On an unkeyed
+ * sheet with the anti-aliasing off every pixel is opaque, so coverage adds nothing to any figure.
+ * Keyed at the default tolerance against each sheet's corner colour, at the grids the table under
+ * {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different sheet, and only
+ * `character_space_marine_blue.png`, `ui_elements1.png` and `vehicles_and_props.png` settle on the
+ * dials they settle on unkeyed. Four descents end sooner — `cyborg_black_red.png` at 134 positions
+ * rather than 236, the reference sheet at 134 rather than 142 and at `BOTH` at 218 rather than 301,
+ * and `vehicles_and_props.png` at 87 rather than 130 — the space-marine and UI sheets take the same
+ * count, and three run longer: `cyborg_monk.png` at 181 rather than 130,
+ * `three-quarter-view_tiles1.png` at 142 rather than 95, and `cyborg_healer.png` at 254 rather than
+ * 138, settling on `INK_WEIGHTED`.
  *
  * **The count of positions is what a change to any ladder here has to be judged by**, not a wall
  * clock — the same code over the same sheet takes several times longer on one host than another, so
  * the guidance's "a minute or two" is stated against the position count rather than against any figure
  * a stopwatch produced. Every count here is of positions *ranked*: one the descent ranks twice is run
- * once — see `candidateReader` — so the corpus's 1,041 ranked positions ran as 805.
+ * once — see `candidateReader` — so the corpus's 1,088 ranked positions ran as 811.
  *
  * **The reading stage's first round chooses the *cheapest* of the three readings on that sheet
  * rather than the most faithful, and that is the elbow doing what it says rather than a defect.** Of
  * the fifteen positions the reading stage tries, `K_CENTROID` at expansion 0 reproduces the crops
- * most closely at 0.8017 and `INK_WEIGHTED` at expansion 0 comes next at 0.7944, both spending 1208
- * colours; `DOMINANT` at expansion 0 is the least faithful of the three at 0.7806 and spends 1030.
+ * most closely at 0.5465 and `INK_WEIGHTED` at expansion 0 comes next at 0.5260, both spending 1208
+ * colours; `DOMINANT` at expansion 0 is the least faithful of the three at 0.5203 and spends 1030.
  * The knee of that frontier is `DOMINANT`. Once the merge and the cleanup have folded the averaging
  * readings' extra colours away, a later round ranks a different frontier and its knee is
  * `K_CENTROID` — which is what a descent of more than one round is for. Those four figures are a
@@ -94,10 +94,10 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * `DOMINANT` on likeness above, on a sheet whose contours were softened on the way back from the
  * generator. On `test_sprites/cyborg_healer.png` (a grid of 4, and again a grid the run was given
  * rather than one the sheet reads at) `K_CENTROID` at expansion 0 beats the other averaging reading
- * on **both** counts — 0.7921 for 1416 colours against `INK_WEIGHTED`'s 0.7865 for 1435 — and the
- * first round's elbow settles on `DOMINANT`, at 0.7772 for 1298, because it is cheaper than either.
+ * on **both** counts — 0.5298 for 1416 colours against `INK_WEIGHTED`'s 0.5221 for 1435 — and the
+ * first round's elbow settles on `DOMINANT`, at 0.5136 for 1298, because it is cheaper than either.
  * Those six figures are a reading of the first stage **at three crops**, like the four above them;
- * at five they are 0.7953 for 1427, 0.7876 for 1445 and 0.7805 for 1321, which moves no part of the
+ * at five they are 0.5287 for 1427, 0.5164 for 1445 and 0.5108 for 1321, which moves no part of the
  * argument. The whole sweep then settles every corpus sheet on `K_CENTROID`, which is the warning
  * stated at its sharpest: a sheet that lives on its contours gets the reading that softens them
  * unless the reader asks for `INK_WEIGHTED` — which is what `AUTO_TUNE_GUIDANCE.settled` tells them
@@ -167,12 +167,12 @@ export const PROXY_CROP_STRIDE = 0.5;
  *
  * | Sheet | Grid the run was given | Rounds | Positions |
  * | --- | --- | --- | --- |
- * | `cyborg_black_red.png` | 6 | **4** | 189 |
+ * | `cyborg_black_red.png` | 6 | **5** | 236 |
  * | `armour.png` | 6 | 3 | 142 |
  * | `vehicles_and_props.png` | 5 | 3 | 134 |
  * | `cyborg_monk.png` | 4 | 3 | 134 |
  * | `character_space_marine_blue.png` | 5 | 3 | 130 |
- * | `cyborg_healer.png` | 4 | 3 | 130 |
+ * | `cyborg_healer.png` | 4 | 3 | 138 |
  * | `three-quarter-view_tiles1.png` | 5 | 2 | 95 |
  * | `ui_elements1.png` | 4 | 2 | 87 |
  *
@@ -186,12 +186,13 @@ export const PROXY_CROP_STRIDE = 0.5;
  * **Eight is the worst of those eight plus headroom, and the headroom is the point.** A cap that a
  * sheet exactly reaches cannot be told apart from one that cut it short — and a cut descent does not
  * merely stop early, it answers with wherever the cut happened to fall. On the corpus the last round
- * is only ever the one that finds the repeat: `cyborg_black_red.png` capped at three rounds answers
- * with the position its fourth round confirms. But before each candidate was scored over its crop's
+ * is only ever the one that finds the repeat: `cyborg_black_red.png` capped at four rounds answers
+ * with the position its fifth round confirms. But before each candidate was scored over its crop's
  * own mesh, the reference sheet ran six rounds and would have answered strictly worse cut at three,
  * so the rounds a sheet needs move with the score and the ladders, and a cap sized to today's worst
- * case would be the first thing either change broke. None of the eight reaches a fifth round, so
- * the headroom is paid only by a sheet that needs it.
+ * case would be the first thing either change broke — scoring colour by OKLab distance rather than
+ * by the paper's brightness ratio took that sheet from four rounds to five. None of the eight reaches
+ * a sixth round, so the headroom is paid only by a sheet that needs it.
  *
  * **A cap is still needed, because nothing guarantees the descent settles.** What the stages descend
  * on is a pair of figures ranked by an elbow rather than a scalar objective, and an elbow's knee

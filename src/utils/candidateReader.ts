@@ -11,9 +11,9 @@ import type { TuneCrop } from './tuneCrop.ts';
  * dials in force alongside its own ladder — see `withIncumbent` — and the dials in force are the
  * position the stage before it chose, so its reading is already known. A round that retraces an
  * earlier one's ground asks again too. Measured over the eight corpus sheets at the grids the table
- * under `TUNE_ROUNDS` gives, the descent ranks 1,041 positions and only 805 of them are distinct: 23%
+ * under `TUNE_ROUNDS` gives, the descent ranks 1,088 positions and only 811 of them are distinct: 25%
  * of what it used to run was an answer it already had, and 38% on
- * `test_sprites/character_space_marine_blue.png`.
+ * `test_sprites/character_space_marine_blue.png` and `test_sprites/vehicles_and_props.png`.
  *
  * **Remembering a reading changes no answer**, because a reading is a function of the dials, the
  * crops and the settings, and only the dials vary within one sweep: `autoTune` makes one of these per

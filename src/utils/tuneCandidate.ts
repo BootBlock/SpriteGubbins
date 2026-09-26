@@ -62,10 +62,10 @@ export function readCandidate(
     // that are true and neither is a reason to hide the pass from the score. A reader with the pass
     // on is going to *get* that fringe, so the two badges the panel reported were figures about a
     // sheet nobody was looking at. Measured on `test_sprites/armour.png` at a grid of 6 and a budget
-    // of 16, the sweep reports 16.0 → 11.8 colours with the control at `OFF` and 15.6 → 16.0 with it
+    // of 16, the sweep reports 16.0 → 11.8 colours with the control at `OFF` and 15.6 → 11.8 with it
     // at `BOTH`, where it settles the pass at a strength of 10% over only the hardest, longest
     // contours — a coverage is an alpha and `SNAP` bounds the hues rather than the count, so every
-    // one it writes is a colour the trade has to pay for. Ranking the candidates on what they
+    // one it writes is a colour the trade has to pay for, and the sweep pays for as few as it can. Ranking the candidates on what they
     // actually produce is what puts badge and preview back in agreement, and the elbow is what stops
     // the fringe being bought at any price.
     //

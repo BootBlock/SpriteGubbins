@@ -13,14 +13,6 @@ describe('integralImage', () => {
     expect(rectangleSum(table, WIDTH, 2, 2, 0, 0)).toBe(0);
   });
 
-  it('sums the product of two planes where a second is given', () => {
-    // What an SSIM covariance asks for, and the reason the product form exists at all.
-    const other = Float64Array.from(PLANE).map((value) => value * 2);
-    const table = integralImage(PLANE, WIDTH, HEIGHT, other);
-
-    expect(rectangleSum(table, WIDTH, 1, 1, 2, 2)).toBe(2 * (25 + 36 + 64 + 81));
-  });
-
   it('matches a direct sum over every rectangle of a plane, the corner and the whole plane included', () => {
     // Every rectangle, so the ones touching the top-left corner — where the table has no row or
     // column before them to subtract — are answered without a special case, and so is the whole plane.

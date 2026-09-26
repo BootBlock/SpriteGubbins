@@ -1,62 +1,58 @@
 import { describe, expect, it } from 'vitest';
 import { imageFrom, soften } from '../test/images.ts';
 import { oklabToSrgb, srgbToOklab } from './oklab.ts';
-import { oklabPlanes } from './oklabPlanes.ts';
+import { oklabPlanes, type OklabPlanes } from './oklabPlanes.ts';
 import { meanSsim, ssimAgainst, ssimReference } from './ssim.ts';
 
 /**
  * The same index computed the slow way — every window summed directly, no summed-area tables.
  *
- * This is what establishes that the fast form is the index it claims to be. Five integral tables per
- * channel and a rectangle difference is easy to get subtly wrong in a way no property test would
- * notice: an off-by-one in the stride shifts one plane against another and still returns a plausible
- * number in [0, 1] that is monotone in everything you would think to check. Written from the paper's
- * own expression, so the two agree only if the fast one is right.
+ * This is what establishes that the fast form is the index it claims to be. Summed-area tables and a
+ * rectangle difference are easy to get subtly wrong in a way no property test would notice: an
+ * off-by-one in the stride shifts one plane against another and still returns a plausible number in
+ * [0, 1] that is monotone in everything you would think to check. Written from the paper's own
+ * expression, with its luminance term swapped for `sech` of the OKLab distance between the window
+ * means as `meanSsim` states, so the two agree only if the fast one is right. `components` names the
+ * planes read, so a test can ask what the index is without one of them.
  */
-function directSsim(a: ImageData, b: ImageData, window = 8): number {
+function directSsim(
+  a: ImageData,
+  b: ImageData,
+  components: readonly (keyof OklabPlanes)[] = ['L', 'a', 'b', 'alpha'],
+  window = 8,
+): number {
   const left = oklabPlanes(a);
   const right = oklabPlanes(b);
-  return (
-    (directChannel(left.L, right.L, a.width, a.height, window) +
-      directChannel(left.a, right.a, a.width, a.height, window) +
-      directChannel(left.b, right.b, a.width, a.height, window) +
-      directChannel(left.alpha, right.alpha, a.width, a.height, window)) /
-    4
-  );
-}
-
-function directChannel(
-  left: Float64Array,
-  right: Float64Array,
-  width: number,
-  height: number,
-  window: number,
-): number {
-  const c1 = (0.01 * 255) ** 2;
+  const { width, height } = a;
   const c2 = (0.03 * 255) ** 2;
   let total = 0;
   let windows = 0;
 
   for (let top = 0; top + window <= height; top += 1) {
     for (let x = 0; x + window <= width; x += 1) {
-      const xs: number[] = [];
-      const ys: number[] = [];
+      const at: number[] = [];
       for (let dy = 0; dy < window; dy += 1) {
-        for (let dx = 0; dx < window; dx += 1) {
-          xs.push(left[(top + dy) * width + x + dx] ?? 0);
-          ys.push(right[(top + dy) * width + x + dx] ?? 0);
+        for (let dx = 0; dx < window; dx += 1) at.push((top + dy) * width + x + dx);
+      }
+      const count = at.length;
+      const mean = (plane: Float64Array) => at.reduce((sum, index) => sum + (plane[index] ?? 0), 0) / count;
+      let apart = 0;
+      let varA = 0;
+      let varB = 0;
+      let covariance = 0;
+      for (const component of components) {
+        const meanA = mean(left[component]);
+        const meanB = mean(right[component]);
+        apart += (meanA - meanB) ** 2;
+        for (const index of at) {
+          const offA = (left[component][index] ?? 0) - meanA;
+          const offB = (right[component][index] ?? 0) - meanB;
+          varA += (offA * offA) / (count - 1);
+          varB += (offB * offB) / (count - 1);
+          covariance += (offA * offB) / (count - 1);
         }
       }
-      const count = xs.length;
-      const meanA = xs.reduce((sum, value) => sum + value, 0) / count;
-      const meanB = ys.reduce((sum, value) => sum + value, 0) / count;
-      const varA = xs.reduce((sum, value) => sum + (value - meanA) ** 2, 0) / (count - 1);
-      const varB = ys.reduce((sum, value) => sum + (value - meanB) ** 2, 0) / (count - 1);
-      const covariance =
-        xs.reduce((sum, value, index) => sum + (value - meanA) * ((ys[index] ?? 0) - meanB), 0) / (count - 1);
-      total +=
-        ((2 * meanA * meanB + c1) * (2 * covariance + c2)) /
-        ((meanA * meanA + meanB * meanB + c1) * (varA + varB + c2));
+      total += ((1 / Math.cosh(Math.sqrt(apart) / 89.35)) * (2 * covariance + c2)) / (varA + varB + c2);
       windows += 1;
     }
   }
@@ -64,9 +60,19 @@ function directChannel(
   return windows === 0 ? 1 : total / windows;
 }
 
-/** What the three colour channels scored, out of an index taken between two opaque images. */
-function colourShare(index: number): number {
-  return (4 * index - 1) / 3;
+/** A flat 16 × 16 opaque swatch of one colour. */
+function swatch([r, g, b]: readonly [number, number, number]): ImageData {
+  return imageFrom(16, 16, () => ({ r, g, b, a: 255 }));
+}
+
+/** The scaled OKLab distance between two sRGB colours. */
+function oklabDistance(
+  one: readonly [number, number, number],
+  other: readonly [number, number, number],
+): number {
+  const a = srgbToOklab(...one);
+  const b = srgbToOklab(...other);
+  return Math.hypot(a.L - b.L, a.a - b.a, a.b - b.b);
 }
 
 /** The art blended `share` of the way toward a flat mid grey. */
@@ -144,28 +150,57 @@ describe('meanSsim', () => {
 
     expect(ladder).toEqual([...ladder].sort((a, b) => b - a));
     expect(ladder[0]).toBeCloseTo(1, 12);
-    // Half of what the colour channels can lose is gone by the time nothing of the artwork is left.
-    // Every rung is opaque, so coverage scores 1 throughout and a quarter of the index is out of
-    // reach; `colourShare` takes it back out. Stated as a share of where the ladder starts rather
-    // than as an absolute figure, because what a flat grey scores against a particular sheet is a
-    // property of that sheet's colours rather than of the index.
-    expect(colourShare(ladder[4] ?? 1)).toBeLessThan(colourShare(ladder[0] ?? 1) / 2);
+    // Over half of what the index can lose is gone by the time nothing of the artwork is left.
+    expect(ladder[4]).toBeLessThan(0.5);
   });
 
-  it('lifts every comparison of two opaque images by the same share, so it reorders none of them', () => {
-    // The promise that lets the coverage channel in without moving a sweep over an opaque sheet:
-    // where both images are opaque everywhere, coverage is a flat 1 and the index is the three colour
-    // channels' mean carried into the top three quarters of the range.
+  it('adds nothing for coverage where both images are opaque everywhere', () => {
+    // The promise that lets coverage in without moving a sweep over an opaque sheet: a component that
+    // is one constant on both sides adds nothing to a distance, a spread or a covariance.
     for (const other of [ART, soften(ART), towardFlat(ART, 0.5), towardFlat(ART, 1)]) {
-      const left = oklabPlanes(ART);
-      const right = oklabPlanes(other);
-      const colour =
-        (directChannel(left.L, right.L, ART.width, ART.height, 8) +
-          directChannel(left.a, right.a, ART.width, ART.height, 8) +
-          directChannel(left.b, right.b, ART.width, ART.height, 8)) /
-        3;
-      expect(meanSsim(ART, other)).toBeCloseTo((3 * colour + 1) / 4, 10);
+      expect(meanSsim(ART, other)).toBeCloseTo(directSsim(ART, other, ['L', 'a', 'b']), 10);
     }
+  });
+
+  it('charges a flat shift the same at black as in the mid-tones, for the same OKLab distance', () => {
+    // The defect this replaced. The paper's luminance term compares two means by their ratio, so run
+    // on OKLab lightness it scored the first pair here at 0.7554 and the second at 0.9986. Each pair
+    // is chosen for a distance near 17 — black, mid grey, and a hue shift in a blue fill — and each
+    // is measured rather than assumed.
+    const pairs = [
+      [
+        [0, 0, 0],
+        [1, 1, 1],
+      ],
+      [
+        [128, 128, 128],
+        [148, 148, 148],
+      ],
+      [
+        [40, 70, 170],
+        [40, 95, 170],
+      ],
+    ] as const;
+    const distances = pairs.map(([one, other]) => oklabDistance(one, other));
+    const costs = pairs.map(([one, other]) => 1 - meanSsim(swatch(one), swatch(other)));
+
+    for (const distance of distances) expect(distance).toBeCloseTo(17, 0);
+    // A flat swatch has no spread, so its cost is the level term alone, which is a function of the
+    // distance alone: the costs differ only as far as the three distances do.
+    const perSquaredDistance = costs.map((cost, index) => cost / (distances[index] ?? 1) ** 2);
+    expect(Math.max(...perSquaredDistance) / Math.min(...perSquaredDistance)).toBeLessThan(1.01);
+    expect(Math.min(...costs)).toBeGreaterThan(0.01);
+  });
+
+  it('charges a small step at mid lightness what the paper charged for it there', () => {
+    // Where the level scale is matched: at the middle of the lightness axis, sRGB 99, a step of two
+    // code values costs what the paper's own luminance term priced it at on the code values.
+    const c1 = (0.01 * 255) ** 2;
+    const paper = 1 - (2 * 99 * 101 + c1) / (99 ** 2 + 101 ** 2 + c1);
+    const cost = 1 - meanSsim(swatch([99, 99, 99]), swatch([101, 101, 101]));
+
+    expect(cost / paper).toBeGreaterThan(0.97);
+    expect(cost / paper).toBeLessThan(1.03);
   });
 
   it('is symmetric in its two arguments', () => {

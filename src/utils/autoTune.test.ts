@@ -273,18 +273,14 @@ describe('autoTune', () => {
     expect(outcome.dials.inkThreshold).toBe(started.inkThreshold);
   });
 
-  it('counts a stage’s positions across every round that reached it, skips included', () => {
+  it('counts a stage’s positions across every round that reached it', () => {
     const outcome = sweptSheet();
     const reading = outcome.stages.find((stage) => stage.stage === 'READING');
-    const inkBlend = outcome.stages.find((stage) => stage.stage === 'INK_BLEND');
 
-    // `READING` never skips and its ladder is complete, so it costs exactly fifteen a round.
+    // `READING` never skips and its ladder is complete, so it costs exactly fifteen a round. A stage
+    // that swept in one round and was skipped in a later one is the other half of the contract, and
+    // `tests/auto-tune-stage-counts.test.ts` steers a sweep down that path.
     expect(reading?.candidates).toBe(15 * outcome.rounds);
-    // And the ink blend is the other half of the contract: it swept in an earlier round and is
-    // skipped in the last, so it reports a reason *and* what it spent. Dropping the carry-forward
-    // would leave this at zero while the sweep's own total still counted those positions.
-    expect(inkBlend?.skipped).not.toBeNull();
-    expect(inkBlend?.candidates).toBeGreaterThan(0);
     expect(outcome.candidates).toBe(1 + outcome.stages.reduce((total, stage) => total + stage.candidates, 0));
   });
 
