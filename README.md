@@ -99,7 +99,7 @@ mirrors that so paths behave identically in both.
 | `npm run build` | Type-check, then build the production bundle and service worker into `dist/` |
 | `npm run preview` | Serve `dist/` locally, isolation headers included |
 | `npm run test` / `test:run` | Vitest, in watch and single-run modes |
-| `npm run type-check` | `tsc -b --noEmit` across the app and the Vite config |
+| `npm run type-check` | `tsc -b --noEmit` across the app, the tests, `scripts/`, the Vite config and the scripts in `public/` |
 | `npm run lint` | ESLint |
 | `npm run format` | Prettier |
 | `npm run icons` | Regenerate the app icon set from the source pixel glyph |

@@ -4,6 +4,7 @@ import { relative, resolve, sep } from 'node:path';
 import { ESLint } from 'eslint';
 import * as ts from 'typescript';
 import { describe, expect, it } from 'vitest';
+import { CONFIG_HOST, typescriptPrograms } from './typescriptPrograms.ts';
 
 /**
  * Every rule that needs type information must run on every file a TypeScript program checks, and
@@ -66,19 +67,10 @@ const SCRIPT = /\.[cm]?[jt]sx?$/;
  * `tsc -b` builds.
  */
 function checkedFiles(): Set<string> {
-  const host: ts.ParseConfigFileHost = {
-    ...ts.sys,
-    onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
-      throw new Error(ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '));
-    },
-  };
-  const solution = ts.getParsedCommandLineOfConfigFile('tsconfig.json', undefined, host);
-  const programs = solution?.projectReferences ?? [];
-  if (programs.length === 0) throw new Error('tsconfig.json references no program');
   const root = process.cwd();
   return new Set(
-    programs.flatMap(({ path }) => {
-      const program = ts.getParsedCommandLineOfConfigFile(path, undefined, host);
+    typescriptPrograms().flatMap((path) => {
+      const program = ts.getParsedCommandLineOfConfigFile(path, undefined, CONFIG_HOST);
       if (!program) throw new Error(`${path} does not parse`);
       return program.fileNames.map((file) => relative(root, resolve(file)).split(sep).join('/'));
     }),

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import * as ts from 'typescript';
 import { describe, expect, it } from 'vitest';
+import { typescriptPrograms } from './typescriptPrograms.ts';
 
 /**
  * The TypeScript programs must be checked to the same standard.
@@ -84,17 +85,6 @@ function booleanOptions(file: string): Map<string, boolean> {
   return new Map(entries.filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean'));
 }
 
-/** The configs `tsconfig.json` references, which are the programs `tsc -b` checks. */
-function referencedConfigs(): string[] {
-  const references: unknown = declaration('tsconfig.json')['references'];
-  if (!Array.isArray(references)) throw new Error('tsconfig.json declares no references array');
-  return references.map((reference: unknown) => {
-    const path = isRecord(reference) ? reference['path'] : undefined;
-    if (typeof path !== 'string') throw new Error('tsconfig.json holds a reference with no path');
-    return resolve(process.cwd(), path);
-  });
-}
-
 const programs: ReadonlyMap<string, Map<string, boolean>> = new Map(
   CONFIGS.map((file) => [file, booleanOptions(file)]),
 );
@@ -103,7 +93,7 @@ describe('tsconfig strictness', () => {
   it('compares every program the build checks, and no other', () => {
     // A program referenced from `tsconfig.json` and missing here would be checked to whatever
     // standard it happened to declare, with this suite green.
-    expect(referencedConfigs().sort()).toStrictEqual(
+    expect(typescriptPrograms().sort()).toStrictEqual(
       CONFIGS.map((file) => resolve(process.cwd(), file)).sort(),
     );
   });
@@ -154,7 +144,7 @@ describe('tsconfig strictness', () => {
       expect(
         CONFIGS.filter((file) => programs.get(file)?.has(name)),
         `${name} is not set by exactly the programs its exemption names`,
-      ).toStrictEqual(owners);
+      ).toStrictEqual(CONFIGS.filter((file) => owners.includes(file)));
     }
   });
 });
