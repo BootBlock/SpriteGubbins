@@ -103,8 +103,8 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
   const { width, height, data } = image;
   const pixels = width * height;
 
-  // The plane the key's own variation lies in, worked out once for the whole image — see
-  // `keyDistance.ts` for what it is and why the distance is measured against it.
+  // The key's position and hue, worked out once for the whole image — see `keyDistance.ts` for the
+  // plane they describe and why the distance is measured against it.
   const basis = keyBasis(color);
 
   // Squared, so every comparison below stays clear of a square root taken 16 million times.
