@@ -195,6 +195,33 @@ function promptFor(
   });
 }
 
+const SHEET_PROMPTS = new Map<string, string>();
+
+/**
+ * One sheet compiled from the base subject that selects it, with no additional anatomy and every
+ * other output setting at its default — once, however many sweeps read it.
+ *
+ * `no category emits another category’s components` and `every sheet of one series states the same
+ * finished capability` each walk every sheet the app can compile and compile exactly this prompt, so
+ * sharing it halves the most expensive work in the file without changing what either sweep reads.
+ * Keyed on the base's anatomy, which is the one field that tells the subjects
+ * `assemblyBaseSubjectsOf` returns for a category apart.
+ */
+function sheetPrompt(
+  category: SubjectCategory,
+  subject: SubjectDefinition,
+  mode: DirectionalMode,
+  directions: DirectionSet,
+  sheetIndex: number,
+): string {
+  const key = [category, subject.anatomy, mode, directions, String(sheetIndex)].join('|');
+  const cached = SHEET_PROMPTS.get(key);
+  if (cached !== undefined) return cached;
+  const prompt = promptFor(category, mode, undefined, sheetIndex, directions, subject);
+  SHEET_PROMPTS.set(key, prompt);
+  return prompt;
+}
+
 describe('the plan table itself', () => {
   it('files no plan under a category that cannot contain it', () => {
     // Structural, not textual: an entry of kind `tile` under CHARACTER is the contamination, and it
@@ -724,9 +751,8 @@ describe('every sheet of one series states the same finished capability', () => 
     // each of them two lines above a list of all ten sheets.
     let multiSheet = 0;
     for (const { category, subject, mode, directions } of EVERY_SERIES) {
-      const output = { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions };
       const sheets = sheetSeriesFor(category, subject, mode, directions).map((_, sheetIndex) =>
-        capabilityOf(generatePrompt(category, subject, { ...output, sheetIndex })),
+        capabilityOf(sheetPrompt(category, subject, mode, directions, sheetIndex)),
       );
       if (sheets.length < 2) continue;
       multiSheet += 1;
@@ -1156,8 +1182,10 @@ describe('no category emits another category’s components', () => {
   it.each(SHEETS)(
     '$category / $mode / $directions / $sheet',
     ({ category, subject, mode, directions, sheetIndex }) => {
-      const prompt = promptFor(category, mode, undefined, sheetIndex, directions, subject);
-      const section = sectionOf(prompt, 'COMPONENT INVENTORY');
+      const section = sectionOf(
+        sheetPrompt(category, subject, mode, directions, sheetIndex),
+        'COMPONENT INVENTORY',
+      );
       expect(section).not.toBe('');
 
       // Neither half is a list of category names, and that is the fix rather than the tidy-up: the
@@ -1350,52 +1378,36 @@ describe('every mode of the union is reachable from some category', () => {
 });
 
 describe('every inventory line carries an identifier the manifest can use', () => {
-  /** Every plan the table holds, whatever base and direction set produce it, with the facings it was built for. */
-  const everyPlan = SUBJECT_CATEGORIES.flatMap((category) =>
-    assemblyBaseSubjectsOf(category).flatMap((subject) =>
-      modesFor(category, subject).flatMap((mode) =>
-        (CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[]).flatMap((directions) =>
-          sheetSeriesFor(category, subject, mode, directions).map((plan) => ({
-            category,
-            mode,
-            directions,
-            plan,
-          })),
-        ),
-      ),
-    ),
-  );
+  const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-  it('spells every label as a slug', () => {
-    for (const { category, mode, plan } of everyPlan) {
-      for (const entry of plan.groups.flatMap((group) => group.entries)) {
-        expect(entry.label, `${category}/${mode}/${plan.name}: ${entry.text}`).toMatch(
-          /^[a-z0-9]+(-[a-z0-9]+)*$/,
-        );
-      }
-    }
+  it('spells every label and every part name as a slug', () => {
+    // Collected and asserted once rather than asserted per entry, so a failure lists every offender
+    // and the sweep does not pay for thousands of passing assertions.
+    const offenders = EVERY_PLAN.flatMap(({ category, mode, plan }) =>
+      plan.groups
+        .flatMap((group) => group.entries)
+        .flatMap((entry) =>
+          [entry.label, ...(entry.parts ?? [])]
+            .filter((name) => !SLUG.test(name))
+            .map((name) => `${category}/${mode}/${plan.name}: “${name}” in ${entry.text}`),
+        ),
+    );
+
+    expect(offenders).toStrictEqual([]);
   });
 
   it('gives a line that names its parts exactly one name per component', () => {
     // `componentSlots` takes the names straight from `parts`, so a list of the wrong length makes the
     // name list a different length from the component count — which maps every sprite after the
     // divergence onto the wrong component, the failure the whole arrangement is arranged against.
-    for (const { category, mode, plan } of everyPlan) {
-      for (const entry of plan.groups.flatMap((group) => group.entries)) {
-        if (entry.parts === undefined) continue;
-        expect(entry.parts, `${category}/${mode}/${plan.name}: ${entry.text}`).toHaveLength(entry.count);
-      }
-    }
-  });
+    const offenders = EVERY_PLAN.flatMap(({ category, mode, plan }) =>
+      plan.groups
+        .flatMap((group) => group.entries)
+        .filter((entry) => entry.parts !== undefined && entry.parts.length !== entry.count)
+        .map((entry) => `${category}/${mode}/${plan.name}: ${entry.text}`),
+    );
 
-  it('spells every part name as a slug', () => {
-    for (const { category, mode, plan } of everyPlan) {
-      for (const entry of plan.groups.flatMap((group) => group.entries)) {
-        for (const part of entry.parts ?? []) {
-          expect(part, `${category}/${mode}/${plan.name}: ${entry.text}`).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
-        }
-      }
-    }
+    expect(offenders).toStrictEqual([]);
   });
 
   it('never names two components of one plan the same thing', () => {
@@ -1410,7 +1422,7 @@ describe('every inventory line carries an identifier the manifest can use', () =
     // reaches 98 of the table's 418 entries, missing exactly the collision that is live — an
     // authored name landing on one another line *derives*, since the authoring convention puts
     // ordinals inside part names (`mounting-bracket-1`) and the derived branch produces that shape.
-    for (const { category, mode, plan } of everyPlan) {
+    for (const { category, mode, plan } of EVERY_PLAN) {
       const names = planSlots(plan);
       expect(new Set(names).size, `${category}/${mode}/${plan.name}: ${names.join(', ')}`).toBe(names.length);
     }
@@ -1420,7 +1432,7 @@ describe('every inventory line carries an identifier the manifest can use', () =
     // Within a plan a label is an identity: `componentSlots` suffixes it with a facing or an ordinal,
     // so two lines sharing one label produce two runs of the same names for different components.
     // Across plans they may repeat freely — a vehicle's `fittings` and an item's are not related.
-    for (const { category, mode, plan } of everyPlan) {
+    for (const { category, mode, plan } of EVERY_PLAN) {
       const labels = plan.groups.flatMap((group) => group.entries.map((entry) => entry.label));
       expect(new Set(labels).size, `${category}/${mode}/${plan.name}: ${labels.join(', ')}`).toBe(
         labels.length,

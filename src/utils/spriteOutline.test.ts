@@ -27,10 +27,15 @@ const SHEET = imageFrom(16, 16, (x, y) =>
 );
 
 describe('outlineSprites', () => {
-  it('leaves every drawn pixel of the artwork exactly as it found it', () => {
+  it.each([
+    { marks: 'a box', axes: [] },
+    { marks: 'a box and its axis', axes: [{ box: BOX, axis: 5, confidence: 1, snapped: false }] },
+  ])('leaves every drawn pixel of the artwork exactly as it found it when it marks $marks', ({ axes }) => {
     // The reason the ring is drawn outside the box rather than on it: the sprite's own edge is the
     // pixel a reader checking the bounds is looking at, and a mark on it replaces what it measures.
-    const marked = outlineSprites(SHEET, [BOX], []);
+    // An axis runs *through* a sprite, so drawing it where it actually falls would replace the very
+    // pixels a reader is checking it against, so its tick sits in the ring, outside the box, too.
+    const marked = outlineSprites(SHEET, [BOX], axes);
 
     for (let y = BOX.top; y < BOX.top + BOX.height; y += 1) {
       for (let x = BOX.left; x < BOX.left + BOX.width; x += 1) {
@@ -131,18 +136,6 @@ describe('outlineSprites', () => {
 
     expect(at(marked, 4, BOX.top - 1)).toEqual(marker(1));
     expect(at(marked, 5, BOX.top - 1)).toEqual(marker(1));
-  });
-
-  it('leaves the artwork alone when it marks an axis, as it does when it marks a box', () => {
-    // An axis runs *through* a sprite, so drawing it where it actually falls would replace the very
-    // pixels a reader is checking it against. The tick is outside the ring for that reason.
-    const marked = outlineSprites(SHEET, [BOX], [{ box: BOX, axis: 5, confidence: 1, snapped: false }]);
-
-    for (let y = BOX.top; y < BOX.top + BOX.height; y += 1) {
-      for (let x = BOX.left; x < BOX.left + BOX.width; x += 1) {
-        expect(at(marked, x, y)).toEqual(ART);
-      }
-    }
   });
 
   it('drops a mark that would fall off the sheet rather than wrapping it', () => {
