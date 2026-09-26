@@ -85,11 +85,6 @@ describe('service worker hand-over', () => {
     expect(worker.stores.has(SUPERSEDED)).toBe(false);
   });
 
-  it('deletes a superseded precache at once when no window is open to need it', async () => {
-    const worker = await installedBesideOldBuild([]);
-
-    await worker.dispatch('activate');
-
-    expect(worker.stores.has(SUPERSEDED)).toBe(false);
-  });
+  // With no window open at the hand-over, the superseded build goes at `activate` itself — which
+  // `src/swCaches.test.ts` asserts beside the caches of other apps that must survive the same sweep.
 });
