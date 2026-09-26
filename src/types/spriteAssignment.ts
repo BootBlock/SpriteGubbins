@@ -106,8 +106,8 @@ export interface AssignedSprite {
    * Which sprite this one is directly joined to, in reading order counting from one, or `null`.
    *
    * Not the same question as {@link joinedTo}, which names the piece's *leader*: in a chain of three
-   * the last fragment is joined to the middle one and led by the first. A control offering "join to
-   * sprite N" has to show the sprite the reader actually chose, so it reads this.
+   * the last fragment is joined to the middle one and led by the first. The field that names a join's
+   * partner by number has to show the sprite the reader actually chose, so it reads this.
    */
   readonly joinTarget: number | null;
   /**

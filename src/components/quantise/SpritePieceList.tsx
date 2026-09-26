@@ -14,6 +14,8 @@ interface SpritePieceListProps {
   readonly assignment: SpriteAssignment;
   /** The studio's component names — empty where it is composing no sheet. */
   readonly inventory: readonly string[];
+  /** Whether a newer result is on its way, so that {@link assignment} describes the previous one. */
+  readonly busy: boolean;
 }
 
 /**
@@ -29,11 +31,19 @@ interface SpritePieceListProps {
  * around and click. A list of pieces would have no row for the second half of a join, so there would
  * be no way to undo one.
  *
+ * **While a newer result is on its way the list stays mounted**, as the preview beside it keeps
+ * the previous result's chips. What it *reports* about that sheet — how the naming stands, what it
+ * lost, what to do about it — is withdrawn, as the panel's badges above it are, because a finding
+ * about the sheet before the last dial move reads as one about the sheet now. The rows stay,
+ * dimmed and `inert`: a press against them would pin a decision to a sheet that may already be gone.
+ * They were once withdrawn too, and every result then mounted the whole list again — on a sheet of
+ * hundreds of sprites that rebuild was most of what moving a dial cost.
+ *
  * The list is not capped and does not scroll on its own, as the app's other row lists are not: each
  * row holds a focusable control, so a box with its own scrollbar would add a tab stop that reaches
  * nothing the tab order does not already reach.
  */
-export function SpritePieceList({ assignment, inventory }: SpritePieceListProps) {
+export function SpritePieceList({ assignment, inventory, busy }: SpritePieceListProps) {
   const selected = useSpriteAssignmentStore((state) => state.selected);
   const reveal = useSpriteAssignmentStore((state) => state.reveal);
   const revealed = useSpriteAssignmentStore((state) => state.revealed);
@@ -45,11 +55,11 @@ export function SpritePieceList({ assignment, inventory }: SpritePieceListProps)
   // it names may be well outside the panel's scrolled view. Scrolling it into view is what makes the
   // two halves one control surface rather than two lists that happen to agree.
   //
-  // **On the click's request, never on `selected`**, which still names a row when the list mounts
-  // again under a result that landed after a dial move — see `SpriteAssignmentState.reveal`. The
-  // request is settled here, by the list, even where no row holds its sprite: a click made while a
-  // result was on its way names a box that result may have re-cut, and a request left standing
-  // would scroll the page the next time a dial brought that box back.
+  // **On the click's request, never on `selected`**, which still names a row after a result lands
+  // under a dial move, and would scroll the page back here each time — see
+  // `SpriteAssignmentState.reveal`. The request is settled here, by the list, even where no row
+  // holds its sprite: a request left standing would scroll the page the next time a dial brought
+  // that sprite back, answering no click at all.
   //
   // `nearest` rather than `center`, so a row already on screen does not jump under the reader; and
   // no focus is taken, because the click that caused this was in another column and moving focus
@@ -64,13 +74,15 @@ export function SpritePieceList({ assignment, inventory }: SpritePieceListProps)
     <div className="mt-4 space-y-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <p className="text-xs font-semibold text-ink-muted">Which sprite is which</p>
-        <Badge tone={assignment.naming === null ? 'attention' : 'valid'}>
-          {namingLabel(assignment, inventory)}
-        </Badge>
+        {!busy && (
+          <Badge tone={assignment.naming === null ? 'attention' : 'valid'}>
+            {namingLabel(assignment, inventory)}
+          </Badge>
+        )}
         {/* Only where something was actually dropped. A dial that re-cut the sheet has just thrown
             away work the reader did, and saying so is the difference between a feature that forgot
             and one that said what it forgot. */}
-        {assignment.lost > 0 && (
+        {!busy && assignment.lost > 0 && (
           <Badge tone="attention">
             {assignment.lost === 1
               ? '1 choice no longer fits the sheet'
@@ -79,34 +91,40 @@ export function SpritePieceList({ assignment, inventory }: SpritePieceListProps)
         )}
       </div>
 
-      <div className="space-y-2">
-        {assignment.sprites.map((sprite, index) => (
-          <SpritePieceRow
-            key={`${String(sprite.pin.x)},${String(sprite.pin.y)}`}
-            sprite={sprite}
-            ordinal={index + 1}
-            pieceName={sprite.piece === null ? null : (assignment.pieces[sprite.piece]?.name ?? null)}
-            inventory={inventory}
-            others={assignment.sprites.flatMap((other, at) =>
-              at === index ? [] : [{ ordinal: at + 1, sprite: other }],
-            )}
-            selected={selected !== null && samePin(selected, sprite.pin)}
-            ref={reveal !== null && samePin(reveal, sprite.pin) ? owed : null}
-          />
-        ))}
+      <div
+        inert={busy}
+        aria-busy={busy}
+        className={`space-y-3 transition-opacity duration-390 ${busy ? 'opacity-50' : ''}`}
+      >
+        <div className="space-y-2">
+          {assignment.sprites.map((sprite, index) => (
+            <SpritePieceRow
+              key={`${String(sprite.pin.x)},${String(sprite.pin.y)}`}
+              sprite={sprite}
+              ordinal={index + 1}
+              pieceName={sprite.piece === null ? null : (assignment.pieces[sprite.piece]?.name ?? null)}
+              inventory={inventory}
+              sprites={assignment.sprites}
+              selected={selected !== null && samePin(selected, sprite.pin)}
+              ref={reveal !== null && samePin(reveal, sprite.pin) ? owed : null}
+            />
+          ))}
+        </div>
+
+        {!busy && (
+          <p className="text-xs leading-relaxed text-ink-muted">{guidanceFor(assignment, inventory)}</p>
+        )}
+
+        {/* Only once there is something to take back, because a button that would do nothing is
+            worse than no button: it invites a press and reports nothing when it lands. */}
+        {edited && (
+          <ControlTooltip hint="Clear the choices" text={QUANTISE_ACTION_TOOLTIPS.clearAssignments}>
+            <Button variant="view" size="md" onClick={forget}>
+              Clear the choices
+            </Button>
+          </ControlTooltip>
+        )}
       </div>
-
-      <p className="text-xs leading-relaxed text-ink-muted">{guidanceFor(assignment, inventory)}</p>
-
-      {/* Only once there is something to take back, because a button that would do nothing is worse
-          than no button: it invites a press and reports nothing when it lands. */}
-      {edited && (
-        <ControlTooltip hint="Clear the choices" text={QUANTISE_ACTION_TOOLTIPS.clearAssignments}>
-          <Button variant="view" size="md" onClick={forget}>
-            Clear the choices
-          </Button>
-        </ControlTooltip>
-      )}
     </div>
   );
 }
