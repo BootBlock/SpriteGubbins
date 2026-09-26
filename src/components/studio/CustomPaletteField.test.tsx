@@ -72,7 +72,7 @@ describe('CustomPaletteField', () => {
   });
 
   it('pins a pasted list as it is typed, and names the line it could not read', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<CustomPaletteField />);
 
     await user.click(screen.getByRole('textbox', { name: 'Or paste the colours' }));
@@ -93,7 +93,7 @@ describe('CustomPaletteField', () => {
   });
 
   it('reduces that picture on the press, and only on the press', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<CustomPaletteField />);
     await choose(new File(['sheet'], 'accepted-sheet.png', { type: 'image/png' }));
     await waitFor(() => {
@@ -126,7 +126,7 @@ describe('CustomPaletteField', () => {
   });
 
   it('renames without touching the colours', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<CustomPaletteField />);
     await choose(new File(['#102030\n'], 'palette.txt', { type: 'text/plain' }));
     await waitFor(() => {
@@ -166,7 +166,7 @@ describe('CustomPaletteField', () => {
   it('keeps the name the reader typed when the pasted list is edited again', async () => {
     // The box re-reads on every keystroke and a pasted list names nothing, so taking its empty name
     // would wipe out the typed one the moment a colour was added to the list.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<CustomPaletteField />);
     await user.click(screen.getByRole('textbox', { name: 'Or paste the colours' }));
     await user.paste('#102030');
@@ -179,7 +179,7 @@ describe('CustomPaletteField', () => {
   });
 
   it('drops the palette on Remove, and empties the box that pinned it', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<CustomPaletteField />);
     await user.click(screen.getByRole('textbox', { name: 'Or paste the colours' }));
     await user.paste('#102030');

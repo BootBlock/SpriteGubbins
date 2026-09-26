@@ -53,15 +53,6 @@ describe('QuantisePresetControls', () => {
     expect(screen.getByLabelText('Save into')).toHaveValue(DEFAULT_PROJECT_ID);
   });
 
-  it('no longer carries the transfer controls, which moved to the Projects view', () => {
-    // The pack carries the projects and both saved collections together now, so a control that
-    // could replace only this collection would be offering an import this file cannot describe.
-    render(<QuantisePresetControls />);
-
-    expect(screen.queryByRole('button', { name: /Export JSON/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Import JSON/ })).toBeNull();
-  });
-
   it('counts what is saved, and lists it by name', () => {
     useQuantisePresetStore.setState({ presets: [saved] });
 
@@ -73,22 +64,24 @@ describe('QuantisePresetControls', () => {
   });
 
   it('refuses to save until the box holds a name', async () => {
+    const user = userEvent.setup({ delay: null });
     render(<QuantisePresetControls />);
 
     const save = screen.getByRole('button', { name: 'Save' });
     expect(save).toBeDisabled();
 
-    await userEvent.type(screen.getByLabelText('Save these settings as'), 'Flat sheets');
+    await user.type(screen.getByLabelText('Save these settings as'), 'Flat sheets');
     expect(save).toBeEnabled();
   });
 
   it('says Update before the press when the name is one already saved in that project', async () => {
+    const user = userEvent.setup({ delay: null });
     useQuantisePresetStore.setState({ presets: [saved] });
     render(<QuantisePresetControls />);
 
     // Differently cased, because that is what the store treats as the same preset — the button has
     // to answer by the same rule, or it promises one thing and the store does another.
-    await userEvent.type(screen.getByLabelText('Save these settings as'), 'flat SHEETS');
+    await user.type(screen.getByLabelText('Save these settings as'), 'flat SHEETS');
 
     expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
@@ -98,11 +91,12 @@ describe('QuantisePresetControls', () => {
     // The rule projects changed. Two games are each free to have their own “Flat sheets”, and a
     // save into one may not silently overwrite the other's — so the button has to answer by the
     // project as well as by the name, or it promises an update the store will not perform.
+    const user = userEvent.setup({ delay: null });
     const elsewhere: QuantisePreset = { ...saved, projectId: 'another-project' };
     useQuantisePresetStore.setState({ presets: [elsewhere] });
     render(<QuantisePresetControls />);
 
-    await userEvent.type(screen.getByLabelText('Save these settings as'), 'Flat sheets');
+    await user.type(screen.getByLabelText('Save these settings as'), 'Flat sheets');
 
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Update' })).toBeNull();
@@ -112,6 +106,7 @@ describe('QuantisePresetControls', () => {
     // #354. Each `selectOptions` is one `change`, which a closed native select fires on every arrow
     // key in Chromium on Windows and on every typed letter everywhere — so a move made on `change`
     // filed the set under the first project the keyboard passed over.
+    const user = userEvent.setup({ delay: null });
     const moveQuantisePreset = vi.fn((id: string, projectId: string) => {
       useQuantisePresetStore.setState((state) => ({
         presets: state.presets.map((preset) => (preset.id === id ? { ...preset, projectId } : preset)),
@@ -129,13 +124,11 @@ describe('QuantisePresetControls', () => {
     render(<QuantisePresetControls />);
 
     const select = screen.getByRole('combobox', { name: 'Project for the saved settings “Flat sheets”' });
-    await userEvent.selectOptions(select, 'harbour');
-    await userEvent.selectOptions(select, 'castle');
+    await user.selectOptions(select, 'harbour');
+    await user.selectOptions(select, 'castle');
     expect(moveQuantisePreset).not.toHaveBeenCalled();
 
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Move the saved settings “Flat sheets” to Castle' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Move the saved settings “Flat sheets” to Castle' }));
 
     expect(moveQuantisePreset).toHaveBeenCalledTimes(1);
     expect(moveQuantisePreset).toHaveBeenCalledWith('quantise-1', 'castle');
@@ -147,14 +140,15 @@ describe('QuantisePresetControls', () => {
   });
 
   it('empties both boxes once the settings were actually stored', async () => {
+    const user = userEvent.setup({ delay: null });
     const saveQuantisePreset = vi.fn().mockResolvedValue(true);
     useQuantisePresetStore.setState({ saveQuantisePreset });
     render(<QuantisePresetControls />);
 
     const name = screen.getByLabelText('Save these settings as');
-    await userEvent.type(name, 'Flat sheets');
-    await userEvent.type(screen.getByLabelText('Describe it (optional)'), 'Line art.');
-    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await user.type(name, 'Flat sheets');
+    await user.type(screen.getByLabelText('Describe it (optional)'), 'Line art.');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(saveQuantisePreset).toHaveBeenCalledWith('Flat sheets', 'Line art.', DEFAULT_PROJECT_ID);
     expect(name).toHaveValue('');
@@ -163,22 +157,24 @@ describe('QuantisePresetControls', () => {
   it('keeps the name in the box when the write was refused, so it can be retried', async () => {
     // The store reports its own failure with a toast and resolves normally, so clearing the box
     // unconditionally would make the reader retype the name to try again.
+    const user = userEvent.setup({ delay: null });
     useQuantisePresetStore.setState({ saveQuantisePreset: vi.fn().mockResolvedValue(false) });
     render(<QuantisePresetControls />);
 
     const name = screen.getByLabelText('Save these settings as');
-    await userEvent.type(name, 'Flat sheets');
-    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await user.type(name, 'Flat sheets');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(name).toHaveValue('Flat sheets');
   });
 
   it('loads a saved set into the tab when its row is pressed', async () => {
+    const user = userEvent.setup({ delay: null });
     const loadQuantisePreset = vi.fn();
     useQuantisePresetStore.setState({ presets: [saved], loadQuantisePreset });
     render(<QuantisePresetControls />);
 
-    await userEvent.click(screen.getByRole('button', { name: /^Load the saved settings/ }));
+    await user.click(screen.getByRole('button', { name: /^Load the saved settings/ }));
 
     expect(loadQuantisePreset).toHaveBeenCalledWith(saved);
   });
@@ -209,11 +205,12 @@ describe('QuantisePresetControls', () => {
   });
 
   it('asks before deleting, and deletes nothing on the first press', async () => {
+    const user = userEvent.setup({ delay: null });
     const deleteQuantisePreset = vi.fn().mockResolvedValue(undefined);
     useQuantisePresetStore.setState({ presets: [saved], deleteQuantisePreset });
     render(<QuantisePresetControls />);
 
-    await userEvent.click(screen.getByRole('button', { name: /^Delete the saved settings “Flat sheets”$/ }));
+    await user.click(screen.getByRole('button', { name: /^Delete the saved settings “Flat sheets”$/ }));
 
     expect(deleteQuantisePreset).not.toHaveBeenCalled();
     expect(
@@ -225,12 +222,13 @@ describe('QuantisePresetControls', () => {
   });
 
   it('deletes on the confirmation, naming the row it was pressed on', async () => {
+    const user = userEvent.setup({ delay: null });
     const deleteQuantisePreset = vi.fn().mockResolvedValue(undefined);
     useQuantisePresetStore.setState({ presets: [saved], deleteQuantisePreset });
     render(<QuantisePresetControls />);
 
-    await userEvent.click(screen.getByRole('button', { name: /^Delete the saved settings “Flat sheets”$/ }));
-    await userEvent.click(
+    await user.click(screen.getByRole('button', { name: /^Delete the saved settings “Flat sheets”$/ }));
+    await user.click(
       screen.getByRole('button', { name: 'Delete the saved settings “Flat sheets”, for good' }),
     );
 
@@ -238,14 +236,13 @@ describe('QuantisePresetControls', () => {
   });
 
   it('puts the row back on Cancel, having deleted nothing', async () => {
+    const user = userEvent.setup({ delay: null });
     const deleteQuantisePreset = vi.fn().mockResolvedValue(undefined);
     useQuantisePresetStore.setState({ presets: [saved], deleteQuantisePreset });
     render(<QuantisePresetControls />);
 
-    await userEvent.click(screen.getByRole('button', { name: /^Delete the saved settings “Flat sheets”$/ }));
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Cancel — keep the saved settings “Flat sheets”' }),
-    );
+    await user.click(screen.getByRole('button', { name: /^Delete the saved settings “Flat sheets”$/ }));
+    await user.click(screen.getByRole('button', { name: 'Cancel — keep the saved settings “Flat sheets”' }));
 
     expect(deleteQuantisePreset).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Load the saved settings “Flat sheets”' })).toBeInTheDocument();

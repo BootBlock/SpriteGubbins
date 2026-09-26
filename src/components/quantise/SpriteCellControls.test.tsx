@@ -42,21 +42,31 @@ describe('SpriteCellControls', () => {
     expect(screen.queryByLabelText('Cell width')).toBeNull();
   });
 
-  it('withholds the studio’s own size where the studio states none', () => {
-    draw();
+  it.each([
+    ['withholds the studio’s own size where the studio states none', null, false],
+    ['offers the studio’s own size where it states one', TARGET, true],
+    // The studio's field is free prose, so its size is whatever a reader typed — and a 2048 cell on
+    // a fifteen-sprite sheet asks the writer for fifteen sixteen-megabyte canvases.
+    [
+      'withholds the studio’s size where the studio states one larger than a cell may be',
+      { width: 2048, height: 2048 },
+      false,
+    ],
+  ] as const)('%s', (_, target, offered) => {
+    draw(DEFAULT_SPRITE_CELL_CHOICE, target);
 
-    expect(screen.queryByRole('button', { name: 'Studio target' })).toBeNull();
-  });
-
-  it('offers the studio’s own size where it states one', () => {
-    draw(DEFAULT_SPRITE_CELL_CHOICE, TARGET);
-
-    expect(screen.getByRole('button', { name: 'Studio target' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Studio target' }) !== null).toBe(offered);
   });
 
   it('shows the two size boxes only under the source that has a size to type', () => {
+    const { unmount } = draw({ ...DEFAULT_SPRITE_CELL_CHOICE, source: 'FIXED' }, TARGET);
+    expect(screen.getByLabelText('Cell width')).toBeInTheDocument();
+    expect(screen.getByLabelText('Cell height')).toBeInTheDocument();
+    unmount();
+
     draw({ ...DEFAULT_SPRITE_CELL_CHOICE, source: 'TARGET' }, TARGET);
     expect(screen.queryByLabelText('Cell width')).toBeNull();
+    expect(screen.queryByLabelText('Cell height')).toBeNull();
 
     // The studio's own size is the cell, so there is nothing for a reader to state here.
     expect(screen.getByText('16 × 16 cell')).toBeInTheDocument();
@@ -86,6 +96,7 @@ describe('SpriteCellControls', () => {
 
   it('keeps the typed size while the reader looks at another source and back', async () => {
     // Stepping through the pills to see what the studio states must not empty the boxes.
+    const user = userEvent.setup({ delay: null });
     const onChange = vi.fn();
     const typed: SpriteCellChoice = {
       ...DEFAULT_SPRITE_CELL_CHOICE,
@@ -94,17 +105,18 @@ describe('SpriteCellControls', () => {
     };
     draw(typed, TARGET, onChange);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Studio target' }));
+    await user.click(screen.getByRole('button', { name: 'Studio target' }));
 
     expect(onChange).toHaveBeenCalledWith({ ...typed, source: 'TARGET' });
   });
 
   it('moves one axis of the anchor without disturbing the other', async () => {
+    const user = userEvent.setup({ delay: null });
     const onChange = vi.fn();
     const chosen: SpriteCellChoice = { ...DEFAULT_SPRITE_CELL_CHOICE, source: 'TARGET' };
     draw(chosen, TARGET, onChange);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Left' }));
+    await user.click(screen.getByRole('button', { name: 'Left' }));
 
     expect(onChange).toHaveBeenCalledWith({ ...chosen, anchor: { x: 'LEFT', y: 'BOTTOM' } });
   });
@@ -117,14 +129,6 @@ describe('SpriteCellControls', () => {
 
     expect(screen.getByRole('button', { name: 'Bounding box' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByRole('group', { name: 'Anchor across the cell' })).toBeNull();
-  });
-
-  it('withholds the studio’s size where the studio states one larger than a cell may be', () => {
-    // The studio's field is free prose, so its size is whatever a reader typed — and a 2048 cell on
-    // a fifteen-sprite sheet asks the writer for fifteen sixteen-megabyte canvases.
-    draw(DEFAULT_SPRITE_CELL_CHOICE, { width: 2048, height: 2048 });
-
-    expect(screen.queryByRole('button', { name: 'Studio target' })).toBeNull();
   });
 
   it('keeps the notice’s live region in the document before there is anything to announce', () => {

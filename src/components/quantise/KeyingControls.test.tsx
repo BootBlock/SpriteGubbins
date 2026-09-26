@@ -39,11 +39,12 @@ describe('KeyingControls', () => {
   it('switches the pass on when the offer is taken, and changes nothing else', async () => {
     // The press is the reader's, which is the whole argument for an offer rather than a default:
     // nothing on this tab alters artwork unasked, and this asks.
+    const user = userEvent.setup({ delay: null });
     show({ offered: true });
     const tolerance = useQuantiseStore.getState().keyTolerance;
     expect(useQuantiseStore.getState().keyingEnabled).toBe(false);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Key the background' }));
+    await user.click(screen.getByRole('button', { name: 'Key the background' }));
 
     expect(useQuantiseStore.getState().keyingEnabled).toBe(true);
     // At the tolerance the control already held: the press runs the pass the reader was shown a
@@ -65,11 +66,12 @@ describe('KeyingControls', () => {
     // coverage, so the reader wants it precisely when keying is off — a sheet that arrived carrying
     // its own alpha — and hiding it behind the toggle would put it out of reach in the one state it
     // exists for.
+    const user = userEvent.setup({ delay: null });
     show();
 
     expect(screen.getByLabelText('Silhouette coverage threshold')).toBeInTheDocument();
     expect(useQuantiseStore.getState().silhouetteThreshold).toBe(0);
-    await userEvent.click(screen.getByRole('button', { name: '50%' }));
+    await user.click(screen.getByRole('button', { name: '50%' }));
 
     expect(useQuantiseStore.getState().silhouetteThreshold).toBe(50);
   });

@@ -84,8 +84,9 @@ describe('DuplicateControls', () => {
   it('reports the fold from the result rather than from the dial', async () => {
     // The two part company for as long as a job is in flight, and this is the direction that
     // misleads: the dial is on, and the sheet on screen is what the position before it produced.
+    const user = userEvent.setup({ delay: null });
     show({ duplicates: ONE_GROUP });
-    await userEvent.click(screen.getByRole('checkbox', { name: /snap duplicates/i }));
+    await user.click(screen.getByRole('checkbox', { name: /snap duplicates/i }));
 
     expect(useQuantiseStore.getState().duplicateSnap).toBe(true);
     expect(screen.queryByText('Folded into one drawing')).not.toBeInTheDocument();
@@ -100,13 +101,14 @@ describe('DuplicateControls', () => {
   });
 
   it('refuses the snap with a reason while there is nothing to fold', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
 
     const snap = screen.getByRole('checkbox', { name: /snap duplicates/i });
     expect(snap).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByText(/nothing was grouped at the tolerance in force/i)).toBeInTheDocument();
 
-    await userEvent.click(snap);
+    await user.click(snap);
     expect(useQuantiseStore.getState().duplicateSnap).toBe(false);
   });
 
