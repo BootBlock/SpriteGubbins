@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { detailedMarks, detailedSheet } from '../test/detailedSheet.ts';
 import { imageFrom, soften } from '../test/images.ts';
+import { pitchedCells } from '../test/pitchedCells.ts';
 import { estimateMeshPeriod } from './meshPeriod.ts';
 import { estimateProfilePeriod } from './profilePeriod.ts';
 import { measureSheetScale } from './pixelGrid.ts';
@@ -61,25 +62,39 @@ describe('estimateProfilePeriod', () => {
     expect(estimateProfilePeriod(stepProfile(alternatingBoth))).not.toBe(13);
   });
 
-  it('settles a fractional pitch on a neighbouring integer, not on its doubled ghost', () => {
+  it('settles a fractional pitch off its doubled ghost, on the integer below it', () => {
     // Art at six and a half pixels puts its sharpest integer-lag peak at thirteen — twice the
     // truth. The harmonic descent asks whether the half-lag's window carries nearly the peak's own
-    // support, which a split fundamental does, and offering either neighbouring integer is right:
-    // the mesh snaps cut by cut, so six or seven both follow the art.
-    const sheet = softenedSheet(6.5, 18);
-
-    const period = estimateProfilePeriod(stepProfile(sheet));
-    expect(period === 6 || period === 7, `settled on ${String(period)}`).toBe(true);
+    // support, which a split fundamental does. Of the two integers either side, 6 is offered: 7
+    // is coarser than the art and merges a cell in every fourteen (#479).
+    expect(estimateProfilePeriod(stepProfile(softenedSheet(6.5, 18)))).toBe(6);
   });
 
   it('settles a small fractional pitch off its tripled ghost, which no halving reaches', () => {
     // Art at four and a third puts its sharpest integer-lag peak at thirteen — *three* times the
-    // truth, so a descent that only halves lands on six-and-a-half's neighbours and stops. The
-    // divisor-of-three leg is what brings it home; either neighbour of the true pitch is right.
-    const sheet = softenedSheet(4.35, 28);
+    // truth, so a descent that only halves lands on six-and-a-half's neighbours and stops.
+    expect(estimateProfilePeriod(stepProfile(softenedSheet(4.35, 28)))).toBe(4);
+  });
 
-    const period = estimateProfilePeriod(stepProfile(sheet));
-    expect(period === 4 || period === 5, `settled on ${String(period)}`).toBe(true);
+  it('settles a pitch off any multiple, however many pitches it spans', () => {
+    // Random art at seven and three quarters can land its sharpest peak on 54, its *seventh*
+    // multiple, and art at 6 on 30, its fifth — neither reached by a half or a third, so the reading
+    // offered 54 and 30 (#479). Every whole division of a settled peak is asked, and the finest
+    // that carries its support is the fundamental.
+    expect(estimateProfilePeriod(stepProfile(soften(pitchedCells(512, 7.75, 1))))).toBe(7);
+    expect(estimateProfilePeriod(stepProfile(soften(pitchedCells(512, 6, 36))))).toBe(6);
+  });
+
+  it('offers a fractional pitch the fundamental peaks above as the integer below it', () => {
+    // At 8.75 the comb's own tooth is 9, the nearer integer and the coarser one, and 9 was offered.
+    expect(estimateProfilePeriod(stepProfile(softenedSheet(8.75, 58)))).toBe(8);
+  });
+
+  it('offers the integer below a fractional pitch read from its tooth’s neighbours', () => {
+    // At 6.75 the comb's own tooth is 7 — the nearer integer, and the coarser one. The pitch the
+    // tooth measures is read to a fraction from the correlation either side of it, and offered as
+    // the whole scale at or below it.
+    expect(estimateProfilePeriod(stepProfile(softenedSheet(6.75, 75)))).toBe(6);
   });
 
   it('reads sprites on a field through the envelope that buried the raw correlation', () => {
