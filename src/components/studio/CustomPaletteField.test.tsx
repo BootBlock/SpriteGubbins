@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { FakePaletteReadWorker } from '../../test/fakePaletteReadWorker.ts';
 import { imageFrom } from '../../test/images.ts';
 import { MAX_PALETTE_ENTRIES } from '../../utils/pngPalette.ts';
 import { CustomPaletteField } from './CustomPaletteField.tsx';
@@ -17,7 +18,8 @@ import { CustomPaletteField } from './CustomPaletteField.tsx';
  *
  * The decode is stubbed for the reason `IdentityPaletteCapture`'s suite stubs it: `createImageBitmap`
  * and a 2D canvas are the two things happy-dom does not provide, and they stand between choosing a
- * file and any of this running.
+ * file and any of this running. The thread a picture is read on is the fake that answers as the real
+ * one does, so the colours asserted here are the reading's own.
  */
 
 /** 400 distinct colours, which is more than a palette can carry. */
@@ -25,6 +27,8 @@ const SHEET = imageFrom(20, 20, (x, y) => ({ r: x * 12, g: y * 12, b: 0, a: 255 
 
 beforeEach(() => {
   useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, palette: 'CUSTOM' } });
+  FakePaletteReadWorker.reset();
+  vi.stubGlobal('Worker', FakePaletteReadWorker);
 
   vi.stubGlobal('createImageBitmap', () =>
     Promise.resolve({ width: SHEET.width, height: SHEET.height, close: () => undefined }),
@@ -87,7 +91,7 @@ describe('CustomPaletteField', () => {
     await choose(new File(['sheet'], 'accepted-sheet.png', { type: 'image/png' }));
 
     await waitFor(() => {
-      expect(screen.getByText(/accepted-sheet holds 400 colours/)).toBeVisible();
+      expect(screen.getByText(/accepted-sheet holds more than the 256 colours/)).toBeVisible();
     });
     expect(pinned()).toBeNull();
   });
@@ -102,7 +106,9 @@ describe('CustomPaletteField', () => {
 
     await user.click(screen.getByRole('button', { name: `Reduce to ${String(MAX_PALETTE_ENTRIES)}` }));
 
-    expect(pinned()?.entries).toHaveLength(MAX_PALETTE_ENTRIES);
+    await waitFor(() => {
+      expect(pinned()?.entries).toHaveLength(MAX_PALETTE_ENTRIES);
+    });
     expect(pinned()?.name).toBe('accepted-sheet');
     // The offer goes with the answer, so a second press cannot reduce what is already reduced.
     expect(screen.queryByRole('button', { name: /^Reduce/ })).toBeNull();
@@ -206,6 +212,8 @@ describe('CustomPaletteField', () => {
 
     expect(pinned()).toEqual({ name: 'dusk', entries: ['#102030'] });
     expect(screen.queryByText(/accepted-sheet holds/)).toBeNull();
+    // Retired at its decode, so no thread was ever started for it.
+    expect(FakePaletteReadWorker.started).toHaveLength(0);
   });
 
   it('stays removed when a picture chosen before Remove finishes decoding', async () => {
@@ -243,3 +251,117 @@ function holdDecode(): () => void {
     release();
   };
 }
+
+describe('CustomPaletteField, while a picture is read off the tab’s thread', () => {
+  beforeEach(() => {
+    FakePaletteReadWorker.hold = true;
+  });
+
+  /** Drops the sheet and answers its reading with a refusal, leaving the offer on screen. */
+  async function refuseSheet(): Promise<void> {
+    await choose(new File(['sheet'], 'accepted-sheet.png', { type: 'image/png' }));
+    await waitFor(() => {
+      expect(FakePaletteReadWorker.started).toHaveLength(1);
+    });
+    act(() => {
+      FakePaletteReadWorker.latest().answer({ kind: 'read', entries: null });
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^Reduce to/ })).toBeVisible();
+    });
+  }
+
+  it('says it is reducing, and takes no second press, until the reduction lands', async () => {
+    // A large sheet reduces for seconds. A button that looked unpressed for that long would be
+    // pressed again, starting the same reduction twice.
+    const user = userEvent.setup({ delay: null });
+    render(<CustomPaletteField />);
+    await refuseSheet();
+
+    await user.click(screen.getByRole('button', { name: /^Reduce to/ }));
+
+    expect(screen.getByRole('button', { name: 'Reducing…' })).toBeDisabled();
+    expect(FakePaletteReadWorker.latest().posted[0]?.kind).toBe('reduce');
+    act(() => {
+      FakePaletteReadWorker.latest().answer({ kind: 'read', entries: ['#102030'] });
+    });
+    await waitFor(() => {
+      expect(pinned()).toEqual({ name: 'accepted-sheet', entries: ['#102030'] });
+    });
+  });
+
+  it('ends the reduction’s thread on Remove', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<CustomPaletteField />);
+    await user.click(screen.getByRole('textbox', { name: 'Or paste the colours' }));
+    await user.paste('#102030');
+    await refuseSheet();
+    await user.click(screen.getByRole('button', { name: /^Reduce to/ }));
+
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
+
+    expect(FakePaletteReadWorker.latest().terminated).toBe(true);
+  });
+
+  it('pins nothing from a reduction that answered in the same turn as Remove', async () => {
+    // The answer arrives before Remove, so the thread has already settled and ending it stops
+    // nothing — its colours are held back only by the ticket Remove retired.
+    const user = userEvent.setup({ delay: null });
+    render(<CustomPaletteField />);
+    await user.click(screen.getByRole('textbox', { name: 'Or paste the colours' }));
+    await user.paste('#102030');
+    await refuseSheet();
+    await user.click(screen.getByRole('button', { name: /^Reduce to/ }));
+
+    act(() => {
+      FakePaletteReadWorker.latest().answer({ kind: 'read', entries: ['#405060'] });
+      fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(pinned()).toBeNull();
+  });
+
+  it('clears the failure line once a retried reduction pins', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<CustomPaletteField />);
+    await refuseSheet();
+    await user.click(screen.getByRole('button', { name: /^Reduce to/ }));
+    act(() => {
+      FakePaletteReadWorker.latest().answer({ kind: 'failed', reason: 'Array buffer allocation failed' });
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^Reduce to/ })).toBeEnabled();
+    });
+
+    await user.click(screen.getByRole('button', { name: /^Reduce to/ }));
+    act(() => {
+      FakePaletteReadWorker.latest().answer({ kind: 'read', entries: ['#102030'] });
+    });
+
+    await waitFor(() => {
+      expect(pinned()?.entries).toEqual(['#102030']);
+    });
+    expect(screen.queryByText(/could not be reduced/)).toBeNull();
+  });
+
+  it('keeps the offer, and says why, when the reduction fails', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<CustomPaletteField />);
+    await refuseSheet();
+    await user.click(screen.getByRole('button', { name: /^Reduce to/ }));
+
+    act(() => {
+      FakePaletteReadWorker.latest().answer({ kind: 'failed', reason: 'Array buffer allocation failed' });
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/accepted-sheet could not be reduced \(Array buffer allocation failed\)/),
+      ).toBeVisible();
+    });
+    expect(screen.getByRole('button', { name: /^Reduce to/ })).toBeEnabled();
+  });
+});

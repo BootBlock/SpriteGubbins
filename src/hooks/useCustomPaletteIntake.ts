@@ -2,13 +2,12 @@ import { useCallback, useState } from 'react';
 import { customPaletteRequests } from '../stores/customPaletteRequests.ts';
 import { useOutputStore } from '../stores/useOutputStore.ts';
 import type { CustomPalette } from '../types/customPalette.ts';
-import type { ImportedImage } from '../types/quantiser.ts';
 import { fileStem } from '../utils/fileStem.ts';
-import { imagePalette, reduceImagePalette } from '../utils/imagePalette.ts';
 import { parseCustomPalette } from '../utils/parseCustomPalette.ts';
 import { parsePaletteText } from '../utils/parsePaletteText.ts';
 import { MAX_PALETTE_ENTRIES } from '../utils/pngPalette.ts';
-import { useImageFile } from './useImageFile.ts';
+import { useCustomPaletteImage } from './useCustomPaletteImage.ts';
+import type { OversizedImage } from './useCustomPaletteImage.ts';
 
 /**
  * The three ways a palette of the reader's own gets into the studio, and what each one reports.
@@ -19,33 +18,30 @@ import { useImageFile } from './useImageFile.ts';
  * `useIdentityPaletteCapture` takes for the same reason.
  *
  * **An image over the ceiling is refused and held, not truncated.** A sheet dropped where a swatch
- * was meant is the likely way to get here, and quietly keeping a palette’s worth of its thousands of colours would pin a
- * palette nobody chose. So the count is reported and the picture is kept just long enough to offer
- * the one thing that would make it a palette: reducing it, deliberately, through the same quantiser
- * the Quantise tab uses.
+ * was meant is the likely way to get here, and quietly keeping a palette’s worth of its thousands of
+ * colours would pin a palette nobody chose. So the refusal is reported and the picture is kept just
+ * long enough to offer the one thing that would make it a palette: reducing it, deliberately,
+ * through the same quantiser the Quantise tab uses.
  *
- * **The reader's last choice wins.** Every file is read through `customPaletteRequests`, and a paste,
- * a reduction and Clear each retire a read still in flight, so a slow file never lands on top of
- * something the reader did after choosing it.
+ * **A picture is read on a thread of its own**, which `useCustomPaletteImage` owns along with the
+ * refusal and the reduction it offers.
+ *
+ * **The reader's last choice wins.** Every file and every reduction is read through
+ * `customPaletteRequests`, and a paste, a later file and Clear each retire a read still in flight, so
+ * a slow file never lands on top of something the reader did after choosing it.
  *
  * Impure, so `src/hooks/` rather than `src/utils/`: it decodes files and writes to a store. The
  * reading of each form is pure and is tested without a DOM.
  */
 
-/** An image that states more colours than a palette can carry, kept while the offer stands. */
-export interface OversizedImage {
-  readonly image: ImageData;
-  /** The file's name without its extension, as the palette would have been called. */
-  readonly name: string;
-  readonly colors: number;
-}
-
 /** What the panel renders and calls. */
 export interface CustomPaletteIntake {
   /** What the last file or paste could not read, at most a few lines and then a count of the rest. */
   readonly problems: readonly string[];
-  /** The refused image and its count, or `null` where nothing has been refused. */
+  /** The refused image, or `null` where nothing has been refused. */
   readonly oversized: OversizedImage | null;
+  /** Whether the refused image is being reduced right now, which takes seconds on a large sheet. */
+  readonly reducing: boolean;
   readonly acceptFile: (file: File | null | undefined) => void;
   readonly acceptPaste: (text: string) => void;
   readonly reduceOversized: () => void;
@@ -57,7 +53,6 @@ export interface CustomPaletteIntake {
 export function useCustomPaletteIntake(): CustomPaletteIntake {
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const [problems, setProblems] = useState<readonly string[]>([]);
-  const [oversized, setOversized] = useState<OversizedImage | null>(null);
 
   /**
    * The one way colours reach the configuration, so no route can pin something another would refuse.
@@ -87,28 +82,15 @@ export function useCustomPaletteIntake(): CustomPaletteIntake {
     [setOutputField],
   );
 
-  const readImage = useCallback(
-    ({ name, image }: ImportedImage) => {
-      const reading = imagePalette(image, MAX_PALETTE_ENTRIES);
-      setProblems([]);
-
-      if (reading.entries === null) {
-        setOversized({ image, name: fileStem(name), colors: reading.colors });
-        return;
-      }
-
-      setOversized(null);
-      pin({ name: fileStem(name), entries: reading.entries }, name);
-    },
-    [pin],
+  const { oversized, reducing, acceptImage, reduceOversized, dismissOversized } = useCustomPaletteImage(
+    pin,
+    setProblems,
   );
-
-  const acceptImage = useImageFile(readImage, customPaletteRequests);
 
   const readText = useCallback(
     (text: string, fallbackName: string, read: string) => {
       const reading = parsePaletteText(text, fallbackName);
-      setOversized(null);
+      dismissOversized();
       setProblems(reading.problems);
 
       // Past the ceiling the gate answers `null`, and the count is what makes that actionable: a
@@ -137,7 +119,7 @@ export function useCustomPaletteIntake(): CustomPaletteIntake {
         read,
       );
     },
-    [pin],
+    [pin, dismissOversized],
   );
 
   const acceptFile = useCallback(
@@ -179,14 +161,6 @@ export function useCustomPaletteIntake(): CustomPaletteIntake {
     [readText],
   );
 
-  const reduceOversized = useCallback(() => {
-    if (oversized === null) return;
-    customPaletteRequests.supersede();
-    const entries = reduceImagePalette(oversized.image, MAX_PALETTE_ENTRIES);
-    setOversized(null);
-    pin({ name: oversized.name, entries }, `${oversized.name}, reduced`);
-  }, [oversized, pin]);
-
   /**
    * The name alone, so every write to the field goes through this hook.
    *
@@ -209,8 +183,17 @@ export function useCustomPaletteIntake(): CustomPaletteIntake {
     customPaletteRequests.supersede();
     setOutputField('customPalette', null);
     setProblems([]);
-    setOversized(null);
-  }, [setOutputField]);
+    dismissOversized();
+  }, [setOutputField, dismissOversized]);
 
-  return { problems, oversized, acceptFile, acceptPaste, reduceOversized, rename, clear };
+  return {
+    problems,
+    oversized,
+    reducing,
+    acceptFile,
+    acceptPaste,
+    reduceOversized,
+    rename,
+    clear,
+  };
 }

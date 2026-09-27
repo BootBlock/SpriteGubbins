@@ -42,3 +42,31 @@ describe('createRequestSequence', () => {
     expect(read()).toBe(true);
   });
 });
+
+describe('a ticket’s signal', () => {
+  it('stays unaborted while its read is current', () => {
+    const requests = createRequestSequence();
+
+    expect(requests.begin().signal.aborted).toBe(false);
+  });
+
+  it('aborts when a later read begins, and leaves the later one standing', () => {
+    // The work a retired read started is told to stop, not only ignored when it lands.
+    const requests = createRequestSequence();
+    const large = requests.begin();
+    const small = requests.begin();
+
+    expect(large.signal.aborted).toBe(true);
+    expect(small.signal.aborted).toBe(false);
+  });
+
+  it('aborts every read in flight when the target is superseded', () => {
+    const requests = createRequestSequence();
+    const read = requests.begin();
+
+    requests.supersede();
+
+    expect(read.signal.aborted).toBe(true);
+    expect(requests.begin().signal.aborted).toBe(false);
+  });
+});

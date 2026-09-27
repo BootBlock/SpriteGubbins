@@ -1,5 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../../constants/quantiseDials.ts';
@@ -8,6 +8,7 @@ import { identityPaletteRequests } from '../../stores/identityPaletteRequests.ts
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseAnswerStore } from '../../stores/useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
+import { FakePaletteReadWorker } from '../../test/fakePaletteReadWorker.ts';
 import { imageFrom } from '../../test/images.ts';
 import type { BackgroundKeying, QuantiseSettings } from '../../types/quantiser.ts';
 import { colorPlanFor } from '../../utils/colorReduction.ts';
@@ -84,9 +85,13 @@ beforeEach(() => {
   useOutputStore.setState({
     output: { ...DEFAULT_OUTPUT_CONFIG, identityLock: '', backgroundKey: 'MAGENTA_FF00FF' },
   });
+  // The thread the colours are measured on, answering as the real one does.
+  FakePaletteReadWorker.reset();
+  vi.stubGlobal('Worker', FakePaletteReadWorker);
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   useQuantiseStore.setState({ ...QUANTISE_DEFAULT_DIALS, source: null, gridOverride: null });
   useQuantiseAnswerStore.getState().reset();
 });
@@ -94,7 +99,7 @@ afterEach(() => {
 const theButton = () => screen.getByRole('button', { name: 'Use the quantised sheet' });
 
 describe('QuantisedSheetCaptureButton', () => {
-  it('writes the quantised result’s colours into the lock, not the dropped sheet’s', () => {
+  it('writes the quantised result’s colours into the lock, not the dropped sheet’s', async () => {
     loadTab({ color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });
     render(<QuantisedSheetCaptureButton />);
 
@@ -102,7 +107,9 @@ describe('QuantisedSheetCaptureButton', () => {
 
     // One colour, not two: the source carries a charcoal and a near-charcoal, and the grid reading
     // the reader settled voted the second away. Reading the source would have stated both.
-    expect(useOutputStore.getState().output.identityLock).toBe('Palette: #1E1E24');
+    await waitFor(() => {
+      expect(useOutputStore.getState().output.identityLock).toBe('Palette: #1E1E24');
+    });
   });
 
   it('retires a sheet still decoding beside it, as the later choice', () => {

@@ -1,5 +1,12 @@
 import { flattenOpacity } from './flattenOpacity.ts';
-import { colorHistogram, toHex, unpackColor } from './imageData.ts';
+import {
+  alphaAt,
+  CHANNELS_PER_PIXEL,
+  FULLY_TRANSPARENT,
+  packedColorAt,
+  toHex,
+  unpackColor,
+} from './imageData.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
 /**
@@ -18,30 +25,34 @@ import { buildPalette } from './wuQuantiser.ts';
  * whose channels are rounding noise — takes no part at all.
  *
  * Pure, as everything in this directory is. The decoding that produces the `ImageData` is the impure
- * half and lives in `src/hooks/`.
+ * half and lives in `src/hooks/`, and both readings run on `paletteReadWorker`'s thread rather than
+ * the tab's: a reduction of a large sheet takes seconds.
  */
-
-/** What an image was found to hold: its colours, or the count that put them out of reach. */
-export interface ImagePaletteReading {
-  /** The colours as `#RRGGBB`, or `null` where the image holds more than a palette may carry. */
-  readonly entries: readonly string[] | null;
-  /** How many distinct opaque colours the image holds, whether or not they fit. */
-  readonly colors: number;
-}
 
 /**
- * The image's colours, or the count of them where there are too many to pin.
+ * The image's colours, or `null` where there are more than `max` of them.
  *
- * **Refused rather than truncated**, and the count is why: an image over the ceiling is almost
- * always a sheet dropped where a swatch was meant, and silently keeping the first 256 colours of a
- * sheet would pin a palette the reader never chose while the studio said it was theirs. The caller
- * reports the figure and offers {@link reduceImagePalette}, which is the same choice made
- * deliberately.
+ * **Refused rather than truncated**: an image over the ceiling is almost always a sheet dropped
+ * where a swatch was meant, and silently keeping the first 256 colours of a sheet would pin a
+ * palette the reader never chose while the studio said it was theirs. The caller says so and offers
+ * {@link reduceImagePalette}, which is the same choice made deliberately.
+ *
+ * **It stops counting at the first colour past `max`.** The refusal needs to know only that the
+ * image is over, and a full count of an anti-aliased sheet is a set of millions — measured at 9.5
+ * seconds for a random 4096² image, against a flattening pass that is linear and cheap. So nothing
+ * reports how far over an image was, because finding out is the whole cost.
  */
-export function imagePalette(image: ImageData, max: number): ImagePaletteReading {
-  // Flattened, every key is one opaque colour, so the histogram's keys are already one per colour.
-  const entries = [...colorHistogram(flattenOpacity(image)).keys()].map((key) => toHex(unpackColor(key)));
-  return { entries: entries.length > max ? null : entries, colors: entries.length };
+export function imagePalette(image: ImageData, max: number): readonly string[] | null {
+  // Flattened, every pixel left is one opaque colour, so a packed key is one per colour.
+  const { data } = flattenOpacity(image);
+  const colors = new Set<number>();
+  for (let offset = 0; offset < data.length; offset += CHANNELS_PER_PIXEL) {
+    if (alphaAt(data, offset) === FULLY_TRANSPARENT) continue;
+    colors.add(packedColorAt(data, offset));
+    if (colors.size > max) return null;
+  }
+  // A `Set` keeps insertion order, which is the scan order, which is the author's order.
+  return [...colors].map((key) => toHex(unpackColor(key)));
 }
 
 /**
