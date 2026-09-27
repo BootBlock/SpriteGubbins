@@ -87,7 +87,7 @@ interface ControlTooltipProps {
  * was getting *every* card, unasked, rather than none.
  *
  * **A `disabled` control dispatches no pointer events and cannot be focused**, so a card hung off
- * one would be unreachable by either route — and nineteen of these wrap a control that can be
+ * one would be unreachable by either route — and twenty of these wrap a control that can be
  * disabled. Two compose the reason into the card that goes unreachable: `GeneratorSiteLink` appends
  * the chosen target's own note about having no page to open, and `QuantisedSheetCaptureButton`
  * appends the offer's reason. The wrapper therefore takes the
@@ -167,7 +167,7 @@ export function ControlTooltip({
       onPointerDown={guidance.dismiss}
       // A `disabled` child dispatches no pointer events at all — not to itself and not on to an
       // ancestor — so the wrapper never hears the hover that is the only remaining way to its
-      // guidance, and two of the nineteen disabled-capable controls compose into their card the very
+      // guidance, and two of the twenty disabled-capable controls compose into their card the very
       // condition that disables them. Taking the pointer events off the child hands them to this
       // span, which is where the handlers live; a disabled control has no click to lose by it.
       className={`[&>*:disabled]:pointer-events-none ${className}`}

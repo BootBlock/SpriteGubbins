@@ -123,6 +123,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/useUIStore-*.js',
   'assets/index-*.css',
   'assets/index-*.js',
+  'assets/paletteReadWorker-*.js',
   'assets/quantiseWorker-*.js',
   'assets/sheetWriteWorker-*.js',
   'assets/sqlite3-*.wasm',

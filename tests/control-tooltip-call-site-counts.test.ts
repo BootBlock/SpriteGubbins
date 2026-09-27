@@ -40,7 +40,7 @@ const CALL_SITE_COUNT = 88;
  *
  * Every one of them is a `<button>`, and every value is an expression bar `GeneratorSiteLink`’s,
  * which writes the bare attribute. That is why the walk parses rather than matches: a regular
- * expression looking for `disabled=` returns eighteen of these nineteen and reports a figure that is
+ * expression looking for `disabled=` returns nineteen of these twenty and reports a figure that is
  * almost right.
  */
 const DISABLED_CAPABLE = [
@@ -59,6 +59,7 @@ const DISABLED_CAPABLE = [
   'src/components/quantise/DownloadControls.tsx',
   'src/components/quantise/PaletteLockControls.tsx',
   'src/components/quantise/QuantisePresetControls.tsx',
+  'src/components/studio/CustomPaletteField.tsx',
   'src/components/studio/GeneratorSiteLink.tsx',
   'src/components/studio/PresetSavePanel.tsx',
   'src/components/studio/QuantisedSheetCaptureButton.tsx',

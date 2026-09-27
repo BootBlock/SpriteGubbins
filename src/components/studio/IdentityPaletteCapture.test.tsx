@@ -1,7 +1,9 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
+import { identityPaletteRequests } from '../../stores/identityPaletteRequests.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { FakePaletteReadWorker } from '../../test/fakePaletteReadWorker.ts';
 import { imageFrom } from '../../test/images.ts';
 import { IdentityPaletteCapture } from './IdentityPaletteCapture.tsx';
 
@@ -29,6 +31,9 @@ beforeEach(() => {
   useOutputStore.setState({
     output: { ...DEFAULT_OUTPUT_CONFIG, identityLock: '', backgroundKey: 'TRANSPARENT' },
   });
+  // The thread the colours are measured on, answering as the real one does.
+  FakePaletteReadWorker.reset();
+  vi.stubGlobal('Worker', FakePaletteReadWorker);
 
   // The impure boundary, stubbed so the decode can be held open mid-flight. `createImageBitmap`
   // and a 2D canvas are the two things happy-dom does not provide, and they are precisely what
@@ -113,5 +118,80 @@ describe('IdentityPaletteCapture', () => {
     await waitFor(() => {
       expect(useOutputStore.getState().output.identityLock).toBe('Palette: #1E1E24');
     });
+  });
+});
+
+describe('IdentityPaletteCapture, while the sheet is measured off the tab’s thread', () => {
+  beforeEach(() => {
+    FakePaletteReadWorker.hold = true;
+  });
+
+  /** Chooses the sheet, lets it decode, and returns the thread measuring it. */
+  async function measuring(): Promise<FakePaletteReadWorker> {
+    render(<IdentityPaletteCapture />);
+    await chooseSheet();
+    await act(async () => {
+      releaseDecode();
+    });
+    await waitFor(() => {
+      expect(FakePaletteReadWorker.started.length).toBeGreaterThan(0);
+    });
+    return FakePaletteReadWorker.latest();
+  }
+
+  it('keeps what the user typed while the sheet was being measured', async () => {
+    const thread = await measuring();
+
+    act(() => {
+      useOutputStore.getState().setOutputField('identityLock', 'Cyan visor across upper face');
+    });
+    act(() => {
+      thread.answer({ kind: 'read', entries: ['#1E1E24'] });
+    });
+
+    await waitFor(() => {
+      expect(useOutputStore.getState().output.identityLock).toBe(
+        'Cyan visor across upper face; Palette: #1E1E24',
+      );
+    });
+  });
+
+  it('measures again when the background key changes while the sheet is measured', async () => {
+    // The answer was measured against a key the prompt no longer states, so it is not written.
+    const first = await measuring();
+
+    act(() => {
+      useOutputStore.getState().setOutputField('backgroundKey', 'MAGENTA_FF00FF');
+    });
+    act(() => {
+      first.answer({ kind: 'read', entries: ['#FF00FF', '#1E1E24'] });
+    });
+
+    await waitFor(() => {
+      expect(FakePaletteReadWorker.started).toHaveLength(2);
+    });
+    const again = FakePaletteReadWorker.latest();
+    expect(again.posted[0]).toMatchObject({ kind: 'identity', backgroundKey: { r: 255, g: 0, b: 255 } });
+    expect(useOutputStore.getState().output.identityLock).toBe('');
+    act(() => {
+      again.answer({ kind: 'read', entries: ['#1E1E24'] });
+    });
+    await waitFor(() => {
+      expect(useOutputStore.getState().output.identityLock).toBe('Palette: #1E1E24');
+    });
+  });
+
+  it('ends the measuring when a wholesale write replaces the lock, and writes nothing', async () => {
+    const thread = await measuring();
+
+    act(() => {
+      useOutputStore.setState({
+        output: { ...useOutputStore.getState().output, identityLock: 'Loaded from a preset' },
+      });
+      identityPaletteRequests.supersede();
+    });
+
+    expect(thread.terminated).toBe(true);
+    expect(useOutputStore.getState().output.identityLock).toBe('Loaded from a preset');
   });
 });
