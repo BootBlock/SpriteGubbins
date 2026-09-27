@@ -50,7 +50,7 @@ describe('chooseByPrice', () => {
 
   it('settles a tie the price makes on the more faithful candidate, however the scores rounded', () => {
     // The two ends of the chord the price is read from score alike by construction: at the slope
-    // between them, 0.3 for 3000 colours and 0.75 for 4500 both score exactly 0. Computed, the two
+    // between them, 0.3 for 3000 colours and 0.75 for 4500 both score −0.6. Computed, the two
     // scores differ in the last bits, and which way depends on the platform's `**` — so the same
     // pair is nudged a few units in the last place each way, and the answer must not move.
     const price = (0.75 - 0.3) / (4500 - 3000);
