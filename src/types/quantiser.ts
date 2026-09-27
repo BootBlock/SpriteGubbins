@@ -1024,7 +1024,10 @@ export interface SpriteSymmetry {
    * sprite.
    */
   readonly confidence: number;
-  /** Whether the snap settled this sprite's pairs, which `SNAP` and the confidence floor decide. */
+  /**
+   * Whether the snap settled this sprite's pairs, which `SNAP` and the confidence floor decide — and
+   * which is refused wherever anything is drawn directly against the box (see `bordersArtwork`).
+   */
   readonly snapped: boolean;
 }
 

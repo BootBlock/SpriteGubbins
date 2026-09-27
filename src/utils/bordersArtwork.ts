@@ -20,9 +20,12 @@ import { FULLY_TRANSPARENT, alphaAt, pixelOffset } from './imageData.ts';
  * refused as well — conservative, and on a real sheet a speck sits in a gutter rather than against
  * a sprite's box.
  *
- * Nothing that belongs to the edited sprite can be in the ring, because both passes build the region
- * to cover the box they replace. A sprite whose artwork reaches the ring is caught here as well as by
- * `reachesAny`, since its box is within any gap; the speck is the case only this check can see.
+ * Nothing that belongs to the edited sprite can be in the ring, because every pass that asks builds
+ * the region to cover the box it replaces. The duplicate fold and the frame alignment write regions
+ * larger than that box, so they ask `reachesAny` as well, and a sprite whose artwork reaches the ring
+ * is caught by both, since its box is within any gap. The symmetry settle writes only inside the
+ * sprite's own box, which the segmentation already put further than the gap from every other box, so
+ * this is the whole of its refusal: the speck is the case only this check can see.
  *
  * Pure. A walk of the ring's perimeter, clipped to the sheet, so linear in the region's outline.
  */

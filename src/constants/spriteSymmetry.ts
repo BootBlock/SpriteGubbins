@@ -46,9 +46,15 @@ export const SYMMETRY_GUIDANCE = {
 
   /** `SNAP`, and at least one sprite reached the floor. */
   snapped:
-    'The sprites marked below reached the confidence floor, so each mirrored pair of pixels inside them has been written with one colour and their two halves now match exactly. The colour written is whichever of the pair’s two has more of its own colour beside it inside the sprite — the pixel that continues what it is part of, rather than the one that breaks it — so a gap in a contour is closed from the intact side rather than being copied across to the other one. Anything that has no counterpart inside the sprite — the reach of an arm the mirror line cannot pair — is left exactly as it arrived rather than being deleted or invented. Sprites below the floor were reported and not touched.',
+    'The sprites marked below reached the confidence floor, so each mirrored pair of pixels inside them has been written with one colour and their two halves now match exactly. The colour written is whichever of the pair’s two has more of its own colour beside it inside the sprite — the pixel that continues what it is part of, rather than the one that breaks it — so a gap in a contour is closed from the intact side rather than being copied across to the other one. Anything that has no counterpart inside the sprite — the reach of an arm the mirror line cannot pair — is left exactly as it arrived rather than being deleted or invented. Sprites below the floor were reported and not touched, and so was any sprite with a stray pixel directly against its edge, which settling it could have joined to it.',
 
-  /** `SNAP`, and nothing qualified — the state that reads as a broken feature and is not. */
+  /**
+   * `SNAP`, and nothing qualified — the state that reads as a broken feature and is not.
+   *
+   * It names the stray-pixel refusal as well as the floor, because a sprite can pass the floor and
+   * still be left alone, and then a share above the floor is listed under a paragraph that would
+   * otherwise say none reached it.
+   */
   refused:
-    'No sprite on this sheet mirrors closely enough to reach the confidence floor, so none has been changed. That is the ordinary answer for subjects that are asymmetric on purpose, and it is also what a sheet looks like when its halves have drifted further apart than the tolerance admits. The shares listed below say which: a sprite in the high eighties has drifted, and one near half is a subject with something on one side only.',
+    'No sprite on this sheet has been settled, so none has been changed. Usually none mirrors closely enough to reach the confidence floor. That is the ordinary answer for subjects that are asymmetric on purpose, and it is also what a sheet looks like when its halves have drifted further apart than the tolerance admits. The shares listed below say which: a sprite in the high eighties has drifted, and one near half is a subject with something on one side only. A sprite listed above the floor was left alone because a stray pixel sits directly against its edge, and settling it could have joined the two.',
 } as const;

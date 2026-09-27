@@ -1,5 +1,6 @@
 import { SYMMETRY_AXIS_SEARCH, SYMMETRY_SWEEP_BUDGET } from '../constants/quantiser.ts';
 import type { SpriteBox, SpriteSymmetry } from '../types/quantiser.ts';
+import { bordersArtwork } from './bordersArtwork.ts';
 import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 import type { MutableOklab } from './oklab.ts';
 import { srgbToOklabInto } from './oklab.ts';
@@ -90,7 +91,10 @@ export function sheetSymmetry(
   image: ImageData,
   boxes: readonly SpriteBox[],
   tolerance: number,
-  /** The share a sprite must already reach before the snap may settle it, or `null` to snap none. */
+  /**
+   * The share a sprite must already reach before the snap may settle it, or `null` to snap none. A
+   * sprite past it is still refused where anything is drawn directly against its box.
+   */
   floor: number | null,
 ): SpriteSymmetry[] {
   // One reach for the whole sheet rather than one per sprite, because the budget is a statement about
@@ -105,7 +109,14 @@ export function sheetSymmetry(
     // nothing whatever to settle, so the snap must not claim it. Marked, it would cost a copy of the
     // sheet and a second segmentation to rewrite no pixel, and the panel would print "settled" on a
     // row where nothing was. A pole, a spear and a rope are all one column wide.
-    return { box, axis, confidence, snapped: paired && floor !== null && confidence >= floor };
+    //
+    // A sprite with anything drawn directly against its box is refused as well, by the rule the
+    // duplicate fold and the frame alignment are refused by: a settle can draw a clear pixel on the
+    // box's edge, which joins a speck beyond it to the sprite, and the joined box can then come
+    // within the gap of a neighbour — see `bordersArtwork`. Refused here rather than in the snap, so
+    // the flag the panel prints as "settled" is the truth about what happened.
+    const qualifies = paired && floor !== null && confidence >= floor;
+    return { box, axis, confidence, snapped: qualifies && !bordersArtwork(image, box) };
   });
 }
 

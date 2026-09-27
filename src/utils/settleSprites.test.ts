@@ -230,6 +230,23 @@ function frameOverSpeck(): ImageData {
   });
 }
 
+/**
+ * A 9 × 9 block with a three-pixel break in its left edge, a three-pixel speck one clear column past
+ * that break, and a block one clear column past the speck.
+ *
+ * The block mirrors in 33 of its 36 pairs, which is past the floor, and settling it closes the break
+ * from the intact side. The closed edge then touches the speck, which the segmentation drops rather
+ * than boxes, and the joined component reaches within the gap of the other block.
+ */
+function brokenEdgeBySpeck(): ImageData {
+  return imageFrom(30, 12, (x, y) => {
+    if (x >= 3 && x < 6 && y >= 1 && y < 10) return FILL;
+    if (x >= 7 && x < 10 && y === 5) return EDGE;
+    if (x >= 10 && x < 19 && y >= 1 && y < 10) return x === 10 && y >= 4 && y < 7 ? CLEAR : FILL;
+    return CLEAR;
+  });
+}
+
 /** How many sprites a settled sheet reports, or `0` where it did not segment. */
 function spriteCount(sheet: SettledSheet): number {
   return sheet.sprites.kind === 'SEGMENTED' ? sheet.sprites.boxes.length : 0;
@@ -241,13 +258,20 @@ function spriteCount(sheet: SettledSheet): number {
  * into the sprite it edited would shift all four.
  */
 describe('settleSprites — a snap keeps the sprite count', () => {
+  const settle = { symmetry: 'SNAP' as const };
   const fold = { duplicateSnap: true };
   const align = { frameAlignment: 'SNAP' as const };
+  // A sprite past the floor with a pair left to settle; one that already mirrors exactly has none.
+  const drifted = (read: SettledSheet) =>
+    read.symmetry?.filter(
+      (reading) => reading.confidence >= READING_ONLY.symmetryConfidence / 100 && reading.confidence < 1,
+    ).length ?? 0;
   const groups = (read: SettledSheet) => read.duplicates.length;
   const drifts = (read: SettledSheet) =>
     read.strips?.flatMap((strip) => strip.frames).filter((frame) => frame.drift.y !== 0).length ?? 0;
 
   it.each([
+    ['the symmetry settle', 'a speck against its write', brokenEdgeBySpeck, settle, drifted],
     ['the duplicate fold', 'a neighbour within the gap of its write', tallerCanonical, fold, groups],
     ['the duplicate fold', 'a speck against its write', tallerCanonicalOverSpeck, fold, groups],
     ['the frame alignment', 'a neighbour within the gap of its write', frameOverSliver, align, drifts],

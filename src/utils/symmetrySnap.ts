@@ -47,7 +47,10 @@ import {
  * **Nothing is snapped that {@link SpriteSymmetry.snapped} does not name**, and that flag is where
  * the confidence floor was already applied. This function has no opinion about which sprites deserve
  * settling — the whole reason the pass ships off by default is that a held sword, a single pauldron
- * and a shoulder bag are asymmetric on purpose, and the floor is what keeps them intact.
+ * and a shoulder bag are asymmetric on purpose, and the floor is what keeps them intact. The flag
+ * also refuses a sprite with anything drawn directly against its box, since a pixel this draws on the
+ * box's edge would join that artwork to the sprite (see `bordersArtwork`); so every write here stays
+ * inside a box the next segmentation finds unchanged or smaller.
  *
  * Returns the image it was given, by reference, whenever no pixel actually moved — no reading
  * marked, or every marked sprite already agreeing with itself. So `CHECK`, a `SNAP` nothing

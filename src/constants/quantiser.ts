@@ -2366,7 +2366,7 @@ export const QUANTISE_TOOLTIPS = {
     '`0` is the strictest setting, where mirrored pixels must be identical; the Symmetry control is what switches the pass off. It matters most on a sheet with no colour reduction, where almost no two pixels are exactly equal. It reaches the sheet only by lifting a sprite past the floor below, which lets `SNAP` settle it.',
   symmetryConfidence:
     'How much of a sprite must already mirror before `SNAP` settles it. It keeps the snap off subjects that are asymmetric on purpose: a figure holding a sword falls well below the floor and is reported untouched.\n\n' +
-    'Lower it to snap sprites that have drifted further; raise it to settle only the nearly symmetric ones. It appears only under `SNAP`, and the panel names the sprites that pass.',
+    'Lower it to snap sprites that have drifted further; raise it to settle only the nearly symmetric ones. It appears only under `SNAP`, and the panel names the sprites that pass. A sprite past the floor with a stray pixel directly against its edge is still left alone, because settling it could join the two.',
   duplicateTolerance:
     'How alike two sprites must be before they are read as one drawing. Generators repeat themselves (two identical facings, a repeated animation frame), and nothing else on this tab says so.\n\n' +
     'At `0` only sprites whose visible pixels match outright are grouped. Raise it to catch a pair that came back a shade apart; lower it when genuinely different poses are called the same.\n\n' +
