@@ -2,39 +2,41 @@ import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
 import type { ColorReduction, Rgba } from '../types/quantiser.ts';
 import { channelRungs } from './channelRungs.ts';
 import { CHANNELS_PER_PIXEL, FULLY_OPAQUE, FULLY_TRANSPARENT } from './imageData.ts';
-import { locateEntries, nearestOklab, type LocatedEntry } from './lockedPalette.ts';
+import { nearestPointSearch } from './nearestPointSearch.ts';
+import { type MutableOklab, srgbToOklab, srgbToOklabInto } from './oklab.ts';
 
 /**
  * Where an anti-aliased blend is kept to under `SNAP`: the colour space the reduction in force
  * allows, one form per reduction.
  *
- * **The reduction's own space, not a reading of the sheet.** A sheet is only as legal as the
- * reduction made it, so the colours a blend may take are the ones that reduction permits:
+ * **The reduction's own space, not a count-limited reading of the sheet.** A sheet is only as legal
+ * as the reduction made it, so the colours a blend may take are the ones that reduction permits:
  *
  * - `CHANNEL_DEPTH` — the nearest rung per channel, from the table `snapToChannelDepth` redraws the
  *   sheet with. A machine of this kind has no list to search; the ladder is the palette.
- * - `PALETTE` — the nearest of the machine's or the reader's entries, which the studio caps at
- *   `MAX_PALETTE_ENTRIES`.
- * - `LOCKED` — the nearest of the lock's entries, which `PaletteLockControls` caps at the same
- *   figure. The lock is the statement of which colours the series is drawn in.
+ * - `PALETTE` — the nearest of the machine's or the reader's entries.
+ * - `LOCKED` — the nearest of the lock's entries and of the colours the sheet kept beyond the
+ *   lock's reach. Both are colours the lock allows: it moves a colour only within its snap distance,
+ *   and a colour further out stays on the sheet as the artwork's own. The entries come first, so an
+ *   entry takes a tie.
  * - `MAX_COLORS` — the nearest of the colours the sheet holds, since a budget's palette is chosen
- *   from the sheet itself and every colour the sheet holds is one of its entries. The budget bounds
- *   the set.
+ *   from the sheet itself and every colour the sheet holds is one of its entries.
  *
  * Reading the sheet's colours for every reduction instead is what this replaced, and it had to give
  * up past `MAX_PALETTE_ENTRIES` of them — the ordinary case for a channel depth, which barely reduces
  * the count — so a machine space quietly gained colours it could not display.
  *
- * **Each list is searched in scaled OKLab**, with `nearestOklab`, colour only: a palette entry is a
- * colour rather than a compositing state. A linear scan, so the answer is memoised on the blended
- * colour, and each search is paid once per distinct blend. The key drops alpha for the same reason
- * the search does, and it is arithmetic on the packed value because this runs once per claimed pixel.
+ * **Each list is searched in scaled OKLab, colour only**, since a palette entry is a colour rather
+ * than a compositing state. The search is `nearestPointSearch` over the list's OKLab positions, so its
+ * cost barely grows with the list: a lock over a sheet at a grid of 1 can leave hundreds of thousands
+ * of colours beyond its reach. The answer is still memoised on the blended colour, because this runs
+ * once per claimed pixel; the key drops alpha for the same reason the search does.
  *
  * **Every answer keeps the blend's own coverage**, and a fully transparent blend is returned as it is:
  * a cleared pixel carries no colour, and zero throughout is what every pass writes when it clears one.
  *
- * `held` is where `MAX_COLORS` finds the sheet's colours: the sheet itself, or every region of a sheet
- * cut into several, which hold its colours between them — see `settleRegions`.
+ * `held` is where the sheet's colours are read: the sheet itself, or every region of a sheet cut into
+ * several, which hold its colours between them — see `settleRegions`.
  */
 export function blendSnap(reduction: ColorReduction, held: readonly ImageData[]): (blend: Rgba) => Rgba {
   if (reduction.kind === 'CHANNEL_DEPTH') {
@@ -52,20 +54,49 @@ export function blendSnap(reduction: ColorReduction, held: readonly ImageData[])
           };
   }
 
-  const located = locateEntries(reduction.kind === 'MAX_COLORS' ? sheetColors(held) : reduction.entries);
-  const resolved = new Map<number, Rgba>();
-  return (blend) => (blend.a === FULLY_TRANSPARENT ? blend : nearestHeld(blend, located, resolved));
+  const nearest = nearestOf(allowedColors(reduction, held));
+  return (blend) => (blend.a === FULLY_TRANSPARENT ? blend : nearest(blend));
 }
 
-/** The blend taken to its nearest entry, memoised on its colour, keeping its own coverage. */
-function nearestHeld(blend: Rgba, located: readonly LocatedEntry[], resolved: Map<number, Rgba>): Rgba {
-  const key = (blend.r * 256 + blend.g) * 256 + blend.b;
-  let nearest = resolved.get(key);
-  if (nearest === undefined) {
-    nearest = nearestOklab(blend, located)?.entry ?? blend;
-    resolved.set(key, nearest);
+/** The colours a list-shaped reduction allows a blend to take, in the order that settles a tie. */
+function allowedColors(
+  reduction: Exclude<ColorReduction, { kind: 'CHANNEL_DEPTH' }>,
+  held: readonly ImageData[],
+): readonly Rgba[] {
+  switch (reduction.kind) {
+    case 'PALETTE':
+      return reduction.entries;
+    case 'LOCKED':
+      return [...reduction.entries, ...sheetColors(held)];
+    case 'MAX_COLORS':
+      return sheetColors(held);
   }
-  return { r: nearest.r, g: nearest.g, b: nearest.b, a: blend.a };
+}
+
+/**
+ * The search over one list: each blend taken to its nearest colour in scaled OKLab, memoised on the
+ * blended colour, keeping its own coverage. An empty list leaves the blend as it is.
+ */
+function nearestOf(colors: readonly Rgba[]): (blend: Rgba) => Rgba {
+  const search = nearestPointSearch(
+    colors.map((color) => {
+      const lab = srgbToOklab(color.r, color.g, color.b);
+      return [lab.L, lab.a, lab.b, 0] as const;
+    }),
+  );
+  const target: MutableOklab = { L: 0, a: 0, b: 0 };
+  const resolved = new Map<number, Rgba>();
+
+  return (blend) => {
+    const key = (blend.r * 256 + blend.g) * 256 + blend.b;
+    let nearest = resolved.get(key);
+    if (nearest === undefined) {
+      srgbToOklabInto(target, blend.r, blend.g, blend.b);
+      nearest = colors[search(target.L, target.a, target.b, 0)] ?? blend;
+      resolved.set(key, nearest);
+    }
+    return { r: nearest.r, g: nearest.g, b: nearest.b, a: blend.a };
+  };
 }
 
 /**
@@ -75,7 +106,7 @@ function nearestHeld(blend: Rgba, located: readonly LocatedEntry[], resolved: Ma
  * Alpha is dropped on the way in: a palette is a list of colours, and a soft pixel's own coverage is
  * a fact about that pixel. A pixel under `COVERAGE_FLOOR` is left out, since its channels are
  * rounding noise rather than a colour the sheet holds. First-met order is what settles a tie in
- * `nearestOklab`, which takes the earliest entry, so the answer is stable across two runs.
+ * `nearestPointSearch`, which takes the earliest point, so the answer is stable across two runs.
  *
  * It reads the channel array directly rather than through `colorHistogram`, which would build a Map
  * of counts this has no use for.

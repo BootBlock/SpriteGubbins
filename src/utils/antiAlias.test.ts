@@ -8,11 +8,11 @@ import {
   FULLY_TRANSPARENT,
   countColors,
   createImage,
+  packColor,
   readPixel,
 } from './imageData.ts';
 import { channelLevels } from './channelLevels.ts';
 import { MAX_PALETTE_ENTRIES } from './pngPalette.ts';
-import { channels } from '../test/images.ts';
 import type { ColorReduction, Rgba } from '../types/quantiser.ts';
 
 const INK: Rgba = { r: 20, g: 20, b: 20, a: FULLY_OPAQUE };
@@ -257,14 +257,29 @@ describe('antiAlias', () => {
       };
     });
 
-  it('keeps snapping to a budget’s colours however many the sheet holds', () => {
-    // The snap once gave up past `MAX_PALETTE_ENTRIES` colours and wrote the raw blend, which is the
-    // ordinary case for a channel depth. A budget bounds its own set, so there is no ceiling to meet.
+  it('keeps a lock’s blends to its entries and the colours it left, however many the sheet holds', () => {
+    // A lock with a short reach leaves most of a sheet's colours as they were, so the sheet can hold
+    // any number of them. The snap once gave up past `MAX_PALETTE_ENTRIES` and wrote the raw blend.
     const large = withPalette(384);
     expect(countColors(large)).toBeGreaterThan(MAX_PALETTE_ENTRIES);
-    expect(channels(antiAlias(large, { ...SETTINGS, snapTo: BUDGET }))).not.toEqual(
-      channels(antiAlias(large, { ...SETTINGS, snapTo: null })),
+    const lock: ColorReduction = { kind: 'LOCKED', entries: [MID], snap: 4 };
+    const result = antiAlias(large, { ...SETTINGS, snapTo: lock });
+    const pixelAt = (image: ImageData, pixel: number): Rgba =>
+      readPixel(image.data, pixel * CHANNELS_PER_PIXEL);
+    const opaque = (color: Rgba): number => packColor({ ...color, a: FULLY_OPAQUE });
+    const pixels = Array.from({ length: large.width * large.height }, (_, pixel) => pixel);
+    const allowed = new Set([MID, ...pixels.map((pixel) => pixelAt(large, pixel))].map(opaque));
+
+    const claims = edgeClaims(large, SETTINGS);
+    const claimed = pixels.filter((pixel) => (claims.coverage[pixel] ?? 0) > 0);
+    for (const pixel of claimed) {
+      expect(allowed.has(opaque(pixelAt(result, pixel))), `pixel ${String(pixel)}`).toBe(true);
+    }
+    const moved = claimed.filter(
+      (pixel) => packColor(pixelAt(result, pixel)) !== packColor(pixelAt(large, pixel)),
     );
+    // Proof the pass changed something, so the sweep above is not over an untouched sheet.
+    expect(moved.length).toBeGreaterThan(0);
   });
 
   it('keeps every blend on the channel ladder under a channel depth, however many colours the sheet holds', () => {

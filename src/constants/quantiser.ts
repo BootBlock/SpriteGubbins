@@ -1606,8 +1606,8 @@ export const ANTI_ALIAS_PALETTE_CHOICES = [
  * Where the Blended shades control opens — keeping to the colours the colour setting allows.
  *
  * It is read only where a colour reduction is in force, and in that state the reader has already
- * said what colours this sheet is made of: a machine's fixed list, a budget, or a palette locked off
- * an earlier sheet in the series. A pass that quietly added shades outside any of those would undo
+ * said what colours this sheet is made of: a machine's fixed list or channel depth, a budget, or a
+ * palette locked off an earlier sheet in the series. A pass that quietly added shades outside any of those would undo
  * the setting that produced them — a Game Boy sheet is four shades because four is the whole point,
  * and a fringe in a fifth is not a Game Boy sheet. `BLEND` is there for the reader who wants the
  * softer contour more than the palette, and who can see both figures in the panel above.

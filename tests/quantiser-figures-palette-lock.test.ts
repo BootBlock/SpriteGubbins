@@ -3,7 +3,7 @@ import { CORPUS_SHEETS, loadCorpus } from './sheetCorpus.ts';
 import { calibrationSettings } from './calibrationSettings.ts';
 import { COLOR_MERGE_RANGE, DEFAULT_PALETTE_SNAP, PALETTE_SNAP_RANGE } from '../src/constants/quantiser.ts';
 import { colorHistogram, fromHex, packColor, unpackColor } from '../src/utils/imageData.ts';
-import { type LocatedEntry, locateEntries, nearestOklab } from '../src/utils/lockedPalette.ts';
+import { type LocatedEntry, locateEntries, nearestOklab } from '../src/test/nearestOklab.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
 import { buildPalette } from '../src/utils/wuQuantiser.ts';
 import type { QuantiseSettings, Rgba } from '../src/types/quantiser.ts';

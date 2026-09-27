@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Rgba } from '../types/quantiser.ts';
+import { locateEntries, nearestOklab } from '../test/nearestOklab.ts';
 import { blendSnap } from './blendSnap.ts';
 import { channelLevels } from './channelLevels.ts';
 import { CHANNELS_PER_PIXEL, FULLY_OPAQUE, FULLY_TRANSPARENT, createImage, writePixel } from './imageData.ts';
@@ -33,12 +34,31 @@ describe('blendSnap', () => {
     expect(snap({ r: 120, g: 125, b: 130, a: FULLY_OPAQUE })).toEqual(MID);
   });
 
-  it('takes a blend to the nearest locked entry, and never to a colour only the sheet holds', () => {
-    // The lock is the series' palette. A colour beyond its reach survives on the sheet, but it is not
-    // a colour the series is drawn in, so no blend is taken to it.
-    const snap = blendSnap({ kind: 'LOCKED', entries: [PAPER, INK], snap: 8 }, [sheetOf(PAPER, INK, MID)]);
-    expect(snap({ r: 128, g: 128, b: 128, a: FULLY_OPAQUE })).not.toEqual(MID);
-    expect([PAPER, INK]).toContainEqual(snap({ r: 128, g: 128, b: 128, a: FULLY_OPAQUE }));
+  it('takes a blend to the nearest locked entry or colour the lock left, and to no other', () => {
+    // A lock moves a colour only within its reach, so the red here stays on the sheet as the artwork's
+    // own: a fringe beside it keeps to red rather than to the nearest entry. An entry the sheet does
+    // not hold is a colour the series is drawn in, so a blend may take it.
+    const snap = blendSnap({ kind: 'LOCKED', entries: [PAPER, MID, INK], snap: 4 }, [
+      sheetOf(PAPER, INK, RED),
+    ]);
+    expect(snap({ r: 190, g: 40, b: 35, a: FULLY_OPAQUE })).toEqual(RED);
+    expect(snap({ r: 120, g: 125, b: 130, a: FULLY_OPAQUE })).toEqual(MID);
+  });
+
+  it('gives the brute-force OKLab answer, earliest colour taking a tie', () => {
+    // The index is held to the definition, over a list with a duplicate so a tie has to be settled.
+    const entries = [PAPER, MID, INK, RED, MID, { r: 30, g: 160, b: 90, a: FULLY_OPAQUE }];
+    const snap = blendSnap({ kind: 'PALETTE', entries }, []);
+    const located = locateEntries(entries);
+    for (let value = 0; value < 256; value += 15) {
+      for (const blend of [
+        { r: value, g: 255 - value, b: (value * 7) % 256, a: FULLY_OPAQUE },
+        { r: value, g: value, b: value, a: 128 },
+      ]) {
+        const expected = nearestOklab(blend, located)?.entry;
+        expect(snap(blend), JSON.stringify(blend)).toEqual({ ...expected, a: blend.a });
+      }
+    }
   });
 
   it('takes a blend to the nearest colour any held image holds under a budget', () => {

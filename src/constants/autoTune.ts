@@ -313,7 +313,7 @@ export const TUNE_ALIAS_RUNS = [2, 3, 4, 5, 6, 8, 10, 12] as const;
 export const TUNE_ALIAS_STRENGTHS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as const;
 
 /**
- * Whether a blended shade may be a colour the sheet did not already hold — both positions.
+ * Whether a blended shade may be a colour the colour setting does not allow — both positions.
  *
  * The union itself rather than a ladder written out beside it, because there are only two positions
  * and a copy of them here would be a second opinion about what the control offers. Swept only where a
