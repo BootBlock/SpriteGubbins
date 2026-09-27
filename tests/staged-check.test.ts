@@ -10,10 +10,11 @@ import { retryRefusedStart } from '../scripts/retryRefusedStart.ts';
  * (issue #448).
  *
  * The hook used to hand the staged paths to both tools, which read the working tree, so a file
- * staged in part was judged on content the commit did not carry. Each case here stages one text and
- * leaves a different one in the working tree, and proves the runner judges the staged one, in both
+ * staged in part was judged on content the commit did not carry. Most cases here stage one text and
+ * leave a different one in the working tree, and prove the runner judges the staged one, in both
  * directions: a staged fault the working tree has fixed still fails, and a working-tree fault that
- * is not staged does not.
+ * is not staged does not. The rest prove it reads the index a commit names, reports a file it cannot
+ * parse without stopping, and reads no index entry that is not a regular file.
  *
  * The runner reads git through `GIT_DIR` and `GIT_WORK_TREE`, as `secret-scan-commits.test.ts`
  * explains, but resolves each tool's configuration against this repository's root. So the staged
@@ -33,8 +34,27 @@ let scratch: string;
 let repo: string;
 let env: NodeJS.ProcessEnv;
 
-function git(...args: string[]): void {
-  retryRefusedStart(() => execFileSync('git', args, { cwd: repo, env, stdio: 'pipe' }));
+function git(...args: string[]): string {
+  return gitWith(env, undefined, ...args);
+}
+
+/** {@link git} under `over`, with `input` on its standard input. */
+function gitWith(over: NodeJS.ProcessEnv, input: string | undefined, ...args: string[]): string {
+  return retryRefusedStart(() =>
+    execFileSync('git', args, {
+      cwd: repo,
+      env: over,
+      encoding: 'utf8',
+      stdio: 'pipe',
+      ...(input === undefined ? {} : { input }),
+    }),
+  ).trim();
+}
+
+/** Stage `text` at `path` with the index mode `mode`, whatever the working tree holds there. */
+function stageEntry(mode: string, path: string, text: string): void {
+  const blob = gitWith(env, text, 'hash-object', '-w', '--stdin');
+  git('update-index', '--add', '--cacheinfo', `${mode},${blob},${path}`);
 }
 
 function write(path: string, content: string): void {
@@ -49,9 +69,9 @@ function stageThenEdit(path: string, staged: string, working: string): void {
   write(path, working);
 }
 
-function check(): { status: number | null; stderr: string } {
+function check(over: NodeJS.ProcessEnv = env): { status: number | null; stderr: string } {
   const run = retryRefusedStart(() => {
-    const started = spawnSync(process.execPath, [RUNNER], { env, encoding: 'utf8' });
+    const started = spawnSync(process.execPath, [RUNNER], { env: over, encoding: 'utf8' });
     if (started.error) throw started.error;
     return started;
   });
@@ -83,7 +103,7 @@ describe('staged-check', () => {
     const { status, stderr } = check();
     expect(status).toBe(1);
     expect(stderr).toContain(`  ${CODE}\n`);
-    // One path, not the two an `xargs` split made of it.
+    // One path, not two halves split at the space.
     expect(stderr).toContain(`  ${SPACED}\n`);
     expect(stderr).not.toContain('ESLint failed');
   }, 60_000);
@@ -102,6 +122,35 @@ describe('staged-check', () => {
     stageThenEdit(SPACED, '{ "a": 1 }\n', '{"a":1}\n');
     // Prettier ignores Markdown here, and ESLint lints none, so neither judges this one.
     stageThenEdit('notes.md', '*  not   formatted*\n', '');
+    expect(check()).toEqual({ status: 0, stderr: '' });
+  }, 60_000);
+
+  it('reports a staged file Prettier cannot parse and still runs ESLint', () => {
+    stageThenEdit(SPACED, '{"a":\n', '{ "a": 1 }\n');
+    stageThenEdit(CODE, LINT_ERROR, CLEAN);
+    const { status, stderr } = check();
+    expect(status).toBe(1);
+    expect(stderr).toContain(`  ${SPACED}: `);
+    expect(stderr).toContain('@typescript-eslint/no-unused-vars');
+  }, 60_000);
+
+  it('reads the index GIT_INDEX_FILE names, as `git commit -a` and `git commit <paths>` set it', () => {
+    stageThenEdit(CODE, CLEAN, CLEAN);
+    const commitIndex = { ...env, GIT_INDEX_FILE: join(scratch, 'commit-index') };
+    write(CODE, UNFORMATTED);
+    gitWith(commitIndex, undefined, 'add', '--', CODE);
+    write(CODE, CLEAN);
+    expect(check().status).toBe(0);
+    const { status, stderr } = check(commitIndex);
+    expect(status).toBe(1);
+    expect(stderr).toContain(`  ${CODE}\n`);
+  }, 60_000);
+
+  it('passes over a staged symlink and submodule, which are not files either tool reads', () => {
+    // The symlink's blob would fail Prettier if it were read as a file's text, and the submodule's
+    // entry names no blob at all, so reading it would crash the runner.
+    stageEntry('120000', 'scripts/linked.ts', UNFORMATTED);
+    stageEntry('160000', 'scripts/module.ts', '');
     expect(check()).toEqual({ status: 0, stderr: '' });
   }, 60_000);
 });

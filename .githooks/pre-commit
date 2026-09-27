@@ -3,8 +3,8 @@
 # Sprite Gubbins pre-commit hook. Guards the three things that matter most on a PUBLIC repo,
 # scoped to the STAGED changes so it stays fast:
 #   (a) a credential-shaped scan of the staged diff (no secrets, ever — see CLAUDE.md);
-#   (b) Prettier formatting and ESLint, both judged on the staged copy of each file rather than
-#       the working tree, so a partly staged file is judged on what the commit carries.
+#   (b) Prettier formatting and (c) ESLint, both judged on the staged copy of each file rather
+#       than the working tree, so a partly staged file is judged on what the commit carries.
 # Any failure aborts the commit. In a genuine emergency, bypass with `git commit --no-verify`.
 #
 # Auto-wired by the "prepare" npm script (sets core.hooksPath = .githooks) on `npm install`.
@@ -40,7 +40,7 @@ if ! node scripts/secret-scan.ts --staged; then
   fail=1
 fi
 
-# --- (b) Prettier and ESLint on the staged copy of each file ----------------------------
+# --- (b) and (c) Prettier and ESLint on the staged copy of each file --------------------
 # Both tools read the working tree when handed a path, so a file staged in part was judged on
 # content the commit does not carry (issue #448). `scripts/staged-check.ts` reads each file's blob
 # out of the index and gives that text to Prettier's and ESLint's APIs, and lets each tool decide

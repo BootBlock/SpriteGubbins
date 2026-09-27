@@ -35,7 +35,6 @@ export const NAMES_CITED_FROM_ELSEWHERE: Readonly<Record<string, string>> = {
   devEngines: 'npm’s newer `package.json` field, which the comment explains the project does not declare.',
   packageManager: 'A member of that `devEngines` field.',
   ACM: 'Git’s `--diff-filter` status letters, as the allow-list the scan used to keep.',
-  GIT_INDEX_FILE: 'Git’s environment variable naming the index a command reads.',
   Skeleton2D: 'A Godot node class.',
   Bone2D: 'A Godot node class.',
   CanvasModulate: 'A Godot node class.',
