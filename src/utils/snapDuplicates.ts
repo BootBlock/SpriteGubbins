@@ -40,7 +40,7 @@ import { sameBox } from './sameBox.ts';
  * pixel or two larger than the member it is folding.
  *
  * The result's own facts are re-read from what this returns rather than carried over from the sheet
- * it was measured on — see `quantiseImage`, which does the re-reading. That matters more here than
+ * it was measured on — see `settleSprites`, which does the re-reading. That matters more here than
  * it would after a plain copy: a member that took a larger source has a larger box afterwards,
  * so the bounds the panel reports would otherwise describe a silhouette that is gone.
  *

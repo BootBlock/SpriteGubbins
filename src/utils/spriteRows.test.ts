@@ -73,9 +73,8 @@ describe('spriteRows', () => {
   });
 
   it('leaves the array it was handed in the order it was handed it', () => {
-    // `sheetLayout` is given `SpriteSegmentation`'s own box array whenever a download is written at
-    // 1× — `scaleBoxes` returns its argument unchanged there — and that array is what the store
-    // holds and the preview rings. Sorting in place would reorder the screen from inside a writer.
+    // The array is the caller's, and the `readonly` in the signature promises that answering a
+    // question about it does not reorder it.
     const boxes = [box(12, 1, 4, 4), box(2, 0, 4, 4)];
     const handed = [...boxes];
 

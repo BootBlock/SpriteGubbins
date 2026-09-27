@@ -31,10 +31,9 @@ import type { SpriteBox } from '../types/quantiser.ts';
  * opened before it — and a function whose answer depends on how its caller happened to order an
  * argument is how the two derivations came to part company in the first place.
  *
- * **It sorts a copy, and the copy is not tidiness.** `sheetLayout` is handed `SpriteSegmentation`'s
- * own box array whenever a download is written at 1×, because `scaleBoxes` returns its argument
- * unchanged at that scale — so sorting in place would reorder the list the store holds and the
- * preview draws its rings from, from inside a writer. The boxes themselves come back by reference:
+ * **It sorts a copy, because the array is its caller's.** A function that answers a question about
+ * a list has no business reordering the list it was asked about, which the `readonly` in its
+ * signature already promises. The boxes themselves come back by reference:
  * there is nothing to gain by cloning them, and one set of box objects travelling the whole pipeline
  * is what lets `frameAlignment` exclude a frame's own box from the sheet's by object identity.
  *
