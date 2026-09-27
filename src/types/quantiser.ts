@@ -524,8 +524,8 @@ export const ANTI_ALIAS_PALETTES = ['SNAP', 'BLEND'] as const;
  * Whether an anti-aliased pixel may be a colour the colour setting does not allow.
  *
  * `SNAP` takes each blend to the nearest colour the reduction in force allows — a machine's entries
- * or its channel ladder, a locked palette's entries, or the colours a budget chose for this sheet —
- * so a sheet reduced to a machine's four shades keeps exactly those four. That is what an artist
+ * or its channel ladder, a locked palette's entries and the colours it left alone, or the colours a
+ * budget chose for this sheet — so a sheet reduced to a machine's four shades keeps exactly those four. That is what an artist
  * working to a fixed palette does, reaching for the intermediate tone that already exists rather
  * than mixing a new one; `blendSnap` states it per reduction. `BLEND` writes the mixed shade as
  * computed.

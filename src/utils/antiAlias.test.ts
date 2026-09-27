@@ -280,6 +280,9 @@ describe('antiAlias', () => {
     );
     // Proof the pass changed something, so the sweep above is not over an untouched sheet.
     expect(moved.length).toBeGreaterThan(0);
+    // And not every one of them went to the entry: a blend beside a colour the lock left keeps to the
+    // sheet's own colours, where a snap to the entries alone would paint every fringe in the grey.
+    expect(moved.some((pixel) => opaque(pixelAt(result, pixel)) !== opaque(MID))).toBe(true);
   });
 
   it('keeps every blend on the channel ladder under a channel depth, however many colours the sheet holds', () => {

@@ -11,8 +11,9 @@ const AXES: readonly Axis[] = [0, 1, 2, 3];
  *
  * **One search, two spaces.** `nearestColorSearch` asks it about a palette in RGBA bytes, which is
  * how a sheet is redrawn, and `lloydRefine` asks it about palette entries in scaled OKLab with
- * coverage as the fourth axis, which is how a palette is refined. Both are asked once per distinct
- * colour of a sheet that can carry hundreds of thousands, and the pruning below is the half that
+ * coverage as the fourth axis, which is how a palette is refined. `blendSnap` asks it in scaled OKLab
+ * with a fourth axis of zero, which is how an anti-aliased blend is kept to a palette. All are asked
+ * once per distinct colour of a sheet that can carry hundreds of thousands, and the pruning below is the half that
  * would quietly diverge if it were written twice.
  *
  * **Why an index rather than a loop over the points.** The points are sorted on the axis they spread

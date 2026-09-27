@@ -81,10 +81,10 @@ describe('anti-aliasing under SNAP on the reference sheet', () => {
     60_000,
   );
 
-  it('leaves a budget’s sheet holding no more colours than the budget, which bounds its snap', () => {
-    // `blendSnap` searches the colours a budget's sheet holds, and the budget is what keeps that
-    // search affordable. Every pass between the reduction and the anti-aliasing only moves colours
-    // the sheet already holds.
+  it('leaves a budget’s sheet holding no more colours than the budget', () => {
+    // `blendSnap` keeps a budget's blends to the colours its sheet holds, on the ground that those are
+    // the budget's palette. That holds only while every pass between the reduction and the
+    // anti-aliasing moves colours the sheet already holds rather than making new ones.
     const budget: ColorReduction = { kind: 'MAX_COLORS', maxColors: 64 };
     const sheet = quantiseImage(armour, { ...settingsFor(budget), antiAlias: 'OFF' }).image;
     expect(heldColors(sheet)).toBeLessThanOrEqual(budget.maxColors);

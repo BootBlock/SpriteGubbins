@@ -51,14 +51,14 @@ export interface AntiAliasSettings extends ClaimSettings {
  * intermediate tone that already exists rather than mixing a new one. It bounds the *hues* and not
  * the colour count: a coverage is an alpha, so softening a silhouette adds pixels that are a held
  * hue at a new coverage, and `countColors` keys on all four channels. `blendSnap` states what each
- * reduction allows, and what keeps the search affordable.
+ * reduction allows, and how the nearest colour is found.
  *
  * **Hands back its argument by reference wherever nothing moved**, which is the contract
  * `snapSymmetric` and `snapFrames` keep and for the same reason: a re-segmentation is a linear pass
  * nobody should pay for a sheet that did not change. `OFF` leaves before anything is allocated at
  * all.
  *
- * `held` is where a budget's snap finds the colours the sheet holds, and it is `image` itself unless
+ * `held` is where the snap finds the colours the sheet holds, and it is `image` itself unless
  * `image` is one region of a sheet cut into several, whose colours the regions hold between them.
  *
  * Pure. It reads every source pixel out of the input and writes only into its own copy, so a claimed

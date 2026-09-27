@@ -45,9 +45,10 @@ describe('blendSnap', () => {
     expect(snap({ r: 120, g: 125, b: 130, a: FULLY_OPAQUE })).toEqual(MID);
   });
 
-  it('gives the brute-force OKLab answer, earliest colour taking a tie', () => {
-    // The index is held to the definition, over a list with a duplicate so a tie has to be settled.
-    const entries = [PAPER, MID, INK, RED, MID, { r: 30, g: 160, b: 90, a: FULLY_OPAQUE }];
+  it('gives the brute-force OKLab answer', () => {
+    // The index is held to the definition. How it settles a tie is `nearestPointSearch`'s, and its
+    // own suite holds that.
+    const entries = [PAPER, MID, INK, RED, { r: 30, g: 160, b: 90, a: FULLY_OPAQUE }];
     const snap = blendSnap({ kind: 'PALETTE', entries }, []);
     const located = locateEntries(entries);
     for (let value = 0; value < 256; value += 15) {
