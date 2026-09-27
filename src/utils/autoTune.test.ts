@@ -154,7 +154,8 @@ describe('autoTune', () => {
 
   it('gives the same answer twice for the same sheet and the same settings', () => {
     // A reader who presses Auto twice has not asked for two different answers, and the score's ties
-    // and the crop chooser's are both settled by order rather than by whatever a sort left behind.
+    // (by likeness, then by order) and the crop chooser's (by order) are settled by rule rather than
+    // by whatever a sort left behind.
     expect(autoTune(SHEET, BASE)).toEqual(sweptSheet());
   });
 

@@ -26,7 +26,9 @@ import { tunedDialsOf } from './tuneStage.ts';
  * beats on both counts, which is the price at which the chord construction's knee is the best trade
  * on that frontier: `fidelity − price × colors` is highest exactly at the point standing furthest
  * above the chord. So on that ladder the rule reproduces the elbow it replaces, and every later stage
- * is charged what the elbow charged there rather than what its own ladder's ends would say.
+ * is charged what the elbow charged there rather than what its own ladder's ends would say. Where no
+ * point stands above the chord, the chord's two ends score alike by construction, and
+ * `chooseByPrice` settles that tie on the more faithful end — see `TUNE_SCORE_TIE`.
  *
  * **At the tab's opening dials rather than the reader's**, so the price is a fact about the sheet and
  * the settings the sweep may not move, and not about where the reader happened to leave the dials.

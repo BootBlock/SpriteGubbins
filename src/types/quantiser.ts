@@ -513,20 +513,22 @@ export const ANTI_ALIAS_MODES = ['OFF', 'INTERIOR', 'SILHOUETTE', 'BOTH'] as con
 export type AntiAliasMode = (typeof ANTI_ALIAS_MODES)[number];
 
 /**
- * What becomes of a blended shade the sheet's colours do not already hold — the two positions the
- * control offers.
+ * What becomes of a blended shade the colour setting does not allow — the two positions the control
+ * offers.
  *
  * Validated out of storage like {@link ANTI_ALIAS_MODES}, and for the same reason.
  */
 export const ANTI_ALIAS_PALETTES = ['SNAP', 'BLEND'] as const;
 
 /**
- * Whether an anti-aliased pixel may be a colour the sheet did not already have.
+ * Whether an anti-aliased pixel may be a colour the colour setting does not allow.
  *
- * `SNAP` takes each blend to the nearest colour the sheet holds, so a sheet reduced to a machine's
- * four shades keeps exactly those four — which is what an artist working to a fixed palette does,
- * reaching for the intermediate tone that already exists rather than mixing a new one. `BLEND`
- * writes the mixed shade as computed.
+ * `SNAP` takes each blend to the nearest colour the reduction in force allows — a machine's entries
+ * or its channel ladder, a locked palette's entries and the colours it left alone, or the colours a
+ * budget chose for this sheet — so a sheet reduced to a machine's four shades keeps exactly those four. That is what an artist
+ * working to a fixed palette does, reaching for the intermediate tone that already exists rather
+ * than mixing a new one; `blendSnap` states it per reduction. `BLEND` writes the mixed shade as
+ * computed.
  *
  * **It bounds the hues, not the count**, and the two part company under
  * {@link AntiAliasMode}'s silhouette positions: a coverage is an *alpha*, and `countColors` keys on
@@ -732,7 +734,7 @@ export interface QuantiseTuning {
    */
   readonly antiAliasRun: number;
   /**
-   * Whether a blended shade is kept to the colours the sheet already holds — see
+   * Whether a blended shade is kept to the colours the colour setting allows — see
    * {@link AntiAliasPalette}.
    *
    * Read only where {@link QuantiseSettings.reduction} states a palette to keep to.

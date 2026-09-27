@@ -25,7 +25,7 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * reader has moved a dial off every ladder that can carry one. With the anti-aliasing control at its
  * own `OFF`, which is where the tab opens, those three stages skip and the two figures are **872**
  * and **904**. Those are ceilings rather than ordinary costs, because the descent stops as soon as a
- * round moves nothing: measured over the eight corpus sheets the real figures run from 102 to 192
+ * round moves nothing: measured over the eight corpus sheets the real figures run from 102 to 145
  * positions, and {@link TUNE_ROUNDS} carries that table. Every stage also ranks the positions already
  * in force, which costs nothing where its ladder already holds them; see `withIncumbent` for why the
  * incumbent is in the set at all.
@@ -72,18 +72,19 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * Keyed at the default tolerance against each sheet's corner colour, at the grids the table under
  * {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different sheet, and only
  * the reference sheet at `OFF`, `cyborg_healer.png` and `character_space_marine_blue.png` settle on
- * the dials they settle on unkeyed. Five more move the colour merge by one or two rungs, and the
- * reference sheet at `BOTH` moves it two, turns the cleanup to 32 and takes four cleanup passes. At
- * `OFF`, five descents take the same count and three do not: `three-quarter-view_tiles1.png` ends
- * sooner, at 145 positions rather than 192, and `ui_elements1.png` and `cyborg_monk.png` run longer,
- * at 145 rather than 102. At `BOTH` the reference sheet takes 372 positions over four rounds, where
- * unkeyed it takes 229 over three.
+ * the dials they settle on unkeyed. The other five move the colour merge by one or two rungs, and
+ * `vehicles_and_props.png` also moves its reading, to `DOMINANT` — the one corpus sheet, keyed or
+ * not, that the whole sweep settles anywhere but `K_CENTROID`. The reference sheet at `BOTH` moves
+ * the merge two rungs, turns the cleanup to 32 and takes four cleanup passes. At `OFF`, seven descents
+ * take the same count and one does not: `vehicles_and_props.png` ends sooner, at 102 positions rather
+ * than 145. At `BOTH` the reference sheet takes 372 positions over four rounds, where unkeyed it
+ * takes 229 over three.
  *
  * **The count of positions is what a change to any ladder here has to be judged by**, not a wall
  * clock — the same code over the same sheet takes several times longer on one host than another, so
  * the guidance's "a minute or two" is stated against the position count rather than against any figure
  * a stopwatch produced. Every count here is of positions *ranked*: one the descent ranks twice is run
- * once — see `candidateReader` — so the corpus's 1,121 ranked positions ran as 685.
+ * once — see `candidateReader` — so the corpus's 1,031 ranked positions ran as 604.
  *
  * **The reading stage's first round keeps the *cheapest* of the three readings on that sheet rather
  * than the most faithful, and that is the price doing what it says rather than a defect.** Of the
@@ -103,9 +104,15 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * rather than one the sheet reads at) `K_CENTROID` at expansion 0 beats the other averaging reading
  * on **both** counts — 0.5315 for 6618 colours against `INK_WEIGHTED`'s 0.5149 for 6895 — and
  * the first round keeps `DOMINANT`, at 0.5125 for 6232, because it is cheaper than either. The
- * whole sweep then settles every corpus sheet on `K_CENTROID`, which is the warning stated at its
- * sharpest: a sheet that lives on its contours gets the reading that softens them unless the reader
- * asks for `INK_WEIGHTED` — which is what `AUTO_TUNE_GUIDANCE.settled` tells them to try.
+ * whole sweep then settles every corpus sheet on `K_CENTROID` unkeyed, and seven of the eight keyed,
+ * which is the warning stated at its sharpest: a sheet that lives on its contours gets the reading
+ * that softens them unless the reader asks for `INK_WEIGHTED` — which is what
+ * `AUTO_TUNE_GUIDANCE.settled` tells them to try.
+ *
+ * **Keep the reading stage's first round and the whole sweep's answer apart.** They are two answers,
+ * and this docblock has twice described the first as the second after a change to the descent moved
+ * one and not the other. `tests/auto-tune-figures-*.test.ts` run the real sweep over the corpus and
+ * pin every figure above, both answers included, so a change that moves one fails there.
  */
 
 /**
@@ -171,12 +178,12 @@ export const PROXY_CROP_STRIDE = 0.5;
  *
  * | Sheet | Grid the run was given | Rounds | Positions |
  * | --- | --- | --- | --- |
- * | `three-quarter-view_tiles1.png` | 5 | **4** | 192 |
  * | `armour.png` | 6 | 3 | 145 |
  * | `cyborg_black_red.png` | 6 | 3 | 145 |
  * | `cyborg_healer.png` | 4 | 3 | 145 |
  * | `vehicles_and_props.png` | 5 | 3 | 145 |
  * | `character_space_marine_blue.png` | 5 | 3 | 145 |
+ * | `three-quarter-view_tiles1.png` | 5 | 2 | 102 |
  * | `cyborg_monk.png` | 4 | 2 | 102 |
  * | `ui_elements1.png` | 4 | 2 | 102 |
  *
@@ -187,13 +194,14 @@ export const PROXY_CROP_STRIDE = 0.5;
  * different number and is held in `tests/sheet-scale-corpus.test.ts`: 3 for the reference sheet, and
  * nothing at all for five of these eight.
  *
- * **Eight is twice the worst of those eight, and the headroom is the point.** A cap that a sheet
+ * **Eight is twice the worst the corpus takes, and the headroom is the point.** That worst is three
+ * rounds here, and four for the reference sheet keyed at `BOTH` — see the module note. A cap that a sheet
  * exactly reaches cannot be told apart from one that cut it short, and a cut descent answers with
  * whatever it had reached by then. The rounds a sheet needs move with the score and the ladders:
  * under the elbow this rule replaced, `cyborg_black_red.png` took five rounds and every other sheet
  * two or three, and before each candidate was scored over its crop's own mesh the reference sheet
  * took six. A cap sized to today's worst case would be the first thing either kind of change broke.
- * None of the eight reaches a fifth round, so the headroom is paid only by a sheet that needs it.
+ * No sheet reaches a fifth round, so the headroom is paid only by a sheet that needs it.
  *
  * **The descent cannot circle, so the cap bounds the cost rather than guarding a loop.** Every stage
  * ranks on one score at one price, and moves a dial only for a gain above
@@ -220,6 +228,25 @@ export const TUNE_ROUNDS = 8;
  * at the sweep's price to be worth a thousandth.
  */
 export const TUNE_SCORE_MARGIN = 0.001;
+
+/**
+ * How close two candidates' scores have to be for `chooseByPrice` to treat them as a tie.
+ *
+ * **The sweep's price makes an exact tie, and floating point cannot see one.** The price of a colour
+ * is the slope of the chord between the two ends of the reading stage's frontier — see `colorPrice`
+ * — so at the opening dials those two ends score *the same*, and so does any reading on the chord
+ * between them. Computed, the two scores differ in the last bit or two, and which way they differ
+ * turns on how the platform rounds `**`: on the same commit, Node on Windows and on Linux chose
+ * different readings on `three-quarter-view_tiles1.png` and `ui_elements1.png` at the grids
+ * {@link TUNE_ROUNDS} gives, and then ended the descent in different rounds. A sweep that answers differently in
+ * two browsers on the same sheet is not reporting where the sheet's dials belong.
+ *
+ * **A billionth, which is far from both things it sits between.** The rounding it absorbs is under a
+ * thousand-billionth. The smallest real gap between a stage's two best candidates, over every stage
+ * of every corpus sweep keyed and unkeyed and of the reference sheet at `BOTH`, is 0.0000009 — nine
+ * hundred times this figure — and {@link TUNE_SCORE_MARGIN} is a million times it.
+ */
+export const TUNE_SCORE_TIE = 1e-9;
 
 /** The outline-expansion widths the reading stage tries — the dial's whole range. */
 export const TUNE_OUTLINE_EXPANSIONS = [0, 1, 2, 3, 4] as const;
@@ -313,7 +340,7 @@ export const TUNE_ALIAS_RUNS = [2, 3, 4, 5, 6, 8, 10, 12] as const;
 export const TUNE_ALIAS_STRENGTHS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as const;
 
 /**
- * Whether a blended shade may be a colour the sheet did not already hold — both positions.
+ * Whether a blended shade may be a colour the colour setting does not allow — both positions.
  *
  * The union itself rather than a ladder written out beside it, because there are only two positions
  * and a copy of them here would be a second opinion about what the control offers. Swept only where a
