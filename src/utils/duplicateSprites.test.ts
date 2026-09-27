@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Rgba, SpriteBox } from '../types/quantiser.ts';
 import { imageFrom } from '../test/images.ts';
 import { duplicateSprites } from './duplicateSprites.ts';
-import { DUPLICATE_TOLERANCE_RANGE } from '../constants/quantiser.ts';
+import { DUPLICATE_REGISTRATION_REACH, DUPLICATE_TOLERANCE_RANGE } from '../constants/quantiser.ts';
 import { FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 import { srgbToOklabInto } from './oklab.ts';
 import { pixelDistance } from './pixelDistance.ts';
@@ -135,9 +135,9 @@ describe('duplicateSprites', () => {
   });
 
   it('compares sprites of different sizes, charging the cells only one of them covers', () => {
-    // Two drawings a column apart, laid over one another by their top-left corners. The column only
-    // the wider one has is clear on the other side, so it scores the full 255 — over the 21 × 20
-    // union box that averages to 12, which is inside the dial's range and outside the lower rungs.
+    // Two drawings a column apart in width. However the two are registered, the column only the
+    // wider one has is clear on the other side, so it scores the full 255 — over the 21 × 20 union
+    // box that averages to 12, which is inside the dial's range and outside the lower rungs.
     const { image, boxes } = sheetOf(80, 30, [
       { left: 2, top: 2, cells: block(20, 20, INK) },
       { left: 30, top: 2, cells: block(21, 20, INK) },
@@ -149,6 +149,34 @@ describe('duplicateSprites', () => {
     // A pair the tolerance groups and the hash must not: the wider drawing holds artwork the other
     // does not, so `exact` has to be false however alike the two look.
     expect(groups[0]?.duplicates[0]?.exact).toBe(false);
+  });
+
+  it.each([
+    ['left', (cells: Rgba[][]) => cells.map((line, row) => [row === 0 ? INK : CLEAR, ...line])],
+    [
+      'top',
+      (cells: Rgba[][]) => [cells[0]?.map((_, column) => (column === 0 ? INK : CLEAR)) ?? [], ...cells],
+    ],
+    ['right', (cells: Rgba[][]) => cells.map((line, row) => [...line, row === 0 ? OTHER : CLEAR])],
+    [
+      'bottom',
+      (cells: Rgba[][]) => [...cells, cells[0]?.map((_, column) => (column === 0 ? INK : CLEAR)) ?? []],
+    ],
+  ])('groups a copy carrying one extra pixel on its %s edge', (_, extend) => {
+    // Columns alternating between two colours, so a copy compared a column off its drawing scores
+    // every cell a whole colour apart. An extra pixel on the left or top edge moves the copy's
+    // corner, and laying the pair corner to corner found none of these; registered, each is the one
+    // cell only the copy covers, averaged over the hundred and one either covers.
+    const stripes = Array.from({ length: 10 }, () =>
+      Array.from({ length: 10 }, (_cell, column) => (column % 2 === 0 ? INK : OTHER)),
+    );
+    const { image, boxes } = sheetOf(60, 30, [
+      { left: 4, top: 4, cells: stripes },
+      { left: 30, top: 4, cells: extend(stripes) },
+    ]);
+
+    expect(duplicateSprites(image, boxes, 2)).toEqual([]);
+    expect(duplicateSprites(image, boxes, 3)).toHaveLength(1);
   });
 
   it('does not group two sprites whose sizes are genuinely different', () => {
@@ -352,7 +380,8 @@ describe('duplicateSprites', () => {
  * The early exit against a plain reading of the same question.
  *
  * `spriteDistance` abandons a pair as soon as its running sum can no longer come under the
- * tolerance, which is what makes the quadratic walk affordable — and an exit that abandons one cell
+ * tolerance, and `registerSprites` abandons each offset once it cannot beat the best so far, which is
+ * what makes the quadratic walk affordable — and an exit that abandons one cell
  * too early is a pair silently not reported, with nothing on screen to say so. The bound it uses is
  * therefore the whole of its correctness, and the way to hold it is an oracle: compute the mean the
  * long way, with no exit at all, and require the two to agree at every rung of the dial.
@@ -393,21 +422,32 @@ describe('duplicateSprites — the early exit agrees with a plain reading', () =
     return cells;
   }
 
-  /** The mean per-cell distance over the union box, computed the long way with no early exit. */
+  /**
+   * The mean per-cell distance at the offset that matches best, computed the long way: every offset
+   * in the registration's reach, each over its whole union box with no early exit.
+   */
   function meanDistance(image: ImageData, left: SpriteBox, right: SpriteBox): number {
-    const width = Math.max(left.width, right.width);
-    const height = Math.max(left.height, right.height);
+    const reach = DUPLICATE_REGISTRATION_REACH;
+    let best = Infinity;
+    for (let y = -reach; y <= reach; y += 1) {
+      for (let x = -reach; x <= reach; x += 1) best = Math.min(best, meanAt(image, left, right, x, y));
+    }
+    return best;
+  }
+
+  /** The mean over the union box with `right`'s corner laid at (`x`, `y`) from `left`'s. */
+  function meanAt(image: ImageData, left: SpriteBox, right: SpriteBox, x: number, y: number): number {
     const leftColor = { L: 0, a: 0, b: 0 };
     const rightColor = { L: 0, a: 0, b: 0 };
     let sum = 0;
     let counted = 0;
 
-    for (let row = 0; row < height; row += 1) {
-      for (let column = 0; column < width; column += 1) {
-        const inLeft = row < left.height && column < left.width;
-        const inRight = row < right.height && column < right.width;
+    for (let row = Math.min(0, y); row < Math.max(left.height, y + right.height); row += 1) {
+      for (let column = Math.min(0, x); column < Math.max(left.width, x + right.width); column += 1) {
+        const inLeft = row >= 0 && row < left.height && column >= 0 && column < left.width;
+        const inRight = row >= y && row < y + right.height && column >= x && column < x + right.width;
         const from = inLeft ? pixelOffset(image.width, left.left + column, left.top + row) : -1;
-        const to = inRight ? pixelOffset(image.width, right.left + column, right.top + row) : -1;
+        const to = inRight ? pixelOffset(image.width, right.left + column - x, right.top + row - y) : -1;
         const leftAlpha = from < 0 ? 0 : (image.data[from + 3] ?? 0);
         const rightAlpha = to < 0 ? 0 : (image.data[to + 3] ?? 0);
         if (leftAlpha === FULLY_TRANSPARENT && rightAlpha === FULLY_TRANSPARENT) continue;
@@ -426,7 +466,7 @@ describe('duplicateSprites — the early exit agrees with a plain reading', () =
         sum += pixelDistance(leftColor, leftAlpha, rightColor, rightAlpha);
       }
     }
-    return counted === 0 ? 0 : sum / counted;
+    return counted === 0 ? Infinity : sum / counted;
   }
 
   it('reports the box holding far more visible cells than the sprite it bounds', () => {

@@ -1,6 +1,8 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
 import { groupMedoid } from './groupMedoid.ts';
-import { sameSprite, spriteDistance, spriteHash } from './spriteEquality.ts';
+import { profileSprites } from './alphaProfile.ts';
+import { registerSprites } from './registerSprites.ts';
+import { sameSprite, spriteHash } from './spriteEquality.ts';
 import { disjointSet } from './unionFind.ts';
 
 /**
@@ -30,10 +32,14 @@ import { disjointSet } from './unionFind.ts';
  * size — the extent buckets and the early exit below are what make it so — and it answers in the
  * units every other colour tolerance on this tab is stated in.
  *
- * **Two sprites are compared over the box that covers both of them, anchored at their top-left
- * corners.** A bounding box is tight, so anchoring by it costs nothing to compute and takes the
- * sprites' own positions out of the comparison — which is the whole point, since two frames of one
- * pose sit in different places on the sheet. Where one sprite reaches further than the other, the
+ * **Two sprites are compared over the box that covers both of them, registered where they match
+ * best.** A bounding box is tight, so laying the two corner to corner takes the sprites' own
+ * positions out of the comparison — which is the whole point, since two frames of one pose sit in
+ * different places on the sheet. But the corner is only the seed: keying adds or removes an edge
+ * pixel, and on the left or top edge the corner moves with it, so a pair compared from there is a
+ * column or a row off and every cell scores against its neighbour. `registerSprites` searches a
+ * pixel or two around the corners and compares at the offset that matches best, and the snap writes
+ * its fold at that same offset. Where one sprite reaches further than the other, the
  * cells only it covers are read as transparent on the short side and score the full 255 that any
  * vanished cell scores. That is the honest reading: a drawing with an extra row of artwork genuinely
  * holds artwork the other does not.
@@ -47,7 +53,8 @@ import { disjointSet } from './unionFind.ts';
  * gains one the moment a single contour pixel crosses the keying threshold — so a rule turning on
  * exact extents would fire on repeats that came back byte-identical and on almost nothing else,
  * which is a dial that appears not to work. The union box costs an extra row about one unit of the
- * mean on a sprite that size, which is inside the dial's range rather than past it.
+ * mean on a sprite that size, which is inside the dial's range rather than past it — on whichever
+ * edge the row falls, because the registration keeps one on the top or left from moving the rest.
  *
  * **Both directions are stated because the sign of the perturbation moves the answer, and the
  * figure recorded here before named neither.** "Four parts in 255 per channel" says how far and
@@ -134,6 +141,10 @@ export function duplicateSprites(
     union(twin, index);
   }
 
+  // Each sprite's profile, read once here rather than once for every pair it is in — see
+  // `registerSprites`, which bounds each offset with them before it walks one.
+  const sprites = profileSprites(image, boxes);
+
   // Every remaining pair, which is what `SCATTERED_SPRITE_CEILING` bounds: it caps a segmentation at
   // 512 boxes, so this walk is at most a hundred and thirty thousand comparisons, and each of them
   // abandons as soon as the running sum can no longer come under the tolerance.
@@ -141,9 +152,9 @@ export function duplicateSprites(
   // **At that ceiling the pass costs seconds.** Built to the ceiling — 512 sprites of 20 × 20 drawn
   // pixels filled with per-channel noise, so no pair is byte-identical and the hash pass collapses
   // none of them — this walk's cost climbs steadily with the dial and then falls off its last rung.
-  // Against the dial's floor, where a pair is rejected at its first differing cell, it is roughly
-  // **60× at tolerance 6, 130× at 12, and 230× at its peak around 21** — then about **100× at the
-  // top rung**, which is well under half the peak.
+  // Against its peak around 21 it is roughly **a quarter at tolerance 6 and a half at 12**, and about
+  // **half again at the top rung**. The floor, where a pair is rejected at its first differing cell,
+  // is a sixtieth of the peak, and most of what it costs is reading the profiles and the bounds.
   //
   // **The walk is cheaper at the top rung than at the peak, and the reason is its own machinery.**
   // The expensive case is a pair close enough to be walked a long way before its running sum passes
@@ -156,9 +167,16 @@ export function duplicateSprites(
   //
   // **The whole pass is dearest at the top rung all the same, because of the medoid.** That group of
   // 488 holds no two byte-identical members, so `groupMedoid` measures every pair of them in full,
-  // with no budget to abandon at: about as much work again as the walk at its peak, which puts the
-  // top rung at about one and a half times the peak. The consensus is what keeps a flawed first copy
-  // out of every repeat, and a real group is a handful of frames, most of them byte-identical.
+  // with no budget to abandon at: nearly twice as much work as the walk at its peak, which puts the
+  // top rung at a little over twice the peak. The consensus is what keeps a flawed first copy out of
+  // every repeat, and a real group is a handful of frames, most of them byte-identical.
+  //
+  // **The registration is most of why the medoid costs that.** Each pair is compared at up to
+  // twenty-five offsets rather than one (see `registerSprites`), and the profile bound rejects the
+  // offsets that cannot win before they are walked. Measured against laying every pair corner to
+  // corner, on this fixture, the walk costs the same up to the peak, the medoid about 1.8 times as
+  // much, and the whole pass at the top rung about 1.6 times; on the corpus below the difference is
+  // under the 16 ms the processor clock resolves.
   //
   // **The figures are ratios because absolute wall-clock does not reproduce, and this fixture is
   // where that was measured rather than assumed.** The same rung on the same fixture on this machine
@@ -196,7 +214,9 @@ export function duplicateSprites(
       // `spriteSegments`: a chain is one group. The tolerance is small enough that a chain long
       // enough to matter is a sheet whose sprites are all one sprite anyway.
       if (find(left) === find(right)) continue;
-      if (spriteDistance(image, boxes[left], boxes[right], tolerance) <= tolerance) union(left, right);
+      if (registerSprites(image, sprites[left], sprites[right], tolerance).distance <= tolerance) {
+        union(left, right);
+      }
     }
   }
 
@@ -218,7 +238,7 @@ export function duplicateSprites(
     if (members.length < 2) continue;
     const canonical = boxes[root];
     if (canonical === undefined) continue;
-    const source = boxes[groupMedoid(image, boxes, members, identical)];
+    const source = boxes[groupMedoid(image, sprites, members, identical)];
     if (source === undefined) continue;
     const canonicalClass = identical[root] ?? root;
     found.push({

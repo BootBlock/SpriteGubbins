@@ -1370,6 +1370,27 @@ export const DEFAULT_DUPLICATE_TOLERANCE = 0;
 export const DEFAULT_DUPLICATE_SNAP = false;
 
 /**
+ * How far either side of their top-left corners two sprites are moved against one another before
+ * the duplicate reading compares them, in drawn pixels.
+ *
+ * **The corners are only a seed, because keying moves them.** A sprite loses or gains an edge pixel
+ * the moment one contour pixel crosses the key's threshold, and on the left or top edge that moves
+ * the corner with it — so two copies of one drawing laid corner to corner are compared a column or a
+ * row off, and every cell scores against its neighbour. On `test_sprites/armour.png`, pairing each of
+ * its 15 sprites with a copy carrying one extra pixel found all 15 at the top rung where the pixel
+ * sat on the right or bottom edge and none where it sat on the left or top, until the pair was
+ * registered first. `tests/quantiser-figures-duplicate-registration.test.ts` pins both.
+ *
+ * **Two, because each of the two corners can move by one.** One sprite that lost a pixel on its left
+ * edge and a copy that gained one there sit two columns apart at their corners; a pose that reaches
+ * further on one side is a different pose, which is what {@link FRAME_DRIFT_SEARCH} is for and
+ * this is not. It is a bound on cost as well: the reading considers every candidate of the
+ * `(2 × reach + 1)²`, but skips one whose alpha profiles rule it out and abandons the rest as soon as
+ * they can no longer beat the best so far — see `registerSprites`.
+ */
+export const DUPLICATE_REGISTRATION_REACH = 2;
+
+/**
  * The fewest frames a row must hold before it is read as a strip.
  *
  * **Three, and it cannot be two.** The reading fits a pitch to the frames' own positions and then

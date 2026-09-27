@@ -37,6 +37,17 @@ function block(width: number, height: number, color: Rgba): Rgba[][] {
   return Array.from({ length: height }, () => Array.from({ length: width }, () => color));
 }
 
+/**
+ * Ten columns alternating between two colours, ten rows deep: a drawing that scores every cell a
+ * whole colour apart when a copy of it is laid a column off, so a fold written at the wrong offset
+ * cannot pass for a right one.
+ */
+function stripes(): Rgba[][] {
+  return Array.from({ length: 10 }, () =>
+    Array.from({ length: 10 }, (_, column) => (column % 2 === 0 ? INK : FAR)),
+  );
+}
+
 /** The same block with its first `count` cells replaced. */
 function blockWith(width: number, height: number, color: Rgba, spot: Rgba, count: number): Rgba[][] {
   const cells = block(width, height, color);
@@ -182,6 +193,74 @@ describe('snapDuplicates', () => {
       [21, 20],
       [21, 20],
     ]);
+  });
+
+  it.each([
+    ['left', { x: -1, y: 0 }],
+    ['top', { x: 0, y: -1 }],
+  ] as const)(
+    'folds a member whose extra %s pixel moved its corner onto the drawing, not beside it',
+    (_, step) => {
+      // The member is the source's drawing with one pixel added outside one edge, which moves its
+      // corner. Written from the corner, the source would land a column or a row off the drawing and
+      // leave that pixel's column or row as a fringe; registered, it lands on the drawing and the
+      // extra pixel is cleared.
+      const drawing = stripes();
+      const image = sheetOf(60, 30, [
+        { left: 4, top: 4, cells: drawing },
+        { left: 30, top: 6, cells: drawing },
+        { left: 30 + step.x, top: 6 + step.y, cells: [[INK]] },
+      ]);
+      expect(boxesOf(image).map((box) => [box.left, box.top, box.width, box.height])).toEqual([
+        [4, 4, 10, 10],
+        [30 + step.x, 6 + step.y, 10 - step.x, 10 - step.y],
+      ]);
+
+      const { image: snapped, folded } = fold(image, 3);
+
+      expect(folded).toBe(1);
+      const after = boxesOf(snapped);
+      expect(after.map((box) => [box.left, box.top, box.width, box.height])).toEqual([
+        [4, 4, 10, 10],
+        [30, 6, 10, 10],
+      ]);
+      expect(cellsOf(snapped, boxAt(after, 1))).toEqual(drawing.flat());
+    },
+  );
+
+  it('grows a member left, into clear space, where the source reaches further that way', () => {
+    // The mirror of the case above: the source is the one carrying the extra left pixel, so the
+    // member takes it, one column left of the member's own corner.
+    const drawing = stripes();
+    const image = sheetOf(60, 30, [
+      { left: 4, top: 4, cells: drawing },
+      { left: 3, top: 4, cells: [[INK]] },
+      { left: 30, top: 6, cells: drawing },
+    ]);
+
+    const { image: snapped, folded } = fold(image, 3);
+
+    expect(folded).toBe(1);
+    expect(boxesOf(snapped).map((box) => [box.left, box.top, box.width, box.height])).toEqual([
+      [3, 4, 11, 10],
+      [29, 6, 11, 10],
+    ]);
+  });
+
+  it('leaves a member alone rather than writing off the left edge of the sheet', () => {
+    // The same fold with the member flush against the sheet's left edge, so the column the source's
+    // extra pixel needs is not on the sheet.
+    const drawing = stripes();
+    const image = sheetOf(60, 30, [
+      { left: 30, top: 4, cells: drawing },
+      { left: 29, top: 4, cells: [[INK]] },
+      { left: 0, top: 16, cells: drawing },
+    ]);
+
+    const { image: snapped, folded } = fold(image, 3);
+
+    expect(folded).toBe(0);
+    expect(snapped.data).toEqual(image.data);
   });
 
   it('leaves a member alone rather than growing it into a neighbour', () => {

@@ -1,7 +1,9 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
 import { bordersArtwork } from './bordersArtwork.ts';
 import { reachesAny } from './boxClearance.ts';
-import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { alphaProfile } from './alphaProfile.ts';
+import { registerSprites } from './registerSprites.ts';
 import { sameBox } from './sameBox.ts';
 
 /**
@@ -19,9 +21,11 @@ import { sameBox } from './sameBox.ts';
  *
  * **Each member is cleared and redrawn rather than block-copied**, because the relation admits
  * sprites of different extents and the member's own silhouette has to go with the rest of it. The
- * region written is the box covering both — the member's box and the source's extent laid at the
- * member's top-left corner, which is the same registration the comparison used. Inside it the
- * source's pixels are written where the source reaches, and transparency where it does not.
+ * region written is the box covering both — the member's box and the source laid where it matches
+ * the member best, which is the registration the comparison judged the pair at (see
+ * `registerSprites`). So a member that gained a pixel on its left edge takes the source one column
+ * in from its corner, where the drawing is, rather than a column off. Inside the region the source's
+ * pixels are written where the source reaches, and transparency where it does not.
  *
  * **A member whose region would reach anything else on the sheet is left exactly as it was.** That
  * region can be larger than the box it replaces, so it can cross into a neighbour — and overwriting
@@ -62,28 +66,45 @@ export function snapDuplicates(
 
   for (const group of groups) {
     const { source } = group;
+    const sourceProfile = alphaProfile(image, source);
     // Every member but the source, the canonical included, in reading order.
     const members = [group.canonical, ...group.duplicates.map((member) => member.box)].filter(
       (box) => !sameBox(box, source),
     );
     for (const box of members) {
+      // Where the source's top-left corner lands on the sheet, and the box covering both.
+      const { shift } = registerSprites(
+        image,
+        { box, profile: alphaProfile(image, box) },
+        { box: source, profile: sourceProfile },
+      );
+      const placed = { left: box.left + shift.x, top: box.top + shift.y };
+      const left = Math.min(box.left, placed.left);
+      const top = Math.min(box.top, placed.top);
       const region: SpriteBox = {
-        left: box.left,
-        top: box.top,
-        width: Math.max(box.width, source.width),
-        height: Math.max(box.height, source.height),
+        left,
+        top,
+        width: Math.max(box.left + box.width, placed.left + source.width) - left,
+        height: Math.max(box.top + box.height, placed.top + source.height) - top,
         pixels: 0,
       };
-      if (region.left + region.width > image.width || region.top + region.height > image.height) continue;
+      if (left < 0 || top < 0 || left + region.width > image.width || top + region.height > image.height) {
+        continue;
+      }
       if (bordersArtwork(image, region)) continue;
       if (reachesAny(region, boxes, box, gap) || reachesAny(region, written, null, gap)) continue;
 
-      for (let row = 0; row < region.height; row += 1) {
-        const to = pixelOffset(image.width, region.left, region.top + row);
-        const from = row < source.height ? pixelOffset(image.width, source.left, source.top + row) : -1;
-        for (let column = 0; column < region.width; column += 1) {
-          const at = to + column * CHANNELS_PER_PIXEL;
-          if (from < 0 || column >= source.width) {
+      for (let row = region.top; row < region.top + region.height; row += 1) {
+        const sourceRow = row - placed.top;
+        for (let column = region.left; column < region.left + region.width; column += 1) {
+          const at = pixelOffset(image.width, column, row);
+          const sourceColumn = column - placed.left;
+          if (
+            sourceRow < 0 ||
+            sourceRow >= source.height ||
+            sourceColumn < 0 ||
+            sourceColumn >= source.width
+          ) {
             // Past what the source covers: the member's own artwork is cleared rather than left,
             // or the fold would leave a fringe of the drawing it was meant to replace.
             data[at] = 0;
@@ -92,7 +113,7 @@ export function snapDuplicates(
             data[at + 3] = FULLY_TRANSPARENT;
             continue;
           }
-          const read = from + column * CHANNELS_PER_PIXEL;
+          const read = pixelOffset(image.width, source.left + sourceColumn, source.top + sourceRow);
           data[at] = image.data[read] ?? 0;
           data[at + 1] = image.data[read + 1] ?? 0;
           data[at + 2] = image.data[read + 2] ?? 0;

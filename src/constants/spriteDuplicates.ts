@@ -17,7 +17,7 @@ export const DUPLICATE_GUIDANCE = {
    * nothing — a reader who has just raised the tolerance and seen this wants to know the sheet is
    * clean, not that the control is broken.
    */
-  none: 'Every sprite on this sheet is its own drawing at the tolerance in force, so there is nothing to fold. Each pair is laid over the other by its top-left corner and compared cell by cell, so where two drawings differ in size the cells only one of them covers count against the pair — which is what keeps a large sprite and a small one apart, and what lets a silhouette that gained a pixel at one edge still match the frame it came from. Raise the tolerance if two sprites you can see are the same pose are not being grouped.',
+  none: 'Every sprite on this sheet is its own drawing at the tolerance in force, so there is nothing to fold. Each pair is compared cell by cell, laid over the other where the two match best near their top-left corners. Where two drawings differ in size, the cells only one of them covers count against the pair — which is what keeps a large sprite and a small one apart, and what lets a silhouette that gained a pixel on any edge still match the frame it came from. Raise the tolerance if two sprites you can see are the same pose are not being grouped.',
 
   /**
    * Groups were found and nothing has been done about them, which is the ordinary reading state.

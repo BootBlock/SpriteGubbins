@@ -1,4 +1,4 @@
-import type { SpriteBox } from '../types/quantiser.ts';
+import type { PixelShift, SpriteBox } from '../types/quantiser.ts';
 import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, packedColorAt, pixelOffset } from './imageData.ts';
 import type { MutableOklab } from './oklab.ts';
 import { srgbToOklabInto } from './oklab.ts';
@@ -129,11 +129,13 @@ export function sameSprite(image: ImageData, left: SpriteBox | undefined, right:
 }
 
 /**
- * The mean per-cell distance between two sprites, or `Infinity` once it is known to pass `limit`.
+ * The mean per-cell distance between two sprites laid over one another at `shift`, or `Infinity`
+ * once it is known to pass `limit`.
  *
- * The two are laid over one another by their top-left corners and read across the box that covers
- * both — see the module docblock for why the bounding box is the registration, and why the cells
- * only one of them covers count as a loss rather than being left out.
+ * `shift` is where `right`'s top-left corner sits relative to `left`'s, and the two are read across
+ * the box that covers both at that offset. Which offset to ask for is `registerSprites`'s question,
+ * not this one's: the corners are only where the search starts, because keying moves them. The
+ * cells only one sprite covers count as a loss rather than being left out — see `duplicateSprites`.
  *
  * Mean rather than worst, for the reason `differenceMap` takes the mean over a cell's source pixels:
  * the question is how well one sprite *stands for* the other, and a single stray pixel — a rivet the
@@ -149,8 +151,8 @@ export function sameSprite(image: ImageData, left: SpriteBox | undefined, right:
  * The running sum only grows and the divisor can never exceed the union box's cell count, so a sum
  * already past `limit × those cells` means the final mean is past `limit` whatever the rest of the
  * sprites hold. A pair that is not a duplicate is usually rejected within the first few rows, and at
- * a limit of `0` it is rejected at the first cell that differs. The medoid in `groupMedoid` needs
- * every distance in full, and leaves `limit` at its default.
+ * a limit of `0` it is rejected at the first cell that differs. The registration search leans on it
+ * too, handing each candidate after the first the best mean so far as its limit.
  *
  * **The box's cell count is the only sound bound available here**, and the tempting tighter one is
  * wrong: `SpriteBox.pixels` counts the opaque pixels of the *connected region*, not of the box that
@@ -165,15 +167,16 @@ export function sameSprite(image: ImageData, left: SpriteBox | undefined, right:
  */
 export function spriteDistance(
   image: ImageData,
-  left: SpriteBox | undefined,
-  right: SpriteBox | undefined,
+  left: SpriteBox,
+  right: SpriteBox,
+  shift: PixelShift,
   limit = Infinity,
 ): number {
-  if (left === undefined || right === undefined) return Infinity;
-
   const { data } = image;
-  const width = Math.max(left.width, right.width);
-  const height = Math.max(left.height, right.height);
+  // The union box, in a frame whose origin is `left`'s top-left corner.
+  const first = { x: Math.min(0, shift.x), y: Math.min(0, shift.y) };
+  const width = Math.max(left.width, shift.x + right.width) - first.x;
+  const height = Math.max(left.height, shift.y + right.height) - first.y;
   const budget = limit * width * height;
   const leftColor: MutableOklab = { L: 0, a: 0, b: 0 };
   const rightColor: MutableOklab = { L: 0, a: 0, b: 0 };
@@ -187,47 +190,94 @@ export function spriteDistance(
   let cachedRight = -1;
   let cachedDistance = 0;
 
-  for (let row = 0; row < height; row += 1) {
-    const leftRow = row < left.height;
-    const rightRow = row < right.height;
-    for (let column = 0; column < width; column += 1) {
-      // `-1` is off the end of one sprite, which is transparent on that side — the cells the union
-      // box adds. Never an out-of-bounds read: every offset built here is inside the sprite that
-      // owns it, and the sprite is inside the sheet.
-      const from =
-        leftRow && column < left.width ? pixelOffset(image.width, left.left + column, left.top + row) : -1;
-      const to =
-        rightRow && column < right.width
-          ? pixelOffset(image.width, right.left + column, right.top + row)
-          : -1;
+  for (const [top, bottom, start, end] of walkOrder(first, width, height, left, right, shift)) {
+    for (let row = top; row < bottom; row += 1) {
+      const leftRow = row >= 0 && row < left.height;
+      const rightRow = row >= shift.y && row < shift.y + right.height;
+      for (let column = start; column < end; column += 1) {
+        // `-1` is off the edge of one sprite, which is transparent on that side — the cells the union
+        // box adds. Never an out-of-bounds read: every offset built here is inside the sprite that
+        // owns it, and the sprite is inside the sheet.
+        const from =
+          leftRow && column >= 0 && column < left.width
+            ? pixelOffset(image.width, left.left + column, left.top + row)
+            : -1;
+        const to =
+          rightRow && column >= shift.x && column < shift.x + right.width
+            ? pixelOffset(image.width, right.left + column - shift.x, right.top + row - shift.y)
+            : -1;
 
-      // A cell no sprite covers is fully transparent on that side, and `CLEAR` is the packed value
-      // that says so — which is what lets the cache below key on colour alone.
-      const leftPacked = from < 0 ? CLEAR : visibleColorAt(data, from);
-      const rightPacked = to < 0 ? CLEAR : visibleColorAt(data, to);
-      // The equal-colour shortcut, which is the case that dominates a genuine duplicate — and which
-      // also disposes of every cell neither sprite covers, since both read `CLEAR`.
-      if (leftPacked === rightPacked) {
-        if (leftPacked !== CLEAR) counted += 1;
-        continue;
-      }
-      counted += 1;
+        // A cell no sprite covers is fully transparent on that side, and `CLEAR` is the packed value
+        // that says so — which is what lets the cache below key on colour alone.
+        const leftPacked = from < 0 ? CLEAR : visibleColorAt(data, from);
+        const rightPacked = to < 0 ? CLEAR : visibleColorAt(data, to);
+        // The equal-colour shortcut, which is the case that dominates a genuine duplicate — and which
+        // also disposes of every cell neither sprite covers, since both read `CLEAR`.
+        if (leftPacked === rightPacked) {
+          if (leftPacked !== CLEAR) counted += 1;
+          continue;
+        }
+        counted += 1;
 
-      if (leftPacked !== cachedLeft || rightPacked !== cachedRight) {
-        const leftAlpha = leftPacked & 0xff;
-        const rightAlpha = rightPacked & 0xff;
-        if (from >= 0) srgbToOklabInto(leftColor, data[from] ?? 0, data[from + 1] ?? 0, data[from + 2] ?? 0);
-        if (to >= 0) srgbToOklabInto(rightColor, data[to] ?? 0, data[to + 1] ?? 0, data[to + 2] ?? 0);
-        cachedDistance = pixelDistance(leftColor, leftAlpha, rightColor, rightAlpha);
-        cachedLeft = leftPacked;
-        cachedRight = rightPacked;
+        if (leftPacked !== cachedLeft || rightPacked !== cachedRight) {
+          const leftAlpha = leftPacked & 0xff;
+          const rightAlpha = rightPacked & 0xff;
+          if (from >= 0) {
+            srgbToOklabInto(leftColor, data[from] ?? 0, data[from + 1] ?? 0, data[from + 2] ?? 0);
+          }
+          if (to >= 0) srgbToOklabInto(rightColor, data[to] ?? 0, data[to + 1] ?? 0, data[to + 2] ?? 0);
+          cachedDistance = pixelDistance(leftColor, leftAlpha, rightColor, rightAlpha);
+          cachedLeft = leftPacked;
+          cachedRight = rightPacked;
+        }
+        sum += cachedDistance;
+        if (sum > budget) return Infinity;
       }
-      sum += cachedDistance;
-      if (sum > budget) return Infinity;
     }
   }
 
   if (counted === 0) return Infinity;
   const mean = sum / counted;
   return mean > limit ? Infinity : mean;
+}
+
+/**
+ * The union box as the rectangles {@link spriteDistance} walks, the cells only one sprite covers
+ * first: the rows above and below where the two overlap, then the columns either side of it, then
+ * the overlap itself. Each is `[top, bottom, start, end]`, half-open, in the frame whose origin is
+ * `left`'s top-left corner.
+ *
+ * **The order is the early exit's, and it changes no answer.** A cell only one sprite covers is
+ * transparent on the other side, so wherever it is drawn it scores the full 255 — and those cells
+ * are what separate an offset that does not match from one that does. Walked first, they carry the
+ * running sum past the budget within a row or two on an offset that cannot win, where walked in
+ * reading order they are spread one or two to a row and the sum reaches the budget halfway down the
+ * sprite. The cells summed are the same in any order, so the mean returned differs by rounding in
+ * its last bits at most, and the exit stays exact for the reason `spriteDistance` gives.
+ */
+function walkOrder(
+  first: PixelShift,
+  width: number,
+  height: number,
+  left: SpriteBox,
+  right: SpriteBox,
+  shift: PixelShift,
+): readonly (readonly [number, number, number, number])[] {
+  const top = first.y;
+  const bottom = first.y + height;
+  const start = first.x;
+  const end = first.x + width;
+  const overlapTop = Math.max(0, shift.y);
+  const overlapBottom = Math.min(left.height, shift.y + right.height);
+  const overlapStart = Math.max(0, shift.x);
+  const overlapEnd = Math.min(left.width, shift.x + right.width);
+  // Two sprites laid clear of one another share no cell, so the whole box is one side's alone.
+  if (overlapTop >= overlapBottom || overlapStart >= overlapEnd) return [[top, bottom, start, end]];
+  return [
+    [top, overlapTop, start, end],
+    [overlapBottom, bottom, start, end],
+    [overlapTop, overlapBottom, start, overlapStart],
+    [overlapTop, overlapBottom, overlapEnd, end],
+    [overlapTop, overlapBottom, overlapStart, overlapEnd],
+  ];
 }

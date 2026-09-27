@@ -907,6 +907,45 @@ export interface CoverageMask {
 }
 
 /**
+ * A sprite's coverage summed along each row and each column, and how many of its cells show at all.
+ *
+ * What `registerSprites` bounds an offset with before it pays to walk one. `pixelDistance` never
+ * scores a cell below the difference between its two alphas, so the sum `spriteDistance` builds is
+ * at least the sum of those differences — and summing a row's differences can only lose to the
+ * difference of the row's sums. So two profiles laid a few rows apart say how far apart the sprites
+ * must be at *every* horizontal offset with that vertical one, and the columns say the same the other
+ * way, each from a handful of numbers rather than a walk over every cell. See `alphaProfile`.
+ */
+export interface AlphaProfile {
+  /** The alpha summed across each row of the box, top to bottom. */
+  readonly rows: Int32Array;
+  /** The alpha summed down each column of the box, left to right. */
+  readonly columns: Int32Array;
+  /** The cells that are not fully transparent — the most any comparison can count on this side. */
+  readonly visible: number;
+}
+
+/**
+ * A sprite and its {@link AlphaProfile}, read once and carried together.
+ *
+ * The duplicate reading compares every pair of sprites, so a profile taken per comparison would be
+ * read off the sheet once for every other sprite. Carrying it beside the box is what makes it once
+ * per sprite.
+ */
+export interface ProfiledSprite {
+  readonly box: SpriteBox;
+  readonly profile: AlphaProfile;
+}
+
+/** Where one sprite matches another best, and how well it matches there. See `registerSprites`. */
+export interface SpriteRegistration {
+  /** The mean per-cell distance at {@link shift}, or `Infinity` where no offset comes under the limit. */
+  readonly distance: number;
+  /** Where the second sprite's top-left corner sits relative to the first's, in drawn pixels. */
+  readonly shift: PixelShift;
+}
+
+/**
  * What the sheet broke into, or why it did not break into anything a reader can act on.
  *
  * Three outcomes rather than a list with a flag beside it, because they are not one answer at

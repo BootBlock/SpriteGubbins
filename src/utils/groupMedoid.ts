@@ -1,5 +1,5 @@
-import type { SpriteBox } from '../types/quantiser.ts';
-import { spriteDistance } from './spriteEquality.ts';
+import type { ProfiledSprite } from '../types/quantiser.ts';
+import { registerSprites } from './registerSprites.ts';
 
 /**
  * The member of a duplicate group that every other member is folded onto: its medoid, the member
@@ -17,7 +17,7 @@ import { spriteDistance } from './spriteEquality.ts';
  * that need not share an extent, and it has no answer at all where every copy came back a shade
  * apart — every cell is then a tie, which is the near-duplicate case the tolerance exists for. The
  * medoid is always artwork the sheet already holds, measured in the same distance the group was
- * formed by.
+ * formed by, at the same registration — see `registerSprites`.
  *
  * **Ties go to the earliest member**, so a group of two, which has no majority either way, folds
  * onto its first sprite as it always did, and two runs at the same settings agree.
@@ -29,13 +29,13 @@ import { spriteDistance } from './spriteEquality.ts';
  * `SCATTERED_SPRITE_CEILING` that is the same order of work as the grouping walk at its dearest
  * rung, which `duplicateSprites` records.
  *
- * Pure. `members` are indices into `boxes` in reading order, and `identical` maps each index to the
+ * Pure. `members` are indices into `sprites` in reading order, and `identical` maps each index to the
  * first index of its byte-identical class, as `duplicateSprites` builds it. Returns an index from
  * `members`.
  */
 export function groupMedoid(
   image: ImageData,
-  boxes: readonly SpriteBox[],
+  sprites: readonly ProfiledSprite[],
   members: readonly number[],
   identical: readonly number[],
 ): number {
@@ -53,7 +53,7 @@ export function groupMedoid(
     for (let step = position + 1; step < classes.length; step += 1) {
       const right = classes[step];
       if (right === undefined) continue;
-      const distance = spriteDistance(image, boxes[left], boxes[right]);
+      const { distance } = registerSprites(image, sprites[left], sprites[right]);
       totals[position] = (totals[position] ?? 0) + distance * (weight.get(right) ?? 0);
       totals[step] = (totals[step] ?? 0) + distance * (weight.get(left) ?? 0);
     }
