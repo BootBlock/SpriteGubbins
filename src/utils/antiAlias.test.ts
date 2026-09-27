@@ -78,7 +78,7 @@ describe('antiAlias', () => {
   });
 
   it('hands the sheet straight back where nothing was claimed', () => {
-    // By reference, not by value: `quantiseImage` compares identities to decide whether the
+    // By reference, not by value: `settleSprites` compares identities to decide whether the
     // segmentation has to be re-read, and a copy would cost a linear pass over the whole sheet on
     // every transform a reader never asked to soften.
     const flat = imageFrom(12, 6, () => PAPER);
