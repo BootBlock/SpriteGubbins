@@ -3,8 +3,8 @@
 # Sprite Gubbins pre-commit hook. Guards the three things that matter most on a PUBLIC repo,
 # scoped to the STAGED changes so it stays fast:
 #   (a) a credential-shaped scan of the staged diff (no secrets, ever — see CLAUDE.md);
-#   (b) Prettier formatting on staged code files;
-#   (c) ESLint on staged JS/TS/TSX files.
+#   (b) Prettier formatting and ESLint, both judged on the staged copy of each file rather than
+#       the working tree, so a partly staged file is judged on what the commit carries.
 # Any failure aborts the commit. In a genuine emergency, bypass with `git commit --no-verify`.
 #
 # Auto-wired by the "prepare" npm script (sets core.hooksPath = .githooks) on `npm install`.
@@ -29,13 +29,6 @@ fi
 note() { printf '%s\n' "$*" >&2; }
 err() { printf '%spre-commit: %s%s\n' "$red" "$*" "$reset" >&2; }
 
-# Staged files, everything but a deletion — a deletion can't introduce new content. Stated as an
-# exclusion (git's lower case) rather than the allow-list `ACM` this used to be, for the reason
-# `scripts/secret-scan.ts` gives: an allow-list omits whatever is not in it, and this one omitted
-# `R`. Rename detection is on by default, so a `git mv` and an edit in one commit made the whole
-# file a rename — and it was then checked by neither Prettier nor ESLint below.
-staged="$(git diff --cached --name-only --diff-filter=d)"
-
 # --- (a) Secret scan of the staged diff ------------------------------------------------
 # The credential patterns live in one place — `scripts/secretScan.ts`, which `secret-scan.ts` and
 # the CI job both call — so the hook and the publish gate cannot drift apart. The script scans the
@@ -47,25 +40,13 @@ if ! node scripts/secret-scan.ts --staged; then
   fail=1
 fi
 
-# --- (b) Prettier check on staged code files -------------------------------------------
-# Prettier honours .prettierignore, so pass the staged code files and let it skip the rest.
-prettier_files="$(printf '%s\n' "$staged" | grep -Ei '\.(m?[jt]sx?|cjs|css|json)$' || true)"
-if [ -n "$prettier_files" ]; then
-  if ! printf '%s\n' "$prettier_files" | xargs npx prettier --check; then
-    err 'Prettier found unformatted staged files — run `npm run format` (or `npx prettier --write <files>`).'
-    fail=1
-  fi
-fi
-
-# --- (c) ESLint on staged JS/TS/TSX files ----------------------------------------------
-# `--no-warn-ignored`: staged files under an ignore pattern (public/, dist/) are deliberately
-# not linted, and warning about each one on every commit is pure noise.
-eslint_files="$(printf '%s\n' "$staged" | grep -Ei '\.([jt]sx?|mjs|cjs)$' || true)"
-if [ -n "$eslint_files" ]; then
-  if ! printf '%s\n' "$eslint_files" | xargs npx eslint --no-warn-ignored; then
-    err 'ESLint failed on staged files — fix the reported problems (or `npm run lint:fix`).'
-    fail=1
-  fi
+# --- (b) Prettier and ESLint on the staged copy of each file ----------------------------
+# Both tools read the working tree when handed a path, so a file staged in part was judged on
+# content the commit does not carry (issue #448). `scripts/staged-check.ts` reads each file's blob
+# out of the index and gives that text to Prettier's and ESLint's APIs, and lets each tool decide
+# which staged files are its business, as `format:check` and `lint` do in CI.
+if ! node scripts/staged-check.ts; then
+  fail=1
 fi
 
 if [ "$fail" -ne 0 ]; then
