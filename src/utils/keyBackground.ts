@@ -94,10 +94,13 @@ export interface KeyedImage {
  * first has already marked. That is that half expiring rather than misbehaving — a tolerance that
  * loose is matching those blends directly — and the hue test carries the pass from there.
  *
- * **Keyed pixels are written `{0, 0, 0, 0}`, not their original RGB at zero alpha.** This is not
- * tidiness. `alignToGrid` resolves each cell to its modal *packed RGBA*, so transparent pixels that
- * kept different RGB values are still different colours to that vote — and collapsing the drifting
- * field into one value before the vote is taken is the entire reason keying runs first.
+ * **Keyed pixels are written `{0, 0, 0, 0}`, not their original RGB at zero alpha**, so the field
+ * leaves here as one value whatever the sheet carried under it. The cell readings count a clear
+ * pixel by its coverage alone, so they would not notice; the mesh would. `stepProfile` sums the
+ * difference across all four channels, so two clear neighbours that kept different RGB are a step
+ * to it, and a field that kept the key's drift under zero alpha would hand the mesh the very steps
+ * keying first exists to take away. Keying runs first for the reason `quantiseImage`
+ * gives: a drifting field is a crowd of distinct opaque colours until this pass clears it.
  */
 export function keyBackground(image: ImageData, { color, tolerance }: BackgroundKeying): KeyedImage {
   const { width, height, data } = image;
@@ -155,7 +158,7 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
     }
 
     // Nothing is written for a keyed pixel: `createImage` zero-fills, which is exactly the canonical
-    // `{0, 0, 0, 0}` the modal vote downstream depends on.
+    // `{0, 0, 0, 0}` the mesh measurement downstream depends on — see the docblock.
     if (alphaAt(data, offset) !== FULLY_TRANSPARENT) keyedPixels += 1;
   }
 

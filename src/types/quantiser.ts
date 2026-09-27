@@ -386,8 +386,9 @@ export const VOTE_METHODS = ['DOMINANT', 'INK_WEIGHTED', 'K_CENTROID'] as const;
 /**
  * One of the three cell readings.
  *
- * `DOMINANT` selects — the modal colour, with the line rescue — and never invents a colour, so it
- * votes over reduced colours. The other two *average*, deliberately: `INK_WEIGHTED` darkens a
+ * `DOMINANT` selects — the modal colour of the cell's artwork, with the line rescue — and never
+ * invents a colour, so it votes over reduced colours. All three make a cell clear only when more
+ * than half of it is. The other two *average*, deliberately: `INK_WEIGHTED` darkens a
  * cell's body toward the line crossing it, and `K_CENTROID` takes the centre of the cell's
  * dominant colour cluster. An average has to see the unreduced colours to have anything to blend,
  * so for those the reduction runs after the vote — the order is `quantiseImage`'s to hold.

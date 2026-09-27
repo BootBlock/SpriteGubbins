@@ -108,7 +108,9 @@ import { buildPalette } from './wuQuantiser.ts';
  * *distinct* colour polling one vote — so a cell holding 62 never-repeating magentas and 2 pixels
  * of one flat sprite colour resolves entirely to the **sprite**, which dilates the artwork into its
  * own background by up to a whole cell on every side. Keying first collapses that field to one
- * value before either the palette or the vote sees it, and the mesh is measured after it for the
+ * value before either the palette or the vote sees it — and every reading then settles a cell's
+ * coverage ahead of its colour, so the cleared field cannot fail the other way and erode the art by
+ * outvoting a cell's shades one at a time. The mesh is measured after keying for the
  * same reason: a keyed field's drifting colours are steps the profile would otherwise count, and
  * collapsing them leaves the art's own boundaries as the only mass worth weighing.
  *

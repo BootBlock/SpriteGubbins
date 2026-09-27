@@ -1203,7 +1203,7 @@ export const SCATTERED_SPRITE_CEILING = 512;
  * a weapon or a cloak extending sixteen drawn pixels past what the other side holds, which is well
  * past anything a sprite drawn at 16 to 64 pixels a side can carry. The reference sheet
  * (`test_sprites/armour.png`, 1254², grid 6, keyed on `#FF00FF` at `DEFAULT_KEY_TOLERANCE`)
- * separates into fifteen pieces measuring 24 to 34 drawn pixels across, where the quarter-width
+ * separates into fifteen pieces measuring 24 to 35 drawn pixels across, where the quarter-width
  * bound below is the binding one on all but the five widest of them.
  *
  * It is a **bound on cost as much as on the claim**: the sweep is `(4 × reach + 1)` scorings of a
@@ -1945,8 +1945,8 @@ export const KEY_TINT_SHARE = 0.1;
  * four in, against about 0.01% from five in onward — so four rings of spill, not three, and on
  * several other sheets five. With the despill at 5 none of the reference sheet's five rings carries
  * the tint, and at a grid of 6 the key-tinted pixels on the outermost ring of the result fall to none
- * from 10 with no reduction and from 4 under a 64-colour budget. The terrain sheet,
- * `three-quarter-view_tiles1.png`, is the widest case: 300 of the 2,339 pixels on its result's
+ * from 40 with no reduction and from 18 under a 64-colour budget. The terrain sheet,
+ * `three-quarter-view_tiles1.png`, is the widest case: 365 of the 2,361 pixels on its result's
  * outermost ring were key-tinted under that budget, and none are.
  *
  * **5 because the guard needs the ring past the band to hold artwork and no spill.** A sheet's
@@ -2045,9 +2045,9 @@ export const MAX_IMAGE_PIXELS = MAX_IMAGE_EDGE * MAX_IMAGE_EDGE;
  *
  * **The quantity divided out is the sprites' combined bounding-box area**, which is what
  * `affordableReach` sums and is not the same as the sheet's drawn pixels: the reference sheet's
- * fifteen boxes total **17,391** where the opaque pixels inside them number 13,875, twenty per cent
+ * fifteen boxes total **17,851** where the opaque pixels inside them number 14,589, eighteen per cent
  * fewer. Both are in the coordinates of the reduced result the pass reads rather than the source
- * sheet's. So the budget affords 964 sweeps against the 33 the full reach costs — 29 times over,
+ * sheet's. So the budget affords 939 sweeps against the 33 the full reach costs — 28 times over,
  * which is why **this** bound narrows that sheet by nothing, and the quarter-width cap in `bestAxis`
  * is what actually narrows ten of its fifteen. A figure of “18,073 drawn pixels” stood here and
  * reproduced under none of fifteen readings of the conditions its neighbour states (issue #237);
@@ -2311,8 +2311,8 @@ export const QUANTISE_TOOLTIPS = {
     'It is for a sheet that arrives at its own pixel scale, which keeps whatever soft outline it was drawn with. A low setting keeps most of the fringe and grows the silhouette; a high one tightens it; `50%` sends each pixel whichever way it was mostly drawn.\n\n' +
     'Only transparency is read, so colours inside a sprite are untouched. Off leaves the sheet as it arrived, for a sheet whose soft outline is the finished artwork.',
   vote:
-    'How each patch of the sheet is read down to its one pixel. It changes only the quantised result.\n\n' +
-    '- `DOMINANT` takes the patch’s most common colour and never invents one, so it is the standard choice. With a colour reduction in force, it keeps a near-black outline or bright trim even as a minority.\n' +
+    'How each patch of the sheet is read down to its one pixel. It changes only the quantised result, and under all three a patch comes back transparent only when most of it is.\n\n' +
+    '- `DOMINANT` takes the most common colour in the patch’s artwork and never invents one, so it is the standard choice. With a colour reduction in force, it keeps a near-black outline or bright trim even as a minority.\n' +
     '- `INK_WEIGHTED` darkens each patch toward the line crossing it: the strongest choice where contours break up, at the cost of blending colours the image never contained.\n' +
     '- `K_CENTROID` averages only the patch’s dominant colour cluster, which keeps hue smooth but lets a thin line lose its patch.\n\n' +
     'A dither switches off the outline rescue of `DOMINANT`, because it holds the colour reduction back to the end.',

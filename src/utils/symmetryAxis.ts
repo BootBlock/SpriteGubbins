@@ -51,7 +51,7 @@ import { pixelDistance } from './pixelDistance.ts';
  * pixels either way is a real correction on a sprite 32 across and is four tenths of one per cent on
  * a sprite 2048 across, where the appendage that moved the centre would have to be a thousand pixels
  * long for the sweep to reach it. So the sheets the budget narrows are the sheets the extra
- * candidates were never going to help, and the reference sheet — fifteen sprites at 24 to 34 pixels
+ * candidates were never going to help, and the reference sheet — fifteen sprites at 24 to 35 pixels
  * across, keyed on `#FF00FF` at `DEFAULT_KEY_TOLERANCE` — is not narrowed at all.
  *
  * An axis genuinely further out than the reach comes back as a **low confidence about the centre**,
@@ -67,7 +67,7 @@ import { pixelDistance } from './pixelDistance.ts';
  *
  * **The bounds are what make it affordable, and there are two of them.** The sheet's own budget
  * gives {@link affordableReach} below, and the reference sheet does not come near it: its fifteen
- * boxes total 17,391 pixels against a budget that affords 964 sweeps where the full reach costs 33,
+ * boxes total 17,851 pixels against a budget that affords 939 sweeps where the full reach costs 33,
  * so the budget narrows this sheet's reach by nothing at all. What does narrow it is the
  * quarter-width cap in `bestAxis`, which binds on all but the five widest of those fifteen — see
  * {@link SYMMETRY_AXIS_SEARCH}, which states that and the widths it is measured against.
@@ -119,7 +119,7 @@ export function sheetSymmetry(
  * sprite that large has its axis anyway.
  *
  * **Exported for one reason**, which is the reason `SYMMETRY_SWEEP_BUDGET`'s docblock states a
- * figure at all: that figure — the reference sheet's fifteen boxes totalling 17,391 pixels, and the
+ * figure at all: that figure — the reference sheet's fifteen boxes totalling 17,851 pixels, and the
  * reach of eight it buys — is asserted in `tests/quantiser-figures-symmetry-pass.test.ts`, and a
  * suite that restated this arithmetic instead of calling it would pass with the divisor changed to the
  * sheet's drawn pixels, which is the mistake that docblock exists to name.

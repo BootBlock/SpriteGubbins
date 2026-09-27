@@ -43,10 +43,16 @@ import { lineAwareWinner } from './lineVote.ts';
  * representative of the cell means; where two colours tie on distance as well, the earlier in scan
  * order keeps the cell, so the result is deterministic on every input.
  *
- * **Every pixel under `COVERAGE_FLOOR` votes as one bucket, the keyed field's `{0, 0, 0, 0}`**,
- * whatever bytes it carries — a fully transparent pixel's leftover RGB and a faint pixel's rounding
- * noise alike. Counted by their bytes, each such value was a bucket of its own, so a cell that was
- * mostly field or faint fringe answered one of them at random rather than the field it nearly is.
+ * **Coverage is decided before colour, as the other two readings decide it.** A cell is clear —
+ * `{0, 0, 0, 0}`, the keyed field's value — only when more than half of it is under
+ * `COVERAGE_FLOOR`, and otherwise takes the modal colour of the pixels at or above it, the clear ones
+ * casting no vote. Voted as one more bucket, the clear pixels were a single colour against artwork
+ * split across several shades, so transparency won a cell on plurality even where most of it was
+ * art. On `test_sprites/armour.png` at grid 6, keyed on `#FF00FF` at `DEFAULT_KEY_TOLERANCE` with no
+ * reduction, that erased 622 cells more than half artwork, 272 of them at least three-quarters, and
+ * every one on a silhouette, where the outline is; now it erases none, and no mostly clear cell
+ * comes out drawn under either rule. Counting a clear pixel by its bytes would be worse still — a
+ * fully transparent pixel's leftover RGB and a faint pixel's rounding noise would each be a colour.
  *
  * **Idempotent over the same mesh**: after this each cell is already one colour, so running it
  * again changes nothing — the clearest single check that the step did what it claims, and the
@@ -91,7 +97,8 @@ export function alignToGrid(image: ImageData, mesh: GridMesh, lineAware = false)
 }
 
 /**
- * The most frequent colour in one cell as a packed value — ties resolved towards the cell's centre,
+ * One cell's colour as a packed value: `0` where more than half the cell is clear, and otherwise
+ * the most frequent colour among the pixels that are not — ties resolved towards the cell's centre,
  * then by scan order.
  *
  * Takes the two tallies it counts into rather than making them, and leaves both empty for the next
@@ -117,17 +124,25 @@ function modalColor(
   distances.clear();
   const centreX = (left + right - 1) / 2;
   const centreY = (top + bottom - 1) / 2;
+  let clear = 0;
 
   for (let y = top; y < bottom; y += 1) {
     for (let x = left; x < right; x += 1) {
       const offset = pixelOffset(image.width, x, y);
-      const key = alphaAt(image.data, offset) < COVERAGE_FLOOR ? 0 : packedColorAt(image.data, offset);
+      if (alphaAt(image.data, offset) < COVERAGE_FLOOR) {
+        clear += 1;
+        continue;
+      }
+      const key = packedColorAt(image.data, offset);
       counts.set(key, (counts.get(key) ?? 0) + 1);
       const distance = (x - centreX) * (x - centreX) + (y - centreY) * (y - centreY);
       const nearest = distances.get(key);
       if (nearest === undefined || distance < nearest) distances.set(key, distance);
     }
   }
+
+  // Exactly half clear keeps the art, the same boundary `inkWeightedCells` and `kCentroidCells` draw.
+  if (clear * 2 > (right - left) * (bottom - top)) return 0;
 
   let winner = 0;
   let winningCount = 0;
