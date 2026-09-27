@@ -37,8 +37,8 @@ import { TUNE_STAGES } from './tuneStages.ts';
  * **It goes round the stages until a round moves nothing**, up to `TUNE_ROUNDS` times. One pass down
  * a coordinate descent settles each dial against the ones ahead of it in the pipeline and against the
  * *opening positions* of the ones behind it, which is only half an answer; a second round re-asks
- * every one of those questions from where the first left everything. Measured over the corpus, one
- * sheet stops at the fourth round, five at the third and two at the second — `TUNE_ROUNDS` carries
+ * every one of those questions from where the first left everything. Measured over the corpus, five
+ * sheets stop at the third round and three at the second — `TUNE_ROUNDS` carries
  * that table.
  *
  * **A round that moves nothing is the only way it ends short of the cap, and the descent cannot
@@ -110,9 +110,10 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
         // **And its dials go back where the reader had them, here rather than at the end.** Rounds
         // are what make this necessary at all: a stage can sweep under one reading and then be
         // skipped because a later round moved off it, which leaves positions chosen under a reading
-        // the sweep has abandoned — measured on `test_sprites/three-quarter-view_tiles1.png` at a
-        // grid of 5, the cleanup-pass count is swept while the fill cleanup is on and set aside once
-        // a later round turns the cleanup off. A dial left where that
+        // the sweep has abandoned — the line strength moved under `INK_WEIGHTED` and left behind
+        // once a later round chooses `DOMINANT`, which `auto-tune-stage-counts.test.ts` drives. No
+        // corpus sheet takes that path at the tab's opening dials today, and nothing about a sheet
+        // rules it out. A dial left where that
         // sweep put it reaches no pixel of the result, because each skip predicate is exactly the
         // pipeline's own gate; it reaches the *tab*, where it is a slider the reader never touched
         // sitting somewhere new, ready to take effect the moment they change the control that was

@@ -1,4 +1,4 @@
-import { TUNE_SCORE_MARGIN } from '../constants/autoTune.ts';
+import { TUNE_SCORE_MARGIN, TUNE_SCORE_TIE } from '../constants/autoTune.ts';
 import type { TuneReading } from '../types/autoTune.ts';
 
 /**
@@ -16,19 +16,23 @@ import type { TuneReading } from '../types/autoTune.ts';
  * cleanup goes from off to 20 for a gain the margin refuses. Kneedle asks the same of a knee before it declares one
  * (Satopää et al., 2011): a difference has to clear a stated threshold before it counts as one.
  *
- * Ties among the challengers are settled by the earliest, so the answer does not depend on how a
- * sort left them. Takes a non-empty list in the type rather than checking for one.
+ * **Scores within {@link TUNE_SCORE_TIE} of the best are a tie, and a tie goes to the more faithful
+ * candidate.** The price makes ties by construction — the two ends of the chord it is read from score
+ * alike — and two candidates that trade equally well are told apart by the likeness the reader asked
+ * the sweep to find, not by which way the platform rounded. That is also the chord construction's own
+ * answer: the knee is the most faithful trade on the chord. Candidates that tie on likeness as well
+ * spend the same colours, and go to the earliest, so the answer does not depend on how a sort left
+ * them. Takes a non-empty list in the type rather than checking for one.
  */
 export function chooseByPrice(readings: readonly [TuneReading, ...TuneReading[]], price: number): number {
   const score = (reading: TuneReading) => reading.fidelity - price * reading.colors;
-  const incumbent = score(readings[0]);
-  let best = 0;
-  let top = incumbent;
+  const top = Math.max(...readings.map(score));
+  let best = -1;
   readings.forEach((reading, index) => {
-    if (score(reading) > top) {
-      top = score(reading);
-      best = index;
-    }
+    if (score(reading) < top - TUNE_SCORE_TIE) return;
+    const held = readings[best];
+    if (held === undefined || reading.fidelity > held.fidelity + TUNE_SCORE_TIE) best = index;
   });
-  return top - incumbent > TUNE_SCORE_MARGIN ? best : 0;
+  const chosen = readings[best] ?? readings[0];
+  return score(chosen) - score(readings[0]) > TUNE_SCORE_MARGIN ? best : 0;
 }

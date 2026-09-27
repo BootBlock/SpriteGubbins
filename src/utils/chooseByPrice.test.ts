@@ -44,8 +44,34 @@ describe('chooseByPrice', () => {
     expect(chooseByPrice([at(32, 0.6), at(32, 0.9), at(64, 0.95)], 0)).toBe(2);
   });
 
-  it('settles a tie among the challengers on the earliest', () => {
+  it('settles a tie among challengers that spend alike on the earliest', () => {
     expect(chooseByPrice([at(16, 0.5), at(16, 0.9), at(16, 0.9)], 0.001)).toBe(1);
+  });
+
+  it('settles a tie the price makes on the more faithful candidate, however the scores rounded', () => {
+    // The two ends of the chord the price is read from score alike by construction: at the slope
+    // between them, 0.3 for 3000 colours and 0.75 for 4500 both score −0.6. Computed, the two
+    // scores differ in the last bits, and which way depends on the platform's `**` — so the same
+    // pair is nudged a few units in the last place each way, and the answer must not move.
+    const price = (0.75 - 0.3) / (4500 - 3000);
+    for (const nudge of [-4, -1, 0, 1, 4]) {
+      const cheap = at(3000, 0.3 + nudge * Number.EPSILON);
+      const faithful = at(4500, 0.75);
+      const opening = at(4000, 0.4);
+      const inOrder: [TuneReading, ...TuneReading[]] = [opening, cheap, faithful];
+      const reversed: [TuneReading, ...TuneReading[]] = [opening, faithful, cheap];
+      expect(inOrder[chooseByPrice(inOrder, price)]).toBe(faithful);
+      expect(reversed[chooseByPrice(reversed, price)]).toBe(faithful);
+    }
+  });
+
+  it('keeps a real difference far smaller than the margin a difference rather than a tie', () => {
+    // The smallest gap between two best candidates the corpus shows is 0.0000009; it is ranked on
+    // its score, and the more faithful candidate does not win it. At a thousandth a colour, 0.9 for
+    // 20 colours scores 0.88, and 0.9000991 for 20.1 scores 0.8799991.
+    const readings: [TuneReading, ...TuneReading[]] = [at(64, 0.5), at(20, 0.9), at(20.1, 0.9000991)];
+    expect(chooseByPrice(readings, 0.001)).toBe(1);
+    expect(chooseByPrice([at(64, 0.5), at(20.1, 0.9000991), at(20, 0.9)], 0.001)).toBe(2);
   });
 
   it('is not swayed by the order the challengers arrive in', () => {
