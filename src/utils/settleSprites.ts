@@ -147,10 +147,10 @@ function alignSprites(reduced: ImageData, settings: QuantiseSettings): AlignedSh
   // **The last of the three settles, and the only one that *moves* artwork rather than editing
   // it.** It asks a question about the rows the sprites are laid out in — does this run hold
   // still — so it needs the segmentation, and it needs the one taken over the sheet as it will
-  // actually be downloaded: every pass above may have changed a silhouette, and a strip is fitted to where the
-  // silhouettes are. That is also why it goes after the fold rather than before it. The fold copies
-  // whole sprites between positions, so reading strips first would fit a lattice to a layout the
-  // fold is about to change.
+  // actually be downloaded: every pass above may have changed a silhouette, and a strip is fitted
+  // to where the silhouettes are. That is also why it goes after the fold rather than before it.
+  // The fold copies whole sprites between positions, so reading strips first would fit a lattice
+  // to a layout the fold is about to change.
   //
   // `OFF` skips it outright rather than reading and discarding, which is how the outline expansion,
   // the reductions and the symmetry sweep are all guarded: it registers every frame of every row
