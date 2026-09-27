@@ -162,7 +162,7 @@ describe('the figures DESPILL_DEPTH states', () => {
     expect({ ring4: percent(ring4), ring5: percent(ring5), band, interior }).toEqual(CALIBRATION[name]);
   });
 
-  it('takes the reference sheet’s tinted outer ring at a grid of 6 to none, from 10 unreduced and 4 under 64 colours', () => {
+  it('takes the reference sheet’s tinted outer ring at a grid of 6 to none, from 40 unreduced and 18 under 64 colours', () => {
     despill.off = true;
     const before = [
       outerRingAtGrid6(sheet('armour.png'), null)[0],
@@ -174,18 +174,18 @@ describe('the figures DESPILL_DEPTH states', () => {
       outerRingAtGrid6(sheet('armour.png'), 64)[0],
     ];
 
-    expect(before).toEqual([10, 4]);
+    expect(before).toEqual([40, 18]);
     expect(after).toEqual([0, 0]);
   }, 300_000);
 
-  it('takes 300 of the terrain sheet’s 2,339 outer-ring pixels under 64 colours to none', () => {
+  it('takes 365 of the terrain sheet’s 2,361 outer-ring pixels under 64 colours to none', () => {
     const tiles = sheet('three-quarter-view_tiles1.png');
     despill.off = true;
     const before = outerRingAtGrid6(tiles, 64);
     despill.off = false;
     const after = outerRingAtGrid6(tiles, 64);
 
-    expect(before).toEqual([300, 2_339]);
+    expect(before).toEqual([365, 2_361]);
     expect(after[0]).toBe(0);
   }, 300_000);
 });

@@ -25,6 +25,9 @@ const NOISY = imageFrom(20, 15, (x, y) => ({
 /** The grid anchored at the image's own corner, which is what most of these tests exercise. */
 const CORNER: GridOffset = { x: 0, y: 0 };
 
+/** The keyed field's value, which is what a cell reads as when most of it is clear. */
+const CLEAR: Rgba = { r: 0, g: 0, b: 0, a: 0 };
+
 describe('alignToGrid', () => {
   it('is idempotent — aligning an aligned image changes nothing', () => {
     // The clearest single check that the step did what it claims: after it, every cell is one
@@ -90,16 +93,60 @@ describe('alignToGrid', () => {
     expect(readPixel(aligned.data, 0)).toEqual(majority);
   });
 
-  it('counts every pixel under the coverage floor as one keyed field, whatever its bytes', () => {
+  it('counts every pixel under the coverage floor as clear, whatever its bytes', () => {
     // Ten faint pixels, each carrying a different noise colour, beside six of one opaque red. By
-    // their bytes each was a bucket of one and the red won; as the field they are, they win.
+    // their bytes each was a bucket of one and the red won; as the clear pixels they are, they are
+    // most of the cell, and the cell is clear.
     const red: Rgba = { r: 200, g: 30, b: 30, a: 255 };
     const cell = imageFrom(4, 4, (x, y) => {
       const index = y * 4 + x;
       return index < 6 ? red : { r: index * 20, g: 0, b: 0, a: 10 };
     });
     const aligned = alignToGrid(cell, regularMesh(4, 4, 4, CORNER));
-    expect(readPixel(aligned.data, 0)).toEqual({ r: 0, g: 0, b: 0, a: 0 });
+    expect(readPixel(aligned.data, 0)).toEqual(CLEAR);
+  });
+
+  it('keeps a cell that is mostly artwork, however its artwork is split between shades', () => {
+    // The silhouette case. Fourteen clear pixels outnumber each of three reds (8, 7 and 7), and
+    // voted as one more bucket they won the cell outright — erasing an edge cell that is
+    // three-fifths art. Coverage is decided first, so the cell takes its commonest red.
+    const shades: Rgba[] = [
+      { r: 200, g: 30, b: 30, a: 255 },
+      { r: 170, g: 30, b: 30, a: 255 },
+      { r: 140, g: 30, b: 30, a: 255 },
+    ];
+    const cell = imageFrom(6, 6, (x, y) => {
+      const index = y * 6 + x;
+      if (index < 14) return CLEAR;
+      return shades[index < 22 ? 0 : index < 29 ? 1 : 2] ?? CLEAR;
+    });
+    const aligned = alignToGrid(cell, regularMesh(6, 6, 6, CORNER));
+    expect(readPixel(aligned.data, 0)).toEqual(shades[0]);
+  });
+
+  it('draws the coverage line where the other two readings draw it: exactly half clear stays art', () => {
+    const red: Rgba = { r: 200, g: 30, b: 30, a: 255 };
+    const halfClear = (clear: number) => imageFrom(4, 4, (x, y) => (y * 4 + x < clear ? CLEAR : red));
+    const mesh = regularMesh(4, 4, 4, CORNER);
+
+    expect(readPixel(alignToGrid(halfClear(8), mesh).data, 0)).toEqual(red);
+    expect(readPixel(alignToGrid(halfClear(9), mesh).data, 0)).toEqual(CLEAR);
+  });
+
+  it('lets the line rescue reach a keyed edge cell the clear pixels used to win', () => {
+    // Sixteen clear pixels outnumbered the fourteen of pale body, so the cell came out clear and the
+    // rescue, which never overrules a transparent winner, had nothing to act on: the outline and
+    // the fill went together. Now the body wins the cell and the six of ink are a line to keep.
+    const body: Rgba = { r: 220, g: 200, b: 160, a: 255 };
+    const ink: Rgba = { r: 20, g: 20, b: 30, a: 255 };
+    const cell = imageFrom(6, 6, (x, y) => {
+      const index = y * 6 + x;
+      return index < 16 ? CLEAR : index < 30 ? body : ink;
+    });
+    const mesh = regularMesh(6, 6, 6, CORNER);
+
+    expect(readPixel(alignToGrid(cell, mesh).data, 0)).toEqual(body);
+    expect(readPixel(alignToGrid(cell, mesh, true).data, 0)).toEqual(ink);
   });
 
   it('aligns the partial cells a sheet cuts short, rather than leaving a ragged edge', () => {
@@ -109,8 +156,8 @@ describe('alignToGrid', () => {
     // Asserted against the colour the strip should actually hold, not merely against itself: the
     // output buffer starts zero-filled, so "every pixel in the cell matches" is equally true of a
     // cell that was never written at all — which is precisely the implementation this test rules
-    // out. The strip's last cell is the one clear of the transparent columns, which vote as one
-    // field: 4 × 3 all-distinct opaque pixels, so its modal vote ties and the centre tie-break
+    // out. The strip's last cell is the one clear of the transparent columns: 4 × 3 all-distinct
+    // opaque pixels, so its modal vote ties and the centre tie-break
     // resolves it. The cell's centre is (17.5, 13), and nearest-then-earliest takes the pixel at
     // x = 17, y = 13.
     const expected = readPixel(NOISY.data, pixelOffset(NOISY.width, 17, 13));

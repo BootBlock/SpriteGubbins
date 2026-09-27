@@ -57,7 +57,7 @@ describe('the symmetry pass — the two figures its cost is argued from', () => 
    * The quantity `affordableReach` divides the budget by, summed the way that function sums it.
    *
    * Box area, not drawn pixels — and the reason this figure is asserted at all is that those two
-   * are twenty per cent apart on this sheet, so a docblock naming the wrong one of them sends a
+   * are eighteen per cent apart on this sheet, so a docblock naming the wrong one of them sends a
    * reader re-deriving the reach to a number the code never computes (issue #237). The reach
    * itself is taken from `affordableReach` rather than restated here, for the same reason: a
    * restatement passes with the real divisor swapped, which is precisely the change this is
@@ -66,14 +66,14 @@ describe('the symmetry pass — the two figures its cost is argued from', () => 
   const combinedBoxArea = (boxes: readonly SpriteBox[]): number =>
     boxes.reduce((total, box) => total + box.width * box.height, 0);
 
-  it('totals 17,391 pixels of box against 13,875 of artwork, and is not narrowed by the budget', () => {
+  it('totals 17,851 pixels of box against 14,589 of artwork, and is not narrowed by the budget', () => {
     const result = quantiseImage(sheet, AS_STATED());
     expect(result.sprites.kind).toBe('SEGMENTED');
     const boxes = result.sprites.kind === 'SEGMENTED' ? result.sprites.boxes : [];
     expect(boxes).toHaveLength(15);
 
     const area = combinedBoxArea(boxes);
-    expect(area).toBe(17_391);
+    expect(area).toBe(17_851);
 
     // The other quantity, pinned beside it because the docblock now says which is which and the
     // pair is the whole of that sentence's point.
@@ -81,9 +81,9 @@ describe('the symmetry pass — the two figures its cost is argued from', () => 
     for (let at = 3; at < result.image.data.length; at += CHANNELS_PER_PIXEL) {
       if ((result.image.data[at] ?? 0) > 0) opaque += 1;
     }
-    expect(opaque).toBe(13_875);
+    expect(opaque).toBe(14_589);
 
-    // The budget buys 964 sweeps where the full reach costs 33, which is what "the budget narrows
+    // The budget buys 939 sweeps where the full reach costs 33, which is what "the budget narrows
     // this sheet by nothing" means — and the reach is asked of the pass rather than recomputed
     // here, so a divisor changed inside `affordableReach` fails this rather than sailing past it.
     //
@@ -91,7 +91,7 @@ describe('the symmetry pass — the two figures its cost is argued from', () => 
     // of its own width, which binds on ten of these fifteen. That is `SYMMETRY_AXIS_SEARCH`'s
     // claim rather than this docblock's, and it is why nothing here states a total cost — a
     // `(4 × reach + 1) × area` product is the nominal figure the cap leaves unspent.
-    expect(Math.floor(SYMMETRY_SWEEP_BUDGET / area)).toBe(964);
+    expect(Math.floor(SYMMETRY_SWEEP_BUDGET / area)).toBe(939);
     expect(affordableReach(boxes)).toBe(SYMMETRY_AXIS_SEARCH);
 
     // The boxes are in the **reduced** result's coordinates, not the source sheet's, which is the
@@ -99,6 +99,6 @@ describe('the symmetry pass — the two figures its cost is argued from', () => 
     // the wall-clock ratio these docblocks used to carry. Pinned so that a pass moved back onto
     // the source sheet fails here rather than quietly making the docblocks' arithmetic 36× out.
     expect([result.image.width, result.image.height]).toEqual([209, 210]);
-    expect(area / (result.image.width * result.image.height)).toBeCloseTo(0.396, 3);
+    expect(area / (result.image.width * result.image.height)).toBeCloseTo(0.407, 3);
   }, 300_000);
 });

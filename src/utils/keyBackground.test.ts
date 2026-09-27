@@ -122,9 +122,8 @@ describe('keyBackground', () => {
   });
 
   it('writes a keyed pixel as {0, 0, 0, 0}, whatever colour it was', () => {
-    // Not tidiness. `alignToGrid` votes on the *packed RGBA*, so transparent pixels that kept their
-    // own RGB are still distinct colours to it — and collapsing the field to one value before that
-    // vote is the entire reason `quantiseImage` runs this first.
+    // The field leaves as one value whatever it covered, so no later reader has to ask what a clear
+    // pixel's leftover channels mean — see the paragraph on it in `keyBackground`'s docblock.
     const varied = imageFrom(8, 8, (x, y) => ({ r: 255 - x, g: y, b: 255 - y, a: 255 }));
 
     const result = keyBackground(varied, { color: MAGENTA, tolerance: 16 });

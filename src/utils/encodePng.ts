@@ -27,8 +27,8 @@ import { indexImage } from './pngPalette.ts';
  * default, comes to 15,673 bytes indexed. The same pixels written truecolour are a 39,047-byte
  * `IDAT`, so 39,104 bytes complete — two and a half times the file, for a sheet whose sixty-four
  * colours the format was not being told about. **The keying state is part of the measurement**: key
- * the same sheet on magenta at the default tolerance and the indexed file falls to 10,829 bytes and
- * the truecolour `IDAT` to 30,431, because the field the key removes is the largest flat region on
+ * the same sheet on magenta at the default tolerance and the indexed file falls to 11,111 bytes and
+ * the truecolour `IDAT` to 31,042, because the field the key removes is the largest flat region on
  * the page. `tests/quantiser-figures-encode-png.test.ts` re-derives all of these.
  */
 
@@ -61,7 +61,7 @@ export async function encodePng(image: ImageData): Promise<WrittenPng> {
   // difference filters cost four extra passes over the sheet to make the file *larger*. On the
   // reference sheet at a grid of 6 and a budget of 64, unkeyed, the `IDAT` is 15,412 bytes stored
   // and 17,422 adaptively filtered — 13.0% worse for five times the filtering work. Keyed on
-  // magenta it is 10,552 and 12,154, which is 15.2% worse: the penalty moves with the sheet, its
+  // magenta it is 10,834 and 12,451, which is 14.9% worse: the penalty moves with the sheet, its
   // direction does not.
   const filtered = filterScanlines({
     raw: indexed.indices,
