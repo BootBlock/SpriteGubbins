@@ -458,10 +458,10 @@ describe('design tokens', () => {
     // (`bg-slate-…`, `text-cyan-…`), between them emitted 43 stock-palette
     // utilities no component references.
     //
-    // The bytes are the small half. The real cost is that a component reaching for a stock slate
-    // instead of `bg-foundry-800` would have rendered correctly, which defeats the one mechanism
-    // that normally catches a non-token class: an unknown utility emits no CSS at all. Losing
-    // either directive brings that back silently.
+    // The stock palette itself is now cleared in the stylesheet, so those classes emit nothing
+    // wherever they are spelled; `stock-palette.test.ts` holds that. What these two directives still
+    // keep out is every other class the archived app and the Markdown spell, each of which would
+    // ship as a rule nothing wears.
     //
     // The suffixes above are elided on purpose: a full class name written in this comment is
     // itself a candidate, and this file is scanned.

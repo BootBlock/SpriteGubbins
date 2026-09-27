@@ -1,4 +1,4 @@
-import { relative } from 'node:path';
+import { relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { codeOnly } from '../scripts/codeOnly.ts';
@@ -49,6 +49,23 @@ const DOMAIN_COLOUR_PATHS = [
  */
 const HEX = /#[0-9a-fA-F]{3,8}\b/;
 
+/**
+ * Every CSS colour function that writes a colour down, rather than mixing two that already exist.
+ *
+ * The hex was the only spelling this suite looked for, so a component could write the same colour
+ * as `rgb()`, `hsl()` or `oklch()` and pass the gate — in an inline `style`, or inside the brackets
+ * of an arbitrary background value, both of which Tailwind and the browser render as written. `color-mix()`
+ * is not here: it blends colours that must already be named, and this app mixes tokens with it.
+ * `color()` is, since it takes a colour space and a triple like the rest.
+ *
+ * `src/index.css` is where these are written down, and is exempt below. The domain paths are exempt
+ * for the reason they are exempt from the hex.
+ */
+const COLOUR_FUNCTION = /\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/;
+
+/** The one file a colour value may be written in as a function of any kind. */
+const STYLESHEET = 'src/index.css';
+
 /** The file's path from the project root, in the spelling `DOMAIN_COLOUR_PATHS` is written in. */
 function sourcePath(file: string): string {
   return relative(process.cwd(), file).replaceAll('\\', '/');
@@ -58,11 +75,11 @@ function isExempt(path: string, allowed: string): boolean {
   return allowed.endsWith('/') ? path.startsWith(allowed) : path === allowed;
 }
 
-/** Every line of `file` outside a comment that carries a hex literal, as `path:line`. */
-function offendingLines(file: string): string[] {
+/** Every line of `file` outside a comment that `pattern` matches, as `path:line`. */
+function offendingLines(file: string, pattern: RegExp = HEX): string[] {
   return codeOnly(sourceText(file))
     .split('\n')
-    .map((line, index) => (HEX.test(line) ? `${sourcePath(file)}:${index + 1}` : ''))
+    .map((line, index) => (pattern.test(line) ? `${sourcePath(file)}:${index + 1}` : ''))
     .filter(Boolean);
 }
 
@@ -73,6 +90,13 @@ function offendingLines(file: string): string[] {
  */
 function isColocatedTest(file: string): boolean {
   return /\.test\.tsx?$/.test(file);
+}
+
+/** Every app source a raw colour could be painted from, with the tests and the domain files left out. */
+function appSources(): string[] {
+  return scannableSources()
+    .filter((file) => !isColocatedTest(file))
+    .filter((file) => !DOMAIN_COLOUR_PATHS.some((allowed) => isExempt(sourcePath(file), allowed)));
 }
 
 describe('raw colour literals', () => {
@@ -96,10 +120,17 @@ describe('raw colour literals', () => {
   });
 
   it('leaves no hex literal under src/ outside the domain-colour files', () => {
-    const offenders = scannableSources()
-      .filter((file) => !isColocatedTest(file))
-      .filter((file) => !DOMAIN_COLOUR_PATHS.some((allowed) => isExempt(sourcePath(file), allowed)))
-      .flatMap(offendingLines);
+    expect(appSources().flatMap((file) => offendingLines(file))).toStrictEqual([]);
+  });
+
+  it('leaves no colour function under src/ outside the stylesheet and the domain-colour files', () => {
+    // The stylesheet is exempt because it is full of these, so it has to still show them, or a
+    // `codeOnly` that blanked too much would pass this for the best possible reason.
+    expect(offendingLines(resolve(process.cwd(), STYLESHEET), COLOUR_FUNCTION)).not.toStrictEqual([]);
+
+    const offenders = appSources()
+      .filter((file) => sourcePath(file) !== STYLESHEET)
+      .flatMap((file) => offendingLines(file, COLOUR_FUNCTION));
 
     expect(offenders).toStrictEqual([]);
   });

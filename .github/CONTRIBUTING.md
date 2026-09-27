@@ -25,10 +25,12 @@ do instead.
 Sprite Gubbins is maintained by one person, [@BootBlock](https://github.com/BootBlock), and much of
 it is written by AI agents working to the conventions in `CLAUDE.md`. Three things follow from that:
 
-- **The conventions are unusually specific, and they are enforced by tests.** Colours come from
-  design tokens, durations come from a six-rung ladder, files stay under 150 lines of code, and
+- **The conventions are unusually specific, and they are enforced by tests and lint.** Colours,
+  easing curves and keyframes come from design tokens, with no hex, colour function or stock
+  palette class written anywhere else; durations come from a six-rung ladder; a component selects
+  the store fields it uses rather than the whole store; files stay under 150 lines of code; and
   guidance copy is checked for punctuation and for sentences shared between two controls. A change
-  that ignores one of these fails the build rather than review.
+  that ignores one of these fails the gate rather than review.
 - **Work lands through git worktrees on this machine**, one branch per task, verified in a browser
   before it is merged. An incoming branch does not fit that, and reviewing one properly costs more
   than describing the problem and having it done here.

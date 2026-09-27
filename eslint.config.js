@@ -11,6 +11,9 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
+// A call to one of the app's store hooks, which are all named `use…Store`.
+const STORE_HOOK = "CallExpression[callee.name=/^use[A-Z]\\w*Store$/][callee.name!='useSyncExternalStore']";
+
 export default tseslint.config(
   // Never lint build output, deps, or generated service-worker scaffolding. `public/` is *not*
   // here: its script ships to every visitor as written, and ESLint reads no image or icon beside it.
@@ -127,6 +130,24 @@ export default tseslint.config(
       // Accessibility linting at the recommended preset's severities (errors).
       ...jsxA11y.flatConfigs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // CLAUDE.md bans selecting a whole store. A store hook called with no selector, or with one
+      // that hands back its argument untouched, subscribes the component to every field, so it
+      // re-renders on every write anywhere in the store. React's own `useSyncExternalStore` shares
+      // the name's shape and is no store, so it is left out. `tests/whole-store-select.test.ts`
+      // lints both shapes against the rule this file resolves for `src/`.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: `${STORE_HOOK}[arguments.length=0]`,
+          message:
+            'Select the fields you use from a store; calling its hook with no selector subscribes to all of it.',
+        },
+        {
+          selector: `${STORE_HOOK} > ArrowFunctionExpression[body.type="Identifier"]`,
+          message:
+            'Select the fields you use from a store; a selector that returns its argument subscribes to all of it.',
+        },
+      ],
     },
   },
 
