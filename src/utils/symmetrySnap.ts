@@ -77,7 +77,7 @@ export function snapSymmetric(image: ImageData, readings: readonly SpriteSymmetr
 
   // A sprite can qualify and still have nothing to settle — every pair already agreeing is the
   // ordinary case at a high floor — and the copy above is then a copy of the sheet with no edit in
-  // it. Handing back the original instead is what lets `quantiseImage` tell that the sheet did not
+  // it. Handing back the original instead is what lets `settleSprites` tell that the sheet did not
   // move and reuse the segmentation it already took, rather than labelling the result a second time
   // to arrive at the same boxes.
   return settled === 0 ? image : snapped;

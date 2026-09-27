@@ -78,10 +78,10 @@ interface AlignedSheet extends Omit<SettledSheet, 'sprites'> {
 
 /** The symmetry settle, the duplicate fold and the frame alignment, with the readings each forces. */
 function alignSprites(reduced: ImageData, settings: QuantiseSettings): AlignedSheet {
-  // **The last passes of all, and the two of them run *over a reading* rather than over the sheet.**
-  // Both ask a question about the sprites the sheet holds — is this one symmetric, is this one a
-  // repeat of that one — so both need the segmentation to exist before they can ask anything, and
-  // both are taken here rather than earlier for that reason.
+  // **The first two passes here, and both run *over a reading* rather than over the sheet.** Both
+  // ask a question about the sprites the sheet holds — is this one symmetric, is this one a repeat
+  // of that one — so both need the segmentation to exist before they can ask anything, and both are
+  // taken here rather than earlier for that reason.
   //
   // The order between them is stated rather than incidental: **the symmetry settle runs first, and
   // the duplicate reading is then taken over what it produced.** A settle can bring two sprites that
@@ -144,10 +144,10 @@ function alignSprites(reduced: ImageData, settings: QuantiseSettings): AlignedSh
   const folded = fold !== null && snapped ? fold.image : settled;
   const foldedSprites = snapped ? spriteSegments(folded, settings.spriteGap) : settledSprites;
 
-  // **The last reading of all, and the only pass that *moves* artwork rather than editing it.** It
-  // asks a question about the rows the sprites are laid out in — does this run hold still — so it
-  // needs the segmentation, and it needs the one taken over the sheet as it will actually be
-  // downloaded: every pass above may have changed a silhouette, and a strip is fitted to where the
+  // **The last of the three settles, and the only one that *moves* artwork rather than editing
+  // it.** It asks a question about the rows the sprites are laid out in — does this run hold
+  // still — so it needs the segmentation, and it needs the one taken over the sheet as it will
+  // actually be downloaded: every pass above may have changed a silhouette, and a strip is fitted to where the
   // silhouettes are. That is also why it goes after the fold rather than before it. The fold copies
   // whole sprites between positions, so reading strips first would fit a lattice to a layout the
   // fold is about to change.
