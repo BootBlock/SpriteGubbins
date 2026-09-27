@@ -1,6 +1,6 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
 import { groupMedoid } from './groupMedoid.ts';
-import { profileSprites } from './alphaProfile.ts';
+import { profileSprites } from './profileSprites.ts';
 import { registerSprites } from './registerSprites.ts';
 import { sameSprite, spriteHash } from './spriteEquality.ts';
 import { disjointSet } from './unionFind.ts';
@@ -152,9 +152,10 @@ export function duplicateSprites(
   // **At that ceiling the pass costs seconds.** Built to the ceiling — 512 sprites of 20 × 20 drawn
   // pixels filled with per-channel noise, so no pair is byte-identical and the hash pass collapses
   // none of them — this walk's cost climbs steadily with the dial and then falls off its last rung.
-  // Against its peak around 21 it is roughly **a quarter at tolerance 6 and a half at 12**, and about
-  // **half again at the top rung**. The floor, where a pair is rejected at its first differing cell,
-  // is a sixtieth of the peak, and most of what it costs is reading the profiles and the bounds.
+  // Against its peak around 21 it is roughly **a quarter at tolerance 6 and a half at 12**, and
+  // about **half the peak at the top rung**. The floor, where a pair is rejected at its first
+  // differing cell, is a sixtieth of the peak, and most of what it costs there is reading the
+  // profiles and the bounds.
   //
   // **The walk is cheaper at the top rung than at the peak, and the reason is its own machinery.**
   // The expensive case is a pair close enough to be walked a long way before its running sum passes
@@ -166,17 +167,19 @@ export function duplicateSprites(
   // costs at 22.
   //
   // **The whole pass is dearest at the top rung all the same, because of the medoid.** That group of
-  // 488 holds no two byte-identical members, so `groupMedoid` measures every pair of them in full,
-  // with no budget to abandon at: nearly twice as much work as the walk at its peak, which puts the
+  // 488 holds no two byte-identical members, so `groupMedoid` measures every pair of them with no
+  // tolerance to abandon at: each pair's first offset in full, and each later one until it can no
+  // longer beat the best so far. That is nearly twice as much work as the walk at its peak, which puts the
   // top rung at a little over twice the peak. The consensus is what keeps a flawed first copy out of
   // every repeat, and a real group is a handful of frames, most of them byte-identical.
   //
   // **The registration is most of why the medoid costs that.** Each pair is compared at up to
   // twenty-five offsets rather than one (see `registerSprites`), and the profile bound rejects the
   // offsets that cannot win before they are walked. Measured against laying every pair corner to
-  // corner, on this fixture, the walk costs the same up to the peak, the medoid about 1.8 times as
-  // much, and the whole pass at the top rung about 1.6 times; on the corpus below the difference is
-  // under the 16 ms the processor clock resolves.
+  // corner, on this fixture, the walk costs about the same from tolerance 6 to the peak, the floor
+  // about two and a half times as much though still a fraction of a second, the medoid
+  // about 1.8 times, and the whole pass at the top rung about 1.6 times; on the corpus below the
+  // difference is under the 16 ms the processor clock resolves.
   //
   // **The figures are ratios because absolute wall-clock does not reproduce, and this fixture is
   // where that was measured rather than assumed.** The same rung on the same fixture on this machine

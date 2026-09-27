@@ -1,4 +1,4 @@
-import type { AlphaProfile, ProfiledSprite, SpriteBox } from '../types/quantiser.ts';
+import type { AlphaProfile, SpriteBox } from '../types/quantiser.ts';
 import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 
 /** One sprite's profile, read off its box in one pass over its alpha bytes. See `AlphaProfile`. */
@@ -19,24 +19,4 @@ export function alphaProfile(image: ImageData, box: SpriteBox): AlphaProfile {
     }
   }
   return { rows, columns, visible };
-}
-
-/**
- * The summed difference between two profiles with the second laid `offset` places along the
- * first, every place outside one of them reading as nothing.
- *
- * A lower bound on the sum of alpha differences over the whole union box at that offset along this
- * axis, whatever the offset along the other: see `AlphaProfile`.
- */
-export function profileGap(left: Int32Array, right: Int32Array, offset: number): number {
-  let gap = 0;
-  for (let at = Math.min(0, offset); at < Math.max(left.length, offset + right.length); at += 1) {
-    gap += Math.abs((left[at] ?? 0) - (right[at - offset] ?? 0));
-  }
-  return gap;
-}
-
-/** Each box beside its profile, in the order given. */
-export function profileSprites(image: ImageData, boxes: readonly SpriteBox[]): ProfiledSprite[] {
-  return boxes.map((box) => ({ box, profile: alphaProfile(image, box) }));
 }

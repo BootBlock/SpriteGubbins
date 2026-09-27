@@ -165,8 +165,9 @@ describe('duplicateSprites', () => {
   ])('groups a copy carrying one extra pixel on its %s edge', (_, extend) => {
     // Columns alternating between two colours, so a copy compared a column off its drawing scores
     // every cell a whole colour apart. An extra pixel on the left or top edge moves the copy's
-    // corner, and laying the pair corner to corner found none of these; registered, each is the one
-    // cell only the copy covers, averaged over the hundred and one either covers.
+    // corner, and laying the pair corner to corner found neither of those two cases; registered,
+    // each of the four is the one cell only the copy covers, averaged over the hundred and one
+    // either covers.
     const stripes = Array.from({ length: 10 }, () =>
       Array.from({ length: 10 }, (_cell, column) => (column % 2 === 0 ? INK : OTHER)),
     );

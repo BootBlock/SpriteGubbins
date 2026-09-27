@@ -1,6 +1,6 @@
 import { DUPLICATE_REGISTRATION_REACH } from '../constants/quantiser.ts';
 import type { PixelShift, ProfiledSprite, SpriteRegistration } from '../types/quantiser.ts';
-import { profileGap } from './alphaProfile.ts';
+import { profileGap } from './profileGap.ts';
 import { spriteDistance } from './spriteEquality.ts';
 
 /** The steps along one axis the search takes, from `-reach` to `reach`. */
@@ -15,7 +15,10 @@ const CANDIDATE_STEPS: readonly number[] = Array.from(
  * Built once, because it depends on nothing but the reach. The order is the tie-break: a candidate
  * has to be strictly closer than everything before it to win, so two offsets that match equally
  * well — a solid block, which matches itself one column over as well as it does in place — come
- * back at the one nearer the corners, and two runs at the same settings agree.
+ * back at the one nearer the corners, and two runs at the same settings agree. Equally well means
+ * equal as computed: two offsets sum their cells in different orders (see `walkOrder` in
+ * `spriteEquality.ts`), so a tie that holds only in exact arithmetic can round either way, which
+ * moves the answer by an offset whose mean is the same to the last bits.
  */
 const CANDIDATES: readonly PixelShift[] = (() => {
   const shifts = CANDIDATE_STEPS.flatMap((y) => CANDIDATE_STEPS.map((x) => ({ x, y })));

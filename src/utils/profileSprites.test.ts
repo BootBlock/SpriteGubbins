@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Rgba } from '../types/quantiser.ts';
 import { imageFrom } from '../test/images.ts';
 import { alphaProfile } from './alphaProfile.ts';
+import { profileSprites } from './profileSprites.ts';
 import { FULLY_OPAQUE, FULLY_TRANSPARENT } from './imageData.ts';
 
 const CLEAR: Rgba = { r: 9, g: 9, b: 9, a: FULLY_TRANSPARENT };
@@ -24,12 +25,14 @@ function sheet(): ImageData {
 
 const BOX = { left: 1, top: 1, width: 3, height: 2, pixels: 0 };
 
-describe('alphaProfile', () => {
-  it('sums each row and each column of the box, and counts the cells that show', () => {
-    const profile = alphaProfile(sheet(), BOX);
+describe('profileSprites', () => {
+  it('pairs each box with its own profile, in the order given', () => {
+    const image = sheet();
+    const other = { left: 0, top: 0, width: 1, height: 1, pixels: 1 };
 
-    expect([...profile.rows]).toEqual([3 * 255, 128 + 255]);
-    expect([...profile.columns]).toEqual([255 + 128, 255, 255 + 255]);
-    expect(profile.visible).toBe(5);
+    expect(profileSprites(image, [BOX, other])).toEqual([
+      { box: BOX, profile: alphaProfile(image, BOX) },
+      { box: other, profile: alphaProfile(image, other) },
+    ]);
   });
 });

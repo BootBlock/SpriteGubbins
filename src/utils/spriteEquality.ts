@@ -247,8 +247,8 @@ export function spriteDistance(
  * the overlap itself. Each is `[top, bottom, start, end]`, half-open, in the frame whose origin is
  * `left`'s top-left corner.
  *
- * **The order is the early exit's, and it changes no answer.** A cell only one sprite covers is
- * transparent on the other side, so wherever it is drawn it scores the full 255 — and those cells
+ * **The order is the early exit's, and it changes nothing but rounding.** A cell only one sprite covers is
+ * transparent on the other side, so wherever it is drawn it scores its whole alpha — and those cells
  * are what separate an offset that does not match from one that does. Walked first, they carry the
  * running sum past the budget within a row or two on an offset that cannot win, where walked in
  * reading order they are spread one or two to a row and the sum reaches the budget halfway down the

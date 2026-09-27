@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Rgba, SpriteBox } from '../types/quantiser.ts';
 import { imageFrom } from '../test/images.ts';
-import { profileSprites } from './alphaProfile.ts';
+import { profileSprites } from './profileSprites.ts';
 import { groupMedoid } from './groupMedoid.ts';
 import { FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 
