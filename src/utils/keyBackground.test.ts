@@ -122,8 +122,8 @@ describe('keyBackground', () => {
   });
 
   it('writes a keyed pixel as {0, 0, 0, 0}, whatever colour it was', () => {
-    // The field leaves as one value whatever it covered, so no later reader has to ask what a clear
-    // pixel's leftover channels mean — see the paragraph on it in `keyBackground`'s docblock.
+    // The field leaves as one value whatever it covered, because the mesh's step profile reads all
+    // four channels and would count leftover RGB under zero alpha as steps — see `keyBackground`.
     const varied = imageFrom(8, 8, (x, y) => ({ r: 255 - x, g: y, b: 255 - y, a: 255 }));
 
     const result = keyBackground(varied, { color: MAGENTA, tolerance: 16 });

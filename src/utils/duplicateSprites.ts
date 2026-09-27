@@ -54,7 +54,8 @@ import { disjointSet } from './unionFind.ts';
  * neither which way nor with what distribution, and the readings a maintainer might take from it
  * disagree: nine of them — the two flat shifts, ±4 at random per channel, +4 and −4 alternating by
  * channel, and a value uniform over −4 to 4 per channel rounded to the nearest whole number, each
- * random reading at seeds 1, 2 and 3 of a mulberry32 generator — run from **2 to 6** of the 15
+ * random reading at seeds 1, 2 and 3 of a mulberry32 generator, drawn once per channel in pixel
+ * order, red then green then blue, with ±4 taking −4 below a draw of one half — run from **2 to 6** of the 15
  * sprites keeping their extent. (They ran from 0 to 4 before the cell reading decided a cell's
  * coverage ahead of its colour, from 1 to 6 before `despillKey` began correcting the key's tint
  * behind the fringe, and from 0 to 3 before the mesh cut each sprite on its own phase; each of the

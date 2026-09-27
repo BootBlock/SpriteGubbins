@@ -95,10 +95,11 @@ export interface KeyedImage {
  * loose is matching those blends directly — and the hue test carries the pass from there.
  *
  * **Keyed pixels are written `{0, 0, 0, 0}`, not their original RGB at zero alpha**, so the field
- * leaves here as one value whatever the sheet carried under it. No pass behind this one reads a
- * clear pixel's channels — the cell readings count it by its coverage alone, and the mesh measures
- * it as a fixed neutral — so what the canonical value buys is a sheet no later reader has to ask
- * that question of, not a vote that depends on it. Keying runs first for the reason `quantiseImage`
+ * leaves here as one value whatever the sheet carried under it. The cell readings count a clear
+ * pixel by its coverage alone, so they would not notice; the mesh would. `stepProfile` sums the
+ * difference across all four channels, so two clear neighbours that kept different RGB are a step
+ * to it, and a field that kept the key's drift under zero alpha would hand the mesh the very steps
+ * keying first exists to take away. Keying runs first for the reason `quantiseImage`
  * gives: a drifting field is a crowd of distinct opaque colours until this pass clears it.
  */
 export function keyBackground(image: ImageData, { color, tolerance }: BackgroundKeying): KeyedImage {
@@ -157,7 +158,7 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
     }
 
     // Nothing is written for a keyed pixel: `createImage` zero-fills, which is exactly the canonical
-    // `{0, 0, 0, 0}` the modal vote downstream depends on.
+    // `{0, 0, 0, 0}` the mesh measurement downstream depends on — see the docblock.
     if (alphaAt(data, offset) !== FULLY_TRANSPARENT) keyedPixels += 1;
   }
 
