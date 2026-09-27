@@ -4,6 +4,7 @@ import { useCanvasPaint } from '../../hooks/useCanvasPaint.ts';
 import { useDetachedWindow } from '../../hooks/useDetachedWindow.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
 import { useSecondPaneImage } from '../../hooks/useSecondPaneImage.ts';
+import { ToastSourceContext } from '../../hooks/useShowToast.ts';
 import { useSpriteAssignment } from '../../hooks/useSpriteAssignment.ts';
 import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
 import { ComparisonPane } from './ComparisonPane.tsx';
@@ -159,46 +160,50 @@ export function ImageComparison({
   );
 
   const isDetached = detached.target !== null;
+  // Named as the preview in either document, so each notification the panel raises is sent wherever
+  // the panel is when it is raised rather than where it was when its button was pressed — see
+  // `ToastSource`.
   const surface = (
-    <section
-      ref={panel}
-      className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40"
-    >
-      {/* A blocked popup is the one failure that otherwise leaves a control appearing to do nothing,
+    <ToastSourceContext value="preview">
+      <section
+        ref={panel}
+        className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40"
+      >
+        {/* A blocked popup is the one failure that otherwise leaves a control appearing to do nothing,
           so it is said out loud rather than logged. It stands until an attempt succeeds, because
           what refused it is a browser setting rather than a passing condition. */}
-      {detached.refused && (
-        <p
-          role="alert"
-          className="rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs leading-relaxed text-gold"
-        >
-          The browser would not open a window for the preview. Allow popups for this site, or leave the
-          preview here — everything on this panel works either way.
-        </p>
-      )}
+        {detached.refused && (
+          <p
+            role="alert"
+            className="rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs leading-relaxed text-gold"
+          >
+            The browser would not open a window for the preview. Allow popups for this site, or leave the
+            preview here — everything on this panel works either way.
+          </p>
+        )}
 
-      <ComparisonToolbar
-        mode={shown}
-        onModeChange={setMode}
-        zoom={zoom}
-        onZoomChange={setZoom}
-        differenceScale={differenceScale}
-        onDifferenceScaleChange={setDifferenceScale}
-        sourceName={sourceName}
-        resultImage={quantised?.result.image ?? null}
-        sprites={quantised?.result.sprites ?? null}
-        duplicates={quantised?.result.duplicates ?? []}
-        isDetached={isDetached}
-        onDetachToggle={() => {
-          if (isDetached) detached.reattach();
-          else detached.detach(panel.current);
-        }}
-      />
+        <ComparisonToolbar
+          mode={shown}
+          onModeChange={setMode}
+          zoom={zoom}
+          onZoomChange={setZoom}
+          differenceScale={differenceScale}
+          onDifferenceScaleChange={setDifferenceScale}
+          sourceName={sourceName}
+          resultImage={quantised?.result.image ?? null}
+          sprites={quantised?.result.sprites ?? null}
+          duplicates={quantised?.result.duplicates ?? []}
+          isDetached={isDetached}
+          onDetachToggle={() => {
+            if (isDetached) detached.reattach();
+            else detached.detach(panel.current);
+          }}
+        />
 
-      {shown === 'WIPE' ? (
-        <WipePanes first={first} second={second} busy={busy} at={wipeAt} onMove={setWipeAt} />
-      ) : (
-        /*
+        {shown === 'WIPE' ? (
+          <WipePanes first={first} second={second} busy={busy} at={wipeAt} onMove={setWipeAt} />
+        ) : (
+          /*
           The query container: `@[38rem]` below measures this box, not the viewport — and that
           distinction is what the two panes now turn on. This panel used to span the whole page, so a
           viewport breakpoint described its width closely enough; it is now a column of a split, and
@@ -211,14 +216,15 @@ export function ImageComparison({
           whole point of the split. `tests/quantise-column-width.test.ts` re-derives that 642 from the
           grid and fails if the threshold ever rises past it.
         */
-        <div className="@container">
-          <div className="grid grid-cols-1 gap-4 @[38rem]:grid-cols-2">
-            <ComparisonPane {...first} />
-            <ComparisonPane {...second} busy={busy} />
+          <div className="@container">
+            <div className="grid grid-cols-1 gap-4 @[38rem]:grid-cols-2">
+              <ComparisonPane {...first} />
+              <ComparisonPane {...second} busy={busy} />
+            </div>
           </div>
-        </div>
-      )}
-    </section>
+        )}
+      </section>
+    </ToastSourceContext>
   );
 
   // Detached, the page keeps the panel's place and says where it went — see `DetachedNotice`, which

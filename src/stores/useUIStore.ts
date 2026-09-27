@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { TOAST_DURATION_MS, TOAST_EXIT_MS } from '../constants/ui.ts';
 import type { AppUpdate } from '../types/appUpdate.ts';
 import type { BeforeInstallPromptEvent } from '../types/pwa.ts';
-import type { AppTab, ToastTarget } from '../types/ui.ts';
+import type { AppTab, ToastSource, ToastTarget } from '../types/ui.ts';
 
 /**
  * The shell: which view is showing, what the toast says, which overlay is open, whether the browser
@@ -17,9 +17,10 @@ export interface UIState {
   /**
    * Which document the current message belongs in.
    *
-   * A notification follows the surface that raised it, and the app can have two surfaces at once:
-   * the quantiser portals its comparison panel — download button included — into a window of its
-   * own, and a confirmation for a press made there belongs there. Every `Toast` reads this and
+   * A notification follows the part of the app that raised it, and the app can have two surfaces at
+   * once: the quantiser portals its comparison panel — download button included — into a window of
+   * its own, and a confirmation for that panel belongs wherever the panel is when the confirmation
+   * arrives. {@link UIState.showToast} decides that as it writes this, and every `Toast` reads it and
    * renders only what is addressed to the document it is mounted in, which is the same shape
    * {@link ALL_OVERLAYS_CLOSED} uses to keep one overlay showing at a time: one piece of state
    * decides, rather than two surfaces each deciding for themselves and both being right.
@@ -68,6 +69,16 @@ export interface UIState {
    * notification intercepting clicks in the corner of the page.
    */
   readonly isToastLeaving: boolean;
+  /**
+   * Whether the quantiser's preview panel is in a window of its own, and so whether a `Toast` is
+   * mounted there to show what is addressed to it.
+   *
+   * Written by `DetachedPreview` as it mounts and unmounts, and by nothing else, because that
+   * component is both the window's `Toast` and the only place the panel can be while it is away from
+   * the page. The window's own state stays in `ImageComparison`; this is the one fact about it that
+   * {@link UIState.showToast} has to read at a moment no render is involved in.
+   */
+  readonly isPreviewDetached: boolean;
   readonly isAtlasModalOpen: boolean;
   readonly isHistoryModalOpen: boolean;
   readonly isSplitModalOpen: boolean;
@@ -95,21 +106,26 @@ export interface UIState {
    * Show a message, replacing any current one. It announces for {@link TOAST_DURATION_MS}, then
    * fades for {@link TOAST_EXIT_MS} before clearing itself.
    *
-   * `target` says which document it belongs in, and defaults to the page. React components take it
-   * from {@link useShowToast}, which reads the surface they are rendered in rather than asking each
-   * call site to know — so a control moved into the detached preview is addressed correctly without
-   * being told. The default is what the stores themselves rely on: four of them raise their own
-   * failures from outside React entirely, and there is no surface but the page they could be raised
-   * from.
-   */
-  showToast(message: string, target?: ToastTarget): void;
-  /**
-   * Bring a notification addressed to the detached preview back into the page.
+   * `from` says which part of the app raised it, and defaults to the page. **The document it is shown
+   * in is decided here, as it is raised**, and not by the caller: a message from the preview panel
+   * goes to the detached window while {@link isPreviewDetached} says the panel is there, and to the
+   * page otherwise. A download is answered by a worker seconds after the press, so the document the
+   * panel was in at the press can have closed, or opened, by the time there is anything to say — and
+   * a message addressed to a window that has gone is shown nowhere at all.
    *
-   * The window that was showing it can go at any moment — the reader presses Return, closes it
-   * themselves, or navigates away from the quantiser — and the message would otherwise be left
-   * addressed to a surface that no longer exists, which is the same silence this addressing was
-   * added to stop. `DetachedPreview` calls this as it unmounts.
+   * React components take `from` from {@link useShowToast}, which reads it from where they are
+   * rendered. The default is what the stores themselves rely on: four of them raise their own
+   * failures from outside React entirely, and nothing but the page raises those.
+   */
+  showToast(message: string, from?: ToastSource): void;
+  /**
+   * Record whether the preview panel is in a window of its own. `DetachedPreview` calls this as it
+   * mounts and as it unmounts.
+   *
+   * Leaving the window also brings a notification still showing there back into the page. The
+   * window can go at any moment — the reader presses Return, closes it themselves, or navigates away
+   * from the quantiser — and the message would otherwise stay addressed to a surface that no longer
+   * exists, which is the same silence this addressing was added to stop.
    *
    * It re-raises rather than re-labelling, so the dwell starts again. That is deliberate on both
    * counts: the page's live region never announced this message, so it needs to be announced there
@@ -120,7 +136,7 @@ export interface UIState {
    * {@link TOAST_EXIT_MS}, and nothing is served by pulling a notification two thirds of the way off
    * one screen back onto another at full opacity.
    */
-  recallToast(): void;
+  setPreviewDetached(detached: boolean): void;
   /**
    * Take the toast off the screen now, whichever phase it is in.
    *
@@ -207,6 +223,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   toastId: 0,
   toastRaisedAt: 0,
   isToastLeaving: false,
+  isPreviewDetached: false,
   ...ALL_OVERLAYS_CLOSED,
   deferredPWAInstallPrompt: null,
   appUpdate: 'current',
@@ -221,11 +238,11 @@ export const useUIStore = create<UIState>((set, get) => ({
     set({ activeTab });
   },
 
-  showToast: (message, target = 'page') => {
+  showToast: (message, from = 'page') => {
     cancelToastTimer();
     set((state) => ({
       toastMessage: message,
-      toastTarget: target,
+      toastTarget: from === 'preview' && state.isPreviewDetached ? 'detached' : 'page',
       toastId: state.toastId + 1,
       toastRaisedAt: Date.now(),
       isToastLeaving: false,
@@ -248,10 +265,12 @@ export const useUIStore = create<UIState>((set, get) => ({
     set({ toastMessage: null, isToastLeaving: false });
   },
 
-  recallToast: () => {
+  setPreviewDetached: (isPreviewDetached) => {
+    set({ isPreviewDetached });
+    if (isPreviewDetached) return;
     const { toastMessage, toastTarget, isToastLeaving, showToast } = get();
     if (toastTarget !== 'detached' || toastMessage === null || isToastLeaving) return;
-    showToast(toastMessage, 'page');
+    showToast(toastMessage);
   },
 
   // Opening one overlay closes the others. Every one of them is a `<dialog showModal()>`, and

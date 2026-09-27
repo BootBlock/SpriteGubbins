@@ -54,6 +54,7 @@ beforeEach(() => {
 
 afterEach(() => {
   useUIStore.getState().dismissToast();
+  useUIStore.setState({ isPreviewDetached: false });
 });
 
 describe('Toast', () => {
@@ -79,7 +80,8 @@ describe('Toast', () => {
     render(<Toast />);
 
     act(() => {
-      useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'detached');
+      useUIStore.getState().setPreviewDetached(true);
+      useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'preview');
     });
 
     // The quantiser's detached preview has a `Toast` of its own, and the store holds one message —
@@ -94,7 +96,8 @@ describe('Toast', () => {
     render(<Toast target="detached" />);
 
     act(() => {
-      useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'detached');
+      useUIStore.getState().setPreviewDetached(true);
+      useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'preview');
     });
 
     expect(liveRegion()).toHaveTextContent('Downloaded sheet-quantised.png');

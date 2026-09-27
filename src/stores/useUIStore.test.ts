@@ -18,7 +18,7 @@ const TOAST_LIFETIME_MS = TOAST_DURATION_MS + TOAST_EXIT_MS;
 beforeEach(() => {
   vi.useFakeTimers();
   useUIStore.getState().dismissToast();
-  useUIStore.setState({ isAtlasModalOpen: false, isHistoryModalOpen: false });
+  useUIStore.setState({ isAtlasModalOpen: false, isHistoryModalOpen: false, isPreviewDetached: false });
 });
 
 afterEach(() => {
@@ -164,19 +164,39 @@ describe('useUIStore', () => {
     expect(useUIStore.getState().toastRaisedAt).toBe(raisedAt + 2000);
   });
 
-  it('addresses a toast to the page unless it is told otherwise', () => {
+  it('addresses a toast to the page unless the detached preview raised it', () => {
     useUIStore.getState().showToast('Prompt copied');
     expect(useUIStore.getState().toastTarget).toBe('page');
 
-    useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'detached');
+    useUIStore.getState().setPreviewDetached(true);
+    useUIStore.getState().showToast('Saved custom preset');
+    // The page's own notifications stay in the page while the preview is away from it.
+    expect(useUIStore.getState().toastTarget).toBe('page');
+
+    useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'preview');
+    expect(useUIStore.getState().toastTarget).toBe('detached');
+  });
+
+  it('addresses the preview’s toast by where the preview is when it is raised', () => {
+    // A download pressed in the window and answered after it closed: the window's `Toast` has gone
+    // with it, so a message addressed there would be shown nowhere.
+    useUIStore.getState().setPreviewDetached(true);
+    useUIStore.getState().setPreviewDetached(false);
+    useUIStore.getState().showToast('Could not write sheet-quantised@8x.png: out of memory', 'preview');
+    expect(useUIStore.getState().toastTarget).toBe('page');
+
+    // And the reverse: pressed in the page, answered after the panel was detached.
+    useUIStore.getState().setPreviewDetached(true);
+    useUIStore.getState().showToast('Downloaded sheet-quantised@8x.png', 'preview');
     expect(useUIStore.getState().toastTarget).toBe('detached');
   });
 
   it('brings a notification back into the page when the surface showing it goes', () => {
-    useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'detached');
+    useUIStore.getState().setPreviewDetached(true);
+    useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'preview');
 
     vi.advanceTimersByTime(TOAST_DURATION_MS - 1);
-    useUIStore.getState().recallToast();
+    useUIStore.getState().setPreviewDetached(false);
 
     // Re-raised rather than re-labelled: the page's live region never announced this, and the dwell
     // it has left in the window it is leaving is not the dwell it needs where it is arriving.
@@ -187,11 +207,12 @@ describe('useUIStore', () => {
   });
 
   it('leaves a notification already on its way out where it is', () => {
-    useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'detached');
+    useUIStore.getState().setPreviewDetached(true);
+    useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'preview');
     vi.advanceTimersByTime(TOAST_DURATION_MS);
     expect(useUIStore.getState().isToastLeaving).toBe(true);
 
-    useUIStore.getState().recallToast();
+    useUIStore.getState().setPreviewDetached(false);
 
     // Nothing is served by pulling a card two thirds of the way off one screen back onto another at
     // full opacity — its own timer takes it off within `TOAST_EXIT_MS`.
@@ -201,10 +222,11 @@ describe('useUIStore', () => {
   });
 
   it('leaves a toast the page raised alone', () => {
+    useUIStore.getState().setPreviewDetached(true);
     useUIStore.getState().showToast('Saved custom preset');
     const raised = useUIStore.getState().toastId;
 
-    useUIStore.getState().recallToast();
+    useUIStore.getState().setPreviewDetached(false);
 
     // Not re-raised, which would restart the dwell of a notification nothing has happened to.
     expect(useUIStore.getState().toastId).toBe(raised);

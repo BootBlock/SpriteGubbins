@@ -943,7 +943,7 @@ describe('ImageComparison, detached — where its notifications land', () => {
 
   /** The panel with the page's toast beside it, which is the arrangement `AppOverlays` renders. */
   function showWithToast() {
-    render(
+    return render(
       <>
         <ImageComparison
           sourceName="sheet.png"
@@ -961,12 +961,39 @@ describe('ImageComparison, detached — where its notifications land', () => {
 
   /** Press Download and wait for the writer's answer, which is what raises the notification. */
   async function download(inside: HTMLElement): Promise<void> {
+    await pressDownload(inside);
+    await waitFor(() => {
+      expect(useUIStore.getState().toastMessage).not.toBeNull();
+    });
+  }
+
+  /**
+   * Hold the writer's answer until the test lets it go, so the panel can move while the sheet is
+   * being written — which, at a large magnification, is seconds in which the reader can do anything.
+   */
+  function holdWrite(): () => Promise<void> {
+    let release = (): void => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    FakeSheetWriteWorker.respond = ({ image }) =>
+      gate.then(() => encodePng(image)).then((file) => ({ kind: 'written', file }) as const);
+    return async () => {
+      await act(async () => {
+        release();
+        await Promise.resolve();
+      });
+      await waitFor(() => {
+        expect(useUIStore.getState().toastMessage).not.toBeNull();
+      });
+    };
+  }
+
+  /** Press Download without waiting for its answer. */
+  async function pressDownload(inside: HTMLElement): Promise<void> {
     await act(async () => {
       press('Download PNG', inside);
       await Promise.resolve();
-    });
-    await waitFor(() => {
-      expect(useUIStore.getState().toastMessage).not.toBeNull();
     });
   }
 
@@ -1003,6 +1030,51 @@ describe('ImageComparison, detached — where its notifications land', () => {
     // taken off the screen by a reader pressing Return for an unrelated reason.
     expect(screen.getByText(DOWNLOADED)).toBeInTheDocument();
     expect(useUIStore.getState().toastTarget).toBe('page');
+  });
+
+  it('answers a download that finishes after the preview returned in the page', async () => {
+    const finish = holdWrite();
+    const opened = watchOpen();
+    showWithToast();
+    press('Detach preview');
+    await pressDownload(bodyOf(opened));
+
+    press('Return to the page', bodyOf(opened));
+    await finish();
+
+    // Pressed in the window, answered once it had gone: the window's toast went with it, so the page
+    // is the only place left to say what was written.
+    expect(screen.getByText(DOWNLOADED)).toBeInTheDocument();
+    expect(useUIStore.getState().toastTarget).toBe('page');
+  });
+
+  it('answers a download that finishes after the reader left the quantiser in the page', async () => {
+    const finish = holdWrite();
+    const opened = watchOpen();
+    const { rerender } = showWithToast();
+    press('Detach preview');
+    await pressDownload(bodyOf(opened));
+
+    // What `App` does on navigation: the tab, the panel and its window all go, and the page stays.
+    rerender(<Toast />);
+    await finish();
+
+    expect(screen.getByText(DOWNLOADED)).toBeInTheDocument();
+  });
+
+  it('answers a download pressed in the page in the window the preview has since moved to', async () => {
+    const finish = holdWrite();
+    const opened = watchOpen();
+    showWithToast();
+    await pressDownload(document.body);
+
+    press('Detach preview');
+    await finish();
+
+    // The reader followed the panel to the other window, and its answer follows it there too rather
+    // than being painted on the page behind.
+    expect(within(bodyOf(opened)).getByText(DOWNLOADED)).toBeInTheDocument();
+    expect(screen.queryByText(DOWNLOADED)).toBeNull();
   });
 
   it('leaves the page its own notifications while the preview is detached', () => {
