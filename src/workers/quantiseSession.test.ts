@@ -298,6 +298,32 @@ describe('quantiseSession', () => {
     expect(refusing.of('quantise')).toHaveLength(1);
   });
 
+  it('does not quantise the previous sheet when the next one could not be posted', () => {
+    // The thread still holds the sheet before, and a typed grid needs no survey — so a thread kept
+    // here would answer the next question from the old sheet, and the tab would file that answer as
+    // the new sheet's. Ending the thread leaves nothing loaded, which the worker says in words.
+    loadSheet(createImage(64, 64));
+    const first = thread();
+    first.refuseToClone = new Error('The sheet could not be cloned');
+
+    loadSheet(createImage(32, 32));
+
+    expect(useQuantiseAnswerStore.getState().survey).toEqual({
+      kind: 'failed',
+      reason: 'The sheet could not be cloned',
+    });
+    expect(first.terminated).toBe(true);
+
+    quantiseSheet(settingsAt(8));
+
+    // A failed clone says nothing about the browser, so this is a fresh thread rather than a verdict.
+    expect(useQuantiseAnswerStore.getState().fatal).toBeNull();
+    expect(FakeWorker.started).toHaveLength(2);
+    expect(first.of('quantise')).toHaveLength(0);
+    expect(thread().of('load')).toHaveLength(0);
+    expect(thread().of('quantise')).toHaveLength(1);
+  });
+
   it('reports the thread dying as the one failure nothing recovers from', () => {
     loadSheet(createImage(64, 64));
     thread().die();
