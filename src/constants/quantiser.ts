@@ -2359,7 +2359,7 @@ export const QUANTISE_TOOLTIPS = {
     'Whether each sprite is scored for vertical symmetry, and whether anything is done about it. Each sprite’s best mirror line is reported with how much of the sprite actually mirrors around it.\n\n' +
     '- `OFF` skips the symmetry reading.\n' +
     `- ${CHECK_CHANGES_NOTHING}\n` +
-    '- `SNAP` also writes one colour across each mirrored pair of every sprite that passes the confidence floor below, so its two halves match exactly.\n\n' +
+    '- `SNAP` also writes one colour across each mirrored pair of every sprite that passes the confidence floor below, so its two halves match exactly. A sprite with a stray pixel directly against its edge is left alone.\n\n' +
     '**Many subjects are asymmetric on purpose** (a sword in one hand, a single pauldron), and nothing here can tell those from drift. Read the sheet with `CHECK` first, and switch the preview to Sprites to see each axis.',
   symmetryTolerance:
     'How far apart two mirrored pixels may sit and still agree, measured the way every colour distance on this tab is. The reported confidence is a share of pairs within it: raise it and more of a sprite counts as symmetric.\n\n' +

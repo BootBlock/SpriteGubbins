@@ -231,8 +231,8 @@ function frameOverSpeck(): ImageData {
 }
 
 /**
- * A 9 × 9 block with a three-pixel break in its left edge, a three-pixel speck one clear column past
- * that break, and a block one clear column past the speck.
+ * A 9 × 9 block with a three-pixel break in its left edge, a three-pixel speck directly against that
+ * break, and a block one clear column past the speck.
  *
  * The block mirrors in 33 of its 36 pairs, which is past the floor, and settling it closes the break
  * from the intact side. The closed edge then touches the speck, which the segmentation drops rather
@@ -253,11 +253,12 @@ function spriteCount(sheet: SettledSheet): number {
 }
 
 /**
- * A snap tidies the sprites it acts on and never changes how many there are. The count names every
- * piece, and cuts the pack, the manifest and the `.aseprite` file, so a pass that merged a neighbour
- * into the sprite it edited would shift all four.
+ * A snap never merges a neighbour into the sprite it acts on. The count names every piece, and cuts
+ * the pack, the manifest and the `.aseprite` file, so a pass that merged a neighbour into the sprite
+ * it edited would shift all four. The symmetry settle can still part a sprite by clearing a pixel out
+ * of a one-pixel bridge, which `settleSprites` reads the sheet again for; these cases are the merge.
  */
-describe('settleSprites — a snap keeps the sprite count', () => {
+describe('settleSprites — a snap merges no neighbour into its sprite', () => {
   const settle = { symmetry: 'SNAP' as const };
   const fold = { duplicateSnap: true };
   const align = { frameAlignment: 'SNAP' as const };

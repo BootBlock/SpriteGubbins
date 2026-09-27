@@ -180,15 +180,17 @@ describe('sheetSymmetry', () => {
   });
 
   it('does not mark a sprite past the floor while anything is drawn directly against its box', () => {
-    // The same block, with one stray pixel diagonally off its top-left corner — outside the box, and
-    // a settle that drew that corner would join the two.
-    const image = sheet(32, 8, (x, y) =>
-      (y >= 2 && y < 6 && x >= 10 && x < 16) || (x === 9 && y === 1) ? BODY : CLEAR,
-    );
+    // The same block with its top-left corner cleared, and one stray pixel diagonally off that corner
+    // — outside the box and touching nothing drawn. Eleven of the twelve pairs agree, and the settle
+    // would draw the corner from its partner, which joins the stray pixel to the sprite.
+    const image = sheet(32, 8, (x, y) => {
+      if (x === 9 && y === 1) return BODY;
+      return y >= 2 && y < 6 && x >= 10 && x < 16 && !(x === 10 && y === 2) ? BODY : CLEAR;
+    });
 
-    const reading = read(image, box(10, 2, 6, 4, 24), 0, 1);
+    const reading = read(image, box(10, 2, 6, 4, 23), 0, 0.9);
 
-    expect(reading.confidence).toBe(1);
+    expect(reading.confidence).toBeCloseTo(11 / 12);
     expect(reading.snapped).toBe(false);
   });
 

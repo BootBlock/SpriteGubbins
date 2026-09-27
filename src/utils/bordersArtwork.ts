@@ -25,7 +25,8 @@ import { FULLY_TRANSPARENT, alphaAt, pixelOffset } from './imageData.ts';
  * larger than that box, so they ask `reachesAny` as well, and a sprite whose artwork reaches the ring
  * is caught by both, since its box is within any gap. The symmetry settle writes only inside the
  * sprite's own box, which the segmentation already put further than the gap from every other box, so
- * this is the whole of its refusal: the speck is the case only this check can see.
+ * this is all it needs to keep from joining anything outside that box: the speck is the case only
+ * this check can see.
  *
  * Pure. A walk of the ring's perimeter, clipped to the sheet, so linear in the region's outline.
  */
