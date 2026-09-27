@@ -72,12 +72,14 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * Keyed at the default tolerance against each sheet's corner colour, at the grids the table under
  * {@link TUNE_ROUNDS} gives and with no colour budget, the sweep reads a different sheet, and only
  * the reference sheet at `OFF`, `cyborg_healer.png` and `character_space_marine_blue.png` settle on
- * the dials they settle on unkeyed. Five more move the colour merge by one or two rungs, and the
- * reference sheet at `BOTH` moves it two, turns the cleanup to 32 and takes four cleanup passes. At
- * `OFF`, five descents take the same count and three do not: `three-quarter-view_tiles1.png` ends
- * sooner, at 145 positions rather than 192, and `ui_elements1.png` and `cyborg_monk.png` run longer,
- * at 145 rather than 102. At `BOTH` the reference sheet takes 372 positions over four rounds, where
- * unkeyed it takes 229 over three.
+ * the dials they settle on unkeyed. The other five move the colour merge by one or two rungs, and
+ * `vehicles_and_props.png` also moves its reading, to `DOMINANT` — the one corpus sheet, keyed or
+ * not, that the whole sweep settles anywhere but `K_CENTROID`. The reference sheet at `BOTH` moves
+ * the merge two rungs, turns the cleanup to 32 and takes four cleanup passes. At `OFF`, four descents
+ * take the same count and four do not: `three-quarter-view_tiles1.png` ends sooner, at 145 positions
+ * rather than 192, and so does `vehicles_and_props.png`, at 102 rather than 145, while
+ * `ui_elements1.png` and `cyborg_monk.png` run longer, at 145 rather than 102. At `BOTH` the reference
+ * sheet takes 372 positions over four rounds, where unkeyed it takes 229 over three.
  *
  * **The count of positions is what a change to any ladder here has to be judged by**, not a wall
  * clock — the same code over the same sheet takes several times longer on one host than another, so
@@ -103,9 +105,15 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * rather than one the sheet reads at) `K_CENTROID` at expansion 0 beats the other averaging reading
  * on **both** counts — 0.5315 for 6618 colours against `INK_WEIGHTED`'s 0.5149 for 6895 — and
  * the first round keeps `DOMINANT`, at 0.5125 for 6232, because it is cheaper than either. The
- * whole sweep then settles every corpus sheet on `K_CENTROID`, which is the warning stated at its
- * sharpest: a sheet that lives on its contours gets the reading that softens them unless the reader
- * asks for `INK_WEIGHTED` — which is what `AUTO_TUNE_GUIDANCE.settled` tells them to try.
+ * whole sweep then settles every corpus sheet on `K_CENTROID` unkeyed, and seven of the eight keyed,
+ * which is the warning stated at its sharpest: a sheet that lives on its contours gets the reading
+ * that softens them unless the reader asks for `INK_WEIGHTED` — which is what
+ * `AUTO_TUNE_GUIDANCE.settled` tells them to try.
+ *
+ * **Keep the reading stage's first round and the whole sweep's answer apart.** They are two answers,
+ * and this docblock has twice described the first as the second after a change to the descent moved
+ * one and not the other. `tests/auto-tune-figures-*.test.ts` run the real sweep over the corpus and
+ * pin every figure above, both answers included, so a change that moves one fails there.
  */
 
 /**
