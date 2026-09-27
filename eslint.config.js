@@ -132,9 +132,12 @@ export default tseslint.config(
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       // CLAUDE.md bans selecting a whole store. A store hook called with no selector, or with one
       // that hands back its argument untouched, subscribes the component to every field, so it
-      // re-renders on every write anywhere in the store. React's own `useSyncExternalStore` shares
-      // the name's shape and is no store, so it is left out. `tests/whole-store-select.test.ts`
-      // lints both shapes against the rule this file resolves for `src/`.
+      // re-renders on every write anywhere in the store. A selector cannot be matched against its
+      // own parameter's name, so the second entry reports any arrow selector whose body is a bare
+      // name: its argument, or a value from outside the store that no selector has a reason to
+      // return. React's own `useSyncExternalStore` shares the name's shape and is no store, so it
+      // is left out. `tests/whole-store-select.test.ts` lints these shapes against the rule this
+      // file resolves for `src/`.
       'no-restricted-syntax': [
         'error',
         {
@@ -145,7 +148,7 @@ export default tseslint.config(
         {
           selector: `${STORE_HOOK} > ArrowFunctionExpression[body.type="Identifier"]`,
           message:
-            'Select the fields you use from a store; a selector that returns its argument subscribes to all of it.',
+            'Select the fields you use from a store; a selector that returns a bare name, such as its argument, selects no field of it.',
         },
       ],
     },

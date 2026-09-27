@@ -161,11 +161,12 @@ function isTest(file: string): boolean {
  * and the difference between the two is the dead CSS the build ships. `scripts/deadUtilities.ts`
  * compares them, so every hole in this list is a utility that guard stops asking about.
  *
- * **A second guard's verdict rests on it**, and for the same reason a class name has to be spelled
- * somewhere the app wears it: `design-tokens.test.ts` sweeps this list for every assignment of
- * `--color-tab`, so that none rests on the stop the palette reserves for the live state. A hole
- * here is a file that guard stops reading too — which is why the walk is a module, and why a
- * directory added to the app belongs in it rather than in a list one consumer keeps.
+ * **Other guards' verdicts rest on it too**, each asking what the app wears: whether any assignment
+ * of `--color-tab` rests on the stop the palette reserves for the live state, and whether any class
+ * reaches for Tailwind's default palette. `grep -rn appMarkup tests/ scripts/` names today's; this
+ * docblock does not keep the list, for the reason `scannableSources` gives above. A hole here is a
+ * file every one of them stops reading — which is why the walk is a module, and why a directory
+ * added to the app belongs in it rather than in a list one consumer keeps.
  *
  * Two inclusions decide it, beyond the `.ts` as well as `.tsx` that `scannableSources` explains
  * above: **`index.css`**, because `@utility glass-panel { … }` is where several of the app's own

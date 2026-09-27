@@ -2,9 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { codeOnly } from '../scripts/codeOnly.ts';
-import { emittedClassNames } from '../scripts/deadUtilities.ts';
-import { appMarkup, sourceText } from '../scripts/sourceFiles.ts';
+import { emittedClassNames, wornMarkup } from '../scripts/deadUtilities.ts';
 import { compileStylesheet } from './compileStylesheet.ts';
 
 /**
@@ -66,12 +64,10 @@ const STOCK_PROBES = [
  */
 const CANDIDATE = /[\w\-:/.!#%[\]@]+/g;
 
-/** Every word in the app's own markup, comments blanked, as the dead-utility guard reads it. */
+/** Every word in the app's own markup, read as the dead-utility guard reads it. */
 function markupWords(): string[] {
   const words = new Set<string>();
-  for (const file of appMarkup()) {
-    const source = sourceText(file);
-    const code = file.endsWith('.html') ? source.replace(/<!--[^]*?-->/g, '') : codeOnly(source);
+  for (const code of wornMarkup()) {
     for (const [word] of code.matchAll(CANDIDATE)) words.add(word);
   }
   return [...words];

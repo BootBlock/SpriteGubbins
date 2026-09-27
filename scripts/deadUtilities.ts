@@ -15,10 +15,10 @@ import { appMarkup, sourceText, tailwindScanned } from './sourceFiles.ts';
  * paragraph explaining why nothing may wear one — the rule against ink on a role colour, shipping a
  * working version of the class it bans.
  *
- * The wasted bytes are not the cost. `src/index.css` states the real one where it excludes the
- * documentation: a class the app bans but the build emits **works**, so a component reaching for it
- * renders correctly, and the thing that normally catches the mistake — an unknown utility emitting
- * no CSS at all — never fires.
+ * The wasted bytes are not the cost. A class the app bans but the build emits **works**, so a
+ * component reaching for it renders correctly, and the thing that normally catches the mistake — an
+ * unknown utility emitting no CSS at all — never fires. The translucent ink fill above was exactly
+ * that. (The stock palette was the widest case, and `src/index.css` now removes it at the theme.)
  *
  * The rung guard in `tests/design-tokens.test.ts` asks this question for one family of utilities,
  * which is why it caught the speed and missed the fill. This asks it for all of them, from the only
@@ -181,8 +181,13 @@ export function staleCollisions(sources: readonly string[]): string[] {
   return PROSE_COLLISIONS.filter((name) => sources.some((text) => spelledIn(name, text)));
 }
 
-/** The app's own markup, with every comment blanked, so only what the app *wears* can answer. */
-function markup(): string[] {
+/**
+ * The app's own markup, with every comment blanked, so only what the app *wears* can answer.
+ *
+ * Exported because `tests/stock-palette.test.ts` asks the same question of the same text, and two
+ * readers of it would be two answers to what the app wears.
+ */
+export function wornMarkup(): string[] {
   return appMarkup().map((file) => {
     const source = sourceText(file);
     // `codeOnly` walks JavaScript and CSS comments; the shell document is neither.
@@ -212,7 +217,7 @@ function spellings(name: string): string {
  * in {@link PROSE_COLLISIONS} is exempting a class the app has since taken up.
  */
 export function assertNoDeadUtilities(css: string): void {
-  const sources = markup();
+  const sources = wornMarkup();
 
   const dead = deadUtilities(css, sources);
   if (dead.length > 0) {

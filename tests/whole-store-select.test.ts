@@ -46,6 +46,12 @@ describe('selecting a whole store', () => {
     expect(await findings('const all = useUIStore((state) => state);')).toHaveLength(1);
   });
 
+  it('is reported for a selector returning any bare name, since the rule cannot see which one', async () => {
+    // Recorded rather than wished away: a selector returning a value from outside the store is no
+    // selector at all, and the rule reports it on the same ground as the identity it exists for.
+    expect(await findings('const value = useUIStore(() => fallback);')).toHaveLength(1);
+  });
+
   it('is not reported for a selector that picks a field', async () => {
     // The shape every store read in the app takes, so a rule that flagged it would fail everywhere.
     expect(await findings('const accent = useSettingsStore((state) => state.accentHue);')).toStrictEqual([]);
