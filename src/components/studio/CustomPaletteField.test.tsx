@@ -290,7 +290,7 @@ describe('CustomPaletteField, while a picture is read off the tab’s thread', (
     });
   });
 
-  it('ends the reduction’s thread on Remove, and pins nothing when it would have landed', async () => {
+  it('ends the reduction’s thread on Remove', async () => {
     const user = userEvent.setup({ delay: null });
     render(<CustomPaletteField />);
     await user.click(screen.getByRole('textbox', { name: 'Or paste the colours' }));
@@ -301,7 +301,50 @@ describe('CustomPaletteField, while a picture is read off the tab’s thread', (
     await user.click(screen.getByRole('button', { name: 'Remove' }));
 
     expect(FakePaletteReadWorker.latest().terminated).toBe(true);
+  });
+
+  it('pins nothing from a reduction that answered in the same turn as Remove', async () => {
+    // The answer arrives before Remove, so the thread has already settled and ending it stops
+    // nothing — its colours are held back only by the ticket Remove retired.
+    const user = userEvent.setup({ delay: null });
+    render(<CustomPaletteField />);
+    await user.click(screen.getByRole('textbox', { name: 'Or paste the colours' }));
+    await user.paste('#102030');
+    await refuseSheet();
+    await user.click(screen.getByRole('button', { name: /^Reduce to/ }));
+
+    act(() => {
+      FakePaletteReadWorker.latest().answer({ kind: 'read', entries: ['#405060'] });
+      fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     expect(pinned()).toBeNull();
+  });
+
+  it('clears the failure line once a retried reduction pins', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<CustomPaletteField />);
+    await refuseSheet();
+    await user.click(screen.getByRole('button', { name: /^Reduce to/ }));
+    act(() => {
+      FakePaletteReadWorker.latest().answer({ kind: 'failed', reason: 'Array buffer allocation failed' });
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^Reduce to/ })).toBeEnabled();
+    });
+
+    await user.click(screen.getByRole('button', { name: /^Reduce to/ }));
+    act(() => {
+      FakePaletteReadWorker.latest().answer({ kind: 'read', entries: ['#102030'] });
+    });
+
+    await waitFor(() => {
+      expect(pinned()?.entries).toEqual(['#102030']);
+    });
+    expect(screen.queryByText(/could not be reduced/)).toBeNull();
   });
 
   it('keeps the offer, and says why, when the reduction fails', async () => {

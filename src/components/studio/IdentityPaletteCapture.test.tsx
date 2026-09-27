@@ -1,7 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
-import { identityPaletteRequests } from '../../stores/identityPaletteRequests.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { FakePaletteReadWorker } from '../../test/fakePaletteReadWorker.ts';
 import { imageFrom } from '../../test/images.ts';
@@ -181,17 +180,32 @@ describe('IdentityPaletteCapture, while the sheet is measured off the tab’s th
     });
   });
 
-  it('ends the measuring when a wholesale write replaces the lock, and writes nothing', async () => {
+  it('ends the measuring when a wholesale write replaces the lock', async () => {
     const thread = await measuring();
 
     act(() => {
-      useOutputStore.setState({
-        output: { ...useOutputStore.getState().output, identityLock: 'Loaded from a preset' },
-      });
-      identityPaletteRequests.supersede();
+      useOutputStore
+        .getState()
+        .setOutputConfig({ ...useOutputStore.getState().output, identityLock: 'Restored from history' });
     });
 
     expect(thread.terminated).toBe(true);
-    expect(useOutputStore.getState().output.identityLock).toBe('Loaded from a preset');
+  });
+
+  it('writes nothing from a measuring that answered in the same turn as a wholesale write', async () => {
+    // The answer arrives first, so its thread has settled; only the retired ticket holds it back.
+    const thread = await measuring();
+
+    act(() => {
+      thread.answer({ kind: 'read', entries: ['#1E1E24'] });
+      useOutputStore
+        .getState()
+        .setOutputConfig({ ...useOutputStore.getState().output, identityLock: 'Restored from history' });
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(useOutputStore.getState().output.identityLock).toBe('Restored from history');
   });
 });

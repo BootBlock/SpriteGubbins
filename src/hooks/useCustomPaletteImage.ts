@@ -90,6 +90,8 @@ export function useCustomPaletteImage(
       .then(
         (entries) => {
           if (!current()) return;
+          // Cleared, since a failed attempt before this one left its line saying nothing was pinned.
+          setProblems([]);
           setOversized(null);
           pin({ name, entries }, `${name}, reduced`);
         },
