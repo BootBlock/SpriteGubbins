@@ -1,5 +1,5 @@
-import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
-import type { Rgba } from '../types/quantiser.ts';
+import type { ColorReduction } from '../types/quantiser.ts';
+import { blendSnap } from './blendSnap.ts';
 import { coverageBlend } from './coverageBlend.ts';
 import {
   CLAIM_ABOVE,
@@ -9,20 +9,19 @@ import {
   edgeClaims,
   type ClaimSettings,
 } from './edgeClaims.ts';
-import { CHANNELS_PER_PIXEL, FULLY_OPAQUE, createImage, readPixel, writePixel } from './imageData.ts';
-import { locateEntries, nearestOklab, type LocatedEntry } from './lockedPalette.ts';
-import { MAX_PALETTE_ENTRIES } from './pngPalette.ts';
+import { CHANNELS_PER_PIXEL, createImage, readPixel, writePixel } from './imageData.ts';
 
-/** Everything the pass needs: what to claim, and whether a blend may be a new colour. */
+/** Everything the pass needs: what to claim, and which colours a blend may be. */
 export interface AntiAliasSettings extends ClaimSettings {
   /**
-   * Whether each blend is taken to the nearest colour the sheet already holds.
+   * The colour reduction each blend is kept to, or `null` where a blend is written as it is mixed.
    *
    * The caller decides this from two things — the reader's own position, and whether a colour
    * reduction is in force at all. With no reduction there is no statement of which colours the sheet
-   * is made of, so there is nothing to keep a blend to; see `AntiAliasPalette`.
+   * is made of, so there is nothing to keep a blend to; see `AntiAliasPalette`. `blendSnap` says
+   * what each reduction keeps a blend to.
    */
-  readonly snap: boolean;
+  readonly snapTo: ColorReduction | null;
 }
 
 /**
@@ -45,21 +44,21 @@ export interface AntiAliasSettings extends ClaimSettings {
  * `edgeRuns` hold that half, down to the trapezoid area each pixel is owed.
  *
  * **The blend is a linear-light mix, and the palette is a constraint on it.** `coverageBlend` says
- * why the light has to be added rather than the bytes. Under {@link AntiAliasSettings.snap} each
- * result is taken to the nearest colour the sheet already holds, so a sheet reduced to a machine's
- * four shades keeps exactly those four — which is what an artist working to a fixed palette does,
- * reaching for the intermediate tone that already exists rather than mixing a new one. It bounds the
- * *hues* and not the colour count: a coverage is an alpha, so softening a silhouette adds pixels
- * that are a held hue at a new coverage, and `countColors` keys on all four channels. The nearest
- * search is paid once per distinct blend rather than once per pixel, and over a set `sheetColors`
- * refuses to build past the size a palette can be at all — the two things that keep it affordable.
+ * why the light has to be added rather than the bytes. Under {@link AntiAliasSettings.snapTo} each
+ * result is taken to the nearest colour the reduction in force allows, so a sheet reduced to a
+ * machine's four shades keeps exactly those four, and a sheet reduced to a machine's channel depth
+ * stays on its ladder — which is what an artist working to a fixed palette does, reaching for the
+ * intermediate tone that already exists rather than mixing a new one. It bounds the *hues* and not
+ * the colour count: a coverage is an alpha, so softening a silhouette adds pixels that are a held
+ * hue at a new coverage, and `countColors` keys on all four channels. `blendSnap` states what each
+ * reduction allows, and what keeps the search affordable.
  *
  * **Hands back its argument by reference wherever nothing moved**, which is the contract
  * `snapSymmetric` and `snapFrames` keep and for the same reason: a re-segmentation is a linear pass
  * nobody should pay for a sheet that did not change. `OFF` leaves before anything is allocated at
  * all.
  *
- * `held` is where the snap finds the colours the sheet already holds, and it is `image` itself unless
+ * `held` is where a budget's snap finds the colours the sheet holds, and it is `image` itself unless
  * `image` is one region of a sheet cut into several, whose colours the regions hold between them.
  *
  * Pure. It reads every source pixel out of the input and writes only into its own copy, so a claimed
@@ -80,9 +79,7 @@ export function antiAlias(
   const output = createImage(width, height);
   output.data.set(data);
 
-  const palette = settings.snap ? sheetColors(held) : null;
-  const located = palette === null ? null : locateEntries(palette);
-  const resolved = new Map<number, Rgba>();
+  const snap = settings.snapTo === null ? null : blendSnap(settings.snapTo, held);
 
   for (let pixel = 0; pixel < width * height; pixel += 1) {
     const scaled = claims.coverage[pixel] ?? 0;
@@ -94,11 +91,7 @@ export function antiAlias(
       readPixel(data, neighbour * CHANNELS_PER_PIXEL),
       scaled / CLAIM_PRECISION,
     );
-    writePixel(
-      output.data,
-      pixel * CHANNELS_PER_PIXEL,
-      located === null ? blend : keep(blend, located, resolved),
-    );
+    writePixel(output.data, pixel * CHANNELS_PER_PIXEL, snap === null ? blend : snap(blend));
   }
 
   return output;
@@ -115,72 +108,4 @@ function step(side: number, width: number): number {
   if (side === CLAIM_ABOVE) return -width;
   if (side === CLAIM_BELOW) return width;
   return side === CLAIM_LEFT ? -1 : 1;
-}
-
-/**
- * The blend, taken to the nearest colour the sheet already holds — keeping its own coverage.
- *
- * The colour and the coverage are two answers: `nearestOklab` compares colours alone, deliberately,
- * because a palette entry is a colour rather than a compositing state. So a silhouette blend keeps
- * the alpha the coverage gave it and takes only the hue it landed nearest.
- *
- * Memoised on the blended colour, which is what bounds the number of searches. The key drops alpha
- * for the same reason the search does — two blends of one pair of colours at two coverages resolve to
- * the same entry, and looking each of them up separately would be paying for the distinction the
- * search does not make. It is arithmetic on the packed value rather than a spread, because this runs
- * once per claimed pixel and a throwaway object per pixel is what every pass beside this one refuses.
- */
-function keep(blend: Rgba, located: readonly LocatedEntry[], resolved: Map<number, Rgba>): Rgba {
-  const key = (blend.r * 256 + blend.g) * 256 + blend.b;
-  const cached = resolved.get(key);
-  if (cached !== undefined) return { r: cached.r, g: cached.g, b: cached.b, a: blend.a };
-
-  const nearest = nearestOklab(blend, located)?.entry ?? blend;
-  resolved.set(key, nearest);
-  return { r: nearest.r, g: nearest.g, b: nearest.b, a: blend.a };
-}
-
-/**
- * Every distinct colour the sheet holds, opaque, in the order it was first met — or `null` where it
- * holds more of them than a palette can name. The sheet is every image in `images`: one, or each
- * region of a sheet cut into several — see `settleRegions`.
- *
- * **The `null` is what bounds the snap, and it is the app's own boundary rather than a new one.**
- * `nearestOklab` is a linear scan, so a search set of this size is paid once per distinct blend; on
- * a sheet reduced to a budget or to a machine's list that set is tens of colours and the cost is
- * nothing. Two reductions do not bound it at all, though — a locked palette at a snap of zero
- * reaches nothing and leaves the sheet exactly as it arrived, and a channel-depth reduction at six
- * bits admits a quarter of a million — and on one of those the search would run for tens of seconds
- * over a set that is not a *palette* in any sense a reader means. {@link MAX_PALETTE_ENTRIES} is
- * where `indexImage` already draws that line, for the same reason: past it, the sheet's colours are
- * not a list anything can be kept to.
- *
- * Alpha is dropped on the way in: a palette is a list of colours, and a soft pixel's own coverage is
- * a fact about that pixel. A pixel under `COVERAGE_FLOOR` is left out, since its channels are
- * rounding noise rather than a colour the sheet holds. First-met order is what settles a tie in `nearestOklab`, which takes the
- * earliest entry, so the answer is stable across two runs over the same sheet.
- *
- * It reads the channel array directly rather than through `colorHistogram`, which would build a Map
- * of counts this has no use for — and it stops the moment the sheet passes the ceiling, so the
- * refusal costs a partial pass rather than a whole one.
- */
-function sheetColors(images: readonly ImageData[]): readonly Rgba[] | null {
-  const seen = new Set<number>();
-  const entries: Rgba[] = [];
-
-  for (const { data } of images) {
-    for (let offset = 0; offset < data.length; offset += CHANNELS_PER_PIXEL) {
-      if ((data[offset + 3] ?? 0) < COVERAGE_FLOOR) continue;
-      const r = data[offset] ?? 0;
-      const g = data[offset + 1] ?? 0;
-      const b = data[offset + 2] ?? 0;
-      const packed = (r * 256 + g) * 256 + b;
-      if (seen.has(packed)) continue;
-      if (seen.size === MAX_PALETTE_ENTRIES) return null;
-      seen.add(packed);
-      entries.push({ r, g, b, a: FULLY_OPAQUE });
-    }
-  }
-
-  return entries;
 }

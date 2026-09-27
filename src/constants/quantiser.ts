@@ -1598,12 +1598,12 @@ export const DEFAULT_ANTI_ALIAS_RUN = 2;
  * and what separates them is which colours the sheet is allowed to end up holding.
  */
 export const ANTI_ALIAS_PALETTE_CHOICES = [
-  { value: 'SNAP', label: 'SNAP (keep to the sheet’s own colours)' },
+  { value: 'SNAP', label: 'SNAP (keep to the colour setting)' },
   { value: 'BLEND', label: 'BLEND (write the mixed shade)' },
 ] as const;
 
 /**
- * Where the Blended shades control opens — keeping to the colours the sheet already holds.
+ * Where the Blended shades control opens — keeping to the colours the colour setting allows.
  *
  * It is read only where a colour reduction is in force, and in that state the reader has already
  * said what colours this sheet is made of: a machine's fixed list, a budget, or a palette locked off
@@ -2401,8 +2401,8 @@ export const QUANTISE_TOOLTIPS = {
     'The shortest step of a contour worth softening, in drawn pixels. A slope comes back as straight runs: long runs are a gentle diagonal, short ones are close to 45°.\n\n' +
     'Raising this leaves the short steps as they are and softens only the long, shallow stretches, which suits a small sprite. The dial opens at its lowest position, which keeps every run.',
   antiAliasPalette:
-    'What happens to a blended shade the sheet’s colours do not already hold.\n\n' +
-    '- `SNAP` takes each blend to the nearest colour already on the sheet, so a fixed palette keeps exactly its shades. On a sheet with few colours, some contours stay unsoftened.\n' +
+    'What happens to a blended shade the colour setting does not allow.\n\n' +
+    '- `SNAP` takes each blend to the nearest colour the setting allows: a machine’s palette or colour depth, a locked palette, or the colours a budget chose for this sheet. A fixed palette keeps exactly its shades. With few colours to choose from, some contours stay unsoftened.\n' +
     '- `BLEND` writes the mixed shade as computed, softening every contour and adding shades the palette does not hold.\n\n' +
     'It appears only while a colour setting constrains the sheet.',
   presetName:

@@ -135,9 +135,10 @@ export interface LocatedEntry {
 /**
  * The entries converted once, rather than once per colour looked up, for {@link nearestOklab}.
  *
- * `antiAlias` is the caller: it wants the nearest entry however far away it is, which a lattice cell
- * cannot bound, and its set is capped at `MAX_PALETTE_ENTRIES` so the scan stays affordable. A lock
- * asks a bounded question and is answered by {@link lockReach} instead.
+ * `blendSnap` is the caller: it wants the nearest entry however far away it is, which a lattice cell
+ * cannot bound, and every list it searches is a palette, a lock or a budget's colours, each at most
+ * `MAX_PALETTE_ENTRIES` long, so the scan stays affordable. A lock asks a bounded question and is
+ * answered by {@link lockReach} instead.
  */
 export function locateEntries(entries: readonly Rgba[]): readonly LocatedEntry[] {
   return entries.map((entry) => ({ entry, lab: srgbToOklab(entry.r, entry.g, entry.b) }));

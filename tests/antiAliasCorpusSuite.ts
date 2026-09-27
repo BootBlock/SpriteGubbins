@@ -7,7 +7,7 @@ import {
   DEFAULT_ANTI_ALIAS_STRENGTH,
   DEFAULT_ANTI_ALIAS_THRESHOLD,
 } from '../src/constants/quantiser.ts';
-import type { AntiAliasMode, QuantiseSettings } from '../src/types/quantiser.ts';
+import type { AntiAliasMode, ColorReduction, QuantiseSettings } from '../src/types/quantiser.ts';
 import { antiAlias } from '../src/utils/antiAlias.ts';
 import { CHANNELS_PER_PIXEL, packedColorAt, unpackColor } from '../src/utils/imageData.ts';
 import { srgbToOklab } from '../src/utils/oklab.ts';
@@ -115,13 +115,16 @@ const EXPECTED: Record<CorpusSheetName, CorpusReading> = {
 
 const KEY = BACKGROUND_KEY_COLORS.MAGENTA_FF00FF;
 
+/** The budget each sheet is reduced to, and so the colours the pass keeps a blend to. */
+const BUDGET: ColorReduction = { kind: 'MAX_COLORS', maxColors: 64 };
+
 /** The sheet as the pass actually meets it: quantised, keyed, and reduced to a colour budget. */
 function quantised(image: ImageData): ImageData {
   const settings: QuantiseSettings = {
     ...QUANTISE_DEFAULT_DIALS,
     grid: measureSheetScale(image)?.grid ?? 1,
     key: KEY === null ? null : { color: KEY, tolerance: QUANTISE_DEFAULT_DIALS.keyTolerance },
-    reduction: { kind: 'MAX_COLORS', maxColors: 64 },
+    reduction: BUDGET,
   };
   return quantiseImage(image, settings).image;
 }
@@ -133,7 +136,7 @@ function movedShare(sheet: ImageData, mode: AntiAliasMode, threshold: number): n
     threshold,
     strength: DEFAULT_ANTI_ALIAS_STRENGTH / 100,
     shortestRun: DEFAULT_ANTI_ALIAS_RUN,
-    snap: true,
+    snapTo: BUDGET,
   });
   if (result === sheet) return 0;
   let moved = 0;

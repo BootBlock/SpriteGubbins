@@ -54,10 +54,11 @@ export function settleSprites(reduced: ImageData, settings: QuantiseSettings): S
  * cut through the sheet's artwork, so nothing may run across it, and nothing that treats it as a
  * contour may run along it either.
  *
- * **Except for the one question about the sheet's colours.** The anti-aliasing's snap keeps each
- * blend to a colour the sheet already holds, and the regions of a sheet hold its colours between them
- * rather than each of them all — so every region's blends are kept to the colours every region holds
- * once the three settles have run, which is the set the whole sheet's snap would draw from.
+ * **Except for the one question about the sheet's colours.** Under a colour budget the
+ * anti-aliasing's snap keeps each blend to a colour the sheet already holds, and the regions of a
+ * sheet hold its colours between them rather than each of them all — so every region's blends are
+ * kept to the colours every region holds once the three settles have run, which is the set the whole
+ * sheet's snap would draw from.
  */
 export function settleRegions(
   regions: readonly ImageData[],
@@ -185,7 +186,8 @@ function alignSprites(reduced: ImageData, settings: QuantiseSettings): AlignedSh
 
 /**
  * The anti-aliasing, and the reading its output forces. `held` is every image whose colours a blend
- * may be snapped to: the sheet's own, or every region of it — see {@link settleRegions}.
+ * may be snapped to under a colour budget: the sheet's own, or every region of it — see
+ * {@link settleRegions}.
  */
 function smoothSprites(
   sheet: AlignedSheet,
@@ -219,7 +221,7 @@ function smoothSprites(
       threshold: settings.antiAliasThreshold,
       strength: settings.antiAliasStrength / 100,
       shortestRun: settings.antiAliasRun,
-      snap: settings.antiAliasPalette === 'SNAP' && settings.reduction !== null,
+      snapTo: settings.antiAliasPalette === 'SNAP' ? settings.reduction : null,
     },
     held,
   );
