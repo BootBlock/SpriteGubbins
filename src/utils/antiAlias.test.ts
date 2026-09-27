@@ -8,11 +8,12 @@ import {
   FULLY_TRANSPARENT,
   countColors,
   createImage,
+  packColor,
   readPixel,
 } from './imageData.ts';
+import { channelLevels } from './channelLevels.ts';
 import { MAX_PALETTE_ENTRIES } from './pngPalette.ts';
-import { channels } from '../test/images.ts';
-import type { Rgba } from '../types/quantiser.ts';
+import type { ColorReduction, Rgba } from '../types/quantiser.ts';
 
 const INK: Rgba = { r: 20, g: 20, b: 20, a: FULLY_OPAQUE };
 const PAPER: Rgba = { r: 235, g: 235, b: 235, a: FULLY_OPAQUE };
@@ -58,8 +59,11 @@ const SETTINGS: AntiAliasSettings = {
   threshold: 24,
   strength: 1,
   shortestRun: 2,
-  snap: false,
+  snapTo: null,
 };
+
+/** A budget, which keeps a blend to the colours the sheet holds — see `blendSnap`. */
+const BUDGET: ColorReduction = { kind: 'MAX_COLORS', maxColors: 32 };
 
 const at = (image: ImageData, x: number, y: number): Rgba =>
   readPixel(image.data, (y * image.width + x) * CHANNELS_PER_PIXEL);
@@ -180,15 +184,15 @@ describe('antiAlias', () => {
       y < (x < 6 ? 2 : 3) ? PAPER : y < (x < 6 ? 5 : 6) ? MID : INK,
     );
     const before = countColors(source);
-    expect(countColors(antiAlias(source, { ...SETTINGS, snap: true }))).toBe(before);
-    expect(countColors(antiAlias(source, { ...SETTINGS, snap: false }))).toBeGreaterThan(before);
+    expect(countColors(antiAlias(source, { ...SETTINGS, snapTo: BUDGET }))).toBe(before);
+    expect(countColors(antiAlias(source, { ...SETTINGS, snapTo: null }))).toBeGreaterThan(before);
   });
 
   it('snaps a blend to a colour the sheet already holds rather than to the nearer endpoint', () => {
     const source = imageFrom(12, 9, (x, y) =>
       y < (x < 6 ? 2 : 3) ? PAPER : y < (x < 6 ? 5 : 6) ? MID : INK,
     );
-    const snapped = antiAlias(source, { ...SETTINGS, snap: true });
+    const snapped = antiAlias(source, { ...SETTINGS, snapTo: BUDGET });
 
     // Every pixel is one of the three the sheet arrived with — the count the palette gate is for.
     for (let pixel = 0; pixel < source.width * source.height; pixel += 1) {
@@ -210,8 +214,8 @@ describe('antiAlias', () => {
     // reaches the grey that only its neighbour holds — see `settleRegions`.
     const region = stepped(PAPER, INK);
     const neighbour = imageFrom(4, 4, () => MID);
-    const alone = antiAlias(region, { ...SETTINGS, snap: true });
-    const together = antiAlias(region, { ...SETTINGS, snap: true }, [region, neighbour]);
+    const alone = antiAlias(region, { ...SETTINGS, snapTo: BUDGET });
+    const together = antiAlias(region, { ...SETTINGS, snapTo: BUDGET }, [region, neighbour]);
 
     const holds = (image: ImageData, color: Rgba) =>
       Array.from({ length: image.width * image.height }).some(
@@ -228,7 +232,7 @@ describe('antiAlias', () => {
     const faint =
       (source.height - 1) * source.width * CHANNELS_PER_PIXEL + (source.width - 1) * CHANNELS_PER_PIXEL;
     source.data.set([MID.r, MID.g, MID.b, 10], faint);
-    const snapped = antiAlias(source, { ...SETTINGS, snap: true });
+    const snapped = antiAlias(source, { ...SETTINGS, snapTo: BUDGET });
 
     for (let offset = 0; offset < snapped.data.length; offset += CHANNELS_PER_PIXEL) {
       if (offset === faint) continue;
@@ -237,8 +241,8 @@ describe('antiAlias', () => {
   });
 
   /**
-   * The stepped contour again, with a block of `shades` distinct colours below it that no claim
-   * reaches — so what varies between two of these is the size of the palette a snap would search.
+   * The stepped contour again, with a block of `shades` distinct colours below it — which is how a
+   * sheet comes to hold more colours than a palette can name.
    */
   const withPalette = (shades: number): ImageData =>
     imageFrom(24, 34, (x, y) => {
@@ -253,23 +257,71 @@ describe('antiAlias', () => {
       };
     });
 
-  it('stops snapping where the sheet holds more colours than a palette can name', () => {
-    // `nearestOklab` is a linear scan paid once per distinct blend, so the search set has to be
-    // bounded by something. Two reductions leave it unbounded — a locked palette at a snap of zero,
-    // and a channel depth at six bits — and on one of those the sheet's colours are not a *palette*
-    // in any sense a blend could be kept to. `MAX_PALETTE_ENTRIES` is where `indexImage` already
-    // draws that line.
-    const small = withPalette(64);
-    expect(countColors(small)).toBeLessThan(MAX_PALETTE_ENTRIES);
-    expect(channels(antiAlias(small, { ...SETTINGS, snap: true }))).not.toEqual(
-      channels(antiAlias(small, { ...SETTINGS, snap: false })),
-    );
-
+  it('keeps a lock’s blends to its entries and the colours it left, however many the sheet holds', () => {
+    // A lock with a short reach leaves most of a sheet's colours as they were, so the sheet can hold
+    // any number of them. The snap once gave up past `MAX_PALETTE_ENTRIES` and wrote the raw blend.
     const large = withPalette(384);
     expect(countColors(large)).toBeGreaterThan(MAX_PALETTE_ENTRIES);
-    expect(channels(antiAlias(large, { ...SETTINGS, snap: true }))).toEqual(
-      channels(antiAlias(large, { ...SETTINGS, snap: false })),
+    const lock: ColorReduction = { kind: 'LOCKED', entries: [MID], snap: 4 };
+    const result = antiAlias(large, { ...SETTINGS, snapTo: lock });
+    const pixelAt = (image: ImageData, pixel: number): Rgba =>
+      readPixel(image.data, pixel * CHANNELS_PER_PIXEL);
+    const opaque = (color: Rgba): number => packColor({ ...color, a: FULLY_OPAQUE });
+    const pixels = Array.from({ length: large.width * large.height }, (_, pixel) => pixel);
+    const allowed = new Set([MID, ...pixels.map((pixel) => pixelAt(large, pixel))].map(opaque));
+
+    const claims = edgeClaims(large, SETTINGS);
+    const claimed = pixels.filter((pixel) => (claims.coverage[pixel] ?? 0) > 0);
+    for (const pixel of claimed) {
+      expect(allowed.has(opaque(pixelAt(result, pixel))), `pixel ${String(pixel)}`).toBe(true);
+    }
+    const moved = claimed.filter(
+      (pixel) => packColor(pixelAt(result, pixel)) !== packColor(pixelAt(large, pixel)),
     );
+    // Proof the pass changed something, so the sweep above is not over an untouched sheet.
+    expect(moved.length).toBeGreaterThan(0);
+    // And not every one of them went to the entry: a blend beside a colour the lock left keeps to the
+    // sheet's own colours, where a snap to the entries alone would paint every fringe in the grey.
+    expect(moved.some((pixel) => opaque(pixelAt(result, pixel)) !== opaque(MID))).toBe(true);
+  });
+
+  it('keeps every blend on the channel ladder under a channel depth, however many colours the sheet holds', () => {
+    // The failure this pins: a four-bit sheet carries hundreds of colours, and every blend was written
+    // raw, so the machine space gained colours it cannot display.
+    const large = withPalette(384);
+    expect(countColors(large)).toBeGreaterThan(MAX_PALETTE_ENTRIES);
+    const rungs = new Set(channelLevels(4));
+    const result = antiAlias(large, { ...SETTINGS, snapTo: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 4 } });
+    const claims = edgeClaims(large, SETTINGS);
+    expect(claims.count).toBeGreaterThan(0);
+
+    for (let pixel = 0; pixel < large.width * large.height; pixel += 1) {
+      if ((claims.coverage[pixel] ?? 0) === 0) continue;
+      const color = readPixel(result.data, pixel * CHANNELS_PER_PIXEL);
+      expect(
+        [color.r, color.g, color.b].every((value) => rungs.has(value)),
+        `pixel ${String(pixel)}`,
+      ).toBe(true);
+    }
+  });
+
+  it('keeps a blend to a pinned palette’s entries, including one the sheet does not hold', () => {
+    // The palette is what the machine can show, so its every entry is a legal intermediate tone.
+    const source = stepped(PAPER, INK);
+    const pinned = antiAlias(source, {
+      ...SETTINGS,
+      snapTo: { kind: 'PALETTE', entries: [PAPER, MID, INK] },
+    });
+    const budgeted = antiAlias(source, { ...SETTINGS, snapTo: BUDGET });
+    const reds = (image: ImageData) =>
+      new Set(
+        Array.from(
+          { length: image.width * image.height },
+          (_, pixel) => at(image, pixel % image.width, Math.floor(pixel / image.width)).r,
+        ),
+      );
+    expect(reds(pinned)).toEqual(new Set([PAPER.r, MID.r, INK.r]));
+    expect(reds(budgeted)).toEqual(new Set([PAPER.r, INK.r]));
   });
 
   it('leaves the sheet further from its neighbours as the strength falls', () => {

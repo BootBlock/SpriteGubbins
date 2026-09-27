@@ -100,9 +100,11 @@ const NEARBY: RankedEntry[] = [];
  * The locked entry a colour is taken to, or `null` where it sits further than the snap distance from
  * all of them.
  *
- * The same answer {@link nearestOklab} gives with the threshold applied after it, tie included: the
- * lattice visits cells in no set order, so the earlier entry is chosen by its rank rather than by
- * when it was met. Colour only, coverage left out, for the reason `nearestOklab` states.
+ * The same answer a brute-force scan over every entry gives with the threshold applied after it, tie
+ * included: the lattice visits cells in no set order, so the earlier entry is chosen by its rank
+ * rather than by when it was met. **Colour only, coverage left out**, as the lock itself is: the
+ * entries were made opaque when they were taken, so a pixel's own alpha says nothing about which of
+ * them it is.
  */
 export function lockedEntryFor(color: Rgba, reach: LockReach | null): Rgba | null {
   if (reach === null) return null;
@@ -124,54 +126,4 @@ export function lockedEntryFor(color: Rgba, reach: LockReach | null): Rgba | nul
   }
 
   return best === null ? null : best.entry;
-}
-
-/** One locked colour and where it sits in scaled OKLab — the form {@link nearestOklab} searches. */
-export interface LocatedEntry {
-  readonly entry: Rgba;
-  readonly lab: Oklab;
-}
-
-/**
- * The entries converted once, rather than once per colour looked up, for {@link nearestOklab}.
- *
- * `antiAlias` is the caller: it wants the nearest entry however far away it is, which a lattice cell
- * cannot bound, and its set is capped at `MAX_PALETTE_ENTRIES` so the scan stays affordable. A lock
- * asks a bounded question and is answered by {@link lockReach} instead.
- */
-export function locateEntries(entries: readonly Rgba[]): readonly LocatedEntry[] {
-  return entries.map((entry) => ({ entry, lab: srgbToOklab(entry.r, entry.g, entry.b) }));
-}
-
-/**
- * The entry closest to a colour in scaled OKLab, with the squared distance it won at.
- *
- * Squared, because the caller compares it with a squared threshold: the square root would be one per
- * distinct colour of a sheet and would change no comparison, distance being monotonic in its square.
- * The earliest entry takes a tie, which under `paletteEntriesFrom`'s population order means the
- * more-used of two equidistant colours wins.
- *
- * **Colour only, coverage left out**, as the lock itself is: the entries were made opaque when they
- * were taken, so a pixel's own alpha says nothing about which of them it is.
- */
-export function nearestOklab(
-  source: Rgba,
-  located: readonly LocatedEntry[],
-): { entry: Rgba; distance: number } | null {
-  const color = srgbToOklab(source.r, source.g, source.b);
-  let chosen: Rgba | null = null;
-  let shortest = Infinity;
-
-  for (const { entry, lab } of located) {
-    const dL = color.L - lab.L;
-    const dA = color.a - lab.a;
-    const dB = color.b - lab.b;
-    const distance = dL * dL + dA * dA + dB * dB;
-    if (distance < shortest) {
-      shortest = distance;
-      chosen = entry;
-    }
-  }
-
-  return chosen === null ? null : { entry: chosen, distance: shortest };
 }

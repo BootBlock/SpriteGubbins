@@ -1,4 +1,4 @@
-import { channelLevels } from './channelLevels.ts';
+import { channelRungs } from './channelRungs.ts';
 import { remapColors } from './imageData.ts';
 
 /**
@@ -23,10 +23,7 @@ import { remapColors } from './imageData.ts';
  * which is a decision about the sheet's shape rather than about its colour.
  */
 export function snapToChannelDepth(image: ImageData, bitsPerChannel: number): ImageData {
-  const levels = channelLevels(bitsPerChannel);
-  // Resolved per channel *value* rather than per colour, which `remapColors`'s own memo cannot do:
-  // 256 entries answer for every colour there is, and the table does not depend on the image.
-  const snapped = Array.from({ length: 256 }, (_, value) => nearestLevel(value, levels));
+  const snapped = channelRungs(bitsPerChannel);
 
   // Every channel a canvas holds is an integer 0–255, so the table always answers; the fallbacks are
   // what `noUncheckedIndexedAccess` asks for rather than a case that can arise.
@@ -36,18 +33,4 @@ export function snapToChannelDepth(image: ImageData, bitsPerChannel: number): Im
     b: snapped[color.b] ?? color.b,
     a: color.a,
   }));
-}
-
-/** The rung nearest a channel value, the lower one taking a tie. */
-function nearestLevel(value: number, levels: readonly number[]): number {
-  let chosen = value;
-  let shortest = Infinity;
-  for (const level of levels) {
-    const distance = Math.abs(value - level);
-    if (distance < shortest) {
-      shortest = distance;
-      chosen = level;
-    }
-  }
-  return chosen;
 }
