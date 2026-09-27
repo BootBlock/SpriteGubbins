@@ -109,18 +109,26 @@ describe('constants/autoTune.ts — the cost of a sweep', () => {
     expect([bound(cells), bound(cells) + offLadder(cells)]).toEqual([872, 904]);
   });
 
-  it('ranks 1,121 positions over the corpus and runs 685, settling each between 26 and 135 colours', () => {
+  it('ranks 1,031 positions over the corpus and runs 604, settling each between 26 and 135 colours', () => {
     const unkeyed = ROWS.map(([, row]) => row.unkeyed);
-    expect(sum(unkeyed.map((row) => row.positions))).toBe(1121);
-    expect(sum(unkeyed.map((row) => row.runs))).toBe(685);
+    const ranked = sum(unkeyed.map((row) => row.positions));
+    const run = sum(unkeyed.map((row) => row.runs));
+    expect([ranked, run]).toEqual([1031, 604]);
+    // What `candidateReader` states the cache saves: 41% over the corpus, 46% on ui_elements1.png.
+    const ui = CORPUS_TUNE_FIGURES['ui_elements1.png'].unkeyed;
+    expect([1 - run / ranked, 1 - ui.runs / ui.positions].map((share) => Math.round(share * 100))).toEqual([
+      41, 46,
+    ]);
     expect([
       Math.min(...unkeyed.map((row) => row.colors)),
       Math.max(...unkeyed.map((row) => row.colors)),
     ]).toEqual([26, 135]);
     // Every sheet settles on the reading the guidance warns about, unkeyed.
     expect(new Set(unkeyed.map((row) => row.vote))).toEqual(new Set(['K_CENTROID']));
-    // Eight rounds is twice the worst of the eight.
-    expect(Math.max(...unkeyed.map((row) => row.rounds)) * 2).toBe(TUNE_ROUNDS);
+    // Eight rounds is twice the worst the corpus takes: three here, and the four the reference sheet
+    // takes keyed at `BOTH`, which `auto-tune-figures-alias.test.ts` pins.
+    expect(Math.max(...ROWS.flatMap(([, row]) => [row.unkeyed.rounds, row.keyed.rounds]))).toBe(3);
+    expect(TUNE_ROUNDS).toBe(2 * 4);
   });
 
   it('settles three sheets keyed where it settles them unkeyed, and moves the other five as the docblock says', () => {
@@ -145,11 +153,6 @@ describe('constants/autoTune.ts — the cost of a sweep', () => {
       Object.fromEntries(
         lengthened.map(([name, row]) => [name, [row.unkeyed.positions, row.keyed.positions]]),
       ),
-    ).toEqual({
-      'three-quarter-view_tiles1.png': [192, 145],
-      'vehicles_and_props.png': [145, 102],
-      'cyborg_monk.png': [102, 145],
-      'ui_elements1.png': [102, 145],
-    });
+    ).toEqual({ 'vehicles_and_props.png': [145, 102] });
   });
 });

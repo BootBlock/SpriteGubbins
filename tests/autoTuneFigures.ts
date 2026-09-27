@@ -18,6 +18,10 @@ import { autoTune } from '../src/utils/autoTune.ts';
  * Like the `quantiser-figures-*` suites (see `calibrationSettings.ts`) they pin the figures rather
  * than the prose, so whoever makes one fail has to go and restate the docblock.
  *
+ * **They hold on every platform the gate runs on**, which they did not at first: two sheets took
+ * different descents on Linux than on Windows, because the price makes ties that rounding then broke. See
+ * `TUNE_SCORE_TIE`, which settles such a tie on likeness instead.
+ *
  * Every row is measured with no colour budget and every dial at its opening position, at the grid in
  * the row, which is the run's own input rather than a reading of the sheet — see `TUNE_ROUNDS`.
  */
@@ -47,9 +51,9 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
   'three-quarter-view_tiles1.png': {
     grid: 5,
     unkeyed: {
-      rounds: 4,
-      positions: 192,
-      runs: 136,
+      rounds: 2,
+      positions: 102,
+      runs: 55,
       vote: 'K_CENTROID',
       colorMerge: 15,
       fillCleanup: 0,
@@ -57,8 +61,8 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       colors: 36,
     },
     keyed: {
-      rounds: 3,
-      positions: 145,
+      rounds: 2,
+      positions: 102,
       vote: 'K_CENTROID',
       colorMerge: 12,
       fillCleanup: 0,
@@ -189,8 +193,8 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       colors: 46,
     },
     keyed: {
-      rounds: 3,
-      positions: 145,
+      rounds: 2,
+      positions: 102,
       vote: 'K_CENTROID',
       colorMerge: 12,
       fillCleanup: 0,
@@ -211,8 +215,8 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       colors: 26,
     },
     keyed: {
-      rounds: 3,
-      positions: 145,
+      rounds: 2,
+      positions: 102,
       vote: 'K_CENTROID',
       colorMerge: 18,
       fillCleanup: 0,
