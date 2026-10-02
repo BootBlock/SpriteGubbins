@@ -3,10 +3,9 @@ import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
-import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import type { OutputConfig } from '../types/output.ts';
-import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import type { SheetPlan } from '../types/components.ts';
 import { generatePrompt } from './promptCompiler.ts';
@@ -31,42 +30,59 @@ interface CompiledSheet {
   readonly prompt: string;
 }
 
-const compiled = new Map<SubjectCategory, readonly CompiledSheet[]>();
+/**
+ * The sheets each case of the sweep compiles, kept so the second test reads what the first compiled.
+ *
+ * **Keyed by case, not by category**, because the sweep runs one test per case
+ * (`assemblyBaseCases`): ICON's cases are whole-catalogue rosters, and a category's worth of them as one
+ * test outgrew Vitest's five-second limit on a slow runner. Each case is one subject's sheets.
+ */
+const compiled = new Map<string, readonly CompiledSheet[]>();
 
-/** Every sheet of every base, mode, reachable direction set and series position, as compiled. */
-function everySheet(category: SubjectCategory): readonly CompiledSheet[] {
-  const cached = compiled.get(category);
+/** Every sheet one subject reaches: each mode, reachable direction set and series position, compiled. */
+function sheetsOf(
+  name: string,
+  category: SubjectCategory,
+  subject: SubjectDefinition,
+): readonly CompiledSheet[] {
+  const cached = compiled.get(name);
   if (cached !== undefined) return cached;
-  const sheets: CompiledSheet[] = [];
-  for (const subject of assemblyBaseSubjectsOf(category)) {
-    for (const directionalMode of modesFor(category, subject)) {
-      for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-        const { length } = sheetSeriesFor(category, subject, directionalMode, directions);
-        for (let sheetIndex = 0; sheetIndex < length; sheetIndex += 1) {
-          const output: OutputConfig = { ...DEFAULT_OUTPUT_CONFIG, directionalMode, directions, sheetIndex };
-          sheets.push({
-            where: `${category}/${subject.anatomy}/${directionalMode}/${directions}/${String(sheetIndex)}`,
-            // The plan the compiler itself resolved, rather than one looked up beside it.
-            plan: sheetFacts(category, subject, output).plan,
-            prompt: generatePrompt(category, subject, output),
-          });
-        }
-      }
-    }
-  }
-  compiled.set(category, sheets);
+  const sheets = outputsOf(category, subject).map((output) => ({
+    where: `${name}/${output.directionalMode}/${output.directions}/${String(output.sheetIndex)}`,
+    // The plan the compiler itself resolved, rather than one looked up beside it.
+    plan: sheetFacts(category, subject, output).plan,
+    prompt: generatePrompt(category, subject, output),
+  }));
+  compiled.set(name, sheets);
   return sheets;
 }
+
+/** Every output configuration that addresses one of the subject's sheets. */
+function outputsOf(category: SubjectCategory, subject: SubjectDefinition): readonly OutputConfig[] {
+  return modesFor(category, subject).flatMap((directionalMode) =>
+    CATEGORY_DIRECTION_SETS[category].flatMap((directions) => {
+      const { length } = sheetSeriesFor(category, subject, directionalMode, directions);
+      return Array.from({ length }, (_, sheetIndex) => ({
+        ...DEFAULT_OUTPUT_CONFIG,
+        directionalMode,
+        directions,
+        sheetIndex,
+      }));
+    }),
+  );
+}
+
+const CASES = assemblyBaseCases();
 
 function statesItsEnds(plan: SheetPlan): boolean {
   return plan.groups.some((group) => group.ends !== undefined);
 }
 
 describe('where each component ends', () => {
-  it.each(SUBJECT_CATEGORIES)(
-    'tells no %s sheet of whole drawings that an entry is a severed part',
-    (category) => {
-      for (const { where, plan, prompt } of everySheet(category)) {
+  it.each(CASES)(
+    'tells no sheet of whole drawings that an entry is a severed part: %s',
+    (name, category, subject) => {
+      for (const { where, plan, prompt } of sheetsOf(name, category, subject)) {
         if (plan.extent !== 'WHOLE') continue;
 
         expect(prompt, where).not.toContain(BOUNDARY_HEADING);
@@ -83,8 +99,8 @@ describe('where each component ends', () => {
     },
   );
 
-  it.each(SUBJECT_CATEGORIES)('states once where a piece ends on every %s sheet of pieces', (category) => {
-    for (const { where, plan, prompt } of everySheet(category)) {
+  it.each(CASES)('states once where a piece ends on every sheet of pieces: %s', (name, category, subject) => {
+    for (const { where, plan, prompt } of sheetsOf(name, category, subject)) {
       if (plan.extent !== 'PIECE') continue;
       const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
       const own = plan.groups.flatMap((group) => (group.ends === undefined ? [] : [group.ends]));
@@ -98,15 +114,20 @@ describe('where each component ends', () => {
     }
   });
 
-  it('never gives a sheet of whole drawings a statement of where its pieces end', () => {
-    // `ends` would print a trunk's joins above an inventory of whole drawings, which is the
-    // contradiction this fixes arriving by the other route.
-    for (const category of SUBJECT_CATEGORIES) {
-      for (const { where, plan } of everySheet(category)) {
-        if (plan.extent === 'WHOLE') expect(statesItsEnds(plan), where).toBe(false);
+  it.each(CASES)(
+    'never gives a sheet of whole drawings a statement of where its pieces end: %s',
+    (name, category, subject) => {
+      // `ends` would print a trunk's joins above an inventory of whole drawings, which is the
+      // contradiction this fixes arriving by the other route. Read from the resolved plans alone, so
+      // this compiles no prompt.
+      for (const output of outputsOf(category, subject)) {
+        const { plan } = sheetFacts(category, subject, output);
+        if (plan.extent === 'WHOLE') {
+          expect(statesItsEnds(plan), `${name}/${String(output.sheetIndex)}`).toBe(false);
+        }
       }
-    }
-  });
+    },
+  );
 
   it.each([
     ['OBJECT', 'Single Rigid Object'],

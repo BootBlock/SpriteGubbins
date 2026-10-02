@@ -22,6 +22,7 @@ import {
 } from '../constants/promptText/index.ts';
 import { everySeriesOf, everySheetOf, planProseFor, sheetsProseFor } from '../test/categoryProse.ts';
 import { sectionOf } from '../test/promptSections.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
 import { decliningEverything, standardSubject } from '../test/sheetSubject.ts';
 import { sweepSubjectsOf } from '../test/sweepSubjectsOf.ts';
@@ -782,21 +783,31 @@ describe('every sheet of one series states the same finished capability', () => 
     };
   }
 
-  it('gives every sheet of a batch one answer about the deliverable, and its own share beside it', () => {
-    // The reported defect, swept over every pairing the app can compile: on a `CHARACTER` /
-    // `CORE_DIRECTIONAL_VARIANTS` / `EIGHT_COMPASS` series, sheet 1 told the reader the finished
-    // ten-sheet deliverable was a trunk at four cardinal facings, sheet 2 that it was a trunk at
-    // four diagonals, and sheets 3 to 10 that it was limbs at one facing and no trunk at all —
-    // each of them two lines above a list of all ten sheets.
-    let multiSheet = 0;
-    for (const { category, subject, mode, directions } of EVERY_SERIES) {
+  /**
+   * Every series the app can compile, named and one case each — a subject's mode and direction set —
+   * because the sweep as one test outgrew Vitest's five-second limit on a slow runner. ICON's
+   * whole-catalogue rosters make its series the long ones; a case is one of them.
+   */
+  const SERIES_CASES = assemblyBaseCases().flatMap(([name, category, subject]) =>
+    modesFor(category, subject).flatMap((mode) =>
+      CATEGORY_DIRECTION_SETS[category].map(
+        (directions) => [`${name} / ${mode} / ${directions}`, category, subject, mode, directions] as const,
+      ),
+    ),
+  );
+
+  it.each(SERIES_CASES)(
+    'gives every sheet of a batch one answer about the deliverable, and its own share beside it: %s',
+    (where, category, subject, mode, directions) => {
+      // The reported defect, swept over every pairing the app can compile: on a `CHARACTER` /
+      // `CORE_DIRECTIONAL_VARIANTS` / `EIGHT_COMPASS` series, sheet 1 told the reader the finished
+      // ten-sheet deliverable was a trunk at four cardinal facings, sheet 2 that it was a trunk at
+      // four diagonals, and sheets 3 to 10 that it was limbs at one facing and no trunk at all —
+      // each of them two lines above a list of all ten sheets.
       const sheets = sheetSeriesFor(category, subject, mode, directions).map((_, sheetIndex) =>
         capabilityOf(sheetPrompt(category, subject, mode, directions, sheetIndex)),
       );
-      if (sheets.length < 2) continue;
-      multiSheet += 1;
-      const where = `${category} / ${subject.anatomy} / ${mode} / ${directions}`;
-
+      if (sheets.length < 2) return;
       // One statement of the deliverable across the series, whichever sheet was compiled, and
       // one branch — a batch cannot be told both that every one of its sheets delivers the
       // answer and that this one is only a share of it.
@@ -828,10 +839,17 @@ describe('every sheet of one series states the same finished capability', () => 
           );
         }
       }
-    }
-    // Without this the loop above passes on having found no series at all, which is exactly what a
+    },
+  );
+
+  it('finds some pairing whose series runs to more than one sheet', () => {
+    // Without this the cases above pass on having found no series at all, which is exactly what a
     // plan table collapsed to one sheet per pairing would look like.
-    expect(multiSheet, 'no pairing produces a series to check').toBeGreaterThan(0);
+    const multiSheet = EVERY_SERIES.filter(
+      ({ category, subject, mode, directions }) =>
+        sheetSeriesFor(category, subject, mode, directions).length > 1,
+    );
+    expect(multiSheet.length, 'no pairing produces a series to check').toBeGreaterThan(0);
   });
 
   it('writes no assembly sentence whose meaning moves with the sheet reading it', () => {
