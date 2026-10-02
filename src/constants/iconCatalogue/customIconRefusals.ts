@@ -31,6 +31,14 @@ export const CUSTOM_ICON_REFUSALS = {
   brackets: (what: CustomIconText): string =>
     `Your ${what} contains a square bracket. The prompt uses square brackets for its own section references, so use round brackets instead.`,
 
+  countMarker: (what: CustomIconText): string =>
+    `Your ${what} contains a count, such as “×5” or “x5”. The sheet reads a count as that many separate drawings, so name one icon and leave the count to the game.`,
+
+  separator: (what: 'role' | 'state'): string =>
+    `Your ${what} contains a long dash, which the sheet uses to divide an icon’s role from its look. Use a comma or a word instead.`,
+
+  gone: 'This icon is no longer on your set, so there is nothing to save these changes to. Cancel, and add it again if you still want it.',
+
   schoolMissing: 'Choose the damage school this spell belongs to. Its colour leads the icon.',
 
   schoolStray:

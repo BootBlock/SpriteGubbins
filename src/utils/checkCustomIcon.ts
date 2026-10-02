@@ -1,6 +1,7 @@
 import { CUSTOM_ICON_LIMITS } from '../constants/iconCatalogue/customIconLimits.ts';
 import { CUSTOM_ICON_REFUSALS } from '../constants/iconCatalogue/customIconRefusals.ts';
 import { ICON_CAPACITY_NOTICES } from '../constants/iconCatalogue/iconCapacityNotices.ts';
+import { COUNT_MARKER, LINE_SEPARATOR } from '../constants/iconCatalogue/iconLookRules.ts';
 import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { iconComponentCount } from '../constants/iconCatalogue/index.ts';
 import type {
@@ -27,12 +28,18 @@ import { takenIconSlotNames } from './takenIconSlotNames.ts';
  *   compiler resolves `[SEC:…]` citations over, so a square bracket either throws out of the compiler or
  *   is silently replaced by a section number (R9 of `docs/todo/icon-catalogue.md`). An empty text is a
  *   line with nothing to draw, and the limits are `CUSTOM_ICON_LIMITS`'.
+ * - **A count in any text, or a long dash in a role or state** (`COUNT_MARKER`, `LINE_SEPARATOR`).
+ *   Section 4 reads `×N` as N separate drawings and the dash as the line's divide between role and look,
+ *   so either in the reader's words breaks the line: `Arrow ×5` would ask for five arrows in one slot
+ *   and shift every slot after it.
  * - **A role or state with no plain letter or digit**, since the slot name is made of those alone.
  * - **A slot name something else already answers to** — a catalogue entry or one of its pair's drawings,
  *   an overlay piece, or another pick on this roster — because two sprites answering to one name are cut
  *   to one file, and the second overwrites the first.
  * - **A spell with no school, or a school on anything else**, which is the catalogue's own rule.
  * - **An entry the set has no room for**, measured against `ICON_ROSTER_CAPACITY` as a tick is.
+ * - **A change to an entry no longer on the roster** — cleared, removed or undone away while its form
+ *   was open — since there is nothing left for the change to replace.
  *
  * Every one of these breaks the output whatever the reader's world is. What depends on the world and
  * the key — a colour, a lettered object, a hand — is `customIconWarnings`', which warns and never refuses.
@@ -63,6 +70,9 @@ export function checkCustomIcon(
     refusals.push({ field: 'school', message: CUSTOM_ICON_REFUSALS.schoolStray });
   }
 
+  if (replacing !== null && !picks.some((pick) => pick.source === 'CUSTOM' && pick.entry.id === replacing)) {
+    refusals.push({ field: 'set', message: CUSTOM_ICON_REFUSALS.gone });
+  }
   const others = picks.filter((pick) => iconPickId(pick) !== replacing);
   const entry: CustomIconEntry = {
     id,
@@ -86,7 +96,7 @@ function collapsed(text: string): string {
   return text.replaceAll(/\s+/g, ' ').trim();
 }
 
-/** The refusals any one text earns on its own: its length and its brackets. */
+/** The refusals any one text earns on its own: its length, its brackets, a count, and a dash outside a look. */
 function textRefusals(
   field: CustomIconField,
   text: string,
@@ -97,6 +107,10 @@ function textRefusals(
     found.push({ field, message: CUSTOM_ICON_REFUSALS.tooLong(what, text.length) });
   }
   if (/[[\]]/.test(text)) found.push({ field, message: CUSTOM_ICON_REFUSALS.brackets(what) });
+  if (COUNT_MARKER.test(text)) found.push({ field, message: CUSTOM_ICON_REFUSALS.countMarker(what) });
+  if (what !== 'look' && LINE_SEPARATOR.test(text)) {
+    found.push({ field, message: CUSTOM_ICON_REFUSALS.separator(what) });
+  }
   return found;
 }
 

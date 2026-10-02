@@ -55,3 +55,30 @@ export const KEY_COLOUR_WORDS: Readonly<Record<BackgroundKey, readonly string[]>
 export function wordNamed(text: string, words: readonly string[]): string | undefined {
   return words.find((word) => new RegExp(String.raw`\b${word}`, 'i').test(text));
 }
+
+/**
+ * A count, as an inventory line states one or a reader would read one: `×` with a digit on either side
+ * (`×5`, `5×`, `3×3`), or an `x` standing as a word of its own before a number (`x5`, `x 5`, `arrows
+ * X10`) or straight after one (`5x`). Section 4 reads `×N` as N separate components, so a count in an
+ * entry's own words asks the generator for that many drawings in one slot and shifts every cell and
+ * every slot name after it. An `x` inside a word or between two numbers (`0x1F`, `4x4`) is not one.
+ */
+export const COUNT_MARKER = /\d\s*×|×\s*\d|(?<![\p{L}\p{N}])[xX]\s*\d|\d[xX](?![\p{L}\p{N}])/u;
+
+/**
+ * The dash an inventory line puts between an entry's role and its look (`Role ×1 — look`), and its en
+ * dash twin: in a role or a state name it reads as the line's own separator, and the look appears to
+ * start early.
+ */
+export const LINE_SEPARATOR = /[—–]/;
+
+/**
+ * The first of `words` that `text` contains anywhere, inside a longer word too, in any case, or
+ * `undefined` — the stricter reading the catalogue's own looks are held to, so `hotpink` and
+ * `neonmagenta` count. A reader's text is read by {@link wordNamed}, which a word merely containing a
+ * colour's letters does not trip, because a warning on `pinkerton` would be noise.
+ */
+export function wordWithin(text: string, words: readonly string[]): string | undefined {
+  const lower = text.toLowerCase();
+  return words.find((word) => lower.includes(word));
+}

@@ -36,6 +36,9 @@ interface CustomIconFormProps {
  * A field's refusal shows once it holds text or once Add has been pressed, so an empty form does not
  * open on a column of errors; a press with refusals moves focus to the first field refused.
  *
+ * **Escape cancels the form, not the dialog**, as Cancel does, so a reader backing out of a draft
+ * stays in the catalogue with focus on the button that opened it.
+ *
  * **Warnings never block** (`customIconWarnings`): they name a word the sheet's own rules will overrule,
  * under the background key in force now, and the entry is saved as written. They sit in a polite live
  * region, so a reader typing hears one arrive.
@@ -59,6 +62,24 @@ export function CustomIconForm({ entry, onClose }: CustomIconFormProps) {
   useEffect(() => {
     formRef.current?.querySelector<HTMLElement>(attempts === 0 ? 'input' : '[aria-invalid=true]')?.focus();
   }, [attempts]);
+
+  // Escape cancels this form alone. Its default action is the dialog's `cancel`, which would close the
+  // whole catalogue and throw the draft away, so it is prevented here and the form closes instead. A
+  // listener on the element rather than a JSX handler, since a form is not an interactive element.
+  useEffect(() => {
+    const form = formRef.current;
+    if (form === null) return undefined;
+    const cancel = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    };
+    form.addEventListener('keydown', cancel);
+    return () => {
+      form.removeEventListener('keydown', cancel);
+    };
+  }, [onClose]);
 
   // What each field holds, so a refusal waits until there is something to refuse or Add was pressed.
   // The school always holds a value, and the set's room is measured whatever the fields hold.

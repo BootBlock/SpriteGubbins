@@ -17,7 +17,7 @@ export const CUSTOM_ICON_TOOLTIPS = {
   school: `The damage school this spell or ability belongs to. The sheet closes its line on the school’s name in your ${fieldLabelFor('ICON', 'setting')} and its one colour by hex, which leads the icon ahead of your set’s own colours, as it does for every catalogue spell.`,
 
   figure:
-    'Tick this when the drawing is meant to include a hand, a face or a figure, such as an emote. The sheet draws one your look names either way; ticking it tells the form the figure is meant, so it stops warning about one.',
+    'Tick this when the drawing is meant to include a hand, a face or a figure, such as an emote. The sheet draws one your look names either way; ticking it tells the form the figure is meant, so it stops warning about one, and the row’s card says so. Nothing in the prompt changes.',
 
   twoState:
     'Draws the icon twice, once in each of two states, such as a toggle drawn on and then off. The pair counts as two components, always shares a sheet, and names its two sprites after the role and each state.',

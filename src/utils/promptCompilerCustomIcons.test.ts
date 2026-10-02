@@ -15,9 +15,10 @@ import { generatePrompt } from './promptCompiler.ts';
 
 /**
  * An icon of the reader's own compiled: the same line a catalogue entry gets — the role ×N, the look,
- * a spell's school and colour, a pair's two states — its slot named after its role, the figure rescue
- * reaching it, chunking keeping its pair together, and a citation in its text never reaching the
- * compiler.
+ * a spell's school and colour, a pair's two states — its slot named after its role, the sheet's
+ * figure rescue reaching a hand its look names whatever its `figure` mark says (the mark changes only
+ * the form's warnings and the row's card), chunking keeping its pair together, and a citation in its
+ * text never reaching the compiler.
  */
 
 const OUTPUT: OutputConfig = {
@@ -85,12 +86,20 @@ describe('an icon of the reader’s own in the compiled prompt', () => {
     expect(slots(subject)).toEqual(['cloak-field-engaged', 'cloak-field-idle']);
   });
 
-  it('lets a figure entry’s hand through the exclusions, the guard and the audit', () => {
-    const subject = {
+  it('rescues a hand the look names on every ICON sheet, and compiles the figure mark to nothing', () => {
+    // The rescue sentences are unconditional on an ICON sheet, so they reach a custom look naming a
+    // hand whether or not the entry is marked as showing a figure; no compiler code reads the mark.
+    const marked = {
       ...iconSet([customPick(SALUTE)]),
       exclusions: 'No hand or figure an icon’s entry does not name',
     };
-    const sheet = generatePrompt('ICON', subject, { ...OUTPUT, sheetIndex: 1 });
+    const { figure: _mark, ...unmarkedSalute } = SALUTE;
+    const unmarked = {
+      ...marked,
+      icons: { look: 'FULL_BLEED_TILE' as const, picks: [customPick(unmarkedSalute)] },
+    };
+    const sheet = generatePrompt('ICON', marked, { ...OUTPUT, sheetIndex: 1 });
+
     expect(flat(sectionOf(sheet, 'COMPONENT INVENTORY'))).toContain(`Gang salute ×1 — ${SALUTE.look}`);
     expect(flat(sectionOf(sheet, 'EXCLUSIONS'))).toContain(
       'A hand, face or figure an entry names is part of that icon’s subject and is drawn as the entry describes it.',
@@ -98,6 +107,10 @@ describe('an icon of the reader’s own in the compiled prompt', () => {
     expect(flat(sheet)).toContain(
       'anatomy other than the hand, face or figure that is the subject of an icon’s own entry',
     );
+    expect(generatePrompt('ICON', unmarked, { ...OUTPUT, sheetIndex: 1 })).toBe(sheet);
+    // And on a sheet with no figure anywhere, the same sentences stand.
+    const plain = generatePrompt('ICON', iconSet([customPick(RELIC)]), { ...OUTPUT, sheetIndex: 1 });
+    expect(flat(sectionOf(plain, 'EXCLUSIONS'))).toContain('A hand, face or figure an entry names');
   });
 
   it('keeps a pair together where it would straddle two sheets, and counts it twice', () => {

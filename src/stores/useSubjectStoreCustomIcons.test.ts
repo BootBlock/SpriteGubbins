@@ -82,12 +82,37 @@ describe('useSubjectStore — the reader’s own icons', () => {
     expect(picks()[0]).toEqual(customPick(RELIC));
   });
 
-  it('renames an entry’s slot with its role, and moves it to the end of a new kind', () => {
-    useSubjectStore.getState().addCustomIcon(RELIC_DRAFT);
+  it('renames an entry’s slot with its role, and moves it after the new kind’s own entries', () => {
+    // The toggle is already the reader's own SYSTEM entry, so a relic moved to SYSTEM goes after it:
+    // replaced in place, it would have kept its earlier position and sorted before the toggle.
+    iconStudio([
+      ...cataloguePicks(['heal-minor']),
+      customPick(RELIC),
+      ...cataloguePicks(['system-bags']),
+      customPick(TOGGLE),
+    ]);
     useSubjectStore
       .getState()
       .updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, role: 'Vault pass', kind: 'SYSTEM' });
-    expect(ids()).toEqual(['heal-minor', 'system-bags', 'vault-pass']);
+    expect(ids()).toEqual(['heal-minor', 'system-bags', TOGGLE.id, 'vault-pass']);
+  });
+
+  it('keeps an entry’s place among its kind’s own entries when its kind stays', () => {
+    const second = { ...RELIC, id: 'second-relic', role: 'Second relic' };
+    iconStudio([customPick(RELIC), customPick(second)]);
+    useSubjectStore.getState().updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, role: 'First relic' });
+    expect(ids()).toEqual(['first-relic', 'second-relic']);
+  });
+
+  it('refuses a change to an entry the set no longer holds, and changes nothing', () => {
+    iconStudio([...cataloguePicks(['heal-minor']), customPick(RELIC)]);
+    useSubjectStore.getState().clearIcons();
+    const refusals = useSubjectStore
+      .getState()
+      .updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, look: 'a cracked card' });
+
+    expect(refusals.map((refusal) => refusal.message)).toEqual([CUSTOM_ICON_REFUSALS.gone]);
+    expect(picks()).toEqual([]);
   });
 
   it('records nothing for a change that changes nothing', () => {

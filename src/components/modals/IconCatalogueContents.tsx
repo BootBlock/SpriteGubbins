@@ -46,7 +46,13 @@ interface Editing {
  * and reopening the catalogue shows the new looks, and the row and the prompt never disagree.
  *
  * **Focus follows the form**: opening it focuses its first field, and closing it returns focus to the
- * button that opened it, or to *Add your own icon* where that button has gone.
+ * button that opened it, or to *Add your own icon* where that button has gone. Escape inside the form
+ * cancels the form alone (`CustomIconForm`); outside it, Escape closes the dialog as before.
+ *
+ * **A form whose entry leaves the roster closes**, by whatever route it left — *Clear all*, its own
+ * Remove, an undo — because a change saved to an entry that is gone would land nowhere. The check
+ * refuses such a save too (`checkCustomIcon`); this keeps the reader from typing into one at all. It is
+ * settled during render, as a state adjustment rather than an effect, so no frame shows the stale form.
  *
  * **The contents alone — the dialog frame is `AppOverlays`'**, for the reason `LazyOverlay` gives.
  */
@@ -59,6 +65,14 @@ export function IconCatalogueContents() {
   const [editing, setEditing] = useState<Editing | null>(null);
   const addButton = useRef<HTMLButtonElement>(null);
   const opener = useRef<HTMLElement | null>(null);
+
+  const editedId = editing?.entry?.id;
+  if (
+    editedId !== undefined &&
+    !picks.some((pick) => pick.source === 'CUSTOM' && pick.entry.id === editedId)
+  ) {
+    setEditing(null);
+  }
 
   const shown = useMemo(
     () => iconCatalogueSearch(ICON_CATALOGUE_GROUPS, filter, picks, world),

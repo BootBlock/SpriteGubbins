@@ -19,8 +19,9 @@ import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
  * or a mark alone, which is a different discipline from drawing the thing it depicts.
  *
  * **The icons are the reader's list, and these fields describe the set.** Which icons a sheet draws is
- * the roster (`SubjectDefinition.icons`), ticked from the catalogue in `constants/iconCatalogue/`, and
- * each is drawn as the look its world's family writes for it. So a field here can no longer say what
+ * the roster (`SubjectDefinition.icons`), ticked from the catalogue in `constants/iconCatalogue/` or
+ * written by the reader, and each is drawn as the look its world's family writes for it, or as the
+ * reader's own look. So a field here can no longer say what
  * one icon *is* — a roster mixing a potion, a map pin and a settings cog has no single family, signal or
  * focal motif — and each is a rule the whole set follows instead: where it is shown, the smallest size
  * it must survive, how its subjects sit in their squares, and the discipline its outlines keep.

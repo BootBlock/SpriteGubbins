@@ -615,3 +615,40 @@ every icon. `IconRoster.picks` is `readonly IconPick[]`, and `toggleIconPicks`, 
 words per key, matched from the start of a word, rather than a pattern. *Clear all* removes the reader's
 own entries. The precache lists `iconCatalogue` and `iconCatalogueData` in place of `iconCatalogue` and
 `output`.
+
+**Addendum — review fixes (2026-10-02).** A review of the phase 5 commit raised seven findings. All
+seven held when re-derived, and each was fixed in a follow-up commit with a test shown failing against
+the old code:
+
+- **An edit could be saved to nothing.** With an entry's form open, *Clear all* (or a removal or an
+  undo) took the entry off the roster, and Save changes then matched no pick, changed nothing and closed
+  as if it had worked. `checkCustomIcon` now refuses a change whose entry is no longer on the roster
+  (`CUSTOM_ICON_REFUSALS.gone`), and the dialog closes a form whose entry leaves the roster by any route,
+  settled during render rather than in an effect, so an undo bringing the entry back does not bring back
+  a stale form.
+- **A kind change did not move the entry**, though this record said it did. Every custom entry of a kind
+  sorts with one key, so replacing it in place kept its array position. `withCustomIcon` now replaces
+  in place only while the kind stays, and otherwise takes the old pick out and appends the new one, so
+  it lands after the new kind's own entries; the store test puts another entry of that kind on the set.
+- **A count in the reader's words reached the inventory line.** A role `Arrow ×5` compiled as `Arrow ×5
+  ×1 — …`, and section 4 reads `×N` as N drawings. The rule, `COUNT_MARKER` in `iconLookRules.ts`: `×`
+  with a digit on either side, or an `x` standing as a word before a number (`x5`, `x 5`) or straight
+  after one (`5x`), in a role, a look or a state; an `x` inside a word or between numbers (`0x1F`, `4x4`)
+  passes. The line's em dash, and its en dash twin (`LINE_SEPARATOR`), are refused in a role and a state
+  name, where they would read as the divide between role and look, and allowed in a look, which the line
+  closes on anyway. Both are `checkCustomIcon`'s, so the form, the store and the parser apply them.
+- **Escape inside the form closed the whole dialog** and threw the draft away. The form now takes
+  Escape for itself and cancels as Cancel does, returning focus to its opener; Escape anywhere else
+  still closes the dialog.
+- **The figure test could not fail.** No compiler code reads `figure`, and the rescue sentences are on
+  every ICON sheet, so “a figure entry compiles with the rescue” in this record overstated it: the rescue
+  is unconditional, and a custom entry's `figure` mark changes only the form's warnings and the row's
+  card. The test now compiles the entry with and without the mark to the same prompt, and the card for a
+  marked custom entry says what the mark does rather than claiming the exclusions allow it because of it.
+- **A guard was loosened.** The catalogue's magenta check matched a colour word anywhere in a word
+  before `KEY_COLOUR_WORDS` moved into `iconLookRules.ts`, and only from a word's start after. It, and
+  the presets' key-colour check, now read the same list through `wordWithin`, which matches anywhere, so
+  `hotpink` fails again; the reader's warnings keep the word-start reading.
+- **Stale docblocks** in `TextField`, `subject.ts`, the ICON category and `subjectState.ts` now say the
+  roster holds the reader's own entries, that the form's role and states are required, and that *Clear
+  all* removes the reader's own entries as well as unticking the rest.

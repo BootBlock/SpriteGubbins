@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { CUSTOM_ICON_NOTICES } from '../../constants/iconCatalogue/customIconNotices.ts';
@@ -8,7 +8,7 @@ import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
-import { RELIC, TOGGLE, customPick } from '../../test/customIcons.ts';
+import { RELIC, TOGGLE, customPick, draftOf } from '../../test/customIcons.ts';
 import type { IconPick } from '../../types/iconRoster.ts';
 import { iconPickId } from '../../utils/iconPickId.ts';
 import { IconCatalogueContents } from './IconCatalogueContents.tsx';
@@ -109,5 +109,74 @@ describe('the catalogue dialog’s own icons', () => {
 
     useSubjectStore.getState().undoStudio();
     expect(ids()).toEqual(['heal-minor', RELIC.id]);
+  });
+
+  it.each([
+    [
+      'Clear all',
+      async (user: ReturnType<typeof userEvent.setup>) => {
+        await user.click(screen.getByRole('button', { name: 'Clear all' }));
+      },
+    ],
+    [
+      'an undo',
+      async () => {
+        act(() => {
+          useSubjectStore.getState().undoStudio();
+        });
+      },
+    ],
+  ])(
+    'closes a form whose entry %s takes off the set, so no change is saved to nothing',
+    async (_route, leave) => {
+      const user = userEvent.setup({ delay: null });
+      iconStudio(cataloguePicks(['heal-minor']));
+      useSubjectStore.getState().addCustomIcon(draftOf(RELIC));
+      render(<IconCatalogueContents />);
+
+      await user.click(screen.getByRole('button', { name: `Edit ${RELIC.role}` }));
+      await user.type(screen.getByRole('textbox', { name: 'Look' }), ' and a chain');
+      await leave(user);
+
+      expect(ids()).not.toContain(RELIC.id);
+      expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+      expect(addButton()).toHaveAttribute('aria-expanded', 'false');
+
+      // Bringing the entry back does not bring back a form for it.
+      act(() => {
+        useSubjectStore.getState().undoStudio();
+      });
+      expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+    },
+  );
+
+  it('cancels the form alone on Escape inside it, and leaves Escape outside it to the dialog', async () => {
+    const user = userEvent.setup({ delay: null });
+    iconStudio(cataloguePicks(['heal-minor']));
+    render(<IconCatalogueContents />);
+    const reachedDialog = vi.fn();
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') reachedDialog();
+    };
+    document.addEventListener('keydown', onKey);
+
+    await user.click(addButton());
+    await user.type(screen.getByRole('textbox', { name: 'Role' }), 'Half-written relic');
+    const insideForm = fireEvent.keyDown(screen.getByRole('textbox', { name: 'Role' }), { key: 'Escape' });
+
+    expect(insideForm).toBe(false);
+    expect(reachedDialog).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: 'Role' })).toBeNull();
+    await waitFor(() => {
+      expect(addButton()).toHaveFocus();
+    });
+
+    // Focus moves off the button first, so its guidance card is not open to take this Escape itself.
+    const search = screen.getByRole('textbox', { name: 'Search the catalogue' });
+    await user.click(search);
+    const outsideForm = fireEvent.keyDown(search, { key: 'Escape' });
+    expect(outsideForm).toBe(true);
+    expect(reachedDialog).toHaveBeenCalledOnce();
+    document.removeEventListener('keydown', onKey);
   });
 });

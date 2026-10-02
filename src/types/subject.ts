@@ -258,8 +258,8 @@ export interface CategoryDefinition {
  *
  * **`icons` is the one member that is not a field**, and it is present exactly when the category
  * declares {@link CategoryDefinition.iconRoster}. The sixteen fields are free text the prompt states in
- * section 1; the roster is the inventory itself, a list of catalogue entries section 4 draws, so it is a
- * structure rather than a seventeenth string. It rides inside the same record because it travels
+ * section 1; the roster is the inventory itself, a list of catalogue entries and entries of the reader's
+ * own that section 4 draws, so it is a structure rather than a seventeenth string. It rides inside the same record because it travels
  * everywhere the subject does — the session, the history, a preset and the library pack.
  */
 export type SubjectDefinition = Record<SubjectFieldKey, string> & { readonly icons?: IconRoster };

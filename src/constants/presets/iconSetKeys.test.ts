@@ -8,7 +8,7 @@ import { BACKGROUND_KEY_COLORS } from '../backgroundKeyColors.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { DAMAGE_SCHOOL_DEFINITIONS } from '../iconCatalogue/damageSchools.ts';
 import { iconCatalogueEntry } from '../iconCatalogue/index.ts';
-import { KEY_COLOUR_WORDS, wordNamed } from '../iconCatalogue/iconLookRules.ts';
+import { KEY_COLOUR_WORDS, wordWithin } from '../iconCatalogue/iconLookRules.ts';
 import { lookFamilyOfWorld } from '../iconCatalogue/lookFamilyOfWorld.ts';
 import { iconPickId } from '../../utils/iconPickId.ts';
 import { ICON_SET_PRESETS } from './iconSets.ts';
@@ -115,7 +115,7 @@ describe('the ICON presets’ background keys', () => {
       for (const id of pickIds(preset)) {
         const entry = iconCatalogueEntry(id);
         if (entry === undefined) throw new Error(`${preset.name} picks ${id}, which the catalogue lacks`);
-        expect(wordNamed(entry.looks[family], words), id).toBeUndefined();
+        expect(wordWithin(entry.looks[family], words), id).toBeUndefined();
       }
     },
   );

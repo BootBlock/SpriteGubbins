@@ -5,7 +5,8 @@ import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from './subj
 
 /**
  * What is being drawn: the category, the sixteen answers that describe the subject, and — for an icon
- * set — the roster of catalogue icons it asks for and the look they are drawn in.
+ * set — the roster of catalogue icons and icons of the reader's own it asks for, and the look they are
+ * drawn in.
  *
  * Deliberately holds no compiled prompt, word count or token estimate. All three are functions of
  * this state and the output configuration, so they are derived where they are displayed — mirroring
@@ -59,13 +60,18 @@ export interface SubjectState {
   addCustomIcon(draft: CustomIconDraft): readonly CustomIconRefusal[];
   /**
    * Replace the reader's own entry `id` with a changed draft, as one act, measured as if the old entry
-   * were gone — so it may keep its own slot name. It keeps its place unless its kind changes. Returns the
-   * refusals as {@link addCustomIcon} does; a draft that changes nothing records nothing.
+   * were gone — so it may keep its own slot name. It keeps its place while its kind stays, and moves to
+   * the end of its new kind's shelves when its kind changes (`withCustomIcon`). An `id` no longer on the
+   * roster is refused rather than saved to nothing. Returns the refusals as {@link addCustomIcon} does;
+   * a draft that changes nothing records nothing.
    */
   updateCustomIcon(id: string, draft: CustomIconDraft): readonly CustomIconRefusal[];
   /** Take the reader's own entry `id` off the roster, as one act an undo brings it back from. */
   removeCustomIcon(id: string): void;
-  /** Untick every icon on the roster, as one act, leaving the overlay sheet alone in the series. */
+  /**
+   * Empty the roster, as one act: every catalogue icon unticked and every icon of the reader's own
+   * removed, leaving the overlay sheet alone in the series.
+   */
   clearIcons(): void;
   /**
    * Draw the icon set in another look, as one act an undo steps back over.

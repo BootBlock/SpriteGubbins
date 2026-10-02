@@ -86,7 +86,7 @@ describe('checkCustomIcon — what it refuses', () => {
       CUSTOM_ICON_REFUSALS.roleEmpty,
       CUSTOM_ICON_REFUSALS.lookEmpty,
     ]);
-    expect(messages({ role: '¿¡ — ¿¡' })).toEqual([CUSTOM_ICON_REFUSALS.roleUnnamed]);
+    expect(messages({ role: '¿¡ · ¿¡' })).toEqual([CUSTOM_ICON_REFUSALS.roleUnnamed]);
   });
 
   it('refuses a text past its limit, saying how long it is', () => {
@@ -166,5 +166,54 @@ describe('checkCustomIcon — what it refuses', () => {
     );
     expect(found.entry).toBeNull();
     expect(found.refusals.map((refusal) => refusal.field)).toEqual(['look', 'role', 'school']);
+  });
+
+  it('refuses a change to an entry the roster no longer holds', () => {
+    const found = checkCustomIcon(RELIC_DRAFT, cataloguePicks(['heal-minor']), RELIC.id);
+    expect(found.entry).toBeNull();
+    expect(found.refusals).toEqual([{ field: 'set', message: CUSTOM_ICON_REFUSALS.gone }]);
+    // A catalogue pick of that name is not the entry being changed either.
+    expect(messages({}, cataloguePicks(['heal-minor']))).toEqual([]);
+  });
+
+  it.each([
+    ['role', { role: 'Arrow ×5' }],
+    ['role', { role: 'Arrow 5×' }],
+    ['role', { role: 'Arrow x5' }],
+    ['role', { role: 'Arrows X 10' }],
+    ['role', { role: '5x arrow bundle' }],
+    ['role', { role: 'Grid 3×3' }],
+    ['look', { look: 'bolt ×3 — fire' }],
+    ['look', { look: 'a quiver of arrows x 12' }],
+    ['firstState', { states: ['x2', 'off'] as const }],
+  ] as const)(
+    'refuses a count in the %s, which the sheet would read as that many drawings',
+    (field, draft) => {
+      const found = checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null);
+      expect(found.entry).toBeNull();
+      expect(found.refusals).toContainEqual({
+        field,
+        message: CUSTOM_ICON_REFUSALS.countMarker(field === 'firstState' ? 'state' : field),
+      });
+    },
+  );
+
+  it('lets an x inside a word or between numbers through, as no count', () => {
+    expect(refusedFields({ role: 'Hex 0x1F relic', look: 'a 4x4 crate on an axle, boxed' }, [])).toEqual([]);
+  });
+
+  it.each([
+    ['role', { role: 'Relic — fire' }, 'role'],
+    ['role', { role: 'Relic – fire' }, 'role'],
+    ['secondState', { states: ['on', 'off — dim'] as const }, 'state'],
+  ] as const)('refuses the line’s own dash in the %s', (field, draft, what) => {
+    expect(checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null).refusals).toContainEqual({
+      field,
+      message: CUSTOM_ICON_REFUSALS.separator(what),
+    });
+  });
+
+  it('lets a dash through in the look, which the line closes on anyway', () => {
+    expect(refusedFields({ look: 'a keycard — scorched at one end' }, [])).toEqual([]);
   });
 });

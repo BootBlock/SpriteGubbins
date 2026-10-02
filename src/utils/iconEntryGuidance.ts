@@ -77,15 +77,24 @@ function ownSlotParagraph(entry: CustomIconEntry): string {
     : `Your entry names its two sprites ${slots.join(' and ')} in the sheet’s manifest and the sprite pack.`;
 }
 
-/** Whether it is one drawing or a toggle pair, and whether it may show a figure. */
+/**
+ * Whether it is one drawing or a toggle pair, and whether it may show a figure.
+ *
+ * The figure sentence differs by origin because the flag means different things. A catalogue entry's is
+ * held by the catalogue test to a look that names a figure. A custom entry's is the reader's own mark,
+ * which only quiets the form's warning: no compiler code reads it, and the sheet's figure rescue is
+ * unconditional, so the card says what the mark does and no more.
+ */
 function shapeParagraph(entry: IconEntry): string {
   const drawings =
     entry.states === undefined
       ? 'It is one drawing, and counts as one of the set’s components.'
       : `It is one icon drawn ${spokenIconState(entry.states[0])} and then ${spokenIconState(entry.states[1])}, so it counts as two of the set’s components, and the pair always shares a sheet.`;
   const figure =
-    entry.figure === true
-      ? ' Its drawing includes a hand, a face or a figure, which the set’s exclusions allow because this entry names one.'
-      : '';
+    entry.figure !== true
+      ? ''
+      : 'look' in entry
+        ? ' You marked it as showing a figure, which only stops the form warning about one.'
+        : ' Its drawing includes a hand, a face or a figure, which the set’s exclusions allow because this entry names one.';
   return `${drawings}${figure}`;
 }

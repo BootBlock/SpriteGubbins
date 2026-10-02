@@ -15,6 +15,7 @@ import {
   ROLLED,
   SCROLL,
   wordNamed,
+  wordWithin,
 } from './iconLookRules.ts';
 import { LOOK_FAMILY_OF_WORLD, lookFamilyOfWorld } from './lookFamilyOfWorld.ts';
 import { BACKGROUND_KEY_COLORS } from '../backgroundKeyColors.ts';
@@ -215,11 +216,14 @@ describe('the icon catalogue', () => {
     if (magenta === null) throw new Error('magenta names a colour');
     for (const hex of ['#FF10F0', '#FF6EC7']) expect(keyReaches(magenta, fromHex(hex) ?? magenta)).toBe(true);
 
+    // Anywhere in a word, as this guard always matched, so a run-together `hotpink` is caught too.
+    expect(wordWithin('a hotpink glow', KEY_COLOUR_WORDS.MAGENTA_FF00FF)).toBe('pink');
+    expect(wordWithin('a neonmagenta rim', KEY_COLOUR_WORDS.MAGENTA_FF00FF)).toBe('magenta');
     for (const { entry } of ENTRIES) {
       if (entry.school === 'NETRUN') continue;
       for (const family of LOOK_FAMILIES) {
         expect(
-          wordNamed(entry.looks[family], KEY_COLOUR_WORDS.MAGENTA_FF00FF),
+          wordWithin(entry.looks[family], KEY_COLOUR_WORDS.MAGENTA_FF00FF),
           `${entry.id} / ${family}`,
         ).toBeUndefined();
       }
