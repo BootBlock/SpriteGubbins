@@ -21,15 +21,30 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * on every category bound to it — an icon in a cell has no yaw.
  *
  * **The cyberpunk action bar is the use case the catalogue was built for**: a cyberpunk MMORPG's
- * consumables, drawn at 128 px for ChatGPT 5.6 Sol. It draws the isolated look — each icon alone on the
- * key colour — because the full-bleed tile is phase 3 of `docs/todo/icon-catalogue.md`.
+ * consumables, drawn at 128 px for ChatGPT 5.6 Sol as full-bleed squares, the look of an action bar
+ * that draws its own frame round each one.
+ *
+ * **Two draw full-bleed squares and three draw isolated marks**, by what the game does with them. An
+ * action bar and a bag grid show each icon as a painted square inside the slot's frame, as World of
+ * Warcraft does; a system button, a status badge and a map pin sit on a plate or over the map, so each
+ * is a mark alone.
+ *
+ * **A full-bleed preset takes a key its squares' backdrops will not be keyed out with** (R15 of
+ * `docs/todo/icon-catalogue.md`). Every pixel within the key's reach is removed wherever it sits, and a
+ * backdrop is painted from the set's colours shaded towards black at its corners. The cyberpunk set's
+ * neon glows and violet shadows lie in magenta's shading plane, which `keyDistance.ts` discounts, and a
+ * black key takes the darkness its backdrops fall into, so it takes `PURE_WHITE`, which nothing in a
+ * dark neon square is washed to; the prompt keeps its brightest glint off pure white. The fantasy
+ * grid keeps `TRANSPARENT`, which no painted colour can be confused with. `iconSetKeys.test.ts` holds
+ * every named colour of every ICON preset, and each full-bleed preset's shading of them, outside its
+ * key's reach.
  */
 export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'fantasy-inventory-icon-grid',
     name: 'Fantasy Inventory Icon Grid',
     description:
-      'A painted loot grid of potions, materials and chests drawn at three quarters, so a bottle and a chest both read as objects rather than as flat marks. The rarity tiers are separate pieces the engine lays over any icon.',
+      'A painted loot grid of potions, materials and chests at three quarters, each a square painted edge to edge for the bag slot to frame. The rarity tiers are separate pieces the engine lays over any icon.',
     category: 'ICON',
     subject: {
       species: 'Bags & Inventory',
@@ -51,7 +66,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       exclusions: 'No lettering, numerals, stack counts or keybinds',
       additional_anatomy: 'Tier Pip ×3',
       icons: {
-        look: 'ISOLATED_MARK',
+        look: 'FULL_BLEED_TILE',
         picks: [
           'heal-minor',
           'heal-standard',
@@ -180,7 +195,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       primary_colours: 'Matte Black & Bone White',
       accent_colours: 'Poison Green #4ADE80',
       materials: 'Bone, Horn & Sinew',
-      exclusions: 'No drop shadow outside the icon’s own outline',
+      exclusions: 'No drop shadow cast outside the icon',
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
       icons: {
         look: 'ISOLATED_MARK',
@@ -285,7 +300,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
     id: 'cyberpunk-action-bar-consumables',
     name: 'Cyberpunk Action Bar — Consumables',
     description:
-      'Sixteen action-bar consumables for a cyberpunk MMORPG: stim-pack injectors, neuro-boosts, detox pens and grenades, painted at 128 px so each reads mid-fight from its silhouette and one glowing accent.',
+      'Sixteen action-bar consumables for a cyberpunk MMORPG: stim-packs, neuro-boosts, detox pens and grenades, each a 128 px square painted edge to edge for the bar to frame and read mid-fight by one glowing accent.',
     category: 'ICON',
     subject: {
       species: 'Action Bar',
@@ -305,7 +320,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       exclusions: 'No lettering, numerals, stack counts or keybinds',
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
       icons: {
-        look: 'ISOLATED_MARK',
+        look: 'FULL_BLEED_TILE',
         picks: [
           'heal-minor',
           'heal-standard',
@@ -341,6 +356,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       surfaceDetail: 'DETAILED_PRODUCTION',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
+      backgroundKey: 'PURE_WHITE',
       aspectRatio: 'SQUARE_1_1',
       targetModel: 'CHATGPT_5_6_SOL',
     },

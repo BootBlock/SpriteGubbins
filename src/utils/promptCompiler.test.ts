@@ -4034,9 +4034,11 @@ describe('generatePrompt — an icon set', () => {
   it('audits icons against each other on an icon sheet, and pieces at an icon’s cell on the overlay sheet', () => {
     const ICONS_AGREE = 'Every icon fills the same cell to the same margin';
     const PIECES_AGREE = 'Every piece sits in a cell the size of one icon';
+    // The isolated look's wording; `promptCompilerIconLook.test.ts` holds the full-bleed square's.
+    const isolated = { ...ICON, icons: { look: 'ISOLATED_MARK', picks: ICON.icons?.picks ?? [] } } as const;
     const audit = (sheetIndex: number): string =>
       sectionOf(
-        generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex }),
+        generatePrompt('ICON', isolated, { ...ICON_OUTPUT, sheetIndex }),
         'LAYOUT AND SELF-AUDIT',
       ).replaceAll(/\s+/g, ' ');
     expect(audit(0)).toContain(PIECES_AGREE);

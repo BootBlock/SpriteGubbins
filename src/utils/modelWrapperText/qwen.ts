@@ -47,6 +47,10 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * `CATEGORY_ASSEMBLY` does.** Its third term was `complete figure`, which is `assembled character`
  * restated; one record cannot hold two spellings of one entry without the categories diverging by
  * target, so the synonym went with the fixed strings.
+ *
+ * **`gradient background` comes out on a sheet of full-bleed squares** (`ownBackdrop`), because there
+ * every subject sits on a soft field of its own and this block cannot say which background it means —
+ * see `wrapForModel`'s option, which records the reasoning for both negative blocks.
  */
 export function wrapForQwen(
   prompt: string,
@@ -54,6 +58,7 @@ export function wrapForQwen(
   limbsAreComponents: boolean,
   letteringIsAComponent: boolean,
   assembly: CategoryAssembly,
+  ownBackdrop: boolean,
 ): string {
   const negatives = [
     ...assembly.negatives,
@@ -63,7 +68,7 @@ export function wrapForQwen(
     'cast shadow',
     'drop shadow',
     'contact shadow',
-    'gradient background',
+    ...(ownBackdrop ? [] : ['gradient background']),
     'scene background',
     'ground plane',
     ...surface.negatives,

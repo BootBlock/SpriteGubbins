@@ -66,6 +66,9 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * weight in the whole block naming a figure on sheets whose components are floor tiles and panel
  * frames. `CATEGORY_ASSEMBLY` holds each category's own assembled-whole failure; the weighting is
  * applied here rather than stored there, because it is this channel's convention and not Qwen's.
+ *
+ * **`gradient background` comes out on a sheet of full-bleed squares** (`ownBackdrop`), for the reason
+ * `wrapForModel`'s option gives: the term would be read over the backdrop each square carries.
  */
 export function wrapForStableDiffusion(
   prompt: string,
@@ -73,6 +76,7 @@ export function wrapForStableDiffusion(
   limbsAreComponents: boolean,
   letteringIsAComponent: boolean,
   assembly: CategoryAssembly,
+  ownBackdrop: boolean,
 ): string {
   const negatives = [
     ...assembly.negatives.map((term) => `(${term}:1.3)`),
@@ -82,7 +86,7 @@ export function wrapForStableDiffusion(
     ...(letteringIsAComponent ? [] : ['labels']),
     'floor shadow',
     'drop shadow',
-    'gradient background',
+    ...(ownBackdrop ? [] : ['gradient background']),
     'scene background',
     ...surface.negatives,
     'motion blur',

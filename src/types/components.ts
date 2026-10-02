@@ -643,6 +643,32 @@ interface SheetPlanFields {
    * one the compiler has a sentence for; a second key would be a declaration nothing reads.
    */
   readonly drawnElsewhere?: 'clothing';
+  /**
+   * That every component of this sheet is a square tile painted to its edge, carrying its own backdrop
+   * — so the background the CONTRACT section fixes is only the gutters between tiles (R5 of
+   * `docs/todo/icon-catalogue.md`).
+   *
+   * **Declared by the full-bleed icon sheets alone.** Section 0 calls the background "uniform", with "no
+   * gradient, texture, vignette", and ICON's exclusion line bans backgrounds outright; read over a
+   * painted square, both forbid the backdrop the look exists to draw. This field opens the
+   * `OWN_BACKDROP` block that says the backdrop belongs to the component and the key fills only the
+   * gutters, switches ICON's exclusion, guard and audit text to their tile wording, and takes
+   * `gradient background` out of the Qwen and Stable Diffusion negatives (R13).
+   *
+   * **Never the overlay sheet, under either look.** Its pieces are laid over a finished tile by the
+   * engine, so each has to stay open around its own shape: a veil or a ring arriving with a backdrop
+   * would hide the icon it is laid on.
+   *
+   * **Not TERRAIN either, though a ground tile is painted edge to edge.** A ground tile has no subject in
+   * front of a backdrop: the whole square is the ground, and its edges are the seams its neighbours meet,
+   * which TERRAIN's own plans state. A block calling part of it a soft backdrop "never a scene" would
+   * contradict the material the tile is, and the background item already fills only the space between
+   * tiles there.
+   *
+   * **`OWN_SQUARE` alone**, because the square is the one shape a declarer draws; a second value would be
+   * a declaration nothing reads.
+   */
+  readonly backdrop?: 'OWN_SQUARE';
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */

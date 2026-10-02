@@ -119,6 +119,12 @@ export function promptConditions(
     // Whether the background is a colour at all. Gates section 0's reservation of that colour and the
     // self-audit's check on it; a transparent field has no colour for a component to be drawn in.
     KEY_COLOUR: keyColor === null ? '' : 'yes',
+    // Whether each component is a square carrying its own backdrop (R5 of `docs/todo/icon-catalogue.md`),
+    // which is what the full-bleed icon sheets declare. Gates section 0's sentence handing the backdrop
+    // to the component and the gutters to the key, and the self-audit's check on it; without the pair,
+    // the background item's “no gradient, texture, vignette” forbids the backdrop the sheet asks for.
+    // Asked of the plan, so the overlay sheet of the same set, which declares none, is never told it.
+    OWN_BACKDROP: plan.backdrop === 'OWN_SQUARE' ? 'yes' : '',
     // Read from the resolved reference rather than the stored id, for the reason `HARDWARE_PROFILE`
     // is: a configuration naming a look this build no longer ships emits no heading rather than an
     // empty one.

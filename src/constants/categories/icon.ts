@@ -12,9 +12,9 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * **It is not INTERFACE, and it is not ITEM.** INTERFACE draws the *chrome*: the plate an icon sits
  * in, the frame round it, the bar beside it — its own `Inventory Slot & Icon Plate` option is
  * exactly that plate and deliberately not what goes on it. ITEM draws the object as an object, in
- * the world, at whatever scale its parts call for. An icon is neither: it has to survive being drawn
- * at 32 px in a grid of forty others, which is a different discipline from drawing the thing it
- * depicts.
+ * the world, at whatever scale its parts call for. An icon is neither: it has to survive being shown
+ * at its smallest display size in a grid of forty others, whether it is a square painted edge to edge
+ * or a mark alone, which is a different discipline from drawing the thing it depicts.
  *
  * **The icons are the reader's list, and these fields describe the set.** Which icons a sheet draws is
  * the roster (`SubjectDefinition.icons`), ticked from the catalogue in `constants/iconCatalogue/`, and
@@ -22,6 +22,12 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * one icon *is* — a roster mixing a potion, a map pin and a settings cog has no single family, signal or
  * focal motif — and each is a rule the whole set follows instead: where it is shown, the smallest size
  * it must survive, how its subjects sit in their squares, and the discipline its outlines keep.
+ *
+ * **Every option holds under both looks** (`IconRoster.look`). A full-bleed square paints its backdrop
+ * behind the subject, so *Subject Framing* places the subject inside its square and the backdrop fills
+ * the rest; the sheet's own prose says so. The exclusion against a slot plate holds because ICON's
+ * exclusion line calls a square's backdrop part of the icon, and the option against a drop shadow is worded
+ * "outside the icon" so it means the square's edge for one look and the mark's for the other.
  *
  * **Lettering is banned here twice over**, and the second ban is this category's own. Section 0
  * forbids text anywhere on the sheet; an icon set has to be told again, because a stack count, a
@@ -39,9 +45,10 @@ export const ICON: CategoryDefinition = {
   label: 'Icon / Symbol Set',
   article: 'an',
   // Sixteen icons, so a fresh set fills exactly one icon sheet: the restoratives, boosts and tools an
-  // action bar carries, and the system panels a micro-menu opens.
+  // action bar carries, and the system panels a micro-menu opens. Drawn as full-bleed squares, the look
+  // of the action bar the catalogue was built for — see `ICON_LOOKS`.
   iconRoster: {
-    look: 'ISOLATED_MARK',
+    look: 'FULL_BLEED_TILE',
     picks: [
       'heal-minor',
       'heal-major',
@@ -156,7 +163,8 @@ export const ICON: CategoryDefinition = {
       key: 'build',
       label: 'Subject Framing',
       tooltip:
-        'How each icon’s subject sits in its square: how much of it the subject fills, and how much margin it keeps. Stating it once for the whole set stops one icon arriving with twice the visual weight of the next, the failure that makes a generated grid look like four different packs.',
+        'How each icon’s subject sits in its square: how much of it the subject fills, and how much margin it keeps. Stating it once for the whole set stops one icon arriving with twice the visual weight of the next, the failure that makes a generated grid look like four different packs.\n\n' +
+        'On a full-bleed set the margin is backdrop, so the square stays painted to its edge whatever you choose.',
       options: [
         'Tightly Filling The Square',
         'Standard Padded Margin',
@@ -258,7 +266,7 @@ export const ICON: CategoryDefinition = {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant colours of the icons, by which the set is recognised across a grid. Two colours with a clear value gap keep an icon readable against every plate the interface might put behind it.',
+        'The dominant colours of the icons, by which the set is recognised across a grid. Two colours with a clear value gap keep an icon readable against whatever sits behind its subject: the plate the interface puts there, or the square’s own backdrop.',
       options: [
         'Steel Grey & Cool Shadow',
         'Warm Leather Brown & Tan',
@@ -303,7 +311,7 @@ export const ICON: CategoryDefinition = {
       key: 'materials',
       label: 'Surface Materials',
       tooltip:
-        'What the depicted things are made of and how light reads off them: polished metal takes a hard specular edge, cloth stays matte, glass shows the background through it. At icon size this often separates two objects of the same shape.',
+        'What the depicted things are made of and how light reads off them: polished metal takes a hard specular edge, cloth stays matte, glass shows what is behind it. At icon size this often separates two objects of the same shape.',
       options: [
         'Forged Steel & Oiled Leather',
         'Carved Wood & Woven Cord',
@@ -326,11 +334,11 @@ export const ICON: CategoryDefinition = {
       label: 'Explicit Exclusions',
       tooltip:
         'Negative rules that keep the interface’s job off the icon sheets. Lettering matters most: the engine draws stack counts, cooldown timers and keybinds at runtime, so an icon with one baked in serves one quantity, in one language, on one keyboard.\n\n' +
-        'A hand or a figure is excluded unless an icon’s own entry names one, so the character panel’s icon keeps its bust.',
+        'A hand or a figure is excluded unless an icon’s own entry names one, so the character panel’s icon keeps its bust. On a full-bleed set, a square’s own backdrop is part of the icon, so the plate and scene options leave it alone.',
       options: [
         'No lettering, numerals, stack counts or keybinds',
         'No slot plate, frame or border behind the icon',
-        'No drop shadow outside the icon’s own outline',
+        'No drop shadow cast outside the icon',
         'No hand or figure an icon’s entry does not name',
         'No background scene, tabletop or ground plane',
         'No tooltip, panel or interface chrome around it',

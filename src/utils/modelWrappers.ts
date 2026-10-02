@@ -121,6 +121,18 @@ export function wrapForModel(
      */
     readonly oneSidedFeatures: boolean;
     /**
+     * Whether each component is a square carrying its own backdrop, from the plan's `backdrop` — the
+     * answer `OWN_BACKDROP` gave the template's own gate.
+     *
+     * Read by the two negative blocks, Stable Diffusion's and Qwen's, because each carries `gradient
+     * background` against a field that drifts — and on a sheet of full-bleed squares a model reads that
+     * term over the soft field behind every subject, which is the backdrop the sheet asks for (R13 of
+     * `docs/todo/icon-catalogue.md`). Neither channel can say "between the components only", so the term
+     * comes out there; section 0 still states the uniform gutters. `scene background` stays, because a
+     * backdrop is never a scene. Midjourney's `--no` and Flux's leading sentence name no gradient.
+     */
+    readonly ownBackdrop: boolean;
+    /**
      * Every section name this prompt carries and the number its heading landed on, from
      * `sectionNumbers`.
      *
@@ -162,6 +174,7 @@ export function wrapForModel(
         options.limbsAreComponents,
         options.letteringIsAComponent,
         options.assembly,
+        options.ownBackdrop,
       );
 
     // One wrapper for both Flux tiers. They differ only in how much of the prompt is read, which is
@@ -189,6 +202,7 @@ export function wrapForModel(
         options.limbsAreComponents,
         options.letteringIsAComponent,
         options.assembly,
+        options.ownBackdrop,
       );
 
     case 'SEEDREAM':

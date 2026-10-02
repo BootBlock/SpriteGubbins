@@ -750,8 +750,8 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * pieces no sheet drew put section 1 against section 4. What a first visit pays for: the table of
  * declared bases in `sheetPlans/assemblyBases.ts` and the leaf its types live in; a rigid object's two
  * plans, drawn whole; `plansFor`, `modePlansOf` and `modesWithheldBy`; the subject threaded through
- * every function that resolves or counts a sheet; `resolveOutputForSubject` and the store's
- * `outputFollowing`, which records a base that moves the sheet as an undo step; the two sentences
+ * every function that resolves or counts a sheet; `resolveOutputForSubject` and what is now
+ * `outputFollowingBase`, by which the store records a base that moves the sheet as an undo step; the two sentences
  * `SheetFields` and `RiggingFields` say about a base; one shared guidance sentence on six cards; and
  * the undo copy that names the new step. Measured against `main` at `a5e2eef`, rebuilt from the same
  * lockfile — **2372.61 KiB across 64 entries** on the build's summary line — this build reports

@@ -9,12 +9,22 @@
 /**
  * How every icon of the set is drawn.
  *
- * **One look so far, and the union grows.** `ISOLATED_MARK` is the subject alone on the key colour,
- * which is what an icon sheet has always drawn. The full-bleed tile — the art filling the whole square,
- * backdrop included — is phase 3 of `docs/todo/icon-catalogue.md`, and it joins this list in the change
- * that teaches the sheet to draw it, so no stored roster can name a look the prompt does not state.
+ * - `FULL_BLEED_TILE` paints each icon as a square edge to edge, its subject and its own backdrop
+ *   together, with no frame: the game's interface draws the frame, as an MMORPG's action bar does. The
+ *   key colour fills only the gutters between tiles, and each file cut from the sheet is an opaque
+ *   square.
+ * - `ISOLATED_MARK` draws the subject alone on the key colour, so each file is the subject on
+ *   transparency — a map pin, a status badge or a button glyph the interface sets on its own plate.
+ *
+ * **The look is the set's, not the icon's**, because a grid mixing squares and loose marks reads as two
+ * packs. It reaches the icon sheets (`iconSheet`), the overlay sheet (`ICON_OVERLAY_PLANS`), ICON's
+ * exclusion, guard and audit text through `SheetPlan.backdrop`, and the wrappers' negatives.
+ *
+ * **Full-bleed is listed first because it is the default** — the starter roster's — for the use case the
+ * catalogue was built for: a World of Warcraft–style action bar, whose icons are painted squares the
+ * bar frames. The order is the control's order too.
  */
-export const ICON_LOOKS = ['ISOLATED_MARK'] as const;
+export const ICON_LOOKS = ['FULL_BLEED_TILE', 'ISOLATED_MARK'] as const;
 
 export type IconLook = (typeof ICON_LOOKS)[number];
 

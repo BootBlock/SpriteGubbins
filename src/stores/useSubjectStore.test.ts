@@ -738,6 +738,52 @@ describe('useSubjectStore', () => {
 
       expect(useSubjectStore.getState().toggleIcons(['heal-minor'], true)).toEqual([]);
       useSubjectStore.getState().clearIcons();
+      useSubjectStore.getState().setIconLook('ISOLATED_MARK');
+
+      expect(useSubjectStore.getState().subject).toBe(before);
+      expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
+    });
+  });
+
+  describe('the icon look', () => {
+    function look() {
+      return useSubjectStore.getState().subject.icons?.look;
+    }
+
+    beforeEach(() => {
+      useSubjectStore.setState({
+        category: 'ICON',
+        subject: { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks: ['heal-minor'] } },
+      });
+      useSubjectStore.getState().openStudio();
+    });
+
+    it('draws the set in another look as one step Undo takes back and Redo replays', () => {
+      useSubjectStore.getState().setIconLook('FULL_BLEED_TILE');
+      expect(look()).toBe('FULL_BLEED_TILE');
+      expect(useSubjectStore.getState().subject.icons?.picks).toEqual(['heal-minor']);
+      expect(studioUndoDepth(useSubjectStore.getState().history)).toBe(1);
+
+      useSubjectStore.getState().undoStudio();
+      expect(look()).toBe('ISOLATED_MARK');
+
+      useSubjectStore.getState().redoStudio();
+      expect(look()).toBe('FULL_BLEED_TILE');
+    });
+
+    it('leaves the sheet index where it is, since a look changes no sheet count', () => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 } });
+      const before = useOutputStore.getState().output;
+
+      useSubjectStore.getState().setIconLook('FULL_BLEED_TILE');
+
+      expect(useOutputStore.getState().output).toBe(before);
+    });
+
+    it('records nothing for the look already in force', () => {
+      const before = useSubjectStore.getState().subject;
+
+      useSubjectStore.getState().setIconLook('ISOLATED_MARK');
 
       expect(useSubjectStore.getState().subject).toBe(before);
       expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);

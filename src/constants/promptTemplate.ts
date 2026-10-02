@@ -212,6 +212,14 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * colour does, so the two clauses are the same guard on the two states the field can be in, and one
  * of them is always emitted. https://developers.openai.com/api/docs/guides/image-prompting
  *
+ * **A full-bleed icon square carries its own backdrop, and the background item says whose it is.**
+ * Read over a square painted edge to edge, "uniform", "no gradient, texture, vignette" forbids the very
+ * backdrop the sheet asks for, so `[IF:OWN_BACKDROP]` (declared by the plan, `SheetPlan.backdrop`) hands
+ * the backdrop to the component and the gutters to the key, and the self-audit checks both halves. It
+ * names the field through `BACKGROUND_KEY_DESCRIPTION` rather than "the key colour", for the reason the
+ * paragraph below gives: a transparent field has none. The reservation above already reaches the
+ * backdrop, because the block says the backdrop is part of the component.
+ *
  * **Three places said "the key colour" where the field may have none, and two of them were reached
  * by adding that clause.** The CONTRACT section's palette item and the STYLE section's
  * `describePalette` rule both excepted the background from the pinned palette by naming a colour it
@@ -383,6 +391,13 @@ Satisfy this section before any aesthetic consideration.
 [IF:KEY_COLOUR!=yes]
    Deliver that transparency as the file’s alpha channel. A drawn checkerboard, a grid of grey
    squares or a flat matte in place of it is a painted background and fails this rule.
+[/IF]
+[IF:OWN_BACKDROP]
+   Each component is a square painted edge to edge, its subject and the backdrop behind it together,
+   and that backdrop belongs to the component, not to the background: the background is only the
+   gutters between the squares, so [DEFINE:BACKGROUND_KEY_DESCRIPTION] fills those gutters and never
+   shows inside a square. What this item forbids the background it forbids the gutters, never a
+   square’s own backdrop, and a backdrop keeps every rule a component keeps.
 [/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
@@ -1116,6 +1131,11 @@ still be fixed.
 [N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
 [N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
+[IF:OWN_BACKDROP]
+[N]. Every component is a square painted to its edge, backdrop included, and the background shows only
+   in the gutters between the squares — never inside one, and never as a frame, border or bevel
+   round one.
+[/IF]
 [IF:KEY_COLOUR]
 [N]. No part of any component is in the key colour, or in a shade near enough to be taken for it.
 [/IF]

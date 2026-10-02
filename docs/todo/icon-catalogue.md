@@ -1,6 +1,6 @@
 # Icon catalogue — named icon sets drawn sixteen to a sheet
 
-> **Status:** 🟢 ACTIVE — phases 1–2 shipped; phase 3 next.
+> **Status:** 🟢 ACTIVE — phases 1–3 shipped; phase 4 next.
 
 ## 1. What is wrong
 
@@ -274,3 +274,80 @@ fixed in a follow-up commit:
 **What it breaks.** Nothing stored changes shape: a roster is persisted as phase 1 left it. A tick
 in the catalogue is now an act, so it drops whatever Redo had to step forward to.
 `IconCatalogueGroup` requires a `label`.
+
+### Phase 3 — full-bleed look (2026-10-02)
+
+**What shipped.**
+
+- **The look.** `ICON_LOOKS` is `FULL_BLEED_TILE` then `ISOLATED_MARK`, and `parseIconRoster` reads
+  either on both backends. **Full-bleed is the default**, on ICON's starter roster: the catalogue was
+  built for a World of Warcraft–style action bar, whose icons are painted squares the bar frames, so a
+  fresh set opens on the look its main use needs and the isolated mark is one press away.
+- **The control.** `useSubjectStore.setIconLook(look)` is one act on the studio's undo stack, through
+  the same `writeRoster` the ticks use; a look already in force records nothing, and the sheet index
+  never moves because no sheet count does. *Icons on this set* opens on a *Look* row of
+  `SegmentedChoice` pills (`ICON_LOOK_LABELS`) under a label whose `Tooltip` (`ICON_LOOK_TOOLTIPS`)
+  says what each look changes in the prompt and in the files cut from the sheet.
+- **R5.** `SheetPlanFields.backdrop?: 'OWN_SQUARE'`, declared by full-bleed icon sheets alone — never
+  the overlay sheet, whose pieces must stay open around their shapes, and not TERRAIN, whose square is
+  all ground with seams at its edges rather than a subject in front of a backdrop. It opens
+  `OWN_BACKDROP`: a continuation of section 0's background item handing the backdrop to the component
+  and only the gutters to the key, named through `BACKGROUND_KEY_DESCRIPTION` so a transparent field
+  reads as alpha, and a matching self-audit item. Both are mirrored into §3 of
+  `baseline-prompt-new.md`.
+- **Look-aware prose.** `iconSheet(entries, first, look)` writes each look's assembly, scale example,
+  class, intro and outro: a full-bleed square is painted edge to edge, its subject and its own
+  backdrop together, with no frame, border or bevel because the interface draws the frame, and the
+  backdrop is a soft field of colour, light and texture, never a scene with a horizon, set apart from
+  the subject in value. Its outro answers *Subject Framing*: however loose the subject sits, the
+  backdrop fills the rest of the square. `ICON_OVERLAY_PLANS: Record<IconLook, SheetPlan>` replaces
+  `ICON_OVERLAY_SHEET`; under full-bleed the veil, halo, ring, cooldown sweep and rarity glow are
+  shaped to the square of a tile, with the same labels, parts and counts under both looks. ICON's
+  exclusion line swaps the ban on backgrounds for one on scenery beyond a square's own backdrop and on
+  anything crossing or drawn along its edge, and says the backdrop is no slot plate; the audit checks
+  the squares against each other.
+- **R13.** `wrapForModel` takes `ownBackdrop` from the same `OWN_BACKDROP` answer, and Stable
+  Diffusion's and Qwen's negatives drop `gradient background` on a full-bleed icon sheet alone;
+  `scene background` stays. No other wrapper names a gradient on the field. Sol's directive already
+  protects section 0's numbered items, where the block sits, and the inventory.
+- **R15 and the presets.** *Cyberpunk Action Bar — Consumables* and *Fantasy Inventory Icon Grid* draw
+  full-bleed squares; the system buttons, status badges and map pins stay isolated marks. The
+  cyberpunk set takes `PURE_WHITE`: a dark neon square's corners fall towards black, and its violet
+  glows lie along magenta's shading plane, which the keying discounts, while nothing in it is washed
+  to white. The fantasy grid keeps `TRANSPARENT`. `iconSetKeys.test.ts` holds every hex an ICON preset
+  names outside its key's reach, and each full-bleed preset's colours shaded to 95% black and washed
+  25% towards white as well, and shows the check failing for black and magenta.
+- **Options and guidance.** Every ICON option was read against both looks. The drop-shadow exclusion
+  became `No drop shadow cast outside the icon`; *Subject Framing*, *Primary Colours*, *Surface
+  Materials*, *Explicit Exclusions* and *Background Key* say how they apply to a square; ICON's
+  docblock no longer calls an icon a mark that survives at 32 px.
+- **Identity.** `sheetIdentity` in `sheetRuns.ts` keys an icon set's sheets on the look too, since a
+  look rewrites every prompt while leaving an icon line's text alone.
+- **Tests.** `promptCompilerIconLook.test.ts` compiles both looks: the contract and audit appear
+  together on a full-bleed icon sheet and nowhere else, never on another category's sheets, the
+  exclusions and audit follow the look, the wrapper term goes only where the backdrop is, and Sol
+  carries all sixteen entries verbatim. The parser round-trips both looks on both backends, and the
+  store, the section and its keyboard reach are covered. Sweeps over every ICON sheet now walk both
+  looks (`iconCatalogueRosters`), and the sheet-claims sweep tells the looks' sheets apart.
+
+**Where it departs from the plan, and why.**
+
+- **The guard is not reworded.** It bans no background, so only its class changes with the look.
+- **R15 is held for the presets' named colours alone.** The catalogue names colours in words and the
+  school colours arrive in phase 4, so there is no other colour data to measure yet. The default key
+  stays magenta: it is the reader's choice, and the reservation in section 0 already reaches a
+  square's backdrop, since the block says the backdrop is part of the component.
+- **`outputFollowing` became `utils/outputFollowingBase.ts`**, a pure function with its own test, to
+  keep `useSubjectStore.ts` under 150 lines once it gained `setIconLook`.
+- **Count claims corrected in passing.** `renderStyle.ts` described a default ICON sheet as
+  twenty-eight components on a 16:9 page, and a Sol test fixture's docblock repeated the count; both
+  predate phase 1. `SegmentedChoice` no longer says every call site is in the Quantise tab.
+- **The quantiser is untouched.** A full-bleed square keys out as an opaque square already; resampling
+  it to 128 px is phase 7.
+
+**What it breaks.** A fresh or reset ICON subject opens on full-bleed squares, and the two presets
+above now draw them, the cyberpunk one on a white key. `ICON_OVERLAY_SHEET` is gone,
+`iconSheet` takes a look, and `wrapForQwen` and `wrapForStableDiffusion` take `ownBackdrop`. The
+option `No drop shadow outside the icon’s own outline` is retired; a stored subject holding it keeps
+the text as typed. Every icon set's copied-sheet ticks are lost once, because the identity key now
+carries the look.

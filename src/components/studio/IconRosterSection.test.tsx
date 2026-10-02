@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { ICON_CATALOGUE_GROUPS } from '../../constants/iconCatalogue/index.ts';
@@ -75,6 +75,51 @@ describe('IconRosterSection', () => {
     await user.click(screen.getByRole('heading', { name: 'Icons on this set' }));
 
     expect(screen.getByText('17 icons · 3 sheets')).toBeInTheDocument();
+  });
+
+  it('offers the two looks as one named group, the set’s own pressed', () => {
+    iconStudio(['heal-minor']);
+    render(<IconRosterSection />);
+
+    const group = screen.getByRole('group', { name: 'Look' });
+    expect(within(group).getByRole('button', { name: 'Isolated mark' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(group).getByRole('button', { name: 'Full-bleed tile' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.getByRole('button', { name: 'Guidance: Look' })).toBeInTheDocument();
+  });
+
+  it('draws the set in the look pressed, as a step Undo takes back', async () => {
+    const user = userEvent.setup({ delay: null });
+    iconStudio(['heal-minor']);
+    useSubjectStore.getState().openStudio();
+    render(<IconRosterSection />);
+
+    await user.click(screen.getByRole('button', { name: 'Full-bleed tile' }));
+
+    expect(useSubjectStore.getState().subject.icons?.look).toBe('FULL_BLEED_TILE');
+    expect(screen.getByRole('button', { name: 'Full-bleed tile' })).toHaveAttribute('aria-pressed', 'true');
+    act(() => {
+      useSubjectStore.getState().undoStudio();
+    });
+    expect(screen.getByRole('button', { name: 'Isolated mark' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('reaches the look from the keyboard', async () => {
+    const user = userEvent.setup({ delay: null });
+    iconStudio(['heal-minor']);
+    render(<IconRosterSection />);
+
+    screen.getByRole('button', { name: 'Isolated mark' }).focus();
+    await user.keyboard('{Shift>}{Tab}{/Shift}');
+    expect(screen.getByRole('button', { name: 'Full-bleed tile' })).toHaveFocus();
+    await user.keyboard('{Enter}');
+
+    expect(useSubjectStore.getState().subject.icons?.look).toBe('FULL_BLEED_TILE');
   });
 
   it('renders nothing for a subject with no roster', () => {

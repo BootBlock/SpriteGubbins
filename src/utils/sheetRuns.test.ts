@@ -251,7 +251,7 @@ describe('the identity of an icon set’s sheets', () => {
   const at = (sheetIndex: number): OutputConfig => ({ ...output, sheetIndex });
 
   function withPicks(picks: readonly string[]) {
-    return { ...ICON, icons: { look: 'ISOLATED_MARK', picks } } as const;
+    return { ...ICON, icons: { look: ICON.icons?.look ?? 'FULL_BLEED_TILE', picks } } as const;
   }
 
   it('survives an icon added after the sheets already copied', () => {
@@ -272,5 +272,18 @@ describe('the identity of an icon set’s sheets', () => {
   it('still changes when a field every sheet states changes', () => {
     const cyberpunk = { ...ICON, setting: 'Near-Future Cyberpunk' };
     expect(sheetIdentity('ICON', cyberpunk, at(0))).not.toBe(sheetIdentity('ICON', ICON, at(0)));
+  });
+
+  it('changes on every sheet when the look changes, though an icon sheet’s entries do not', () => {
+    // The look rewrites every sheet's prompt and leaves an icon line's text alone, so a key built from
+    // the entries alone would keep the tick on a sheet the reader has not copied in its new look.
+    const picks = ICON.icons?.picks ?? [];
+    const squares = { ...ICON, icons: { look: 'FULL_BLEED_TILE', picks } } as const;
+    const marks = { ...ICON, icons: { look: 'ISOLATED_MARK', picks } } as const;
+    for (const sheetIndex of [0, 1]) {
+      expect(sheetIdentity('ICON', squares, at(sheetIndex))).not.toBe(
+        sheetIdentity('ICON', marks, at(sheetIndex)),
+      );
+    }
   });
 });

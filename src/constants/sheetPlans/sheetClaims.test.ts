@@ -53,13 +53,18 @@ import { TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
  * the wording itself, where these sweeps can only say what it must not name.
  */
 
-/** Every distinct sheet a category can be asked for, once each — the plans told apart by their names. */
+/**
+ * Every distinct sheet a category can be asked for, once each — the plans told apart by their names and
+ * by the claims this suite reads, since ICON's sheets keep their names under both looks and change their
+ * class and assembly sentence with it.
+ */
 function sheetsOf(category: SubjectCategory): readonly SheetPlan[] {
-  const byName = new Map<string, SheetPlan>();
+  const byClaims = new Map<string, SheetPlan>();
   for (const plan of everySheetOf(category)) {
-    if (!byName.has(plan.name)) byName.set(plan.name, plan);
+    const key = JSON.stringify([plan.name, plan.componentClass, plan.assemblyFailure]);
+    if (!byClaims.has(key)) byClaims.set(key, plan);
   }
-  return [...byName.values()];
+  return [...byClaims.values()];
 }
 
 /**

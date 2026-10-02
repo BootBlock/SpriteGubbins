@@ -2,10 +2,10 @@ import { create } from 'zustand';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
 import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
-import { plansFor } from '../constants/sheetPlans/index.ts';
-import type { OutputConfig } from '../types/output.ts';
+import type { IconLook, IconRoster } from '../types/iconRoster.ts';
 import type { StudioHistory, StudioPosition } from '../types/studioHistory.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
+import { outputFollowingBase } from '../utils/outputFollowingBase.ts';
 import { resolveOutputForSubject } from '../utils/resolveOutputForSubject.ts';
 import { sheetIndexWithinSeries } from '../utils/sheetIndexWithinSeries.ts';
 import { toggleIconPicks } from '../utils/toggleIconPicks.ts';
@@ -20,7 +20,7 @@ import { useOutputStore } from './useOutputStore.ts';
 
 /**
  * What is being drawn: the category, the sixteen answers that describe the subject, and — for an icon
- * set — the roster of catalogue icons it asks for.
+ * set — the roster of catalogue icons it asks for and the look they are drawn in.
  *
  * Deliberately holds no compiled prompt, word count or token estimate. All three are functions of
  * this state and the output configuration, so they are derived where they are displayed — mirroring
@@ -65,6 +65,13 @@ export interface SubjectState {
   toggleIcons(ids: readonly string[], on: boolean): readonly string[];
   /** Untick every icon on the roster, as one act, leaving the overlay sheet alone in the series. */
   clearIcons(): void;
+  /**
+   * Draw the icon set in another look, as one act an undo steps back over.
+   *
+   * Every sheet of the series changes its wording and none changes its count, so the sheet index stays
+   * where it is. Does nothing on a subject with no roster, or when the look is already in force.
+   */
+  setIconLook(look: IconLook): void;
   /** Reroll every field from the current category's option pool. */
   randomizeSubject(): void;
   /** Back to the current category's defaults, without changing category. */
@@ -117,7 +124,7 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     // move the output, never on the keystrokes between.
     const { category, subject } = get();
     const next = { ...subject, [key]: value };
-    const output = outputFollowing(category, subject, next);
+    const output = outputFollowingBase(category, subject, next, useOutputStore.getState().output);
     if (output === null) {
       set({ subject: next });
       return;
@@ -137,12 +144,16 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
 
   toggleIcons: (ids, on) => {
     const toggled = toggleIconPicks(get().subject.icons?.picks ?? [], ids, on, ICON_ROSTER_CAPACITY);
-    writePicks(toggled.picks);
+    writeRoster((roster) => ({ ...roster, picks: toggled.picks }));
     return get().subject.icons === undefined ? [] : toggled.refused;
   },
 
   clearIcons: () => {
-    writePicks([]);
+    writeRoster((roster) => ({ ...roster, picks: [] }));
+  },
+
+  setIconLook: (look) => {
+    if (get().subject.icons?.look !== look) writeRoster((roster) => ({ ...roster, look }));
   },
 
   randomizeSubject: () => {
@@ -182,46 +193,24 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
   },
 }));
 
-/**
- * The output settled against a subject whose assembly base may have changed, or `null` where nothing
- * moves.
- *
- * **Only where the change reaches the plans.** A base chooses which sheets its category draws (issue
- * #283), so a reader who picks `Single Rigid Object` has left behind a cut-out rig sheet that nothing
- * on the object could turn on, and the store would otherwise hold a mode the studio no longer offers.
- * Where the plans are one table before and after, nothing moves — which is what keeps a reader's sheet
- * index while they type, since the combo box writes every keystroke through `setField`.
- */
-function outputFollowing(
-  category: SubjectCategory,
-  before: SubjectDefinition,
-  after: SubjectDefinition,
-): OutputConfig | null {
-  if (plansFor(category, before) === plansFor(category, after)) return null;
-  const { output } = useOutputStore.getState();
-  // The plans differ, so a contract loaded for the body before the edit does not survive it: it
-  // replaces an inventory the new base no longer draws (issue #286).
-  const resolved = resolveOutputForSubject(category, after, output, { category, subject: before });
-  return resolved === output ? null : resolved;
-}
-
-/** Write {@link outputFollowing}'s answer, where it has one. */
+/** Write {@link outputFollowingBase}'s answer, where it has one. */
 function followBase(category: SubjectCategory, before: SubjectDefinition, after: SubjectDefinition): void {
-  const output = outputFollowing(category, before, after);
-  if (output !== null) useOutputStore.getState().setOutputConfig(output);
+  const { output, setOutputConfig } = useOutputStore.getState();
+  const settled = outputFollowingBase(category, before, after, output);
+  if (settled !== null) setOutputConfig(settled);
 }
 
 /**
- * Put a new list of picks on the subject's roster as one act, with the sheet index pulled back inside
- * the series it now draws.
+ * Put a changed roster on the subject as one act, with the sheet index pulled back inside the series it
+ * now draws — a tick, a clear or a new look.
  *
- * Both stores move in the one act, so an undo restores the tick and the sheet the reader was on
- * together.
+ * Both stores move in the one act, so an undo restores the roster and the sheet the reader was on
+ * together. A look leaves the series its length, so for one the index never moves.
  */
-function writePicks(picks: readonly string[]): void {
+function writeRoster(change: (roster: IconRoster) => IconRoster): void {
   const { category, subject } = useSubjectStore.getState();
   if (subject.icons === undefined) return;
-  const next = { ...subject, icons: { ...subject.icons, picks } };
+  const next = { ...subject, icons: change(subject.icons) };
   act(() => {
     useSubjectStore.setState({ subject: next });
     const { output, setOutputConfig } = useOutputStore.getState();

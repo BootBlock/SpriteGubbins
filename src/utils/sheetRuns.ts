@@ -55,6 +55,8 @@ export interface SheetRun extends BatchSheet {
  * moment one more icon was ticked — including the overlay sheet and every full grid, whose prompts had
  * not changed. So the roster is left out of the subject and the drawn sheet's entries stand in for it:
  * a sheet whose icons did not move keeps its tick, and the sheet that took the new icon loses its own.
+ * The roster's look stays in the key, because it rewrites every sheet's prompt while leaving an icon
+ * sheet's entries as they were: a set switched to full-bleed squares has copied none of them yet.
  *
  * **Every part is the *resolved* answer, never the stored field it came from.** A configuration
  * holds a direction set and a primary facing whether or not the mode reads them — a
@@ -71,9 +73,11 @@ export function sheetIdentity(
   const mode = resolveMode(category, subject, output.directionalMode);
   const plan = sheetPlanFor(category, subject, mode, output.directions, output.sheetIndex);
   const { covered } = sheetDirections(category, output, plan);
-  const { icons: _roster, ...fields } = subject;
+  const { icons, ...fields } = subject;
   const entries = plan.groups.flatMap((group) => group.entries.map((entry) => [entry.label, entry.text]));
-  return JSON.stringify([category, fields, mode, plan.name, entries, covered]);
+  // The look joins the key only where there is a roster, so every other category keeps the key it had.
+  const look = icons === undefined ? [] : [icons.look];
+  return JSON.stringify([category, fields, ...look, mode, plan.name, entries, covered]);
 }
 
 /**

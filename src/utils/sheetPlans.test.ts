@@ -27,7 +27,7 @@ import { decliningEverything, standardSubject } from '../test/sheetSubject.ts';
 import { sweepSubjectsOf } from '../test/sweepSubjectsOf.ts';
 import { iconCatalogueSubjects } from '../test/iconCatalogueSubjects.ts';
 import { ICON_GRID_COLUMNS, ICONS_PER_SHEET } from '../constants/iconCatalogue/iconSheetLimits.ts';
-import { ICON_OVERLAY_SHEET } from '../constants/sheetPlans/iconOverlaySheet.ts';
+import { ICON_OVERLAY_PLANS } from '../constants/sheetPlans/iconOverlaySheet.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
@@ -293,7 +293,7 @@ describe('the plan table itself', () => {
     // ICON's icon sheets are built from the roster, so their names follow it; each answers by whether
     // it holds a two-state entry, which the assertion after the list holds them to.
     const isIconSheet = ({ category, plan }: (typeof EVERY_PLAN)[number]): boolean =>
-      category === 'ICON' && plan !== ICON_OVERLAY_SHEET;
+      category === 'ICON' && !Object.values(ICON_OVERLAY_PLANS).includes(plan);
     const posed = [
       ...new Set(
         EVERY_PLAN.filter((entry) => entry.plan.posing === 'PER_POSITION' && !isIconSheet(entry)).map(

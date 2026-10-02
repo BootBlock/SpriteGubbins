@@ -354,6 +354,13 @@ Satisfy this section before any aesthetic consideration.
    Deliver that transparency as the file’s alpha channel. A drawn checkerboard, a grid of grey
    squares or a flat matte in place of it is a painted background and fails this rule.
 [/IF]
+[IF:OWN_BACKDROP]
+   Each component is a square painted edge to edge, its subject and the backdrop behind it together,
+   and that backdrop belongs to the component, not to the background: the background is only the
+   gutters between the squares, so [DEFINE:BACKGROUND_KEY_DESCRIPTION] fills those gutters and never
+   shows inside a square. What this item forbids the background it forbids the gutters, never a
+   square’s own backdrop, and a backdrop keeps every rule a component keeps.
+[/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
 [/IF]
@@ -1086,6 +1093,11 @@ still be fixed.
 [N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
 [N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
+[IF:OWN_BACKDROP]
+[N]. Every component is a square painted to its edge, backdrop included, and the background shows only
+   in the gutters between the squares — never inside one, and never as a frame, border or bevel
+   round one.
+[/IF]
 [IF:KEY_COLOUR]
 [N]. No part of any component is in the key colour, or in a shade near enough to be taken for it.
 [/IF]

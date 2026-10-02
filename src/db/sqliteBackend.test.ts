@@ -4,6 +4,7 @@ import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import { FakeDatabaseWorker } from '../test/fakeDatabaseWorker.ts';
 import { openSqliteBackend } from './openSqliteBackend.ts';
+import { ICON_LOOKS } from '../types/iconRoster.ts';
 import type { SqliteBackend } from './sqliteBackend.ts';
 
 /** The thread the backend started, which every test here has to have got one of. */
@@ -141,11 +142,11 @@ describe('SqliteBackend — the icon roster', () => {
     };
   }
 
-  it('round-trips an icon set’s roster through the session row', async () => {
+  it.each(ICON_LOOKS)('round-trips a %s icon set’s roster through the session row', async (look) => {
     const backend = await open();
     const subject = {
       ...defaultSubjectFor('ICON'),
-      icons: { look: 'ISOLATED_MARK', picks: ['system-sound', 'heal-major', 'pin-waypoint'] },
+      icons: { look, picks: ['system-sound', 'heal-major', 'pin-waypoint'] },
     } as const;
     const saving = backend.saveSession({ category: 'ICON', subject, output: DEFAULT_OUTPUT_CONFIG });
     const sent = thread().calls.at(-1)?.request;

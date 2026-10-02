@@ -239,8 +239,8 @@ const PROFILE_MIN_FEATURE: Readonly<Record<Exclude<ResolutionProfile, 'CUSTOM'>,
  * so the second boundary is that number exactly.
  *
  * **Those two landmarks have since moved, because both share rungs are a share of a cell now, which is
- * lower.** A default ICON sheet is twenty-eight components on a 16:9 page, so its grid is about seven
- * cells by four and a cell on the same 1024-pixel sheet is 256 px tall: `MID_RESOLUTION` is then
+ * lower.** A full ICON icon sheet is sixteen components on a square page, a grid of four cells by four,
+ * so a cell on the same 1024-pixel sheet is 256 px tall: `MID_RESOLUTION` is then
  * 90–128 px and `HIGH_RESOLUTION` 128–166. The gap the first boundary sat in closes, since 128 now
  * lands exactly where `MID_RESOLUTION` gives way to `HIGH_RESOLUTION`, and `RETRO_16_BIT`'s 64–96
  * overlaps the bottom of `MID_RESOLUTION` rather than sitting clear below it. **The rungs are

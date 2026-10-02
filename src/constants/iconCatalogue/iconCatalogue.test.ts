@@ -134,7 +134,8 @@ describe('the starter roster', () => {
   it('fills exactly one icon sheet from entries the catalogue holds', () => {
     const roster = CATEGORY_OPTIONS.ICON.iconRoster;
     if (roster === undefined) throw new Error('ICON declares no starter roster');
-    expect(roster.look).toBe('ISOLATED_MARK');
+    // The look of the action bar the catalogue was built for — see `ICON_LOOKS`.
+    expect(roster.look).toBe('FULL_BLEED_TILE');
     expect(new Set(roster.picks).size).toBe(roster.picks.length);
 
     const entries = roster.picks.flatMap((id) => iconCatalogueEntry(id) ?? []);

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ICON_LOOKS } from '../types/iconRoster.ts';
 import type { IconRoster } from '../types/iconRoster.ts';
 import { parseIconRoster } from './iconRosterParser.ts';
 
@@ -12,8 +13,8 @@ vi.mock('../constants/iconCatalogue/iconSheetLimits.ts', async (original) => ({
 const FALLBACK: IconRoster = { look: 'ISOLATED_MARK', picks: ['heal-minor'] };
 
 describe('parseIconRoster', () => {
-  it('reads a stored roster back unchanged', () => {
-    const roster: IconRoster = { look: 'ISOLATED_MARK', picks: ['system-sound', 'heal-major'] };
+  it.each(ICON_LOOKS)('reads a stored %s roster back unchanged', (look) => {
+    const roster: IconRoster = { look, picks: ['system-sound', 'heal-major'] };
     expect(parseIconRoster(JSON.parse(JSON.stringify(roster)), FALLBACK)).toEqual(roster);
   });
 
@@ -31,7 +32,7 @@ describe('parseIconRoster', () => {
     expect(parseIconRoster(null, FALLBACK)).toBe(FALLBACK);
     expect(parseIconRoster({ look: 'ISOLATED_MARK', picks: 'heal-major' }, FALLBACK)).toEqual(FALLBACK);
     // A look this build does not draw is a retired identifier, which falls back rather than translating.
-    expect(parseIconRoster({ look: 'FULL_BLEED_TILE', picks: ['elixir'] }, FALLBACK)).toEqual({
+    expect(parseIconRoster({ look: 'EMBOSSED_BUTTON', picks: ['elixir'] }, FALLBACK)).toEqual({
       look: 'ISOLATED_MARK',
       picks: ['elixir'],
     });

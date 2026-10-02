@@ -52,8 +52,8 @@ const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
  * uses**, because a native grid is derived from a *component* size and no CHARACTER plan states one:
  * that category's components are the parts of a figure, and the size a reader states for such a
  * sheet is the figure they assemble into. See `utils/componentTargetSize.ts`. An ICON narrows every
- * direction set to `SINGLE_FRONT`, so its twenty-eight components come out at 5× on this square
- * canvas whatever `DEFAULT_OUTPUT_CONFIG` names.
+ * direction set to `SINGLE_FRONT`, so its first sheet, the overlay pieces, comes out at a whole
+ * multiple above 1× on this square canvas whatever `DEFAULT_OUTPUT_CONFIG` names.
  */
 const NATIVE_GRID_SHEET = {
   targetModel: 'CHATGPT_5_6_SOL',

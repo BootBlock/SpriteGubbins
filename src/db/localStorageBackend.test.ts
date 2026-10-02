@@ -12,6 +12,7 @@ import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import { DEFAULT_PROJECT_ID, createDefaultProject } from '../constants/projects.ts';
 import type { PromptHistoryLog } from '../types/history.ts';
+import { ICON_LOOKS } from '../types/iconRoster.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
@@ -741,10 +742,10 @@ describe('LocalStorageBackend — the studio session', () => {
     expect(loaded?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
   });
 
-  it('round-trips an icon set’s roster with its subject', async () => {
+  it.each(ICON_LOOKS)('round-trips a %s icon set’s roster with its subject', async (look) => {
     const subject = {
       ...defaultSubjectFor('ICON'),
-      icons: { look: 'ISOLATED_MARK', picks: ['system-sound', 'heal-major', 'pin-waypoint'] },
+      icons: { look, picks: ['system-sound', 'heal-major', 'pin-waypoint'] },
     } as const;
     await backend.saveSession(session({ category: 'ICON', subject }));
 

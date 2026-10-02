@@ -137,8 +137,9 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  * claim is the sheet's own, spliced in from `RENDER_STYLE_SURFACE`: `smooth gradients`
  * where the style states flat fills, and nothing at all where it asks for soft blended forms. That
  * is the whole of what this channel says about a gradient, and Stable Diffusion's and Qwen's blocks
- * carry the same surface terms **plus** a `gradient background` of their own on every style — so
- * this list says less than theirs in every configuration, and on the three soft styles it says
+ * carry the same surface terms **plus** a `gradient background` of their own on every style — save on
+ * a sheet of full-bleed icon squares, where it would negate the backdrop each square carries — so
+ * this list says no more than theirs in any configuration, and on the three soft styles it says
  * nothing. Section 0's uniform key field is stated in the prompt body, which Midjourney reads in
  * full; the `--no` list was never what carried it.
  *
