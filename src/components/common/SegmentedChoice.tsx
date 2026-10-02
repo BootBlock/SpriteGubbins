@@ -28,10 +28,11 @@ interface SegmentedChoiceProps<T extends string | number> {
 /**
  * One value chosen from a small fixed set, as a row of pills.
  *
- * Ten controls in the Quantise tab are this — the preview layout, the preview magnification, the
+ * Eleven controls in the Quantise tab are this — the preview layout, the preview magnification, the
  * heatmap scale, the keying tolerance, the edge hardening, the download's magnification and format,
- * and the sprite cell's source and its two sizes — and one in the studio, an icon set's look. Most of
- * the Quantise tab's are a handful of stepped numbers where a slider would be the obvious choice and
+ * and the sprite cell's source, its two anchors and its fit — and one in the studio, an icon set's
+ * look. Most of the Quantise tab's are a handful of stepped numbers where a slider would be the
+ * obvious choice and
  * the wrong one — every one of them re-runs work proportional to the whole image, and a drag would spend a recompute
  * per pointer move on a sheet that may be sixteen megapixels. Stepped values reach the same range at
  * one recompute per click.

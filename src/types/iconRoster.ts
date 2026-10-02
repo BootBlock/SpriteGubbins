@@ -42,7 +42,7 @@ export type IconLook = (typeof ICON_LOOKS)[number];
  * **Every field has passed `checkCustomIcon`**, the one gate a custom entry enters a roster or a
  * project's library through — from the catalogue dialog's form, from storage and from a library pack
  * alike — so a roster never holds one that would throw out of the compiler (R9 of
- * `docs/todo/icon-catalogue.md`) or cut two sprites to one file.
+ * `docs/todo/done/icon-catalogue.md`) or cut two sprites to one file.
  */
 export interface CustomIconEntry {
   /**

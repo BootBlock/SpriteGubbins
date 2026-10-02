@@ -27,7 +27,7 @@ import { takenIconSlotNames } from './takenIconSlotNames.ts';
  *
  * - **An empty, over-long or bracketed role, look or state.** Each text reaches the inventory, which the
  *   compiler resolves `[SEC:…]` citations over, so a square bracket either throws out of the compiler or
- *   is silently replaced by a section number (R9 of `docs/todo/icon-catalogue.md`). An empty text is a
+ *   is silently replaced by a section number (R9 of `docs/todo/done/icon-catalogue.md`). An empty text is a
  *   line with nothing to draw, and the limits are `CUSTOM_ICON_LIMITS`'.
  * - **A count in any text, or a long dash in a role or state** (`COUNT_MARKER`, `LINE_SEPARATOR`).
  *   Section 4 reads `×N` as N separate drawings and the dash as the line's divide between role and look,

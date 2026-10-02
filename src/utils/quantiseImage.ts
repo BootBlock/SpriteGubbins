@@ -202,6 +202,8 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // A fact the key established, so carried through from where the key ran rather than re-derived
     // from a result every pass since has been editing.
     keyedShare: prologue.keyedShare,
+    // Whatever form the palette step took, and wherever the dither moved it to, it ran.
+    paletted: settings.reduction !== null,
     // Measured here rather than asked for later, and against the prologue's source rather than the
     // image the caller handed in: the reduction this reports on is the one that ran, and the image
     // it ran on is the keyed and hardened one every pass worked from. Keying's own cost is

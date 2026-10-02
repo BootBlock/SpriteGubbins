@@ -3,8 +3,8 @@ import { DEFAULT_SPRITE_CELL_CHOICE } from '../constants/spriteCell.ts';
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { SpriteCell, SpriteCellChoice } from '../types/spriteCell.ts';
 import {
-  cellOffsets,
   cellPivot,
+  cellPlacements,
   oversizedSprites,
   oversizeReason,
   resolveSpriteCell,
@@ -22,37 +22,42 @@ function choice(overrides: Partial<SpriteCellChoice> = {}): SpriteCellChoice {
   return { ...DEFAULT_SPRITE_CELL_CHOICE, ...overrides };
 }
 
-const CELL: SpriteCell = { width: 16, height: 16, anchor: { x: 'CENTRE', y: 'BOTTOM' } };
+const CELL: SpriteCell = { width: 16, height: 16, anchor: { x: 'CENTRE', y: 'BOTTOM' }, fit: 'REFUSE' };
 
 describe('resolveSpriteCell', () => {
   it('answers with no cell at all where each sprite keeps its bounding box', () => {
-    expect(resolveSpriteCell(choice({ source: 'BOX' }), { width: 20, height: 20 })).toBeNull();
+    expect(resolveSpriteCell(choice({ source: 'BOX' }), { width: 20, height: 20 }, 1)).toBeNull();
   });
 
   it('takes the studio’s own component size where that is the source', () => {
-    const cell = resolveSpriteCell(choice({ source: 'TARGET' }), { width: 20, height: 12 });
+    const cell = resolveSpriteCell(choice({ source: 'TARGET' }), { width: 20, height: 12 }, 1);
 
-    expect(cell).toStrictEqual({ width: 20, height: 12, anchor: { x: 'CENTRE', y: 'BOTTOM' } });
+    expect(cell).toStrictEqual({
+      width: 20,
+      height: 12,
+      anchor: { x: 'CENTRE', y: 'BOTTOM' },
+      fit: 'REFUSE',
+    });
   });
 
   it('degrades to the bounding box where the studio states no size to take', () => {
     // The control does not offer that position while there is no target, and this is what makes the
     // absence safe wherever the two are out of step — a size guessed here would be a cut nobody
     // asked for.
-    expect(resolveSpriteCell(choice({ source: 'TARGET' }), null)).toBeNull();
+    expect(resolveSpriteCell(choice({ source: 'TARGET' }), null, 1)).toBeNull();
   });
 
   it('degrades where the studio states a size larger than a cell may be', () => {
     // The control does not offer the position either, so this is the same guard on both sides of
     // one question rather than a second answer to it.
-    expect(resolveSpriteCell(choice({ source: 'TARGET' }), { width: 2048, height: 2048 })).toBeNull();
+    expect(resolveSpriteCell(choice({ source: 'TARGET' }), { width: 2048, height: 2048 }, 1)).toBeNull();
   });
 
   it('takes the typed size where the source is a cell of the reader’s own', () => {
     const typed = choice({ source: 'FIXED', fixed: { width: 24, height: 32 } });
 
     // And it is the typed size rather than the studio's, even where the studio states one.
-    expect(resolveSpriteCell(typed, { width: 20, height: 12 })).toMatchObject({
+    expect(resolveSpriteCell(typed, { width: 20, height: 12 }, 1)).toMatchObject({
       width: 24,
       height: 32,
     });
@@ -81,40 +86,41 @@ describe('oversizedSprites', () => {
   });
 });
 
-describe('cellOffsets', () => {
+describe('cellPlacements, as drawn', () => {
+  /** Where each placement lands in the cell, which is all `REFUSE` decides. */
+  const offsets = (cell: SpriteCell) => cellPlacements(BOXES, cell).map(({ x, y }) => ({ x, y }));
+
   it('registers the artwork at the anchor the reader named', () => {
     // The first piece is 8 × 6 in a 16 × 16 cell: four pixels of slack either side across, and ten
     // above it with the artwork against the foot.
-    expect(cellOffsets(BOXES, CELL)[0]).toStrictEqual({ x: 4, y: 10 });
-
-    expect(cellOffsets(BOXES, { ...CELL, anchor: { x: 'LEFT', y: 'TOP' } })[0]).toStrictEqual({
-      x: 0,
-      y: 0,
-    });
-
-    expect(cellOffsets(BOXES, { ...CELL, anchor: { x: 'RIGHT', y: 'BOTTOM' } })[0]).toStrictEqual({
-      x: 8,
-      y: 10,
-    });
+    expect(offsets(CELL)[0]).toStrictEqual({ x: 4, y: 10 });
+    expect(offsets({ ...CELL, anchor: { x: 'LEFT', y: 'TOP' } })[0]).toStrictEqual({ x: 0, y: 0 });
+    expect(offsets({ ...CELL, anchor: { x: 'RIGHT', y: 'BOTTOM' } })[0]).toStrictEqual({ x: 8, y: 10 });
   });
 
   it('puts an odd pixel of slack on the side a reader can predict', () => {
     // 5 wide in a 16 cell leaves 11, which centres at 5 rather than 5.5 — floored, as a pivot
     // between two pixels is, because a half-pixel is resolved differently by every consumer.
-    expect(cellOffsets(BOXES, CELL)[1]?.x).toBe(5);
+    expect(offsets(CELL)[1]?.x).toBe(5);
   });
 
-  it('is a displacement rather than a rect, so no cut is widened', () => {
+  it('cuts each sprite at its own box and draws it at its own size, so no cut is widened', () => {
     // Widening the cut is what bakes a neighbouring sprite into this sprite's own file — see
     // `placeInCell`, which measured that on all eight reference sheets.
-    expect(cellOffsets(BOXES, CELL)).toHaveLength(BOXES.length);
-    expect(Object.keys(cellOffsets(BOXES, CELL)[0] ?? {}).sort()).toStrictEqual(['x', 'y']);
+    const placed = cellPlacements(BOXES, CELL);
+
+    expect(placed).toHaveLength(BOXES.length);
+    for (const [index, placement] of placed.entries()) {
+      const { left, top, width, height } = BOXES[index] ?? { left: 0, top: 0, width: 0, height: 0 };
+      expect(placement.source).toStrictEqual({ left, top, width, height });
+      expect([placement.width, placement.height]).toStrictEqual([width, height]);
+    }
   });
 
   it('offsets a sprite the size of its cell by nothing at all', () => {
     const exact = [{ left: 3, top: 4, width: 16, height: 16, pixels: 9 }];
 
-    expect(cellOffsets(exact, CELL)[0]).toStrictEqual({ x: 0, y: 0 });
+    expect(cellPlacements(exact, CELL)[0]).toMatchObject({ x: 0, y: 0 });
   });
 });
 

@@ -11,7 +11,7 @@ import { DAMAGE_SCHOOL_DEFINITIONS } from './damageSchools.ts';
 
 /**
  * The damage schools' colours against the background keys and against each other (R15 of
- * `docs/todo/icon-catalogue.md`).
+ * `docs/todo/done/icon-catalogue.md`).
  *
  * **Against every key a set can take, not one preset's.** A spell can be ticked into any set, under any
  * key, isolated or full-bleed, so its school colour is held out of reach of every key that names a

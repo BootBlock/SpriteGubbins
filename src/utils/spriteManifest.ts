@@ -1,9 +1,15 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
 import type { SpriteNaming } from '../types/spriteAssignment.ts';
-import type { SpriteCell } from '../types/spriteCell.ts';
-import type { ManifestCell, ManifestSheet, ManifestSprite, SpriteManifest } from '../types/spriteManifest.ts';
+import type { SpriteCell, SpritePlacement } from '../types/spriteCell.ts';
+import type {
+  ManifestCell,
+  ManifestPlacement,
+  ManifestSheet,
+  ManifestSprite,
+  SpriteManifest,
+} from '../types/spriteManifest.ts';
+import { cellPivot, cellPlacements } from './spriteCell.ts';
 import { scaleBoxes } from './sheetLayout.ts';
-import { cellOffsets, cellPivot } from './spriteCell.ts';
 
 /**
  * The written sheet described as data: where every sprite sits, what it is called, and which sheet
@@ -24,9 +30,10 @@ import { cellOffsets, cellPivot } from './spriteCell.ts';
  * writes one name per box in the order it was handed them.
  *
  * **A rect is always the artwork's own bounding box**, whatever the cut is. Where a cell was asked
- * for, the cell is stated once at the top and each sprite carries the displacement its box sits at
- * inside that cell — so a consumer compositing from the sheet does exactly what the pack does, and
- * the rect still describes a region of the sheet that holds this sprite and nothing a gutter away.
+ * for, the cell is stated once at the top and each sprite carries its placement — the region cut from
+ * the sheet, and the rectangle it is drawn into inside the cell — so a consumer compositing from the
+ * sheet does exactly what the pack does, and the rect still describes a region of the sheet that
+ * holds this sprite and nothing a gutter away.
  * See `placeInCell`, which measured what widening the rect instead costs, and `SpriteCell` for why
  * a fixed cell is offered at all.
  *
@@ -72,7 +79,7 @@ export interface ManifestInput {
 }
 
 /** This manifest shape's version — see {@link SpriteManifest.version}, which is not a compatibility surface. */
-export const MANIFEST_VERSION = 4;
+export const MANIFEST_VERSION = 5;
 
 /** A box as its own key, so a duplicate group's member can be looked for among the written pieces. */
 function boxKey(box: SpriteBox): string {
@@ -119,7 +126,7 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
   // Measured at 1:1 and then magnified, which is what keeps one placement across the rungs: floored
   // after scaling instead, an odd amount of slack would move the artwork a pixel off its anchor at
   // some rungs and not others, and the 1× file would stop being a clean magnification of itself.
-  const offsets = cell === null ? null : cellOffsets(input.boxes, cell);
+  const placements = cell === null ? null : cellPlacements(input.boxes, cell);
   // Linked at 1:1, where both the segmentation and the duplicate reading were measured — the keys
   // would still match after scaling, and this keeps the one multiplication above.
   const links = duplicateLinks(input.boxes, input.duplicates);
@@ -137,16 +144,17 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
     y: box.top,
     width: box.width,
     height: box.height,
-    // The anchor point of the box above — the foot of it, horizontally centred, where no cell was
-    // asked for; see `ManifestSprite.pivot` for why that default and not another. Floored rather
+    // The anchor point of the box above — or of the square cut from it under `FILL_SQUARE` — and the
+    // foot of it, horizontally centred, where no cell was asked for; see `ManifestSprite.pivot` for
+    // why that default and not another. Floored rather
     // than fractional, inside `cellPivot`: a pivot between two pixels is a half-pixel offset a
     // renderer resolves differently from an importer.
-    pivot: cellPivot(box, anchor),
+    pivot: cellPivot(scaleRegion(placements?.[index]?.source, input.scale) ?? box, anchor),
     // Stated beside the number rather than left to the documentation, because the number is the
     // whole of what a pipeline reads — and the two cuts genuinely differ here, which is the reason
     // this field is not a constant. See `PivotSource`.
     pivotSource: cell === null ? 'DEFAULT_BOTTOM_CENTRE' : 'CELL_ANCHOR',
-    cellOffset: scaleOffset(offsets?.[index], input.scale),
+    placement: manifestPlacement(placements?.[index], input.scale),
     duplicateOf: links.get(index) ?? null,
   }));
 
@@ -188,21 +196,47 @@ function manifestCell(cell: SpriteCell, scale: number): ManifestCell {
     width: cell.width * scale,
     height: cell.height * scale,
     anchor: cell.anchor,
+    fit: cell.fit,
   } satisfies Record<keyof SpriteCell | keyof ManifestCell, unknown>;
 }
 
 /**
- * One sprite's displacement inside its cell, at the magnification the file is written in.
+ * One sprite's placement in its cell, at the magnification the file is written in.
  *
  * `null` where no cell was asked for, which is the same condition {@link SpriteManifest.cell} is
  * `null` under — the two are stated apart because one is per sprite and one is per file, and a
- * consumer reads them together.
+ * consumer reads them together. Every figure is multiplied by the one factor, so the 4× file is the
+ * 1× placement magnified rather than a placement rounded again at each rung.
  */
-function scaleOffset(
-  offset: { readonly x: number; readonly y: number } | undefined,
+function manifestPlacement(placement: SpritePlacement | undefined, scale: number): ManifestPlacement | null {
+  if (placement === undefined) return null;
+  const { source } = placement;
+  return {
+    from: {
+      x: source.left * scale,
+      y: source.top * scale,
+      width: source.width * scale,
+      height: source.height * scale,
+    },
+    x: placement.x * scale,
+    y: placement.y * scale,
+    width: placement.width * scale,
+    height: placement.height * scale,
+  };
+}
+
+/** A placement's region of the sheet at the written file's magnification, or `undefined` for none. */
+function scaleRegion(
+  region: SpritePlacement['source'] | undefined,
   scale: number,
-): { x: number; y: number } | null {
-  return offset === undefined ? null : { x: offset.x * scale, y: offset.y * scale };
+): SpritePlacement['source'] | undefined {
+  if (region === undefined) return undefined;
+  return {
+    left: region.left * scale,
+    top: region.top * scale,
+    width: region.width * scale,
+    height: region.height * scale,
+  };
 }
 
 /** The manifest as the bytes a `.json` file holds — two-space indented, so a person can read it. */

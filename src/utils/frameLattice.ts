@@ -1,4 +1,5 @@
 import type { PixelShift } from '../types/quantiser.ts';
+import { median } from './median.ts';
 
 /** The regular layout a strip's frames were fitted to: where it starts, and how far apart it steps. */
 export interface FrameLattice {
@@ -118,18 +119,4 @@ function repeatedMedianSlope(values: readonly number[]): number {
     return fromHere.length === 0 ? [] : [median(fromHere)];
   });
   return slopes.length === 0 ? 0 : median(slopes);
-}
-
-/**
- * The middle value, or the mean of the two middle ones.
- *
- * Averaging the middle pair of an even-length list rather than taking one of them, so the answer
- * does not depend on which side of the middle a tie falls — a row laid out alternately 21 and 22
- * pixels apart keeps to 21.5, and either whole number would be a claim the row does not support.
- */
-function median(values: readonly number[]): number {
-  const sorted = [...values].sort((left, right) => left - right);
-  const middle = Math.floor(sorted.length / 2);
-  if (sorted.length % 2 === 1) return sorted[middle] ?? 0;
-  return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
 }

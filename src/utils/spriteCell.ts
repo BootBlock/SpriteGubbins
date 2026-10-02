@@ -1,7 +1,15 @@
 import { SPRITE_CELL_SIDE_RANGE } from '../constants/spriteCell.ts';
 import type { TargetSize } from '../types/output.ts';
-import type { SpriteBox } from '../types/quantiser.ts';
-import type { CellAnchorX, CellAnchorY, SpriteCell, SpriteCellChoice } from '../types/spriteCell.ts';
+import type { PixelGrid, SpriteBox } from '../types/quantiser.ts';
+import type {
+  CellAnchorX,
+  CellAnchorY,
+  SheetRegion,
+  SpriteCell,
+  SpriteCellChoice,
+  SpritePlacement,
+} from '../types/spriteCell.ts';
+import { evenScale } from './evenScale.ts';
 
 /**
  * Cutting each sprite into a fixed cell instead of into its own bounding box.
@@ -10,11 +18,13 @@ import type { CellAnchorX, CellAnchorY, SpriteCell, SpriteCellChoice } from '../
  * read it: the cell panel warns on a sprite that will not fit, the download button resolves the cell
  * it sends, `writeSheet` refuses to write one, and `buildManifest` states what it cut. Two readings
  * of "does this sprite fit" would be two answers to one question on one screen, and the one the
- * reader acts on would be the panel's.
+ * reader acts on would be the panel's. The same holds for how big each sprite is drawn in its cell
+ * under a fit that resizes, which `cellPlacements` answers once for the manifest and the pack.
  *
  * **Everything here works in the sheet's own drawn pixels.** The download's magnification is applied
- * once, beside `scaleBoxes`, to the offsets this produces — so the offset a sprite sits at inside
- * its cell is one placement magnified rather than a rounding that moves with the factor.
+ * once, beside `scaleBoxes`, to the placements this produces — so where a sprite sits inside
+ * its cell, and at what size, is one placement magnified rather than a rounding that moves with the
+ * factor.
  *
  * **A cell is a canvas, never a window onto the sheet.** Nothing here widens a rect: a sprite's own
  * bounding box is what gets cut, and `placeInCell` lays it on the cell. Widening the rect instead
@@ -47,13 +57,34 @@ function offsetFor(span: number, anchor: CellAnchorX | CellAnchorY): number {
  * position while there is no target, and this is what makes the absence safe wherever the two are
  * out of step — a size guessed here would be a cut nobody asked for.
  */
-export function resolveSpriteCell(choice: SpriteCellChoice, target: TargetSize | null): SpriteCell | null {
+export function resolveSpriteCell(
+  choice: SpriteCellChoice,
+  target: TargetSize | null,
+  grid: PixelGrid | null,
+): SpriteCell | null {
   if (choice.source === 'BOX') return null;
+  // The second degradation, and the same shape: a resizing fit on a sheet with a pixel scale is a
+  // stored choice the sheet cannot honour, and the control withholds it there for that reason.
+  const { anchor } = choice;
+  const fit = resizingFitAllowed(grid) ? choice.fit : 'REFUSE';
   if (choice.source === 'FIXED') {
-    return { width: choice.fixed.width, height: choice.fixed.height, anchor: choice.anchor };
+    return { width: choice.fixed.width, height: choice.fixed.height, anchor, fit };
   }
   if (target === null || !targetFitsCell(target)) return null;
-  return { width: target.width, height: target.height, anchor: choice.anchor };
+  return { width: target.width, height: target.height, anchor, fit };
+}
+
+/**
+ * Whether a sheet read at this pixel scale may have its sprites resized into their cells.
+ *
+ * **Only at a grid of 1, or before any grid is settled.** A grid above 1 says the sheet is pixel art
+ * drawn at a scale, which the lattice reading has already brought down to one file pixel per drawn
+ * pixel; resizing that by area would blend the pixels the reading exists to keep apart, so such a
+ * sheet keeps `REFUSE` whatever is stored. With no result yet there is nothing to write, and the
+ * stored choice stands for the result to come.
+ */
+export function resizingFitAllowed(grid: PixelGrid | null): boolean {
+  return grid === null || grid === 1;
 }
 
 /**
@@ -74,15 +105,19 @@ export function targetFitsCell(target: TargetSize): boolean {
 /**
  * Which sprites are too big for the cell, by their reading-order position counting from zero.
  *
- * **A refusal rather than a resample**, and this is the reading both halves of that refusal are
- * taken from. A sprite wider or taller than the cell is not a cut that needs squeezing — it is a
- * sheet that came back at a coarser scale than the prompt asked for, or a cell smaller than the
- * artwork it was meant to hold, and squeezing it would hand a rig a piece whose pixels no longer
- * line up with any of its neighbours.
+ * **Under `REFUSE`, a refusal rather than a resample**, and this is the reading both halves of that
+ * refusal are taken from. A sprite wider or taller than the cell is not a cut that needs squeezing —
+ * it is a sheet that came back at a coarser scale than the prompt asked for, or a cell smaller than
+ * the artwork it was meant to hold, and squeezing it would hand a rig a piece whose pixels no longer
+ * line up with any of its neighbours. The two resizing fits refuse nothing: they are the reader
+ * saying the sheet is painted and its sprites are to be resized, the one case where that is the
+ * request.
  *
  * Empty where every sprite fits, which is the case the whole feature exists to produce.
  */
 export function oversizedSprites(boxes: readonly SpriteBox[], cell: SpriteCell): readonly number[] {
+  // A resizing fit brings every sprite inside the cell by construction — see `cellPlacements`.
+  if (cell.fit !== 'REFUSE') return [];
   const over: number[] = [];
   for (const [index, box] of boxes.entries()) {
     if (box.width > cell.width || box.height > cell.height) over.push(index);
@@ -91,25 +126,68 @@ export function oversizedSprites(boxes: readonly SpriteBox[], cell: SpriteCell):
 }
 
 /**
- * Where each sprite's own bounding box sits inside its cell, so the artwork lands on the anchor.
+ * How each sprite becomes its cell: the region of the sheet cut for it, and where that region lands
+ * in the cell and at what size — see {@link SpritePlacement}.
  *
- * A displacement rather than a rect, because that is what the cut actually needs: the pack crops the
- * bounding box out of the sheet and `placeInCell` lays it down here, which is what keeps a
- * neighbouring sprite's pixels out of this sprite's file. It is also what a consumer compositing
- * from the sheet itself has to know, and the manifest states it per sprite for that reason.
- *
- * **Every sprite must fit**, which is {@link oversizedSprites}'s question and the caller's job to
+ * **Under `REFUSE` a displacement and nothing more.** The region is the sprite's own bounding box at
+ * its own size, which is what keeps a neighbouring sprite's pixels out of this sprite's file, and the
+ * offset is what a consumer compositing from the sheet has to know, so the manifest states it per
+ * sprite. Every sprite must fit, which is {@link oversizedSprites}'s question and the caller's job to
  * have asked: `writeSheet` refuses before reaching here. Handed a sprite that does not, this returns
  * a negative displacement, and `placeInCell` clips the overhang away.
+ *
+ * **Under `SCALE_SET` the region is still the box**, drawn at the sheet's one factor (`evenScale`),
+ * each side rounded to a whole pixel and never past the cell.
+ *
+ * **Under `FILL_SQUARE` the region is the square at the centre of the box**, its side the box's
+ * shorter one, drawn at the cell's shorter side. A full-bleed tile is meant to be square, so what this
+ * trims is the strip or two of pixels a generator's tile ran over on one axis; an odd excess is
+ * floored, as every centring here is.
+ *
+ * Either way the drawn size is placed at the anchor, so a non-square cell still registers the artwork
+ * where the reader asked.
  */
-export function cellOffsets(
-  boxes: readonly SpriteBox[],
+export function cellPlacements(boxes: readonly SpriteBox[], cell: SpriteCell): readonly SpritePlacement[] {
+  const factor = cell.fit === 'SCALE_SET' ? evenScale(boxes, cell) : 1;
+  return boxes.map((box) => {
+    const { source, width, height } = drawnAt(box, cell, factor);
+    return {
+      source,
+      x: offsetFor(cell.width - width, cell.anchor.x),
+      y: offsetFor(cell.height - height, cell.anchor.y),
+      width,
+      height,
+    };
+  });
+}
+
+/** The region one sprite is cut from and the size it is drawn at, under the cell's fit. */
+function drawnAt(
+  box: SpriteBox,
   cell: SpriteCell,
-): readonly { readonly x: number; readonly y: number }[] {
-  return boxes.map((box) => ({
-    x: offsetFor(cell.width - box.width, cell.anchor.x),
-    y: offsetFor(cell.height - box.height, cell.anchor.y),
-  }));
+  factor: number,
+): { readonly source: SheetRegion; readonly width: number; readonly height: number } {
+  const region = { left: box.left, top: box.top, width: box.width, height: box.height };
+  if (cell.fit === 'REFUSE') return { source: region, width: box.width, height: box.height };
+  if (cell.fit === 'SCALE_SET') {
+    return {
+      source: region,
+      width: Math.min(cell.width, Math.max(1, Math.round(box.width * factor))),
+      height: Math.min(cell.height, Math.max(1, Math.round(box.height * factor))),
+    };
+  }
+  const side = Math.min(box.width, box.height);
+  const fill = Math.min(cell.width, cell.height);
+  return {
+    source: {
+      left: box.left + offsetFor(box.width - side, 'CENTRE'),
+      top: box.top + offsetFor(box.height - side, 'MIDDLE'),
+      width: side,
+      height: side,
+    },
+    width: fill,
+    height: fill,
+  };
 }
 
 /**
@@ -118,13 +196,15 @@ export function cellOffsets(
  * This is what a cell's pivot is: the reader named an anchor because that is where the piece joins
  * whatever carries it, so the pivot is that same point rather than a second convention beside it.
  * A point on the *box* rather than in the cell, because that is what a manifest states about a
- * sprite on a sheet — `ManifestSprite.cellOffset` is what moves it into a cell.
+ * sprite on a sheet — `ManifestSprite.placement` is what moves it into a cell. Under `FILL_SQUARE`
+ * the box is the square that was cut rather than the whole bounding box, since that square is the
+ * artwork the cell holds.
  *
  * At the default anchor — bottom-centre — it produces exactly the foot-of-the-box figure
  * `buildManifest` stated before a cell could be asked for, which is what keeps the two cuts
  * describing one quantity.
  */
-export function cellPivot(box: SpriteBox, anchor: SpriteCell['anchor']): { x: number; y: number } {
+export function cellPivot(box: SheetRegion, anchor: SpriteCell['anchor']): { x: number; y: number } {
   return {
     x: box.left + offsetFor(box.width, anchor.x),
     y: box.top + offsetFor(box.height, anchor.y),

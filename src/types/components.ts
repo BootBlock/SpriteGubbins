@@ -646,7 +646,7 @@ interface SheetPlanFields {
   /**
    * That every component of this sheet is a square tile painted to its edge, carrying its own backdrop
    * — so the background the CONTRACT section fixes is only the gutters between tiles (R5 of
-   * `docs/todo/icon-catalogue.md`).
+   * `docs/todo/done/icon-catalogue.md`).
    *
    * **Declared by the full-bleed icon sheets alone.** Section 0 calls the background "uniform", with "no
    * gradient, texture, vignette", and ICON's exclusion line bans backgrounds outright; read over a

@@ -15,7 +15,7 @@ import type { SubjectDefinition } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
 
 /**
- * The full-bleed square against the isolated mark, compiled (R5, R13 of `docs/todo/icon-catalogue.md`).
+ * The full-bleed square against the isolated mark, compiled (R5, R13 of `docs/todo/done/icon-catalogue.md`).
  *
  * The look reaches the prompt in five places — section 0's background item and the self-audit's check
  * on it, the icon sheet's own prose, ICON's exclusion and audit lines, and two wrappers' negatives — and

@@ -54,10 +54,13 @@ export interface SheetDownload {
   /**
    * The fixed cell every sprite is cut into, at 1:1, or `null` where each keeps its bounding box.
    *
-   * Refused rather than resampled where a sprite does not fit it — see `writeSheet`, which throws
-   * the sentence this hook's own failure toast then carries.
+   * Under the `REFUSE` fit a sprite that does not fit it is refused rather than resampled — see
+   * `writeSheet`, which throws the sentence this hook's own failure toast then carries. The two other
+   * fits resize the sprites into it instead.
    */
   readonly cell: SpriteCell | null;
+  /** Whether a palette step decided the sheet's colours — see `SheetWriteJob.paletted`. */
+  readonly paletted: boolean;
   /**
    * The duplicate reading, in the segmentation's own boxes rather than in the pieces above.
    *
@@ -105,6 +108,7 @@ export function useImageDownload(): ImageDownload {
       format,
       boxes,
       cell,
+      paletted,
       duplicates,
       names,
       naming,
@@ -128,6 +132,7 @@ export function useImageDownload(): ImageDownload {
         format,
         boxes,
         cell,
+        paletted,
         duplicates,
         names,
         naming,

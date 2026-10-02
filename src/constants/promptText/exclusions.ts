@@ -137,14 +137,14 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, (plan: Sh
   // `utils/sheetPlans.test.ts` holds the general form: no category's exclusion line may name a
   // component of its own plans, because a line that names one can name all but one.
   //
-  // **The figure ban defers to the inventory too** (R4 of `docs/todo/icon-catalogue.md`). Exclusions
+  // **The figure ban defers to the inventory too** (R4 of `docs/todo/done/icon-catalogue.md`). Exclusions
   // outrank what the subject asks for, so a flat “any hand, character or creature” took the bust off
   // the character panel's icon and would take the hand off every emote. A catalogue entry whose
   // subject is a figure declares `figure`, and the line now bans only the figure no entry names and
   // says outright that a named one is drawn. The input-prompt sentence went with the *Icon Family*
   // option that offered button caps.
   //
-  // **The ban on backgrounds follows the sheet's look** (R5 of `docs/todo/icon-catalogue.md`). A
+  // **The ban on backgrounds follows the sheet's look** (R5 of `docs/todo/done/icon-catalogue.md`). A
   // full-bleed square (`SheetPlan.backdrop`) is painted to its edge, backdrop included, so “Backgrounds”
   // would forbid half of every icon; on that sheet the line bans the scenery beyond each square's own
   // backdrop and anything crossing a square's edge instead, and says the backdrop is no slot plate —
@@ -334,7 +334,7 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, CategorySente
   // declares the overlay `drawnElsewhere`, and telling it that the overlays it lists are components
   // would name entries it does not have.
   //
-  // **Anatomy is banned only where no entry names it** (R4 of `docs/todo/icon-catalogue.md`). A
+  // **Anatomy is banned only where no entry names it** (R4 of `docs/todo/done/icon-catalogue.md`). A
   // catalogue entry whose subject is a figure — the character panel's bust — is an icon, and a guard
   // calling every entry that describes anatomy an error would send it to section 0's tripwire as a
   // malformed specification to report rather than draw.

@@ -1,6 +1,6 @@
 # Icon catalogue — named icon sets drawn sixteen to a sheet
 
-> **Status:** 🟢 ACTIVE — phases 1–6 shipped; phase 7 next.
+> **Status:** ✅ COMPLETE — all seven phases shipped, from the roster and the catalogue to the 128 px resizing fits.
 
 ## 1. What is wrong
 
@@ -800,3 +800,85 @@ old code:
 - **An anti-alias case read a cache two others filled.** The comparison moved into the interior case,
   which holds the measured interior below the recorded `both` by more than the `both` case's tolerance,
   so the two independent cases together prove the strict inequality.
+
+### Phase 7 — quantise painted icon sheets to 128 px (2026-10-02)
+
+**What shipped.**
+
+- **The fit.** `SpriteCellChoice` and the resolved `SpriteCell` carry `fit: SpriteFit`, one of
+  `SPRITE_FITS`: `REFUSE` (*As drawn*, the default and the old behaviour), `SCALE_SET` (*Scale
+  evenly*) and `FILL_SQUARE` (*Fill square*). `resolveSpriteCell(choice, target, grid)` resolves a
+  resizing fit to `REFUSE` on a sheet read at a pixel grid above 1 (`resizingFitAllowed`), so pixel
+  art keeps the lattice path; the result's grid now reaches `DownloadControls` and
+  `SpriteCellControls` through `ComparisonToolbar`. `oversizedSprites` refuses nothing under a
+  resizing fit.
+- **The rule.** `cellPlacements` (which replaces `cellOffsets`) returns, per sprite, the region cut
+  from the sheet and the rectangle it is drawn into inside the cell, at 1:1, magnified with
+  everything else. Under `SCALE_SET` the region is the box and the size is the box times one factor
+  for the whole sheet, `evenScale`: the cell's side over the sheet's grid pitch, the smaller of the
+  two axes, and never past the largest factor that fits every sprite. The pitch is `spritePitch`, the
+  median centre-to-centre step within the rows `spriteRows` reads and between those rows. Under
+  `FILL_SQUARE` the region is the square at the centre of the box, drawn at the cell's shorter side.
+  Both are placed at the anchor.
+- **The resampler.** `resampleArea(source, region, width, height)`: a box filter over exact
+  fractional coverage, separable, averaged in premultiplied alpha, exact for whole factors and for a
+  flat colour, deterministic, no dependency. `median` moved out of `frameLattice.ts` into its own
+  util, which `spritePitch` shares.
+- **The palette order.** The sheet is quantised whole and at full size as before; the pack resamples
+  each sprite from that result and then, where a palette step decided the sheet
+  (`QuantiseResult.paletted`, carried to the writer as `SheetWriteJob.paletted`), maps every resized
+  pixel back onto the colours the sheet holds (`sheetColourHold`): coverage to the nearest level the
+  sheet uses, then colour to the nearest of its colours. Resampling after the palette and stopping
+  there wrote colours outside it; resampling before it would have chosen the palette, the lock and
+  every cleanup from 128 px icons instead of the sheet. A sheet left at its own colours keeps the
+  resample's blends.
+- **The pack and the manifest.** `encodeSpritePack(sheet, manifest, layout, paletted)` cuts a
+  placement whose drawn size is its region's own exactly as before, and resamples one that differs.
+  `MANIFEST_VERSION` is 5: `ManifestSprite.cellOffset` became `placement` (`from`, `x`, `y`, `width`,
+  `height`), `ManifestCell` carries `fit`, and the pivot is on the cut square under `FILL_SQUARE`.
+- **The control.** A *Fit* row (`SpriteFitChoice`) after the anchor, shown wherever there is a cell;
+  on a pixel-art sheet its two resizing pills stay on screen, `aria-disabled`, with
+  `SPRITE_FIT_UNAVAILABLE` under them, and *As drawn* shows pressed. The chip (`cellBadgeText`) states
+  what the cut will do: `128 × 128 cell at 43%` or `128 × 128 cell, each square filled`.
+- **Guidance.** `QUANTISE_TOOLTIPS.spriteCellFit` says what each fit does and when to use it, and
+  that a painted icon set reaches 128 × 128 px with *Studio target*, *Centre* and *Middle*; the cut and
+  both anchor cards say the same for an icon set; the cell size cards, *Save at*, the sprite pack and
+  manifest buttons, and ICON's look card (which names the fit for each look) were brought up to the
+  fits. Every docblock that said nothing resamples or that a larger sprite is always refused now says
+  under which fit.
+- **Tests.** The resampler (whole and fractional factors, flat colours at three sizes, an edge against
+  transparency, a coverage that rounds to nothing, conservation, a region, identity, enlarging,
+  determinism); the pitch and the factor; the placements under both resizing fits and the grid's
+  degradation; the colour hold; the manifest's placement; the pack writing sixteen named 128 × 128
+  files from a painted 4 × 4 sheet under each look (`src/test/paintedIconSheet.ts`), full-bleed files
+  covered edge to edge, marks keeping their relative sizes, every resized file's colours inside a
+  sixteen-colour sheet's and outside it with no palette step; a pixel-art pack's sprite files
+  byte-identical to the old crop-and-place; the control, its chip, its held pills and its keyboard
+  reach; the press sending the fit and `paletted`, and `REFUSE` at a grid of 4.
+
+**Where it departs from the plan, and why.**
+
+- **Three fits, not one `SCALE_INTO_CELL`.** The two rules the plan gave one value cannot be told apart
+  from the artwork: a full-bleed tile and a dense isolated mark can share a box and a fill, and
+  guessing crops a mark or shrinks every tile by a different amount. The cell already asks the reader
+  for the two things it cannot derive, the size and the anchor, so the fit is a third statement, and
+  ICON's look card names the fit for each look. Reading the studio's `backdrop` was rejected for the
+  same reason the tab never trusts the studio about the dropped sheet: nothing checks that the sheet
+  is the one the studio is composing.
+- **Nothing is persisted and no preset carries the fit.** The cell choice lives in
+  `useQuantiseDownloadStore`, which survives navigation and not a reload, and the quantise presets
+  carry dials rather than the download's cut; the fit joined the choice where it lives.
+- **Neither of the plan's two palette orders.** Both broke something, as the record above says, so
+  the palette is chosen on the full sheet and the resized pixels are matched back onto it.
+- **No new preview pane.** The tab has never drawn a cut cell under any fit; the chip states the
+  factor or the fill before the press, and the files are written at it.
+- **The magnification still multiplies the cell**, under a resizing fit too, so *Save at* `1×` writes
+  the 128 px files and `2×` writes 256 px ones resampled from the same region; the cell stays in drawn
+  pixels, as it always was.
+
+**What it breaks.** A manifest is version 5: `cellOffset` is gone in favour of `placement`, and the
+cell states `fit`. `SpriteCellChoice` and `SpriteCell` require `fit`; `resolveSpriteCell` takes the
+grid; `cellOffsets` is replaced by `cellPlacements` and `cellPivot` takes a region; `encodeSpritePack`
+takes `paletted`, as `SheetWriteJob`, `SheetDownload` and `QuantiseResult` now require it; and
+`DownloadControls`, `ComparisonToolbar` and `SpriteCellControls` take the grid. Nothing stored changes
+shape, and a pack cut as drawn writes the same sheet and sprite files as before.

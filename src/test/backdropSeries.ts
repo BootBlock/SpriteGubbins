@@ -15,7 +15,7 @@ const STEPS = 17;
  * The shading and washing series a full-bleed square paints from one colour: the colour itself, then
  * every step towards 95% black into the square's corners and towards 25% white into its light.
  *
- * **One series for every key test** (R15 of `docs/todo/icon-catalogue.md`). A full-bleed square paints a
+ * **One series for every key test** (R15 of `docs/todo/done/icon-catalogue.md`). A full-bleed square paints a
  * backdrop from the colours it is given — the set's, and a spell's school colour — and lets them fall
  * towards black and wash towards the light, and the keying removes any pixel within the key's reach
  * wherever it sits. So a colour is safe on a full-bleed sheet only if every step of this series is, and

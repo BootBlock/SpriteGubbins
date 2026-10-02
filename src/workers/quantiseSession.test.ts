@@ -46,6 +46,7 @@ function resultOf(side: number): QuantiseResult {
     colors: 32,
     paletteEntries: [],
     keyedShare: 0,
+    paletted: false,
     sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
     symmetry: null,
     duplicates: [],

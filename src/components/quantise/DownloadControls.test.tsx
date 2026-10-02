@@ -6,7 +6,7 @@ import { useSheetWriteStore } from '../../stores/useSheetWriteStore.ts';
 import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { FakeSheetWriteWorker } from '../../test/fakeSheetWriteWorker.ts';
-import type { SpriteSegmentation } from '../../types/quantiser.ts';
+import type { PixelGrid, SpriteSegmentation } from '../../types/quantiser.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
 import type { SpriteCellChoice } from '../../types/spriteCell.ts';
 import { createImage } from '../../utils/imageData.ts';
@@ -56,10 +56,19 @@ function draw(
   downloadFormat: SheetFormat = 'PNG',
   sprites: SpriteSegmentation | null = null,
   cellChoice: SpriteCellChoice = DEFAULT_SPRITE_CELL_CHOICE,
+  grid: PixelGrid = 1,
+  paletted = false,
 ) {
   useQuantiseDownloadStore.setState({ downloadScale: 1, downloadFormat, cellChoice });
   render(
-    <DownloadControls sourceName="armour.png" resultImage={resultImage} duplicates={[]} sprites={sprites} />,
+    <DownloadControls
+      sourceName="armour.png"
+      resultImage={resultImage}
+      duplicates={[]}
+      sprites={sprites}
+      grid={resultImage === null ? null : grid}
+      paletted={paletted}
+    />,
   );
 }
 
@@ -245,7 +254,45 @@ describe('DownloadControls, cutting into a cell', () => {
       width: 8,
       height: 8,
       anchor: { x: 'CENTRE', y: 'BOTTOM' },
+      fit: 'REFUSE',
     });
+    await finish();
+  });
+
+  it('sends a fit that resizes, and whether the sheet’s colours are a palette, for a painted sheet', async () => {
+    const user = userEvent.setup({ delay: null });
+    draw(
+      createImage(4, 4),
+      'SPRITE_PACK',
+      SEGMENTED,
+      { ...DEFAULT_SPRITE_CELL_CHOICE, source: 'FIXED', fixed: { width: 8, height: 8 }, fit: 'FILL_SQUARE' },
+      1,
+      true,
+    );
+
+    await user.click(screen.getByRole('button', { name: /download sprite pack/i }));
+
+    const posted = FakeSheetWriteWorker.started[0]?.posted[0];
+    expect(posted?.cell?.fit).toBe('FILL_SQUARE');
+    expect(posted?.paletted).toBe(true);
+    await finish();
+  });
+
+  it('sends a sheet with a pixel scale as drawn, whatever fit was stored', async () => {
+    // Pixel art keeps its pixels: the stored fit stands for the next painted sheet, and this one's
+    // pack is the one it always was.
+    const user = userEvent.setup({ delay: null });
+    draw(
+      createImage(4, 4),
+      'SPRITE_PACK',
+      SEGMENTED,
+      { ...DEFAULT_SPRITE_CELL_CHOICE, source: 'FIXED', fixed: { width: 8, height: 8 }, fit: 'SCALE_SET' },
+      4,
+    );
+
+    await user.click(screen.getByRole('button', { name: /download sprite pack/i }));
+
+    expect(FakeSheetWriteWorker.started[0]?.posted[0]?.cell?.fit).toBe('REFUSE');
     await finish();
   });
 

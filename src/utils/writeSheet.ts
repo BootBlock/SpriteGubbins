@@ -28,12 +28,14 @@ import { upscaleNearest } from './upscaleNearest.ts';
  * coordinates. The manifest formats skip the enlargement entirely: a description of the sheet needs
  * the size arithmetic, never the 67-megabyte allocation that producing the pixels would cost.
  *
- * **A cell that a sprite does not fit is refused here**, before any of the above runs. It is the one
- * thing a download can be turned down for that is not a property of the file format, and the refusal
- * is the whole point of it: a sprite larger than the stated cell is a sheet drawn at a coarser scale
- * than the prompt asked for, and squeezing it would hand a rig a piece whose pixels no longer line
- * up with any of its neighbours. The panel says the same thing before the press, from the same
- * reading — see `oversizedSprites`.
+ * **A cell that a sprite does not fit is refused here**, before any of the above runs, wherever the
+ * cell's fit places sprites as drawn. It is the one thing a download can be turned down for that is
+ * not a property of the file format, and the refusal is the whole point of it: a sprite larger than
+ * the stated cell is a sheet drawn at a coarser scale than the prompt asked for, and squeezing it
+ * would hand a rig a piece whose pixels no longer line up with any of its neighbours. The panel says
+ * the same thing before the press, from the same reading — see `oversizedSprites`. Under the two
+ * fits that resize, a painted sheet's sprites are brought into the cell instead, and nothing is
+ * refused; `encodeSpritePack` does the resizing.
  *
  * Pure, as everything in this directory is — asynchronous only because the PNG writer waits on the
  * platform's compressor.
@@ -81,6 +83,14 @@ export interface SheetWriteJob {
    * boxes above are: the press does not have to know which formats care. See `SpriteCell`.
    */
   readonly cell: SpriteCell | null;
+  /**
+   * Whether a palette step decided the sheet's colours, as `QuantiseResult.paletted` says.
+   *
+   * Read by the pack alone, and only where its cell's fit resizes a sprite: a resized sprite is then
+   * mapped back onto the sheet's own colours, so the file beside the sheet holds no colour the sheet
+   * does not. See `sheetColourHold`.
+   */
+  readonly paletted: boolean;
   /** What the manifest calls the picture its rects are into, where that picture is a file of its own. */
   readonly imageName: string;
   /** The studio's configuration at the moment of the press, or `null` where it states no sheet. */
@@ -123,6 +133,7 @@ export async function writeSheet(job: SheetWriteJob): Promise<WrittenSheet> {
       magnify(image, scale),
       manifestFor(job, layout.sheetFile, layout.spriteDirectory),
       layout,
+      job.paletted,
     );
   }
 

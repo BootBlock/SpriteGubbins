@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { imageFrom } from '../test/images.ts';
 import { pixelOffset, readPixel } from './imageData.ts';
 import { cropSprite } from './cropSprite.ts';
-import { cellOffsets } from './spriteCell.ts';
+import { cellPlacements } from './spriteCell.ts';
 import { placeInCell } from './placeInCell.ts';
 
 const A = { r: 200, g: 30, b: 30, a: 255 } as const;
@@ -45,8 +45,12 @@ describe('placeInCell', () => {
     // sheet at a cell-sized rect puts a slice of sprite B into sprite A's PNG. Cutting the box and
     // laying it on a clear cell cannot.
     const cell = { width: 6, height: 2 };
-    const offset = cellOffsets([BOX_A], { ...cell, anchor: { x: 'CENTRE', y: 'BOTTOM' } })[0];
-    if (offset === undefined) throw new Error('the offsets came back empty');
+    const offset = cellPlacements([BOX_A], {
+      ...cell,
+      anchor: { x: 'CENTRE', y: 'BOTTOM' },
+      fit: 'REFUSE',
+    })[0];
+    if (offset === undefined) throw new Error('the placements came back empty');
     const placed = placeInCell(cropSprite(SHEET, BOX_A), cell, offset);
 
     const widened = cropSprite(SHEET, { ...BOX_A, left: BOX_A.left - offset.x, width: cell.width });

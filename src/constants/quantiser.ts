@@ -2423,25 +2423,32 @@ export const QUANTISE_TOOLTIPS = {
     '- Bounding box keeps each piece’s own box, so pieces come out at different sizes, as hand slicing wants.\n' +
     '- Studio target pads each piece with transparency into the component size the studio’s prompt states.\n' +
     '- Fixed pads each piece into the width and height beside it, for a slot size your own pipeline declares.\n\n' +
-    'A rig importer declares one slot size per piece, which is what the fixed cells are for. **Nothing is squeezed to fit:** a sprite larger than the cell refuses the download and names the piece.',
+    'A rig importer declares one slot size per piece, which is what the fixed cells are for. Under the As drawn fit a sprite larger than the cell refuses the download and names the piece. For a painted icon set, choose Studio target with Centre and Middle, and a Fit that scales.',
 
   spriteCellWidth:
     'How wide each cell is, in drawn pixels, the unit the Sprites panel reports the largest piece in. Type the width your importer declares for this slot.\n\n' +
-    'The Save At control magnifies the cell with the artwork, so a cell of `20` saved at `4×` is 80 file pixels across. Every sprite has to fit it.',
+    'The Save At control magnifies the cell with the artwork, so a cell of `20` saved at `4×` is 80 file pixels across. Under the As drawn fit every sprite has to fit it.',
 
   spriteCellHeight:
-    'How tall each cell is, in drawn pixels. Rig pieces rarely want a square cell (a forearm is long and narrow, a pelvis wide and short), so height is set apart from width. The Save At control magnifies it with the artwork, and a taller piece is refused rather than squeezed.',
+    'How tall each cell is, in drawn pixels. Rig pieces rarely want a square cell (a forearm is long and narrow, a pelvis wide and short), so height is set apart from width. The Save At control magnifies it with the artwork, and under the As drawn fit a taller piece is refused rather than squeezed.',
 
   spriteCellAnchorX:
     'Where the artwork sits across its cell when the cell is wider than the piece. Centre suits anything symmetric about its own middle. An edge suits a limb: a rig turns a piece about its joint, so a centred forearm swings from its own middle and the elbow comes apart.\n\n' +
-    'Your choice is also the horizontal half of the manifest’s pivot, so an importer that reads it lands the piece where you cut it.',
+    'Your choice is also the horizontal half of the manifest’s pivot, so an importer that reads it lands the piece where you cut it. For an icon set, choose Centre.',
 
   spriteCellAnchorY:
     'Where the artwork sits down its cell. Bottom is the default, because a ground-standing sprite is placed by its feet. Top suits a piece hanging from a socket, such as an arm from a shoulder; Middle suits one that turns about its centre, such as a wheel.\n\n' +
-    'It is also the vertical half of the pivot the manifest states.',
+    'It is also the vertical half of the pivot the manifest states. For an icon set, choose Middle, so every icon sits in the middle of its square.',
+
+  spriteCellFit:
+    'How each sprite meets its cell. Only the files you save change.\n\n' +
+    '- As drawn places each sprite at its own size. A sprite larger than the cell refuses the download. Pixel art wants this.\n' +
+    '- Scale evenly resizes every sprite by one factor, chosen so one step of the sheet’s grid fills one cell, so icons keep their sizes relative to each other. Use it for isolated marks.\n' +
+    '- Fill square crops each sprite to the square at its centre and resizes it to fill the cell. Use it for full-bleed squares.\n\n' +
+    'Use a scaling fit to bring a painted icon set to 128 × 128 px, with Studio target, Centre and Middle. Each new pixel averages the pixels it covers, then takes the nearest colour the sheet already holds where a palette applies. A sheet with a pixel scale above 1 is always placed as drawn.',
 
   downloadScale:
-    'How many file pixels one drawn pixel is written as when you save. `1×` is the sheet’s own size, which is what an engine imports. Larger rungs write each pixel as a solid square, never resampled, for a copy you can see without magnifying.\n\n' +
+    'How many file pixels one drawn pixel is written as when you save. `1×` is the sheet’s own size, which is what an engine imports. Larger rungs write each pixel as a solid square, never resampled, for a copy you can see without magnifying. A Fit that scales resizes each sprite into the magnified cell.\n\n' +
     'It changes only the saved file. A rung whose file would outgrow the largest image this tab accepts is not offered.',
 } as const;
 

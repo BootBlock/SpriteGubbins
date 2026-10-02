@@ -28,7 +28,9 @@ function draw(
   target: TargetSize | null = null,
   onChange: (next: SpriteCellChoice) => void = () => undefined,
 ) {
-  return render(<SpriteCellControls choice={choice} onChange={onChange} target={target} boxes={BOXES} />);
+  return render(
+    <SpriteCellControls choice={choice} onChange={onChange} target={target} grid={1} boxes={BOXES} />,
+  );
 }
 
 const cut = () => screen.getByRole('group', { name: 'Sprite cut' });

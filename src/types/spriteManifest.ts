@@ -2,7 +2,7 @@ import type { Direction } from './rendering.ts';
 import type { RigContract } from './rigContract.ts';
 import type { RigMode } from './rigging.ts';
 import type { SpriteNaming } from './spriteAssignment.ts';
-import type { SpriteAnchor } from './spriteCell.ts';
+import type { SpriteAnchor, SpriteFit } from './spriteCell.ts';
 import type { SubjectCategory } from './subject.ts';
 
 /**
@@ -108,8 +108,8 @@ export interface ManifestSprite {
    * **This is the box whatever the cut is**, and deliberately so. A fixed cell is roomier than the
    * artwork, and a sheet's sprites sit a gutter apart, so a rect widened to the cell would name a
    * region holding the neighbour as well — see `placeInCell`, which measured that. The cell is
-   * stated once in {@link SpriteManifest.cell} and the displacement per sprite in
-   * {@link cellOffset}, which together say how to build the cell from this box.
+   * stated once in {@link SpriteManifest.cell} and how each sprite fills it in {@link placement},
+   * which together say how to build the cell from the sheet.
    */
   readonly x: number;
   readonly y: number;
@@ -135,20 +135,21 @@ export interface ManifestSprite {
    * carries it, so the pivot is that same point and not a second convention beside it, and
    * {@link pivotSource} says so. The default anchor is bottom-centre, which reproduces the paragraph
    * above exactly. It is a point on the *box* either way, in the sheet's own coordinates —
-   * {@link cellOffset} is what moves it into a cell.
+   * {@link placement} is what moves it into a cell. Under the `FILL_SQUARE` fit it is a point on the
+   * square that was cut from the box, since that square is the artwork the cell holds.
    */
   readonly pivot: { readonly x: number; readonly y: number };
   /** Where {@link pivot} came from — see {@link PivotSource}. */
   readonly pivotSource: PivotSource;
   /**
-   * Where this sprite's box sits inside its cell, or `null` where each sprite keeps its own box.
+   * How this sprite fills its cell, or `null` where each sprite keeps its own box.
    *
    * The one thing a consumer cannot work out from the anchor alone without repeating this app's own
-   * rounding: an odd amount of slack is floored, at 1:1, and magnified with everything else. In the
-   * written file's own pixels, as the rect above is, and non-`null` exactly when
-   * {@link SpriteManifest.cell} is.
+   * arithmetic: an odd amount of slack is floored, at 1:1, and magnified with everything else, and
+   * under a resizing fit the drawn size is rounded per sprite. Non-`null` exactly when
+   * {@link SpriteManifest.cell} is. See {@link ManifestPlacement}.
    */
-  readonly cellOffset: { readonly x: number; readonly y: number } | null;
+  readonly placement: ManifestPlacement | null;
   /**
    * The index of the sprite this one duplicates, or `null` where it is its own drawing.
    *
@@ -157,6 +158,27 @@ export interface ManifestSprite {
    * this list rather than a name — a name is a convenience for a human, and this is a reference.
    */
   readonly duplicateOf: number | null;
+}
+
+/**
+ * Where one sprite's artwork comes from on the sheet and where it lands in its cell.
+ *
+ * **Two rectangles in two sets of pixels.** {@link from} is a region of the written sheet, in its own
+ * pixels as every rect in this file is. The rest is the rectangle that region is drawn into inside the
+ * cell, in the cell's own pixels. A consumer compositing from the sheet resizes `from` to `width` ×
+ * `height` and lays it at `x`, `y` on a clear cell, which is exactly what the pack's file holds.
+ *
+ * Under the `REFUSE` fit the two sizes are equal, `from` is the sprite's own rect, and only the
+ * offset says anything; under `SCALE_SET` the sizes differ by the sheet's one factor, and under
+ * `FILL_SQUARE` `from` is the square at the centre of the sprite's box, drawn at the cell's shorter
+ * side. See `cellPlacements`, which computes it, and `resampleArea`, which the pack resizes with.
+ */
+export interface ManifestPlacement {
+  readonly from: { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
 }
 
 /**
@@ -318,7 +340,7 @@ export interface SpriteManifest {
    * {@link ManifestSprite.pivot} carries wherever this is not `null`.
    *
    * **A cell is a canvas, not a region of the sheet.** Each sprite's file in a pack is this size,
-   * holding that sprite's bounding box at {@link ManifestSprite.cellOffset} and transparency
+   * holding that sprite's artwork as its {@link ManifestSprite.placement} states and transparency
    * everywhere else. Cutting the sheet at a cell-sized rect instead would take in whatever sits a
    * gutter away, which `placeInCell` measured on all eight reference sheets.
    */
@@ -352,4 +374,9 @@ export interface ManifestCell {
   readonly width: number;
   readonly height: number;
   readonly anchor: SpriteAnchor;
+  /**
+   * How the artwork met the cell: placed as drawn, resized by one factor for the whole sheet, or
+   * cropped to its centred square and resized to fill. See `SpriteFit`.
+   */
+  readonly fit: SpriteFit;
 }

@@ -19,6 +19,7 @@ function quantisedTo(width: number, height: number, colors: number): Quantised {
       colors,
       paletteEntries: [],
       keyedShare: 0,
+      paletted: false,
       sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
       symmetry: null,
       duplicates: [],

@@ -6,7 +6,7 @@ import { validationPassFor } from './validationPass.ts';
 
 /**
  * How a full-bleed icon square's backdrop is drawn, in the render style's own surface discipline —
- * the sentence section 0's `[IF:OWN_BACKDROP]` block states (R5 of `docs/todo/icon-catalogue.md`).
+ * the sentence section 0's `[IF:OWN_BACKDROP]` block states (R5 of `docs/todo/done/icon-catalogue.md`).
  *
  * **Derived from what the style already declares, never a second table of styles.** The block used to
  * say "a backdrop keeps every rule a component keeps" while the icon sheet asked for "a soft field of

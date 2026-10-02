@@ -1264,6 +1264,16 @@ export interface QuantiseResult {
    */
   readonly keyedShare: number;
   /**
+   * Whether a palette step decided {@link image}'s colours — a budget, a pinned or locked palette, or
+   * a channel depth — rather than the sheet keeping its own.
+   *
+   * A fact about the result, carried with it for the reason the grid travels with it in `Quantised`:
+   * the download reads it, and the settings in force may already have moved on from the ones this
+   * result was computed under. The sprite pack reads it to decide whether a sprite it resizes is
+   * mapped back onto the sheet's own colours; see `sheetColourHold`.
+   */
+  readonly paletted: boolean;
+  /**
    * What {@link image} cost, pixel by pixel — the preview's difference mode, as data.
    *
    * A fact of the result rather than something asked for separately, and deliberately: a heatmap

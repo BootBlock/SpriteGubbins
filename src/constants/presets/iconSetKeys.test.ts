@@ -15,7 +15,7 @@ import { ICON_SET_PRESETS } from './iconSets.ts';
 
 /**
  * That no ICON preset paints with a colour its own background key would cut away (R15 of
- * `docs/todo/icon-catalogue.md`).
+ * `docs/todo/done/icon-catalogue.md`).
  *
  * The Quantise tab removes every pixel within the key's reach wherever it sits (`keyReaches`), so a
  * colour a preset names near its key is a hole in every icon that uses it. **Held where the data

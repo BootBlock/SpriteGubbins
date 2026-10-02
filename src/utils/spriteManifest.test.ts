@@ -250,7 +250,7 @@ describe('buildManifest', () => {
 });
 
 describe('buildManifest, cut into a cell', () => {
-  const cell = { width: 8, height: 8, anchor: { x: 'CENTRE', y: 'BOTTOM' } } as const;
+  const cell = { width: 8, height: 8, anchor: { x: 'CENTRE', y: 'BOTTOM' }, fit: 'REFUSE' } as const;
 
   it('keeps the rect on the artwork’s own bounding box, whatever the cut is', () => {
     // A cell-sized rect would name a region holding whatever sits a gutter away — see `placeInCell`,
@@ -263,8 +263,15 @@ describe('buildManifest, cut into a cell', () => {
   it('states where that box sits inside its cell', () => {
     const manifest = buildManifest({ ...input, boxes: [box(10, 10, 4, 6)], cell });
 
-    // Two pixels of slack either side across, and the artwork against the foot.
-    expect(manifest.sprites[0]?.cellOffset).toStrictEqual({ x: 2, y: 2 });
+    // Two pixels of slack either side across, and the artwork against the foot, at its own size and
+    // cut from its own rect.
+    expect(manifest.sprites[0]?.placement).toStrictEqual({
+      from: { x: 10, y: 10, width: 4, height: 6 },
+      x: 2,
+      y: 2,
+      width: 4,
+      height: 6,
+    });
   });
 
   it('records the cell itself, at the magnification the file is written in', () => {
@@ -274,14 +281,15 @@ describe('buildManifest, cut into a cell', () => {
       width: 16,
       height: 16,
       anchor: { x: 'CENTRE', y: 'BOTTOM' },
+      fit: 'REFUSE',
     });
   });
 
-  it('carries no cell and no offset where each sprite kept its bounding box', () => {
+  it('carries no cell and no placement where each sprite kept its bounding box', () => {
     const manifest = buildManifest(input);
 
     expect(manifest.cell).toBeNull();
-    expect(manifest.sprites.map((sprite) => sprite.cellOffset)).toStrictEqual([null, null, null]);
+    expect(manifest.sprites.map((sprite) => sprite.placement)).toStrictEqual([null, null, null]);
   });
 
   it('puts the pivot on the anchor the artwork was registered against', () => {
@@ -293,7 +301,7 @@ describe('buildManifest, cut into a cell', () => {
 
     // The reader named that point because it is where the piece joins whatever carries it, so the
     // pivot is that same point rather than a second convention beside it — and it is a point on the
-    // box, which is what `cellOffset` moves into the cell.
+    // box, which is what `placement` moves into the cell.
     expect(manifest.sprites[0]?.pivot).toStrictEqual({ x: 10, y: 10 });
   });
 
@@ -302,7 +310,7 @@ describe('buildManifest, cut into a cell', () => {
 
     // Centred at 1:1 the 5-wide artwork leaves an odd pixel, floored to an offset of 1; at 4× that
     // is 4. Flooring after scaling would have centred 20 in 32 and landed on 6.
-    expect(magnified.sprites[0]?.cellOffset).toMatchObject({ x: 4 });
+    expect(magnified.sprites[0]?.placement).toMatchObject({ x: 4 });
   });
 
   it('says the pivot came from the anchor rather than from the default', () => {

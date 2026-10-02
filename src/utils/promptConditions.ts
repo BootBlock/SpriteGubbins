@@ -119,7 +119,7 @@ export function promptConditions(
     // Whether the background is a colour at all. Gates section 0's reservation of that colour and the
     // self-audit's check on it; a transparent field has no colour for a component to be drawn in.
     KEY_COLOUR: keyColor === null ? '' : 'yes',
-    // Whether each component is a square carrying its own backdrop (R5 of `docs/todo/icon-catalogue.md`),
+    // Whether each component is a square carrying its own backdrop (R5 of `docs/todo/done/icon-catalogue.md`),
     // which is what the full-bleed icon sheets declare. Gates section 0's sentence handing the backdrop
     // to the component and the gutters to the key, and the self-audit's check on it; without the pair,
     // the background item's “no gradient, texture, vignette” forbids the backdrop the sheet asks for.
@@ -191,7 +191,7 @@ export function promptConditions(
     // the answer are resolved in `sheetFacts` — whether the sheet draws it, and whether the line was
     // emitted at all.
     CLOTHING_IS_A_COMPONENT: clothingIsAComponent ? 'yes' : '',
-    // The exception's third shape (R3 of `docs/todo/icon-catalogue.md`): a sheet whose components carry
+    // The exception's third shape (R3 of `docs/todo/done/icon-catalogue.md`): a sheet whose components carry
     // none of the attribute because another sheet of its series draws it. ICON's icon sheets are the
     // case — the overlay sheet draws the *Applied Overlay*, and the icons are drawn bare for the engine
     // to lay it on — so the paint rule stated over them would order an overlay painted onto every icon.

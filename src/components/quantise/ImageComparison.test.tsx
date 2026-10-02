@@ -52,6 +52,7 @@ function resultFor(grid: number, colors = 32, leadingShift = { x: 0, y: 0 }, dis
     colors,
     paletteEntries: [],
     keyedShare: 0,
+    paletted: false,
     sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
     symmetry: null,
     duplicates: [],

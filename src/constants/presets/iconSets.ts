@@ -34,7 +34,7 @@ import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
  * the map or in a wheel's slot, so each is a mark alone.
  *
  * **A full-bleed preset takes a key its squares' backdrops will not be keyed out with** (R15 of
- * `docs/todo/icon-catalogue.md`). Every pixel within the key's reach is removed wherever it sits, and a
+ * `docs/todo/done/icon-catalogue.md`). Every pixel within the key's reach is removed wherever it sits, and a
  * square's backdrop is painted from the set's colours shaded towards black at its corners. Measured
  * over every hex colour ICON's *Primary Colours* and *Accent Colours* offer, shaded and washed that
  * way, `PURE_BLACK` reaches four primaries — the cyberpunk set's own Gunmetal among them — and

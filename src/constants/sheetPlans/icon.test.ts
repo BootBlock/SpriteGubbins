@@ -160,7 +160,7 @@ describe('the ICON series', () => {
 });
 
 describe('the ICON look', () => {
-  // R5 of `docs/todo/icon-catalogue.md`: the full-bleed square declares its backdrop, so section 0, the
+  // R5 of `docs/todo/done/icon-catalogue.md`: the full-bleed square declares its backdrop, so section 0, the
   // exclusions and the wrappers can follow it, and nothing else does.
   it('declares a backdrop on full-bleed icon sheets alone, never on an overlay sheet', () => {
     const picks = SINGLE_ONES.slice(0, 20);

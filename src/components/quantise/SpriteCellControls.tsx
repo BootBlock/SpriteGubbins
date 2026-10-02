@@ -6,14 +6,16 @@ import {
   SPRITE_CELL_SOURCE_LABELS,
 } from '../../constants/spriteCell.ts';
 import type { TargetSize } from '../../types/output.ts';
-import type { SpriteBox } from '../../types/quantiser.ts';
+import type { PixelGrid, SpriteBox } from '../../types/quantiser.ts';
 import { CELL_ANCHORS_X, CELL_ANCHORS_Y, SPRITE_CELL_SOURCES } from '../../types/spriteCell.ts';
 import type { SpriteCellChoice, SpriteCellSource } from '../../types/spriteCell.ts';
+import { cellBadgeText } from '../../utils/cellBadgeText.ts';
 import { oversizedSprites, resolveSpriteCell, targetFitsCell } from '../../utils/spriteCell.ts';
 import { Badge } from '../common/Badge.tsx';
 import { NumberField } from '../common/NumberField.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
+import { SpriteFitChoice } from './SpriteFitChoice.tsx';
 
 interface SpriteCellControlsProps {
   readonly choice: SpriteCellChoice;
@@ -26,11 +28,19 @@ interface SpriteCellControlsProps {
    */
   readonly target: TargetSize | null;
   /**
+   * The pixel scale the result was computed at, or `null` with no result yet.
+   *
+   * What withholds the two fits that resize: a sheet read at a grid above 1 is pixel art, which keeps
+   * its pixels — see `resizingFitAllowed`, which the press resolves the cell through as well.
+   */
+  readonly grid: PixelGrid | null;
+  /**
    * The sprites the segmentation found, in the 1:1 result's coordinates.
    *
-   * Read for one question only: whether any of them is larger than the cell. The download refuses
-   * such a sheet rather than squeezing it, and this is where the reader is told so before the press
-   * — beside the setting they would change, rather than in a toast after it.
+   * Read for two questions: whether any of them is larger than the cell, which the download refuses
+   * under `As drawn` rather than squeezing it, and what one factor `Scale evenly` would resize them
+   * by. This is where the reader is told either before the press — beside the setting they would
+   * change, rather than in a toast after it.
    */
   readonly boxes: readonly SpriteBox[];
 }
@@ -46,12 +56,12 @@ interface SpriteCellControlsProps {
  * makes about the heatmap's scale.
  *
  * **Every control here is off unless it can do something.** The two size boxes appear only under
- * `Fixed`, since the other two sources state their own size; the anchor appears only where there is
- * a cell for artwork to sit in; and `Studio target` is absent while the studio states no size. See
- * `SpriteCell` for what the whole arrangement is for, and `spriteCellSource` for what a reader is
- * told about it.
+ * `Fixed`, since the other two sources state their own size; the anchor and the fit appear only where
+ * there is a cell for artwork to sit in; and `Studio target` is absent while the studio states no
+ * size; `SpriteFitChoice` says how its own pills are held back on a pixel-art sheet. See `SpriteCell`
+ * for what the whole arrangement is for, and `spriteCellSource` for what a reader is told about it.
  */
-export function SpriteCellControls({ choice, onChange, target, boxes }: SpriteCellControlsProps) {
+export function SpriteCellControls({ choice, onChange, target, grid, boxes }: SpriteCellControlsProps) {
   const sources = SPRITE_CELL_SOURCES.filter(
     (offered) => offered !== 'TARGET' || (target !== null && targetFitsCell(target)),
   );
@@ -62,7 +72,9 @@ export function SpriteCellControls({ choice, onChange, target, boxes }: SpriteCe
   // beside a cut that has silently fallen back to the bounding box. What the pills show is what the
   // download will actually do.
   const source = sources.includes(choice.source) ? choice.source : SPRITE_CELL_SOURCES[0];
-  const cell = resolveSpriteCell({ ...choice, source }, target);
+  // The fit in force is derived for the same reason: on a pixel-art sheet a stored resizing fit
+  // resolves to `REFUSE`, so that is the pill shown pressed, beside the reason the others are held.
+  const cell = resolveSpriteCell({ ...choice, source }, target, grid);
   const over = cell === null ? [] : oversizedSprites(boxes, cell);
 
   return (
@@ -149,6 +161,14 @@ export function SpriteCellControls({ choice, onChange, target, boxes }: SpriteCe
               }}
             />
           </div>
+
+          <SpriteFitChoice
+            fit={cell.fit}
+            grid={grid}
+            onChange={(fit) => {
+              onChange({ ...choice, fit });
+            }}
+          />
         </>
       )}
 
@@ -169,30 +189,10 @@ export function SpriteCellControls({ choice, onChange, target, boxes }: SpriteCe
       <div aria-live="polite" aria-atomic="true">
         {cell !== null && (
           <Badge tone={over.length === 0 ? 'neutral' : 'attention'}>
-            {over.length === 0
-              ? `${cell.width} × ${cell.height} cell`
-              : oversizeLabel(over.length, cell.width, cell.height)}
+            {cellBadgeText(cell, boxes, over.length)}
           </Badge>
         )}
       </div>
     </div>
   );
-}
-
-/**
- * How many pieces will not fit, in the few words a chip has room for.
- *
- * The cell is named in both branches so the chip is worth reading in either — a reader who has just
- * typed a size wants to see the size they typed, whether or not it worked.
- *
- * **Kept to the length of a chip rather than written as a sentence**, because `Badge` carries
- * `whitespace-nowrap` and is an inline-flex item that cannot shrink below its own text. Below
- * `--breakpoint-quantise` this panel is the page width, so a sentence here would spill past the
- * panel's border on a phone and give the body a horizontal scroll. The sentence a reader needs
- * exists twice already — the guidance behind the ⓘ, and the refusal the press itself reports, which
- * names the offending piece rather than only counting the pieces.
- */
-function oversizeLabel(over: number, width: number, height: number): string {
-  const pieces = over === 1 ? '1 sprite' : `${String(over)} sprites`;
-  return `${pieces} larger than ${String(width)} × ${String(height)}`;
 }

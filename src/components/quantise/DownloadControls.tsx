@@ -7,7 +7,7 @@ import { useSheetIdentity } from '../../hooks/useSheetIdentity.ts';
 import { useComponentTarget } from '../../hooks/useComponentTarget.ts';
 import { useSpriteAssignment } from '../../hooks/useSpriteAssignment.ts';
 import { useQuantiseDownloadStore } from '../../stores/useQuantiseDownloadStore.ts';
-import type { SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
+import type { PixelGrid, SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
 import { resolveSpriteCell } from '../../utils/spriteCell.ts';
@@ -37,6 +37,15 @@ interface DownloadControlsProps {
    * of the segmentation, so a sheet with nothing separable has nothing to group.
    */
   readonly duplicates: readonly SpriteDuplicateGroup[];
+  /**
+   * The pixel scale the result was computed at, or `null` with no result.
+   *
+   * What decides whether the cell's fit may resize a sprite: only a sheet read at a grid of 1 can be
+   * painted, and pixel art keeps its pixels — see `resizingFitAllowed`.
+   */
+  readonly grid: PixelGrid | null;
+  /** Whether a palette step decided the result's colours — see `QuantiseResult.paletted`. */
+  readonly paletted: boolean;
 }
 
 /**
@@ -55,7 +64,14 @@ interface DownloadControlsProps {
  * **The settings are read from `useQuantiseDownloadStore`** rather than handed down, so they outlive
  * the view — see the store for the trip to the studio that used to reset them.
  */
-export function DownloadControls({ sourceName, resultImage, sprites, duplicates }: DownloadControlsProps) {
+export function DownloadControls({
+  sourceName,
+  resultImage,
+  sprites,
+  duplicates,
+  grid,
+  paletted,
+}: DownloadControlsProps) {
   const downloadScale = useQuantiseDownloadStore((state) => state.downloadScale);
   const setDownloadScale = useQuantiseDownloadStore((state) => state.setDownloadScale);
   const downloadFormat = useQuantiseDownloadStore((state) => state.downloadFormat);
@@ -158,7 +174,13 @@ export function DownloadControls({ sourceName, resultImage, sprites, duplicates 
       </div>
 
       {cuts && (
-        <SpriteCellControls choice={cellChoice} onChange={setCellChoice} target={target} boxes={boxes} />
+        <SpriteCellControls
+          choice={cellChoice}
+          onChange={setCellChoice}
+          target={target}
+          grid={grid}
+          boxes={boxes}
+        />
       )}
 
       <ControlTooltip
@@ -187,7 +209,8 @@ export function DownloadControls({ sourceName, resultImage, sprites, duplicates 
               // Sent whatever the format is, as the boxes are, and `null` under a format that does
               // not cut — so a cell left set from an earlier press cannot reach a writer that has no
               // controls on screen for it.
-              cell: cuts ? resolveSpriteCell(cellChoice, target) : null,
+              cell: cuts ? resolveSpriteCell(cellChoice, target, grid) : null,
+              paletted,
               duplicates,
               // One name per piece, already decided, beside the route that decided them — the
               // inventory itself is not sent, because matching it to the artwork is a question this

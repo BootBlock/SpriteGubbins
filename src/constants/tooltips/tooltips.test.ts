@@ -16,6 +16,7 @@ import { SHEET_IDENTITY_GUIDANCE } from '../sheetIdentity.ts';
 import { STUDIO_HISTORY_GUIDANCE } from '../studioHistory.ts';
 import { APP_TAB_CHOICES } from '../ui.ts';
 import { RESULT_PREVIEW_MODES_UNAVAILABLE } from '../previewModes.ts';
+import { SPRITE_FIT_UNAVAILABLE } from '../spriteCell.ts';
 import { presetCollectionGuidance } from './presets.ts';
 import { movePresetRefusal, moveQuantiseRefusal } from './projects.ts';
 import { ICON_CAPACITY_NOTICES } from '../iconCatalogue/iconCapacityNotices.ts';
@@ -137,6 +138,9 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   // Why four of the preview layout's pills cannot be chosen yet, on the `waiting` footing: a reason
   // a control is unavailable, rendered under it and pointed at by each of the pills it withholds.
   ['RESULT_PREVIEW_MODES_UNAVAILABLE', RESULT_PREVIEW_MODES_UNAVAILABLE],
+  // Why the sprite fit's two resizing pills cannot be chosen on a sheet with a pixel scale, on the
+  // same footing as the line above.
+  ['SPRITE_FIT_UNAVAILABLE', SPRITE_FIT_UNAVAILABLE],
   // Both entries of both undo panels, on the same footing as the two above: each says what the two
   // buttons beside it do — what a step back restores, and what performing another act costs — which
   // is a control's own explanation rendered under it rather than behind an ⓘ. Neither record is
@@ -296,6 +300,7 @@ const PLAIN_SURFACES = [
   'SHEET_IDENTITY_GUIDANCE.',
   'PALETTE_EXPORT_GUIDANCE.',
   'RESULT_PREVIEW_MODES_UNAVAILABLE',
+  'SPRITE_FIT_UNAVAILABLE',
   'movePresetRefusal',
   'moveQuantiseRefusal',
   'ICON_CAPACITY_NOTICES.',

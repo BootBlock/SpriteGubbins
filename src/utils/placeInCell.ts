@@ -1,7 +1,8 @@
 import { CHANNELS_PER_PIXEL, createImage, pixelOffset } from './imageData.ts';
 
 /**
- * One sprite's own pixels, laid on a transparent cell of a stated size at a stated offset.
+ * One sprite's own pixels — or, under a fit that resizes, those pixels resampled — laid on a
+ * transparent cell of a stated size at a stated offset.
  *
  * **The step that makes a cell a canvas rather than a window.** Widening the rect and cutting the
  * sheet at it looks equivalent and is not: a sheet's sprites are laid out a gutter apart, so a cell
@@ -17,13 +18,13 @@ import { CHANNELS_PER_PIXEL, createImage, pixelOffset } from './imageData.ts';
  * produce.
  *
  * **The offset is given rather than derived**, because it is decided at 1:1 and magnified with
- * everything else — see `cellOffsets`. Recomputing it here from the magnified sizes would floor a
+ * everything else — see `cellPlacements`. Recomputing it here from the magnified sizes would floor a
  * different quantity and put the artwork a pixel off its anchor at some rungs and not others.
  *
  * Rows outside the cell are not copied, so an offset that would hang the artwork over an edge is
  * clipped rather than allowed to write past the end of the array. Nothing produces one — the caller
- * refuses a sprite larger than the cell — and the clip is what keeps that a refusal rather than a
- * corrupted file.
+ * refuses a sprite larger than the cell under the `REFUSE` fit, and the two resizing fits never draw
+ * one past it — and the clip is what keeps that a refusal rather than a corrupted file.
  *
  * Row by row rather than pixel by pixel: a row is contiguous in both images, so this is one `set`
  * per row against four channel writes per pixel.
