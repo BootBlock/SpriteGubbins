@@ -182,9 +182,12 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
     ),
   ),
   // Why a catalogue row cannot be ticked, rendered under it as `CheckboxField`'s reason — the
-  // `TARGET_MODELS[].generatorSite.note` footing — in both of its wordings.
+  // `TARGET_MODELS[].generatorSite.note` footing — in both of its wordings, and the notice a group
+  // tick left short raises, which is the same refusal said after the press rather than before it.
   ['ICON_CAPACITY_NOTICES.row(full)', ICON_CAPACITY_NOTICES.row(1, 0)],
   ['ICON_CAPACITY_NOTICES.row(short)', ICON_CAPACITY_NOTICES.row(2, 1)],
+  ['ICON_CAPACITY_NOTICES.refused(one)', ICON_CAPACITY_NOTICES.refused(1)],
+  ['ICON_CAPACITY_NOTICES.refused(several)', ICON_CAPACITY_NOTICES.refused(3)],
 ];
 
 /** Flattens the records into `NAME.key` pairs, so a failure names the entry rather than a position. */

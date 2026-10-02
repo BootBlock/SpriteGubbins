@@ -250,7 +250,7 @@ describe('Tooltip', () => {
     const user = userEvent.setup({ delay: null });
     renderTooltip();
 
-    // A card in one of the app's four overlays sits inside an open `<dialog>`, where Escape is also
+    // A card in one of the app's five overlays sits inside an open `<dialog>`, where Escape is also
     // the platform's close watcher — so dismissing a paragraph of guidance took the atlas
     // calculator's figures, the history drawer's search or a part-answered settings panel with it.
     // Measured in Edge 152 on a bare `showModal()`ed dialog: `preventDefault()` on the `keydown`

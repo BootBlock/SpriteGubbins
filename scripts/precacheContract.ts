@@ -87,13 +87,13 @@
  * is the note beside them, and `useQuantiseStore` is the identity lock's. They stay as the record of
  * what each cost on the first visit it arrived on; none of them is a line in the list any more.
  *
- * **Five lines arrived with the icon catalogue's picker, and one of them is new code.**
- * `IconCatalogueContents` is the fifth overlay's own chunk, loaded on demand as the other four are.
- * The other four are the split's shared chunks again: the catalogue dialog and the studio's
- * *Icons on this set* section both read the roster's figures, so `useIconRosterSummary` and the
- * `useSheetSubject` and `output` modules it reaches are cut out of the studio's chunk into ones the
- * two share, and `TextField` is cut out the same way now that the dialog's search box is one. What a
- * first visit gains from those four is requests rather than bytes.
+ * **Five lines arrived with the icon catalogue's picker, and two of them are new code.**
+ * `IconCatalogueContents` is the fifth overlay's own chunk, loaded on demand as the other four are,
+ * and `useIconRosterSummary` is the new hook the catalogue dialog and the studio's *Icons on this
+ * set* section both read the roster's figures through, so the split cuts it out of the studio's
+ * chunk into one the two share. The other three are existing modules cut out the same way:
+ * `useSheetSubject` and `output`, which that hook reaches, and `TextField`, now that the dialog's
+ * search box is one. What a first visit gains from those three is requests rather than bytes.
  */
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',

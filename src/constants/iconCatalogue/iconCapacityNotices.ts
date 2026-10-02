@@ -16,5 +16,7 @@ export const ICON_CAPACITY_NOTICES = {
 
   /** After a group tick that left `count` icons unticked for want of room. */
   refused: (count: number): string =>
-    `${String(count)} ${count === 1 ? 'icon was' : 'icons were'} left unticked: a set holds at most ${String(ICON_ROSTER_CAPACITY)} components.`,
+    count === 1
+      ? `Your set had no room for one of those icons, so it was left unticked: a set holds at most ${String(ICON_ROSTER_CAPACITY)} components.`
+      : `Your set had no room for ${String(count)} of those icons, so they were left unticked: a set holds at most ${String(ICON_ROSTER_CAPACITY)} components.`,
 } as const;
