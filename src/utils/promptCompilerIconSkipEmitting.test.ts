@@ -1,6 +1,5 @@
 import { describe, it } from 'vitest';
-import { expectSkippedPairingsMatch, iconSkippedConfigurations } from '../test/iconSkippedPairings.ts';
-import { DIRECTIONAL_MODES } from '../types/output.ts';
+import { expectSkippedPairingsMatch, iconSkippedCases } from '../test/iconSkippedPairings.ts';
 
 /**
  * That ICON's skipped pairings compile to the prompt their resolution names, for the emitting variant the
@@ -8,15 +7,10 @@ import { DIRECTIONAL_MODES } from '../types/output.ts';
  * rule and its reason are `iconSkippedPairings.ts`'s.
  */
 describe('ICON pairings the sweeps skip (emitting)', () => {
-  it.each(
-    iconSkippedConfigurations('emitting').flatMap((configuration) =>
-      DIRECTIONAL_MODES.map((mode) => [configuration.name, mode, configuration] as const),
-    ),
-  )(
-    'compiles %s under %s to the offered pairing’s prompt',
-    (_name, mode, configuration) => {
-      expectSkippedPairingsMatch(configuration, mode);
+  it.each(iconSkippedCases('emitting'))(
+    'compiles %s, sheet index %i, under %s to the offered pairing’s prompt',
+    (_name, sheetIndex, mode, configuration) => {
+      expectSkippedPairingsMatch(configuration, sheetIndex, mode);
     },
-    30_000,
   );
 });

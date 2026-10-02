@@ -18,6 +18,7 @@ import { calculateAtlasMetrics, widthBiasFor } from './atlasCalculator.ts';
 import { batchComponentCount, componentCountFor, sheetCountFor } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetBatch } from './sheetBatch.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
 import { standardSubject } from '../test/sheetSubject.ts';
 
@@ -52,23 +53,32 @@ function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
  * their own, and a count checked against the standard OBJECT sheets while the prompt compiled the
  * rigid ones would be comparing two deliverables.
  */
-const SHEETS = SUBJECT_CATEGORIES.flatMap((category) =>
-  assemblyBaseSubjectsOf(category).flatMap((subject) =>
-    modesFor(category, subject).flatMap((mode) =>
-      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-        sheetSeriesFor(category, subject, mode, directions).map((plan, sheetIndex) => ({
-          category,
-          subject,
-          base: subject.anatomy,
-          mode,
-          directions,
-          sheetIndex,
-          sheet: plan.name,
-        })),
-      ),
+const CASES = assemblyBaseCases();
+
+const SHEETS = CASES.flatMap(([name, category, subject]) =>
+  modesFor(category, subject).flatMap((mode) =>
+    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+      sheetSeriesFor(category, subject, mode, directions).map((plan, sheetIndex) => ({
+        name,
+        category,
+        subject,
+        base: subject.anatomy,
+        mode,
+        directions,
+        sheetIndex,
+        sheet: plan.name,
+      })),
     ),
   ),
 );
+
+/**
+ * The sheets one of {@link CASES} draws: what a sweep compiling a prompt per sheet walks per case, so no
+ * one case outgrows the time limit as ICON's rosters grow (`assemblyBaseCases`).
+ */
+function sheetsOf(name: string): typeof SHEETS {
+  return SHEETS.filter((sheet) => sheet.name === name);
+}
 
 describe('component counts', () => {
   it.each(SHEETS)(
@@ -121,34 +131,42 @@ describe('component counts', () => {
     }
   });
 
-  it('promises the selector the whole batch, since that is what the user is choosing', () => {
-    // The one reader that is deliberately *not* per sheet. A pairing costing six generations reading
-    // the same figure as one that costs a single sheet would have the two looking like the same size
-    // of job, which is the question this label exists to answer.
-    //
-    // **The batch axis, not the inventory axis** — the reported failure this pins. The label used to
-    // sum the parts of the plan and count them, so a CHARACTER's directional pairing over the five
-    // classic facings read "49 across 2 sheets" and then produced six generations of 185 components:
-    // the trunk once, and the limbs at each of the five facings. Both figures now come off the very
-    // batch `sheetBatch` enumerates, which is the list the split drawer, the studio's progress strip
-    // and every prompt's own section 6 are counting.
-    for (const { category, subject, mode, directions } of SHEETS) {
-      const output = withOutput({ directionalMode: mode, directions });
-      const { sheets } = sheetBatch(category, subject, output);
-      const choice = directionalModeChoices(category, subject, output, []).find(
-        (candidate) => candidate.value === mode,
-      );
-
-      expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
-        String(batchComponentCount(category, subject, sheets, [])),
-      );
-      if (sheets.length > 1) {
-        expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
-          `in ${String(sheets.length)} sheets`,
+  it.each(CASES)(
+    'promises the selector the whole batch, since that is what the user is choosing, on %s',
+    (name) => {
+      // The one reader that is deliberately *not* per sheet. A pairing costing six generations reading
+      // the same figure as one that costs a single sheet would have the two looking like the same size
+      // of job, which is the question this label exists to answer.
+      //
+      // **The batch axis, not the inventory axis** — the reported failure this pins. The label used to
+      // sum the parts of the plan and count them, so a CHARACTER's directional pairing over the five
+      // classic facings read "49 across 2 sheets" and then produced six generations of 185 components:
+      // the trunk once, and the limbs at each of the five facings. Both figures now come off the very
+      // batch `sheetBatch` enumerates, which is the list the split drawer, the studio's progress strip
+      // and every prompt's own section 6 are counting.
+      //
+      // Once per pairing rather than per sheet: nothing here reads the sheet index, so a series' later
+      // sheets would only repeat the first one's assertions.
+      for (const { category, subject, mode, directions } of sheetsOf(name).filter(
+        (sheet) => sheet.sheetIndex === 0,
+      )) {
+        const output = withOutput({ directionalMode: mode, directions });
+        const { sheets } = sheetBatch(category, subject, output);
+        const choice = directionalModeChoices(category, subject, output, []).find(
+          (candidate) => candidate.value === mode,
         );
+
+        expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
+          String(batchComponentCount(category, subject, sheets, [])),
+        );
+        if (sheets.length > 1) {
+          expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
+            `in ${String(sheets.length)} sheets`,
+          );
+        }
       }
-    }
-  });
+    },
+  );
 
   it('states the batch the reported configuration actually produces, not its two inventory parts', () => {
     // The figure from the report, spelled out rather than derived, so the two axes cannot both move
@@ -296,59 +314,68 @@ describe('component counts', () => {
     expect(articulation).not.toContain('Demon Horn');
   });
 
-  it('states the within-entry reading order wherever an entry can expand along two axes', () => {
-    // The ambiguity this pins: section 4 fixes reading order *between* entries only, and an anatomy
-    // entry carrying both a ×N and a facing list expands along two axes — `Demon Horn ×2: south,
-    // west, north, east` is eight components in either piece-major or facing-major order, and a
-    // generator free to pick either silently mis-maps every anatomy component's identity. The
-    // intro now states the sub-order — facings in listed order, the ×N copies together at each —
-    // as the extension of how every `viewsOf` entry above it already reads. Every multi-view sheet
-    // carries the sentence, because every one of them accepts a ×N entry; a run sheet has one axis
-    // and stays without it.
-    const anatomy = 'Demon Horn ×2, Tail ×1';
-    for (const { category, subject, mode, directions, sheetIndex } of SHEETS) {
-      const plan = sheetSeriesFor(category, subject, mode, directions)[sheetIndex];
-      if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
-      const prompt = generatePrompt(
-        category,
-        { ...subject, additional_anatomy: anatomy },
-        withOutput({ directionalMode: mode, directions, sheetIndex }),
-      );
-
-      const label = `${category}/${mode}/${directions}/${plan.name}`;
-      if (plan.facings !== 'run') {
-        expect(prompt, label).toContain(
-          'Within one entry, walk its facings in the order listed and place all N copies together',
+  it.each(CASES)(
+    'states the within-entry reading order wherever an entry can expand along two axes, on %s',
+    (name) => {
+      // The ambiguity this pins: section 4 fixes reading order *between* entries only, and an anatomy
+      // entry carrying both a ×N and a facing list expands along two axes — `Demon Horn ×2: south,
+      // west, north, east` is eight components in either piece-major or facing-major order, and a
+      // generator free to pick either silently mis-maps every anatomy component's identity. The
+      // intro now states the sub-order — facings in listed order, the ×N copies together at each —
+      // as the extension of how every `viewsOf` entry above it already reads. Every multi-view sheet
+      // carries the sentence, because every one of them accepts a ×N entry; a run sheet has one axis
+      // and stays without it.
+      const anatomy = 'Demon Horn ×2, Tail ×1';
+      for (const { category, subject, mode, directions, sheetIndex } of sheetsOf(name)) {
+        const plan = sheetSeriesFor(category, subject, mode, directions)[sheetIndex];
+        if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
+        const prompt = generatePrompt(
+          category,
+          { ...subject, additional_anatomy: anatomy },
+          withOutput({ directionalMode: mode, directions, sheetIndex }),
         );
-        expect(prompt, label).toContain('never one copy at every facing before the second copy');
-      } else {
-        expect(prompt, label).not.toContain('Within one entry');
-      }
-    }
-  });
 
-  it('gives an entry that refers to its facings the same arithmetic as one that names them', () => {
-    // The `atEachYaw` shape — `Handle, at each of the yaws section 3 lists` — names no facing on
-    // the entry itself, so section 4's rule as first written ("an entry naming several facings
-    // names one drawing at each") bound it only by charitable reading: a generator taking the
-    // sentence literally had no stated arithmetic for the entry at all. The rule now says
-    // reference counts as naming, and this walks every sheet carrying such an entry to check the
-    // two travel together.
-    let referringSheets = 0;
-    for (const { category, subject, mode, directions, sheetIndex } of SHEETS) {
-      const prompt = generatePrompt(
-        category,
-        subject,
-        withOutput({ directionalMode: mode, directions, sheetIndex }),
-      );
-      if (!prompt.includes('at each of the yaws section 3 lists')) continue;
-      referringSheets += 1;
-      expect(prompt, `${category}/${mode}/${directions}`).toContain(
-        'an entry naming or referring to several facings names one drawing at',
-      );
-    }
-    // The pairing above is vacuous unless the referring shape actually ships on some sheet.
-    expect(referringSheets).toBeGreaterThan(0);
+        const label = `${category}/${mode}/${directions}/${plan.name}`;
+        if (plan.facings !== 'run') {
+          expect(prompt, label).toContain(
+            'Within one entry, walk its facings in the order listed and place all N copies together',
+          );
+          expect(prompt, label).toContain('never one copy at every facing before the second copy');
+        } else {
+          expect(prompt, label).not.toContain('Within one entry');
+        }
+      }
+    },
+  );
+
+  /** One sheet's prompt, as the referring-entry checks below compile it. */
+  function promptOf({ category, subject, mode, directions, sheetIndex }: (typeof SHEETS)[number]) {
+    return generatePrompt(category, subject, withOutput({ directionalMode: mode, directions, sheetIndex }));
+  }
+
+  it.each(CASES)(
+    'gives an entry that refers to its facings the same arithmetic as one that names them, on %s',
+    (name) => {
+      // The `atEachYaw` shape — `Handle, at each of the yaws section 3 lists` — names no facing on
+      // the entry itself, so section 4's rule as first written ("an entry naming several facings
+      // names one drawing at each") bound it only by charitable reading: a generator taking the
+      // sentence literally had no stated arithmetic for the entry at all. The rule now says
+      // reference counts as naming, and this walks every sheet carrying such an entry to check the
+      // two travel together.
+      for (const sheet of sheetsOf(name)) {
+        const prompt = promptOf(sheet);
+        if (!prompt.includes('at each of the yaws section 3 lists')) continue;
+        expect(prompt, `${sheet.category}/${sheet.mode}/${sheet.directions}`).toContain(
+          'an entry naming or referring to several facings names one drawing at',
+        );
+      }
+    },
+  );
+
+  it('ships the referring shape on some sheet, so the pairing above is not vacuous', () => {
+    expect(SHEETS.some((sheet) => promptOf(sheet).includes('at each of the yaws section 3 lists'))).toBe(
+      true,
+    );
   });
 });
 

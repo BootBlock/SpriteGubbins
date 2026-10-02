@@ -37,6 +37,7 @@ import {
 } from '../types/output.ts';
 import type { AspectRatio, OutputConfig } from '../types/output.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { renderContractOf, sectionOf } from '../test/promptSections.ts';
 import { resolvedSheetAddress } from '../test/resolvedSheetAddress.ts';
 import { sheetIndicesOf } from '../test/sheetIndicesOf.ts';
@@ -2269,45 +2270,38 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
     'names a direction for a component, that direction wins outright',
   ];
 
-  it('carries no clause written for several facings, under any category or sheet', () => {
-    for (const category of SUBJECT_CATEGORIES) {
-      // Every plan table the category can be drawn from, each compiled with the subject that selects
-      // it: an assembly base draws sheets of its own (issue #283), so the default subject alone never
-      // compiles OBJECT's standard sheets.
-      for (const subject of assemblyBaseSubjectsOf(category)) {
-        // ICON alone compiles each resolved address once (`resolvedSheetAddress`), and
-        // `promptCompilerIconSkip*.test.ts` hold its skipped pairings to the prompt their resolution names.
-        const compiled = new Set<string>();
-        for (const directionalMode of DIRECTIONAL_MODES) {
-          for (const directions of DIRECTION_SETS) {
-            for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
-              const output = withOutput({ directionalMode, directions, sheetIndex });
-              const address = resolvedSheetAddress(
-                category,
-                subject,
-                directionalMode,
-                directions,
-                sheetIndex,
-              );
-              if (category === 'ICON' && compiled.has(address)) continue;
-              compiled.add(address);
-              // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
-              // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
-              // and `sheetDirections` each resolve for themselves, so the stored values go in raw.
-              const plan = sheetPlanFor(category, subject, directionalMode, directions, sheetIndex);
-              if (sheetDirections(category, output, plan).covered.length > 1) continue;
+  // Every plan table each category can be drawn from, each compiled with the subject that selects it:
+  // an assembly base draws sheets of its own (issue #283), so the default subject alone never compiles
+  // OBJECT's standard sheets. One case per subject keeps each within the time limit (`assemblyBaseCases`).
+  it.each(assemblyBaseCases())(
+    'carries no clause written for several facings, on %s',
+    (_name, category, subject) => {
+      // ICON alone compiles each resolved address once (`resolvedSheetAddress`), and
+      // `promptCompilerIconSkip*.test.ts` hold its skipped pairings to the prompt their resolution names.
+      const compiled = new Set<string>();
+      for (const directionalMode of DIRECTIONAL_MODES) {
+        for (const directions of DIRECTION_SETS) {
+          for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
+            const output = withOutput({ directionalMode, directions, sheetIndex });
+            const address = resolvedSheetAddress(category, subject, directionalMode, directions, sheetIndex);
+            if (category === 'ICON' && compiled.has(address)) continue;
+            compiled.add(address);
+            // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
+            // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
+            // and `sheetDirections` each resolve for themselves, so the stored values go in raw.
+            const plan = sheetPlanFor(category, subject, directionalMode, directions, sheetIndex);
+            if (sheetDirections(category, output, plan).covered.length > 1) continue;
 
-              const section = sectionOf(generatePrompt(category, subject, output), SECTION);
-              const where = `${category}/${subject.anatomy}/${directionalMode}/${directions}/${String(sheetIndex)}`;
-              for (const clause of MULTI_FACING_CLAUSES) {
-                expect(section, `${where} carries "${clause}"`).not.toContain(clause);
-              }
+            const section = sectionOf(generatePrompt(category, subject, output), SECTION);
+            const where = `${category}/${subject.anatomy}/${directionalMode}/${directions}/${String(sheetIndex)}`;
+            for (const clause of MULTI_FACING_CLAUSES) {
+              expect(section, `${where} carries "${clause}"`).not.toContain(clause);
             }
           }
         }
       }
-    }
-  });
+    },
+  );
 
   it('still emits every one of those clauses where the sheet does hold several facings', () => {
     // What stops the list above rotting into a set of phrases the template no longer writes, which

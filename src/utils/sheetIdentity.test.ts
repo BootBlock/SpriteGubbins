@@ -4,10 +4,9 @@ import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { DIRECTION_SETS } from '../types/rendering.ts';
 import type { RigContract } from '../types/rigContract.ts';
-import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import { sheetBatch } from './sheetBatch.ts';
 import { sheetIdentity } from './sheetIdentity.ts';
-import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { standardSubject } from '../test/sheetSubject.ts';
 
 /**
@@ -243,31 +242,31 @@ describe('sheetIdentity', () => {
       expect(sheets.map((entry) => entry.facing)).toStrictEqual([null, null, null, null]);
     });
 
-    it('never gives two sheets of one batch the same facing, over every pairing there is', () => {
-      // The property the whole change rests on, swept rather than argued: a name two downloads share
-      // is the failure this replaced, so it may not be reintroduced by a plan, a mode or a set that
-      // nobody had in mind here. Every category, assembly base, mode and direction set, which is
-      // every batch the studio can compose — the base because a declared one draws sheets of its own.
-      for (const category of SUBJECT_CATEGORIES) {
-        for (const subject of assemblyBaseSubjectsOf(category)) {
-          for (const directionalMode of DIRECTIONAL_MODES) {
-            for (const directions of DIRECTION_SETS) {
-              const batch = config({ directionalMode, directions });
-              const named = sheetBatch(category, subject, batch)
-                .sheets.map(
-                  (sheet) => sheetIdentity(category, subject, { ...batch, ...sheet.output }, '').facing,
-                )
-                .filter((facing): facing is string => facing !== null);
+    it.each(
+      assemblyBaseCases().flatMap(([name, category, subject]) =>
+        DIRECTIONAL_MODES.map((mode) => [name, mode, category, subject] as const),
+      ),
+    )(
+      'never gives two sheets of one batch the same facing, on %s under %s',
+      (_name, directionalMode, category, subject) => {
+        // The property the whole change rests on, swept rather than argued: a name two downloads share
+        // is the failure this replaced, so it may not be reintroduced by a plan, a mode or a set that
+        // nobody had in mind here. Every category, assembly base, mode and direction set, which is
+        // every batch the studio can compose — the base because a declared one draws sheets of its
+        // own. One case per subject and mode keeps each within the time limit (`assemblyBaseCases`).
+        for (const directions of DIRECTION_SETS) {
+          const batch = config({ directionalMode, directions });
+          const named = sheetBatch(category, subject, batch)
+            .sheets.map((sheet) => sheetIdentity(category, subject, { ...batch, ...sheet.output }, '').facing)
+            .filter((facing): facing is string => facing !== null);
 
-              expect(
-                new Set(named).size,
-                `${category} / ${subject.anatomy} / ${directionalMode} / ${directions}`,
-              ).toBe(named.length);
-            }
-          }
+          expect(
+            new Set(named).size,
+            `${category} / ${subject.anatomy} / ${directionalMode} / ${directions}`,
+          ).toBe(named.length);
         }
-      }
-    });
+      },
+    );
   });
 
   it('counts the subject’s own anatomy, which the sheet contracts for too', () => {

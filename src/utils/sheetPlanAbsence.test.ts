@@ -13,7 +13,7 @@ import { modesFor, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/
 import { sectionOf } from '../test/promptSections.ts';
 import { decliningEverything, decliningSubject, standardSubject } from '../test/sheetSubject.ts';
 import { DECLINABLE_FIELD_KEYS, SUBJECT_CATEGORIES } from '../types/subject.ts';
-import type { DeclinableFieldKey, SubjectCategory } from '../types/subject.ts';
+import type { DeclinableFieldKey, SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { componentCountFor, planComponentCount } from './componentSet.ts';
 import { componentSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
@@ -27,6 +27,7 @@ import {
 } from './sheetPlanAbsence.ts';
 import { slugify } from './slugify.ts';
 import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 
 /**
  * Section 1's paint rule against section 4's inventory, on every sheet the app can compile.
@@ -51,17 +52,20 @@ import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
  * turn (issue #283). A check compiling that subject is compiling the sheet it was handed.
  */
 function sheetsOf(category: SubjectCategory) {
-  return assemblyBaseSubjectsOf(category).flatMap((subject) =>
-    modesFor(category, subject).flatMap((mode) =>
-      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-        sheetSeriesFor(category, subject, mode, directions).map((_, sheetIndex) => ({
-          subject,
-          mode,
-          directions,
-          sheetIndex,
-          plan: sheetPlanFor(category, subject, mode, directions, sheetIndex),
-        })),
-      ),
+  return assemblyBaseSubjectsOf(category).flatMap((subject) => sheetsOfSubject(category, subject));
+}
+
+/** {@link sheetsOf}, for the one subject a sweep split into `assemblyBaseCases` holds per case. */
+function sheetsOfSubject(category: SubjectCategory, subject: SubjectDefinition) {
+  return modesFor(category, subject).flatMap((mode) =>
+    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+      sheetSeriesFor(category, subject, mode, directions).map((_, sheetIndex) => ({
+        subject,
+        mode,
+        directions,
+        sheetIndex,
+        plan: sheetPlanFor(category, subject, mode, directions, sheetIndex),
+      })),
     ),
   );
 }
@@ -125,11 +129,11 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
     return section;
   }
 
-  it.each(SUBJECT_CATEGORIES)('holds on every %s sheet', (category) => {
+  it.each(assemblyBaseCases())('holds on every sheet of %s', (_name, category, subject) => {
     const label = fieldLabelFor(category, 'clothing');
     const clothing = pooledValue(category, 'clothing');
 
-    for (const sheet of sheetsOf(category)) {
+    for (const sheet of sheetsOfSubject(category, subject)) {
       const { mode, directions, sheetIndex, plan } = sheet;
       const subjectSection = subjectSectionAt(category, sheet, clothing, NO_ADDITIONAL_ANATOMY);
       const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
@@ -146,23 +150,34 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
     }
   });
 
-  it.each(SUBJECT_CATEGORIES)('says nothing about a %s clothing line nobody wrote', (category) => {
-    // A cleared field emits no line, so an exception paragraph naming it would name an absent line
-    // in the section the template calls the sole authority for the subject's design — the reason the
-    // additional-anatomy paragraph is gated on its own rendered value rather than on the plan.
-    const label = fieldLabelFor(category, 'clothing');
+  it.each(assemblyBaseCases())(
+    'says nothing about a clothing line nobody wrote, on %s',
+    (_name, category, subject) => {
+      // A cleared field emits no line, so an exception paragraph naming it would name an absent line
+      // in the section the template calls the sole authority for the subject's design — the reason the
+      // additional-anatomy paragraph is gated on its own rendered value rather than on the plan.
+      const label = fieldLabelFor(category, 'clothing');
 
-    for (const sheet of sheetsOf(category)) {
-      const subjectSection = subjectSectionAt(category, sheet, '', NO_ADDITIONAL_ANATOMY);
+      for (const sheet of sheetsOfSubject(category, subject)) {
+        const subjectSection = subjectSectionAt(category, sheet, '', NO_ADDITIONAL_ANATOMY);
 
-      expect(subjectSection).not.toContain(`- ${label}:`);
-      expect(subjectSection).not.toContain(`**${label}** is excepted`);
-    }
-  });
+        expect(subjectSection).not.toContain(`- ${label}:`);
+        expect(subjectSection).not.toContain(`**${label}** is excepted`);
+      }
+    },
+  );
 
-  it.each(SUBJECT_CATEGORIES)(
-    'states the paint rule on a %s sheet without promising anything',
-    (category) => {
+  // One case per subject and pair of field values keeps each within the time limit, since a
+  // whole-catalogue roster is two dozen sheets (`assemblyBaseCases`).
+  it.each(
+    assemblyBaseCases().flatMap(([name, category, subject]) =>
+      [NO_ADDITIONAL_ANATOMY, 'Extra Piece ×2'].flatMap((anatomy) =>
+        [false, true].map((clothed) => [name, anatomy, clothed, category, subject] as const),
+      ),
+    ),
+  )(
+    'states the paint rule without promising anything, on %s with anatomy %s, clothed %s',
+    (_name, anatomy, clothed, category, subject) => {
       // The rule has to stand on its own, because both paragraphs under it are gated. A first draft of
       // this change closed it with "… except where named below", which on 71 of the 118 sheets this app
       // can compile promised a named exception and named none — leaving "Do not infer props, weapons or
@@ -172,16 +187,12 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
       // The anatomy paragraph's off position is the field's own `NONE`, which is what every category's
       // subject opens on, rather than a cleared field: both render no paragraph, and this is the one a
       // reader who touches nothing actually gets.
-      for (const sheet of sheetsOf(category)) {
-        const { mode, sheetIndex } = sheet;
-        for (const anatomy of [NO_ADDITIONAL_ANATOMY, 'Extra Piece ×2']) {
-          for (const clothing of ['', pooledValue(category, 'clothing')]) {
-            const section = subjectSectionAt(category, sheet, clothing, anatomy);
-            const where = `${category} / ${mode} / sheet ${String(sheetIndex + 1)}`;
+      const clothing = clothed ? pooledValue(category, 'clothing') : '';
+      for (const sheet of sheetsOfSubject(category, subject)) {
+        const section = subjectSectionAt(category, sheet, clothing, anatomy);
+        const where = `${category} / ${sheet.mode} / sheet ${String(sheet.sheetIndex + 1)}`;
 
-            expect(section, where).toContain('never drawn as a separate piece.\n');
-          }
-        }
+        expect(section, where).toContain('never drawn as a separate piece.\n');
       }
     },
   );
