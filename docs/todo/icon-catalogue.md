@@ -1,6 +1,6 @@
 # Icon catalogue — named icon sets drawn sixteen to a sheet
 
-> **Status:** 🟢 ACTIVE — phases 1–3 shipped; phase 4 next.
+> **Status:** 🟢 ACTIVE — phases 1–4 shipped; phase 5 next.
 
 ## 1. What is wrong
 
@@ -378,3 +378,91 @@ follow-up commit:
   guard follows the look through `componentClass`.
 - The default look was written twice; `DEFAULT_ICON_LOOK` is now the one place, read by the starter
   roster and by the series' fallback.
+
+### Phase 4 — content: spells and abilities, emotes and chat, mounts, pets and professions (2026-10-02)
+
+**What shipped.**
+
+- **Kinds.** `ICON_KINDS` is `ITEM`, `SPELL`, `SOCIAL`, `COMPANION`, `PROFESSION`, `SYSTEM`, in
+  shelving order. The labels, the kind filter, the summary's per-kind counts and the kind filter's
+  card are records over every kind, so a kind added later fails to compile until each names it; the
+  card is now a list, one line per kind, since six no longer fit one paragraph.
+  `iconCatalogue.test.ts` holds the shelves to the kinds' order and a shelf to every kind.
+- **Damage schools.** `DAMAGE_SCHOOLS` (kinetic, thermal, cryo, voltaic, toxic, neural, netrun,
+  nanite) and `DAMAGE_SCHOOL_DEFINITIONS` in `src/constants/iconCatalogue/damageSchools.ts`: a name
+  per family (physical, fire, frost, storm, nature, shadow, arcane and holy in fantasy; the catalogue's
+  own names in cyberpunk), a colour word and one hex — steel grey `#B8B2A7`, orange `#F97316`, ice cyan
+  `#67E8F9`, electric blue `#3B82F6`, acid green `#84CC16`, violet `#A855F7`, hot pink `#E11D74` and
+  gold `#FACC15`. The file joined the domain-colour paths. `damageSchools.test.ts` holds every colour
+  and every step of the backdrop series (`src/test/backdropSeries.ts`, now shared with
+  `iconSetKeys.test.ts`) out of every colour key's reach, and every pair at least 40 apart in OKLab
+  (`pixelDistance`), with the first proposal's kinetic and cryo shown failing.
+- **School on the line.** `IconCatalogueEntry.school`, on every `SPELL` entry and no other (a test).
+  `iconLookText` closes a spell's look on `— fire school, its dominant colour orange #F97316`, naming
+  the school as the world does (`damageSchoolName`; a typed world hears the catalogue's name), so the
+  inventory line, the row's second line, its card and the search all say it. The icon sheet's
+  colour-priority sentence ranks it above the set's colours unchanged. A spell's card adds a paragraph
+  saying the school's colour leads the icon. The catalogue test holds every spell's looks to its own
+  school's hue words.
+- **School filter.** A *School* select in the catalogue dialog, shown only while the kind is `SPELL`;
+  moving the kind off it sets the school back to every school in the same change. Its options name each
+  school as the world does — `Fire (thermal)` in a fantasy world (`iconSchoolFilterChoices`) — and its
+  card (`ICON_PICKER_TOOLTIPS.school`) lists every school's colour from the record. The sentence the
+  search and school cards share moved to `FILTER_HIDES_ROWS_ONLY`.
+- **Content.** 148 entries in 19 new groups, every one with all five looks, the catalogue now 326
+  entries in 36 groups:
+  - Spells and abilities (82 entries, 85 components): seven attacks per school (direct hit, area blast,
+    damage over time, channelled attack, finisher, vulnerability debuff, ultimate) on one shelf per
+    school; support (8), mobility (5), control (7) and utility (6, three of them two-state toggles —
+    stealth and auto-attack off and on, the combat stance assault and guard).
+  - Emotes and chat (30 entries): 22 emotes, every one declaring `figure`, and eight chat buttons
+    (say, yell, party, guild, raid and trade channels, the emote wheel, and the microphone as an
+    unmuted and muted pair).
+  - Mounts (8), pets (8) and pet commands (6), kind `COMPANION`; crafting (8) and gathering (6)
+    professions, kind `PROFESSION`.
+- **Presets.** *Cyberpunk Spellbook — Combat Abilities*: two attacks from each school, full-bleed,
+  ChatGPT 5.6 Sol, Near-Future Cyberpunk, square, `128 × 128 px per icon`, face on, on `PURE_WHITE`,
+  whose reach `iconSetKeys.test.ts` measures against each of its spells' school colours along the
+  backdrop series. *Cyberpunk Emote Wheel*: sixteen emotes as isolated marks on a transparent key, the
+  shipped set whose every icon is a figure.
+- **Tests.** The figure rescue compiled for a whole emote roster across its two sheets (exclusion,
+  rescue sentence, guard and audit), a spell sheet's school text under three worlds and on a mixed
+  sheet, the palette rule's reach, the school filter in the dialog, the store filling a set to the
+  real capacity from the whole catalogue, and the per-kind counts in the summary and the studio
+  section. The whole-catalogue guidance, exclusion and assembly sweeps walk the new entries through
+  `src/test/iconCatalogueSubjects.ts` unchanged.
+
+**Where it departs from the plan, and why.**
+
+- **A sixth kind, `PROFESSION`.** A trade is neither a companion nor a spell, and filing it under
+  either would put a mining pick on the shelf a reader opens for a mount or a fireball.
+- **Every spell and ability has a school, support, mobility, control and utility included**, so the
+  SPELL ⇔ school rule has no exception: heals, the cleanse and the revive are nanite (holy), the
+  shield and haste voltaic, a slow cryo, a fear neural, an interrupt netrun, a root toxic, and the
+  physical moves kinetic.
+- **The proposed colours were tuned.** The proposal's slate kinetic and sky cryo sat 24 apart in OKLab
+  and its emerald nanite and lime toxic 28, barely past the 12 to 21 a painted key field drifts by. So
+  kinetic became a warm steel, voltaic took the electric blue a cyberpunk game gives electrical damage
+  and nanite the gold a fantasy game gives holy light; the closest pair now sits 40.5 apart.
+- **Chat leaves out whisper and voice chat**, which the social panels shelf already holds, and ships
+  raid and trade channels instead. The emote picker is `chat-emote-wheel`, because ICON's assembly
+  negative is `menu screen`; five looks say “display” rather than “screen” for the same reason.
+- **The whole catalogue no longer fits one set.** It is 334 components against
+  `ICON_ROSTER_CAPACITY` (320), which stays where it is: a set is one game's choice from every
+  world's archetypes. The test rosters split the catalogue in two, and the browser check ticked every
+  shelf: the set filled to 320 components (313 icons), the notice reported the refusal and 13 rows
+  said the set was full.
+- **Three prompt sweeps compile each of ICON's sheets once** (`resolvedSheetAddress`), as the
+  multi-facing sweep already did, because the split catalogue doubled ICON's sheets and the marker and
+  punctuation sweeps passed their timeout recompiling them for every mode and set ICON declines; the
+  existing test holds each skipped pairing to the prompt it resolves to.
+- **The palette rule answers the inventory too.** A fixed palette's block told the model what to do
+  with a colour section 1 names outside it; a spell's line now names one by hex, so the rule reads
+  “section 1 or section 4”.
+- **A one-component last sheet is reachable from the test rosters**, and the sheet-count test now
+  reads the contract through `componentTally`, as the prompt does.
+
+**What it breaks.** Nothing stored changes shape, and every existing catalogue id is kept. A dialog
+filter value now carries `school`. The palette block's colour rule names the inventory beside the
+subject in every category's prompt. The `output` chunk grows past Vite's advisory 500 kB warning
+(526.6 kB) because the catalogue is compiled into it; the precache stays under its ceiling.

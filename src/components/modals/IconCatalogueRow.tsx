@@ -11,7 +11,7 @@ interface IconCatalogueRowProps {
   readonly checked: boolean;
   /** Why the row cannot be ticked, or empty where it can. */
   readonly disabledReason: string;
-  /** Stable across renders, so a tick re-renders the row it changed and not the other 177. */
+  /** Stable across renders, so a tick re-renders the row it changed and not every other row. */
   readonly onToggle: (id: string, on: boolean) => void;
 }
 

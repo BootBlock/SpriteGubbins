@@ -51,10 +51,14 @@ describe('IconRosterSection', () => {
   });
 
   it('counts each kind of icon on the set', () => {
-    iconStudio(['heal-minor', 'heal-major', 'system-bags']);
+    iconStudio(['heal-minor', 'heal-major', 'thermal-strike', 'emote-wave', 'mount-skiff', 'system-bags']);
     render(<IconRosterSection />);
 
-    expect(screen.getByText('Items and consumables: 2. Interface and system: 1.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Items and consumables: 2. Spells and abilities: 1. Emotes and chat: 1. Mounts and pets: 1. Professions: 0. Interface and system: 1.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('opens the catalogue', async () => {

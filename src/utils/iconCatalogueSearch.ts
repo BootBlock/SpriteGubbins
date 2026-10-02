@@ -9,7 +9,11 @@ import { iconLookText } from './iconLookText.ts';
  * look it is drawn as in `world` — through `iconLookText`, which is what the sheet's inventory line
  * says, so a search for “injector” finds the cyberpunk healing tiers and not the fantasy ones — and its
  * group's label. Every word typed has to match somewhere in that text, in any case, so adding a word
- * narrows the list rather than widening it.
+ * narrows the list rather than widening it. A spell's look text closes on its school's name in
+ * `world`, so a search for “frost” finds the cryo school in a fantasy world.
+ *
+ * **The school filter keeps only the entries of one school**, which are spells alone; the dialog offers
+ * it only while the kind is `SPELL`, so it never narrows a shelf the reader cannot see it narrowing.
  */
 export function iconCatalogueSearch(
   groups: readonly IconCatalogueGroup[],
@@ -26,6 +30,7 @@ export function iconCatalogueSearch(
     if (filter.kind !== 'ALL' && group.kind !== filter.kind) return [];
     const entries = group.entries.filter((entry) => {
       if (filter.tickedOnly && !ticked.has(entry.id)) return false;
+      if (filter.school !== 'ALL' && entry.school !== filter.school) return false;
       const text = [entry.role, entry.id, iconLookText(entry, world), group.label].join(' ').toLowerCase();
       return words.every((word) => text.includes(word));
     });

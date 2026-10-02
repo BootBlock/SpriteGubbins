@@ -8,7 +8,7 @@ import { IconCatalogueFooter } from './IconCatalogueFooter.tsx';
 import { IconCatalogueGroupSection } from './IconCatalogueGroupSection.tsx';
 
 /** What the dialog shows on opening: the whole catalogue. */
-const UNFILTERED: IconCatalogueFilter = { query: '', kind: 'ALL', tickedOnly: false };
+const UNFILTERED: IconCatalogueFilter = { query: '', kind: 'ALL', school: 'ALL', tickedOnly: false };
 
 /** Picks for a subject with no roster, which the dialog is never opened over but has to type. */
 const NO_PICKS: readonly string[] = [];
@@ -38,7 +38,7 @@ export function IconCatalogueContents() {
 
   return (
     <>
-      <IconCatalogueFilters filter={filter} onChange={setFilter} />
+      <IconCatalogueFilters filter={filter} world={world} onChange={setFilter} />
 
       <div className="flex-1 space-y-5 overflow-y-auto px-6 py-4">
         {shown.length === 0 ? (

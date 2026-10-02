@@ -123,6 +123,42 @@ describe('IconCatalogueContents', () => {
     expect(picks()).toEqual(['heal-minor', 'system-bags']);
   });
 
+  it('offers the school filter for spells alone, and drops the school once the kind moves off them', async () => {
+    const user = userEvent.setup({ delay: null });
+    iconStudio([]);
+    render(<IconCatalogueContents />);
+    const kind = screen.getByRole('combobox', { name: 'Kind' });
+    expect(screen.queryByRole('combobox', { name: 'School' })).toBeNull();
+
+    await user.selectOptions(kind, 'SPELL');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'School' }), 'THERMAL');
+    const strike = iconCatalogueEntry('thermal-strike');
+    if (strike === undefined) throw new Error('No thermal-strike');
+    const look = iconLookText(strike, WORLD);
+    expect(look).toContain('— thermal school, its dominant colour orange #F97316');
+    expect(screen.getByRole('checkbox', { name: strike.role })).toHaveAccessibleDescription(look);
+    expect(screen.queryByRole('checkbox', { name: role('cryo-strike') })).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: role('heal-minor') })).toBeNull();
+
+    await user.selectOptions(kind, 'ALL');
+    expect(screen.queryByRole('combobox', { name: 'School' })).toBeNull();
+    expect(screen.getByRole('checkbox', { name: role('cryo-strike') })).toBeInTheDocument();
+
+    await user.selectOptions(kind, 'SPELL');
+    expect(screen.getByRole('combobox', { name: 'School' })).toHaveValue('ALL');
+    expect(picks()).toEqual([]);
+  });
+
+  it('names the school filter’s options as the subject’s world names the schools', async () => {
+    const user = userEvent.setup({ delay: null });
+    iconStudio([]);
+    useSubjectStore.setState((state) => ({ subject: { ...state.subject, setting: 'High Fantasy' } }));
+    render(<IconCatalogueContents />);
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Kind' }), 'SPELL');
+    expect(screen.getByRole('option', { name: 'Fire (thermal)' })).toBeInTheDocument();
+  });
+
   it('says an empty set is the overlay sheet alone', () => {
     iconStudio([]);
     render(<IconCatalogueContents />);

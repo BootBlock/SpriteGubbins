@@ -22,7 +22,14 @@ export interface IconRosterTally {
  * the capacity a tick is measured against, and each row's room to be ticked all read it.
  */
 export function iconRosterTally(picks: readonly string[]): IconRosterTally {
-  const byKind: Record<IconKind, number> = { ITEM: 0, SYSTEM: 0 };
+  const byKind: Record<IconKind, number> = {
+    ITEM: 0,
+    SPELL: 0,
+    SOCIAL: 0,
+    COMPANION: 0,
+    PROFESSION: 0,
+    SYSTEM: 0,
+  };
   let icons = 0;
   let components = 0;
   for (const id of picks) {

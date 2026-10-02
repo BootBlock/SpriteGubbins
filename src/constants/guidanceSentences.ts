@@ -222,3 +222,12 @@ export const SAVED_WORK_SURVIVES_A_RELOAD =
  */
 export const MOVE_WAITS_FOR_THE_BUTTON =
   'Nothing moves until you press **Move**, so you can step through the list with the arrow keys first.';
+
+/**
+ * What a catalogue filter leaves alone, on the icon catalogue's search box and its school filter.
+ *
+ * Both hide rows and nothing else, and a reader who has just watched rows vanish needs to know their
+ * ticks did not go with them, so both say it in the same words because it is the same behaviour.
+ */
+export const FILTER_HIDES_ROWS_ONLY =
+  'It hides rows and nothing more: your ticks, the set and the prompt stay as they are.';

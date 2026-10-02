@@ -86,8 +86,11 @@ function rule(palette: Palette, key: Rgba | null): string {
   // field has no colour to hold, so telling the model it "stays the key colour" there asks for a
   // painted field in the section that has just banned one. `key` is already in hand for
   // `partitionEntries`, which is what makes this a branch rather than a new parameter.
+  // The inventory is named beside the subject because an entry can name a colour too — every icon
+  // catalogue spell closes on its school's colour by hex — and a palette rule that answered only the
+  // subject's colours would leave that one to argue with the palette.
   const nearest =
-    'Where section [SEC:SUBJECT] names a colour this block does not allow, use the nearest colour it does — never mix, tint or dither one to approximate it. The background field is the exception: ' +
+    'Where section [SEC:SUBJECT] or section [SEC:INVENTORY] names a colour this block does not allow, use the nearest colour it does — never mix, tint or dither one to approximate it. The background field is the exception: ' +
     (key === null
       ? 'it stays fully transparent, and takes no colour from this palette.'
       : 'it stays the key colour section [SEC:CONTRACT] fixes, and is not drawn from this palette.');

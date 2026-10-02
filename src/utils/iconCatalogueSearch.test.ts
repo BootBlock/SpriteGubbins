@@ -3,7 +3,7 @@ import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
 import type { IconCatalogueFilter } from '../types/iconCatalogue.ts';
 import { iconCatalogueSearch } from './iconCatalogueSearch.ts';
 
-const EVERYTHING: IconCatalogueFilter = { query: '', kind: 'ALL', tickedOnly: false };
+const EVERYTHING: IconCatalogueFilter = { query: '', kind: 'ALL', school: 'ALL', tickedOnly: false };
 
 /** The ids a search leaves, in the order it lists them. */
 function idsFor(
@@ -45,6 +45,27 @@ describe('iconCatalogueSearch', () => {
     );
     expect(groups.length).toBeGreaterThan(0);
     expect(groups.every((group) => group.kind === 'SYSTEM')).toBe(true);
+  });
+
+  it('narrows to one damage school, which leaves spells alone', () => {
+    const groups = iconCatalogueSearch(
+      ICON_CATALOGUE_GROUPS,
+      { ...EVERYTHING, kind: 'SPELL', school: 'THERMAL' },
+      [],
+      'Modern Day',
+    );
+    const entries = groups.flatMap((group) => group.entries);
+    expect(entries.map((entry) => entry.id)).toContain('thermal-strike');
+    expect(entries.every((entry) => entry.school === 'THERMAL')).toBe(true);
+    expect(groups.every((group) => group.kind === 'SPELL')).toBe(true);
+  });
+
+  it('finds a spell by the name its world gives the school', () => {
+    // The thermal school is fire in a fantasy world and incendiary in a modern one, and this attack's
+    // modern look (a flare gun) never says fire, so only the school's name can match the word.
+    expect(idsFor({ query: 'fire school' }, [], 'High Fantasy')).toContain('thermal-strike');
+    expect(idsFor({ query: 'fire school' }, [], 'Modern Day')).not.toContain('thermal-strike');
+    expect(idsFor({ query: 'incendiary school' }, [], 'Modern Day')).toContain('thermal-strike');
   });
 
   it('lists only the ticked icons, and drops a group left empty', () => {

@@ -37,6 +37,7 @@ import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { planSlots } from './componentSlots.ts';
+import { componentTally } from './componentTally.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
 import { planAsDrawn, planDraws } from './sheetPlanAbsence.ts';
@@ -1384,8 +1385,9 @@ describe('the declared count is the inventory’s own length', () => {
         null,
       );
 
-      // Stated four times over; all four are the same sum or the sheet is silently wrong.
-      expect(prompt).toContain(`Exactly ${String(expected)} components`);
+      // Stated four times over; all four are the same sum or the sheet is silently wrong. The contract
+      // agrees in number, since an icon set's last sheet can hold a single icon.
+      expect(prompt).toContain(`Exactly ${componentTally(expected)}`);
       expect(prompt).toContain(`### Component inventory: ${sheet} — ${String(expected)} in total`);
       expect(prompt).toContain(`Component count is exactly ${String(expected)}.`);
     },

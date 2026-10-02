@@ -1,28 +1,50 @@
 import type { IconCatalogueEntry, IconCatalogueGroup } from '../../types/iconCatalogue.ts';
 import { AMMUNITION } from './ammunition.ts';
 import { BOOSTS } from './boosts.ts';
+import { CHAT } from './chat.ts';
 import { COMBAT_STATUS } from './combatStatus.ts';
 import { CONTAINERS } from './containers.ts';
+import { CONTROL_ABILITIES } from './controlAbilities.ts';
+import { CRAFTING_MATERIALS } from './craftingMaterials.ts';
+import { CRAFTING_PROFESSIONS } from './craftingProfessions.ts';
+import { CRYO_ATTACKS } from './cryoAttacks.ts';
 import { CURRENCY } from './currency.ts';
-import { FOOD_AND_DRINK } from './foodAndDrink.ts';
+import { EMOTES } from './emotes.ts';
 import { EQUIPMENT_SLOTS } from './equipmentSlots.ts';
+import { FOOD_AND_DRINK } from './foodAndDrink.ts';
+import { GATHERING_PROFESSIONS } from './gatheringProfessions.ts';
+import { KINETIC_ATTACKS } from './kineticAttacks.ts';
 import { LOOT_ROLLS } from './lootRolls.ts';
 import { MAP_PINS } from './mapPins.ts';
-import { CRAFTING_MATERIALS } from './craftingMaterials.ts';
+import { MOBILITY_ABILITIES } from './mobilityAbilities.ts';
+import { MOUNTS } from './mounts.ts';
+import { NANITE_ATTACKS } from './naniteAttacks.ts';
+import { NETRUN_ATTACKS } from './netrunAttacks.ts';
+import { NEURAL_ATTACKS } from './neuralAttacks.ts';
+import { PET_COMMANDS } from './petCommands.ts';
+import { PETS } from './pets.ts';
 import { QUEST_ITEMS } from './questItems.ts';
 import { RESTORATIVES } from './restoratives.ts';
 import { SERVICES } from './services.ts';
 import { SOCIAL_PANELS } from './socialPanels.ts';
+import { SUPPORT_ABILITIES } from './supportAbilities.ts';
 import { SYSTEM_PANELS } from './systemPanels.ts';
+import { THERMAL_ATTACKS } from './thermalAttacks.ts';
 import { THROWABLES } from './throwables.ts';
 import { TOOLS_AND_KEYS } from './toolsAndKeys.ts';
+import { TOXIC_ATTACKS } from './toxicAttacks.ts';
+import { UTILITY_ABILITIES } from './utilityAbilities.ts';
+import { VOLTAIC_ATTACKS } from './voltaicAttacks.ts';
 
 /**
- * Every group of the icon catalogue, in the order the picker shelves them: items and consumables, then
- * the interface and system icons.
+ * Every group of the icon catalogue, in the order the picker shelves them: by kind in `ICON_KINDS`
+ * order — items and consumables, spells and abilities, emotes and chat, mounts and pets, professions,
+ * then the interface and system icons.
  *
- * **Spells and abilities, emotes and social icons, mounts, pets and professions are not here yet**; they
- * are phase 4 of `docs/todo/icon-catalogue.md`, and each arrives as a group file of its own beside these.
+ * **The order is the roster's order too** (`sortIconPicks`), so it decides which icons share a sheet:
+ * a school's seven attacks sit together, the attack shelves follow `DAMAGE_SCHOOLS`, and the support,
+ * mobility, control and utility abilities follow them. `iconCatalogue.test.ts` holds the shelves to
+ * the kinds' order, so a group added out of place fails there rather than splitting a kind in two.
  */
 export const ICON_CATALOGUE_GROUPS: readonly IconCatalogueGroup[] = [
   RESTORATIVES,
@@ -36,6 +58,25 @@ export const ICON_CATALOGUE_GROUPS: readonly IconCatalogueGroup[] = [
   QUEST_ITEMS,
   CONTAINERS,
   EQUIPMENT_SLOTS,
+  KINETIC_ATTACKS,
+  THERMAL_ATTACKS,
+  CRYO_ATTACKS,
+  VOLTAIC_ATTACKS,
+  TOXIC_ATTACKS,
+  NEURAL_ATTACKS,
+  NETRUN_ATTACKS,
+  NANITE_ATTACKS,
+  SUPPORT_ABILITIES,
+  MOBILITY_ABILITIES,
+  CONTROL_ABILITIES,
+  UTILITY_ABILITIES,
+  EMOTES,
+  CHAT,
+  MOUNTS,
+  PETS,
+  PET_COMMANDS,
+  CRAFTING_PROFESSIONS,
+  GATHERING_PROFESSIONS,
   SYSTEM_PANELS,
   SOCIAL_PANELS,
   SERVICES,

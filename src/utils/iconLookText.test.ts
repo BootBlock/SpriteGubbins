@@ -24,6 +24,24 @@ describe('iconLookText', () => {
     expect(iconLookText(heal, '  near-future CYBERPUNK ')).toBe(heal.looks.CYBERPUNK);
   });
 
+  it('closes a spell on its school as the world names it, and the school’s one colour', () => {
+    const strike = entry('thermal-strike');
+    expect(iconLookText(strike, 'High Fantasy')).toBe(
+      `${strike.looks.FANTASY} — fire school, its dominant colour orange #F97316`,
+    );
+    expect(iconLookText(strike, 'Near-Future Cyberpunk')).toBe(
+      `${strike.looks.CYBERPUNK} — thermal school, its dominant colour orange #F97316`,
+    );
+    // A world no family names hears the catalogue's own name for the school.
+    expect(iconLookText(strike, 'Dieselpunk Sky Pirates')).toBe(
+      'thermal direct-hit attack, drawn as the stated World & Era would make it — thermal school, its dominant colour orange #F97316',
+    );
+  });
+
+  it('names no school on an entry outside one', () => {
+    expect(iconLookText(entry('heal-minor'), 'High Fantasy')).not.toContain('school');
+  });
+
   it('hands a world no family names to the role, drawn as that world would make it', () => {
     const fallback = 'minor healing consumable, drawn as the stated World & Era would make it';
     expect(iconLookText(entry('heal-minor'), 'Dieselpunk Sky Pirates')).toBe(fallback);

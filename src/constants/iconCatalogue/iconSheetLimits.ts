@@ -14,9 +14,11 @@ export const ICONS_PER_SHEET = ICON_GRID_COLUMNS * ICON_GRID_COLUMNS;
 /**
  * The most components a roster may ask for, counting a two-state entry as two.
  *
- * A bound on what storage may hold and on what the picker lets a reader tick, sized to the whole
- * catalogue a game's action bars, bags, spellbook, emotes and system menu need together. It is what
- * {@link ICON_SERIES_LONGEST} is derived from, and that in turn bounds a stored sheet index.
+ * A bound on what storage may hold and on what the picker lets a reader tick, sized to the icons one
+ * game's action bars, bags, spellbook, emotes and system menu need together. **The catalogue holds more
+ * than that**, since it offers every world's archetypes and a set is one game's choice from them, so
+ * ticking all of it is refused once the set is full. It is what {@link ICON_SERIES_LONGEST} is derived
+ * from, and that in turn bounds a stored sheet index.
  */
 export const ICON_ROSTER_CAPACITY = 320;
 

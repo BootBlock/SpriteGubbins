@@ -32,6 +32,8 @@ const DOMAIN_COLOUR_PATHS = [
   'src/constants/categories/',
   // The pooled values a preset pins.
   'src/constants/presets/',
+  // The one colour each damage school's icons are led by, stated in every spell's inventory line.
+  'src/constants/iconCatalogue/damageSchools.ts',
   // The background key: named to the reader, and stated verbatim in the compiled prompt.
   'src/constants/output/choices.ts',
   'src/constants/promptText/sheet.ts',

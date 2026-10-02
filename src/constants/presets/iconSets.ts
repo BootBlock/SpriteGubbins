@@ -4,13 +4,13 @@ import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
 /**
- * Icon sets — five rosters a game actually asks for, each ticked from the catalogue.
+ * Icon sets — seven rosters a game actually asks for, each ticked from the catalogue.
  *
  * **Each preset is a roster as well as a look.** An icon sheet draws the reader's picks, so a preset
  * that set only the fields would hand every reader the starter set whatever its card promised. Each
  * one carries the icons its card names — a loot grid's potions and materials, a system bar's panels, a
- * unit frame's status icons, a map's pins and an action bar's consumables — in the order its sheets
- * draw them.
+ * unit frame's status icons, a map's pins, an action bar's consumables, a spellbook's attacks and an
+ * emote wheel's gestures — in the order its sheets draw them.
  *
  * **The camera is what the four older ones vary**, and it is the one place this category is looser than
  * INTERFACE: a flat front-on glyph, a three-quarter potion bottle and an isometric map pin are all
@@ -20,22 +20,27 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * four square cells need a square sheet. `SINGLE_FRONT` is the honest direction set for the reason it is
  * on every category bound to it — an icon in a cell has no yaw.
  *
- * **The cyberpunk action bar is the use case the catalogue was built for**: a cyberpunk MMORPG's
- * consumables, drawn at 128 px for ChatGPT 5.6 Sol as full-bleed squares, the look of an action bar
- * that draws its own frame round each one.
+ * **The three cyberpunk sets are the use case the catalogue was built for**: a cyberpunk MMORPG's
+ * consumables and its spellbook, drawn at 128 px for ChatGPT 5.6 Sol as full-bleed squares, the look of
+ * an action bar that draws its own frame round each one, and its emote wheel as marks for the wheel's
+ * own slots. The spellbook ticks two attacks from each of the eight damage schools, so every school's
+ * colour is on its sheet, and draws them face on, as a spell's emblem is; the emote wheel is the
+ * shipped set whose every icon is a figure, which only the figure-aware exclusions let it draw.
  *
- * **Two draw full-bleed squares and three draw isolated marks**, by what the game does with them. An
- * action bar and a bag grid show each icon as a painted square inside the slot's frame, as World of
- * Warcraft does; a system button, a status badge and a map pin sit on a plate or over the map, so each
- * is a mark alone.
+ * **Three draw full-bleed squares and four draw isolated marks**, by what the game does with them. An
+ * action bar, a spellbook and a bag grid show each icon as a painted square inside the slot's frame, as
+ * World of Warcraft does; a system button, a status badge, a map pin and an emote sit on a plate, over
+ * the map or in a wheel's slot, so each is a mark alone.
  *
  * **A full-bleed preset takes a key its squares' backdrops will not be keyed out with** (R15 of
  * `docs/todo/icon-catalogue.md`). Every pixel within the key's reach is removed wherever it sits, and a
  * square's backdrop is painted from the set's colours shaded towards black at its corners. Measured
  * over every hex colour ICON's *Primary Colours* and *Accent Colours* offer, shaded and washed that
  * way, `PURE_BLACK` reaches four primaries — the cyberpunk set's own Gunmetal among them — and
- * `MAGENTA_FF00FF` reaches Void Magenta, while `PURE_WHITE` reaches none. So the cyberpunk set takes
- * `PURE_WHITE`, which keeps its key safe when a reader swaps its colours for others the fields offer.
+ * `MAGENTA_FF00FF` reaches Void Magenta, while `PURE_WHITE` reaches none. So the cyberpunk sets take
+ * `PURE_WHITE`, which keeps the key safe when a reader swaps their colours for others the fields offer;
+ * the spellbook's eight school colours are held out of every key's reach by `damageSchools.test.ts`,
+ * so they leave the choice where the set's own colours put it.
  * The fantasy grid keeps `TRANSPARENT`, which no painted colour can be confused with.
  * `iconSetKeys.test.ts` holds all of this, and shows the black and magenta measurements failing.
  */
@@ -357,6 +362,136 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       backgroundKey: 'PURE_WHITE',
+      aspectRatio: 'SQUARE_1_1',
+      targetModel: 'CHATGPT_5_6_SOL',
+    },
+  },
+  {
+    id: 'cyberpunk-spellbook-combat-abilities',
+    name: 'Cyberpunk Spellbook — Combat Abilities',
+    description:
+      'Sixteen spellbook attacks for a cyberpunk MMORPG, two from each damage school, each a 128 px square painted edge to edge and led by its school’s one colour, so a player reads the school before the shape.',
+    category: 'ICON',
+    subject: {
+      species: 'Spellbook & Ability List',
+      gender: 'Epic',
+      age: 'Factory-Fresh Chrome',
+      role: '32 × 32 Pixels',
+      setting: 'Near-Future Cyberpunk',
+      build: 'Tightly Filling The Square',
+      silhouette: 'One Bold Readable Shape Each',
+      face_head: 'Emissive Core Glow',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Cooldown Dimming Veil',
+      worn_details: 'Neon Rim Lighting',
+      primary_colours: 'Gunmetal #2B2F36 & Chrome',
+      accent_colours: 'Electric Cyan #00E5FF',
+      materials: 'Carbon Fibre & Neon Tubing',
+      exclusions: 'No lettering, numerals, stack counts or keybinds',
+      additional_anatomy: NO_ADDITIONAL_ANATOMY,
+      icons: {
+        look: 'FULL_BLEED_TILE',
+        picks: [
+          'kinetic-strike',
+          'kinetic-finisher',
+          'thermal-strike',
+          'thermal-blast',
+          'cryo-strike',
+          'cryo-channel',
+          'voltaic-strike',
+          'voltaic-blast',
+          'toxic-strike',
+          'toxic-over-time',
+          'neural-strike',
+          'neural-vulnerability',
+          'netrun-strike',
+          'netrun-ultimate',
+          'nanite-strike',
+          'nanite-blast',
+        ],
+      },
+    },
+    output: {
+      ...DEFAULT_IMAGE_CONFIG,
+      renderStyle: 'PAINTED_2D',
+      projection: 'ORTHOGRAPHIC_FRONT',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_FRONT,
+      directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+      directions: 'SINGLE_FRONT',
+      primaryDirection: 'front',
+      rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '128 × 128 px per icon',
+      paletteLimit: 'UNRESTRICTED',
+      surfaceDetail: 'DETAILED_PRODUCTION',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
+      outlineStyle: 'DARK_LOCAL_CONTOUR',
+      backgroundKey: 'PURE_WHITE',
+      aspectRatio: 'SQUARE_1_1',
+      targetModel: 'CHATGPT_5_6_SOL',
+    },
+  },
+  {
+    id: 'cyberpunk-emote-wheel',
+    name: 'Cyberpunk Emote Wheel',
+    description:
+      'Sixteen emotes for a cyberpunk MMORPG’s emote wheel, from a wave to a facepalm, each a chrome cyber-hand, an android face-plate or a neon avatar drawn alone for the wheel’s own slot to hold.',
+    category: 'ICON',
+    subject: {
+      species: 'Social Panels',
+      gender: 'Common',
+      age: 'Scuffed Street-Worn Kit',
+      role: '32 × 32 Pixels',
+      setting: 'Near-Future Cyberpunk',
+      build: 'Upright And Centred',
+      silhouette: 'Distinct Outline For Every Icon',
+      face_head: 'Neon Edge Light',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Locked Padlock Mark',
+      worn_details: 'Neon Rim Lighting',
+      primary_colours: 'Gunmetal #2B2F36 & Chrome',
+      accent_colours: 'Electric Cyan #00E5FF',
+      materials: 'Scratched Chrome & Rubber Grip',
+      exclusions: 'No background scene, tabletop or ground plane',
+      additional_anatomy: NO_ADDITIONAL_ANATOMY,
+      icons: {
+        look: 'ISOLATED_MARK',
+        picks: [
+          'emote-wave',
+          'emote-bow',
+          'emote-salute',
+          'emote-cheer',
+          'emote-laugh',
+          'emote-cry',
+          'emote-dance',
+          'emote-point',
+          'emote-thumbs-up',
+          'emote-thumbs-down',
+          'emote-shrug',
+          'emote-facepalm',
+          'emote-clap',
+          'emote-heart',
+          'emote-angry',
+          'emote-peace',
+        ],
+      },
+    },
+    output: {
+      ...DEFAULT_IMAGE_CONFIG,
+      renderStyle: 'PAINTED_2D',
+      projection: 'ORTHOGRAPHIC_FRONT',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_FRONT,
+      directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+      directions: 'SINGLE_FRONT',
+      primaryDirection: 'front',
+      rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '128 × 128 px per icon',
+      paletteLimit: 'UNRESTRICTED',
+      surfaceDetail: 'CLEAN_PRODUCTION',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
+      outlineStyle: 'DARK_LOCAL_CONTOUR',
+      backgroundKey: 'TRANSPARENT',
       aspectRatio: 'SQUARE_1_1',
       targetModel: 'CHATGPT_5_6_SOL',
     },

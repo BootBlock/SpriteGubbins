@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Rgba } from '../../types/quantiser.ts';
+import { backdropSeries } from '../../test/backdropSeries.ts';
+import { DAMAGE_SCHOOLS } from '../../types/iconCatalogue.ts';
 import { fromHex } from '../../utils/imageData.ts';
 import { keyReaches } from '../../utils/keyReach.ts';
 import { BACKGROUND_KEY_COLORS } from '../backgroundKeyColors.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
+import { DAMAGE_SCHOOL_DEFINITIONS } from '../iconCatalogue/damageSchools.ts';
+import { iconCatalogueEntry } from '../iconCatalogue/index.ts';
 import { ICON_SET_PRESETS } from './iconSets.ts';
 
 /**
@@ -13,12 +17,13 @@ import { ICON_SET_PRESETS } from './iconSets.ts';
  * The Quantise tab removes every pixel within the key's reach wherever it sits (`keyReaches`), so a
  * colour a preset names near its key is a hole in every icon that uses it. **Held where the data
  * exists**: the colours a preset names by hex in its *Primary Colours* and *Accent Colours*, which are
- * the colours the prompt tells the generator to paint with. The catalogue's looks name colours in words
- * and no school colour exists before phase 4, so neither is measurable yet.
+ * the colours the prompt tells the generator to paint with. The catalogue's looks name colours in words,
+ * so they are not measurable; the damage schools' colours are, and `damageSchools.test.ts` holds them
+ * against every key along the same backdrop series.
  *
  * **A full-bleed preset is held further**, because each square paints a backdrop from the set's colours
  * and lets it fall towards black into its corners and wash a little towards its light. Every step of
- * that series stays out of reach too.
+ * that series (`backdropSeries`) stays out of reach too.
  *
  * **And its key is measured against every colour ICON's fields offer, not only its own.** A reader
  * swaps the colours on a preset more readily than its key, so a full-bleed key has to hold for any
@@ -39,25 +44,6 @@ function namedColours(subject: (typeof ICON_SET_PRESETS)[number]['subject']): re
       .match(NAMED_HEX)
       ?.flatMap((hex) => fromHex(hex) ?? []) ?? []
   );
-}
-
-/** `colour` mixed `share` of the way to `towards`, per channel. */
-function mix(colour: Rgba, towards: number, share: number): Rgba {
-  const channel = (value: number): number => Math.round(value + (towards - value) * share);
-  return { r: channel(colour.r), g: channel(colour.g), b: channel(colour.b), a: colour.a };
-}
-
-/** The deepest a backdrop is taken to shade a set colour, and the furthest it washes one. */
-const DEEPEST_SHADE = 0.95;
-const FURTHEST_WASH = 0.25;
-const STEPS = 17;
-
-/** The shading and washing series a full-bleed square paints from one set colour. */
-function backdropSeries(colour: Rgba): readonly Rgba[] {
-  return Array.from({ length: STEPS + 1 }, (_, step) => step / STEPS).flatMap((at) => [
-    mix(colour, 0, at * DEEPEST_SHADE),
-    mix(colour, 255, at * FURTHEST_WASH),
-  ]);
 }
 
 /** Every option of ICON's two colour fields that names a hex whose backdrop series `key` reaches. */
@@ -87,7 +73,36 @@ describe('the ICON presets’ background keys', () => {
 
   it('has a full-bleed preset to hold, and keeps an isolated one', () => {
     expect(fullBleed.map((preset) => preset.id)).toContain('cyberpunk-action-bar-consumables');
+    expect(fullBleed.map((preset) => preset.id)).toContain('cyberpunk-spellbook-combat-abilities');
     expect(ICON_SET_PRESETS.some((preset) => preset.subject.icons?.look === 'ISOLATED_MARK')).toBe(true);
+  });
+
+  it.each(ICON_SET_PRESETS.map((preset) => [preset.name, preset] as const))(
+    '%s shades none of its spells’ school colours into its key',
+    (_name, preset) => {
+      // A spell's line names its school's colour, and the icon sheet ranks it above the set's own, so
+      // the key has to hold for it as it does for the set's colours — along the backdrop series on a
+      // full-bleed set, where the school's glow lights the square's backdrop too.
+      const key = BACKGROUND_KEY_COLORS[preset.output.backgroundKey];
+      if (key === null) return;
+      const schools = (preset.subject.icons?.picks ?? []).flatMap(
+        (id) => iconCatalogueEntry(id)?.school ?? [],
+      );
+      for (const school of schools) {
+        const colour = fromHex(DAMAGE_SCHOOL_DEFINITIONS[school].hex);
+        if (colour === null) throw new Error(`${school} names no colour`);
+        const steps = preset.subject.icons?.look === 'FULL_BLEED_TILE' ? backdropSeries(colour) : [colour];
+        for (const step of steps) expect(keyReaches(key, step), school).toBe(false);
+      }
+    },
+  );
+
+  it('measures every school’s colour against the spellbook’s key', () => {
+    const spellbook = ICON_SET_PRESETS.find((preset) => preset.id === 'cyberpunk-spellbook-combat-abilities');
+    const schools = new Set(
+      (spellbook?.subject.icons?.picks ?? []).flatMap((id) => iconCatalogueEntry(id)?.school ?? []),
+    );
+    expect([...schools].sort()).toEqual([...DAMAGE_SCHOOLS].sort());
   });
 
   it.each(fullBleed.map((preset) => [preset.name, preset] as const))(

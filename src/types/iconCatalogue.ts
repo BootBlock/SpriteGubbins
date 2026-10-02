@@ -12,14 +12,21 @@
  * What kind of icon a group holds, which is how the catalogue is filed.
  *
  * Coarse on purpose, as `ComponentKind` is: a kind is a shelf a reader browses, and the groups inside
- * it (restoratives, the system panels, map pins) are what a reader actually ticks. Two kinds have
- * content so far; spells and abilities, social icons and companions join in phase 4 of
- * `docs/todo/icon-catalogue.md` with the groups that hold them.
+ * it (restoratives, the thermal attacks, mounts) are what a reader actually ticks.
+ *
+ * - `ITEM`: things a character carries and uses up.
+ * - `SPELL`: the abilities a spellbook and an action bar hold, every one in a {@link DamageSchool}.
+ * - `SOCIAL`: emotes and the chat channels.
+ * - `COMPANION`: mounts, pets and the commands a pet bar gives.
+ * - `PROFESSION`: the crafting and gathering trades. A sixth kind beside the plan's five, because a
+ *   trade is neither a companion nor a spell, and filing it under either would put a mining pick on
+ *   the shelf a reader opens for a mount or a fireball.
+ * - `SYSTEM`: the panels, markers and status icons a game's interface draws.
  *
  * A list as well as a union, in the catalogue's shelving order, because the picker walks it: the kind
  * filter offers each, and the roster summary counts each.
  */
-export const ICON_KINDS = ['ITEM', 'SYSTEM'] as const;
+export const ICON_KINDS = ['ITEM', 'SPELL', 'SOCIAL', 'COMPANION', 'PROFESSION', 'SYSTEM'] as const;
 
 export type IconKind = (typeof ICON_KINDS)[number];
 
@@ -34,6 +41,45 @@ export type IconKind = (typeof ICON_KINDS)[number];
 export const LOOK_FAMILIES = ['FANTASY', 'AGE_OF_STEAM', 'MODERN', 'CYBERPUNK', 'SPACE_OPERA'] as const;
 
 export type LookFamily = (typeof LOOK_FAMILIES)[number];
+
+/**
+ * The damage schools a spell or ability belongs to, under the names a cyberpunk world gives them.
+ *
+ * **Each school is one colour across the whole set**, so a player knows every thermal ability by the
+ * glow it shares with the others before reading its silhouette — the convention a World of Warcraft
+ * spellbook teaches. The colour and the school's name in each family of world are
+ * `DAMAGE_SCHOOL_DEFINITIONS` in `constants/iconCatalogue/damageSchools.ts`.
+ *
+ * In fantasy they are physical, fire, frost, storm, nature, shadow, arcane and holy. The order is the
+ * school filter's order and the attack shelves'.
+ */
+export const DAMAGE_SCHOOLS = [
+  'KINETIC',
+  'THERMAL',
+  'CRYO',
+  'VOLTAIC',
+  'TOXIC',
+  'NEURAL',
+  'NETRUN',
+  'NANITE',
+] as const;
+
+export type DamageSchool = (typeof DAMAGE_SCHOOLS)[number];
+
+/** What a damage school is called, and the one colour every icon of it is led by. */
+export interface DamageSchoolDefinition {
+  /** The school's name in the catalogue — `Thermal` — in sentence case: what the picker files it under. */
+  readonly label: string;
+  /**
+   * What each family of world calls the school, lower case and completing “… — fire school” in an
+   * inventory line. A world that maps to no family is told the catalogue's own name, `label`.
+   */
+  readonly names: Readonly<Record<LookFamily, string>>;
+  /** The colour in words, lower case — `orange` — said before its hex so a model reads the hue first. */
+  readonly colourName: string;
+  /** The colour as six-digit hex, `#F97316`: what the prompt names and the key tests measure. */
+  readonly hex: string;
+}
 
 /** One archetype the reader can tick: a game role, and how each family of world draws it. */
 export interface IconCatalogueEntry {
@@ -61,6 +107,14 @@ export interface IconCatalogueEntry {
    * mentioning one to declaring it.
    */
   readonly figure?: true;
+  /**
+   * The damage school a spell or ability belongs to: present on every entry of a `SPELL` group and on
+   * no other, which the catalogue test holds.
+   *
+   * It is what the inventory line closes on — the school's name in the subject's world and its colour
+   * by hex — so the generator leads the icon with the school's colour (`iconLookText`).
+   */
+  readonly school?: DamageSchool;
   /**
    * The two states of a toggle, in the order they are drawn — `['unmuted', 'muted']`.
    *
@@ -91,8 +145,8 @@ export interface IconCatalogueGroup {
 }
 
 /**
- * What the catalogue dialog is narrowed to: the words searched for, the kind of shelf shown, and
- * whether only the ticked icons are listed.
+ * What the catalogue dialog is narrowed to: the words searched for, the kind of shelf shown, the damage
+ * school, and whether only the ticked icons are listed.
  *
  * View state rather than anything stored: the dialog holds it while it is open, and closing it shows
  * the whole catalogue again next time.
@@ -102,5 +156,11 @@ export interface IconCatalogueFilter {
   readonly query: string;
   /** One kind of shelf, or `ALL`. */
   readonly kind: IconKind | 'ALL';
+  /**
+   * One damage school, or `ALL`. Offered only while `kind` is `SPELL`, the one kind whose entries carry
+   * a school, and set back to `ALL` whenever the kind moves off it, so a school chosen earlier never
+   * hides rows the reader cannot see a control for.
+   */
+  readonly school: DamageSchool | 'ALL';
   readonly tickedOnly: boolean;
 }

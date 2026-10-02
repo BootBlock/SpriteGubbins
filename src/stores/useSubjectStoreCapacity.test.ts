@@ -8,10 +8,10 @@ import { useSubjectStore } from './useSubjectStore.ts';
 /**
  * The roster's capacity, as the store enforces it on a tick.
  *
- * In a file of its own because it moves the capacity: the shipped catalogue is 182 components against
- * a capacity of 320, so no tick of a real entry can reach it until the spells arrive in phase 4. Moved
- * to five here, every module in this file reads the moved figure, which is the claim under test — that
- * the store measures a tick against `ICON_ROSTER_CAPACITY` and refuses what does not fit.
+ * In a file of its own because it moves the capacity. The real one is reached only by ticking most of
+ * the catalogue, which `useSubjectStore.test.ts` does once; here the edge cases want a set a few ticks
+ * from full. Moved to five, every module in this file reads the moved figure, which is the claim under
+ * test — that the store measures a tick against `ICON_ROSTER_CAPACITY` and refuses what does not fit.
  */
 vi.mock('../constants/iconCatalogue/iconSheetLimits.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../constants/iconCatalogue/iconSheetLimits.ts')>();

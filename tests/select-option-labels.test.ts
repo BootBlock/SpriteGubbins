@@ -7,6 +7,8 @@ import { CATEGORY_DIRECTION_SETS } from '../src/constants/categoryDirectionSets.
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/defaults.ts';
 import { HARDWARE_PROFILE_CHOICES } from '../src/constants/hardware/index.ts';
 import { ICON_KIND_FILTER_CHOICES } from '../src/constants/iconCatalogue/iconKindFilterChoices.ts';
+import { everyLookWorld } from '../src/test/iconCatalogueSubjects.ts';
+import { iconSchoolFilterChoices } from '../src/utils/iconSchoolFilterChoices.ts';
 import { TARGET_MODELS } from '../src/constants/models.ts';
 import { PALETTE_CHOICES } from '../src/constants/palettes/index.ts';
 import { styleReferenceChoices } from '../src/constants/styleReferences/index.ts';
@@ -70,6 +72,10 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   // the option pools. The budget is the same one: the column does not care what the string means.
   HARDWARE_PROFILE_CHOICES: HARDWARE_PROFILE_CHOICES.map((choice) => choice.label),
   ICON_KIND_FILTER_CHOICES: ICON_KIND_FILTER_CHOICES.map((choice) => choice.label),
+  // Named as the subject's world names each school, so every world a family or the fallback sends.
+  iconSchoolFilterChoices: everyLookWorld().flatMap((world) =>
+    iconSchoolFilterChoices(world).map((choice) => choice.label),
+  ),
   MODEL_CHOICES: TARGET_MODELS.map((model) => model.name),
   OPENING_VIEW_CHOICES: OPENING_VIEW_CHOICES.map((choice) => choice.label),
   /*

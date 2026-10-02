@@ -4,7 +4,8 @@ import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../constants/promptText/index.ts';
 import { DEFAULT_MODE_FOR } from '../constants/sheetPlans/index.ts';
-import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
+import { ICON_CATALOGUE_GROUPS, iconComponentCount } from '../constants/iconCatalogue/index.ts';
+import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { canRedoStudio, canUndoStudio, studioUndoDepth } from '../utils/studioHistory.ts';
@@ -673,6 +674,26 @@ describe('useSubjectStore', () => {
 
       expect(picks()).toEqual(restoratives);
       expect(studioUndoDepth(useSubjectStore.getState().history)).toBe(1);
+    });
+
+    it('fills a set to its capacity from the whole catalogue, and hands back what does not fit', () => {
+      // The catalogue is larger than one set can hold, so ticking all of it at once is the real
+      // capacity's refusal: what fits is ticked in catalogue order, and the rest comes back.
+      iconStudio([]);
+      const every = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries);
+
+      const refused = useSubjectStore.getState().toggleIcons(
+        every.map((entry) => entry.id),
+        true,
+      );
+
+      const components = every
+        .filter((entry) => picks().includes(entry.id))
+        .reduce((total, entry) => total + iconComponentCount(entry), 0);
+      expect(refused.length).toBeGreaterThan(0);
+      expect(components).toBeLessThanOrEqual(ICON_ROSTER_CAPACITY);
+      expect(components).toBeGreaterThan(ICON_ROSTER_CAPACITY - 2);
+      expect([...picks(), ...refused].sort()).toEqual(every.map((entry) => entry.id).sort());
     });
 
     it('clears the roster to the overlay sheet alone', () => {

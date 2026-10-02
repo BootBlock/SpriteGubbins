@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
-import { CATEGORY_DIRECTION_SETS, resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
+import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
 import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import { CATEGORY_PROJECTIONS } from '../constants/categoryProjections.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
@@ -10,7 +10,6 @@ import { PALETTES } from '../constants/palettes/index.ts';
 import {
   modesFor,
   resolveMode,
-  resolveSheetIndex,
   resolveRigMode,
   sheetPlanFor,
   sheetSeriesFor,
@@ -39,6 +38,7 @@ import {
 import type { AspectRatio, OutputConfig } from '../types/output.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
 import { renderContractOf, sectionOf } from '../test/promptSections.ts';
+import { resolvedSheetAddress } from '../test/resolvedSheetAddress.ts';
 import { sheetIndicesOf } from '../test/sheetIndicesOf.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
@@ -578,9 +578,20 @@ describe('generatePrompt — conditional blocks', () => {
         // could hide in. A default subject names none, so every sweep in this file used to stop short
         // of that half of the one value the compiler treats specially.
         const subject = { ...base, additional_anatomy: 'Sensor Vane ×2' };
+        // ICON compiles each resolved address once, as `resolvedSheetAddress` says why.
+        const compiled = new Set<string>();
         for (const directionalMode of DIRECTIONAL_MODES) {
           for (const directions of DIRECTION_SETS) {
             for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
+              const address = resolvedSheetAddress(
+                category,
+                subject,
+                directionalMode,
+                directions,
+                sheetIndex,
+              );
+              if (category === 'ICON' && compiled.has(address)) continue;
+              compiled.add(address);
               const prompt = generatePrompt(
                 category,
                 subject,
@@ -2260,23 +2271,22 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
       // it: an assembly base draws sheets of its own (issue #283), so the default subject alone never
       // compiles OBJECT's standard sheets.
       for (const subject of assemblyBaseSubjectsOf(category)) {
-        // ICON alone compiles each resolved address once. It offers one mode and one set, so every other
-        // stored mode and set resolves to the same sheets — and its whole-catalogue roster is a dozen of
-        // them, compiled once per stored pairing otherwise. The raw stored values still reach the
-        // compiler for every other category, where the narrowing is what this sweep exists to test, and
-        // the test after this one holds ICON's skipped pairings to the prompt their resolution names.
+        // ICON alone compiles each resolved address once (`resolvedSheetAddress`); the test after
+        // this one holds ICON's skipped pairings to the prompt their resolution names.
         const compiled = new Set<string>();
         for (const directionalMode of DIRECTIONAL_MODES) {
           for (const directions of DIRECTION_SETS) {
             for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
               const output = withOutput({ directionalMode, directions, sheetIndex });
-              const resolved = [
-                resolveMode(category, subject, directionalMode),
-                resolveDirectionSet(category, directions),
-                resolveSheetIndex(category, subject, directionalMode, directions, sheetIndex),
-              ].join('|');
-              if (category === 'ICON' && compiled.has(resolved)) continue;
-              compiled.add(resolved);
+              const address = resolvedSheetAddress(
+                category,
+                subject,
+                directionalMode,
+                directions,
+                sheetIndex,
+              );
+              if (category === 'ICON' && compiled.has(address)) continue;
+              compiled.add(address);
               // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
               // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
               // and `sheetDirections` each resolve for themselves, so the stored values go in raw.
@@ -2296,8 +2306,8 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
   });
 
   it('compiles every ICON pairing the sweep skips to the prompt its resolution names', () => {
-    // The sweep above compiles each of ICON's resolved addresses once; this is what makes that skip
-    // safe. A stored mode and set ICON does not offer reach the compiler raw here, and the prompt is
+    // The sweeps in this file compile each of ICON's resolved addresses once; this is what makes that
+    // skip safe. A stored mode and set ICON does not offer reach the compiler raw here, and the prompt is
     // the one the offered pairing compiles.
     const subject = defaultSubjectFor('ICON');
     for (const sheetIndex of [0, 1]) {
@@ -3805,11 +3815,22 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
 
     for (const category of SUBJECT_CATEGORIES) {
       for (const subject of assemblyBaseSubjectsOf(category)) {
+        // ICON compiles each resolved address once, as `resolvedSheetAddress` says why.
+        const compiled = new Set<string>();
         for (const directionalMode of DIRECTIONAL_MODES) {
           for (const directions of DIRECTION_SETS) {
             // The bound is derived, not written down: each pairing's own series, so a pairing that
             // grows a sheet is swept without this loop being touched.
             for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
+              const address = resolvedSheetAddress(
+                category,
+                subject,
+                directionalMode,
+                directions,
+                sheetIndex,
+              );
+              if (category === 'ICON' && compiled.has(address)) continue;
+              compiled.add(address);
               collect(
                 generatePrompt(
                   category,
