@@ -2,15 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
-import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
+import { CATEGORY_DIRECTION_SETS, resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
+import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import { CATEGORY_PROJECTIONS } from '../constants/categoryProjections.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
 import {
   modesFor,
   resolveMode,
+  resolveSheetIndex,
   resolveRigMode,
-  SHEET_INDEX_RANGE,
   sheetPlanFor,
   sheetSeriesFor,
 } from '../constants/sheetPlans/index.ts';
@@ -38,8 +39,9 @@ import {
 import type { AspectRatio, OutputConfig } from '../types/output.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
 import { renderContractOf, sectionOf } from '../test/promptSections.ts';
+import { sheetIndicesOf } from '../test/sheetIndicesOf.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
-import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetFacts } from './promptFacts.ts';
 import { countWords, estimateTokens } from './promptMetrics.ts';
@@ -101,7 +103,7 @@ const PER_DIRECTION_DEPTH_HEADING = '### Depth order for each direction this she
 /** Every field cleared — the case v1 filled with `DEFINED` tokens. */
 const EMPTY_SUBJECT: SubjectDefinition = Object.fromEntries(
   SUBJECT_FIELD_KEYS.map((key) => [key, '']),
-) as SubjectDefinition;
+) as Record<SubjectFieldKey, string>;
 
 /** Every marker the five template passes consume, none of which may survive into a compiled prompt. */
 const MARKER = /\[(?:DEFINE|OPTIONAL|IF|SECTION|SEC):|\[\/IF\]|\[N\]/;
@@ -578,7 +580,7 @@ describe('generatePrompt — conditional blocks', () => {
         const subject = { ...base, additional_anatomy: 'Sensor Vane ×2' };
         for (const directionalMode of DIRECTIONAL_MODES) {
           for (const directions of DIRECTION_SETS) {
-            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
               const prompt = generatePrompt(
                 category,
                 subject,
@@ -2258,10 +2260,21 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
       // it: an assembly base draws sheets of its own (issue #283), so the default subject alone never
       // compiles OBJECT's standard sheets.
       for (const subject of assemblyBaseSubjectsOf(category)) {
+        // Each resolved address once: a stored mode or set the category narrows compiles the prompt
+        // its resolution names, so a second stored value resolving to it is the same prompt again —
+        // and ICON's whole-catalogue series would otherwise be compiled once per mode and set.
+        const compiled = new Set<string>();
         for (const directionalMode of DIRECTIONAL_MODES) {
           for (const directions of DIRECTION_SETS) {
-            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
               const output = withOutput({ directionalMode, directions, sheetIndex });
+              const resolved = [
+                resolveMode(category, subject, directionalMode),
+                resolveDirectionSet(category, directions),
+                resolveSheetIndex(category, subject, directionalMode, directions, sheetIndex),
+              ].join('|');
+              if (compiled.has(resolved)) continue;
+              compiled.add(resolved);
               // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
               // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
               // and `sheetDirections` each resolve for themselves, so the stored values go in raw.
@@ -2530,11 +2543,12 @@ describe('generatePrompt — technical settings in prose', () => {
     // size a sheet over a thousand pixels wide can only satisfy by enlarging one — so the size was
     // read as a mood, and a sheet came back carrying far more interior detail than the grid it named
     // could hold. Nothing here re-derives the figure; `nativeGridScale.test.ts` pins the arithmetic.
-    // An ICON symbol set, because a native grid is derived from a *component* size and no CHARACTER
-    // sheet states one — every plan that category has draws parts of a figure.
+    // A FONT's capitals, because a native grid is derived from a *component* size and no CHARACTER
+    // sheet states one — every plan that category has draws parts of a figure — and because the sheet
+    // can be drawn wide, where ICON's grid is held square.
     const prompt = generatePrompt(
-      'ICON',
-      defaultSubjectFor('ICON'),
+      'FONT',
+      defaultSubjectFor('FONT'),
       withOutput({
         renderStyle: 'PIXEL_ART',
         resolutionProfile: 'CUSTOM',
@@ -2551,11 +2565,11 @@ describe('generatePrompt — technical settings in prose', () => {
     // Section 2 says which of the two things the size is, and states the multiple as a figure.
     expect(prompt).toContain('### The native grid, and the scale it is delivered at');
     expect(prompt).toContain('**The target component size above is a native pixel grid');
-    // Twenty-eight components at a 16 × 32 grid, each given half its own size of clearance, seat
-    // 10 × 3 on the nominal 1024 × 576 sheet at 4× and 8 × 2 at 5× — twelve short. The count is
+    // Twenty-six components at a 16 × 32 grid, each given half its own size of clearance, seat
+    // 10 × 3 on the nominal 1024 × 576 sheet at 4× and 8 × 2 at 5× — ten short. The count is
     // asserted beside it so a change to the sheet plan fails here naming its own cause rather than
     // the figure.
-    expect(prompt).toContain('Exactly 28 components');
+    expect(prompt).toContain('Exactly 26 components');
     expect(prompt).toContain('**4× or more**');
     // And the enlargement is the one that adds nothing, which is what the report's sheet failed.
     expect(prompt).toContain('The enlargement adds nothing');
@@ -2574,14 +2588,14 @@ describe('generatePrompt — technical settings in prose', () => {
       spriteTargetSize: '16 × 32 px',
     } as const;
 
-    // A square sheet is 1024 × 1024 rather than 1024 × 576, so the same twenty-eight components fit
-    // at 5× — 8 × 4 seats them, and 6× seats 7 × 3.
+    // A square sheet is 1024 × 1024 rather than 1024 × 576, so the same twenty-six capitals fit at
+    // 5× — 8 × 4 seats them, and 6× seats 7 × 3.
     const square = generatePrompt(
-      'ICON',
-      defaultSubjectFor('ICON'),
+      'FONT',
+      defaultSubjectFor('FONT'),
       withOutput({ ...grid, aspectRatio: 'SQUARE_1_1' }),
     );
-    expect(square).toContain('Exactly 28 components');
+    expect(square).toContain('Exactly 26 components');
     expect(square).toContain('**5× or more**');
 
     // And a sheet asking for fewer of them on the same canvas is enlarged more: a PORTRAIT
@@ -3420,6 +3434,8 @@ describe('generatePrompt — the shape of the delivered canvas', () => {
     // arrangement sentence, which is inside no block `modelWrapperText/sol.ts` protects and inside
     // no check section 9 runs. Every category, because the contract is the one section all thirteen
     // carry unconditionally and a gate added around this item would be invisible on CHARACTER alone.
+    // The canvas stated is the one the category can be drawn on: ICON's grid is held square, so a
+    // stored wide ratio compiles as `SQUARE_1_1` there and as itself everywhere else.
     for (const category of SUBJECT_CATEGORIES) {
       const subject = defaultSubjectFor(category);
       for (const aspectRatio of ASPECT_RATIOS) {
@@ -3427,7 +3443,9 @@ describe('generatePrompt — the shape of the delivered canvas', () => {
           generatePrompt(category, subject, withOutput({ aspectRatio })),
           'NON-NEGOTIABLE OUTPUT CONTRACT',
         );
-        expect(contract, `${category}/${aspectRatio}`).toContain(canvasSentence(aspectRatio));
+        expect(contract, `${category}/${aspectRatio}`).toContain(
+          canvasSentence(resolveAspectRatio(category, aspectRatio)),
+        );
       }
     }
   });
@@ -3761,10 +3779,9 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
       for (const subject of assemblyBaseSubjectsOf(category)) {
         for (const directionalMode of DIRECTIONAL_MODES) {
           for (const directions of DIRECTION_SETS) {
-            // The bound is derived, not written down: `SHEET_INDEX_RANGE.max` is the longest series
-            // any pairing produces over any set its category offers, so a pairing that grows a sheet
-            // is swept without this loop being touched.
-            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            // The bound is derived, not written down: each pairing's own series, so a pairing that
+            // grows a sheet is swept without this loop being touched.
+            for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
               collect(
                 generatePrompt(
                   category,
@@ -3905,5 +3922,83 @@ describe('generatePrompt — the one ban that is per-category', () => {
     for (const banned of ['watermark', 'signature', 'caption']) {
       expect(prompt.toLowerCase(), `${category} stops banning a ${banned}`).toContain(banned);
     }
+  });
+});
+
+describe('generatePrompt — an icon set', () => {
+  const ICON = defaultSubjectFor('ICON');
+  const ICON_OUTPUT = withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' });
+  const ELSEWHERE = '**Applied Overlay** is excepted: another sheet of this series draws it';
+  const COMPONENTS = '**Applied Overlay** is excepted: section';
+
+  it('excepts the overlay as drawn elsewhere on the icon sheets, and as components on the overlay sheet', () => {
+    const overlay = sectionOf(
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 }),
+      'SUBJECT DEFINITION',
+    );
+    const icons = sectionOf(
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 1 }),
+      'SUBJECT DEFINITION',
+    );
+
+    expect(overlay).toContain(COMPONENTS);
+    expect(overlay).not.toContain(ELSEWHERE);
+    expect(icons).toContain(ELSEWHERE);
+    expect(icons).not.toContain(COMPONENTS);
+  });
+
+  it('says nothing about an overlay line nobody wrote', () => {
+    const icons = generatePrompt('ICON', { ...ICON, clothing: '' }, { ...ICON_OUTPUT, sheetIndex: 1 });
+    expect(icons).not.toContain('is excepted: another sheet of this series');
+  });
+
+  it('states the drawn-elsewhere exception on no other category’s sheets', () => {
+    for (const category of SUBJECT_CATEGORIES.filter((candidate) => candidate !== 'ICON')) {
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const directionalMode of modesFor(category, subject)) {
+          const output = withOutput({ directionalMode });
+          for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, output.directions)) {
+            expect(
+              generatePrompt(category, subject, { ...output, sheetIndex }),
+              `${category}/${subject.anatomy}/${directionalMode}/${String(sheetIndex)}`,
+            ).not.toContain('is excepted: another sheet of this series');
+          }
+        }
+      }
+    }
+  });
+
+  it('lists the roster as named lines in the world’s look, under the grid the sheet states', () => {
+    const subject = { ...ICON, setting: 'Near-Future Cyberpunk' };
+    const inventory = sectionOf(
+      generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 1 }),
+      'COMPONENT INVENTORY',
+    );
+    expect(inventory).toContain('Sixteen icons, four across and four down, in the reading order below.');
+    expect(inventory).toContain(
+      'Minor healing consumable ×1 — a slim red stim-pack auto-injector, needle capped, with a glowing amber dose window',
+    );
+    expect(inventory.replaceAll(/\s+/g, ' ')).toContain(
+      'A colour an entry names is that icon’s own, and outranks the set’s accent colour for it',
+    );
+  });
+
+  it('bans a hand or figure only where no entry names one', () => {
+    const exclusions = sectionOf(
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 1 }),
+      'EXCLUSIONS',
+    );
+    expect(exclusions).toContain('any hand, character or creature an entry in section');
+    expect(exclusions).toContain(
+      'A hand, face or figure an entry names is part of that icon’s subject and is drawn',
+    );
+  });
+
+  it('draws the set on a square canvas, whatever canvas the configuration arrived with', () => {
+    const contract = sectionOf(
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, aspectRatio: 'ULTRAWIDE_21_9' }),
+      'NON-NEGOTIABLE OUTPUT CONTRACT',
+    );
+    expect(contract).toContain('The delivered image is a square 1:1 canvas.');
   });
 });

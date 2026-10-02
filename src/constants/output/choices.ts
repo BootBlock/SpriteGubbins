@@ -1,5 +1,4 @@
 import type {
-  AspectRatio,
   LightingModel,
   OutlineStyle,
   PaletteLimit,
@@ -23,11 +22,12 @@ import type { JointCapStyle, OverlapMargin } from '../../types/rigging.ts';
  * state, and leave the rest to `tooltips.ts`, which has no width to run out of.
  * `tests/select-option-labels.test.ts` enforces the budget and derives the number.
  *
- * **Every list here is offered whole, to every category.** The six that are not — the sheet mode,
- * the sheet of the series, the direction set, the rig mode, the projection and the art style
- * reference — are built per category in their own files, because each is a question a category can
- * answer differently: see `directionalModeChoices.ts`, `sheetChoices.ts`, `directionSetChoices.ts`,
- * `rigModeChoices.ts`, `projectionChoices.ts`, and `styleReferences/styleReferenceChoices.ts` —
+ * **Every list here is offered whole, to every category.** The seven that are not — the sheet mode,
+ * the sheet of the series, the direction set, the rig mode, the projection, the sheet canvas and the
+ * art style reference — are built per category in their own files, because each is a question a
+ * category can answer differently: see `directionalModeChoices.ts`, `sheetChoices.ts`,
+ * `directionSetChoices.ts`, `rigModeChoices.ts`, `projectionChoices.ts`, `aspectRatioChoices.ts`, and
+ * `styleReferences/styleReferenceChoices.ts` —
  * which is filed with the library it labels rather than here, as the machine and palette lists are.
  */
 export interface OutputChoice<T extends string | number> {
@@ -111,11 +111,4 @@ export const LIGHTING_MODEL_CHOICES: readonly OutputChoice<LightingModel>[] = [
   { value: 'FLAT_NEUTRAL_ALBEDO', label: 'FLAT_NEUTRAL_ALBEDO (engine-lit — standard)' },
   { value: 'ISOMETRIC_TOP_LEFT', label: 'ISOMETRIC_TOP_LEFT (fixed 45° top-left key light)' },
   { value: 'UNLIT_EMISSIVE_BAKED', label: 'UNLIT_EMISSIVE_BAKED (flat unlit diffuse)' },
-];
-
-export const ASPECT_RATIO_CHOICES: readonly OutputChoice<AspectRatio>[] = [
-  { value: 'WIDE_16_9', label: 'WIDE_16_9 (recommended)' },
-  { value: 'SQUARE_1_1', label: 'SQUARE_1_1' },
-  { value: 'TALL_9_16', label: 'TALL_9_16' },
-  { value: 'ULTRAWIDE_21_9', label: 'ULTRAWIDE_21_9' },
 ];

@@ -13,6 +13,7 @@ import * as OUTPUT_CHOICES from '../src/constants/output/choices.ts';
 import type { OutputChoice } from '../src/constants/output/choices.ts';
 import { directionalModeChoices } from '../src/constants/output/directionalModeChoices.ts';
 import { directionSetChoices } from '../src/constants/output/directionSetChoices.ts';
+import { aspectRatioChoices } from '../src/constants/output/aspectRatioChoices.ts';
 import { projectionChoices } from '../src/constants/output/projectionChoices.ts';
 import { rigModeChoices } from '../src/constants/output/rigModeChoices.ts';
 import { sheetChoices } from '../src/constants/output/sheetChoices.ts';
@@ -101,11 +102,12 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   // its own (issue #283), with the standard subject's empty `clothing` so no entry a subject can
   // decline is left out of the figure: the widest label is the one that has to fit.
   modeChoices: SUBJECT_CATEGORIES.flatMap((category) =>
-    assemblyBaseSubjectsOf(category).flatMap(({ anatomy }) =>
+    assemblyBaseSubjectsOf(category).flatMap(({ anatomy, icons }) =>
       CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
         directionalModeChoices(
           category,
-          { ...standardSubject(), anatomy },
+          // ICON's roster too, so the whole catalogue's sheet count is in the widest label.
+          { ...standardSubject(), anatomy, ...(icons === undefined ? {} : { icons }) },
           { ...DEFAULT_OUTPUT_CONFIG, directions },
           HEAVY_ANATOMY,
         ).map((choice) => choice.label),
@@ -122,6 +124,11 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   // offered all seven.
   cameraChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     projectionChoices(category).map((choice) => choice.label),
+  ),
+  // Scoped to the category like the cameras: ICON is offered the square canvas alone, and the other
+  // twelve every canvas.
+  aspectRatioChoices: SUBJECT_CATEGORIES.flatMap((category) =>
+    aspectRatioChoices(category).map((choice) => choice.label),
   ),
   // Scoped to the category like the modes above, and to the pairing as well — nine categories offer
   // a single rig and never render this control at all, and a pairing that delivers a sheet drawing

@@ -741,6 +741,42 @@ describe('LocalStorageBackend — the studio session', () => {
     expect(loaded?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
   });
 
+  it('round-trips an icon set’s roster with its subject', async () => {
+    const subject = {
+      ...defaultSubjectFor('ICON'),
+      icons: { look: 'ISOLATED_MARK', picks: ['system-sound', 'heal-major', 'pin-waypoint'] },
+    } as const;
+    await backend.saveSession(session({ category: 'ICON', subject }));
+
+    expect((await backend.loadSession())?.subject).toEqual(subject);
+  });
+
+  it('reads an ICON session stored before the roster existed as the default icon set', async () => {
+    const { icons: _dropped, ...preCatalogue } = defaultSubjectFor('ICON');
+    storage.setItem(
+      STORAGE_KEYS.studioSession,
+      JSON.stringify({ category: 'ICON', subject: preCatalogue, output: DEFAULT_OUTPUT_CONFIG }),
+    );
+
+    expect((await backend.loadSession())?.subject).toEqual(defaultSubjectFor('ICON'));
+  });
+
+  it('drops a pick the catalogue no longer holds from a stored icon set', async () => {
+    const subject = {
+      ...defaultSubjectFor('ICON'),
+      icons: { look: 'ISOLATED_MARK', picks: ['retired-entry', 'elixir'] },
+    };
+    storage.setItem(
+      STORAGE_KEYS.studioSession,
+      JSON.stringify({ category: 'ICON', subject, output: DEFAULT_OUTPUT_CONFIG }),
+    );
+
+    expect((await backend.loadSession())?.subject.icons).toEqual({
+      look: 'ISOLATED_MARK',
+      picks: ['elixir'],
+    });
+  });
+
   it('stores the session under its own key, leaving the other collections alone', async () => {
     await backend.savePreset(customPreset());
     await backend.saveSession(session());

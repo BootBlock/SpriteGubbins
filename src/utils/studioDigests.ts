@@ -1,3 +1,4 @@
+import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import {
   resolveCameraElevation,
@@ -121,7 +122,7 @@ export function sheetDigest(category: SubjectCategory, subject: SheetSubject, ou
     series.length > 1 ? sheetPlanFor(category, subject, mode, output.directions, output.sheetIndex).name : '',
     output.componentBudget === NO_COMPONENT_BUDGET ? 'uncapped' : `budget ${String(output.componentBudget)}`,
     output.backgroundKey,
-    output.aspectRatio,
+    resolveAspectRatio(category, output.aspectRatio),
   ]);
 }
 

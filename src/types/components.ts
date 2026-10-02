@@ -626,6 +626,20 @@ interface SheetPlanFields {
    * must not carry.
    */
   readonly assemblyFailure: AssemblyFailure;
+  /**
+   * A declinable attribute this sheet's components carry none of, because another sheet of its series
+   * draws it as pieces of their own — ICON's `clothing`, the *Applied Overlay*, which the overlay sheet
+   * draws and every icon sheet leaves off its icons for the engine to lay on at runtime.
+   *
+   * **Declared rather than derived**, because what the entries say cannot answer it. Section 1's paint
+   * rule says every applied attribute is painted onto the component it sits on, and a sheet whose
+   * entries bind none of the attribute is usually a sheet that paints it — a vehicle's directional
+   * views paint the cladding its part library draws as panels. Only the plan knows that its icons are
+   * drawn bare, so it says so here, and section 1 then excepts the attribute in those words
+   * (`CLOTHING_DRAWN_ELSEWHERE`). `sheetPlans.test.ts` holds a plan declaring it to a series in which
+   * another sheet does draw the attribute and this one does not.
+   */
+  readonly drawnElsewhere?: DeclinableFieldKey;
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */

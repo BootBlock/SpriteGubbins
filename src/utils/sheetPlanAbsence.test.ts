@@ -102,9 +102,16 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
     clothing: string,
     additional: string,
   ): string {
-    const key = [category, subject.anatomy, mode, directions, String(sheetIndex), clothing, additional].join(
-      '|',
-    );
+    // The whole subject, because ICON's sheets differ by roster and world under one base.
+    const key = [
+      category,
+      JSON.stringify(subject),
+      mode,
+      directions,
+      String(sheetIndex),
+      clothing,
+      additional,
+    ].join('|');
     const cached = SUBJECT_SECTIONS.get(key);
     if (cached !== undefined) return cached;
     const prompt = generatePrompt(
@@ -127,7 +134,14 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
       const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
 
       expect(subjectSection, where).toContain(`- ${label}: ${clothing}`);
-      expect(subjectSection.includes(`**${label}** is excepted`), where).toBe(planDraws(plan, 'clothing'));
+      expect(subjectSection.includes(`**${label}** is excepted: section`), where).toBe(
+        planDraws(plan, 'clothing'),
+      );
+      // The exception's other shape: a sheet that leaves the attribute to a sibling of its series says
+      // so, and only that sheet — ICON's icon sheets, whose overlay is the overlay sheet's.
+      expect(subjectSection.includes(`**${label}** is excepted: another sheet`), where).toBe(
+        plan.drawnElsewhere === 'clothing',
+      );
     }
   });
 

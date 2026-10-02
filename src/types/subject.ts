@@ -2,6 +2,7 @@
  * The subject half of a prompt: what is being drawn, as opposed to how it should be rendered
  * (that is `OutputConfig` in ./output.ts).
  */
+import type { IconRoster } from './iconRoster.ts';
 
 /**
  * The kinds of thing the studio can describe.
@@ -239,13 +240,29 @@ export interface CategoryDefinition {
    */
   readonly article: 'a' | 'an';
   readonly fields: readonly FieldOption[];
+  /**
+   * The icon set a fresh subject of this category opens with, for the one category whose inventory is a
+   * list the reader picks — ICON.
+   *
+   * **Declaring it is what gives the category a roster at all**: `defaultSubjectFor` copies it into
+   * {@link SubjectDefinition.icons}, so a subject carries `icons` exactly when its category declares
+   * one, and `parseSubject` treats a stored subject of such a category without a roster as written by an
+   * older build.
+   */
+  readonly iconRoster?: IconRoster;
 }
 
 /**
  * The user's current answers. Every key is always present — switching category resets the whole
  * record to that category's defaults — so consumers never have to handle a missing field.
+ *
+ * **`icons` is the one member that is not a field**, and it is present exactly when the category
+ * declares {@link CategoryDefinition.iconRoster}. The sixteen fields are free text the prompt states in
+ * section 1; the roster is the inventory itself, a list of catalogue entries section 4 draws, so it is a
+ * structure rather than a seventeenth string. It rides inside the same record because it travels
+ * everywhere the subject does — the session, the history, a preset and the library pack.
  */
-export type SubjectDefinition = Record<SubjectFieldKey, string>;
+export type SubjectDefinition = Record<SubjectFieldKey, string> & { readonly icons?: IconRoster };
 
 /**
  * The fields a pool may declare an `absentOption` in, and therefore the fields a sheet's inventory can
@@ -267,12 +284,13 @@ export type DeclinableFieldKey = (typeof DECLINABLE_FIELD_KEYS)[number];
 
 /**
  * The subject fields a sheet's inventory is a function of: the assembly base, which chooses the plans
- * a category draws from (`sheetPlans/assemblyBases.ts`), and the {@link DECLINABLE_FIELD_KEYS} values,
- * each of which can decline a piece of one (`utils/sheetPlanAbsence.ts`).
+ * a category draws from (`sheetPlans/assemblyBases.ts`), the {@link DECLINABLE_FIELD_KEYS} values,
+ * each of which can decline a piece of one (`utils/sheetPlanAbsence.ts`), and — for ICON — the roster
+ * that lists the icons and the *World & Era* that decides how each is drawn (`sheetPlans/icon.ts`).
  *
  * **One record rather than a string per field**, because every function that resolves or counts a sheet
  * takes all of them, and adjacent string parameters are a set no type checker can tell apart when a call
  * site reorders them. A whole `SubjectDefinition` satisfies it, which is what the compiler hands down; a
  * studio control reading a few fields out of the store builds one.
  */
-export type SheetSubject = Pick<SubjectDefinition, 'anatomy' | DeclinableFieldKey>;
+export type SheetSubject = Pick<SubjectDefinition, 'anatomy' | 'setting' | DeclinableFieldKey | 'icons'>;

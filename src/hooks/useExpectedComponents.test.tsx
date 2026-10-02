@@ -25,7 +25,13 @@ function fromStores(): number {
   const { output } = useOutputStore.getState();
   return componentCountFor(
     category,
-    { anatomy: subject.anatomy, clothing: subject.clothing, face_head: subject.face_head },
+    {
+      anatomy: subject.anatomy,
+      setting: subject.setting,
+      clothing: subject.clothing,
+      face_head: subject.face_head,
+      ...(subject.icons === undefined ? {} : { icons: subject.icons }),
+    },
     output.directionalMode,
     output.directions,
     output.sheetIndex,

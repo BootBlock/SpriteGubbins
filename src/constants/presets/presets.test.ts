@@ -84,6 +84,7 @@ const COMPONENT_NOUNS = [
   'per band',
   'per frame',
   'per badge',
+  'per icon',
   'per button slice',
   'per portrait',
 ];

@@ -6,7 +6,7 @@ import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { SUBJECT_FIELD_KEYS } from '../../types/subject.ts';
-import type { SubjectDefinition } from '../../types/subject.ts';
+import type { SubjectDefinition, SubjectFieldKey } from '../../types/subject.ts';
 import { IdentitySubjectDigest } from './IdentitySubjectDigest.tsx';
 
 /**
@@ -20,7 +20,10 @@ import { IdentitySubjectDigest } from './IdentitySubjectDigest.tsx';
 
 /** Every field cleared, then the named ones answered. */
 function subjectWith(answers: Partial<SubjectDefinition>): SubjectDefinition {
-  const subject = Object.fromEntries(SUBJECT_FIELD_KEYS.map((key) => [key, ''])) as SubjectDefinition;
+  const subject = Object.fromEntries(SUBJECT_FIELD_KEYS.map((key) => [key, ''])) as Record<
+    SubjectFieldKey,
+    string
+  >;
   return { ...subject, ...answers };
 }
 

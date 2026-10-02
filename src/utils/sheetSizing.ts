@@ -1,3 +1,4 @@
+import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import type { SheetPlan } from '../types/components.ts';
 import type { OutputConfig, ResolutionProfile, StatedTargetSize, TargetSize } from '../types/output.ts';
 import type { RigContract } from '../types/rigContract.ts';
@@ -112,6 +113,12 @@ export function sheetSizing(
     stated,
     text,
     component,
-    nativeScale: nativeGridScale(output.renderStyle, component, output.aspectRatio, components, rig),
+    nativeScale: nativeGridScale(
+      output.renderStyle,
+      component,
+      resolveAspectRatio(category, output.aspectRatio),
+      components,
+      rig,
+    ),
   };
 }

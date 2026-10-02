@@ -145,3 +145,33 @@ describe('undoStudio and redoStudio', () => {
     expect(redoStudio(OPEN, OPEN_AT)).toBe(OPEN);
   });
 });
+
+describe('an icon set’s roster in the studio history', () => {
+  const ICON_AT: StudioPosition = {
+    category: 'ICON',
+    subject: defaultSubjectFor('ICON'),
+    output: DEFAULT_OUTPUT_CONFIG,
+  };
+
+  it('records a step for a change to the roster alone', () => {
+    // The roster is not one of the sixteen fields, and comparing those alone would call a ticked icon
+    // no change at all — so Undo would step past it.
+    const roster = ICON_AT.subject.icons;
+    if (roster === undefined) throw new Error('ICON opens with no roster');
+    const ticked: StudioPosition = {
+      ...ICON_AT,
+      subject: { ...ICON_AT.subject, icons: { ...roster, picks: [...roster.picks, 'elixir'] } },
+    };
+    expect(studioUndoDepth(recordStudio(openStudioHistory(ICON_AT), ICON_AT, ticked))).toBe(1);
+  });
+
+  it('records nothing for a freshly built roster holding the same picks', () => {
+    const roster = ICON_AT.subject.icons;
+    if (roster === undefined) throw new Error('ICON opens with no roster');
+    const rebuilt: StudioPosition = {
+      ...ICON_AT,
+      subject: { ...ICON_AT.subject, icons: { look: roster.look, picks: [...roster.picks] } },
+    };
+    expect(studioUndoDepth(recordStudio(openStudioHistory(ICON_AT), ICON_AT, rebuilt))).toBe(0);
+  });
+});

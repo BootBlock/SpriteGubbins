@@ -129,8 +129,15 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, (plan: Sh
   // the plan; a reference cannot, so a fifth overlay piece is covered the moment the plan lists it.
   // `utils/sheetPlans.test.ts` holds the general form: no category's exclusion line may name a
   // component of its own plans, because a line that names one can name all but one.
+  //
+  // **The figure ban defers to the inventory too** (R4 of `docs/todo/icon-catalogue.md`). Exclusions
+  // outrank what the subject asks for, so a flat “any hand, character or creature” took the bust off
+  // the character panel's icon and would take the hand off every emote. A catalogue entry whose
+  // subject is a figure declares `figure`, and the line now bans only the figure no entry names and
+  // says outright that a named one is drawn. The input-prompt sentence went with the *Icon Family*
+  // option that offered button caps.
   ICON: () =>
-    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any hand, character or creature holding or presenting the subject; any slot plate, tooltip or interface panel drawn behind or around a component; and any lettering, numeral, stack count, timer or key name on a component. The lettering ban above is on what a component carries, never on what this sheet draws: an entry the inventory in section [SEC:INVENTORY] names is a component in its own right, and one that is a mark an engine lays over a finished icon is still drawn — clear in its own cell, never applied to an icon here. An input prompt is the blank cap or button shape the engine writes a binding onto, never the key name it is named after.',
+    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any hand, character or creature an entry in section [SEC:INVENTORY] does not name, holding or presenting the subject; any slot plate, tooltip or interface panel drawn behind or around a component; and any lettering, numeral, stack count, timer or key name on a component. The lettering ban above is on what a component carries, never on what this sheet draws: an entry the inventory in section [SEC:INVENTORY] names is a component in its own right, and one that is a mark an engine lays over a finished icon is still drawn — clear in its own cell, never applied to an icon here. A hand, face or figure an entry names is part of that icon’s subject and is drawn as the entry describes it.',
   // No environment ban, for a third version of BUILDING’s reason: the scenery the other categories
   // forbid is this one’s entire deliverable. What is foreign to a backdrop is the *playfield* — the
   // things a player acts on — and playable geometry is named first because it is the one that costs
@@ -407,7 +414,7 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, CategorySente
   // second half is the check this deliverable actually needs — an icon grid fails by disagreeing
   // with itself about weight and margin, and that only shows when the members are seen together.
   ICON: (plan, additions) =>
-    `Every component is ${plan.componentClass}${auditExemption(additions)} — no anatomy, floor or terrain tiles, scenery, and no interface panel or slot plate drawn behind an icon — and no component carries a letter, a numeral, a stack count or a key name. Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.`,
+    `Every component is ${plan.componentClass}${auditExemption(additions)} — no anatomy or figure its entry does not name, no floor or terrain tiles or scenery, and no interface panel or slot plate drawn behind an icon — and no component carries a letter, a numeral, a stack count or a key name. Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.`,
   // The seam check reaches only a sheet that lists a band meant to loop, for the reason the exclusion
   // line's seam clause does (issue #278): the layer library draws no band, and the check named one.
   // Scoping it in words alone was TERRAIN's arrangement copied, and TERRAIN lays tiles on both sheets.
@@ -464,12 +471,12 @@ export const FRAME_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = 
   PORTRAIT: false,
   // INTERFACE's answer, for INTERFACE's reason, and it took a review pass to get here. The *plate*
   // an icon sits in is genuinely that category's component and this one's exclusions ban it, which
-  // is what made `false` look right. But `ICON_SYMBOL_SET`'s state group requires a selected ring
+  // is what made `false` look right. But `ICON_OVERLAY_SHEET`'s state group requires a selected ring
   // and a highlight halo, and those are edges around something by construction: `--no border`
   // suppresses exactly them, and `--no` cannot express the placement that would separate an edge the
   // sheet requires from a surround a generator adds. The rule `modelWrapperText/midjourney.ts`
   // states for this term is that it stays out wherever excluding it would take the sheet's own
-  // subject with it, and one of this sheet's three groups is that subject.
+  // subject with it, and one of that sheet's two groups is that subject.
   ICON: true,
   // A band has edges but no border: it is cut to a strip and butted against its own copy, so a frame
   // drawn round one is the surround this term suppresses — and a border would sit exactly where the

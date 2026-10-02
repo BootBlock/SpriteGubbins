@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sameWord } from '../../test/sameWord.ts';
+import { sweepSubjectsOf } from '../../test/sweepSubjectsOf.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { PROMPT_TEMPLATE } from '../promptTemplate.ts';
 import { modePlansOf } from '../sheetPlans/modes.ts';
@@ -69,7 +70,11 @@ describe('CATEGORY_ASSEMBLY', () => {
   function requiredWords(category: SubjectCategory): ReadonlySet<string> {
     const entries = modePlansOf(category)
       .flatMap((plans) => Object.values(plans))
-      .flatMap((seriesFor) => Object.values(DIRECTION_LISTS).flatMap((facings) => seriesFor(facings)))
+      .flatMap((seriesFor) =>
+        Object.values(DIRECTION_LISTS).flatMap((facings) =>
+          sweepSubjectsOf(category).flatMap((subject) => seriesFor(facings, subject)),
+        ),
+      )
       .flatMap((plan) => plan.groups.flatMap((group) => group.entries.map((entry) => entry.text)));
     const definition = CATEGORY_OPTIONS[category];
     const subject = definition.fields

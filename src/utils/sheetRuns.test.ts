@@ -244,3 +244,33 @@ describe('sheetRuns', () => {
     );
   });
 });
+
+describe('the identity of an icon set’s sheets', () => {
+  const ICON = defaultSubjectFor('ICON');
+  const output = withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY', directions: 'SINGLE_FRONT' });
+  const at = (sheetIndex: number): OutputConfig => ({ ...output, sheetIndex });
+
+  function withPicks(picks: readonly string[]) {
+    return { ...ICON, icons: { look: 'ISOLATED_MARK', picks } } as const;
+  }
+
+  it('survives an icon added after the sheets already copied', () => {
+    // Sixteen icons fill the first icon sheet, so the seventeenth opens a sheet of its own: the overlay
+    // sheet and the full grid draw exactly what they drew before, and keep their ticks.
+    const picks = ICON.icons?.picks ?? [];
+    const grown = withPicks([...picks, 'elixir']);
+    expect(sheetIdentity('ICON', grown, at(0))).toBe(sheetIdentity('ICON', ICON, at(0)));
+    expect(sheetIdentity('ICON', grown, at(1))).toBe(sheetIdentity('ICON', ICON, at(1)));
+  });
+
+  it('changes for the sheet the new icon joins', () => {
+    const short = withPicks(['heal-minor', 'heal-major']);
+    const grown = withPicks(['heal-minor', 'heal-major', 'elixir']);
+    expect(sheetIdentity('ICON', grown, at(1))).not.toBe(sheetIdentity('ICON', short, at(1)));
+  });
+
+  it('still changes when a field every sheet states changes', () => {
+    const cyberpunk = { ...ICON, setting: 'Near-Future Cyberpunk' };
+    expect(sheetIdentity('ICON', cyberpunk, at(0))).not.toBe(sheetIdentity('ICON', ICON, at(0)));
+  });
+});

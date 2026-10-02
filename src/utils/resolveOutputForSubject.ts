@@ -1,3 +1,4 @@
+import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
 import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
@@ -11,13 +12,13 @@ import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
  * honour, resolved against what it can.
  *
  * **Two changes reach it, and they differ only in how much each can move.** A category switch can
- * move all seven claims below, because the modes, the facings, the cameras and the looks are all
- * category-scoped, and because a rig contract is a document loaded for one subject. A change of
+ * move all eight claims below, because the modes, the facings, the cameras, the canvases and the looks
+ * are all category-scoped, and because a rig contract is a document loaded for one subject. A change of
  * assembly base can move four — the sheet mode, the rig, the contract that rig carries and the sheet
  * index — because a base chooses the plans its category draws from (issue #283): a rigid object has
- * no rig sheet, and a nine-slice frame has no state library. The other three are functions of the
+ * no rig sheet, and a nine-slice frame has no state library. The other four are functions of the
  * category alone and come back unchanged, so one function serves both rather than two that would have
- * to agree about the three they share. `useSubjectStore` asks it about a base only where the edit
+ * to agree about the four they share. `useSubjectStore` asks it about a base only where the edit
  * changes the plans, which is what leaves a reader's sheet index alone when they retype a value that
  * draws the same sheets.
  *
@@ -102,7 +103,11 @@ export function resolveOutputForSubject(
   // camera it was rendered under and carries it into section 2 as a measurement, so a look the new
   // subject cannot be drawn to goes rather than standing over a camera that contradicts it.
   const styleReference = resolveStyleReference(category, output.styleReference);
-  // The rig CONTRACT, which is the seventh claim and the only one that is a document rather than a
+  // And the sheet canvas, the claim ICON's grid added: sixteen square cells four by four need a square
+  // sheet, so a wide canvas carried in from a character becomes `SQUARE_1_1` and comes back unchanged
+  // on every category that can use it.
+  const aspectRatio = resolveAspectRatio(category, output.aspectRatio);
+  // The rig CONTRACT, which is the eighth claim and the only one that is a document rather than a
   // choice between values this app offers. It names one skeleton — these fifteen slots, at these
   // sizes, jointed at these ends — so unlike the rig MODE it cannot survive becoming another kind of
   // subject. `resolveRigMode` deliberately keeps a cut-out rig across CHARACTER → CREATURE, and a
@@ -133,6 +138,7 @@ export function resolveOutputForSubject(
     projection === output.projection &&
     cameraElevation === output.cameraElevation &&
     styleReference === output.styleReference &&
+    aspectRatio === output.aspectRatio &&
     rigContract === output.rigContract &&
     output.sheetIndex === 0
   ) {
@@ -147,6 +153,7 @@ export function resolveOutputForSubject(
     projection,
     cameraElevation,
     styleReference,
+    aspectRatio,
     rigContract,
     // Cleared with the set exactly as the control clears it, and only then: a facing pinned against
     // `THREE_CLASSIC` is one `SINGLE_FRONT` never turns to, and leaving it behind would let a preset

@@ -6,7 +6,7 @@ import type { ComponentKind, SheetPlan } from '../types/components.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
-import type { SubjectCategory } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 
 /**
  * Structural checks on the plan tables.
@@ -70,7 +70,8 @@ export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly Componen
   // a cell: it has no anatomy, no mechanism to drive, no frame that belongs to it (the plate is
   // INTERFACE's) and it never butts against a copy of itself, so a `tile` entry here would be a
   // background band or a nine-slice filed under a symbol set. `structure` is what the union already
-  // means by "a piece of the subject", and every entry in `ICON_SYMBOL_SET` is one.
+  // means by "a piece of the subject", and every entry of the overlay sheet and of every icon sheet a
+  // roster builds is one.
   ICON: ['structure'],
   // BUILDING's pair, and for the reason INTERFACE shares it: the bands of a parallax set repeat and
   // butt against copies of themselves along one axis, which is the whole of what this union means by
@@ -116,8 +117,14 @@ export interface PlanViolation {
  * the standard one, because a base's sheets reach a prompt exactly as the standard sheets do. A table
  * offering no mode at all is the one violation that belongs to no mode, and it is reported because
  * `resolveMode` would then have no sheet to fall back to.
+ *
+ * **Each series is built for every subject `subjectsOf` names**, because ICON's is built from the
+ * reader's roster: a sweep holding its sheets to these rules has to build them from every catalogue
+ * entry, where every other category's series ignores the subject and one stands for all.
  */
-export function validateAllSheetPlans(): readonly PlanViolation[] {
+export function validateAllSheetPlans(
+  subjectsOf: (category: SubjectCategory) => readonly SheetSubject[],
+): readonly PlanViolation[] {
   const violations: PlanViolation[] = [];
 
   for (const category of SUBJECT_CATEGORIES) {
@@ -126,7 +133,10 @@ export function validateAllSheetPlans(): readonly PlanViolation[] {
       if (modes.length === 0) violations.push({ category, mode: null, message: 'has a base with no mode' });
       for (const mode of modes) {
         const seriesFor = plans[mode];
-        if (seriesFor !== undefined) violations.push(...seriesViolations(category, mode, seriesFor));
+        if (seriesFor === undefined) continue;
+        for (const subject of subjectsOf(category)) {
+          violations.push(...seriesViolations(category, mode, seriesFor, subject));
+        }
       }
     }
   }
@@ -139,6 +149,7 @@ function seriesViolations(
   category: SubjectCategory,
   mode: DirectionalMode,
   seriesFor: SeriesFor,
+  subject: SheetSubject,
 ): readonly PlanViolation[] {
   const violations: PlanViolation[] = [];
 
@@ -147,7 +158,7 @@ function seriesViolations(
   // would leave the others' plans unexamined.
   for (const directions of CATEGORY_DIRECTION_SETS[category]) {
     const setFacings = DIRECTION_LISTS[directions];
-    const series = seriesFor(setFacings);
+    const series = seriesFor(setFacings, subject);
 
     // Names are what a run row, a toast and an inventory heading identify a sheet by, and what
     // `sheetIdentity` keys a batch's progress on — two sheets of one series sharing one would make the

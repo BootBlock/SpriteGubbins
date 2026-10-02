@@ -76,7 +76,7 @@ export function generatePrompt(
   const prompt = substitute(resolved, values);
 
   return wrapForModel(prompt, output.targetModel, {
-    aspectRatio: output.aspectRatio,
+    aspectRatio: facts.aspectRatio,
     backgroundKeyDescription: BACKGROUND_KEY_TEXT[output.backgroundKey],
     frameIsAComponent: FRAME_IS_A_COMPONENT[category],
     letteringIsAComponent: LETTERING_IS_A_COMPONENT[category],

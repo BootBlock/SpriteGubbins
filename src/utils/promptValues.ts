@@ -254,7 +254,7 @@ export function promptValues(
     DEPTH_ORDER_DESCRIPTION: depthOrderDescription(coveredDirections, cameraElevation),
 
     BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[output.backgroundKey],
-    ASPECT_DESCRIPTION: ASPECT_TEXT[output.aspectRatio],
+    ASPECT_DESCRIPTION: ASPECT_TEXT[facts.aspectRatio],
     JOINT_CAP_DESCRIPTION: JOINT_CAP_TEXT[output.jointCapStyle],
     OVERLAP_MARGIN_DESCRIPTION: OVERLAP_MARGIN_TEXT[output.overlapMargin],
     // Every piece's size, joint end and pivot, from the engine's own rig. Empty on every sheet

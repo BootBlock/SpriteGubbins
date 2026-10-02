@@ -14,6 +14,10 @@ import type { SubjectCategory, SubjectDefinition } from '../../types/subject.ts'
  * which would need a cast to claim the result is complete. Here the compiler *checks* it: the
  * starting object is the category's own defaults, so every key is present by construction.
  *
+ * **ICON's roster is not a field and is not blanked.** It is the inventory rather than a line of
+ * section 1, so a sparse ICON subject keeps the starter roster its category declares unless `stated`
+ * names one — an empty roster would leave a preset that draws the overlay sheet alone.
+ *
  * Shared rather than copied, because two families now want it — the Unsung Saviour contracts and the
  * art-style references — and a second copy is where one of them quietly stops blanking a field the
  * other does.

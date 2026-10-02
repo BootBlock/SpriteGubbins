@@ -470,6 +470,10 @@ never drawn as a separate piece.
 [IF:CLOTHING_IS_A_COMPONENT]
 **[DEFINE:CLOTHING_LABEL]** is excepted: section [SEC:INVENTORY] draws it as components of its own.
 [/IF]
+[IF:CLOTHING_DRAWN_ELSEWHERE]
+**[DEFINE:CLOTHING_LABEL]** is excepted: another sheet of this series draws it as pieces of its own, and no
+component on this sheet carries it.
+[/IF]
 [IF:ADDITIONAL_ANATOMY]
 [IF:ANATOMY_PER_VIEW]
 **[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is excepted: section [SEC:INVENTORY] lists each piece named there

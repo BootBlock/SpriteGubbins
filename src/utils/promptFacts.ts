@@ -1,4 +1,5 @@
 import { BACKGROUND_KEY_COLORS } from '../constants/backgroundKeyColors.ts';
+import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
@@ -16,7 +17,14 @@ import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { oneSidedFeatures } from './oneSidedFeatures.ts';
 import { pinnedPalette } from './pinnedPalette.ts';
 import type { StyleReference } from '../types/styleReference.ts';
-import type { Direction, DirectionalMode, OutputConfig, Projection, RigMode } from '../types/output.ts';
+import type {
+  AspectRatio,
+  Direction,
+  DirectionalMode,
+  OutputConfig,
+  Projection,
+  RigMode,
+} from '../types/output.ts';
 import type { SheetPlan } from '../types/components.ts';
 import type { RigContract } from '../types/rigContract.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
@@ -30,7 +38,7 @@ import { mirrorPairs } from './mirrorPairs.ts';
 import { sheetBatch } from './sheetBatch.ts';
 import type { SheetBatch } from './sheetBatch.ts';
 import { sheetDirections } from './sheetDirections.ts';
-import { drawnPlanFor, planDraws } from './sheetPlanAbsence.ts';
+import { drawnPlanFor, planAsDrawn, planDraws } from './sheetPlanAbsence.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**
@@ -57,6 +65,12 @@ export interface SheetFacts {
   readonly coveredMirrorPairs: ReturnType<typeof mirrorPairs>;
   readonly projection: Projection;
   readonly cameraElevation: number;
+  /**
+   * The sheet canvas, resolved through the category — ICON's grid is square — and read twice: by
+   * `promptValues` for the layout line and by the compiler for the wrapper's own aspect statement, so
+   * the two cannot name different canvases.
+   */
+  readonly aspectRatio: AspectRatio;
   readonly batch: SheetBatch;
   readonly emitComponentMap: boolean;
   readonly emitPromptFeedback: boolean;
@@ -101,6 +115,15 @@ export interface SheetFacts {
    * calls the sole authority for the subject's design.
    */
   readonly clothingIsAComponent: boolean;
+  /**
+   * Whether section 1 excepts the `clothing` line because another sheet of this series draws it and
+   * nothing on this one carries it — ICON's icon sheets, whose *Applied Overlay* is the overlay sheet's.
+   *
+   * The plan declares it (`SheetPlan.drawnElsewhere`), and two more halves have to hold for the sentence
+   * to be true: the line was emitted at all, and some sheet of the series, as this subject draws it,
+   * really does draw the attribute as pieces.
+   */
+  readonly clothingDrawnElsewhere: boolean;
   /**
    * Everything this subject carries on one flank and not the other, named — see
    * `utils/oneSidedFeatures.ts`, and `FieldOption.oneSidedOptions` for what may be declared.
@@ -306,6 +329,13 @@ export function sheetFacts(
   // ICON and INTERFACE take: their sheets draw the attribute whatever is chosen, so the exception is
   // always right and there is no value that could make it wrong. See `sheetPlans/icon.ts`.
   const clothingIsAComponent = subject.clothing.trim() !== '' && planDraws(plan, 'clothing');
+  // The exception's other shape, for a sheet that leaves the attribute to a sibling: ICON's icons are
+  // drawn bare and the overlay sheet draws the overlay library, so section 1 telling every icon to
+  // carry the *Applied Overlay* would be false of every one of them.
+  const clothingDrawnElsewhere =
+    subject.clothing.trim() !== '' &&
+    plan.drawnElsewhere === 'clothing' &&
+    series.some((sheet) => planDraws(planAsDrawn(sheet, category, subject), 'clothing'));
 
   return {
     mode,
@@ -316,6 +346,7 @@ export function sheetFacts(
     coveredMirrorPairs,
     projection,
     cameraElevation,
+    aspectRatio: resolveAspectRatio(category, output.aspectRatio),
     batch,
     emitComponentMap,
     emitPromptFeedback,
@@ -332,6 +363,7 @@ export function sheetFacts(
     anatomyFacings,
     additionalAnatomyLine,
     clothingIsAComponent,
+    clothingDrawnElsewhere,
     // Asked of the subject rather than of the plan, because a one-sided feature is an attribute the
     // reader chose and every component carrying it is drawn at every facing the sheet covers. The
     // pools are what bound it — see `utils/oneSidedFeatures.ts`.

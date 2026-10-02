@@ -5,7 +5,8 @@ import { HARDWARE_PROFILES } from '../src/constants/hardware/index.ts';
 import { PALETTES } from '../src/constants/palettes/index.ts';
 import * as promptText from '../src/constants/promptText/index.ts';
 import { PROMPT_TEMPLATE } from '../src/constants/promptTemplate.ts';
-import { SHEET_INDEX_RANGE, sheetPlanFor } from '../src/constants/sheetPlans/index.ts';
+import { sheetPlanFor } from '../src/constants/sheetPlans/index.ts';
+import { sheetIndicesOf } from '../src/test/sheetIndicesOf.ts';
 import type { SheetPlan } from '../src/types/components.ts';
 import { DIRECTIONAL_MODES, DIRECTION_SETS, RESOLUTION_PROFILES } from '../src/types/output.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
@@ -65,7 +66,7 @@ function addressedSheets(): readonly { readonly category: SubjectCategory; reado
     for (const subject of assemblyBaseSubjectsOf(category)) {
       for (const directionalMode of DIRECTIONAL_MODES) {
         for (const directions of DIRECTION_SETS) {
-          for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+          for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
             sheets.push({
               category,
               plan: sheetPlanFor(category, subject, directionalMode, directions, sheetIndex),

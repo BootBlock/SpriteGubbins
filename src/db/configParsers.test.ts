@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { ICON_SERIES_LONGEST } from '../constants/iconCatalogue/iconSheetLimits.ts';
+import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { COMPONENT_BUDGET_RANGE, NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { resolveSheetIndex, SHEET_INDEX_RANGE } from '../constants/sheetPlans/index.ts';
 import { standardSubject } from '../test/sheetSubject.ts';
-import { parseImageConfig, parseOutputConfig } from './configParsers.ts';
+import { parseImageConfig, parseOutputConfig, parseSubject } from './configParsers.ts';
 
 /**
  * The component budget crossing the storage boundary.
@@ -109,13 +111,14 @@ describe('parseOutputConfig — sheetIndex', () => {
   });
 
   it('is bounded by the plan table rather than by a number written down here', () => {
-    // Derived, so a pairing that grows a sheet admits one in the same edit. Four sheets is the most
-    // any pairing takes today — FONT's glyph set, which is four because printable ASCII does not fit
-    // one generation — and an index past that is corrupt storage rather than a choice. It moved from
-    // three when that category landed, which is the derivation doing its job: the eight-compass
-    // character series is still the longest *directional* one.
+    // Derived, so a pairing that grows a sheet admits one in the same edit. ICON's series is the
+    // longest now: the overlay sheet and then a full roster sixteen icons to a sheet, which a pair that
+    // never splits can stretch to fifteen — twenty-three sheets for 320 components. FONT's glyph set is
+    // still the longest *fixed* series at four, and the eight-compass character series the longest
+    // directional one; an index past ICON's bound is corrupt storage rather than a choice.
     expect(SHEET_INDEX_RANGE.min).toBe(0);
-    expect(SHEET_INDEX_RANGE.max).toBe(3);
+    expect(SHEET_INDEX_RANGE.max).toBe(ICON_SERIES_LONGEST - 1);
+    expect(ICON_SERIES_LONGEST).toBe(23);
   });
 
   it('falls back for anything outside that, fractional, or not a number', () => {
@@ -299,5 +302,41 @@ describe('parseOutputConfig — the reader’s own palette', () => {
 
     expect(parsed.palette).toBe('CUSTOM');
     expect(parsed.customPalette).toBeNull();
+  });
+});
+
+describe('parseSubject — the icon roster', () => {
+  it('reads an ICON subject back with its roster', () => {
+    const subject = {
+      ...defaultSubjectFor('ICON'),
+      setting: 'Near-Future Cyberpunk',
+      icons: { look: 'ISOLATED_MARK', picks: ['heal-major', 'system-sound'] },
+    } as const;
+    expect(parseSubject(JSON.parse(JSON.stringify(subject)), 'ICON')).toEqual(subject);
+  });
+
+  it('discards a whole ICON subject written before the roster existed', () => {
+    // Its fields meant something else then — `species` named an icon family, where it now names where
+    // the set is shown — so keeping half of it would compile a set nobody asked for.
+    const written = { ...defaultSubjectFor('ICON'), species: 'Inventory & Item Icon' };
+    const { icons: _dropped, ...preCatalogue } = written;
+    expect(parseSubject(preCatalogue, 'ICON')).toEqual(defaultSubjectFor('ICON'));
+  });
+
+  it('drops a stale pick and keeps the rest of the subject', () => {
+    const stored = {
+      ...defaultSubjectFor('ICON'),
+      role: '48 × 48 Pixels',
+      icons: { look: 'ISOLATED_MARK', picks: ['retired-entry', 'elixir'] },
+    };
+    const parsed = parseSubject(stored, 'ICON');
+    expect(parsed.role).toBe('48 × 48 Pixels');
+    expect(parsed.icons).toEqual({ look: 'ISOLATED_MARK', picks: ['elixir'] });
+  });
+
+  it('carries no roster on a category that declares none', () => {
+    const stored = { ...defaultSubjectFor('CHARACTER'), icons: { look: 'ISOLATED_MARK', picks: ['elixir'] } };
+    expect(parseSubject(stored, 'CHARACTER')).toEqual(defaultSubjectFor('CHARACTER'));
+    expect(parseSubject(stored, 'CHARACTER')).not.toHaveProperty('icons');
   });
 });

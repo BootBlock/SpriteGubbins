@@ -5,6 +5,7 @@ import { modePlansOf } from '../constants/sheetPlans/index.ts';
 import type { SheetPlan, SheetSeries } from '../types/components.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import type { SubjectCategory } from '../types/subject.ts';
+import { sweepSubjectsOf } from './sweepSubjectsOf.ts';
 
 /**
  * Every series a category can be asked for: each mode of each plan table it can be drawn from — its
@@ -17,8 +18,10 @@ import type { SubjectCategory } from '../types/subject.ts';
 export function everySeriesOf(category: SubjectCategory): readonly SheetSeries[] {
   return modePlansOf(category).flatMap((plans) =>
     Object.values(plans).flatMap((seriesFor) =>
-      (Object.keys(DIRECTION_LISTS) as DirectionSet[]).map((set) =>
-        seriesFor(DIRECTION_LISTS[resolveDirectionSet(category, set)]),
+      (Object.keys(DIRECTION_LISTS) as DirectionSet[]).flatMap((set) =>
+        sweepSubjectsOf(category).map((subject) =>
+          seriesFor(DIRECTION_LISTS[resolveDirectionSet(category, set)], subject),
+        ),
       ),
     ),
   );

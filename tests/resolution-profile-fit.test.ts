@@ -1,13 +1,9 @@
+import { sheetIndicesOf } from '../src/test/sheetIndicesOf.ts';
 import { describe, expect, it } from 'vitest';
 import { CATEGORY_DIRECTION_SETS } from '../src/constants/categoryDirectionSets.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
 import { SHEET_CELL_PITCH } from '../src/constants/sheetCanvas.ts';
-import {
-  CATEGORY_SHEET_PLANS,
-  modesFor,
-  plansFor,
-  SHEET_INDEX_RANGE,
-} from '../src/constants/sheetPlans/index.ts';
+import { CATEGORY_SHEET_PLANS, modesFor, plansFor } from '../src/constants/sheetPlans/index.ts';
 import { assemblyBaseSubjectsOf } from '../src/test/assemblyBaseSubjects.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 import { generatePrompt } from '../src/utils/promptCompiler.ts';
@@ -106,7 +102,7 @@ describe('the resolution profile against the page it is drawn on', () => {
           // index decide which plan compiles — an eight-compass core is two sheets and an articulation
           // run after them, and the defect this suite exists for was on every one of the three.
           for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
               for (const resolutionProfile of SHARE_BEARING) {
                 const where = `${category} / ${base} / ${directionalMode} / ${directions} / ${String(sheetIndex)} / ${resolutionProfile}`;
                 const prompt = generatePrompt(category, subject, {

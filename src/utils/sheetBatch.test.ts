@@ -242,8 +242,13 @@ describe('a subject with no facing is one sheet per plan, whatever set the confi
   });
 
   it.each(UNTURNABLE)('%s asks for no yaw it does not have', (category) => {
-    const runs = sheetRuns(category, defaultSubjectFor(category), TURNED);
-    expect(runs).toHaveLength(seriesLength(category));
+    // The category's own default subject, so ICON compiles its starter roster's icon sheets as well
+    // as the overlay sheet — and the series is measured with that same subject.
+    const subject = defaultSubjectFor(category);
+    const runs = sheetRuns(category, subject, TURNED);
+    expect(runs).toHaveLength(
+      sheetSeriesFor(category, subject, TURNED.directionalMode, TURNED.directions).length,
+    );
 
     for (const run of runs) {
       // The two lines the report quotes, and their replacements. `object yaw 0°` is the whole point:

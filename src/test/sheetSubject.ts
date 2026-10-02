@@ -13,11 +13,12 @@ import type { DeclinableFieldKey, SheetSubject, SubjectCategory } from '../types
  *
  * **Every declinable field is empty for the same reason.** An empty value matches no `absentOption`,
  * so a plan keeps every entry it declares — which is the corpus a suite about the declared plans is
- * asking for. A check about what a reader who declines gets goes through {@link decliningSubject},
+ * asking for. The world is empty and there is no roster, so ICON draws its overlay sheet alone; a sweep
+ * that needs ICON's icon sheets walks `sweepSubjectsOf` instead. A check about what a reader who declines gets goes through {@link decliningSubject},
  * which takes the value from the pool rather than spelling it out.
  */
 export function standardSubject(): SheetSubject {
-  return { anatomy: '', clothing: '', face_head: '' };
+  return { anatomy: '', setting: '', clothing: '', face_head: '' };
 }
 
 /**
@@ -51,7 +52,13 @@ export function decliningSubject(
 
   // Written out key by key rather than folded over `DECLINABLE_FIELD_KEYS`, so that a fourth key is a
   // compiler error here instead of a field this silently leaves at its declared value.
-  return { anatomy: subject.anatomy, clothing: valueFor('clothing'), face_head: valueFor('face_head') };
+  return {
+    anatomy: subject.anatomy,
+    setting: subject.setting,
+    clothing: valueFor('clothing'),
+    face_head: valueFor('face_head'),
+    ...(subject.icons === undefined ? {} : { icons: subject.icons }),
+  };
 }
 
 /**

@@ -1,6 +1,7 @@
 import { COMPONENT_BUDGET_RANGE } from '../../constants/componentBudget.ts';
+import { resolveAspectRatio } from '../../constants/categoryAspectRatios.ts';
 import {
-  ASPECT_RATIO_CHOICES,
+  aspectRatioChoices,
   BACKGROUND_KEY_CHOICES,
   DIRECTIONAL_MODE_TOOLTIPS,
   directionalModeChoices,
@@ -163,8 +164,10 @@ export function SheetFields() {
       <SelectField
         label="Sheet Canvas Aspect Ratio"
         tooltip={OUTPUT_TOOLTIPS.aspectRatio}
-        value={output.aspectRatio}
-        choices={ASPECT_RATIO_CHOICES}
+        // Resolved through the category, as the projection control resolves its camera: ICON's grid
+        // is drawn on a square canvas alone, so a stored wide ratio shows as the canvas it compiles to.
+        value={resolveAspectRatio(category, output.aspectRatio)}
+        choices={aspectRatioChoices(category)}
         onChange={(value) => {
           setOutputField('aspectRatio', value);
         }}

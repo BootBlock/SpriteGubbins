@@ -45,6 +45,7 @@ export function promptConditions(
     anatomyFacings,
     additionalAnatomyLine,
     clothingIsAComponent,
+    clothingDrawnElsewhere,
     oneSidedFeatures,
   } = facts;
   const views = viewCoverage(coveredDirections);
@@ -184,6 +185,11 @@ export function promptConditions(
     // the answer are resolved in `sheetFacts` — whether the sheet draws it, and whether the line was
     // emitted at all.
     CLOTHING_IS_A_COMPONENT: clothingIsAComponent ? 'yes' : '',
+    // The exception's third shape (R3 of `docs/todo/icon-catalogue.md`): a sheet whose components carry
+    // none of the attribute because another sheet of its series draws it. ICON's icon sheets are the
+    // case — the overlay sheet draws the *Applied Overlay*, and the icons are drawn bare for the engine
+    // to lay it on — so the paint rule stated over them would order an overlay painted onto every icon.
+    CLOTHING_DRAWN_ELSEWHERE: clothingDrawnElsewhere ? 'yes' : '',
     // Which shape that exception sentence takes. On a multi-view sheet the anatomy turns with the
     // trunk — section 4 lists each piece at every one of the sheet's facings and counts it per view
     // — so the sentence must say so, or section 1 promises a single drawing the inventory below it

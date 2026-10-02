@@ -5,6 +5,7 @@ import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import type { SheetSubject, SubjectCategory } from '../../types/subject.ts';
 import { resolveDirectionSet } from '../categoryDirectionSets.ts';
 import { DIRECTION_LISTS } from '../promptText/camera.ts';
+import { ICON_SERIES_LONGEST } from '../iconCatalogue/iconSheetLimits.ts';
 import { modePlansOf, plansFor, resolveMode } from './modes.ts';
 
 // The table this directory is named for, in its own file so the rig table below can read it without
@@ -19,6 +20,9 @@ export {
   resolveMode,
   supportsMode,
 } from './modes.ts';
+
+/** A subject naming nothing — no base, no declined field, no world and no roster. */
+const NO_SUBJECT: SheetSubject = { anatomy: '', setting: '', clothing: '', face_head: '' };
 
 // The bases that draw something other than their category's standard plans, and the shapes both
 // tables are written in.
@@ -38,24 +42,29 @@ export {
 
 /**
  * What a stored sheet index is allowed to be, bounded by the longest series any pairing produces
- * over any direction set its category offers, for any assembly base the category declares.
+ * over any direction set its category offers, for any assembly base the category declares — and by the
+ * longest ICON series a full roster can take.
  *
  * Derived rather than written down, so a pairing that grows a sheet admits one here in the same
- * edit — FONT's glyph set is the current maximum at four, printable ASCII being more glyphs than one
- * generation delivers, and the eight-compass character series is the longest *directional* one at
- * three. It is deliberately
+ * edit — FONT's glyph set is the longest fixed series at four, printable ASCII being more glyphs than
+ * one generation delivers, and the eight-compass character series is the longest *directional* one at
+ * three. ICON's series is built from the reader's roster rather than fixed by the pairing, so its bound
+ * is `ICON_SERIES_LONGEST`, derived from the roster's capacity; every other series ignores the subject,
+ * and a subject declaring nothing stands in for it. It is deliberately
  * a bound on *corrupt storage* and not a validity check: which indices are real depends on the
- * category, the base and the chosen set, which `parseOutputConfig` does not have, so an index that is
- * whole and in range but larger than its own series resolves to sheet one in {@link sheetPlanFor}.
+ * category, the base, the chosen set and the roster, which `parseOutputConfig` does not have, so an
+ * index that is whole and in range but larger than its own series resolves to sheet one in
+ * {@link sheetPlanFor}.
  */
 export const SHEET_INDEX_RANGE = {
   min: 0,
   max:
     Math.max(
+      ICON_SERIES_LONGEST,
       ...SUBJECT_CATEGORIES.flatMap((category) =>
         modePlansOf(category).flatMap((byMode) =>
           Object.values(byMode).flatMap((seriesFor) =>
-            Object.values(DIRECTION_LISTS).map((facings) => seriesFor(facings).length),
+            Object.values(DIRECTION_LISTS).map((facings) => seriesFor(facings, NO_SUBJECT).length),
           ),
         ),
       ),
@@ -81,7 +90,7 @@ export function sheetSeriesFor(
   const seriesFor = plansFor(category, subject)[resolveMode(category, subject, mode)];
   // Unreachable while every base offers a mode, which `sheetPlans.test.ts` pins.
   if (seriesFor === undefined) throw new Error(`No sheet plan for ${category} / ${mode}.`);
-  return seriesFor(DIRECTION_LISTS[resolveDirectionSet(category, directions)]);
+  return seriesFor(DIRECTION_LISTS[resolveDirectionSet(category, directions)], subject);
 }
 
 /**

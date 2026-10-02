@@ -24,6 +24,10 @@ import { everySeriesOf, everySheetOf, planProseFor, sheetsProseFor } from '../te
 import { sectionOf } from '../test/promptSections.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
 import { decliningEverything, standardSubject } from '../test/sheetSubject.ts';
+import { sweepSubjectsOf } from '../test/sweepSubjectsOf.ts';
+import { iconCatalogueSubjects } from '../test/iconCatalogueSubjects.ts';
+import { ICON_GRID_COLUMNS, ICONS_PER_SHEET } from '../constants/iconCatalogue/iconSheetLimits.ts';
+import { ICON_OVERLAY_SHEET } from '../constants/sheetPlans/iconOverlaySheet.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
@@ -35,7 +39,7 @@ import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { planSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
-import { planAsDrawn } from './sheetPlanAbsence.ts';
+import { planAsDrawn, planDraws } from './sheetPlanAbsence.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
 /**
@@ -214,7 +218,8 @@ function sheetPrompt(
   directions: DirectionSet,
   sheetIndex: number,
 ): string {
-  const key = [category, subject.anatomy, mode, directions, String(sheetIndex)].join('|');
+  // The whole subject, because ICON's sheets differ by roster and world under one base.
+  const key = [category, JSON.stringify(subject), mode, directions, String(sheetIndex)].join('|');
   const cached = SHEET_PROMPTS.get(key);
   if (cached !== undefined) return cached;
   const prompt = promptFor(category, mode, undefined, sheetIndex, directions, subject);
@@ -226,7 +231,7 @@ describe('the plan table itself', () => {
   it('files no plan under a category that cannot contain it', () => {
     // Structural, not textual: an entry of kind `tile` under CHARACTER is the contamination, and it
     // is visible in the data long before it becomes a sentence in a prompt.
-    expect(validateAllSheetPlans()).toEqual([]);
+    expect(validateAllSheetPlans(sweepSubjectsOf)).toEqual([]);
   });
 
   it.each(SUBJECT_CATEGORIES)('%s offers at least one mode, and defaults to one it supports', (category) => {
@@ -285,9 +290,13 @@ describe('the plan table itself', () => {
     // line worth several components is equally how a tileset lists four corners, and the portrait's
     // twelve expressions are twelve lines each worth exactly one. So what this holds is that a plan
     // changing its answer is a deliberate edit that shows up here.
+    // ICON's icon sheets are built from the roster, so their names follow it; each answers by whether
+    // it holds a two-state entry, which the assertion after the list holds them to.
+    const isIconSheet = ({ category, plan }: (typeof EVERY_PLAN)[number]): boolean =>
+      category === 'ICON' && plan !== ICON_OVERLAY_SHEET;
     const posed = [
       ...new Set(
-        EVERY_PLAN.filter(({ plan }) => plan.posing === 'PER_POSITION').map(
+        EVERY_PLAN.filter((entry) => entry.plan.posing === 'PER_POSITION' && !isIconSheet(entry)).map(
           ({ category, sheet }) => `${category} / ${sheet}`,
         ),
       ),
@@ -350,8 +359,37 @@ describe('the plan table itself', () => {
       // them in; and one overlay drawn at two stages of a cooldown.
       'PORTRAIT / Expression set',
       'PORTRAIT / Feature cut',
-      'ICON / Symbol set',
+      'ICON / Overlay pieces',
     ]);
+
+    // A sound toggle drawn unmuted and muted is one icon in two positions, so an icon sheet holding a
+    // two-state entry settles that change and one holding none settles nothing.
+    for (const entry of EVERY_PLAN.filter(isIconSheet)) {
+      const pairs = entry.plan.groups.some((group) => group.entries.some((line) => line.count > 1));
+      expect(entry.plan.posing, entry.sheet).toBe(pairs ? 'PER_POSITION' : 'UNSTATED');
+    }
+  });
+
+  it('lets a sheet leave an attribute to a sibling only where a sibling draws it and it does not', () => {
+    // `drawnElsewhere` is what puts “another sheet of this series draws it” into section 1, so a sheet
+    // declaring it has to sit in a series where some other sheet really draws the attribute as pieces,
+    // and must not draw any of it itself — or the sentence is false of the sheet it is printed on.
+    let declared = 0;
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const series of everySeriesOf(category)) {
+        series.forEach((plan, index) => {
+          if (plan.drawnElsewhere === undefined) return;
+          declared += 1;
+          const key = plan.drawnElsewhere;
+          expect(planDraws(plan, key), `${category} / ${plan.name}`).toBe(false);
+          expect(
+            series.some((other, at) => at !== index && planDraws(other, key)),
+            `${category} / ${plan.name}`,
+          ).toBe(true);
+        });
+      }
+    }
+    expect(declared).toBeGreaterThan(0);
   });
 
   it('gives the tileset only to the categories that assemble from repeating pieces', () => {
@@ -1463,14 +1501,21 @@ describe('every inventory line carries an identifier the manifest can use', () =
  * naming the number rather than quietly agreeing with whatever the plan now says.
  */
 const FIGURE_WORDS: Readonly<Record<number, string>> = {
+  1: 'one',
   2: 'two',
+  3: 'three',
+  4: 'four',
+  5: 'five',
   6: 'six',
+  7: 'seven',
   8: 'eight',
   9: 'nine',
   10: 'ten',
   11: 'eleven',
   12: 'twelve',
+  13: 'thirteen',
   14: 'fourteen',
+  15: 'fifteen',
   16: 'sixteen',
   21: 'twenty-one',
   26: 'twenty-six',
@@ -1583,15 +1628,30 @@ describe('no count in a plan’s prose contradicts the entries it describes', ()
     expect(transitions.outro).toContain(`The ${figureWord(joined)} pure tiles`);
   });
 
-  it('states ICON’s family size where the sheet opens, and where a redrawn state is priced', () => {
-    const plan = sheetNamed('ICON', 'SINGLE_DIRECTION_POSE_LIBRARY', 'Symbol set');
-    const icons = groupNamed(plan, null);
-    const family = totalOf(icons);
+  it('states every ICON icon sheet’s grid from the icons it holds', () => {
+    // The intro is the generator's map of the sheet — how many icons, how many across and how many
+    // down — so it is held to the entries under it on every icon sheet the starter set and the whole
+    // catalogue build, a short last sheet included.
+    for (const subject of [standardSubjectOf('ICON'), ...iconCatalogueSubjects()]) {
+      const [, ...iconSheets] = sheetSeriesFor(
+        'ICON',
+        subject,
+        'SINGLE_DIRECTION_POSE_LIBRARY',
+        'SINGLE_FRONT',
+      );
+      expect(iconSheets.length).toBeGreaterThan(0);
+      for (const plan of iconSheets) {
+        const icons = groupNamed(plan, null);
+        const count = totalOf(icons);
+        const across = Math.min(count, ICON_GRID_COLUMNS);
+        const down = Math.ceil(count / ICON_GRID_COLUMNS);
 
-    expect(icons.intro).toContain(`${figureWordCapitalised(family)} members of the one family`);
-    expect(groupNamed(plan, 'State pieces').intro).toContain(
-      `costs one component here and ${figureWord(family)}`,
-    );
+        expect(count, plan.name).toBeLessThanOrEqual(ICONS_PER_SHEET);
+        expect(icons.intro, plan.name).toContain(
+          `${figureWordCapitalised(count)} icons, ${figureWord(across)} across and ${figureWord(down)} down`,
+        );
+      }
+    }
   });
 
   it('states PORTRAIT’s expression count in the sentence a reader checks the delivery against', () => {

@@ -14,15 +14,30 @@ import type { SheetSubject } from '../types/subject.ts';
  * fourth field now changes `DECLINABLE_FIELD_KEYS`, this hook and `test/sheetSubject.ts`, each of
  * which writes its keys out so that the compiler names the ones still to do.
  *
+ * **ICON's roster and its *World & Era* joined them** when the icon catalogue arrived: the roster is
+ * the inventory itself, and the world decides how each of its lines reads. The roster is selected by
+ * reference, which only a roster edit replaces.
+ *
  * **Field by field rather than the whole subject**, which is the rule about selecting a store: a view
- * subscribing to `state.subject` re-renders on every keystroke in all sixteen fields, and these three
- * are the ones that move a component count. Memoised because every caller feeds the record to a
+ * subscribing to `state.subject` re-renders on every keystroke in all sixteen fields, and these five
+ * are the ones that move a sheet's inventory. Memoised because every caller feeds the record to a
  * `useMemo` of its own, and a fresh object each render would defeat all of them.
  */
 export function useSheetSubject(): SheetSubject {
   const anatomy = useSubjectStore((state) => state.subject.anatomy);
+  const setting = useSubjectStore((state) => state.subject.setting);
   const clothing = useSubjectStore((state) => state.subject.clothing);
   const focalFeature = useSubjectStore((state) => state.subject.face_head);
+  const icons = useSubjectStore((state) => state.subject.icons);
 
-  return useMemo(() => ({ anatomy, clothing, face_head: focalFeature }), [anatomy, clothing, focalFeature]);
+  return useMemo(
+    () => ({
+      anatomy,
+      setting,
+      clothing,
+      face_head: focalFeature,
+      ...(icons === undefined ? {} : { icons }),
+    }),
+    [anatomy, setting, clothing, focalFeature, icons],
+  );
 }

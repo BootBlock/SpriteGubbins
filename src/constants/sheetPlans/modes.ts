@@ -14,7 +14,7 @@ import { objectDirectionalVariants, OBJECT_CUTOUT_RIG, OBJECT_PART_LIBRARY } fro
 import { TERRAIN_BLEND_SET, TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
 import { VEHICLE_STANDARD_PLANS } from './vehicle.ts';
 import { PORTRAIT_EXPRESSION_LIBRARY } from './portrait.ts';
-import { ICON_SYMBOL_SET } from './icon.ts';
+import { iconSeries } from './icon.ts';
 import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.ts';
 import { FONT_CAPITALS, FONT_DIGITS_AND_PUNCTUATION, FONT_LOWER_CASE, FONT_SYMBOLS } from './font.ts';
 
@@ -114,9 +114,10 @@ export const CATEGORY_SHEET_PLANS: Readonly<Record<SubjectCategory, ModePlans>> 
   },
   // One mode, for the reasons `sheetPlans/icon.ts` gives. The absent `TILESET_MODULAR` is the one
   // worth naming here: an icon grid is cells sitting apart with clear margin between them, which is
-  // the opposite of pieces that butt against copies of themselves.
+  // the opposite of pieces that butt against copies of themselves. The one series in the table built
+  // from the subject: the overlay sheet, then the reader's roster sixteen icons to a sheet.
   ICON: {
-    SINGLE_DIRECTION_POSE_LIBRARY: fixed(ICON_SYMBOL_SET),
+    SINGLE_DIRECTION_POSE_LIBRARY: iconSeries,
   },
   // The fourth category to take the tileset, and the second whose repeat is along one axis rather
   // than two: a parallax band loops against its own copy along the scroll direction. The layer

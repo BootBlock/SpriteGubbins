@@ -82,3 +82,23 @@ describe('a rig contract across a change of subject', () => {
     expect(resolved.rigContract).toBeNull();
   });
 });
+
+describe('the sheet canvas across a change of category', () => {
+  it('squares the canvas for an icon set, whose grid is four square cells by four', () => {
+    const wide: OutputConfig = { ...DEFAULT_OUTPUT_CONFIG, aspectRatio: 'WIDE_16_9' };
+    const resolved = resolveOutputForSubject('ICON', defaultSubjectFor('ICON'), wide, {
+      category: 'CHARACTER',
+      subject: defaultSubjectFor('CHARACTER'),
+    });
+    expect(resolved.aspectRatio).toBe('SQUARE_1_1');
+  });
+
+  it('keeps the canvas wherever the new category can use it', () => {
+    const tall: OutputConfig = { ...DEFAULT_OUTPUT_CONFIG, aspectRatio: 'TALL_9_16' };
+    const resolved = resolveOutputForSubject('CREATURE', defaultSubjectFor('CREATURE'), tall, {
+      category: 'CHARACTER',
+      subject: defaultSubjectFor('CHARACTER'),
+    });
+    expect(resolved.aspectRatio).toBe('TALL_9_16');
+  });
+});

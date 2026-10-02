@@ -1,6 +1,7 @@
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
 import { CATEGORY_ASSEMBLY_BASES, CATEGORY_SHEET_PLANS, plansFor } from '../constants/sheetPlans/index.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import { iconCatalogueSubjects } from './iconCatalogueSubjects.ts';
 
 /**
  * One subject for each plan table a category can be drawn from: the category's default subject with its
@@ -26,7 +27,12 @@ export function assemblyBaseSubjectsOf(category: SubjectCategory): readonly Subj
     if (!declared.has(plans)) declared.set(plans, anatomy);
   }
 
-  return [standardSubjectOf(category), ...[...declared.values()].map((anatomy) => ({ ...subject, anatomy }))];
+  const standard = standardSubjectOf(category);
+  // ICON's sheets are built from the roster rather than chosen by a base, so its walk adds the whole
+  // catalogue, in the default subject's world, to the starter set that subject carries. The suites
+  // walking these compile a prompt per sheet; every look is held to its rules in the catalogue's own.
+  const rosters = category === 'ICON' ? iconCatalogueSubjects(standard) : [];
+  return [standard, ...rosters, ...[...declared.values()].map((anatomy) => ({ ...subject, anatomy }))];
 }
 
 /**
