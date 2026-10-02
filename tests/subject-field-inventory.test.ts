@@ -107,28 +107,44 @@ function where(category: SubjectCategory, { mode, directions, sheetIndex }: Addr
   return `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
 }
 
-describe('the subject’s type moves nothing in the inventory', () => {
-  it.each(SUBJECT_CATEGORIES)('every %s species value compiles one section 4 and one count', (category) => {
-    // Byte-identical, not merely equal in total: a value that swapped a forelimb for a tentacle while
-    // keeping the count would satisfy an arithmetic check and would still be the mechanism the cards
-    // claimed. The count is read out of the compiled prompt rather than from `componentCountFor`, which
-    // takes no `species` — asking it would be asserting the signature rather than the behaviour. The
-    // leading option is the reference because it is what `defaultSubjectFor` installs.
-    const { options } = fieldOf(category, 'species');
-    const [reference] = options;
-    if (reference === undefined) throw new Error(`Empty species pool for ${category}.`);
-    const subject = defaultSubjectFor(category);
+/**
+ * Every sheet each category's default subject can be compiled at, as one case each: a category's
+ * every address in one test passed the one-second limit a slow runner stands in for, since each
+ * address compiles once per species value.
+ */
+const SPECIES_ADDRESSES = SUBJECT_CATEGORIES.flatMap((category) =>
+  addressesOf(category, defaultSubjectFor(category)).map(
+    (address) => [where(category, address), category, address] as const,
+  ),
+);
 
-    for (const address of addressesOf(category, subject)) {
+describe('the subject’s type moves nothing in the inventory', () => {
+  it.each(SPECIES_ADDRESSES)(
+    'every species value compiles one section 4 and one count: %s',
+    (at, category, address) => {
+      // Byte-identical, not merely equal in total: a value that swapped a forelimb for a tentacle while
+      // keeping the count would satisfy an arithmetic check and would still be the mechanism the cards
+      // claimed. The count is read out of the compiled prompt rather than from `componentCountFor`, which
+      // takes no `species` — asking it would be asserting the signature rather than the behaviour. The
+      // leading option is the reference because it is what `defaultSubjectFor` installs.
+      const { options } = fieldOf(category, 'species');
+      const [reference] = options;
+      if (reference === undefined) throw new Error(`Empty species pool for ${category}.`);
+      const subject = defaultSubjectFor(category);
+
       const expected = inventoryOf(category, { ...subject, species: reference }, address);
-      expect(expected.count, `${where(category, address)} states no count`).toBeDefined();
+      expect(expected.count, `${at} states no count`).toBeDefined();
 
       for (const species of options) {
         const actual = inventoryOf(category, { ...subject, species }, address);
-        expect(actual.section, `${where(category, address)} / ${species}`).toBe(expected.section);
-        expect(actual.count, `${where(category, address)} / ${species}`).toBe(expected.count);
+        expect(actual.section, `${at} / ${species}`).toBe(expected.section);
+        expect(actual.count, `${at} / ${species}`).toBe(expected.count);
       }
-    }
+    },
+  );
+
+  it('reaches a sheet of every category, so the sweep above covers each', () => {
+    expect(new Set(SPECIES_ADDRESSES.map(([, category]) => category))).toEqual(new Set(SUBJECT_CATEGORIES));
   });
 
   it.each(SUBJECT_CATEGORIES)('every %s species value still reaches section 1 verbatim', (category) => {

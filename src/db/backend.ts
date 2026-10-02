@@ -3,6 +3,7 @@ import type { LibraryPack } from '../types/libraryPack.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 
@@ -36,10 +37,10 @@ export interface PersistenceBackend {
   clearHistoryLogs(): Promise<void>;
 
   /**
-   * The projects the two saved collections below are filed under.
+   * The projects the three saved collections below are filed under.
    *
    * There is no `replaceProjects` beside these: a project is deleted one at a time, and the only
-   * thing that replaces the whole set is an import, which replaces all three collections together
+   * thing that replaces the whole set is an import, which replaces all four collections together
    * through {@link replaceLibrary}.
    */
   listProjects(): Promise<Project[]>;
@@ -73,13 +74,26 @@ export interface PersistenceBackend {
   deleteQuantisePreset(id: string): Promise<void>;
 
   /**
-   * Replace the projects and both saved collections with the contents of an imported pack, in one
-   * transaction.
+   * Each project's library of icons of the reader's own — see `SavedCustomIcon`, which says why a set
+   * holds its own copy of an entry and the library another.
    *
-   * One method rather than three replaces, for the reason {@link LibraryPack} gives: a preset names
-   * its project by id, so a partial replacement is a library that does not hold together. An
+   * Written one entry at a time, replacing whatever stood under its id, so adding an entry and
+   * changing one are the same call. Every project's library is listed together, as the two preset
+   * collections are, and the caller narrows it to the project it shows.
+   */
+  saveCustomIcon(icon: SavedCustomIcon): Promise<void>;
+  listCustomIcons(): Promise<SavedCustomIcon[]>;
+  /** Remove one. Deleting an id that is not there is a no-op, not an error. */
+  deleteCustomIcon(id: string): Promise<void>;
+
+  /**
+   * Replace the projects and the three saved collections with the contents of an imported pack, in
+   * one transaction.
+   *
+   * One method rather than four replaces, for the reason {@link LibraryPack} gives: every saved entry
+   * names its project by id, so a partial replacement is a library that does not hold together. An
    * implementation that cannot offer a transaction has to reach the same end state or none of it —
-   * see the fallback, which rewrites all three keys and says what it can and cannot promise.
+   * see the fallback, which rewrites all four keys and says what it can and cannot promise.
    */
   replaceLibrary(pack: LibraryPack): Promise<void>;
 

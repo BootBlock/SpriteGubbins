@@ -26,7 +26,7 @@ export const PROJECT_ACTION_TOOLTIPS = {
     'Makes a project from the two boxes beside this and adds it to the list, ready for your next save. It is refused if the name is blank or another project already answers to it. Nothing is filed in the new project until you save into it or move an existing save across.',
 
   selectProject:
-    'Opens this project, listing the studio presets and the quantiser settings saved in it. Choosing one changes nothing about your saves; it decides which of them the panel beside this shows. The number on the right counts everything filed here, of both kinds.',
+    'Opens this project, listing the studio presets, the quantiser settings and the icon library saved in it. Choosing one changes nothing about your saves; it decides which of them the panel beside this shows. The number on the right counts everything filed here, of every kind.',
 
   editProjectDetails:
     'Opens this project’s name and sentence for editing, in place of its heading. The saves inside are untouched and stay in this project however you rename it.\n\n' +
@@ -45,7 +45,7 @@ export const PROJECT_ACTION_TOOLTIPS = {
     'Closes the editor and keeps this project’s existing name and sentence. Escape in either box does the same, and nothing filed in the project was going to change in any case.',
 
   deleteProject:
-    'Removes this project and everything saved in it, after asking once: its studio presets and its quantiser settings go with it.\n\n' +
+    'Removes this project and everything saved in it, after asking once: its studio presets, its quantiser settings and its icon library go with it. An icon set holding a copy of one of its icons keeps that copy.\n\n' +
     'Nothing in the studio or the Quantise tab changes. The Default project can never be removed, because it is where a save goes when you choose nothing else.',
 
   confirmDeleteProject:
@@ -55,12 +55,13 @@ export const PROJECT_ACTION_TOOLTIPS = {
     'Leaves the project and everything in it alone, and puts the row back to its ordinary buttons.',
 
   exportLibrary:
-    'Downloads your whole library as a single JSON file: every project, every studio preset filed in one, and every saved set of quantiser settings. The built-in archetypes travel in it too, so whoever opens it sees complete configurations.\n\n' +
+    'Downloads your whole library as a single JSON file: every project, and every studio preset, saved set of quantiser settings and icon of your own filed in one. The built-in archetypes travel in it too, so whoever opens it sees complete configurations.\n\n' +
     'Use it to move your work to another browser or machine, to keep a copy that outlives this browser’s storage, or to hand projects to somebody else.',
 
   importLibrary:
     'Reads a library pack this app exported and offers to put its contents in place of yours. It says how many things the file carries and how many of yours would go, and nothing is removed until you agree.\n\n' +
-    'Built-in archetypes in the file are skipped, and a preset naming a project the file does not carry is filed under Default rather than lost. Where two projects, or two saves in one project, share a name, both arrive and the later is renamed, for example “Hero (2)”.',
+    'Built-in archetypes in the file are skipped, and a save naming a project the file does not carry is filed under Default rather than lost. Where two projects, or two saves in one project, share a name, both arrive and the later is renamed, for example “Hero (2)”.\n\n' +
+    'An icon of your own that the icon form would refuse is left out, as is a second icon in one project answering to the same slot name.',
 
   confirmImportLibrary:
     'Replaces your projects and everything saved in them with the file’s. **All of it goes from this browser’s storage and there is no undo**, so cancel and export first if any of it is worth keeping.\n\n' +

@@ -1,6 +1,7 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
@@ -11,6 +12,7 @@ import {
   parseOutputConfig,
   parseSubject,
 } from './configParsers.ts';
+import { parseCustomIconEntry } from './customIconEntryParser.ts';
 import { parseQuantiseDials } from './quantiseDialsParser.ts';
 import { isRecord, parseJson, readNumber, readString } from './readers.ts';
 import { parseSession } from './sessionParser.ts';
@@ -220,4 +222,27 @@ export function parseQuantisePresetRow(row: unknown): QuantisePreset | null {
     description: readString(row, 'description') ?? '',
     dials: parseQuantiseDials(tuningJson === null ? undefined : parseJson(tuningJson)),
   };
+}
+
+/**
+ * Parse a `custom_icon_entries` row: one entry of a project's icon library.
+ *
+ * Rejected for want of an **id or a project**, as a preset row is and for its reason — a row without a
+ * project is storage edited by hand, and re-filing it would move the reader's icon into a library they
+ * never chose — and for an entry `parseCustomIconEntry` refuses. **The entry is never repaired**: it is
+ * the reader's own words, and a bracket or a count in it would break the prompt the moment it was
+ * ticked, so a hand-edited one is dropped rather than drawn.
+ *
+ * The same shape on both backends: the fallback stores this row verbatim, so one parser reads both.
+ */
+export function parseCustomIconRow(row: unknown): SavedCustomIcon | null {
+  if (!isRecord(row)) return null;
+
+  const id = readString(row, 'id');
+  const projectId = readString(row, 'project_id');
+  const entryJson = readString(row, 'entry_json');
+  if (id === null || projectId === null || entryJson === null) return null;
+
+  const entry = parseCustomIconEntry(parseJson(entryJson));
+  return entry === null ? null : { id, projectId, entry };
 }

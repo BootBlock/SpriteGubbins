@@ -3,10 +3,12 @@ import type { LibraryPack } from '../types/libraryPack.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import type { PersistenceBackend } from './backend.ts';
 import {
+  parseCustomIconRow,
   parseHistoryRow,
   parsePresetRow,
   parseProjectRow,
@@ -186,6 +188,19 @@ export class SqliteBackend implements PersistenceBackend {
 
   async deleteQuantisePreset(id: string): Promise<void> {
     await this.request({ kind: 'deleteQuantisePreset', presetId: id });
+  }
+
+  async saveCustomIcon(icon: SavedCustomIcon): Promise<void> {
+    await this.request({ kind: 'saveCustomIcon', icon });
+  }
+
+  async listCustomIcons(): Promise<SavedCustomIcon[]> {
+    const rows = await this.requestRows({ kind: 'listCustomIcons' });
+    return rows.map(parseCustomIconRow).filter((icon): icon is SavedCustomIcon => icon !== null);
+  }
+
+  async deleteCustomIcon(id: string): Promise<void> {
+    await this.request({ kind: 'deleteCustomIcon', iconId: id });
   }
 
   async replaceLibrary(pack: LibraryPack): Promise<void> {

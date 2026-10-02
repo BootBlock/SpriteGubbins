@@ -23,7 +23,7 @@ export const ToastSourceContext = createContext<ToastSource>('page');
  * Raise a notification from the part of the app the caller is rendered in.
  *
  * This is what a React component uses in place of reading `showToast` off the store: the store's
- * action takes a source and this is what knows which one. Code outside React — the four stores that
+ * action takes a source and this is what knows which one. Code outside React — the stores that
  * report their own failures — calls `useUIStore.getState().showToast(...)` still, and gets the page
  * by default, which is the only part of the app it can be running for.
  */

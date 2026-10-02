@@ -199,8 +199,9 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
       (world) => [`iconEntryGuidance(own ${entry.id}, ${world})`, iconEntryGuidance(entry, world)] as const,
     ),
   ),
-  // What the form for an icon of the reader's own says beside a refused field, under every row of
-  // theirs, after a removal and as a warning — text shown under a control, on the
+  // What the form for an icon of the reader's own says beside a refused field, under a row of theirs
+  // the library does not hold or holds another copy of, after an untick, a keep or a delete, when the
+  // library refuses a write, and as a warning — text shown under a control or after its press, on the
   // `ICON_CAPACITY_NOTICES` footing.
   ...Object.entries(CUSTOM_ICON_REFUSALS).flatMap(([key, text]) =>
     typeof text === 'string' ? [[`CUSTOM_ICON_REFUSALS.${key}`, text] as const] : [],
@@ -212,8 +213,12 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
     'CUSTOM_ICON_REFUSALS.taken',
     CUSTOM_ICON_REFUSALS.taken('heal-minor', 'the catalogue’s “Minor healing consumable”'),
   ],
-  ['CUSTOM_ICON_NOTICES.yours', CUSTOM_ICON_NOTICES.yours],
-  ['CUSTOM_ICON_NOTICES.removed', CUSTOM_ICON_NOTICES.removed(RELIC.role)],
+  ['CUSTOM_ICON_NOTICES.setOnly', CUSTOM_ICON_NOTICES.setOnly],
+  ['CUSTOM_ICON_NOTICES.differs', CUSTOM_ICON_NOTICES.differs],
+  ['CUSTOM_ICON_NOTICES.removed', CUSTOM_ICON_NOTICES.removed(LONGEST_CUSTOM_ICON.role)],
+  ['CUSTOM_ICON_NOTICES.kept', CUSTOM_ICON_NOTICES.kept(LONGEST_CUSTOM_ICON.role)],
+  ['CUSTOM_ICON_NOTICES.deleted', CUSTOM_ICON_NOTICES.deleted(LONGEST_CUSTOM_ICON.role)],
+  ['CUSTOM_ICON_NOTICES.setOnlyAfterRefusal', CUSTOM_ICON_NOTICES.setOnlyAfterRefusal],
   ...(['MAGENTA_FF00FF', 'PURE_WHITE', 'PURE_BLACK'] as const).map(
     (key) =>
       [

@@ -2,7 +2,9 @@ import { DEFAULT_PROJECT_ID, PROJECT_NAME_MAX_LENGTH } from '../constants/projec
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 import { isSubjectCategory, parseImageConfig, parseSubject } from './configParsers.ts';
+import { parseCustomIconEntry } from './customIconEntryParser.ts';
 import { parseQuantiseDials } from './quantiseDialsParser.ts';
 import { isRecord, readNumber, readString } from './readers.ts';
 
@@ -116,4 +118,28 @@ export function parseImportedQuantisePreset(value: unknown): QuantisePreset | nu
     description: readString(value, 'description') ?? '',
     dials: parseQuantiseDials(value['dials']),
   };
+}
+
+/**
+ * Parse an entry of a project's icon library from an imported JSON file.
+ *
+ * The twin of `parseCustomIconRow`, differing as the presets' pair differs: the entry arrives nested
+ * under `entry` rather than as a JSON string, and **a missing project id is repaired to the Default
+ * project**, which the pack parser then re-files further where the file does not carry the project it
+ * names.
+ *
+ * **The entry itself is never repaired.** It is held to `checkCustomIcon` through
+ * `parseCustomIconEntry` exactly as the form and storage hold it, so a hand-written pack carrying a
+ * bracket, a count, a long dash in a role or a slot the catalogue answers to loses that entry rather
+ * than reaching a roster the compiler would throw on. Rejected too for want of an id, which is what an
+ * edit overwrites and a delete addresses.
+ */
+export function parseImportedCustomIcon(value: unknown): SavedCustomIcon | null {
+  if (!isRecord(value)) return null;
+
+  const id = readString(value, 'id');
+  const entry = parseCustomIconEntry(value['entry']);
+  if (id === null || entry === null) return null;
+
+  return { id, projectId: readString(value, 'projectId') ?? DEFAULT_PROJECT_ID, entry };
 }

@@ -39,9 +39,10 @@ export type IconLook = (typeof ICON_LOOKS)[number];
  * differs is the look: one text the reader writes for their own world, rather than one per family, since
  * the reader knows the world their game is set in and the catalogue's families do not.
  *
- * **Every field has passed `checkCustomIcon`**, the one gate a custom entry enters a roster through —
- * from the catalogue dialog's form and from storage alike — so a roster never holds one that would throw
- * out of the compiler (R9 of `docs/todo/icon-catalogue.md`) or cut two sprites to one file.
+ * **Every field has passed `checkCustomIcon`**, the one gate a custom entry enters a roster or a
+ * project's library through — from the catalogue dialog's form, from storage and from a library pack
+ * alike — so a roster never holds one that would throw out of the compiler (R9 of
+ * `docs/todo/icon-catalogue.md`) or cut two sprites to one file.
  */
 export interface CustomIconEntry {
   /**
@@ -71,7 +72,8 @@ export type IconEntry = IconCatalogueEntry | CustomIconEntry;
  * whole.
  *
  * **A catalogue pick stores only the id**, so a reworded look reaches every saved set; a custom pick
- * stores the entry itself, because the roster is the only place it exists.
+ * stores the entry itself, so a set keeps the copy it was saved with whatever a project's library
+ * (`SavedCustomIcon`) does with its own copy afterwards.
  */
 export type IconPick =
   | { readonly source: 'CATALOGUE'; readonly id: string }

@@ -27,16 +27,17 @@ const SCHOOL_COLOURS = DAMAGE_SCHOOLS.map(
 ).join(', ');
 
 /**
- * Guidance for the catalogue dialog's four filters — the controls there that hold a value.
+ * Guidance for the catalogue dialog's four filters and its library's project — the controls there that
+ * hold a value.
  *
- * Filed beside the kind labels the filter offers, as a setting's guidance is. None of the four
+ * Filed beside the kind labels the filter offers, as a setting's guidance is. None of the five
  * reaches the prompt or the roster: they decide which rows the dialog shows, and the cards say so,
  * because a reader who has just watched rows vanish needs to know their ticks did not go with them.
  * The kind and school cards are built from the records they describe, so a kind or a school added
  * later is in its card the moment it is in the filter.
  */
 export const ICON_PICKER_TOOLTIPS = {
-  search: `Narrows the catalogue to the icons whose role, slot name, group or look under your ${fieldLabelFor('ICON', 'setting')} contains every word you type. ${FILTER_HIDES_ROWS_ONLY}`,
+  search: `Narrows the catalogue and your own icons to those whose role, slot name, group or look under your ${fieldLabelFor('ICON', 'setting')} contains every word you type. ${FILTER_HIDES_ROWS_ONLY}`,
 
   kind: [
     'Shows the shelves of one kind, or every kind.',
@@ -52,4 +53,8 @@ export const ICON_PICKER_TOOLTIPS = {
 
   tickedOnly:
     'Lists only the icons already on your set, so you can review the set in one place and untick what it no longer needs. An icon you untick here leaves the list at once. The filter itself changes nothing in the set or the prompt.',
+
+  libraryProject:
+    'Which project’s library of your own icons the shelves show, and where an icon you add or change is saved. Each project keeps its own, so one game’s icons are offered in its later sets and never in another game’s.\n\n' +
+    'Choosing another project changes nothing on your set or in the prompt: icons already ticked stay, and any not in that project’s library say so under their names.',
 } as const;

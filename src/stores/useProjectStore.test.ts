@@ -6,8 +6,11 @@ import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
+import { RELIC, SPELL } from '../test/customIcons.ts';
+import { savedIcon } from '../test/iconLibraryStudio.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import { useCustomIconLibraryStore } from './useCustomIconLibraryStore.ts';
 import { usePresetStore } from './usePresetStore.ts';
 import { useProjectStore } from './useProjectStore.ts';
 import { useQuantisePresetStore } from './useQuantisePresetStore.ts';
@@ -44,6 +47,7 @@ beforeEach(() => {
   useProjectStore.setState({ projects: [] });
   usePresetStore.setState({ customPresets: [] });
   useQuantisePresetStore.setState({ presets: [] });
+  useCustomIconLibraryStore.setState({ icons: [] });
   useUIStore.getState().dismissToast();
 });
 
@@ -220,16 +224,21 @@ describe('deleteProject', () => {
     await backend.savePreset(preset(DEFAULT_PROJECT_ID, 'kept'));
     await backend.saveQuantisePreset(dials(harbour.id, 'doomed-dials'));
     await backend.saveQuantisePreset(dials(DEFAULT_PROJECT_ID, 'kept-dials'));
+    await backend.saveCustomIcon(savedIcon(RELIC, harbour.id));
+    await backend.saveCustomIcon(savedIcon(SPELL));
     await usePresetStore.getState().fetchCustomPresets();
     await useQuantisePresetStore.getState().fetchQuantisePresets();
+    await useCustomIconLibraryStore.getState().fetchCustomIcons();
 
     await useProjectStore.getState().deleteProject(harbour.id);
 
     expect(useProjectStore.getState().projects.map((project) => project.id)).toEqual([DEFAULT_PROJECT_ID]);
-    // Both collections re-read rather than filtered in place, so what is on screen is what storage
+    // Every collection re-read rather than filtered in place, so what is on screen is what storage
     // now holds.
     expect(usePresetStore.getState().customPresets.map((entry) => entry.id)).toEqual(['kept']);
     expect(useQuantisePresetStore.getState().presets.map((entry) => entry.id)).toEqual(['kept-dials']);
+    expect(useCustomIconLibraryStore.getState().icons).toEqual([savedIcon(SPELL)]);
+    await expect(backend.listCustomIcons()).resolves.toEqual([savedIcon(SPELL)]);
     await expect(backend.listPresets()).resolves.toHaveLength(1);
     await expect(backend.listQuantisePresets()).resolves.toHaveLength(1);
     expect(useUIStore.getState().toastMessage).toBe('Deleted project, and everything saved in it');
@@ -257,6 +266,7 @@ describe('deleteProject', () => {
       projects: [{ id: 'harbour', name: 'Harbour', description: '', createdAt: 1, updatedAt: 1 }],
       presets: [],
       quantisePresets: [],
+      customIcons: [],
     });
     await useProjectStore.getState().fetchProjects();
     expect(useProjectStore.getState().projects.map((project) => project.id)).toEqual(['harbour']);

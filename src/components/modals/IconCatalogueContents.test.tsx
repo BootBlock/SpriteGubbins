@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { ICON_CATALOGUE_GROUPS, iconCatalogueEntry } from '../../constants/iconCatalogue/index.ts';
@@ -8,6 +8,7 @@ import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { iconLookText } from '../../utils/iconLookText.ts';
+import { buttonReading, control, queryControl } from '../../test/catalogueControls.ts';
 import { IconCatalogueContents } from './IconCatalogueContents.tsx';
 import { cataloguePicks } from '../../constants/iconCatalogue/cataloguePicks.ts';
 import { iconPickId } from '../../utils/iconPickId.ts';
@@ -18,7 +19,9 @@ import { iconPickId } from '../../utils/iconPickId.ts';
  * way the sheet list does.
  *
  * Driven through the real store rather than a spy on `toggleIcons`, so a tick is asserted where it
- * lands — the subject's roster — and in catalogue order.
+ * lands — the subject's roster — and in catalogue order. Controls are found through
+ * `test/catalogueControls.ts` rather than role queries, which over every catalogue row run past the
+ * test time limit on a slow runner.
  */
 const WORLD = 'Near-Future Cyberpunk';
 
@@ -57,15 +60,15 @@ describe('IconCatalogueContents', () => {
     iconStudio([]);
     render(<IconCatalogueContents />);
 
-    const checkboxes = screen.getAllByRole('checkbox').filter((box) => box.getAttribute('aria-describedby'));
+    const checkboxes = Array.from(document.querySelectorAll('input[type=checkbox]')).filter((box) =>
+      box.getAttribute('aria-describedby'),
+    );
     const entries = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries);
     expect(checkboxes).toHaveLength(entries.length);
 
     const heal = iconCatalogueEntry('heal-minor');
     if (heal === undefined) throw new Error('No heal-minor');
-    expect(screen.getByRole('checkbox', { name: heal.role })).toHaveAccessibleDescription(
-      iconLookText(heal, WORLD),
-    );
+    expect(control(heal.role)).toHaveAccessibleDescription(iconLookText(heal, WORLD));
   });
 
   it('ticks and unticks an icon in the studio’s roster', async () => {
@@ -73,11 +76,11 @@ describe('IconCatalogueContents', () => {
     iconStudio(['system-bags']);
     render(<IconCatalogueContents />);
 
-    await user.click(screen.getByRole('checkbox', { name: role('heal-minor') }));
+    await user.click(control(role('heal-minor')));
     expect(picks()).toEqual(['heal-minor', 'system-bags']);
-    expect(screen.getByRole('checkbox', { name: role('heal-minor') })).toBeChecked();
+    expect(control(role('heal-minor'))).toBeChecked();
 
-    await user.click(screen.getByRole('checkbox', { name: role('system-bags') }));
+    await user.click(control(role('system-bags')));
     expect(picks()).toEqual(['heal-minor']);
   });
 
@@ -87,10 +90,10 @@ describe('IconCatalogueContents', () => {
     render(<IconCatalogueContents />);
     if (RESTORATIVES === undefined) throw new Error('No restoratives group');
 
-    await user.click(screen.getByRole('button', { name: `Tick all ${RESTORATIVES.label}` }));
+    await user.click(control(`Tick all ${RESTORATIVES.label}`));
     expect(picks()).toEqual(RESTORATIVES.entries.map((entry) => entry.id));
 
-    await user.click(screen.getByRole('button', { name: `Untick all ${RESTORATIVES.label}` }));
+    await user.click(control(`Untick all ${RESTORATIVES.label}`));
     expect(picks()).toEqual([]);
   });
 
@@ -100,8 +103,8 @@ describe('IconCatalogueContents', () => {
     render(<IconCatalogueContents />);
     if (RESTORATIVES === undefined) throw new Error('No restoratives group');
 
-    await user.type(screen.getByRole('textbox', { name: 'Search the catalogue' }), 'healing consumable');
-    await user.click(screen.getByRole('button', { name: `Tick all ${RESTORATIVES.label}` }));
+    await user.type(control('Search the catalogue'), 'healing consumable');
+    await user.click(control(`Tick all ${RESTORATIVES.label}`));
 
     // The three healing tiers and the healing-over-time patch match; the mana and stamina rows do not.
     expect(picks()).toEqual(['heal-minor', 'heal-standard', 'heal-major', 'regeneration']);
@@ -112,19 +115,18 @@ describe('IconCatalogueContents', () => {
     iconStudio(['heal-minor', 'system-bags']);
     render(<IconCatalogueContents />);
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Kind' }), 'SYSTEM');
-    expect(screen.queryByRole('checkbox', { name: role('heal-minor') })).toBeNull();
-    expect(screen.getByRole('checkbox', { name: role('system-bags') })).toBeInTheDocument();
+    await user.selectOptions(control('Kind'), 'SYSTEM');
+    expect(queryControl(role('heal-minor'))).toBeNull();
+    expect(control(role('system-bags'))).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Kind' }), 'ALL');
-    await user.click(screen.getByRole('checkbox', { name: 'Ticked only' }));
-    const rows = screen
-      .getAllByRole('checkbox')
+    await user.selectOptions(control('Kind'), 'ALL');
+    await user.click(control('Ticked only'));
+    const rows = Array.from(document.querySelectorAll('input[type=checkbox]'))
       .filter((box) => box.getAttribute('aria-describedby'))
       .map((box) => box.closest('li')?.querySelector('label')?.textContent);
     expect(rows).toEqual([role('heal-minor'), role('system-bags')]);
 
-    await user.type(screen.getByRole('textbox', { name: 'Search the catalogue' }), 'no such icon');
+    await user.type(control('Search the catalogue'), 'no such icon');
     expect(screen.getByText('No icon matches that search and those filters.')).toBeInTheDocument();
     expect(picks()).toEqual(['heal-minor', 'system-bags']);
   });
@@ -133,25 +135,25 @@ describe('IconCatalogueContents', () => {
     const user = userEvent.setup({ delay: null });
     iconStudio([]);
     render(<IconCatalogueContents />);
-    const kind = screen.getByRole('combobox', { name: 'Kind' });
-    expect(screen.queryByRole('combobox', { name: 'School' })).toBeNull();
+    const kind = control('Kind');
+    expect(queryControl('School')).toBeNull();
 
     await user.selectOptions(kind, 'SPELL');
-    await user.selectOptions(screen.getByRole('combobox', { name: 'School' }), 'THERMAL');
+    await user.selectOptions(control('School'), 'THERMAL');
     const strike = iconCatalogueEntry('thermal-strike');
     if (strike === undefined) throw new Error('No thermal-strike');
     const look = iconLookText(strike, WORLD);
     expect(look).toContain('— thermal school, its dominant colour orange #F97316');
-    expect(screen.getByRole('checkbox', { name: strike.role })).toHaveAccessibleDescription(look);
-    expect(screen.queryByRole('checkbox', { name: role('cryo-strike') })).toBeNull();
-    expect(screen.queryByRole('checkbox', { name: role('heal-minor') })).toBeNull();
+    expect(control(strike.role)).toHaveAccessibleDescription(look);
+    expect(queryControl(role('cryo-strike'))).toBeNull();
+    expect(queryControl(role('heal-minor'))).toBeNull();
 
     await user.selectOptions(kind, 'ALL');
-    expect(screen.queryByRole('combobox', { name: 'School' })).toBeNull();
-    expect(screen.getByRole('checkbox', { name: role('cryo-strike') })).toBeInTheDocument();
+    expect(queryControl('School')).toBeNull();
+    expect(control(role('cryo-strike'))).toBeInTheDocument();
 
     await user.selectOptions(kind, 'SPELL');
-    expect(screen.getByRole('combobox', { name: 'School' })).toHaveValue('ALL');
+    expect(control('School')).toHaveValue('ALL');
     expect(picks()).toEqual([]);
   });
 
@@ -161,8 +163,8 @@ describe('IconCatalogueContents', () => {
     useSubjectStore.setState((state) => ({ subject: { ...state.subject, setting: 'High Fantasy' } }));
     render(<IconCatalogueContents />);
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Kind' }), 'SPELL');
-    expect(screen.getByRole('option', { name: 'Fire (thermal)' })).toBeInTheDocument();
+    await user.selectOptions(control('Kind'), 'SPELL');
+    expect(within(control('School')).getByRole('option', { name: 'Fire (thermal)' })).toBeInTheDocument();
   });
 
   it('says an empty set is the overlay sheet alone', () => {
@@ -191,7 +193,7 @@ describe('IconCatalogueContents', () => {
       '19 icons, drawn as 19 of the 320 components a set can hold, on 3 sheets',
     );
 
-    await user.click(screen.getByRole('checkbox', { name: last.role }));
+    await user.click(control(last.role));
     expect(status).toHaveTextContent(
       '20 icons, drawn as 20 of the 320 components a set can hold, on 3 sheets: the overlay sheet and 2 icon sheets.',
     );
@@ -202,8 +204,8 @@ describe('IconCatalogueContents', () => {
     iconStudio(['heal-minor', 'system-bags']);
     render(<IconCatalogueContents />);
 
-    await user.type(screen.getByRole('textbox', { name: 'Search the catalogue' }), 'healing consumable');
-    await user.click(screen.getByRole('button', { name: 'Clear all' }));
+    await user.type(control('Search the catalogue'), 'healing consumable');
+    await user.click(buttonReading('Clear all'));
     expect(picks()).toEqual([]);
 
     useSubjectStore.getState().undoStudio();
@@ -215,7 +217,7 @@ describe('IconCatalogueContents', () => {
     iconStudio([]);
     render(<IconCatalogueContents />);
 
-    await user.click(screen.getByRole('button', { name: 'Done' }));
+    await user.click(buttonReading('Done'));
 
     expect(useUIStore.getState().isIconCatalogueModalOpen).toBe(false);
   });

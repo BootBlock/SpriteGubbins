@@ -25,8 +25,8 @@ export const STUDIO_ACTION_TOOLTIPS = {
     '- preset load, or restore from the prompt history\n' +
     '- assembly base that moved your sheet\n' +
     '- tick or untick in the icon catalogue\n' +
-    '- icon of your own added, changed or removed\n\n' +
-    'Only those acts are recorded; editing a field records nothing. An edit you made after one of them is not lost, because Redo brings the studio back exactly as you left it. Nothing outside the Studio tab moves.\n\n' +
+    '- icon of your own added or changed on your set\n\n' +
+    'Only those acts are recorded; editing a field records nothing. An icon library is stored work rather than part of the studio, so Undo leaves it as it is. An edit you made after one of them is not lost, because Redo brings the studio back exactly as you left it. Nothing outside the Studio tab moves.\n\n' +
     'Ctrl+Z does the same, except while you are typing in a box, where it undoes your typing, or while a dialog is open.',
 
   redoSubject:

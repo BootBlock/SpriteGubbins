@@ -2,15 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { CUSTOM_ICON_REFUSALS } from '../constants/iconCatalogue/customIconRefusals.ts';
 import { ICON_CAPACITY_NOTICES } from '../constants/iconCatalogue/iconCapacityNotices.ts';
 import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
-import {
-  LONGEST_CUSTOM_ICON,
-  RELIC,
-  RELIC_DRAFT,
-  SPELL,
-  TOGGLE,
-  customPick,
-  draftOf,
-} from '../test/customIcons.ts';
+import { LONGEST_CUSTOM_ICON, RELIC, RELIC_DRAFT, SPELL, TOGGLE, customPick } from '../test/customIcons.ts';
+import { customIconDraftOf } from './customIconDraftOf.ts';
 import type { CustomIconDraft, CustomIconField } from '../types/customIconDraft.ts';
 import { checkCustomIcon } from './checkCustomIcon.ts';
 
@@ -26,29 +19,31 @@ function refusedFields(
   draft: Partial<CustomIconDraft>,
   picks = cataloguePicks(['heal-minor']),
 ): CustomIconField[] {
-  return checkCustomIcon({ ...RELIC_DRAFT, ...draft }, picks, null).refusals.map((refusal) => refusal.field);
+  return checkCustomIcon({ ...RELIC_DRAFT, ...draft }, picks, null, []).refusals.map(
+    (refusal) => refusal.field,
+  );
 }
 
 /** The messages a check refused with. */
 function messages(draft: Partial<CustomIconDraft>, picks = cataloguePicks(['heal-minor'])): string[] {
-  return checkCustomIcon({ ...RELIC_DRAFT, ...draft }, picks, null).refusals.map(
+  return checkCustomIcon({ ...RELIC_DRAFT, ...draft }, picks, null, []).refusals.map(
     (refusal) => refusal.message,
   );
 }
 
 describe('checkCustomIcon — what it accepts', () => {
   it('makes the entry a draft describes, its slot name derived from the role', () => {
-    expect(checkCustomIcon(RELIC_DRAFT, cataloguePicks(['heal-minor']), null)).toEqual({
+    expect(checkCustomIcon(RELIC_DRAFT, cataloguePicks(['heal-minor']), null, [])).toEqual({
       entry: RELIC,
       refusals: [],
     });
   });
 
   it('makes a spell with its school, a pair with its states as slugs, and a figure', () => {
-    expect(checkCustomIcon(draftOf(SPELL), [], null).entry).toEqual(SPELL);
-    const typed = { ...draftOf(TOGGLE), states: ['  Engaged ', 'IDLE'] as const };
-    expect(checkCustomIcon(typed, [], null).entry).toEqual(TOGGLE);
-    expect(checkCustomIcon({ ...RELIC_DRAFT, figure: true }, [], null).entry).toEqual({
+    expect(checkCustomIcon(customIconDraftOf(SPELL), [], null, []).entry).toEqual(SPELL);
+    const typed = { ...customIconDraftOf(TOGGLE), states: ['  Engaged ', 'IDLE'] as const };
+    expect(checkCustomIcon(typed, [], null, []).entry).toEqual(TOGGLE);
+    expect(checkCustomIcon({ ...RELIC_DRAFT, figure: true }, [], null, []).entry).toEqual({
       ...RELIC,
       figure: true,
     });
@@ -59,6 +54,7 @@ describe('checkCustomIcon — what it accepts', () => {
       { ...RELIC_DRAFT, role: '  Nightcity’s   keycard ', look: 'a brass card,\n  “scorched” at one end' },
       [],
       null,
+      [],
     );
     expect(entry?.role).toBe('Nightcity’s keycard');
     expect(entry?.id).toBe('nightcity-s-keycard');
@@ -68,12 +64,14 @@ describe('checkCustomIcon — what it accepts', () => {
   it('accepts texts at their limits exactly', () => {
     expect(refusedFields({ role: `R${'o'.repeat(47)}`, look: 'a'.repeat(200) }, [])).toEqual([]);
     expect(refusedFields({ states: ['o'.repeat(24), 'off'] }, [])).toEqual([]);
-    expect(checkCustomIcon(draftOf(LONGEST_CUSTOM_ICON), [], null).entry).toEqual(LONGEST_CUSTOM_ICON);
+    expect(checkCustomIcon(customIconDraftOf(LONGEST_CUSTOM_ICON), [], null, []).entry).toEqual(
+      LONGEST_CUSTOM_ICON,
+    );
   });
 
   it('measures a changed entry as if the one it replaces were gone', () => {
     const picks = [customPick(RELIC)];
-    expect(checkCustomIcon({ ...RELIC_DRAFT, look: 'a cracked card' }, picks, RELIC.id).entry?.look).toBe(
+    expect(checkCustomIcon({ ...RELIC_DRAFT, look: 'a cracked card' }, picks, RELIC.id, []).entry?.look).toBe(
       'a cracked card',
     );
     expect(refusedFields({}, picks)).toEqual(['role']);
@@ -103,7 +101,7 @@ describe('checkCustomIcon — what it refuses', () => {
   ] as const)(
     'refuses a square bracket in the %s, which the compiler would read as a citation',
     (field, draft) => {
-      const found = checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null);
+      const found = checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null, []);
       expect(found.entry).toBeNull();
       expect(found.refusals.map((refusal) => refusal.field)).toContain(field);
       expect(found.refusals.map((refusal) => refusal.message).join(' ')).toContain('square bracket');
@@ -163,13 +161,14 @@ describe('checkCustomIcon — what it refuses', () => {
       { ...RELIC_DRAFT, role: '', look: '[x]', kind: 'SPELL', school: null },
       [],
       null,
+      [],
     );
     expect(found.entry).toBeNull();
     expect(found.refusals.map((refusal) => refusal.field)).toEqual(['look', 'role', 'school']);
   });
 
   it('refuses a change to an entry the roster no longer holds', () => {
-    const found = checkCustomIcon(RELIC_DRAFT, cataloguePicks(['heal-minor']), RELIC.id);
+    const found = checkCustomIcon(RELIC_DRAFT, cataloguePicks(['heal-minor']), RELIC.id, []);
     expect(found.entry).toBeNull();
     expect(found.refusals).toEqual([{ field: 'set', message: CUSTOM_ICON_REFUSALS.gone }]);
     // A catalogue pick of that name is not the entry being changed either.
@@ -189,7 +188,7 @@ describe('checkCustomIcon — what it refuses', () => {
   ] as const)(
     'refuses a count in the %s, which the sheet would read as that many drawings',
     (field, draft) => {
-      const found = checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null);
+      const found = checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null, []);
       expect(found.entry).toBeNull();
       expect(found.refusals).toContainEqual({
         field,
@@ -207,7 +206,7 @@ describe('checkCustomIcon — what it refuses', () => {
     ['role', { role: 'Relic – fire' }, 'role'],
     ['secondState', { states: ['on', 'off — dim'] as const }, 'state'],
   ] as const)('refuses the line’s own dash in the %s', (field, draft, what) => {
-    expect(checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null).refusals).toContainEqual({
+    expect(checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null, []).refusals).toContainEqual({
       field,
       message: CUSTOM_ICON_REFUSALS.separator(what),
     });

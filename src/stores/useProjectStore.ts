@@ -5,18 +5,19 @@ import { storageFailure } from '../db/storageFailure.ts';
 import type { Project } from '../types/project.ts';
 import { findByName } from '../utils/findByName.ts';
 import { usePresetStore } from './usePresetStore.ts';
+import { useCustomIconLibraryStore } from './useCustomIconLibraryStore.ts';
 import { useQuantisePresetStore } from './useQuantisePresetStore.ts';
 import { useUIStore } from './useUIStore.ts';
 
 /**
- * The projects a saved archetype or a saved set of quantiser dials is filed under, and the actions
- * that make, rename and destroy one.
+ * The projects a saved archetype, a saved set of quantiser dials or an icon library entry is filed
+ * under, and the actions that make, rename and destroy one.
  *
  * **Moving the library in and out is not here**, and `useLibraryTransferStore` says why: a pack
  * carries all three collections together, so it is no more this store's than either of theirs.
  * What is here is a project's own life — made, renamed, and destroyed along with what it holds.
  *
- * It reaches into the two collection stores, and only through their own actions — the same rule
+ * It reaches into the three collection stores, and only through their own actions — the same rule
  * `usePresetStore` follows in reaching into the studio's three. Neither of them reaches back: a
  * save is told which project it is for by the control that asked for it, so nothing below needs to
  * read this store to write a preset.
@@ -55,11 +56,12 @@ export interface ProjectState {
    */
   updateProjectDetails(id: string, name: string, description: string): Promise<boolean>;
   /**
-   * Delete a project **and every preset filed under it**, then re-read both collections.
+   * Delete a project **and everything filed under it** — its presets, its sets of dials and its icon
+   * library — then re-read all three collections.
    *
-   * The cascade is the backend's, in one transaction, so there is no window in which a preset names
-   * a project that is gone. What is left here is the consequence for the app's own state: both
-   * collection stores are holding rows this may have deleted, so both are asked to re-read rather
+   * The cascade is the backend's, in one transaction, so there is no window in which a saved entry
+   * names a project that is gone. What is left here is the consequence for the app's own state: every
+   * collection store is holding rows this may have deleted, so each is asked to re-read rather
    * than being filtered in place — the backend is where that collection's membership is decided.
    *
    * Which projects may be deleted at all is `projectDeletionRefusal`'s to say, and it is read here
@@ -174,6 +176,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ projects: await database.listProjects() });
       await usePresetStore.getState().fetchCustomPresets();
       await useQuantisePresetStore.getState().fetchQuantisePresets();
+      await useCustomIconLibraryStore.getState().fetchCustomIcons();
       showToast('Deleted project, and everything saved in it');
     } catch (error) {
       showToast(storageFailure('Could not delete that project', error));

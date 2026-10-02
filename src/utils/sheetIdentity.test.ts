@@ -244,27 +244,28 @@ describe('sheetIdentity', () => {
 
     it.each(
       assemblyBaseCases().flatMap(([name, category, subject]) =>
-        DIRECTIONAL_MODES.map((mode) => [name, mode, category, subject] as const),
+        DIRECTIONAL_MODES.flatMap((mode) =>
+          DIRECTION_SETS.map((directions) => [name, mode, directions, category, subject] as const),
+        ),
       ),
     )(
-      'never gives two sheets of one batch the same facing, on %s under %s',
-      (_name, directionalMode, category, subject) => {
+      'never gives two sheets of one batch the same facing, on %s under %s and %s',
+      (_name, directionalMode, directions, category, subject) => {
         // The property the whole change rests on, swept rather than argued: a name two downloads share
         // is the failure this replaced, so it may not be reintroduced by a plan, a mode or a set that
         // nobody had in mind here. Every category, assembly base, mode and direction set, which is
         // every batch the studio can compose — the base because a declared one draws sheets of its
-        // own. One case per subject and mode keeps each within the time limit (`assemblyBaseCases`).
-        for (const directions of DIRECTION_SETS) {
-          const batch = config({ directionalMode, directions });
-          const named = sheetBatch(category, subject, batch)
-            .sheets.map((sheet) => sheetIdentity(category, subject, { ...batch, ...sheet.output }, '').facing)
-            .filter((facing): facing is string => facing !== null);
+        // own. One case per batch, which is the unit the property is about: one per subject and mode
+        // passed the one-second limit a slow runner stands in for on an ICON roster's twenty-odd sheets.
+        const batch = config({ directionalMode, directions });
+        const named = sheetBatch(category, subject, batch)
+          .sheets.map((sheet) => sheetIdentity(category, subject, { ...batch, ...sheet.output }, '').facing)
+          .filter((facing): facing is string => facing !== null);
 
-          expect(
-            new Set(named).size,
-            `${category} / ${subject.anatomy} / ${directionalMode} / ${directions}`,
-          ).toBe(named.length);
-        }
+        expect(
+          new Set(named).size,
+          `${category} / ${subject.anatomy} / ${directionalMode} / ${directions}`,
+        ).toBe(named.length);
       },
     );
   });

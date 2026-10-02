@@ -129,55 +129,64 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
     return section;
   }
 
-  it.each(assemblyBaseCases())('holds on every sheet of %s', (_name, category, subject) => {
-    const label = fieldLabelFor(category, 'clothing');
-    const clothing = pooledValue(category, 'clothing');
-
-    for (const sheet of sheetsOfSubject(category, subject)) {
-      const { mode, directions, sheetIndex, plan } = sheet;
-      const subjectSection = subjectSectionAt(category, sheet, clothing, NO_ADDITIONAL_ANATOMY);
-      const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
-
-      expect(subjectSection, where).toContain(`- ${label}: ${clothing}`);
-      expect(subjectSection.includes(`**${label}** is excepted: section`), where).toBe(
-        planDraws(plan, 'clothing'),
-      );
-      // The exception's other shape: a sheet that leaves the attribute to a sibling of its series says
-      // so, and only that sheet — ICON's icon sheets, whose overlay is the overlay sheet's.
-      expect(subjectSection.includes(`**${label}** is excepted: another sheet`), where).toBe(
-        plan.drawnElsewhere === 'clothing',
-      );
-    }
-  });
-
-  it.each(assemblyBaseCases())(
-    'says nothing about a clothing line nobody wrote, on %s',
-    (_name, category, subject) => {
-      // A cleared field emits no line, so an exception paragraph naming it would name an absent line
-      // in the section the template calls the sole authority for the subject's design — the reason the
-      // additional-anatomy paragraph is gated on its own rendered value rather than on the plan.
-      const label = fieldLabelFor(category, 'clothing');
-
-      for (const sheet of sheetsOfSubject(category, subject)) {
-        const subjectSection = subjectSectionAt(category, sheet, '', NO_ADDITIONAL_ANATOMY);
-
-        expect(subjectSection).not.toContain(`- ${label}:`);
-        expect(subjectSection).not.toContain(`**${label}** is excepted`);
-      }
-    },
+  /**
+   * Every sheet of every assembly-base case, as one case each. A case's sheets in one test passed the
+   * one-second limit a slow runner stands in for on an ICON roster's two dozen sheets
+   * (`assemblyBaseCases`); a sheet is one compile, shared across the three sweeps by the cache above.
+   */
+  const BASES = assemblyBaseCases();
+  const SHEET_CASES = BASES.flatMap(([name, category, subject]) =>
+    sheetsOfSubject(category, subject).map(
+      (sheet) =>
+        [
+          `${name} / ${sheet.mode} / ${sheet.directions} / sheet ${String(sheet.sheetIndex + 1)}`,
+          category,
+          sheet,
+        ] as const,
+    ),
   );
 
-  // One case per subject and pair of field values keeps each within the time limit, since a
-  // whole-catalogue roster is two dozen sheets (`assemblyBaseCases`).
+  it('walks a sheet of every assembly-base case', () => {
+    const walked = new Set(SHEET_CASES.map(([, , sheet]) => sheet.subject));
+    expect(BASES.every(([, , subject]) => walked.has(subject))).toBe(true);
+  });
+
+  it.each(SHEET_CASES)('holds on %s', (where, category, sheet) => {
+    const label = fieldLabelFor(category, 'clothing');
+    const clothing = pooledValue(category, 'clothing');
+    const subjectSection = subjectSectionAt(category, sheet, clothing, NO_ADDITIONAL_ANATOMY);
+
+    expect(subjectSection, where).toContain(`- ${label}: ${clothing}`);
+    expect(subjectSection.includes(`**${label}** is excepted: section`), where).toBe(
+      planDraws(sheet.plan, 'clothing'),
+    );
+    // The exception's other shape: a sheet that leaves the attribute to a sibling of its series says
+    // so, and only that sheet — ICON's icon sheets, whose overlay is the overlay sheet's.
+    expect(subjectSection.includes(`**${label}** is excepted: another sheet`), where).toBe(
+      sheet.plan.drawnElsewhere === 'clothing',
+    );
+  });
+
+  it.each(SHEET_CASES)('says nothing about a clothing line nobody wrote, on %s', (where, category, sheet) => {
+    // A cleared field emits no line, so an exception paragraph naming it would name an absent line
+    // in the section the template calls the sole authority for the subject's design — the reason the
+    // additional-anatomy paragraph is gated on its own rendered value rather than on the plan.
+    const label = fieldLabelFor(category, 'clothing');
+    const subjectSection = subjectSectionAt(category, sheet, '', NO_ADDITIONAL_ANATOMY);
+
+    expect(subjectSection, where).not.toContain(`- ${label}:`);
+    expect(subjectSection, where).not.toContain(`**${label}** is excepted`);
+  });
+
   it.each(
-    assemblyBaseCases().flatMap(([name, category, subject]) =>
+    SHEET_CASES.flatMap(([where, category, sheet]) =>
       [NO_ADDITIONAL_ANATOMY, 'Extra Piece ×2'].flatMap((anatomy) =>
-        [false, true].map((clothed) => [name, anatomy, clothed, category, subject] as const),
+        [false, true].map((clothed) => [where, anatomy, clothed, category, sheet] as const),
       ),
     ),
   )(
     'states the paint rule without promising anything, on %s with anatomy %s, clothed %s',
-    (_name, anatomy, clothed, category, subject) => {
+    (where, anatomy, clothed, category, sheet) => {
       // The rule has to stand on its own, because both paragraphs under it are gated. A first draft of
       // this change closed it with "… except where named below", which on 71 of the 118 sheets this app
       // can compile promised a named exception and named none — leaving "Do not infer props, weapons or
@@ -188,12 +197,9 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
       // subject opens on, rather than a cleared field: both render no paragraph, and this is the one a
       // reader who touches nothing actually gets.
       const clothing = clothed ? pooledValue(category, 'clothing') : '';
-      for (const sheet of sheetsOfSubject(category, subject)) {
-        const section = subjectSectionAt(category, sheet, clothing, anatomy);
-        const where = `${category} / ${sheet.mode} / sheet ${String(sheet.sheetIndex + 1)}`;
+      const section = subjectSectionAt(category, sheet, clothing, anatomy);
 
-        expect(section, where).toContain('never drawn as a separate piece.\n');
-      }
+      expect(section, where).toContain('never drawn as a separate piece.\n');
     },
   );
 });

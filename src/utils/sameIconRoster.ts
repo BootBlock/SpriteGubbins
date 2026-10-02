@@ -1,4 +1,5 @@
-import type { CustomIconEntry, IconPick, IconRoster } from '../types/iconRoster.ts';
+import type { IconPick, IconRoster } from '../types/iconRoster.ts';
+import { sameCustomIcon } from './sameCustomIcon.ts';
 
 /**
  * Whether two rosters ask for the same icons in the same look and order — or are both absent.
@@ -23,18 +24,5 @@ export function sameIconRoster(a: IconRoster | undefined, b: IconRoster | undefi
 
 function samePick(a: IconPick, b: IconPick): boolean {
   if (a.source === 'CATALOGUE') return b.source === 'CATALOGUE' && a.id === b.id;
-  return b.source === 'CUSTOM' && sameCustomEntry(a.entry, b.entry);
-}
-
-function sameCustomEntry(a: CustomIconEntry, b: CustomIconEntry): boolean {
-  return (
-    a.id === b.id &&
-    a.role === b.role &&
-    a.kind === b.kind &&
-    a.school === b.school &&
-    a.figure === b.figure &&
-    a.look === b.look &&
-    a.states?.[0] === b.states?.[0] &&
-    a.states?.[1] === b.states?.[1]
-  );
+  return b.source === 'CUSTOM' && sameCustomIcon(a.entry, b.entry);
 }

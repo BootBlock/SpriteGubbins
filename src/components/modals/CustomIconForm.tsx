@@ -2,6 +2,8 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CUSTOM_ICON_TOOLTIPS } from '../../constants/iconCatalogue/customIconTooltips.ts';
 import { ICON_CATALOGUE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useIconLibrary } from '../../hooks/useIconLibrary.ts';
+import { useCustomIconLibraryStore } from '../../stores/useCustomIconLibraryStore.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import type { CustomIconField } from '../../types/customIconDraft.ts';
@@ -29,10 +31,12 @@ interface CustomIconFormProps {
 
 /**
  * The form for an icon of the reader's own: its role, kind, school, figure, states and look, checked as
- * typed against the roster it will join.
+ * typed against the roster it will join and the chosen project's library it is saved to.
  *
- * **One check for the form and the store** (`checkCustomIcon`): the refusals beside each field are the
- * ones the store would return, so a form that lets the reader press Add has an entry the store accepts.
+ * **One check for the form and the stores** (`checkCustomIcon`): the refusals beside each field are the
+ * ones the library store would return, so a form that lets the reader press Add has an entry it accepts.
+ * The press writes the set and the library (`useCustomIconLibraryStore.writeCustomIcon`), and the form
+ * closes once the write is settled — at once for the set, after the library for a library entry alone.
  * A field's refusal shows once it holds text or once Add has been pressed, so an empty form does not
  * open on a column of errors; a press with refusals moves focus to the first field refused.
  *
@@ -46,8 +50,8 @@ interface CustomIconFormProps {
 export function CustomIconForm({ entry, onClose }: CustomIconFormProps) {
   const picks = useSubjectStore((state) => state.subject.icons?.picks ?? NO_PICKS);
   const world = useSubjectStore((state) => state.subject.setting);
-  const addCustomIcon = useSubjectStore((state) => state.addCustomIcon);
-  const updateCustomIcon = useSubjectStore((state) => state.updateCustomIcon);
+  const writeCustomIcon = useCustomIconLibraryStore((state) => state.writeCustomIcon);
+  const library = useIconLibrary();
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const [values, setValues] = useState<CustomIconFormValues>(() => customIconFormValues(entry));
   const [attempts, setAttempts] = useState(0);
@@ -55,7 +59,10 @@ export function CustomIconForm({ entry, onClose }: CustomIconFormProps) {
   const headingId = useId();
 
   const draft = useMemo(() => customIconFormDraft(values), [values]);
-  const check = useMemo(() => checkCustomIcon(draft, picks, entry?.id ?? null), [draft, picks, entry]);
+  const check = useMemo(
+    () => checkCustomIcon(draft, picks, entry?.id ?? null, library.entries),
+    [draft, picks, entry, library.entries],
+  );
   const warnings = useMemo(() => customIconWarnings(draft, backgroundKey), [draft, backgroundKey]);
 
   // The role on opening, and the first refused field after a press that was refused.
@@ -105,8 +112,9 @@ export function CustomIconForm({ entry, onClose }: CustomIconFormProps) {
       setAttempts((count) => count + 1);
       return;
     }
-    const refused = entry === null ? addCustomIcon(draft) : updateCustomIcon(entry.id, draft);
-    if (refused.length === 0) onClose();
+    void writeCustomIcon(library.projectId, draft, entry?.id ?? null).then((written) => {
+      if (written) onClose();
+    });
   };
   const submitLabel = entry === null ? 'Add to your set' : 'Save changes';
 

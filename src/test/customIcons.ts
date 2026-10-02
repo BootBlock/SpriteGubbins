@@ -69,18 +69,6 @@ export function customPick(entry: CustomIconEntry): IconPick {
   return { source: 'CUSTOM', entry };
 }
 
-/** The draft that makes `entry` again, as the form would hand it over. */
-export function draftOf(entry: CustomIconEntry): CustomIconDraft {
-  return {
-    role: entry.role,
-    kind: entry.kind,
-    school: entry.school ?? null,
-    figure: entry.figure === true,
-    states: entry.states ?? null,
-    look: entry.look,
-  };
-}
-
 /**
  * An ICON subject holding a catalogue pick and one entry of each custom shape, in the shelving order a
  * parsed roster comes back in — what the persistence suites write and expect to read back.

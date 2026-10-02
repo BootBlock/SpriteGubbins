@@ -2,6 +2,7 @@ import type { Database } from '@sqlite.org/sqlite-wasm';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 
 /**
  * How a domain object becomes the columns a statement binds, and how several statements become one
@@ -9,7 +10,7 @@ import type { QuantisePreset } from '../types/quantisePreset.ts';
  *
  * Filed apart from `sqliteRequests.ts` because the two answer different questions. That file says
  * *which* SQL each request runs; this says what a row's columns are and in what order — a fact each
- * object has once, however many statements write it. Two collections are written by both an upsert
+ * object has once, however many statements write it. Three collections are written by both an upsert
  * and an import, so a column order restated at each of those is a pair free to drift, and the
  * failure it produces is a row whose name is in the description column.
  */
@@ -58,6 +59,11 @@ export function quantisePresetBindings(preset: QuantisePreset, updatedAt: number
     JSON.stringify(preset.dials),
     updatedAt,
   ];
+}
+
+/** One library entry's columns, in the order every statement that writes it binds them. */
+export function customIconBindings(icon: SavedCustomIcon, updatedAt: number): (string | number)[] {
+  return [icon.id, icon.projectId, JSON.stringify(icon.entry), updatedAt];
 }
 
 /** One project's columns, in the order every statement that writes it binds them. */

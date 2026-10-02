@@ -1,17 +1,20 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { CUSTOM_ICON_NOTICES } from '../../constants/iconCatalogue/customIconNotices.ts';
 import { ICON_CATALOGUE_GROUPS } from '../../constants/iconCatalogue/index.ts';
-import { ICON_CATALOGUE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { ICON_ROSTER_CAPACITY } from '../../constants/iconCatalogue/iconSheetLimits.ts';
+import { useIconLibrary } from '../../hooks/useIconLibrary.ts';
 import { useShowToast } from '../../hooks/useShowToast.ts';
+import { useCustomIconLibraryStore } from '../../stores/useCustomIconLibraryStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { ICON_KINDS } from '../../types/iconCatalogue.ts';
 import type { IconCatalogueFilter } from '../../types/iconCatalogue.ts';
 import type { CustomIconEntry, IconPick } from '../../types/iconRoster.ts';
 import { customIconShelves } from '../../utils/customIconShelves.ts';
+import type { CustomIconShelfRow } from '../../utils/customIconShelves.ts';
 import { iconCatalogueSearch } from '../../utils/iconCatalogueSearch.ts';
-import { Button } from '../common/Button.tsx';
-import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { iconRosterTally } from '../../utils/iconRosterTally.ts';
 import { CustomIconForm } from './CustomIconForm.tsx';
+import { CustomIconLibraryBar } from './CustomIconLibraryBar.tsx';
 import { CustomIconShelfSection } from './CustomIconShelfSection.tsx';
 import { IconCatalogueFilters } from './IconCatalogueFilters.tsx';
 import { IconCatalogueFooter } from './IconCatalogueFooter.tsx';
@@ -30,16 +33,17 @@ interface Editing {
 
 /**
  * The icon catalogue: every shelf of icons a set can draw, ticked into the studio's roster, with the
- * reader's own icons on shelves of their own and the form that writes them.
+ * reader's own icons — on the set, in the chosen project's library, or both — on shelves of their own,
+ * and the form that writes them.
  *
- * **Every tick lands in the studio at once**, through `useSubjectStore.toggleIcons`, as one step of the
+ * **Every tick lands in the studio at once**, through `useSubjectStore`'s actions, as one step of the
  * studio's undo stack; there is nothing to submit, so the footer's Done only closes the dialog. An icon
- * of the reader's own is added, changed and removed the same way, one act each. The filters and the
- * open form are this dialog's own view state, and go when it closes.
+ * of the reader's own ticks and unticks the same way, and an add or an edit made in the form also
+ * writes the chosen project's library (`useCustomIconLibraryStore`), which Undo leaves alone. The
+ * filters and the open form are this dialog's own view state, and go when it closes.
  *
  * **The reader's own shelves follow the catalogue's last shelf of their kind**, which is where the roster
- * draws them (`sortIconPicks`), so the dialog's order is the sheets' order. The filters narrow them as
- * they narrow the catalogue's.
+ * draws them (`sortIconPicks`). The filters narrow them as they narrow the catalogue's.
  *
  * **Each row's secondary line is the look the sheet will ask for**, resolved under the subject's
  * *World & Era* through `iconLookText` — the resolver the inventory line uses — so changing the world
@@ -49,10 +53,11 @@ interface Editing {
  * button that opened it, or to *Add your own icon* where that button has gone. Escape inside the form
  * cancels the form alone (`CustomIconForm`); outside it, Escape closes the dialog as before.
  *
- * **A form whose entry leaves the roster closes**, by whatever route it left — *Clear all*, its own
- * Remove, an undo — because a change saved to an entry that is gone would land nowhere. The check
- * refuses such a save too (`checkCustomIcon`); this keeps the reader from typing into one at all. It is
- * settled during render, as a state adjustment rather than an effect, so no frame shows the stale form.
+ * **A form whose entry leaves both the roster and the library closes**, by whatever route it left —
+ * *Clear all*, an untick of an icon the library does not hold, a Delete, an undo, another project —
+ * because a change saved to an entry that is gone would land nowhere. The check refuses such a save too
+ * (`checkCustomIcon`); this keeps the reader from typing into one at all. It is settled during render,
+ * as a state adjustment rather than an effect, so no frame shows the stale form.
  *
  * **The contents alone — the dialog frame is `AppOverlays`'**, for the reason `LazyOverlay` gives.
  */
@@ -60,6 +65,9 @@ export function IconCatalogueContents() {
   const picks = useSubjectStore((state) => state.subject.icons?.picks ?? NO_PICKS);
   const world = useSubjectStore((state) => state.subject.setting);
   const removeCustomIcon = useSubjectStore((state) => state.removeCustomIcon);
+  const tickCustomIcon = useCustomIconLibraryStore((state) => state.tickCustomIcon);
+  const keepCustomIcon = useCustomIconLibraryStore((state) => state.keepCustomIcon);
+  const library = useIconLibrary();
   const showToast = useShowToast();
   const [filter, setFilter] = useState<IconCatalogueFilter>(UNFILTERED);
   const [editing, setEditing] = useState<Editing | null>(null);
@@ -69,7 +77,8 @@ export function IconCatalogueContents() {
   const editedId = editing?.entry?.id;
   if (
     editedId !== undefined &&
-    !picks.some((pick) => pick.source === 'CUSTOM' && pick.entry.id === editedId)
+    !picks.some((pick) => pick.source === 'CUSTOM' && pick.entry.id === editedId) &&
+    !library.entries.some((entry) => entry.id === editedId)
   ) {
     setEditing(null);
   }
@@ -78,7 +87,11 @@ export function IconCatalogueContents() {
     () => iconCatalogueSearch(ICON_CATALOGUE_GROUPS, filter, picks, world),
     [filter, picks, world],
   );
-  const own = useMemo(() => customIconShelves(picks, filter, world), [filter, picks, world]);
+  const own = useMemo(
+    () => customIconShelves(picks, library.saved, filter, world),
+    [filter, picks, library.saved, world],
+  );
+  const left = ICON_ROSTER_CAPACITY - iconRosterTally(picks).components;
 
   const openForm = useCallback((entry: CustomIconEntry | null) => {
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -90,14 +103,27 @@ export function IconCatalogueContents() {
       (opener.current?.isConnected === true ? opener.current : addButton.current)?.focus();
     });
   }, []);
-  const remove = useCallback(
-    (entry: CustomIconEntry) => {
-      removeCustomIcon(entry.id);
-      showToast(CUSTOM_ICON_NOTICES.removed(entry.role));
-      setEditing((current) => (current?.entry?.id === entry.id ? null : current));
+  const { projectId } = library;
+  const toggle = useCallback(
+    (row: CustomIconShelfRow, on: boolean) => {
+      if (on) {
+        const [refusal] = tickCustomIcon(projectId, row.entry);
+        if (refusal !== undefined) showToast(refusal.message);
+        return;
+      }
+      removeCustomIcon(row.entry.id);
+      if (row.saved !== undefined) return;
+      // The row goes with the icon, so the keyboard goes to the button that can bring a new one.
+      showToast(CUSTOM_ICON_NOTICES.removed(row.entry.role));
       addButton.current?.focus();
     },
-    [removeCustomIcon, showToast],
+    [projectId, tickCustomIcon, removeCustomIcon, showToast],
+  );
+  const keep = useCallback(
+    (entry: CustomIconEntry) => {
+      void keepCustomIcon(projectId, entry);
+    },
+    [projectId, keepCustomIcon],
   );
 
   return (
@@ -105,25 +131,14 @@ export function IconCatalogueContents() {
       <IconCatalogueFilters filter={filter} world={world} onChange={setFilter} />
 
       <div className="flex-1 space-y-5 overflow-y-auto px-6 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="min-w-0 flex-1 basis-60 text-xs leading-relaxed text-ink-muted">
-            Where your game needs an icon the catalogue does not hold, write your own: it joins the set as a
-            named slot like any ticked icon.
-          </p>
-          <ControlTooltip hint="Add your own icon" text={ICON_CATALOGUE_ACTION_TOOLTIPS.addOwn}>
-            <Button
-              ref={addButton}
-              variant="view"
-              size="md"
-              aria-expanded={editing !== null}
-              onClick={() => {
-                openForm(null);
-              }}
-            >
-              Add your own icon
-            </Button>
-          </ControlTooltip>
-        </div>
+        <CustomIconLibraryBar
+          projectId={projectId}
+          isFormOpen={editing !== null}
+          addButtonRef={addButton}
+          onAdd={() => {
+            openForm(null);
+          }}
+        />
 
         {editing !== null && (
           <CustomIconForm key={editing.entry?.id ?? 'new'} entry={editing.entry} onClose={closeForm} />
@@ -147,8 +162,10 @@ export function IconCatalogueContents() {
                   key={`own-${shelf.kind}`}
                   shelf={shelf}
                   world={world}
+                  left={left}
+                  onToggle={toggle}
                   onEdit={openForm}
-                  onRemove={remove}
+                  onKeep={keep}
                 />
               )),
           ])

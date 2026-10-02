@@ -6,9 +6,12 @@ import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
+import { RELIC, SPELL } from '../test/customIcons.ts';
+import { savedIcon } from '../test/iconLibraryStudio.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import { useCustomIconLibraryStore } from './useCustomIconLibraryStore.ts';
 import { useLibraryTransferStore } from './useLibraryTransferStore.ts';
 import { usePresetStore } from './usePresetStore.ts';
 import { useProjectStore } from './useProjectStore.ts';
@@ -51,6 +54,7 @@ function packFile(pack: {
   readonly projects?: readonly unknown[];
   readonly presets?: readonly unknown[];
   readonly quantisePresets?: readonly unknown[];
+  readonly customIcons?: readonly unknown[];
 }): File {
   return new File([JSON.stringify(pack)], 'sprite-gubbins-library.json', { type: 'application/json' });
 }
@@ -79,6 +83,7 @@ beforeEach(() => {
   useProjectStore.setState({ projects: [] });
   usePresetStore.setState({ customPresets: [] });
   useQuantisePresetStore.setState({ presets: [] });
+  useCustomIconLibraryStore.setState({ icons: [] });
   useUIStore.getState().dismissToast();
 });
 
@@ -101,6 +106,28 @@ describe('exportLibraryJSON', () => {
     // parser has to skip them coming back.
     expect(pack['presets']).toHaveLength(PRESETS.length + 1);
     expect(pack['quantisePresets']).toHaveLength(1);
+  });
+});
+
+describe('the icon libraries in a transfer', () => {
+  it('exports every project’s icon library, and an import replaces them and counts them', async () => {
+    await seedLibrary();
+    await backend.saveCustomIcon(savedIcon(RELIC));
+    await useCustomIconLibraryStore.getState().fetchCustomIcons();
+
+    const exported: unknown = JSON.parse(useLibraryTransferStore.getState().exportLibraryJSON());
+    expect(exported).toEqual(expect.objectContaining({ customIcons: [savedIcon(RELIC)] }));
+
+    await useLibraryTransferStore
+      .getState()
+      .importLibraryJSON(packFile({ ...smallPack(), customIcons: [savedIcon(SPELL, HARBOUR.id)] }));
+    await useLibraryTransferStore.getState().confirmLibraryImport();
+
+    expect(useCustomIconLibraryStore.getState().icons).toEqual([savedIcon(SPELL, HARBOUR.id)]);
+    await expect(backend.listCustomIcons()).resolves.toEqual([savedIcon(SPELL, HARBOUR.id)]);
+    // Four arrived (a project, a preset, a set of dials and an icon) over three (the Default project,
+    // its preset and its icon).
+    expect(useUIStore.getState().toastMessage).toBe('Imported 4 saved items, replacing 3');
   });
 });
 

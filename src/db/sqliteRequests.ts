@@ -1,17 +1,22 @@
 import type { Database } from '@sqlite.org/sqlite-wasm';
 import { HISTORY_LIMIT } from './backend.ts';
-import { presetBindings, projectBindings, quantisePresetBindings, transact } from './sqliteBindings.ts';
+import {
+  DELETE_CUSTOM_ICON_SQL,
+  INSERT_CUSTOM_ICON_SQL,
+  SELECT_CUSTOM_ICONS_SQL,
+} from './customIconStatements.ts';
+import {
+  customIconBindings,
+  presetBindings,
+  projectBindings,
+  quantisePresetBindings,
+} from './sqliteBindings.ts';
+import { deleteProjectIn, replaceLibraryIn } from './sqliteLibrary.ts';
 import {
   DELETE_ALL_HISTORY_SQL,
-  DELETE_ALL_PRESETS_SQL,
-  DELETE_ALL_PROJECTS_SQL,
-  DELETE_ALL_QUANTISE_PRESETS_SQL,
   DELETE_HISTORY_SQL,
   DELETE_PRESET_SQL,
-  DELETE_PRESETS_BY_PROJECT_SQL,
-  DELETE_PROJECT_SQL,
   DELETE_QUANTISE_PRESET_SQL,
-  DELETE_QUANTISE_PRESETS_BY_PROJECT_SQL,
   INSERT_HISTORY_SQL,
   INSERT_PRESET_SQL,
   INSERT_PROJECT_SQL,
@@ -93,18 +98,10 @@ export function handleRequest(database: Database, request: WorkerCall['request']
       database.exec(INSERT_PROJECT_SQL, { bind: projectBindings(request.project) });
       return undefined;
 
-    case 'deleteProject': {
-      // The cascade, and the reason it is a transaction rather than three statements: a project
-      // removed while its presets survived would leave every one of them naming a container that is
-      // no longer there, and nothing above this can show or repair that.
-      const { projectId } = request;
-      transact(database, () => {
-        database.exec(DELETE_PRESETS_BY_PROJECT_SQL, { bind: [projectId] });
-        database.exec(DELETE_QUANTISE_PRESETS_BY_PROJECT_SQL, { bind: [projectId] });
-        database.exec(DELETE_PROJECT_SQL, { bind: [projectId] });
-      });
+    // The cascade, as one transaction — see `sqliteLibrary.ts`.
+    case 'deleteProject':
+      deleteProjectIn(database, request.projectId);
       return undefined;
-    }
 
     case 'savePreset':
       database.exec(INSERT_PRESET_SQL, { bind: presetBindings(request.preset, Date.now()) });
@@ -130,33 +127,21 @@ export function handleRequest(database: Database, request: WorkerCall['request']
       database.exec(DELETE_QUANTISE_PRESET_SQL, { bind: [request.presetId] });
       return undefined;
 
-    case 'replaceLibrary': {
-      // All three collections in one transaction, because they refer to one another: an import that
-      // failed between them would leave presets naming projects the file was about to replace.
-      const { pack } = request;
-      transact(database, () => {
-        database.exec(DELETE_ALL_PROJECTS_SQL);
-        database.exec(DELETE_ALL_PRESETS_SQL);
-        database.exec(DELETE_ALL_QUANTISE_PRESETS_SQL);
-        // Each project's own timestamps travel with it, so an imported library keeps the order it
-        // was exported in rather than being flattened to the moment of the import.
-        for (const project of pack.projects) {
-          database.exec(INSERT_PROJECT_SQL, { bind: projectBindings(project) });
-        }
-        // One instant for every row of both preset collections, so each arrives in the order the
-        // file lists it rather than in one the clock decided between inserts. `SELECT … ORDER BY
-        // updated_at DESC` then leaves that order to SQLite's own tie-breaking, which is the same
-        // answer the fallback gives: a pack is a collection, not a sequence of saves.
-        const updatedAt = Date.now();
-        for (const preset of pack.presets) {
-          database.exec(INSERT_PRESET_SQL, { bind: presetBindings(preset, updatedAt) });
-        }
-        for (const preset of pack.quantisePresets) {
-          database.exec(INSERT_QUANTISE_PRESET_SQL, { bind: quantisePresetBindings(preset, updatedAt) });
-        }
-      });
+    case 'saveCustomIcon':
+      database.exec(INSERT_CUSTOM_ICON_SQL, { bind: customIconBindings(request.icon, Date.now()) });
       return undefined;
-    }
+
+    case 'listCustomIcons':
+      return select(database, SELECT_CUSTOM_ICONS_SQL);
+
+    case 'deleteCustomIcon':
+      database.exec(DELETE_CUSTOM_ICON_SQL, { bind: [request.iconId] });
+      return undefined;
+
+    // Every collection in one transaction — see `sqliteLibrary.ts`.
+    case 'replaceLibrary':
+      replaceLibraryIn(database, request.pack);
+      return undefined;
 
     // The row itself, not a list: `db/rows.ts` on the other side turns it — or its absence — into a
     // settings object, which is where every other row shape is interpreted too.

@@ -346,6 +346,7 @@ describe('LocalStorageBackend — presets', () => {
       projects: [project()],
       presets: [customPreset({ id: 'new', name: 'New' })],
       quantisePresets: [],
+      customIcons: [],
     });
 
     expect((await backend.listPresets()).map((preset) => preset.id)).toEqual(['new']);
@@ -653,6 +654,7 @@ describe('LocalStorageBackend — a refused write', () => {
       projects: [project()],
       presets: [customPreset()],
       quantisePresets: [],
+      customIcons: [],
     });
     await expect(promise).rejects.toThrow(/refused the write/i);
   });

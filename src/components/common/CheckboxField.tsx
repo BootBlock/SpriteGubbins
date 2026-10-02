@@ -15,6 +15,14 @@ interface CheckboxFieldProps {
    * scans the list by, so it belongs on the row rather than behind the ⓘ.
    */
   readonly description?: string;
+  /**
+   * A line under the description about where the option stands — shown, wired into the accessible
+   * description after it, and painted as needing attention.
+   *
+   * Optional because one caller has one: a row of the reader's own icons in the catalogue dialog, which
+   * says when unticking it takes the icon away for good or when the set's copy is not the library's.
+   */
+  readonly note?: string;
   /** When set, the reason the option is unavailable — shown in place of nothing at all. */
   readonly disabledReason: string;
   readonly onChange: (checked: boolean) => void;
@@ -34,16 +42,19 @@ export function CheckboxField({
   tooltip,
   checked,
   description,
+  note,
   disabledReason,
   onChange,
 }: CheckboxFieldProps) {
   const inputId = useId();
   const descriptionId = useId();
+  const noteId = useId();
   const reasonId = useId();
   const hasDescription = description !== undefined && description !== '';
+  const hasNote = note !== undefined && note !== '';
   const isDisabled = disabledReason !== '';
-  // Both paragraphs where a row carries both, in the order they are rendered, as `SelectField` does.
-  const describedBy = [hasDescription ? descriptionId : '', isDisabled ? reasonId : '']
+  // Every paragraph a row carries, in the order they are rendered, as `SelectField` does.
+  const describedBy = [hasDescription ? descriptionId : '', hasNote ? noteId : '', isDisabled ? reasonId : '']
     .filter((id) => id !== '')
     .join(' ');
 
@@ -78,6 +89,12 @@ export function CheckboxField({
       {hasDescription && (
         <p id={descriptionId} className="mt-0.5 ml-6 text-2xs leading-relaxed text-ink-muted">
           {description}
+        </p>
+      )}
+
+      {hasNote && (
+        <p id={noteId} className="mt-0.5 ml-6 text-2xs leading-relaxed text-gold">
+          {note}
         </p>
       )}
 

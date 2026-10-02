@@ -33,7 +33,7 @@ import { callSitesPassing, callSitesWrappingAttribute } from './jsxCallSites.ts'
  */
 
 /** Every `<ControlTooltip>` the app renders, counted through the `text` its props type requires. */
-const CALL_SITE_COUNT = 98;
+const CALL_SITE_COUNT = 101;
 
 /**
  * Where the wrapped control is written with `disabled`, by the file that renders each.
@@ -70,14 +70,16 @@ const DISABLED_CAPABLE = [
 ];
 
 /**
- * A whole number under a hundred, spelled the way this repository's prose spells one.
+ * A whole number under a thousand, spelled the way this repository's prose spells one: “eighty-two”,
+ * and “a hundred and one” in the British way.
  *
  * The house voice writes a figure of this size as words, so an assertion looking for the digits
  * would find nothing — and one looking for a hand-typed “eighty-two” beside an `82` above is two
  * literals free to part company: the count moves, the first case fails, whoever fixes it edits the
  * constant, and the prose case goes on passing against a sentence that still says the old number.
- * That is this suite reproducing inside itself the drift it exists to stop. Throws rather than
- * guessing past 99, since a count that reaches a hundred wants the sentences re-read anyway.
+ * That is this suite reproducing inside itself the drift it exists to stop. It stopped at 99 until
+ * the count reached a hundred and one, when the sentences were re-read and still held; it throws past
+ * 999 for the same reason it once threw past 99.
  */
 function inWords(value: number): string {
   const units = [
@@ -104,8 +106,13 @@ function inWords(value: number): string {
   ];
   const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
 
-  if (!Number.isInteger(value) || value < 0 || value > 99) {
+  if (!Number.isInteger(value) || value < 0 || value > 999) {
     throw new Error(`no spelling for ${String(value)} — extend inWords, and re-read the sentences`);
+  }
+  if (value >= 100) {
+    const hundreds = Math.floor(value / 100);
+    const head = hundreds === 1 ? 'a hundred' : `${units[hundreds] ?? ''} hundred`;
+    return value % 100 === 0 ? head : `${head} and ${inWords(value % 100)}`;
   }
 
   const under20 = units[value];

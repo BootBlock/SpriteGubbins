@@ -35,7 +35,8 @@ import {
   SURFACE_DETAILS,
   TARGET_MODEL_IDS,
 } from '../types/output.ts';
-import type { AspectRatio, OutputConfig } from '../types/output.ts';
+import type { AspectRatio, DirectionalMode, OutputConfig } from '../types/output.ts';
+import type { DirectionSet } from '../types/rendering.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
 import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { renderContractOf, sectionOf } from '../test/promptSections.ts';
@@ -541,11 +542,14 @@ describe('generatePrompt — conditional blocks', () => {
     ).not.toThrow();
   });
 
-  it('never lets a template marker reach the output, across every branch', () => {
-    // Every combination of the switches the template branches on, so no block escapes being both
-    // taken and skipped. The target is one of them: it decides the self-audit and section 0's
-    // category tripwire, so pinning it to one model would leave half of each of those unrendered.
-    for (const targetModel of TARGET_MODEL_IDS) {
+  // One case per target: every target in one test came within a few per cent of the one-second limit a
+  // slow runner stands in for.
+  it.each(TARGET_MODEL_IDS)(
+    'never lets a template marker reach the output, across every branch, for %s',
+    (targetModel) => {
+      // Every combination of the switches the template branches on, so no block escapes being both
+      // taken and skipped. The target is one of them: it decides the self-audit and section 0's
+      // category tripwire, so pinning it to one model would leave half of each of those unrendered.
       for (const renderStyle of RENDER_STYLES) {
         for (const rigMode of RIG_MODES) {
           for (const emitComponentMap of [true, false]) {
@@ -561,8 +565,8 @@ describe('generatePrompt — conditional blocks', () => {
           }
         }
       }
-    }
-  });
+    },
+  );
 
   it('never lets one reach it from a value either, under any category or sheet', () => {
     // The branch sweep above pins one category, and the markers that arrive through a *value* are
@@ -659,16 +663,18 @@ describe('generatePrompt — numbered lists', () => {
     return runs;
   }
 
-  it('numbers every list consecutively from one, whichever items the sheet drops', () => {
-    // The defect: section 9's rig check and pixel-art check are conditional and independent, so a
-    // pixel-art sheet in POSE_LIBRARY mode used to emit "…6. 8." — a checklist whose seventh check
-    // appears to have gone missing, in the section meant to be worked through item by item.
-    // The background key joined the sweep when section 9 gained a check that is conditional on it:
-    // the audit's key-colour reservation and its alpha-channel check are each other's `[IF]` and
-    // `[IF:…!=yes]`, so exactly one of the two is emitted and the count does not move today. Nothing
-    // holds them that way — a future rule conditional on the key alone would land in the same list —
-    // and this sweep is the guard that would see it.
-    for (const targetModel of TARGET_MODEL_IDS) {
+  // One case per target: every target in one test passed the one-second limit a slow runner stands in for.
+  it.each(TARGET_MODEL_IDS)(
+    'numbers every list consecutively from one, whichever items the sheet drops, for %s',
+    (targetModel) => {
+      // The defect: section 9's rig check and pixel-art check are conditional and independent, so a
+      // pixel-art sheet in POSE_LIBRARY mode used to emit "…6. 8." — a checklist whose seventh check
+      // appears to have gone missing, in the section meant to be worked through item by item.
+      // The background key joined the sweep when section 9 gained a check that is conditional on it:
+      // the audit's key-colour reservation and its alpha-channel check are each other's `[IF]` and
+      // `[IF:…!=yes]`, so exactly one of the two is emitted and the count does not move today. Nothing
+      // holds them that way — a future rule conditional on the key alone would land in the same list —
+      // and this sweep is the guard that would see it.
       for (const renderStyle of RENDER_STYLES) {
         for (const rigMode of RIG_MODES) {
           for (const backgroundKey of BACKGROUND_KEYS) {
@@ -685,8 +691,8 @@ describe('generatePrompt — numbered lists', () => {
           }
         }
       }
-    }
-  });
+    },
+  );
 
   it('is checking lists that are actually there', () => {
     // Guards the sweep above, which passes vacuously if the prompt stops carrying numbered lists at
@@ -2236,6 +2242,21 @@ describe('generatePrompt — the subject’s one-sided features, named rather th
   });
 });
 
+/** One stored sheet address, as the facing sweep compiles it. */
+interface FacingAddress {
+  readonly directionalMode: DirectionalMode;
+  readonly directions: DirectionSet;
+  readonly sheetIndex: number;
+}
+
+/** One case of the facing sweep: its name, the subject and the addresses it compiles. */
+type FacingCase = readonly [
+  name: string,
+  category: SubjectCategory,
+  subject: SubjectDefinition,
+  addresses: readonly FacingAddress[],
+];
+
 describe('generatePrompt — section 3 on a sheet that covers one facing', () => {
   /**
    * The defect: section 3 told a single-facing sheet that “one camera” *never* means every component
@@ -2274,36 +2295,70 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
 
   // Every plan table each category can be drawn from, each compiled with the subject that selects it:
   // an assembly base draws sheets of its own (issue #283), so the default subject alone never compiles
-  // OBJECT's standard sheets. One case per subject keeps each within the time limit (`assemblyBaseCases`).
-  it.each(assemblyBaseCases())(
-    'carries no clause written for several facings, on %s',
-    (_name, category, subject) => {
-      // ICON alone compiles each resolved address once (`resolvedSheetAddress`), and
-      // `promptCompilerIconSkip*.test.ts` hold its skipped pairings to the prompt their resolution names.
-      const compiled = new Set<string>();
-      for (const directionalMode of DIRECTIONAL_MODES) {
-        for (const directions of DIRECTION_SETS) {
-          for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
-            const output = withOutput({ directionalMode, directions, sheetIndex });
-            const address = resolvedSheetAddress(category, subject, directionalMode, directions, sheetIndex);
-            if (category === 'ICON' && compiled.has(address)) continue;
-            compiled.add(address);
-            // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
-            // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
-            // and `sheetDirections` each resolve for themselves, so the stored values go in raw.
-            const plan = sheetPlanFor(category, subject, directionalMode, directions, sheetIndex);
-            if (sheetDirections(category, output, plan).covered.length > 1) continue;
+  // OBJECT's standard sheets. One case per subject and stored mode, and one per sheet of an ICON
+  // subject, keeps each within the one-second limit a slow runner stands in for: an ICON roster's
+  // sheets in one test passed it. ICON alone compiles each resolved address once
+  // (`resolvedSheetAddress`), and `promptCompilerIconSkip*.test.ts` hold its skipped pairings to the
+  // prompt their resolution names.
+  const FACING_BASES = assemblyBaseCases();
+  const FACING_CASES = FACING_BASES.flatMap(([name, category, subject]): FacingCase[] => {
+    const addresses = DIRECTIONAL_MODES.flatMap((directionalMode) =>
+      DIRECTION_SETS.flatMap((directions) =>
+        sheetIndicesOf(category, subject, directionalMode, directions).map((sheetIndex) => ({
+          directionalMode,
+          directions,
+          sheetIndex,
+        })),
+      ),
+    );
+    if (category !== 'ICON') {
+      return DIRECTIONAL_MODES.map((mode) => [
+        `${name}, ${mode}`,
+        category,
+        subject,
+        addresses.filter(({ directionalMode }) => directionalMode === mode),
+      ]);
+    }
+    const seen = new Set<string>();
+    return addresses.flatMap((at): FacingCase[] => {
+      const address = resolvedSheetAddress(
+        category,
+        subject,
+        at.directionalMode,
+        at.directions,
+        at.sheetIndex,
+      );
+      if (seen.has(address)) return [];
+      seen.add(address);
+      return [[`${name}, sheet ${String(at.sheetIndex + 1)}`, category, subject, [at]]];
+    });
+  });
 
-            const section = sectionOf(generatePrompt(category, subject, output), SECTION);
-            const where = `${category}/${subject.anatomy}/${directionalMode}/${directions}/${String(sheetIndex)}`;
-            for (const clause of MULTI_FACING_CLAUSES) {
-              expect(section, `${where} carries "${clause}"`).not.toContain(clause);
-            }
-          }
+  it.each(FACING_CASES)(
+    'carries no clause written for several facings, on %s',
+    (_name, category, subject, addresses) => {
+      for (const { directionalMode, directions, sheetIndex } of addresses) {
+        const output = withOutput({ directionalMode, directions, sheetIndex });
+        // Asked of the *resolved* sheet, because a category narrows both the mode and the set — an
+        // interface widget compiles one facing whatever the two controls say. `sheetPlanFor` and
+        // `sheetDirections` each resolve for themselves, so the stored values go in raw.
+        const plan = sheetPlanFor(category, subject, directionalMode, directions, sheetIndex);
+        if (sheetDirections(category, output, plan).covered.length > 1) continue;
+
+        const section = sectionOf(generatePrompt(category, subject, output), SECTION);
+        const where = `${category}/${subject.anatomy}/${directionalMode}/${directions}/${String(sheetIndex)}`;
+        for (const clause of MULTI_FACING_CLAUSES) {
+          expect(section, `${where} carries "${clause}"`).not.toContain(clause);
         }
       }
     },
   );
+
+  it('splits the facing sweep over every assembly-base case, ICON’s rosters sheet by sheet', () => {
+    const covered = new Set(FACING_CASES.map(([, , subject]) => subject));
+    expect(FACING_BASES.every(([, , subject]) => covered.has(subject))).toBe(true);
+    expect(FACING_CASES.some(([, , , addresses]) => addresses.length > 0)).toBe(true);
+  });
 
   it('still emits every one of those clauses where the sheet does hold several facings', () => {
     // What stops the list above rotting into a set of phrases the template no longer writes, which

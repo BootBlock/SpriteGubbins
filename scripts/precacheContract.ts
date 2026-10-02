@@ -107,6 +107,13 @@
  * `iconCatalogue` one rather than an `output` one: the chunk that was
  * `output` (372.7 kB with the form, the check and the copy) is now `iconCatalogue`, and the data
  * group is named `iconCatalogueData` (159.6 kB, unchanged) so the two never share a shape here.
+ *
+ * **The icon library took two lines away and added none.** `App` now fetches each project's icon
+ * library on boot, which puts the library store and its hook in the entry chunk (`index` 361.68 →
+ * 364.68 kB) and re-cuts the split around it: the shared chunk that was `iconCatalogue` (373.94 kB)
+ * and the small `quantiseDials` (1.34 kB) are one chunk now, named `quantiseDials` (375.36 kB), and
+ * `TextField` (1.01 kB) folds into the chunks that render it. Measured against the build immediately
+ * before, the precache goes from 56 entries and 2719.45 KiB to 54 and 2729.66 KiB.
  */
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',
@@ -127,11 +134,9 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/SheetStepButtons-*.js',
   'assets/SpecTab-*.js',
   'assets/StudioTab-*.js',
-  'assets/TextField-*.js',
   'assets/Tooltip-*.js',
   'assets/componentBudget-*.js',
   'assets/database-*.js',
-  'assets/iconCatalogue-*.js',
   'assets/iconCatalogueData-*.js',
   'assets/presets-*.js',
   'assets/quantiseDials-*.js',

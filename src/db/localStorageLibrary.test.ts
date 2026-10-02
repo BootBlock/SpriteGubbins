@@ -115,6 +115,7 @@ describe('replaceLibrary on the fallback', () => {
       projects: [createDefaultProject(2_000)],
       presets: [preset(DEFAULT_PROJECT_ID, 'imported')],
       quantisePresets: [dials(DEFAULT_PROJECT_ID, 'imported-dials')],
+      customIcons: [],
     });
 
     expect((await backend.listProjects()).map((project) => project.id)).toEqual([DEFAULT_PROJECT_ID]);
@@ -134,6 +135,7 @@ describe('replaceLibrary on the fallback', () => {
       ],
       presets: [],
       quantisePresets: [],
+      customIcons: [],
     });
 
     expect((await backend.listProjects()).map((project) => project.id)).toEqual([
@@ -155,6 +157,7 @@ describe('replaceLibrary on the fallback', () => {
         projects: [{ id: 'other', name: 'Other', description: '', createdAt: 3, updatedAt: 3 }],
         presets: [],
         quantisePresets: [],
+        customIcons: [],
       }),
     ).rejects.toThrow(/refused the write/i);
 

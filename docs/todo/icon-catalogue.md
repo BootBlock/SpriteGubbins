@@ -1,6 +1,6 @@
 # Icon catalogue — named icon sets drawn sixteen to a sheet
 
-> **Status:** 🟢 ACTIVE — phases 1–5 shipped; phase 6 next.
+> **Status:** 🟢 ACTIVE — phases 1–6 shipped; phase 7 next.
 
 ## 1. What is wrong
 
@@ -652,3 +652,115 @@ the old code:
 - **Stale docblocks** in `TextField`, `subject.ts`, the ICON category and `subjectState.ts` now say the
   roster holds the reader's own entries, that the form's role and states are required, and that *Clear
   all* removes the reader's own entries as well as unticking the rest.
+
+### Phase 6 — custom-entry library (2026-10-02)
+
+**What shipped.**
+
+- **Storage.** `SavedCustomIcon` (`src/types/savedCustomIcon.ts`): a library row's own `id`, which an
+  edit keeps, its `projectId`, and the `entry` as `checkCustomIcon` passed it. A `custom_icon_entries`
+  table (`id`, `project_id`, `entry_json`, `updated_at`) with its statements in
+  `src/db/customIconStatements.ts`, and the localStorage key `sprite_gubbins_custom_icon_entries`.
+  `PersistenceBackend` gains `saveCustomIcon`, `listCustomIcons` and `deleteCustomIcon` on every
+  implementation: SQLite through three new worker requests, the fallback, the held-elsewhere backend
+  (lists nothing, refuses the writes) and both test doubles. One parser reads a row from either backend
+  (`parseCustomIconRow`), and a stored entry goes through `parseCustomIconEntry`
+  (`src/db/customIconEntryParser.ts`): its fields typed by `readCustomIconDraft`, which the roster
+  parser now shares, then held to `checkCustomIcon` with no roster or library beside it, so a bracket,
+  a count, a long dash in a role or a slot the catalogue or the overlay sheet answers to is dropped
+  rather than drawn.
+- **Cascade and import.** Deleting a project deletes its library in the same transaction
+  (`deleteProjectIn`, `src/db/sqliteLibrary.ts`, which also holds `replaceLibraryIn`; the fallback's
+  `deleteProjectFrom` empties it before the project goes). `LibraryPack.customIcons` travels in the
+  library pack: `parseImportedCustomIcon` repairs a missing project to Default, refuses what the form
+  refuses, the pack re-files an icon naming a project the file does not carry, and `firstOfEachSlot`
+  keeps the first of two icons in one project answering to one slot (a pair's drawing names included);
+  one slot in two projects is two libraries and both stay. `libraryPackSize`, the confirmation's
+  figures (`ProjectTransferControls`, the transfer store's own count) and the re-reads after an import
+  and a project delete all include the library.
+- **Older storage stays.** The SQLite discard compares stored objects against the DDL one way only, so
+  a database without the new table is kept and the table made on the same boot; the fallback's discard
+  counts the new key among the collections filed under a project, and an absent key is no reason to
+  discard. A test boots a database made by the DDL without the table and keeps its rows.
+- **Store.** `useCustomIconLibraryStore` holds every project's library, as the preset stores hold
+  every project's presets, because the pack exports them all and the Projects view counts them, and
+  `chosenProjectId`, the project the dialog shows. `useIconLibrary` narrows it to that project through
+  `chosenProjectId(projects, chosen)`, now the one fallback rule every project control uses (the two
+  save panels and `ProjectSelectField` had it inline). The store's actions are `writeCustomIcon` (add,
+  or change the slot `replacing`), `tickCustomIcon`, `keepCustomIcon`, `deleteCustomIcon` and
+  `chooseProject`.
+- **Behaviour.** An add puts the icon on the set as one act and saves it to the chosen project's
+  library. A change to a ticked icon, or to one only the set holds, changes the set as one act and the
+  library row; a change to a library icon the set does not hold changes the library alone and is not
+  measured against the set's room. **A set holds its own copy**: a saved preset or history entry keeps
+  the copy it was saved with, and neither an edit nor a delete in the library reaches it. A custom row
+  now unticks (the set's copy goes, the library's stays) and ticks again (the library's copy is put on
+  the set, through the same check). Delete asks in place (`useConfirmInPlace`, its sixth call site) and
+  leaves every set's copy; the ticked row then offers **Save to library**. Undo moves the set alone: the
+  library is stored work, as a saved preset is.
+- **Slots.** `checkCustomIcon(draft, picks, replacing, library)` takes the project's library and
+  refuses a slot one of its entries answers to (“your library’s …”), ticked or not, so a later tick can
+  never meet a clash. `replacing` is measured as gone from both; the gone refusal fires only where the
+  entry is in neither; the set's room is measured only where the entry is going onto the set.
+- **Dialog.** `CustomIconLibraryBar` heads the reader's own shelves with a *Library* project select
+  (`ProjectSelectField`, guidance `ICON_PICKER_TOOLTIPS.libraryProject`) beside *Add your own icon*.
+  `customIconShelves` makes one row per slot from the set and the library: ticked or not, the set's
+  copy where ticked, a note where the set alone holds it (`CUSTOM_ICON_NOTICES.setOnly`) or its copy is
+  not the library's (`differs`), and in role order. Search, kind, school and *Ticked only* cover library
+  rows. A row too big for the set's room says so, as a catalogue row does. A form closes when its entry
+  leaves both the set and the library. `CheckboxField` gained an optional `note`, wired into the
+  accessible description.
+- **Projects view.** Each project lists its icon library by name and slot, and its counts, the header's
+  and the delete confirmation's include it.
+- **Guidance.** New action cards (`deleteOwn`, `confirmDeleteOwn`, `cancelDeleteOwn`, `keepOwn`); the
+  add, save, change, cancel, edit and Clear all cards, the custom row's card, the undo cards, the search
+  card and the project cards (select, delete, export, import) say what the library keeps. `removeOwn`
+  and the notice `yours` went with the Remove button.
+- **Tests.** `sqliteRequestsCustomIcons.test.ts` runs every library request against the SQLite build
+  the worker loads, in memory: CRUD, the cascade, the import and its rollback, and hostile rows.
+  `localStorageCustomIconLibrary.test.ts` holds the same on the fallback, with the restore after a
+  refused import write and the discard; `sqliteBackendCustomIcons.test.ts` the worker bridge;
+  `discardIncompatibleDatabase.test.ts` the older database; `libraryPackCustomIcons.test.ts` the
+  round trip and fourteen hostile or malformed entries; `useCustomIconLibraryStore.test.ts` the store,
+  failures included; the project and transfer store suites the cascade and the import;
+  `IconCatalogueLibrary.test.tsx` the dialog (untick keeps, re-tick restores, delete keeps set copies,
+  keep, a copy that differs, a library-only change, a library slot refused, the project switch, search
+  and *Ticked only*); and the guidance suite every new card and notice.
+
+**Where it departs from the plan, and why.**
+
+- **The library's project is chosen in the dialog and lasts while the tab is open**, not stored. The
+  app has no active project; a project is chosen where a save is made, which `usePresetStore` states as
+  a rule, and the save panels open on the first project. The library opens there too, so it and both
+  save panels agree until the reader chooses otherwise. Storing the choice would have meant a column on
+  `studio_session`, which discards every reader's database, or a setting the settings dialog's Reset
+  would clear.
+- **The store holds every project's library** rather than loading one project's: the pack exports all
+  of them and the Projects view counts them, as it does the presets.
+- **Shelf rows are in role order**, not the sheets' order: a library grows across many sets, a reader
+  finds an entry by name, and a row must not move under the pointer as it is ticked.
+- **No Tick all or Untick all on the reader's own shelves.** An untick of an icon the library does not
+  hold removes it, which a group press should not do to several at once.
+- **Delete confirms in place rather than offering Undo**, because the studio's undo stack is the set's
+  and the library is stored data, as a saved preset is; every other stored delete in the app confirms.
+- **The localStorage backend names its collections once** (`STORED_COLLECTIONS`,
+  `src/db/localStorageCollections.ts`): a fifth collection pushed the backend past the module-size
+  target, and the key, parser and row writer of each now travel together.
+- **The catalogue dialog's suites find controls without role queries** (`src/test/catalogueControls.ts`).
+  A role query computes every accessible name among three hundred rows, and the dialog's tests ran past
+  the test time limit at two workers; the existing dialog suite was moved onto it too.
+- **Sweeps from before this phase were split** after they failed the two-worker, one-second survey on
+  this branch, or came within a few per cent of it, each into the unit its property is about, with its
+  coverage kept, a check that its cases still cover what it covered, and no timeout raised:
+  `componentBoundary.test.ts`, `componentSet.test.ts` and `sheetPlanAbsence.test.ts` one case per
+  reachable sheet; `sheetIdentity.test.ts` one per batch; `subject-field-inventory.test.ts` one per
+  sheet address; `promptCompiler.test.ts`'s numbered-list and marker sweeps one per target and its
+  single-facing sweep one per subject and mode, or per sheet of an ICON roster; the blend-weight
+  figures one per weight; and the despill and anti-alias corpus cases one per keying or mode.
+
+**What it breaks.** `checkCustomIcon` takes a fourth argument, the library; `addCustomIcon` and
+`updateCustomIcon` on `useSubjectStore` take the library too, and the form writes through
+`useCustomIconLibraryStore.writeCustomIcon`. `LibraryPack` requires `customIcons`, and a pack file
+written before this change imports with an empty icon library. `CUSTOM_ICON_NOTICES.yours` and the
+*Remove* button are gone: a custom row unticks. `customIconShelves` takes the library and returns rows.
+An existing database gains an empty `custom_icon_entries` table and keeps everything else.

@@ -65,6 +65,6 @@ describe('customIconWarnings', () => {
   it('reports every rule a draft breaks, and never stops the check passing it', () => {
     const draft = { ...RELIC_DRAFT, look: 'a white keycard with a dial in a hand' };
     expect(customIconWarnings(draft, 'PURE_WHITE')).toHaveLength(3);
-    expect(checkCustomIcon(draft, [], null).entry?.look).toBe(draft.look);
+    expect(checkCustomIcon(draft, [], null, []).entry?.look).toBe(draft.look);
   });
 });

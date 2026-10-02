@@ -38,8 +38,8 @@ export interface ConfirmInPlace {
 /**
  * The app's two-press confirmation, and where the keyboard lands at each of its three edges.
  *
- * Five of these are rendered — a history entry, the history drawer's footer, a saved studio preset,
- * a saved quantiser preset and a project — and every one of them answers a keypress by unmounting
+ * Six of these are rendered — a history entry, the history drawer's footer, a saved studio preset,
+ * a saved quantiser preset, a project and an icon in a project's library — and every one of them answers a keypress by unmounting
  * the button that was pressed. The user agent's only fallback is `<body>`: the ring goes, the
  * position goes, and a keyboard reader's next Tab starts again from the top of the page. It happens
  * on the way *into* a confirmation, on the way out of one, and on the confirmation itself.
@@ -58,7 +58,7 @@ export interface ConfirmInPlace {
  * choreography, and the code here is theirs — but they are a *staged import* rather than a row's
  * two-press question: the state that decides whether the confirmation is showing is a pending import
  * held in a store, and it is read by two sibling components rather than one. This hook owns
- * `isConfirming` itself, which is what the five call sites need and what those two cannot use.
+ * `isConfirming` itself, which is what the six call sites need and what those two cannot use.
  * Making it accept externally-driven state as well would be a knob added for one caller, which is
  * the speculative generality the same rulebook bans. The other four are single-edge moves — a focus
  * handed on before a state change, or caught after one — and are not this shape at all.

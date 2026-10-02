@@ -28,10 +28,11 @@ export function storageFailure(fallback: string, error: unknown): string {
 /**
  * Whether this failure is the one the app can explain.
  *
- * Exported for the one caller that has to *compose* rather than substitute. `useSettingsStore` keeps
- * a setting applied when its write is refused — the accent is on screen and works for the session,
- * so reverting it would undo a click the reader watched take effect — and the sentence saying that
- * is the half they most need. It appends the reason instead of replacing the message, which is a
+ * Exported for the two callers that have to *compose* rather than substitute. `useSettingsStore`
+ * keeps a setting applied when its write is refused — the accent is on screen and works for the
+ * session, so reverting it would undo a click the reader watched take effect — and the sentence saying
+ * that is the half they most need. `useCustomIconLibraryStore` is the same case: an icon the set took
+ * stays on the set when the library refuses it, and the reader needs to hear both halves. It appends the reason instead of replacing the message, which is a
  * question about the error rather than a request for a sentence, and asking it through
  * {@link storageFailure} would mean passing an empty fallback as a sentinel: a contract that
  * function does not have, and one nothing else could rely on.

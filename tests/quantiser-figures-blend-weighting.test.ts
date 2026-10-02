@@ -153,20 +153,33 @@ describe('the blend weighting’s fixture figures', () => {
     }
   });
 
-  it('BLEND_VOTE_WEIGHT: the seam fixture, the weights above 1/1024, and the ones below it', () => {
+  // One case per weight rather than one test over all of them: together they passed the test time
+  // limit on a slow runner. The shipped palettes are read once and shared by the cases below 1/1024.
+  let shippedPalettes: string[] | undefined;
+  const shipped = (): string[] => (shippedPalettes ??= palettesAt({}));
+
+  it('BLEND_VOTE_WEIGHT: the seam fixture, unweighted and at the shipped weight', () => {
     expect(seamAt24(UNWEIGHTED)).toEqual([21, 3, 1.83]);
     expect(seamAt24({})).toEqual([24, 0, 0]);
-    expect(keptAcross({ weight: 1 / 4 })).toEqual([8, 9, 12, 17]);
-    expect(keptAcross({ weight: 1 / 16 })).toEqual([8, 10, 13, 20]);
-    expect(keptAcross({ weight: 1 / 32 })).toEqual([8, 11, 14, 22]);
-    expect(keptAcross({ weight: 1 / 64 })).toEqual([8, 11, 15, 22]);
-    expect(keptAcross({ weight: 1 / 512 })).toEqual([8, 11, 15, 22]);
-    // Where the answer stops moving: every palette on every fixture and budget is the shipped one.
-    const shipped = palettesAt({});
-    for (const weight of [1 / 2048, 1 / 4096, 1 / 65536, 1e-6]) {
-      expect(palettesAt({ weight })).toEqual(shipped);
-    }
   });
+
+  it.each([
+    [1 / 4, [8, 9, 12, 17]],
+    [1 / 16, [8, 10, 13, 20]],
+    [1 / 32, [8, 11, 14, 22]],
+    [1 / 64, [8, 11, 15, 22]],
+    [1 / 512, [8, 11, 15, 22]],
+  ])('BLEND_VOTE_WEIGHT: a weight of %f, above 1/1024, keeps its own art counts', (weight, kept) => {
+    expect(keptAcross({ weight })).toEqual(kept);
+  });
+
+  // Where the answer stops moving: every palette on every fixture and budget is the shipped one.
+  it.each([1 / 2048, 1 / 4096, 1 / 65536, 1e-6])(
+    'BLEND_VOTE_WEIGHT: a weight of %f, below 1/1024, chooses the shipped palettes',
+    (weight) => {
+      expect(palettesAt({ weight })).toEqual(shipped());
+    },
+  );
 });
 
 describe('the weighted search against an unweighted one, on the reference sheet', () => {

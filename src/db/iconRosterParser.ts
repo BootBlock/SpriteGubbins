@@ -1,11 +1,11 @@
 import { iconCatalogueEntry, iconComponentCount } from '../constants/iconCatalogue/index.ts';
 import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
-import { DAMAGE_SCHOOLS, ICON_KINDS } from '../types/iconCatalogue.ts';
 import type { CustomIconDraft } from '../types/customIconDraft.ts';
 import { ICON_LOOKS } from '../types/iconRoster.ts';
 import type { IconPick, IconRoster } from '../types/iconRoster.ts';
 import { checkCustomIcon } from '../utils/checkCustomIcon.ts';
 import { iconPickId } from '../utils/iconPickId.ts';
+import { readCustomIconDraft } from './customIconEntryParser.ts';
 import { isRecord, pick } from './readers.ts';
 
 /**
@@ -66,7 +66,7 @@ function readPick(item: unknown): ReadPick | null {
     };
   }
   if (item['source'] !== 'CUSTOM') return null;
-  const draft = readDraft(item['entry']);
+  const draft = readCustomIconDraft(item['entry']);
   if (draft === null) return null;
   return {
     source: 'CUSTOM',
@@ -75,29 +75,8 @@ function readPick(item: unknown): ReadPick | null {
   };
 }
 
-/** A stored custom entry's fields, each of the type it must be, or `null` where one is not. */
-function readDraft(value: unknown): CustomIconDraft | null {
-  if (!isRecord(value)) return null;
-  const { role, look, kind, school, figure, states } = value;
-  if (typeof role !== 'string' || typeof look !== 'string') return null;
-  const knownKind = ICON_KINDS.find((each) => each === kind);
-  if (knownKind === undefined) return null;
-  const knownSchool = school === undefined ? null : (DAMAGE_SCHOOLS.find((each) => each === school) ?? null);
-  if (school !== undefined && knownSchool === null) return null;
-  if (figure !== undefined && figure !== true) return null;
-  const pair = states === undefined ? null : readStates(states);
-  if (states !== undefined && pair === null) return null;
-  return { role, look, kind: knownKind, school: knownSchool, figure: figure === true, states: pair };
-}
-
-function readStates(value: unknown): readonly [string, string] | null {
-  if (!Array.isArray(value) || value.length !== 2) return null;
-  const [first, second]: unknown[] = value;
-  return typeof first === 'string' && typeof second === 'string' ? [first, second] : null;
-}
-
 /** The custom entry a stored draft makes on the roster read so far, or `null` where the check refuses it. */
 function customPick(draft: CustomIconDraft, picks: readonly IconPick[]): IconPick | null {
-  const { entry } = checkCustomIcon(draft, picks, null);
+  const { entry } = checkCustomIcon(draft, picks, null, []);
   return entry === null ? null : { source: 'CUSTOM', entry };
 }

@@ -4,7 +4,8 @@ import { CUSTOM_ICON_REFUSALS } from '../constants/iconCatalogue/customIconRefus
 import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
-import { RELIC, RELIC_DRAFT, SPELL, TOGGLE, customPick, draftOf } from '../test/customIcons.ts';
+import { RELIC, RELIC_DRAFT, SPELL, TOGGLE, customPick } from '../test/customIcons.ts';
+import { customIconDraftOf } from '../utils/customIconDraftOf.ts';
 import type { IconPick } from '../types/iconRoster.ts';
 import { iconPickId } from '../utils/iconPickId.ts';
 import { canRedoStudio, canUndoStudio } from '../utils/studioHistory.ts';
@@ -40,7 +41,7 @@ describe('useSubjectStore — the reader’s own icons', () => {
   });
 
   it('adds an entry at the end of its kind’s shelves, as one act Undo and Redo step over', () => {
-    expect(useSubjectStore.getState().addCustomIcon(RELIC_DRAFT)).toEqual([]);
+    expect(useSubjectStore.getState().addCustomIcon(RELIC_DRAFT, [])).toEqual([]);
     expect(picks()).toEqual([
       ...cataloguePicks(['heal-minor']),
       customPick(RELIC),
@@ -55,7 +56,7 @@ describe('useSubjectStore — the reader’s own icons', () => {
 
   it('refuses a draft the check refuses, changing and recording nothing', () => {
     const hostile = { ...RELIC_DRAFT, look: 'a relic [SEC:X]' };
-    const refusals = useSubjectStore.getState().addCustomIcon(hostile);
+    const refusals = useSubjectStore.getState().addCustomIcon(hostile, []);
 
     expect(refusals.map((refusal) => refusal.message)).toEqual([CUSTOM_ICON_REFUSALS.brackets('look')]);
     expect(ids()).toEqual(['heal-minor', 'system-bags']);
@@ -63,8 +64,8 @@ describe('useSubjectStore — the reader’s own icons', () => {
   });
 
   it('refuses a second entry answering to the same slot name', () => {
-    useSubjectStore.getState().addCustomIcon(RELIC_DRAFT);
-    const refusals = useSubjectStore.getState().addCustomIcon({ ...RELIC_DRAFT, look: 'a second relic' });
+    useSubjectStore.getState().addCustomIcon(RELIC_DRAFT, []);
+    const refusals = useSubjectStore.getState().addCustomIcon({ ...RELIC_DRAFT, look: 'a second relic' }, []);
     expect(refusals.map((refusal) => refusal.field)).toEqual(['role']);
     expect(ids().filter((id) => id === RELIC.id)).toHaveLength(1);
   });
@@ -73,7 +74,7 @@ describe('useSubjectStore — the reader’s own icons', () => {
     iconStudio([customPick(RELIC), customPick({ ...RELIC, id: 'second-relic', role: 'Second relic' })]);
 
     expect(
-      useSubjectStore.getState().updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, look: 'a cracked card' }),
+      useSubjectStore.getState().updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, look: 'a cracked card' }, []),
     ).toEqual([]);
     expect(picks()[0]).toEqual(customPick({ ...RELIC, look: 'a cracked card' }));
     expect(ids()).toEqual([RELIC.id, 'second-relic']);
@@ -93,14 +94,14 @@ describe('useSubjectStore — the reader’s own icons', () => {
     ]);
     useSubjectStore
       .getState()
-      .updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, role: 'Vault pass', kind: 'SYSTEM' });
+      .updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, role: 'Vault pass', kind: 'SYSTEM' }, []);
     expect(ids()).toEqual(['heal-minor', 'system-bags', TOGGLE.id, 'vault-pass']);
   });
 
   it('keeps an entry’s place among its kind’s own entries when its kind stays', () => {
     const second = { ...RELIC, id: 'second-relic', role: 'Second relic' };
     iconStudio([customPick(RELIC), customPick(second)]);
-    useSubjectStore.getState().updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, role: 'First relic' });
+    useSubjectStore.getState().updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, role: 'First relic' }, []);
     expect(ids()).toEqual(['first-relic', 'second-relic']);
   });
 
@@ -109,7 +110,7 @@ describe('useSubjectStore — the reader’s own icons', () => {
     useSubjectStore.getState().clearIcons();
     const refusals = useSubjectStore
       .getState()
-      .updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, look: 'a cracked card' });
+      .updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, look: 'a cracked card' }, []);
 
     expect(refusals.map((refusal) => refusal.message)).toEqual([CUSTOM_ICON_REFUSALS.gone]);
     expect(picks()).toEqual([]);
@@ -117,7 +118,7 @@ describe('useSubjectStore — the reader’s own icons', () => {
 
   it('records nothing for a change that changes nothing', () => {
     iconStudio([customPick(RELIC)]);
-    useSubjectStore.getState().updateCustomIcon(RELIC.id, RELIC_DRAFT);
+    useSubjectStore.getState().updateCustomIcon(RELIC.id, RELIC_DRAFT, []);
     expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
   });
 
@@ -139,7 +140,7 @@ describe('useSubjectStore — the reader’s own icons', () => {
       .slice(0, 16)
       .map((entry) => entry.id);
     iconStudio(cataloguePicks(sixteen));
-    useSubjectStore.getState().addCustomIcon(draftOf(SPELL));
+    useSubjectStore.getState().addCustomIcon(customIconDraftOf(SPELL), []);
     useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 2 } });
     useSubjectStore.getState().openStudio();
 
@@ -153,12 +154,32 @@ describe('useSubjectStore — the reader’s own icons', () => {
   it('does nothing on a subject with no roster', () => {
     useSubjectStore.getState().setCategory('CHARACTER');
     useSubjectStore.getState().openStudio();
-    expect(useSubjectStore.getState().addCustomIcon(RELIC_DRAFT)).toEqual([]);
+    expect(useSubjectStore.getState().addCustomIcon(RELIC_DRAFT, [])).toEqual([]);
     expect(useSubjectStore.getState().subject.icons).toBeUndefined();
     expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
   });
 
-  it('removes the reader’s own entries with the rest when the set is cleared', () => {
+  it('refuses a slot the project’s library holds, and lets a change keep its own library slot', () => {
+    // The library's relic is not ticked, and a second icon named for it could never share a set with it.
+    expect(
+      useSubjectStore
+        .getState()
+        .addCustomIcon(RELIC_DRAFT, [RELIC])
+        .map((refusal) => refusal.field),
+    ).toEqual(['role']);
+    expect(ids()).toEqual(['heal-minor', 'system-bags']);
+
+    // The set's copy of a library entry is the same slot, so changing it is measured as the slot gone.
+    iconStudio([customPick(RELIC)]);
+    expect(
+      useSubjectStore
+        .getState()
+        .updateCustomIcon(RELIC.id, { ...RELIC_DRAFT, look: 'a cracked card' }, [RELIC]),
+    ).toEqual([]);
+    expect(picks()).toEqual([customPick({ ...RELIC, look: 'a cracked card' })]);
+  });
+
+  it('takes the reader’s own entries off the set with the rest when it is cleared', () => {
     iconStudio([...cataloguePicks(['heal-minor']), customPick(RELIC)]);
     useSubjectStore.getState().clearIcons();
     expect(picks()).toEqual([]);

@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { PRESET_ACTION_TOOLTIPS, PROJECT_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
+import { chosenProjectId } from '../../utils/chosenProjectId.ts';
 import { findByNameIn } from '../../utils/findByNameIn.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
@@ -67,7 +68,7 @@ export function PresetSavePanel() {
   const nameId = useId();
   const descriptionId = useId();
 
-  const target = projects.some((project) => project.id === projectId) ? projectId : (projects[0]?.id ?? '');
+  const target = chosenProjectId(projects, projectId);
 
   /**
    * Point the description box at whatever `nextName` names inside `nextProject`, adopting that

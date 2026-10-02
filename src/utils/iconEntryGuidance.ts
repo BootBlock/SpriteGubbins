@@ -17,7 +17,8 @@ import { spokenIconState } from './spokenIconState.ts';
  * Era* as it stands, typed text included.
  *
  * **An entry of the reader's own gets a shorter card from the same parts**: the sprites it names, that
- * the look is theirs under every world, its school and its shape. Its look is not repeated, because the
+ * the look is theirs under every world and that the set and the library each hold a copy, its school
+ * and its shape. Its look is not repeated, because the
  * row shows it under the label as the reader wrote it, and a look written to its limit would take the
  * card past the length a card is read at.
  */
@@ -28,7 +29,7 @@ export function iconEntryGuidance(entry: IconEntry, world: string): string {
   if ('look' in entry) {
     return [
       ownSlotParagraph(entry),
-      `${where}, the sheet draws your own look as you wrote it, as it would under any other. It stays on your set until you remove it, and Edit changes it.`,
+      `${where}, the sheet draws your own look as you wrote it, as it would under any other. Unticking takes it off your set, and your library keeps its own copy.`,
       ...ownSchoolParagraph(entry, world),
       shapeParagraph(entry),
     ].join('\n\n');

@@ -5,9 +5,12 @@ import { DEFAULT_PRESET } from '../../constants/presets/index.ts';
 import { DEFAULT_PROJECT_ID, createDefaultProject } from '../../constants/projects.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../../constants/quantiseDials.ts';
 import { movePresetRefusal, moveQuantiseRefusal } from '../../constants/tooltips/index.ts';
+import { useCustomIconLibraryStore } from '../../stores/useCustomIconLibraryStore.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
+import { RELIC, SPELL } from '../../test/customIcons.ts';
+import { savedIcon } from '../../test/iconLibraryStudio.ts';
 import { namesOmittingLabels } from '../../test/namesOmittingLabels.ts';
 import { repeatedControlNames } from '../../test/repeatedControlNames.ts';
 import type { CustomArchetype } from '../../types/preset.ts';
@@ -64,6 +67,7 @@ beforeEach(() => {
   useProjectStore.setState({ projects: [createDefaultProject(1_000), HARBOUR] });
   usePresetStore.setState({ customPresets: [] });
   useQuantisePresetStore.setState({ presets: [] });
+  useCustomIconLibraryStore.setState({ icons: [] });
 });
 
 afterEach(() => {
@@ -72,6 +76,23 @@ afterEach(() => {
 });
 
 describe('ProjectsTab', () => {
+  it('names a project’s icon library and counts it with everything else filed there', async () => {
+    const user = userEvent.setup({ delay: null });
+    usePresetStore.setState({ customPresets: [preset(HARBOUR.id)] });
+    useCustomIconLibraryStore.setState({ icons: [savedIcon(RELIC, HARBOUR.id), savedIcon(SPELL)] });
+
+    render(<ProjectsTab />);
+    expect(screen.getByText(/holding 3 saved items between them/)).toBeInTheDocument();
+    expect(screen.getByText(SPELL.role)).toBeInTheDocument();
+    expect(screen.queryByText(RELIC.role)).toBeNull();
+
+    await user.click(projectButton('Harbour'));
+    const library = screen.getByRole('heading', { name: 'Icon library' }).closest('div')?.parentElement;
+    expect(library).toHaveTextContent(`Icon library1 saved${RELIC.role} ${RELIC.id}`);
+    // The preset and the icon, counted together on the button that opens the project.
+    expect(projectButton('Harbour')).toHaveTextContent('2');
+  });
+
   it('opens on the first project and lists every one of them with its count', () => {
     usePresetStore.setState({ customPresets: [preset(HARBOUR.id)] });
     useQuantisePresetStore.setState({ presets: [dials(HARBOUR.id)] });

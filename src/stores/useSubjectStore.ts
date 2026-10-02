@@ -3,7 +3,7 @@ import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/ind
 import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import type { CustomIconDraft, CustomIconRefusal } from '../types/customIconDraft.ts';
-import type { IconRoster } from '../types/iconRoster.ts';
+import type { CustomIconEntry, IconRoster } from '../types/iconRoster.ts';
 import type { StudioHistory, StudioPosition } from '../types/studioHistory.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import type { SubjectState } from '../types/subjectState.ts';
@@ -88,9 +88,9 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     writeRoster((roster) => ({ ...roster, picks: [] }));
   },
 
-  addCustomIcon: (draft) => saveCustomIcon(draft, null),
+  addCustomIcon: (draft, library) => saveCustomIcon(draft, null, library),
 
-  updateCustomIcon: (id, draft) => saveCustomIcon(draft, id),
+  updateCustomIcon: (id, draft, library) => saveCustomIcon(draft, id, library),
 
   removeCustomIcon: (id) => {
     writeRoster(({ look, picks }) => ({ look, picks: picks.filter((pick) => iconPickId(pick) !== id) }));
@@ -145,14 +145,18 @@ function followBase(category: SubjectCategory, before: SubjectDefinition, after:
 }
 
 /**
- * Add or replace an entry of the reader's own once `checkCustomIcon` has passed it, or return why not.
- * A replacement equal to what it replaces records nothing, because `recordStudio` compares the rosters
- * by value.
+ * Add or replace an entry of the reader's own once `checkCustomIcon` has passed it against the roster
+ * and `library`, or return why not. A replacement equal to what it replaces records nothing, because
+ * `recordStudio` compares the rosters by value.
  */
-function saveCustomIcon(draft: CustomIconDraft, replacing: string | null): readonly CustomIconRefusal[] {
+function saveCustomIcon(
+  draft: CustomIconDraft,
+  replacing: string | null,
+  library: readonly CustomIconEntry[],
+): readonly CustomIconRefusal[] {
   const roster = useSubjectStore.getState().subject.icons;
   if (roster === undefined) return [];
-  const { entry, refusals } = checkCustomIcon(draft, roster.picks, replacing);
+  const { entry, refusals } = checkCustomIcon(draft, roster.picks, replacing, library);
   if (entry === null) return refusals;
   writeRoster(({ look, picks }) => ({ look, picks: withCustomIcon(picks, entry, replacing) }));
   return [];

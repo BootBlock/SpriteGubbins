@@ -1,7 +1,10 @@
 import { memo } from 'react';
 import { CUSTOM_ICON_NOTICES } from '../../constants/iconCatalogue/customIconNotices.ts';
 import { ICON_CATALOGUE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
+import { useCustomIconLibraryStore } from '../../stores/useCustomIconLibraryStore.ts';
 import type { CustomIconEntry } from '../../types/iconRoster.ts';
+import type { CustomIconShelfRow } from '../../utils/customIconShelves.ts';
 import { iconEntryGuidance } from '../../utils/iconEntryGuidance.ts';
 import { iconLookText } from '../../utils/iconLookText.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -10,66 +13,136 @@ import { CheckboxField } from '../common/CheckboxField.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 interface CustomIconRowProps {
-  readonly entry: CustomIconEntry;
+  readonly row: CustomIconShelfRow;
   /** The subject's *World & Era*, which names a spell's school in the row's second line and its card. */
   readonly world: string;
+  /** Why the row cannot be ticked — the set has no room for it — or empty where it can. */
+  readonly disabledReason: string;
   /** Stable across renders, as `IconCatalogueRow`'s toggle is. */
+  readonly onToggle: (row: CustomIconShelfRow, on: boolean) => void;
   readonly onEdit: (entry: CustomIconEntry) => void;
-  readonly onRemove: (entry: CustomIconEntry) => void;
+  readonly onKeep: (entry: CustomIconEntry) => void;
 }
 
 /**
- * One icon of the reader's own, on its shelf beside the catalogue's rows: ticked, marked as theirs, and
- * with an Edit and a Remove of its own.
+ * One icon of the reader's own, on its shelf beside the catalogue's rows: a box that ticks it onto the
+ * set and unticks it off, a badge marking it as theirs, and an Edit beside a Delete or a Save to library.
  *
- * **Its box is ticked and cannot be unticked**, because the roster is the only place the entry exists:
- * an untick would be a removal with a checkbox's lightness, so it says under the label that the entry
- * stays until removed, and the box keeps its place in the tab order for a keyboard user to hear why, as
- * every refused tick does. Removing is the Remove button's, which Undo takes back.
+ * **Unticking takes the set's copy away and leaves the library's**, so a library entry ticks back as it
+ * was. Where the set alone holds the entry, the untick is a removal Undo alone brings back, and the row
+ * says so under its look; it offers Save to library in place of Delete, since there is nothing to delete.
+ *
+ * **Delete confirms in place**, as a saved preset's row does: the library entry is stored data with no
+ * undo, and the confirmation keeps the role on screen beside the question. A ticked copy stays on the
+ * set, so the row remains, now offering Save to library.
  */
 export const CustomIconRow = memo(function CustomIconRow({
-  entry,
+  row,
   world,
+  disabledReason,
+  onToggle,
   onEdit,
-  onRemove,
+  onKeep,
 }: CustomIconRowProps) {
+  const deleteCustomIcon = useCustomIconLibraryStore((state) => state.deleteCustomIcon);
+  const { isConfirming, attachAsk, attachCancel, ask, cancel, confirm } = useConfirmInPlace();
+  const { entry, saved } = row;
+  const note = row.differs
+    ? CUSTOM_ICON_NOTICES.differs
+    : row.ticked && saved === undefined
+      ? CUSTOM_ICON_NOTICES.setOnly
+      : '';
+
   return (
     <li className="space-y-1.5">
       <CheckboxField
         label={entry.role}
         tooltip={iconEntryGuidance(entry, world)}
-        checked
+        checked={row.ticked}
         description={iconLookText(entry, world)}
-        disabledReason={CUSTOM_ICON_NOTICES.yours}
-        onChange={() => undefined}
+        note={note}
+        disabledReason={disabledReason}
+        onChange={(on) => {
+          onToggle(row, on);
+        }}
       />
-      <div className="ml-6 flex flex-wrap items-center gap-2">
-        <Badge tone="view">Your own</Badge>
-        <ControlTooltip hint={`Edit ${entry.role}`} text={ICON_CATALOGUE_ACTION_TOOLTIPS.editOwn}>
-          <Button
-            variant="secondary"
-            size="sm"
-            aria-label={`Edit ${entry.role}`}
-            onClick={() => {
-              onEdit(entry);
-            }}
+      {isConfirming && saved !== undefined ? (
+        <div className="ml-6 flex flex-wrap items-center gap-2">
+          <ControlTooltip
+            hint={`Delete “${entry.role}”`}
+            text={ICON_CATALOGUE_ACTION_TOOLTIPS.confirmDeleteOwn}
           >
-            Edit
-          </Button>
-        </ControlTooltip>
-        <ControlTooltip hint={`Remove ${entry.role}`} text={ICON_CATALOGUE_ACTION_TOOLTIPS.removeOwn}>
-          <Button
-            variant="danger"
-            size="sm"
-            aria-label={`Remove ${entry.role}`}
-            onClick={() => {
-              onRemove(entry);
-            }}
-          >
-            Remove
-          </Button>
-        </ControlTooltip>
-      </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                void confirm(() => deleteCustomIcon(saved.id));
+              }}
+            >
+              Delete “{entry.role}”
+            </Button>
+          </ControlTooltip>
+          <ControlTooltip hint="Cancel" text={ICON_CATALOGUE_ACTION_TOOLTIPS.cancelDeleteOwn}>
+            <Button
+              variant="secondary"
+              size="sm"
+              ref={attachCancel}
+              aria-label={`Cancel — keep ${entry.role} in your library`}
+              onClick={cancel}
+            >
+              Cancel
+            </Button>
+          </ControlTooltip>
+        </div>
+      ) : (
+        <div className="ml-6 flex flex-wrap items-center gap-2">
+          <Badge tone="view">Your own</Badge>
+          <ControlTooltip hint={`Edit ${entry.role}`} text={ICON_CATALOGUE_ACTION_TOOLTIPS.editOwn}>
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label={`Edit ${entry.role}`}
+              onClick={() => {
+                onEdit(entry);
+              }}
+            >
+              Edit
+            </Button>
+          </ControlTooltip>
+          {saved === undefined ? (
+            <ControlTooltip
+              hint={`Save ${entry.role} to library`}
+              text={ICON_CATALOGUE_ACTION_TOOLTIPS.keepOwn}
+            >
+              <Button
+                variant="view"
+                size="sm"
+                aria-label={`Save ${entry.role} to library`}
+                onClick={() => {
+                  onKeep(entry);
+                }}
+              >
+                Save to library
+              </Button>
+            </ControlTooltip>
+          ) : (
+            <ControlTooltip
+              hint={`Delete ${entry.role} from library`}
+              text={ICON_CATALOGUE_ACTION_TOOLTIPS.deleteOwn}
+            >
+              <Button
+                variant="danger"
+                size="sm"
+                ref={attachAsk}
+                aria-label={`Delete ${entry.role} from library`}
+                onClick={ask}
+              >
+                Delete
+              </Button>
+            </ControlTooltip>
+          )}
+        </div>
+      )}
     </li>
   );
 });

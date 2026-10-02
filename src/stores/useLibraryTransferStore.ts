@@ -5,6 +5,7 @@ import { storageFailure } from '../db/storageFailure.ts';
 import type { LibraryPack } from '../types/libraryPack.ts';
 import { describePackImported } from '../utils/packImportSummary.ts';
 import { libraryPackSize, parseLibraryPack, serialiseLibraryPack } from '../utils/libraryPack.ts';
+import { useCustomIconLibraryStore } from './useCustomIconLibraryStore.ts';
 import { usePresetStore } from './usePresetStore.ts';
 import { useProjectStore } from './useProjectStore.ts';
 import { useQuantisePresetStore } from './useQuantisePresetStore.ts';
@@ -13,11 +14,12 @@ import { useUIStore } from './useUIStore.ts';
 /**
  * Moving the whole library in and out of this browser as one file.
  *
- * **A store of its own, because it is not any one collection's job.** Each of the two collections
- * used to own a pack, and neither could own this one: a pack carries the projects, the studio
- * archetypes and the saved dial positions together, because a preset names its project by id and a
- * file holding one without the other describes a library that cannot be assembled. So the transfer
- * reads all three stores and writes all three, and it belongs beside none of them.
+ * **A store of its own, because it is not any one collection's job.** Each of the two preset
+ * collections used to own a pack, and neither could own this one: a pack carries the projects, the
+ * studio archetypes, the saved dial positions and each project's icon library together, because each
+ * saved entry names its project by id and a file holding one without the other describes a library
+ * that cannot be assembled. So the transfer reads all four stores and writes all four, and it belongs
+ * beside none of them.
  *
  * Everything it touches it touches through that store's own actions, which is the rule
  * `usePresetStore` follows in reaching into the studio's three. The replacement itself is a single
@@ -63,6 +65,7 @@ export const useLibraryTransferStore = create<LibraryTransferState>((set, get) =
       projects: useProjectStore.getState().projects,
       presets: usePresetStore.getState().customPresets,
       quantisePresets: useQuantisePresetStore.getState().presets,
+      customIcons: useCustomIconLibraryStore.getState().icons,
     }),
 
   importLibraryJSON: async (file) => {
@@ -109,7 +112,8 @@ export const useLibraryTransferStore = create<LibraryTransferState>((set, get) =
     const replacing =
       useProjectStore.getState().projects.length +
       usePresetStore.getState().customPresets.length +
-      useQuantisePresetStore.getState().presets.length;
+      useQuantisePresetStore.getState().presets.length +
+      useCustomIconLibraryStore.getState().icons.length;
     // **Cleared before the first await, not in the `finally`.** The staged pack is this action's own
     // guard, and clearing it afterwards would leave the guard open across the whole database write:
     // a second press would run a second replace, and a press of Cancel in the same window would
@@ -123,6 +127,7 @@ export const useLibraryTransferStore = create<LibraryTransferState>((set, get) =
       await useProjectStore.getState().fetchProjects();
       await usePresetStore.getState().fetchCustomPresets();
       await useQuantisePresetStore.getState().fetchQuantisePresets();
+      await useCustomIconLibraryStore.getState().fetchCustomIcons();
       showToast(describePackImported(libraryPackSize(imported), replacing, LIBRARY_PACK_ITEMS));
     } catch (error) {
       // Reported and left there: the reader retries from the button, rather than being asked the

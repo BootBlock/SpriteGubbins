@@ -314,9 +314,11 @@ describe('component counts', () => {
     expect(articulation).not.toContain('Demon Horn');
   });
 
-  it.each(CASES)(
-    'states the within-entry reading order wherever an entry can expand along two axes, on %s',
-    (name) => {
+  // One case per sheet: a case's sheets in one test passed the one-second limit a slow runner stands in
+  // for on an ICON roster's twenty-odd sheets.
+  it.each(SHEETS)(
+    'states the within-entry reading order wherever an entry can expand along two axes, on $name / $mode / $directions / $sheet',
+    ({ category, subject, mode, directions, sheetIndex }) => {
       // The ambiguity this pins: section 4 fixes reading order *between* entries only, and an anatomy
       // entry carrying both a ×N and a facing list expands along two axes — `Demon Horn ×2: south,
       // west, north, east` is eight components in either piece-major or facing-major order, and a
@@ -326,24 +328,22 @@ describe('component counts', () => {
       // carries the sentence, because every one of them accepts a ×N entry; a run sheet has one axis
       // and stays without it.
       const anatomy = 'Demon Horn ×2, Tail ×1';
-      for (const { category, subject, mode, directions, sheetIndex } of sheetsOf(name)) {
-        const plan = sheetSeriesFor(category, subject, mode, directions)[sheetIndex];
-        if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
-        const prompt = generatePrompt(
-          category,
-          { ...subject, additional_anatomy: anatomy },
-          withOutput({ directionalMode: mode, directions, sheetIndex }),
-        );
+      const plan = sheetSeriesFor(category, subject, mode, directions)[sheetIndex];
+      if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
+      const prompt = generatePrompt(
+        category,
+        { ...subject, additional_anatomy: anatomy },
+        withOutput({ directionalMode: mode, directions, sheetIndex }),
+      );
 
-        const label = `${category}/${mode}/${directions}/${plan.name}`;
-        if (plan.facings !== 'run') {
-          expect(prompt, label).toContain(
-            'Within one entry, walk its facings in the order listed and place all N copies together',
-          );
-          expect(prompt, label).toContain('never one copy at every facing before the second copy');
-        } else {
-          expect(prompt, label).not.toContain('Within one entry');
-        }
+      const label = `${category}/${mode}/${directions}/${plan.name}`;
+      if (plan.facings !== 'run') {
+        expect(prompt, label).toContain(
+          'Within one entry, walk its facings in the order listed and place all N copies together',
+        );
+        expect(prompt, label).toContain('never one copy at every facing before the second copy');
+      } else {
+        expect(prompt, label).not.toContain('Within one entry');
       }
     },
   );
@@ -353,22 +353,20 @@ describe('component counts', () => {
     return generatePrompt(category, subject, withOutput({ directionalMode: mode, directions, sheetIndex }));
   }
 
-  it.each(CASES)(
-    'gives an entry that refers to its facings the same arithmetic as one that names them, on %s',
-    (name) => {
+  it.each(SHEETS)(
+    'gives an entry that refers to its facings the same arithmetic as one that names them, on $name / $mode / $directions / $sheet',
+    (sheet) => {
       // The `atEachYaw` shape — `Handle, at each of the yaws section 3 lists` — names no facing on
       // the entry itself, so section 4's rule as first written ("an entry naming several facings
       // names one drawing at each") bound it only by charitable reading: a generator taking the
       // sentence literally had no stated arithmetic for the entry at all. The rule now says
       // reference counts as naming, and this walks every sheet carrying such an entry to check the
       // two travel together.
-      for (const sheet of sheetsOf(name)) {
-        const prompt = promptOf(sheet);
-        if (!prompt.includes('at each of the yaws section 3 lists')) continue;
-        expect(prompt, `${sheet.category}/${sheet.mode}/${sheet.directions}`).toContain(
-          'an entry naming or referring to several facings names one drawing at',
-        );
-      }
+      const prompt = promptOf(sheet);
+      if (!prompt.includes('at each of the yaws section 3 lists')) return;
+      expect(prompt, `${sheet.category}/${sheet.mode}/${sheet.directions}`).toContain(
+        'an entry naming or referring to several facings names one drawing at',
+      );
     },
   );
 

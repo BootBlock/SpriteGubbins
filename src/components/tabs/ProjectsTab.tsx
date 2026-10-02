@@ -3,6 +3,7 @@ import { ProjectCreateForm } from '../projects/ProjectCreateForm.tsx';
 import { ProjectList } from '../projects/ProjectList.tsx';
 import { ProjectPanel } from '../projects/ProjectPanel.tsx';
 import { ProjectTransferControls } from '../projects/ProjectTransferControls.tsx';
+import { useCustomIconLibraryStore } from '../../stores/useCustomIconLibraryStore.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
@@ -26,19 +27,21 @@ export function ProjectsTab() {
   const projects = useProjectStore((state) => state.projects);
   const customPresets = usePresetStore((state) => state.customPresets);
   const quantisePresets = useQuantisePresetStore((state) => state.presets);
+  const customIcons = useCustomIconLibraryStore((state) => state.icons);
 
   const [chosen, setChosen] = useState('');
 
   const active = projects.find((project) => project.id === chosen) ?? projects[0];
 
-  /** How many saves each project holds, both kinds counted together — what the buttons show. */
+  /** How many saves each project holds, every kind counted together — what the buttons show. */
   const counts = useMemo(() => {
     const totals = new Map<string, number>();
-    for (const { projectId } of [...customPresets, ...quantisePresets]) {
+    for (const { projectId } of [...customPresets, ...quantisePresets, ...customIcons]) {
       totals.set(projectId, (totals.get(projectId) ?? 0) + 1);
     }
     return totals;
-  }, [customPresets, quantisePresets]);
+  }, [customPresets, quantisePresets, customIcons]);
+  const savedCount = customPresets.length + quantisePresets.length + customIcons.length;
 
   const presetsHere = useMemo(
     () => customPresets.filter((preset) => preset.projectId === active?.id),
@@ -48,6 +51,10 @@ export function ProjectsTab() {
     () => quantisePresets.filter((preset) => preset.projectId === active?.id),
     [quantisePresets, active],
   );
+  const iconsHere = useMemo(
+    () => customIcons.filter((icon) => icon.projectId === active?.id),
+    [customIcons, active],
+  );
 
   return (
     <div className="animate-view-fade-in space-y-6">
@@ -55,9 +62,8 @@ export function ProjectsTab() {
         <div>
           <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">Your projects</h2>
           <p className="text-xs text-ink-muted">
-            {projects.length} {projects.length === 1 ? 'project' : 'projects'}, holding{' '}
-            {customPresets.length + quantisePresets.length} saved{' '}
-            {customPresets.length + quantisePresets.length === 1 ? 'item' : 'items'} between them.
+            {projects.length} {projects.length === 1 ? 'project' : 'projects'}, holding {savedCount} saved{' '}
+            {savedCount === 1 ? 'item' : 'items'} between them.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -86,7 +92,13 @@ export function ProjectsTab() {
             pressed Delete on. A key is the whole fix, because it is what says these are two
             different panels rather than one panel showing something else.
           */}
-          <ProjectPanel key={active.id} project={active} presets={presetsHere} quantisePresets={dialsHere} />
+          <ProjectPanel
+            key={active.id}
+            project={active}
+            presets={presetsHere}
+            quantisePresets={dialsHere}
+            customIcons={iconsHere}
+          />
         </>
       )}
     </div>

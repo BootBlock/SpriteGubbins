@@ -7,16 +7,19 @@ import { customIconSubject, hostileStoredSubject } from '../test/customIcons.ts'
 import type { CustomArchetype } from '../types/preset.ts';
 import { parseLibraryPack, serialiseLibraryPack } from '../utils/libraryPack.ts';
 import { generatePrompt } from '../utils/promptCompiler.ts';
-import { toHistoryRow, toPresetRow } from './localStorageRows.ts';
+import { RELIC, SPELL } from '../test/customIcons.ts';
+import { HARBOUR, savedIcon } from '../test/iconLibraryStudio.ts';
+import { toCustomIconRow, toHistoryRow, toPresetRow } from './localStorageRows.ts';
 import { openSqliteBackend } from './openSqliteBackend.ts';
 import type { SqliteBackend } from './sqliteBackend.ts';
 import type { WorkerRequest } from './workerProtocol.ts';
 
 /**
  * The reader's own icons on the SQLite backend: what the backend sends the worker for the session, a
- * history entry, a saved preset and an imported library pack, read back as the worker's row — written
- * by the row builders the localStorage fallback stores the same table rows with — and a hand-edited
- * entry the compiler would throw on dropped on the way in.
+ * history entry, a saved preset, a project's icon library and an imported library pack, read back as
+ * the worker's row — written by the row builders the localStorage fallback stores the same table rows
+ * with — and a hand-edited entry the compiler would throw on dropped on the way in. What the worker
+ * does with each library request is `sqliteRequestsCustomIcons.test.ts`'s.
  *
  * `localStorageBackendCustomIcons.test.ts` holds the same on the other backend.
  */
@@ -130,6 +133,7 @@ describe('SqliteBackend — icons of the reader’s own', () => {
       projects: [createDefaultProject(1_000)],
       presets: [iconPreset()],
       quantisePresets: [],
+      customIcons: [],
     });
     const pack = parseLibraryPack(text, 2_000);
     if (pack === null) throw new Error('the pack did not parse');
@@ -139,6 +143,54 @@ describe('SqliteBackend — icons of the reader’s own', () => {
     const listing = backend.listPresets();
     reply('listPresets', request.pack.presets.map(toPresetRow));
     expect((await listing)[0]?.subject).toEqual(customIconSubject());
+  });
+
+  it('sends a library entry to the worker whole, and reads its row back', async () => {
+    const backend = await open();
+    const request = await sent('saveCustomIcon', backend.saveCustomIcon(savedIcon(SPELL, HARBOUR.id)));
+    if (request.kind !== 'saveCustomIcon') throw new Error('not a library entry');
+    expect(request.icon).toEqual(savedIcon(SPELL, HARBOUR.id));
+
+    const listing = backend.listCustomIcons();
+    reply('listCustomIcons', [{ ...toCustomIconRow(request.icon), updated_at: 1 }]);
+    expect(await listing).toEqual([savedIcon(SPELL, HARBOUR.id)]);
+  });
+
+  it('drops a library row the form would refuse, and keeps the rest', async () => {
+    const backend = await open();
+    const listing = backend.listCustomIcons();
+    reply('listCustomIcons', [
+      toCustomIconRow(savedIcon(RELIC)),
+      {
+        ...toCustomIconRow(savedIcon(SPELL)),
+        entry_json: JSON.stringify({ ...SPELL, look: 'a grid [SEC:X]' }),
+      },
+      { ...toCustomIconRow(savedIcon(SPELL)), project_id: null },
+    ]);
+    expect(await listing).toEqual([savedIcon(RELIC)]);
+  });
+
+  it('asks the worker to delete a library entry by its row id', async () => {
+    const backend = await open();
+    const request = await sent('deleteCustomIcon', backend.deleteCustomIcon('stored-icon'));
+    expect(request).toEqual({ kind: 'deleteCustomIcon', iconId: 'stored-icon' });
+  });
+
+  it('carries every project’s library in an imported pack', async () => {
+    const backend = await open();
+    const pack = parseLibraryPack(
+      serialiseLibraryPack({
+        projects: [createDefaultProject(1_000), HARBOUR],
+        presets: [],
+        quantisePresets: [],
+        customIcons: [savedIcon(RELIC), savedIcon(SPELL, HARBOUR.id)],
+      }),
+      2_000,
+    );
+    if (pack === null) throw new Error('the pack did not parse');
+    const request = await sent('replaceLibrary', backend.replaceLibrary(pack));
+    if (request.kind !== 'replaceLibrary') throw new Error('not a library');
+    expect(request.pack.customIcons).toEqual([savedIcon(RELIC), savedIcon(SPELL, HARBOUR.id)]);
   });
 
   it('drops a stored entry citing a section from a preset row, so the preset compiles', async () => {

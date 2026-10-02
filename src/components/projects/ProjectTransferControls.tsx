@@ -1,6 +1,8 @@
 import { LIBRARY_PACK_ITEMS } from '../../constants/packImport.ts';
 import { PROJECT_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useCustomIconLibraryStore } from '../../stores/useCustomIconLibraryStore.ts';
 import { useLibraryTransferStore } from '../../stores/useLibraryTransferStore.ts';
+import { libraryPackSize } from '../../utils/libraryPack.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
@@ -13,7 +15,7 @@ const PACK_FILENAME = 'sprite-gubbins-library.json';
  * The library's transfer surface: which store it moves, and what the file is called.
  *
  * The control itself is {@link JsonPackTransfer}, which the two collections used to have one each.
- * There is one now, and it is here, because the file carries all three collections together — a
+ * There is one now, and it is here, because the file carries the projects and every saved collection together — a
  * preset names its project, so a pack of presets without their projects describes a library that
  * cannot be assembled. What is left in this file is only what differs: the store, the filename, the
  * guidance, and this library's own answer to whether there is anything to export, which is always
@@ -33,6 +35,7 @@ export function ProjectTransferControls() {
   const projectCount = useProjectStore((state) => state.projects.length);
   const presetCount = usePresetStore((state) => state.customPresets.length);
   const dialCount = useQuantisePresetStore((state) => state.presets.length);
+  const iconCount = useCustomIconLibraryStore((state) => state.icons.length);
 
   return (
     <JsonPackTransfer
@@ -43,11 +46,8 @@ export function ProjectTransferControls() {
         pendingImport === null
           ? null
           : {
-              incoming:
-                pendingImport.projects.length +
-                pendingImport.presets.length +
-                pendingImport.quantisePresets.length,
-              replacing: projectCount + presetCount + dialCount,
+              incoming: libraryPackSize(pendingImport),
+              replacing: projectCount + presetCount + dialCount + iconCount,
               noun: LIBRARY_PACK_ITEMS,
               confirmGuidance: PROJECT_ACTION_TOOLTIPS.confirmImportLibrary,
               cancelGuidance: PROJECT_ACTION_TOOLTIPS.cancelImportLibrary,

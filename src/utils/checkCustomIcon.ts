@@ -19,8 +19,9 @@ import { slugify } from './slugify.ts';
 import { takenIconSlotNames } from './takenIconSlotNames.ts';
 
 /**
- * Whether an entry of the reader's own may join a roster, and the entry it makes if so — the one gate
- * every custom entry passes, from the catalogue dialog's form, from the store's actions and from storage.
+ * Whether an entry of the reader's own may join a roster or a project's library, and the entry it makes
+ * if so — the one gate every custom entry passes, from the catalogue dialog's form, from the stores'
+ * actions, from storage and from a library pack.
  *
  * **What it refuses, and why each is a refusal rather than a warning:**
  *
@@ -34,12 +35,15 @@ import { takenIconSlotNames } from './takenIconSlotNames.ts';
  *   and shift every slot after it.
  * - **A role or state with no plain letter or digit**, since the slot name is made of those alone.
  * - **A slot name something else already answers to** — a catalogue entry or one of its pair's drawings,
- *   an overlay piece, or another pick on this roster — because two sprites answering to one name are cut
- *   to one file, and the second overwrites the first.
+ *   an overlay piece, another pick on this roster, or another entry of the project's library (`library`)
+ *   — because two sprites answering to one name are cut to one file, and the second overwrites the
+ *   first. The library counts even where it is not ticked, since ticking it later would meet the clash.
  * - **A spell with no school, or a school on anything else**, which is the catalogue's own rule.
- * - **An entry the set has no room for**, measured against `ICON_ROSTER_CAPACITY` as a tick is.
- * - **A change to an entry no longer on the roster** — cleared, removed or undone away while its form
- *   was open — since there is nothing left for the change to replace.
+ * - **An entry the set has no room for**, measured against `ICON_ROSTER_CAPACITY` as a tick is — where
+ *   the entry is going onto the set. A change to a library entry the set does not hold is not measured,
+ *   since it changes nothing the sheets draw.
+ * - **A change to an entry neither on the roster nor in the library** — cleared, unticked, deleted or
+ *   undone away while its form was open — since there is nothing left for the change to replace.
  *
  * Every one of these breaks the output whatever the reader's world is. What depends on the world and
  * the key — a colour, a lettered object, a hand — is `customIconWarnings`', which warns and never refuses.
@@ -47,12 +51,15 @@ import { takenIconSlotNames } from './takenIconSlotNames.ts';
  * **Normalised, never rewritten**: whitespace runs collapse to one space, since a line break inside an
  * inventory line would read as two lines, and the states become slugs, as a catalogue entry's are. The
  * reader's spelling and punctuation are their own. `replacing` names the entry an edit replaces, which
- * is measured as gone.
+ * is measured as gone from the roster and the library alike. `library` is the active project's library
+ * as the caller holds it: the roster parser and a pack's parser pass none, since a stored entry is read
+ * on its own, and a re-tick passes the library without the entry being ticked.
  */
 export function checkCustomIcon(
   draft: CustomIconDraft,
   picks: readonly IconPick[],
   replacing: string | null,
+  library: readonly CustomIconEntry[],
 ): CustomIconCheck {
   const refusals: CustomIconRefusal[] = [];
   const role = collapsed(draft.role);
@@ -70,10 +77,12 @@ export function checkCustomIcon(
     refusals.push({ field: 'school', message: CUSTOM_ICON_REFUSALS.schoolStray });
   }
 
-  if (replacing !== null && !picks.some((pick) => pick.source === 'CUSTOM' && pick.entry.id === replacing)) {
+  const onSet = picks.some((pick) => pick.source === 'CUSTOM' && pick.entry.id === replacing);
+  if (replacing !== null && !onSet && !library.some((held) => held.id === replacing)) {
     refusals.push({ field: 'set', message: CUSTOM_ICON_REFUSALS.gone });
   }
   const others = picks.filter((pick) => iconPickId(pick) !== replacing);
+  const shelved = library.filter((held) => held.id !== replacing);
   const entry: CustomIconEntry = {
     id,
     role,
@@ -83,10 +92,12 @@ export function checkCustomIcon(
     ...(states === null ? {} : { states }),
     look,
   };
-  if (id !== '') refusals.push(...slotRefusals(entry, others));
+  if (id !== '') refusals.push(...slotRefusals(entry, others, shelved));
   const left = ICON_ROSTER_CAPACITY - iconRosterTally(others).components;
   const needed = iconComponentCount(entry);
-  if (needed > left) refusals.push({ field: 'set', message: ICON_CAPACITY_NOTICES.row(needed, left) });
+  if ((replacing === null || onSet) && needed > left) {
+    refusals.push({ field: 'set', message: ICON_CAPACITY_NOTICES.row(needed, left) });
+  }
 
   return refusals.length === 0 ? { entry, refusals } : { entry: null, refusals };
 }
@@ -137,9 +148,19 @@ function statesOf(
   return slugs;
 }
 
-/** A refusal for each of the entry's names something else in the app or on the set already answers to. */
-function slotRefusals(entry: CustomIconEntry, others: readonly IconPick[]): readonly CustomIconRefusal[] {
+/**
+ * A refusal for each of the entry's names something else in the app, on the set or in the project's
+ * library already answers to.
+ */
+function slotRefusals(
+  entry: CustomIconEntry,
+  others: readonly IconPick[],
+  shelved: readonly CustomIconEntry[],
+): readonly CustomIconRefusal[] {
   const taken = new Map(takenIconSlotNames());
+  for (const held of shelved) {
+    for (const name of [held.id, ...iconSlotNames(held)]) taken.set(name, `your library’s “${held.role}”`);
+  }
   for (const pick of others) {
     const icon = rosterIcon(pick);
     if (icon === undefined) continue;

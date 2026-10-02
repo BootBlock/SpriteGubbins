@@ -152,14 +152,29 @@ describe('the figures DESPILL_DEPTH states', () => {
     expect(after.map(([tinted]) => tinted)).toEqual([0, 0, 0, 0, 0]);
   });
 
+  // Each sheet's two keyings are two cases rather than one: together they passed the one-second limit a
+  // slow runner stands in for on the larger sheets.
+  it.each(CORPUS_SHEETS)(
+    'leaves %s’s rings 4 and 5 tinted as the table records, without the despill',
+    (name) => {
+      const [ring4 = [0, 1], ring5 = [0, 1]] = tintByRing(keyed(name, false), 5).slice(3);
+      const { ring4: tableRing4, ring5: tableRing5 } = CALIBRATION[name];
+
+      expect({ ring4: percent(ring4), ring5: percent(ring5) }).toEqual({
+        ring4: tableRing4,
+        ring5: tableRing5,
+      });
+    },
+  );
+
   it.each(CORPUS_SHEETS)('brings %s’s band to the table’s figure against its interior', (name) => {
-    const [ring4 = [0, 1], ring5 = [0, 1]] = tintByRing(keyed(name, false), 5).slice(3);
     const rings = tintByRing(keyed(name, true), 10);
     const band = Math.max(...rings.slice(0, DESPILL_DEPTH).map(percent));
     const interior =
       Math.round((rings.slice(5).reduce((total, ring) => total + percent(ring), 0) / 5) * 100) / 100;
+    const { band: tableBand, interior: tableInterior } = CALIBRATION[name];
 
-    expect({ ring4: percent(ring4), ring5: percent(ring5), band, interior }).toEqual(CALIBRATION[name]);
+    expect({ band, interior }).toEqual({ band: tableBand, interior: tableInterior });
   });
 
   it('takes the reference sheet’s tinted outer ring at a grid of 6 to none, from 40 unreduced and 18 under 64 colours', () => {

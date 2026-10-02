@@ -77,6 +77,7 @@ describe('LocalStorageBackend — icons of the reader’s own', () => {
       projects: [createDefaultProject(1_000)],
       presets: [iconPreset()],
       quantisePresets: [],
+      customIcons: [],
     });
     const pack = parseLibraryPack(text, 2_000);
     if (pack === null) throw new Error('the pack did not parse');
