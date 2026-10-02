@@ -638,8 +638,11 @@ interface SheetPlanFields {
    * drawn bare, so it says so here, and section 1 then excepts the attribute in those words
    * (`CLOTHING_DRAWN_ELSEWHERE`). `sheetPlans.test.ts` holds a plan declaring it to a series in which
    * another sheet does draw the attribute and this one does not.
+   *
+   * **`clothing` alone**, because it is the one attribute section 1's paint rule is about and so the
+   * one the compiler has a sentence for; a second key would be a declaration nothing reads.
    */
-  readonly drawnElsewhere?: DeclinableFieldKey;
+  readonly drawnElsewhere?: 'clothing';
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */

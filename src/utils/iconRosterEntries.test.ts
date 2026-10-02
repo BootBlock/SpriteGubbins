@@ -26,12 +26,14 @@ describe('iconRosterEntries', () => {
 
     expect(sound.count).toBe(2);
     expect(sound.parts).toEqual(states.map((state) => `system-sound-${state}`));
-    expect(sound.text.startsWith(`Sound ×2, drawn ${states[0]} and then ${states[1]} — `)).toBe(true);
+    expect(sound.text.startsWith(`Sound ×2, one icon drawn ${states[0]} and then ${states[1]} — `)).toBe(
+      true,
+    );
   });
 
   it('says a state’s hyphens as spaces', () => {
     const [ready] = iconRosterEntries(subjectWith(['status-ready-check']));
-    expect(ready?.text).toContain('drawn ready and then not ready — ');
+    expect(ready?.text).toContain('one icon drawn ready and then not ready — ');
   });
 
   it('skips an id the catalogue does not hold, and draws nothing for no roster', () => {

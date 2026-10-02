@@ -9,7 +9,6 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  */
 export const SYSTEM_PANELS: IconCatalogueGroup = {
   id: 'system-panels',
-  label: 'System Panels',
   kind: 'SYSTEM',
   entries: [
     {

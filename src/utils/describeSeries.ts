@@ -1,6 +1,7 @@
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { sheetComponentCount } from './componentSet.ts';
+import { componentTally } from './componentTally.ts';
 import type { SheetBatch } from './sheetBatch.ts';
 
 /**
@@ -38,7 +39,7 @@ export function describeSeries(
       const facings =
         sheet.covered.length > 1 ? `covering ${sheet.covered.join(', ')}` : `drawn towards ${sheet.assembly}`;
 
-      return `- **Sheet ${String(index + 1)} — ${sheet.plan.name}**${here}: ${String(count)} components, ${facings}.`;
+      return `- **Sheet ${String(index + 1)} — ${sheet.plan.name}**${here}: ${componentTally(count)}, ${facings}.`;
     })
     .join('\n');
 }

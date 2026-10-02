@@ -186,3 +186,26 @@ or library pack — has no roster and falls back to the ICON default subject who
 option values are gone, the `flat-ability-glyph-set` preset is replaced by `flat-system-button-set`,
 `ASPECT_RATIO_CHOICES` is replaced by `aspectRatioChoices(category)`, and an ICON configuration
 stored with a non-square canvas compiles square.
+**Addendum — review fixes (2026-10-02).** A review of the phase 1 commit found thirteen defects,
+fixed in a follow-up commit:
+
+- ICON's section 4 guard banned every entry describing anatomy, sending the character panel's bust to
+  section 0's tripwire; it now bans only anatomy no entry names.
+- The icon sheet counted components as icons and called a two-state entry two subjects. It now states
+  its grid in drawings and says a ×2 line is one icon drawn in two states.
+- The guard's "overlays it does list" sentence and the audit's icon-agreement check now follow the
+  plan's declared `drawnElsewhere`, so neither names what its sheet does not hold.
+- A colour an entry names outranks the set's primary colours as well as its accent.
+- The section 3 sweep again compiles every raw stored mode and set for every category; only ICON
+  skips a repeat resolution, and a test holds each skipped pairing to the prompt it resolves to.
+- A one-component sheet reads "Exactly 1 component" and "1 component" in section 6's series list
+  (`componentTally`), and is named `Icon N`. The
+  same fix reaches every other one-component sheet, such as a single-facing directional core, which
+  had read “Exactly 1 components” before the catalogue existed.
+- The speculative `DAMAGE_SCHOOLS`, `school`, runtime `ICON_KINDS` and group `label` went;
+  `IconKind` names the two kinds in use.
+- `drawnElsewhere` is narrowed to `'clothing'`; `iconComponentCount` is the one place a pick's
+  component count is written, and the test rosters are cut with `chunkEntries`.
+- The architecture copy names the icon roster, the canvas card says why an icon set is square, the
+  exclusions card cites the character panel's bust, and `iconSheet.ts` names `capabilityRuns` as the
+  reader of its shared assembly sentence.

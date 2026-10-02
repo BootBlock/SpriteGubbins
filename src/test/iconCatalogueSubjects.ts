@@ -1,5 +1,6 @@
 import { defaultSubjectFor } from '../constants/categories/index.ts';
-import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
+import { ICON_CATALOGUE_GROUPS, iconComponentCount } from '../constants/iconCatalogue/index.ts';
+import { chunkEntries } from '../utils/chunkEntries.ts';
 import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { LOOK_FAMILY_OF_WORLD } from '../constants/iconCatalogue/lookFamilyOfWorld.ts';
 import { LOOK_FAMILIES } from '../types/iconCatalogue.ts';
@@ -19,21 +20,13 @@ export const UNMAPPED_WORLD = 'Clockwork Moon Colony';
  * capacity allows — one roster while the catalogue fits in one, and as many as it takes once it does not.
  */
 export function iconCatalogueRosters(): readonly IconRoster[] {
-  const rosters: string[][] = [];
-  let picks: string[] = [];
-  let filled = 0;
-  for (const entry of ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)) {
-    const count = entry.states === undefined ? 1 : 2;
-    if (filled + count > ICON_ROSTER_CAPACITY) {
-      rosters.push(picks);
-      picks = [];
-      filled = 0;
-    }
-    picks.push(entry.id);
-    filled += count;
-  }
-  if (picks.length > 0) rosters.push(picks);
-  return rosters.map((ids) => ({ look: 'ISOLATED_MARK', picks: ids }));
+  const lines = ICON_CATALOGUE_GROUPS.flatMap((group) =>
+    group.entries.map((entry) => ({ id: entry.id, count: iconComponentCount(entry) })),
+  );
+  return chunkEntries(lines, ICON_ROSTER_CAPACITY).map((run) => ({
+    look: 'ISOLATED_MARK',
+    picks: run.map((line) => line.id),
+  }));
 }
 
 /**

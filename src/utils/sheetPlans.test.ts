@@ -1629,7 +1629,7 @@ describe('no count in a plan’s prose contradicts the entries it describes', ()
   });
 
   it('states every ICON icon sheet’s grid from the icons it holds', () => {
-    // The intro is the generator's map of the sheet — how many icons, how many across and how many
+    // The intro is the generator's map of the sheet — how many drawings, how many across and how many
     // down — so it is held to the entries under it on every icon sheet the starter set and the whole
     // catalogue build, a short last sheet included.
     for (const subject of [standardSubjectOf('ICON'), ...iconCatalogueSubjects()]) {
@@ -1648,7 +1648,7 @@ describe('no count in a plan’s prose contradicts the entries it describes', ()
 
         expect(count, plan.name).toBeLessThanOrEqual(ICONS_PER_SHEET);
         expect(icons.intro, plan.name).toContain(
-          `${figureWordCapitalised(count)} icons, ${figureWord(across)} across and ${figureWord(down)} down`,
+          `${figureWordCapitalised(count)} ${count === 1 ? 'drawing' : 'drawings'}${count === 1 ? ', alone' : `, ${figureWord(across)} across and ${figureWord(down)} down`}`,
         );
       }
     }

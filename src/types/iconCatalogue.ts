@@ -9,14 +9,14 @@
  */
 
 /**
- * What kind of icon an entry is, which is how the catalogue is filed and filtered.
+ * What kind of icon a group holds, which is how the catalogue is filed.
  *
  * Coarse on purpose, as `ComponentKind` is: a kind is a shelf a reader browses, and the groups inside
- * it (restoratives, the system menu, map pins) are what a reader actually ticks.
+ * it (restoratives, the system panels, map pins) are what a reader actually ticks. Two kinds have
+ * content so far; spells and abilities, social icons and companions join in phase 4 of
+ * `docs/todo/icon-catalogue.md` with the groups that hold them.
  */
-export const ICON_KINDS = ['ITEM', 'SPELL', 'SOCIAL', 'COMPANION', 'SYSTEM'] as const;
-
-export type IconKind = (typeof ICON_KINDS)[number];
+export type IconKind = 'ITEM' | 'SYSTEM';
 
 /**
  * The families of world an entry writes a look for.
@@ -29,26 +29,6 @@ export type IconKind = (typeof ICON_KINDS)[number];
 export const LOOK_FAMILIES = ['FANTASY', 'AGE_OF_STEAM', 'MODERN', 'CYBERPUNK', 'SPACE_OPERA'] as const;
 
 export type LookFamily = (typeof LOOK_FAMILIES)[number];
-
-/**
- * The damage schools a spell or ability entry belongs to, named here in their cyberpunk spelling.
- *
- * Declared now because an entry's shape is fixed now: `school` is the field a SPELL entry must carry and
- * no other kind may. The per-family names and the one colour each school is drawn in arrive with the
- * spell content itself, which is phase 4 of `docs/todo/icon-catalogue.md`.
- */
-export const DAMAGE_SCHOOLS = [
-  'KINETIC',
-  'THERMAL',
-  'CRYO',
-  'VOLTAIC',
-  'TOXIC',
-  'NEURAL',
-  'NETRUN',
-  'NANITE',
-] as const;
-
-export type DamageSchool = (typeof DAMAGE_SCHOOLS)[number];
 
 /** One archetype the reader can tick: a game role, and how each family of world draws it. */
 export interface IconCatalogueEntry {
@@ -68,8 +48,6 @@ export interface IconCatalogueEntry {
    * hand-typed world that maps to no family is drawn from.
    */
   readonly role: string;
-  /** The damage school, which a SPELL entry carries and no other kind may. */
-  readonly school?: DamageSchool;
   /**
    * Whether the drawing includes a hand, a face or a figure.
    *
@@ -97,8 +75,6 @@ export interface IconCatalogueEntry {
 export interface IconCatalogueGroup {
   /** Lower-case and hyphen-separated, unique across the catalogue. */
   readonly id: string;
-  /** What the picker titles the group, in title case. */
-  readonly label: string;
   readonly kind: IconKind;
   readonly entries: readonly IconCatalogueEntry[];
 }

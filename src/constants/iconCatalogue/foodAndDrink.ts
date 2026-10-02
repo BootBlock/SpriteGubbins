@@ -9,7 +9,6 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  */
 export const FOOD_AND_DRINK: IconCatalogueGroup = {
   id: 'food-and-drink',
-  label: 'Food & Drink',
   kind: 'ITEM',
   entries: [
     {

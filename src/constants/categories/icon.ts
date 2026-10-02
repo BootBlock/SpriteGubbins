@@ -326,7 +326,7 @@ export const ICON: CategoryDefinition = {
       label: 'Explicit Exclusions',
       tooltip:
         'Negative rules that keep the interface’s job off the icon sheets. Lettering matters most: the engine draws stack counts, cooldown timers and keybinds at runtime, so an icon with one baked in serves one quantity, in one language, on one keyboard.\n\n' +
-        'A hand or a figure is excluded unless an icon’s own entry names one, so a wave emote keeps its hand.',
+        'A hand or a figure is excluded unless an icon’s own entry names one, so the character panel’s icon keeps its bust.',
       options: [
         'No lettering, numerals, stack counts or keybinds',
         'No slot plate, frame or border behind the icon',

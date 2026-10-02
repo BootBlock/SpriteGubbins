@@ -1,4 +1,4 @@
-import { iconCatalogueEntry } from '../constants/iconCatalogue/index.ts';
+import { iconCatalogueEntry, iconComponentCount } from '../constants/iconCatalogue/index.ts';
 import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { ICON_LOOKS } from '../types/iconRoster.ts';
 import type { IconRoster } from '../types/iconRoster.ts';
@@ -29,7 +29,7 @@ export function parseIconRoster(value: unknown, fallback: IconRoster): IconRoste
     if (typeof id !== 'string' || picks.includes(id)) continue;
     const entry = iconCatalogueEntry(id);
     if (entry === undefined) continue;
-    const count = entry.states === undefined ? 1 : 2;
+    const count = iconComponentCount(entry);
     if (filled + count > ICON_ROSTER_CAPACITY) break;
     picks.push(id);
     filled += count;

@@ -57,3 +57,14 @@ const ENTRIES_BY_ID: ReadonlyMap<string, IconCatalogueEntry> = new Map(
 export function iconCatalogueEntry(id: string): IconCatalogueEntry | undefined {
   return ENTRIES_BY_ID.get(id);
 }
+
+/**
+ * How many components one entry is on a sheet: one drawing, or one for each state of a toggle.
+ *
+ * The one place that arithmetic is written, because four readers need it and agree only if they share
+ * it — the roster parser's capacity, the sheet's inventory line, the chunking that keeps a pair on one
+ * sheet, and the test rosters built from the whole catalogue.
+ */
+export function iconComponentCount(entry: IconCatalogueEntry): number {
+  return entry.states === undefined ? 1 : entry.states.length;
+}

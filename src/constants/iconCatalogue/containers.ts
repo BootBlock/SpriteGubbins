@@ -10,7 +10,6 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  */
 export const CONTAINERS: IconCatalogueGroup = {
   id: 'containers',
-  label: 'Containers',
   kind: 'ITEM',
   entries: [
     {

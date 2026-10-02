@@ -56,19 +56,34 @@ describe('the ICON series', () => {
   it('states the grid each sheet holds, and the short last row of a short sheet', () => {
     const [, full, short] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 23)));
     expect(full?.groups[0]?.intro).toContain(
-      'Sixteen icons, four across and four down, in the reading order below.',
+      'Sixteen drawings, four across and four down, in the reading order below.',
     );
     expect(short?.groups[0]?.intro).toContain(
-      'Seven icons, four across and two down, the last row holding three, in the reading order below.',
+      'Seven drawings, four across and two down, the last row holding three, in the reading order below.',
     );
     const [, one] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 1)));
-    expect(one?.groups[0]?.intro).toContain('One icon, alone in the middle of the sheet.');
+    expect(one?.groups[0]?.intro).toContain('One drawing, alone in the middle of the sheet.');
+    // And names itself with the one position it holds.
+    expect(one?.name).toBe('Icon 1');
   });
 
-  it('tells every icon that a colour its own entry names outranks the set’s accent', () => {
+  it('tells every icon that a colour its own entry names outranks the set’s primary and accent colours', () => {
     const [, sheet] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 4)));
     expect(sheet?.groups[0]?.intro?.replaceAll(/\s+/g, ' ')).toContain(
-      'A colour an entry names is that icon’s own, and outranks the set’s accent colour for it',
+      'A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for it',
+    );
+  });
+
+  it('counts a two-state entry as one icon drawn twice, in drawings rather than icons', () => {
+    // A sound toggle and a potion are two icons and three drawings: the grid is stated in drawings,
+    // and the intro says what the ×2 line is rather than calling it two different subjects.
+    const [, sheet] = seriesOf(subjectWith(['system-sound', 'heal-minor']));
+    const intro = sheet?.groups[0]?.intro?.replaceAll(/\s+/g, ' ') ?? '';
+    expect(intro).toContain('Three drawings, three across and one down, in the reading order below.');
+    expect(intro).toContain('an entry marked ×2 is one icon drawn once in each of its two states');
+    expect(intro).not.toMatch(/\bicons,/);
+    expect(entriesOf(sheet ?? ICON_OVERLAY_SHEET)[0]?.text).toMatch(
+      /^Sound ×2, one icon drawn unmuted and then muted — /,
     );
   });
 

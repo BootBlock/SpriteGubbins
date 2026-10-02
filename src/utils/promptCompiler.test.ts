@@ -2260,9 +2260,11 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
       // it: an assembly base draws sheets of its own (issue #283), so the default subject alone never
       // compiles OBJECT's standard sheets.
       for (const subject of assemblyBaseSubjectsOf(category)) {
-        // Each resolved address once: a stored mode or set the category narrows compiles the prompt
-        // its resolution names, so a second stored value resolving to it is the same prompt again —
-        // and ICON's whole-catalogue series would otherwise be compiled once per mode and set.
+        // ICON alone compiles each resolved address once. It offers one mode and one set, so every other
+        // stored mode and set resolves to the same sheets — and its whole-catalogue roster is a dozen of
+        // them, compiled once per stored pairing otherwise. The raw stored values still reach the
+        // compiler for every other category, where the narrowing is what this sweep exists to test, and
+        // the test after this one holds ICON's skipped pairings to the prompt their resolution names.
         const compiled = new Set<string>();
         for (const directionalMode of DIRECTIONAL_MODES) {
           for (const directions of DIRECTION_SETS) {
@@ -2273,7 +2275,7 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
                 resolveDirectionSet(category, directions),
                 resolveSheetIndex(category, subject, directionalMode, directions, sheetIndex),
               ].join('|');
-              if (compiled.has(resolved)) continue;
+              if (category === 'ICON' && compiled.has(resolved)) continue;
               compiled.add(resolved);
               // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
               // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
@@ -2288,6 +2290,32 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
               }
             }
           }
+        }
+      }
+    }
+  });
+
+  it('compiles every ICON pairing the sweep skips to the prompt its resolution names', () => {
+    // The sweep above compiles each of ICON's resolved addresses once; this is what makes that skip
+    // safe. A stored mode and set ICON does not offer reach the compiler raw here, and the prompt is
+    // the one the offered pairing compiles.
+    const subject = defaultSubjectFor('ICON');
+    for (const sheetIndex of [0, 1]) {
+      const offered = generatePrompt(
+        'ICON',
+        subject,
+        withOutput({
+          directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+          directions: 'SINGLE_FRONT',
+          sheetIndex,
+        }),
+      );
+      for (const directionalMode of DIRECTIONAL_MODES) {
+        for (const directions of DIRECTION_SETS) {
+          expect(
+            generatePrompt('ICON', subject, withOutput({ directionalMode, directions, sheetIndex })),
+            `${directionalMode}/${directions}/${String(sheetIndex)}`,
+          ).toBe(offered);
         }
       }
     }
@@ -3974,13 +4002,55 @@ describe('generatePrompt — an icon set', () => {
       generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 1 }),
       'COMPONENT INVENTORY',
     );
-    expect(inventory).toContain('Sixteen icons, four across and four down, in the reading order below.');
+    expect(inventory).toContain('Sixteen drawings, four across and four down, in the reading order below.');
     expect(inventory).toContain(
       'Minor healing consumable ×1 — a slim red stim-pack auto-injector, needle capped, with a glowing amber dose window',
     );
     expect(inventory.replaceAll(/\s+/g, ' ')).toContain(
-      'A colour an entry names is that icon’s own, and outranks the set’s accent colour for it',
+      'A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for it',
     );
+  });
+
+  it('keeps the bust of a figure entry rather than calling it an error, on the sheet that lists it', () => {
+    // The starter set draws the character panel's bust; a guard calling every entry describing anatomy
+    // an error would have sent it to section 0's tripwire as a malformed specification.
+    expect(ICON.icons?.picks).toContain('system-character');
+    const prompt = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 1 });
+    const inventory = sectionOf(prompt, 'COMPONENT INVENTORY').replaceAll(/\s+/g, ' ');
+    expect(inventory).toContain(
+      'or anatomy other than the hand, face or figure that is the subject of an icon’s own entry, does not belong',
+    );
+    expect(inventory).not.toContain('An entry describing anatomy');
+  });
+
+  it('says the overlays it lists are components only on the sheet that lists them', () => {
+    const OVERLAYS = 'The overlays and marks it does list are components';
+    const overlay = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 });
+    const icons = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 1 });
+    expect(sectionOf(overlay, 'COMPONENT INVENTORY')).toContain(OVERLAYS);
+    expect(sectionOf(icons, 'COMPONENT INVENTORY')).not.toContain(OVERLAYS);
+  });
+
+  it('audits icons against each other on an icon sheet, and pieces at an icon’s cell on the overlay sheet', () => {
+    const ICONS_AGREE = 'Every icon fills the same cell to the same margin';
+    const PIECES_AGREE = 'Every piece sits in a cell the size of one icon';
+    const audit = (sheetIndex: number): string =>
+      sectionOf(
+        generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex }),
+        'LAYOUT AND SELF-AUDIT',
+      ).replaceAll(/\s+/g, ' ');
+    expect(audit(0)).toContain(PIECES_AGREE);
+    expect(audit(0)).not.toContain(ICONS_AGREE);
+    expect(audit(1)).toContain(ICONS_AGREE);
+    expect(audit(1)).not.toContain(PIECES_AGREE);
+  });
+
+  it('agrees the count’s noun with a sheet of one icon, in section 0 and in the series list', () => {
+    const subject = { ...ICON, icons: { look: 'ISOLATED_MARK', picks: ['heal-minor'] } } as const;
+    const prompt = generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 1 });
+    expect(prompt).toContain('Exactly 1 component, each visibly separate');
+    expect(prompt).not.toMatch(/\b1 components\b/);
+    expect(prompt).toContain('**Sheet 2 — Icon 1** *(this sheet)*: 1 component,');
   });
 
   it('bans a hand or figure only where no entry names one', () => {

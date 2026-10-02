@@ -98,7 +98,7 @@ function inventoryOf(
   });
   return {
     section: sectionOf(prompt, 'COMPONENT INVENTORY'),
-    count: /Exactly (\d+) components/.exec(prompt)?.[1],
+    count: /Exactly (\d+) components?/.exec(prompt)?.[1],
   };
 }
 

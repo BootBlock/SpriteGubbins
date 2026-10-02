@@ -316,9 +316,16 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, CategorySente
   // set’s inventory names overlays and marks that sit on top of an icon, and section 0 forbids
   // annotation drawn over the image. Those are two different things, and saying so where the
   // inventory is about to list a locked mark is what stops a generator resolving the apparent
-  // conflict by omitting the overlays.
+  // conflict by omitting the overlays. It is said only on the sheet that lists them: an icon sheet
+  // declares the overlay `drawnElsewhere`, and telling it that the overlays it lists are components
+  // would name entries it does not have.
+  //
+  // **Anatomy is banned only where no entry names it** (R4 of `docs/todo/icon-catalogue.md`). A
+  // catalogue entry whose subject is a figure — the character panel's bust — is an icon, and a guard
+  // calling every entry that describes anatomy an error would send it to section 0's tripwire as a
+  // malformed specification to report rather than draw.
   ICON: (plan, additions) =>
-    `Every entry below is ${plan.componentClass}${guardExemption(additions)}. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The overlays and marks it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.`,
+    `Every entry below is ${plan.componentClass}${guardExemption(additions)}. An entry describing a floor tile, a wall or a terrain piece, or anatomy other than the hand, face or figure that is the subject of an icon’s own entry, does not belong to this sheet and is an error in this specification, not an instruction to follow.${plan.drawnElsewhere === 'clothing' ? '' : ' The overlays and marks it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.'}`,
   BACKGROUND: (plan, additions) =>
     `Every entry below is ${plan.componentClass}${guardExemption(additions)}. An entry describing anatomy, a wall the player walks against, a platform, a vehicle part or an interface element does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
   // The second sentence is this category's own and is the load-bearing one in the whole record: it is
@@ -412,9 +419,11 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, CategorySente
   // Qualified throughout, as VEHICLE’s and INTERFACE’s are: this sheet’s components include marks
   // and overlays, so an unqualified “no marks” would fail it on the entries section 4 required. The
   // second half is the check this deliverable actually needs — an icon grid fails by disagreeing
-  // with itself about weight and margin, and that only shows when the members are seen together.
+  // with itself about weight and margin, and that only shows when the members are seen together. That
+  // check is worded for the sheet it lands on: an icon sheet (the overlay `drawnElsewhere`) compares
+  // icons, and the overlay sheet, which draws none, compares its pieces at one icon's cell.
   ICON: (plan, additions) =>
-    `Every component is ${plan.componentClass}${auditExemption(additions)} — no anatomy or figure its entry does not name, no floor or terrain tiles or scenery, and no interface panel or slot plate drawn behind an icon — and no component carries a letter, a numeral, a stack count or a key name. Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.`,
+    `Every component is ${plan.componentClass}${auditExemption(additions)} — no anatomy or figure its entry does not name, no floor or terrain tiles or scenery, and no interface panel or slot plate drawn behind an icon — and no component carries a letter, a numeral, a stack count or a key name. ${plan.drawnElsewhere === 'clothing' ? 'Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.' : 'Every piece sits in a cell the size of one icon, at the same outline weight and under the same light, so no piece reads as belonging to a different set.'}`,
   // The seam check reaches only a sheet that lists a band meant to loop, for the reason the exclusion
   // line's seam clause does (issue #278): the layer library draws no band, and the check named one.
   // Scoping it in words alone was TERRAIN's arrangement copied, and TERRAIN lays tiles on both sheets.

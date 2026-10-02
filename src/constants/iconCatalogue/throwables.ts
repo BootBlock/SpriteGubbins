@@ -10,7 +10,6 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  */
 export const THROWABLES: IconCatalogueGroup = {
   id: 'throwables',
-  label: 'Throwables',
   kind: 'ITEM',
   entries: [
     {

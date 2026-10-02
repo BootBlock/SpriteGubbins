@@ -9,7 +9,6 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  */
 export const SOCIAL_PANELS: IconCatalogueGroup = {
   id: 'social-panels',
-  label: 'Social',
   kind: 'SYSTEM',
   entries: [
     {

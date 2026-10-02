@@ -1,3 +1,4 @@
+import { componentTally } from './componentTally.ts';
 import { CATEGORY_OPTIONS, fieldLabelFor } from '../constants/categories/index.ts';
 import {
   ASPECT_TEXT,
@@ -100,6 +101,8 @@ export function promptValues(
     // by sound. See `CategoryDefinition.article`.
     CATEGORY_ARTICLE: CATEGORY_OPTIONS[category].article,
     COMPONENT_COUNT: String(componentCount),
+    // The figure with its noun, for section 0's contract, where a sheet of one component is reachable.
+    COMPONENT_TALLY: componentTally(componentCount),
     // Every one of these is now a function of the category as well as the mode. That is the whole
     // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
     // are what let a CHARACTER sheet ask for floors and walls and then forbid them.

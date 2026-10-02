@@ -9,15 +9,21 @@ import { ICON_GRID_COLUMNS } from '../iconCatalogue/iconSheetLimits.ts';
  * **Built rather than written**, because what it draws is the reader's list: the entries are the picks
  * this sheet holds, and the intro states the grid from their count, so a short last sheet says it is
  * short rather than promising sixteen. Every icon sheet of a series shares one `assembly` sentence, which
- * is what lets the split drawer group them as one run of the set.
+ * is what lets `capabilityRuns` in `utils/seriesCapability.ts` fold them into one run when section 6
+ * states what the series delivers.
  *
- * `first` is the roster position of this sheet's first icon, counted in components from one, and with
- * the count it names the sheet — `Icons 17–32` — so the split drawer tells two sheets of one set apart.
+ * **It counts drawings, not icons.** A two-state entry is one icon drawn twice and takes two cells, so the
+ * grid is stated in drawings and the intro says what a ×2 line is; a sheet holding a sound toggle and a
+ * potion is three drawings of two icons.
+ *
+ * `first` is the roster position of this sheet's first drawing, counted in components from one, and with
+ * the count it names the sheet — `Icons 17–32`, or `Icon 17` for a sheet of one — so the split drawer
+ * tells two sheets of one set apart.
  */
 export function iconSheet(entries: readonly ComponentEntry[], first: number): SheetPlan {
   const count = componentTotal(entries);
   return {
-    name: `Icons ${String(first)}–${String(first + count - 1)}`,
+    name: count === 1 ? `Icon ${String(first)}` : `Icons ${String(first)}–${String(first + count - 1)}`,
     facings: 'run',
     assembly:
       'a full grid of icons at one cell size — every member filling the same margin at the same visual weight, readable from its silhouette alone at the smallest size the player sees it, and swappable one for another without the grid changing character.',
@@ -45,8 +51,9 @@ export function iconSheet(entries: readonly ComponentEntry[], first: number): Sh
       {
         heading: null,
         intro: `${gridSentence(count)}
-Each is a different subject from this one set, drawn so the set agrees on weight, margin, outline and
-light. A colour an entry names is that icon’s own, and outranks the set’s accent colour for it:`,
+Each entry is a different icon of this one set, drawn so the set agrees on weight, margin, outline and
+light; an entry marked ×2 is one icon drawn once in each of its two states, in the order it names them.
+A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for it:`,
         entries,
         outro: `Every icon fills the same cell to the same margin, carries the same outline weight, and is lit from
 the same direction as every other icon of the set, on this sheet and on every other sheet of it — an
@@ -59,15 +66,15 @@ of the sprite.`,
 }
 
 /**
- * How the icons sit on the sheet, from their count — `Sixteen icons, four across and four down, in the
- * reading order below.` A short last row says how many it holds, so a sheet of seven is not read as a
+ * How the drawings sit on the sheet, from their count — `Sixteen drawings, four across and four down, in
+ * the reading order below.` A short last row says how many it holds, so a sheet of seven is not read as a
  * grid with a gap to fill.
  */
 function gridSentence(count: number): string {
-  if (count === 1) return 'One icon, alone in the middle of the sheet.';
+  if (count === 1) return 'One drawing, alone in the middle of the sheet.';
   const across = Math.min(count, ICON_GRID_COLUMNS);
   const down = Math.ceil(count / ICON_GRID_COLUMNS);
   const remainder = count % ICON_GRID_COLUMNS;
   const lastRow = down > 1 && remainder !== 0 ? `, the last row holding ${spellNumber(remainder)}` : '';
-  return `${spellNumberCapitalised(count)} icons, ${spellNumber(across)} across and ${spellNumber(down)} down${lastRow}, in the reading order below.`;
+  return `${spellNumberCapitalised(count)} drawings, ${spellNumber(across)} across and ${spellNumber(down)} down${lastRow}, in the reading order below.`;
 }

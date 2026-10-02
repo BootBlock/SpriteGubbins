@@ -363,13 +363,13 @@ or a character portrait. Every rule below serves extraction.
 Satisfy this section before any aesthetic consideration.
 [IF:COMPONENTS_ARE_WHOLE!=yes]
 
-[N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
+[N]. Exactly [DEFINE:COMPONENT_TALLY], each visibly separate, none touching or
    overlapping — and none carrying another: a component that arrives with a neighbouring piece
    still attached to it is two components merged into one.
 [/IF]
 [IF:COMPONENTS_ARE_WHOLE]
 
-[N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
+[N]. Exactly [DEFINE:COMPONENT_TALLY], each visibly separate, none touching or
    overlapping — and each one complete drawing of its own: two entries drawn as one picture are two
    entries merged, not one component.
 [/IF]

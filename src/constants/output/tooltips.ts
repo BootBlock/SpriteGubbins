@@ -79,7 +79,8 @@ export const OUTPUT_TOOLTIPS = {
     'The shape of the sheet canvas, passed to the generator so it lays the component grid out inside the frame instead of cropping it.\n\n' +
     '- `WIDE_16_9` fits the usual wide grid.\n' +
     '- `TALL_9_16` suits one tall figure with its variants stacked.\n' +
-    '- `SQUARE_1_1` is the safest choice on targets that quietly re-frame anything else.',
+    '- `SQUARE_1_1` is the safest choice on targets that quietly re-frame anything else.\n\n' +
+    'An icon set offers `SQUARE_1_1` alone, because each of its sheets is a grid of square cells four across and four down, which only a square canvas holds without stretching a cell or leaving a band empty.',
   componentBudget:
     `The most components you want one generation asked for. It starts at ${String(PRACTICAL_COMPONENT_CEILING)}, about as many as current models deliver before they start merging or dropping pieces. Set \`${String(NO_COMPONENT_BUDGET)}\` for no cap.\n\n` +
     'Going over it is reported against this sheet, and on each row of the split drawer where a batch’s sheets differ in weight. It never changes the prompt: the sheet is not trimmed behind your back.',

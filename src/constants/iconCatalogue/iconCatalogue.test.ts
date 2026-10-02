@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { letteringTermIn } from '../categories/letteringMarks.ts';
 import { LOOK_FAMILIES } from '../../types/iconCatalogue.ts';
-import { ICON_CATALOGUE_GROUPS, iconCatalogueEntry } from './index.ts';
+import { ICON_CATALOGUE_GROUPS, iconCatalogueEntry, iconComponentCount } from './index.ts';
 import { ICON_ROSTER_CAPACITY, ICON_SERIES_LONGEST, ICONS_PER_SHEET } from './iconSheetLimits.ts';
 import { LOOK_FAMILY_OF_WORLD, lookFamilyOfWorld } from './lookFamilyOfWorld.ts';
 
@@ -68,12 +68,6 @@ describe('the icon catalogue', () => {
     },
   );
 
-  it('gives every SPELL entry a damage school, and no other entry one', () => {
-    for (const { group, entry } of ENTRIES) {
-      expect(entry.school !== undefined, `${group.id} / ${entry.id}`).toBe(group.kind === 'SPELL');
-    }
-  });
-
   it('draws a toggle as exactly two distinct states, each one a slot-safe word', () => {
     for (const { entry } of ENTRIES) {
       if (entry.states === undefined) continue;
@@ -86,7 +80,7 @@ describe('the icon catalogue', () => {
   it('fits the whole catalogue inside one roster’s capacity, two-state entries counted twice', () => {
     // Not a rule the catalogue must keep for ever — the test helpers split it into rosters once it
     // outgrows one — but while it holds, a reader can tick every icon into one set.
-    const components = ENTRIES.reduce((total, { entry }) => total + (entry.states === undefined ? 1 : 2), 0);
+    const components = ENTRIES.reduce((total, { entry }) => total + iconComponentCount(entry), 0);
     expect(components).toBeLessThanOrEqual(ICON_ROSTER_CAPACITY);
   });
 
@@ -135,9 +129,9 @@ describe('the starter roster', () => {
     expect(roster.look).toBe('ISOLATED_MARK');
     expect(new Set(roster.picks).size).toBe(roster.picks.length);
 
-    const entries = roster.picks.map((id) => iconCatalogueEntry(id));
-    expect(entries).not.toContain(undefined);
-    const components = entries.reduce((total, entry) => total + (entry?.states === undefined ? 1 : 2), 0);
+    const entries = roster.picks.flatMap((id) => iconCatalogueEntry(id) ?? []);
+    expect(entries).toHaveLength(roster.picks.length);
+    const components = entries.reduce((total, entry) => total + iconComponentCount(entry), 0);
     expect(components).toBe(ICONS_PER_SHEET);
   });
 

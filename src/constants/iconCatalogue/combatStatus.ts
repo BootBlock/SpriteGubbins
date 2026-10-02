@@ -10,7 +10,6 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  */
 export const COMBAT_STATUS: IconCatalogueGroup = {
   id: 'combat-status',
-  label: 'Combat Status',
   kind: 'SYSTEM',
   entries: [
     {

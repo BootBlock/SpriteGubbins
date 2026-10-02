@@ -1,3 +1,4 @@
+import { componentTally } from './componentTally.ts';
 import { describe, expect, it } from 'vitest';
 import { MAX_ANATOMY_MULTIPLIER, NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { DEFAULT_OUTPUT_CONFIG, directionalModeChoices } from '../constants/output/index.ts';
@@ -89,7 +90,7 @@ describe('component counts', () => {
         subject,
         withOutput({ directionalMode: mode, directions, sheetIndex }),
       );
-      expect(prompt).toContain(`Exactly ${count} components`);
+      expect(prompt).toContain(`Exactly ${componentTally(count)}`);
       expect(prompt).toContain(`Component count is exactly ${count}.`);
       // The inventory's own heading is the fourth statement of the number, and the one that reads
       // right beside the entries — a heading disagreeing with section 0 is what a model resolves
@@ -189,7 +190,7 @@ describe('component counts', () => {
     // Fifteen, not three: a five-view core draws the three named pieces at each of its facings.
     expect(prompt).toContain('#### Deployable Modules — 15');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('OBJECT', subject, 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, anatomy, null))} components`,
+      `Exactly ${componentTally(componentCountFor('OBJECT', subject, 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, anatomy, null))}`,
     );
   });
 
@@ -375,7 +376,7 @@ describe('the count once a subject names anatomy of its own', () => {
     // pieces than it counted. Both statements of the number have to move together.
     const prompt = generatePrompt('CHARACTER', withAnatomy('Demon Horn ×2, Tail ×1'), RIG);
 
-    expect(prompt).toContain(`Exactly ${String(BASE + 3)} components`);
+    expect(prompt).toContain(`Exactly ${componentTally(BASE + 3)}`);
     expect(prompt).toContain(`Component count is exactly ${String(BASE + 3)}.`);
   });
 
@@ -406,7 +407,7 @@ describe('the count once a subject names anatomy of its own', () => {
     for (const value of [NO_ADDITIONAL_ANATOMY, '']) {
       const prompt = generatePrompt('CHARACTER', withAnatomy(value), RIG);
 
-      expect(prompt).toContain(`Exactly ${String(BASE)} components`);
+      expect(prompt).toContain(`Exactly ${componentTally(BASE)}`);
       expect(prompt).not.toContain('Additional Genuine Anatomy —');
       expect(prompt).not.toContain('- Additional Genuine Anatomy:');
       // And section 1's prose stops naming it as well. That sentence is the exception to "painted
@@ -450,7 +451,7 @@ describe('the count once a subject names anatomy of its own', () => {
       `CUTOUT_RIG_SINGLE_DIRECTION (${String(count * facings)} in ${String(facings)} sheets)`,
     );
     expect(generatePrompt('CHARACTER', withAnatomy('Demon Horn ×2, Tail ×1'), RIG)).toContain(
-      `Exactly ${String(count)} components`,
+      `Exactly ${componentTally(count)}`,
     );
 
     const metrics = calculateAtlasMetrics({
@@ -468,7 +469,7 @@ describe('the count once a subject names anatomy of its own', () => {
     // would read "Exactly Infinity components".
     const prompt = generatePrompt('CHARACTER', withAnatomy('Tail ×5000000000'), RIG);
 
-    expect(prompt).toContain(`Exactly ${String(BASE + MAX_ANATOMY_MULTIPLIER)} components`);
+    expect(prompt).toContain(`Exactly ${componentTally(BASE + MAX_ANATOMY_MULTIPLIER)}`);
     expect(prompt).not.toContain('Infinity');
     expect(prompt).not.toContain('e+');
     // Section 1 states the clipped count too, so it cannot promise more than section 4 lists.
@@ -482,7 +483,7 @@ describe('the count once a subject names anatomy of its own', () => {
 
     expect(prompt).toContain('- Additional Genuine Anatomy: Tail ×1');
     expect(prompt).toContain('- Tail ×1.');
-    expect(prompt).toContain(`Exactly ${String(BASE + 1)} components`);
+    expect(prompt).toContain(`Exactly ${componentTally(BASE + 1)}`);
     // Never two counts in one entry — that is an instruction to draw both.
     expect(prompt).not.toContain('×0');
   });
@@ -495,7 +496,7 @@ describe('the count once a subject names anatomy of its own', () => {
 
     const prompt = generatePrompt('CHARACTER', withAnatomy(odd), RIG);
     expect(prompt).toContain('- [IF:X] Tail [/IF] ×2.');
-    expect(prompt).toContain(`Exactly ${String(BASE + 2)} components`);
+    expect(prompt).toContain(`Exactly ${componentTally(BASE + 2)}`);
   });
 });
 

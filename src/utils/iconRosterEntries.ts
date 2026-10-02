@@ -1,4 +1,4 @@
-import { iconCatalogueEntry } from '../constants/iconCatalogue/index.ts';
+import { iconCatalogueEntry, iconComponentCount } from '../constants/iconCatalogue/index.ts';
 import type { ComponentEntry } from '../types/components.ts';
 import type { IconCatalogueEntry } from '../types/iconCatalogue.ts';
 import type { SheetSubject } from '../types/subject.ts';
@@ -26,14 +26,20 @@ export function iconRosterEntries(subject: SheetSubject): readonly ComponentEntr
 function rosterLine(entry: IconCatalogueEntry, world: string): ComponentEntry {
   const look = iconLookText(entry, world);
   if (entry.states === undefined) {
-    return { label: entry.id, text: `${entry.role} ×1 — ${look}`, count: 1, kind: 'structure' };
+    return {
+      label: entry.id,
+      text: `${entry.role} ×1 — ${look}`,
+      count: iconComponentCount(entry),
+      kind: 'structure',
+    };
   }
   const [first, second] = entry.states;
+  const count = iconComponentCount(entry);
   return {
     label: entry.id,
-    parts: [`${entry.id}-${first}`, `${entry.id}-${second}`],
-    text: `${entry.role} ×2, drawn ${spoken(first)} and then ${spoken(second)} — ${look}`,
-    count: 2,
+    parts: entry.states.map((state) => `${entry.id}-${state}`),
+    text: `${entry.role} ×${String(count)}, one icon drawn ${spoken(first)} and then ${spoken(second)} — ${look}`,
+    count,
     kind: 'structure',
   };
 }

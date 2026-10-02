@@ -1,3 +1,4 @@
+import { componentTally } from './componentTally.ts';
 import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
@@ -546,7 +547,7 @@ describe('a subject that says it has none of the attribute', () => {
           directions,
           sheetIndex,
         });
-        expect(prompt, where).toContain(`Exactly ${String(count)} components`);
+        expect(prompt, where).toContain(`Exactly ${componentTally(count)}`);
         expect(prompt, where).toContain(`Component count is exactly ${String(count)}.`);
       }
     }
