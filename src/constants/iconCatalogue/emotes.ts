@@ -23,7 +23,7 @@ export const EMOTES: IconCatalogueGroup = {
           'a white-gloved hand raised with its open palm tilted mid-wave, a brass cufflink at the cuff',
         MODERN: 'a flat yellow cartoon hand raised with its open palm tilted mid-wave',
         CYBERPUNK:
-          'a chrome cyber-hand raised with its open palm tilted mid-wave, its knuckle LEDs glowing neon cyan',
+          'a chrome cyber-hand raised with its open palm tilted mid-wave, its knuckle diodes glowing neon cyan',
         SPACE_OPERA:
           'a white-armoured glove raised with its open palm tilted mid-wave, a pale-blue light at its wrist seam',
       },
@@ -52,7 +52,7 @@ export const EMOTES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a top-hatted silhouette touching two fingers to the brim of its hat in salute',
         MODERN: 'a round smiley-style face with a flat cartoon hand held level at its brow in salute',
         CYBERPUNK:
-          'a chrome android face-plate with LED eyes, a chrome cyber-hand snapped flat to its brow in salute',
+          'a chrome android face-plate with diode eyes, a chrome cyber-hand snapped flat to its brow in salute',
         SPACE_OPERA:
           'a white-armoured glove held flat and level at the brow of a white helmet visor in salute',
       },
@@ -67,7 +67,7 @@ export const EMOTES: IconCatalogueGroup = {
         MODERN:
           'a round smiley-style face with a wide open grin and two flat cartoon hands thrown up beside it',
         CYBERPUNK:
-          'a holographic street-kid avatar in a hoodie leaping with both fists punched skyward, neon-pink glitch edges round it',
+          'a holographic street-kid avatar in a hoodie leaping with both fists punched skyward, neon-cyan glitch edges round it',
         SPACE_OPERA:
           'a pale holographic crew avatar with both arms flung high and a small white starburst above it',
       },
@@ -82,8 +82,7 @@ export const EMOTES: IconCatalogueGroup = {
         AGE_OF_STEAM:
           'a brass automaton face with its hinged jaw dropped open in laughter and its eyelids squeezed into crescents',
         MODERN: 'a round yellow smiley-style face laughing with its mouth wide open and two teardrops of joy',
-        CYBERPUNK:
-          'a chrome android face-plate with its LED eyes bent into upturned arcs and its jaw grille flung wide open in laughter',
+        CYBERPUNK: 'a holographic street-kid avatar in a hoodie doubled over laughing, its mouth wide open',
         SPACE_OPERA: 'a pale holographic crew avatar thrown back in laughter, one hand clutching its belly',
       },
     },
@@ -98,7 +97,7 @@ export const EMOTES: IconCatalogueGroup = {
           'a brass automaton face leaking a drip of black oil like a tear from one riveted eye socket',
         MODERN: 'a round smiley-style face with a downturned mouth and two streams of blue tears',
         CYBERPUNK:
-          'a chrome android face-plate with drooping LED eyes and a trickle of glowing cyan coolant running down like tears',
+          'a chrome android face-plate with drooping diode eyes and a trickle of glowing cyan coolant running down like tears',
         SPACE_OPERA:
           'a pale holographic crew avatar with its head bowed into one hand, a single bright tear falling',
       },
@@ -115,7 +114,7 @@ export const EMOTES: IconCatalogueGroup = {
         MODERN:
           'a flat cartoon figure mid-dance with one hip out, one arm pointing up and the other on its hip',
         CYBERPUNK:
-          'a neon wireframe avatar mid-dance with one arm pointed skyward and one knee raised, its outline pulsing hot-pink',
+          'a neon wireframe avatar mid-dance with one arm pointed skyward and one knee raised, its outline pulsing violet',
         SPACE_OPERA:
           'a pale holographic crew avatar spinning on one toe with both arms held out in a graceful arc',
       },
@@ -143,7 +142,7 @@ export const EMOTES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a riveted brass automaton hand in a fist with its jointed thumb raised straight up',
         MODERN: 'a flat yellow cartoon hand in a fist with its thumb raised straight up',
         CYBERPUNK:
-          'a chrome cyber-hand in a fist with its thumb raised straight up, its knuckle LEDs glowing green',
+          'a chrome cyber-hand in a fist with its thumb raised straight up, its knuckle diodes glowing green',
         SPACE_OPERA:
           'a white-armoured glove in a fist with its thumb raised, a pale-blue light along its knuckles',
       },
@@ -157,7 +156,7 @@ export const EMOTES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a white-gloved hand in a fist with its thumb turned straight down',
         MODERN: 'a flat yellow cartoon hand in a fist with its thumb pointing straight down',
         CYBERPUNK:
-          'a chrome cyber-hand in a fist with its thumb pointing straight down, its knuckle LEDs glowing red',
+          'a chrome cyber-hand in a fist with its thumb pointing straight down, its knuckle diodes glowing red',
         SPACE_OPERA:
           'a white-armoured glove in a fist with its thumb pointing down, a dim red light along its knuckles',
       },
@@ -189,7 +188,7 @@ export const EMOTES: IconCatalogueGroup = {
           'a brass automaton face with its riveted hand pressed flat over its eyes and a puff of steam from its collar',
         MODERN: 'a round smiley-style face with a flat cartoon hand slapped over its eyes',
         CYBERPUNK:
-          'a chrome android face-plate with a chrome cyber-hand pressed over its LED eyes, the eyes glowing red between the fingers',
+          'a chrome android face-plate with a chrome cyber-hand pressed over its diode eyes, the eyes glowing red between the fingers',
         SPACE_OPERA: 'a pale holographic crew avatar with its head dropped forward into one palm',
       },
     },
@@ -218,7 +217,7 @@ export const EMOTES: IconCatalogueGroup = {
           'a brass automaton arm bent at the elbow, its riveted bicep swollen and a puff of steam at the joint',
         MODERN: 'a flat cartoon arm bent at the elbow with a bulging bicep and a clenched fist',
         CYBERPUNK:
-          'a chrome cyber-arm bent at the elbow with a bulging hydraulic bicep and glowing knuckle LEDs',
+          'a chrome cyber-arm bent at the elbow with a bulging hydraulic bicep and glowing knuckle diodes',
         SPACE_OPERA:
           'a white-armoured arm bent at the elbow with its bicep plate swelling and a pale-blue light at the joint',
       },
@@ -249,7 +248,7 @@ export const EMOTES: IconCatalogueGroup = {
         MODERN:
           'a round smiley-style face with closed curved eyes, a small crescent moon and three drifting bubbles above it',
         CYBERPUNK:
-          'a chrome android face-plate with its LED eyes dimmed to closed slits, a neon crescent moon and three glowing bubbles drifting above it',
+          'a chrome android face-plate with its diode eyes dimmed to closed slits, a neon crescent moon and three glowing bubbles drifting above it',
         SPACE_OPERA:
           'a pale holographic crew avatar curled asleep with closed eyes, a white crescent moon and three drifting bubbles above it',
       },
@@ -279,7 +278,7 @@ export const EMOTES: IconCatalogueGroup = {
           'a pair of white-gloved hands curved together with fingertips and thumbs shaping a heart',
         MODERN:
           'a pair of flat cartoon hands curved together into a heart shape with a small red heart inside',
-        CYBERPUNK: 'a pair of chrome cyber-hands shaping a heart, the gap between them glowing hot-pink',
+        CYBERPUNK: 'a pair of chrome cyber-hands shaping a heart, the gap between them glowing crimson',
         SPACE_OPERA:
           'a pair of white-armoured gloves shaping a heart around a small pale-blue holographic heart',
       },
@@ -294,7 +293,7 @@ export const EMOTES: IconCatalogueGroup = {
           'a brass automaton face with slanted brow plates and steam jetting from both ear valves',
         MODERN: 'a round red smiley-style face with furrowed brows and a tight downturned frown',
         CYBERPUNK:
-          'a chrome android face-plate with its LED eyes narrowed into hot-red slashes and its jaw grille clenched',
+          'a chrome android face-plate with its diode eyes narrowed into hot-red slashes and its jaw grille clenched',
         SPACE_OPERA:
           'a pale holographic crew avatar with clenched fists at its sides, its outline flickering red',
       },
@@ -309,7 +308,7 @@ export const EMOTES: IconCatalogueGroup = {
         MODERN:
           'a round smiley-style face with huge pleading eyes and two flat cartoon hands pressed together beneath it',
         CYBERPUNK:
-          'a holographic street-kid avatar in a hoodie on its knees with both cupped hands held up, its outline glowing pink',
+          'a holographic street-kid avatar in a hoodie on its knees with both cupped hands held up, its outline glowing amber',
         SPACE_OPERA:
           'a pair of white-armoured gloves pressed palm to palm in a plea, a pale-blue glow round them',
       },
@@ -340,7 +339,7 @@ export const EMOTES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a white-gloved hand raised palm out with its index and middle fingers spread apart',
         MODERN: 'a flat cartoon hand raised palm out with two fingers spread apart in a peace sign',
         CYBERPUNK:
-          'a chrome cyber-hand flashing a peace sign with two fingers spread, its knuckle LEDs glowing hot-pink',
+          'a chrome cyber-hand flashing a peace sign with two fingers spread, its knuckle diodes glowing violet',
         SPACE_OPERA:
           'a white-armoured glove raised palm out with two fingers spread apart, a pale-blue light at its wrist',
       },

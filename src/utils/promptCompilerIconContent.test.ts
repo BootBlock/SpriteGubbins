@@ -28,6 +28,13 @@ const OUTPUT: OutputConfig = {
 
 const flat = (text: string): string => text.replaceAll(/\s+/g, ' ');
 
+/** The number a compiled prompt gives the section headed `title`, so a citation is checked exactly. */
+function sectionNumber(prompt: string, title: string): string {
+  const found = new RegExp(String.raw`^## (\d+)\. ${title}$`, 'm').exec(prompt)?.[1];
+  if (found === undefined) throw new Error(`No section ${title}`);
+  return found;
+}
+
 function groupIds(id: string): readonly string[] {
   const group = ICON_CATALOGUE_GROUPS.find((each) => each.id === id);
   if (group === undefined) throw new Error(`No group ${id}`);
@@ -94,10 +101,31 @@ describe('a spell sheet in the compiled prompt', () => {
       palette: 'PICO_8',
     });
     if (sheet === undefined) throw new Error('No icon sheet');
-    expect(flat(sheet)).toMatch(
-      /Where section \d+ or section \d+ names a colour this block does not allow, use the nearest colour it does/,
+    const subject = sectionNumber(sheet, 'SUBJECT DEFINITION');
+    const inventory = sectionNumber(sheet, 'COMPONENT INVENTORY');
+    expect(flat(sheet)).toContain(
+      `Where section ${subject} or section ${inventory} names a colour this block does not allow, use the nearest colour it does`,
     );
   });
+
+  it.each(['SILHOUETTE_ONLY', 'CLAY_RENDER'] as const)(
+    'lets a %s pass supersede the school colour a spell line names',
+    (renderStyle) => {
+      // The inventory outranks the set's colours, so a pass that superseded only section 1's would
+      // lose to a spell's orange and deliver the finished sheet it was run instead of.
+      const [sheet] = iconSheets(iconSet(THERMAL, 'FULL_BLEED_TILE', 'Near-Future Cyberpunk'), {
+        renderStyle,
+      });
+      if (sheet === undefined) throw new Error('No icon sheet');
+      const inventory = sectionNumber(sheet, 'COMPONENT INVENTORY');
+      expect(flat(sectionOf(sheet, 'RENDER STYLE'))).toContain(
+        `or an entry of the inventory in section ${inventory} does, this pass supersedes it`,
+      );
+      expect(flat(sheet)).toContain(
+        `a pass that lost to the colours named above, or to a colour an entry in section ${inventory} names,`,
+      );
+    },
+  );
 });
 
 describe('an emote sheet in the compiled prompt', () => {
@@ -123,7 +151,9 @@ describe('an emote sheet in the compiled prompt', () => {
     if (sheet === undefined) throw new Error(`No icon sheet ${String(at + 1)}`);
     const exclusions = flat(sectionOf(sheet, 'EXCLUSIONS'));
     // The ban reaches only a hand or figure no entry names, and the rescue says an entry's own is drawn.
-    expect(exclusions).toMatch(/any hand, character or creature an entry in section \d+ does not name/);
+    expect(exclusions).toContain(
+      `any hand, character or creature an entry in section ${sectionNumber(sheet, 'COMPONENT INVENTORY')} does not name`,
+    );
     expect(exclusions).toContain(
       'A hand, face or figure an entry names is part of that icon’s subject and is drawn as the entry describes it.',
     );

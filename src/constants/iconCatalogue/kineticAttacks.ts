@@ -24,7 +24,7 @@ export const KINETIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass-cased rifle bullet leaving a steel muzzle in a ring of white smoke',
         MODERN: 'a copper-jacketed pistol round punching through a dented steel plate',
         CYBERPUNK:
-          'a chrome mantis blade punching clean through a cracked black riot shield in a burst of white sparks',
+          'a chrome smart-round with flared seeker fins curving mid-flight towards a grey target-lock ring',
         SPACE_OPERA: 'a dense white mass-driver slug ringed by a rippling grey gravity wake',
       },
     },
@@ -36,8 +36,7 @@ export const KINETIC_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a whirlwind of three steel swords spinning in a ring round a grey burst of dust',
         AGE_OF_STEAM: 'a cast-iron shrapnel shell bursting into a ring of jagged iron fragments',
         MODERN: 'a black breaching charge bursting outward in a ring of grey concrete chunks',
-        CYBERPUNK:
-          'a chrome hydraulic stomp boot slamming down inside a white shockwave ring of shattered asphalt chunks',
+        CYBERPUNK: 'a chrome seismic charge bursting in a flat ring of shockwave and jagged steel shrapnel',
         SPACE_OPERA: 'a white gravitic nova orb flinging a ring of grey hull fragments outward',
       },
     },
@@ -66,7 +65,7 @@ export const KINETIC_ATTACKS: IconCatalogueGroup = {
           'a brass Gatling gun with a spinning barrel cluster spitting a straight stream of white flashes',
         MODERN: 'a black belt-fed machine gun firing a straight line of brass tracer rounds',
         CYBERPUNK:
-          'a black-and-chrome smart-gun on a gyro stabiliser holding a tight white line of tracking rounds on a sparking chrome target',
+          'a black-and-chrome smart-gun on a gyro stabiliser holding a tight steel-grey line of tracking rounds on a sparking chrome target',
         SPACE_OPERA: 'a white tractor-beam emitter holding a straight rippling grey gravity column',
       },
     },
@@ -80,7 +79,7 @@ export const KINETIC_ATTACKS: IconCatalogueGroup = {
           'a massive riveted steam-hammer piston driving down with a jet of white steam behind it',
         MODERN: 'a black sledgehammer striking down onto a cracked steel plate in a spray of white sparks',
         CYBERPUNK:
-          'a gorilla-strength chrome hydraulic ram gauntlet, its pistons flared, smashing a black ballistic plate in two',
+          'a gorilla-strength chrome hydraulic ram, its pistons flared, driving a blunt steel striking block through a black ballistic plate',
         SPACE_OPERA: 'a white power-hammer piston driving a dense grey singularity forward',
       },
     },
@@ -109,7 +108,7 @@ export const KINETIC_ATTACKS: IconCatalogueGroup = {
         MODERN:
           'a black anti-materiel rifle with a long fluted barrel and a huge muzzle brake firing a white blast',
         CYBERPUNK:
-          'a hulking chrome railgun with split rails crackling white, its slug tearing a white shockwave cone through the air',
+          'a hulking chrome railgun with split rails crackling with steel-grey arcs, its slug tearing a shockwave cone through the air',
         SPACE_OPERA:
           'a white starship mass driver firing a black singularity round wreathed in a warped grey ring',
       },

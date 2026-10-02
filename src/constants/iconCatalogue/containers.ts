@@ -42,7 +42,7 @@ export const CONTAINERS: IconCatalogueGroup = {
         FANTASY: 'a closed wooden treasure chest bound in iron with a gold trim',
         AGE_OF_STEAM: 'a domed wooden steamer trunk with brass corners and leather straps',
         MODERN: 'a dark-green metal footlocker with steel latches',
-        CYBERPUNK: 'a matte black armoured chest with a neon-pink light strip along its lid seam',
+        CYBERPUNK: 'a matte black armoured chest with a neon-amber light strip along its lid seam',
         SPACE_OPERA: 'a white hexagonal treasure pod with gold trim and a glowing seam',
       },
     },

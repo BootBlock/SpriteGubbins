@@ -34,7 +34,7 @@ export const SUPPORT_ABILITIES: IconCatalogueGroup = {
       role: 'Area heal',
       school: 'NANITE',
       looks: {
-        FANTASY: 'a golden holy rune circle radiating three widening rings of light',
+        FANTASY: 'a golden holy circle of light radiating three widening rings',
         AGE_OF_STEAM: 'a brass aether fountain spraying a wide ring of golden healing mist',
         MODERN: 'a white aerosol fogger venting a broad cloud of shimmering gold vapour',
         CYBERPUNK:
@@ -98,7 +98,7 @@ export const SUPPORT_ABILITIES: IconCatalogueGroup = {
       role: 'Haste',
       school: 'VOLTAIC',
       looks: {
-        FANTASY: 'a spiralling blue storm rune flanked by a pair of swept falcon wings',
+        FANTASY: 'a spiralling blue storm vortex flanked by a pair of swept falcon wings',
         AGE_OF_STEAM: 'a brass governor flywheel spinning hard with blue galvanic sparks',
         MODERN: 'a black turbocharger with blue current arcing round its spinning impeller',
         CYBERPUNK:
@@ -115,7 +115,7 @@ export const SUPPORT_ABILITIES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass-riveted iron cuirass of layered overlapping plates',
         MODERN: 'a black ballistic vest with a dented steel trauma plate',
         CYBERPUNK:
-          'a sheet of chrome subdermal plating with a flattened slug embedded in it and white sparks spitting from the dent',
+          'a sheet of chrome subdermal plating with a flattened slug embedded in it and steel sparks spitting from the dent',
         SPACE_OPERA: 'a white ablative armour plate rippling with a grey glowing impact ring',
       },
     },

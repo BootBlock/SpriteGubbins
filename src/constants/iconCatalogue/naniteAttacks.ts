@@ -23,7 +23,7 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a golden spear of holy light with a radiant tip',
         AGE_OF_STEAM: 'a burnished brass reflector lamp firing a single golden radium-glow bolt',
         MODERN: 'a black flare pistol firing a blazing yellow-white magnesium flare',
-        CYBERPUNK: 'a chrome nano-injector dart with a swirling gold nanobot payload in its glass chamber',
+        CYBERPUNK: 'a needle-thin gold arrowhead of densely packed glinting nanites streaking forward',
         SPACE_OPERA: 'a white emitter firing a needle-thin golden starlight bolt',
       },
     },
@@ -47,8 +47,8 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a silver chalice spilling slow drops of golden holy fire',
         AGE_OF_STEAM: 'a glass vial of glowing golden radium paint, a drop beading at its brass spout',
-        MODERN: 'a black UV curing lamp searing a steel plate with a steady yellow glow',
-        CYBERPUNK: 'a grey-goo cloud of gold nanobots slowly eating a chrome plate down to dust',
+        MODERN: 'a black curing lamp searing a steel plate with a steady yellow glow',
+        CYBERPUNK: 'a chrome bolt slowly dissolving from its tip down under a spiral of eating gold nanobots',
         SPACE_OPERA: 'a white hull plate blistering under a lingering golden starlight scorch',
       },
     },
@@ -73,7 +73,7 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a heavy brass-bound radium maul with a glowing golden striking block',
         MODERN: 'a heavy black laser-guided bomb with a yellow designator dot on its nose',
         CYBERPUNK:
-          'a chrome nano-injector spike driven down, unleashing a dense gold swarm that disassembles its target',
+          'a heavy chrome nano-forge ram with a wedge-shaped striking block glowing gold, slamming down in a burst of gold particles',
         SPACE_OPERA: 'a white solar hammer with a captured golden star core, swung down',
       },
     },
@@ -99,7 +99,7 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a towering brass reflector array focusing a vast golden radium beam',
         MODERN: 'a cluster of white magnesium flare bombs blazing with a vast blinding yellow light',
         CYBERPUNK:
-          'a vast gold grey-goo nanite cloud pouring from a cracked chrome hive core, dissolving everything it touches',
+          'a colossal gold nanite orb hanging above a chrome containment ring, gold tendrils whipping out from its surface',
         SPACE_OPERA: 'a captured golden sun core blazing inside a white containment ring',
       },
     },

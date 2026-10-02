@@ -11,10 +11,12 @@ import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
  *
  * **ICON offers one mode and one set**, so every other stored mode and set resolves to the same sheets,
  * and its whole-catalogue rosters run to dozens of them: compiled once per stored pairing, a sweep
- * repeats each sheet for every mode and set the category declines, which is most of its time and none
- * of its coverage. The raw stored values still reach the compiler for every other category, where the
- * narrowing is what a sweep exists to test, and `promptCompiler.test.ts` holds ICON's skipped pairings
- * to the prompt their resolution names.
+ * repeats each sheet for every mode and set the category declines. The repeats add coverage only if
+ * the compiler reads a stored value unresolved somewhere, and that one question is asked once, for
+ * every subject, flag and sheet the sweeps skip, by `iconSkippedPairings.ts` (three
+ * `promptCompilerIconSkip*.test.ts` files, one per variant, so they run side by side). The raw stored
+ * values still reach the sweeps' compiles for every other category, where the narrowing is what a
+ * sweep exists to test.
  */
 export function resolvedSheetAddress(
   category: SubjectCategory,

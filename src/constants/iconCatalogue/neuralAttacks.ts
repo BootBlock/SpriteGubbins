@@ -36,7 +36,7 @@ export const NEURAL_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a ring of dark violet shadow bursting outward from a black void orb',
         AGE_OF_STEAM: 'a brass séance bell ringing out a ring of violet ectoplasm',
         MODERN: 'a black speaker cone emitting a round violet psychic shockwave',
-        CYBERPUNK: 'a chrome braindance overload node bursting in a round violet feedback pulse',
+        CYBERPUNK: 'a chrome neuro-pulse grenade bursting in a round violet feedback ring',
         SPACE_OPERA: 'a white psionic amplifier sphere releasing a round violet telepathic shockwave',
       },
     },
@@ -72,7 +72,7 @@ export const NEURAL_ATTACKS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a huge black scythe sweeping down in an arc of violet shadow',
         AGE_OF_STEAM: 'a brass-bound mesmeric orb slammed down and splitting in a violet spiral flash',
-        MODERN: 'a black hypnotist’s pocket watch shattering in a single violet psychic flash',
+        MODERN: 'a black hypnotist’s pendulum crystal shattering in a single violet psychic flash',
         CYBERPUNK: 'a chrome synapse-burn spike gun firing a single overloaded violet neural round',
         SPACE_OPERA: 'a white psionic crusher ring clamping shut round a crushed violet orb',
       },
@@ -98,7 +98,7 @@ export const NEURAL_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a towering brass mesmerism engine spinning a vast violet hypnotic spiral',
         MODERN: 'a black satellite dish blasting a vast storm of crackling violet psychic waves',
         CYBERPUNK:
-          'a black chrome-ribbed braindance server core unleashing a roaring violet neural overload storm',
+          'a towering black chrome-ribbed broadcast mast unleashing a roaring violet neural overload storm',
         SPACE_OPERA: 'a white psionic monolith radiating a vast violet telepathic shockwave',
       },
     },

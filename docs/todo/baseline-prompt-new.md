@@ -435,10 +435,11 @@ preference never overrules a component’s stated direction.
 [IF:VALIDATION_PASS]
 
 **This sheet’s render style is a validation pass, and what it states about the surface outranks the
-subject’s colour and material attributes.** Section [SEC:STYLE] says what the pass withholds and what
-is drawn in its place; a pass that lost to the colours named above would deliver the finished sheet
-it was run instead of. Everything else in the subject definition keeps the rank the order above
-gives it.
+colour and material attributes of the subject and of every inventory entry.** Section [SEC:STYLE] says
+what the pass withholds and what is drawn in its place; a pass that lost to the colours named above,
+or to a colour an entry in section [SEC:INVENTORY] names, would deliver the finished sheet it was run
+instead of. Everything else in the subject definition and the inventory keeps the rank the order
+above gives it.
 [/IF]
 
 **An exclusion in section [SEC:EXCLUSIONS] outranks every attribute that asks for the same visible element.**

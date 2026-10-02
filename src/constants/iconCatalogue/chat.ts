@@ -36,7 +36,7 @@ export const CHAT: IconCatalogueGroup = {
           'a jagged brass shout bubble with spiked edges and a puff of steam bursting from one point',
         MODERN: 'a jagged orange shout bubble with sharp spiked edges',
         CYBERPUNK:
-          'a jagged shout bubble of glowing hot-pink neon tube with spiked edges and a crackle of white sparks',
+          'a jagged shout bubble of glowing crimson neon tube with spiked edges and a crackle of amber sparks',
         SPACE_OPERA: 'a jagged white shout bubble with spiked edges flaring bright red light',
       },
     },
@@ -94,9 +94,9 @@ export const CHAT: IconCatalogueGroup = {
       figure: true,
       looks: {
         FANTASY: 'a round carved wooden token bearing a small smiling face',
-        AGE_OF_STEAM: 'a brass pocket-watch case opened to show a small smiling enamel face',
+        AGE_OF_STEAM: 'a brass carousel of four small enamel faces, the front one smiling',
         MODERN: 'a round yellow smiling face beside a small grid of four tiny grey faces',
-        CYBERPUNK: 'a black glass palette of four small smiling faces, the chosen one glowing neon-pink',
+        CYBERPUNK: 'a black glass palette of four small smiling faces, the chosen one glowing neon-cyan',
         SPACE_OPERA: 'a white holo-ring of small pale-blue smiling faces orbiting a brighter central one',
       },
     },
@@ -112,9 +112,9 @@ export const CHAT: IconCatalogueGroup = {
         MODERN:
           'a grey podcast microphone in a round shock mount, and the same microphone under a red circle-and-bar for the second state',
         CYBERPUNK:
-          'a chrome throat-mic implant with a glowing cyan mesh grille, and its grille gone dark with a red diode blinking for the second state',
+          'a chrome clip-on mic pod with a glowing cyan mesh grille, and its grille gone dark with a red diode blinking for the second state',
         SPACE_OPERA:
-          'a slim white boom-mic wand with a pale-blue tip light, and its tip dimmed to a red ring for the second state',
+          'a slim white boom-mic wand extended with a pale-blue tip light, and folded back flat against its base with a red ring for the second state',
       },
     },
   ],

@@ -77,9 +77,9 @@ export const PETS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a small green dragon whelp with leathery wings and tiny horns',
         AGE_OF_STEAM: 'a clockwork brass dragon with copper scales and steam curling from its snout',
-        MODERN: 'a bearded dragon lizard basking on a flat stone',
+        MODERN: 'a bearded dragon lizard with its spiny beard puffed out',
         CYBERPUNK:
-          'a small mechanical dragon of chrome scales with neon-pink wing membranes and glowing exhaust nostrils',
+          'a small mechanical dragon of chrome scales with neon-violet wing membranes and glowing exhaust nostrils',
         SPACE_OPERA: 'a white crystalline star-dragon hatchling with glowing blue wing veins',
       },
     },
@@ -87,7 +87,7 @@ export const PETS: IconCatalogueGroup = {
       id: 'pet-construct',
       role: 'Construct companion pet',
       looks: {
-        FANTASY: 'a small stone golem with glowing rune cracks across its body',
+        FANTASY: 'a small stone golem with glowing cracks running across its body',
         AGE_OF_STEAM: 'a brass automaton with a round boiler belly and a wind-up key in its back',
         MODERN: 'a small white consumer robot on two wheels with a round display visor',
         CYBERPUNK:

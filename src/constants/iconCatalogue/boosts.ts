@@ -20,7 +20,7 @@ export const BOOSTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass-capped glass ampoule of orange muscle tonic in a riveted steel cradle',
         MODERN: 'a black tub of protein powder with an orange screw lid',
         CYBERPUNK:
-          'a chunky orange myo-boost injector with a chrome hydraulic piston and a glowing orange pressure gauge',
+          'a chunky orange myo-boost injector with a chrome hydraulic piston and a glowing orange pressure window',
         SPACE_OPERA: 'an orange gravity-trainer capsule clasped in a white alloy band, glowing at both ends',
       },
     },
@@ -55,7 +55,7 @@ export const BOOSTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a riveted iron plate-hardening canister with a brass pressure valve',
         MODERN: 'a grey ballistic armour plate with black webbing straps',
         CYBERPUNK:
-          'a steel-grey dermal-plating injector with a hexagonal chrome barrel and a glowing blue plating gauge',
+          'a steel-grey dermal-plating injector with a hexagonal chrome barrel and a glowing blue charge window',
         SPACE_OPERA: 'a white hexagonal shield-emitter puck projecting a dome of pale blue light',
       },
     },
@@ -138,7 +138,7 @@ export const BOOSTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass diving helmet with round riveted portholes',
         MODERN: 'a yellow diving mask with an attached snorkel',
         CYBERPUNK:
-          'a compact teal rebreather mouthpiece with twin scrubber cartridges and a glowing teal oxygen gauge',
+          'a compact teal rebreather mouthpiece with twin scrubber cartridges and a glowing teal oxygen window',
         SPACE_OPERA: 'a white oxygen-field respirator with glowing blue intake vents',
       },
     },

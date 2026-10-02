@@ -21,7 +21,7 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass double locket holding a pair of umber head-and-shoulders silhouettes',
         MODERN: 'a pair of overlapping grey head-and-shoulders silhouettes, the front one blue',
         CYBERPUNK:
-          'a pair of head-and-shoulders silhouettes drawn in glowing cyan and hot-pink wireframe, linked by a bright data line',
+          'a pair of head-and-shoulders silhouettes drawn in glowing cyan and violet wireframe, linked by a bright data line',
         SPACE_OPERA:
           'a pair of pale-blue holographic head-and-shoulders silhouettes above a white emitter bar',
       },
@@ -47,7 +47,7 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass magnifying glass over three umber head-and-shoulders silhouettes',
         MODERN: 'a grey magnifying glass over three small blue head-and-shoulders silhouettes',
         CYBERPUNK:
-          'a glowing cyan targeting reticle locked over three hot-pink wireframe head-and-shoulders silhouettes',
+          'a glowing cyan targeting reticle locked over three violet wireframe head-and-shoulders silhouettes',
         SPACE_OPERA:
           'a white scanner disc sweeping a pale-blue beam over three holographic head-and-shoulders silhouettes',
       },
@@ -61,7 +61,7 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a row of five umber head-and-shoulders silhouettes beneath a brass bugle',
         MODERN: 'a tight cluster of five grey head-and-shoulders silhouettes, the centre one red',
         CYBERPUNK:
-          'a rank of five head-and-shoulders silhouettes in glowing hot-pink wireframe, ranked beneath a hot red strike chevron',
+          'a rank of five head-and-shoulders silhouettes in glowing violet wireframe, ranked beneath a hot red strike chevron',
         SPACE_OPERA: 'a wedge formation of five pale-blue holographic head-and-shoulders silhouettes',
       },
     },
@@ -73,7 +73,7 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a cream envelope tied with string and sealed with a brass-stamped wax disc',
         MODERN: 'a sealed white envelope with its flap closed',
         CYBERPUNK:
-          'a sealed black envelope of thin polymer with a glowing cyan seam along its flap and a blinking hot-pink diode',
+          'a sealed black envelope of thin polymer with a glowing cyan seam along its flap and a blinking amber diode',
         SPACE_OPERA: 'a white data capsule with a blue light pulsing along its seal',
       },
     },
@@ -120,7 +120,7 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass telegraph sounder with two coiled wires running from it',
         MODERN: 'a pair of overlapping speech bubbles, one blue and one grey',
         CYBERPUNK:
-          'a stack of three speech bubbles in neon cyan, hot-pink and green, each with a tiny glowing diode',
+          'a stack of three speech bubbles in neon cyan, amber and green, each with a tiny glowing diode',
         SPACE_OPERA: 'a white comm dish beaming three pale-blue arcs',
       },
     },
@@ -130,7 +130,7 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a tiny rolled scroll tied to a white feather',
         AGE_OF_STEAM: 'a slim brass speaking tube curling round into a small flared bell',
-        MODERN: 'a small pink speech bubble with a curled tail and three dots inside',
+        MODERN: 'a small purple speech bubble with a curled tail and three dots inside',
         CYBERPUNK: 'a small violet speech bubble with a padlocked tail and a soft glowing encryption shimmer',
         SPACE_OPERA: 'a narrow white comm beam with a violet pulse travelling along it',
       },

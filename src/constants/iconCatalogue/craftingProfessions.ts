@@ -17,7 +17,7 @@ export const CRAFTING_PROFESSIONS: IconCatalogueGroup = {
       id: 'craft-cybernetics',
       role: 'Augmentation crafting',
       looks: {
-        FANTASY: 'a silver enchanting rod tracing a glowing rune onto a steel ring',
+        FANTASY: 'a silver enchanting rod tracing a glowing spiral of light onto a steel ring',
         AGE_OF_STEAM: 'a brass clockwork prosthetic joint clamped in a vice beside a small screwdriver',
         MODERN: 'a carbon-fibre running-blade prosthesis with a hex key resting against it',
         CYBERPUNK:
@@ -33,7 +33,7 @@ export const CRAFTING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a steam drop hammer pounding a red-hot sabre blade on a riveted anvil',
         MODERN: 'a gunsmith’s bench vice holding a stripped pistol slide beside a brass cleaning rod',
         CYBERPUNK:
-          'a computer-controlled mill carving a glowing white-hot mono-katana blade, chrome shavings spraying from its cutter',
+          'a computer-controlled mill carving a glowing red-hot mono-katana blade, chrome shavings spraying from its cutter',
         SPACE_OPERA: 'a white forge cradle holding a plasma rifle as its barrel takes shape in blue light',
       },
     },
@@ -44,8 +44,7 @@ export const CRAFTING_PROFESSIONS: IconCatalogueGroup = {
         FANTASY: 'a bubbling glass alembic over a small flame, dripping into a corked potion vial',
         AGE_OF_STEAM: 'a brass and glass still with a coiled copper condenser dripping into a flask',
         MODERN: 'a conical lab flask spinning on a magnetic stirrer beside a rack of filled test tubes',
-        CYBERPUNK:
-          'a back-alley chem rig of taped glass beakers and a humming centrifuge, dripping glowing green synth into a chrome injector vial',
+        CYBERPUNK: 'a chrome centrifuge with a single glowing green synth vial spinning in its open drum',
         SPACE_OPERA:
           'a white molecular synthesiser pod assembling a glowing vial from a lattice of blue particles',
       },
@@ -71,7 +70,7 @@ export const CRAFTING_PROFESSIONS: IconCatalogueGroup = {
           'a half-wound brass galvanic coil with insulated pliers resting across its copper windings',
         MODERN: 'a green circuit board with a soldering iron touching one joint and a thin curl of smoke',
         CYBERPUNK:
-          'a jury-rigged black circuit board bristling with salvaged chips and hot-pink diodes, a hot soldering iron trailing a wisp of smoke above it',
+          'a jury-rigged black circuit board bristling with salvaged chips and amber diodes, a hot soldering iron trailing a wisp of smoke above it',
         SPACE_OPERA: 'a white engineering drone welding a glowing blue circuit lattice',
       },
     },
@@ -79,11 +78,11 @@ export const CRAFTING_PROFESSIONS: IconCatalogueGroup = {
       id: 'craft-netcrafting',
       role: 'Code and inscription crafting',
       looks: {
-        FANTASY: 'a quill inscribing a glowing rune onto an open spell scroll beside an inkwell',
+        FANTASY: 'a quill dipped in glowing ink resting across a rolled spell scroll tied with ribbon',
         AGE_OF_STEAM: 'a brass card-punch press pressing holes into a stiff paper punch card',
-        MODERN: 'an open black laptop with a USB drive in its side and a progress bar filling on its display',
+        MODERN: 'a black thumb-drive plugged into a small circuit board, its activity light pulsing',
         CYBERPUNK:
-          'a translucent data shard slotted into a battered cyberdeck, its circuit traces flaring hot-pink as a quickhack burns in',
+          'a translucent data shard slotted into a battered cyberdeck, its circuit traces flaring cyan as a quickhack burns in',
         SPACE_OPERA: 'a white holo-stylus etching a glowing blue crystal data wafer',
       },
     },

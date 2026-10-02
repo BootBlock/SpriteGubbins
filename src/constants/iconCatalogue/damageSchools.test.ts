@@ -29,10 +29,12 @@ import { DAMAGE_SCHOOL_DEFINITIONS } from './damageSchools.ts';
  * The least OKLab distance any two school colours keep, on the scaled axes `pixelDistance` reads
  * (0–255 from black to white).
  *
- * Forty, because that is the gap between the nearest hues the keying tells apart from a magenta field —
- * rose and purple read 40 and 49 from it, where a painted field's own drift reads 12 to 21
- * (`keyDistance.ts`) — so two schools this far apart are two colours to the measure the app already
- * trusts to tell a hue from a drift.
+ * Forty on these axes is 0.157 in unscaled OKLab, close to eight times the 0.02 that CSS Color 4 takes
+ * as OKLab's just-noticeable difference (the JND its gamut mapping uses, 5.1 here). A school colour
+ * is never seen flat: it is shaded into a backdrop, washed into a highlight and averaged down to a
+ * 32 px slot, and each of those moves a pixel by more than one just-noticeable step, so two schools
+ * need a margin of several steps to stay two colours after it. The first proposal's two closest pairs
+ * sat 24 and 28 apart, under five steps each, and the eight colours now keep at least 40.
  */
 const MIN_SCHOOL_SEPARATION = 40;
 

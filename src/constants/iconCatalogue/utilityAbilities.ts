@@ -26,7 +26,7 @@ export const UTILITY_ABILITIES: IconCatalogueGroup = {
         AGE_OF_STEAM:
           'a brass dark-lantern with its shutter open and lit, and shut with a violet shadow curling round it for the second state',
         MODERN:
-          'a grey adaptive-camouflage patch shown solid, and shimmering half see-through with violet edges for the second state',
+          'a grey camouflage net bundled in a tight roll, and spread wide and fading into violet haze for the second state',
         CYBERPUNK:
           'a matte black thermoptic camo cowl lying fully opaque, and rippling into transparency with violet distortion along its seams for the second state',
         SPACE_OPERA:
@@ -46,7 +46,7 @@ export const UTILITY_ABILITIES: IconCatalogueGroup = {
         MODERN:
           'a black pistol with its safety on and its slide closed, and firing with a white muzzle flash for the second state',
         CYBERPUNK:
-          'a chrome smart-gun slung low with its targeting link dark, and spitting white muzzle flash with its link lit for the second state',
+          'a chrome smart-gun slung low with its targeting link dark, and spitting a bright muzzle flash with its link lit for the second state',
         SPACE_OPERA:
           'a white blaster rifle with its power cell dim, and blazing a grey-white bolt for the second state',
       },
@@ -64,7 +64,7 @@ export const UTILITY_ABILITIES: IconCatalogueGroup = {
         MODERN:
           'a black assault rifle levelled forward, and a black ballistic shield braced upright for the second state',
         CYBERPUNK:
-          'a chrome mantis-blade snapped out to full extension in a spray of white sparks, and folded back behind a deployed riot-plate cyberware shield for the second state',
+          'a chrome monoblade standing point forward with sparks along its edge, and sheathed behind a deployed hexagonal riot shield for the second state',
         SPACE_OPERA:
           'a white energy lance pointed forward, and a grey hexagonal barrier raised for the second state',
       },
@@ -74,7 +74,7 @@ export const UTILITY_ABILITIES: IconCatalogueGroup = {
       role: 'Scan and reveal',
       school: 'NETRUN',
       looks: {
-        FANTASY: 'a pink arcane scrying lens at the heart of a rune circle',
+        FANTASY: 'a pink arcane scrying lens at the heart of a ring of arcane light',
         AGE_OF_STEAM: 'a brass direction-finding loop antenna pulsing rings of pink light',
         MODERN: 'a black thermal-imaging scope with a pink hotspot glowing on its lens',
         CYBERPUNK:
@@ -99,11 +99,11 @@ export const UTILITY_ABILITIES: IconCatalogueGroup = {
       role: 'Hack a terminal',
       school: 'NETRUN',
       looks: {
-        FANTASY: 'a carved stone rune-lock tablet split open by a glowing pink key sigil',
+        FANTASY: 'a carved stone lock-box split open by a glowing pink key sigil',
         AGE_OF_STEAM: 'a brass difference engine with a pink spark leaping between its exposed cogs',
         MODERN: 'a black flash drive plugged into a grey terminal port glowing pink',
         CYBERPUNK:
-          'a coiled chrome jack cable spiked into a battered street terminal, hot-pink intrusion countermeasures shattering from its cracked display like glass',
+          'a coiled chrome jack cable spiked into a black terminal block, hot-pink intrusion sparks bursting from the port',
         SPACE_OPERA: 'a white console node with a pink holographic lock dissolving into pixels',
       },
     },

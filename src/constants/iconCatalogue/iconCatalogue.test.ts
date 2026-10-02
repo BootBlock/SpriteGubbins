@@ -8,6 +8,9 @@ import { DEFAULT_ICON_LOOK } from './defaultIconLook.ts';
 import { ICON_CATALOGUE_GROUPS, iconCatalogueEntry, iconComponentCount } from './index.ts';
 import { ICON_ROSTER_CAPACITY, ICON_SERIES_LONGEST, ICONS_PER_SHEET } from './iconSheetLimits.ts';
 import { LOOK_FAMILY_OF_WORLD, lookFamilyOfWorld } from './lookFamilyOfWorld.ts';
+import { BACKGROUND_KEY_COLORS } from '../backgroundKeyColors.ts';
+import { fromHex } from '../../utils/imageData.ts';
+import { keyReaches } from '../../utils/keyReach.ts';
 
 /**
  * The catalogue's own contract: what every entry has to be for the sheets built from it to be right.
@@ -26,6 +29,13 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const FIGURE_WORDS = /\b(?:hands?|faces?|heads?|busts?|figures?|persons?|people|torsos?|fingers?|arms?)\b/i;
 
 const SPELLS = ENTRIES.filter(({ entry }) => entry.school !== undefined);
+
+/** Objects that carry markings of their own: numbered faces, letterforms and open writing surfaces. */
+const LETTERING_OBJECTS =
+  /\b(?:runes?|runic|dials?|gauges?|gauged|keypads?|inscrib\w*|stopwatch(?:es)?|clock ?faces?)\b/i;
+
+/** A capitalised acronym — “EMP”, “LEDs” — which a model may letter onto the object it names. */
+const ACRONYM = /\b[A-Z]{2,}s?\b/;
 
 /** The hue words a look could name, each owned by at most one school. */
 const HUE_WORDS = [
@@ -180,6 +190,44 @@ describe('the icon catalogue', () => {
       }
     },
   );
+
+  it.each(ENTRIES.map(({ entry }) => [entry.id, entry] as const))(
+    '%s names nothing that invites lettering onto the icon',
+    (_id, entry) => {
+      // Section 0 forbids text on the sheet, and a model fills a dial, a gauge or a keypad with
+      // numerals, a rune with a letterform, an open scroll with writing and a capitalised acronym with
+      // its own letters. `letteringTermIn` catches the words that ask for lettering; these are the
+      // objects that bring it with them.
+      for (const family of LOOK_FAMILIES) {
+        const look = entry.looks[family];
+        expect(look, `${entry.id} / ${family}`).not.toMatch(LETTERING_OBJECTS);
+        expect(look, `${entry.id} / ${family}`).not.toMatch(ACRONYM);
+        if (/\bscrolls?\b/i.test(look)) expect(look, `${entry.id} / ${family}`).toMatch(/\brolled\b/i);
+      }
+    },
+  );
+
+  it('names pink only on a netrun entry, whose line pins it clear of the magenta key', () => {
+    // Magenta is the default key, and a pink named in words alone ranges into its reach: neon pink is
+    // #FF10F0 or #FF6EC7, both of which the keying takes. The netrun school's line names its pink by
+    // hex, measured clear of every key in `damageSchools.test.ts`, so its looks may say pink.
+    const magenta = BACKGROUND_KEY_COLORS.MAGENTA_FF00FF;
+    if (magenta === null) throw new Error('magenta names a colour');
+    for (const hex of ['#FF10F0', '#FF6EC7']) expect(keyReaches(magenta, fromHex(hex) ?? magenta)).toBe(true);
+
+    for (const { entry } of ENTRIES) {
+      if (entry.school === 'NETRUN') continue;
+      for (const family of LOOK_FAMILIES) {
+        expect(entry.looks[family], `${entry.id} / ${family}`).not.toMatch(/pink|fuchsia|magenta/i);
+      }
+    }
+  });
+
+  it('names no white in a cyberpunk look, since the cyberpunk sets are cut out on a white key', () => {
+    // `PURE_WHITE` is the key the cyberpunk presets take (`iconSets.ts`), and the keying removes every
+    // pixel in its reach wherever it sits, so a white-hot core or white sparks would be holes.
+    for (const { entry } of ENTRIES) expect(entry.looks.CYBERPUNK, entry.id).not.toMatch(/\bwhite\b/i);
+  });
 
   it('outgrows one roster, so the whole catalogue is swept as several', () => {
     // A reader cannot tick every icon into one set: the capacity refuses what does not fit, and the

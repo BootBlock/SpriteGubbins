@@ -64,7 +64,7 @@ export const CRYO_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass condenser nozzle blowing a straight jet of freezing brine spray',
         MODERN: 'a black liquid-nitrogen hose nozzle pouring a straight jet of white freezing vapour',
         CYBERPUNK:
-          'a chrome liquid-nitrogen injector gun with a gauged canister on top, holding a straight cyan cryo stream',
+          'a chrome liquid-nitrogen injector gun with a frosted canister on top, holding a straight cyan cryo stream',
         SPACE_OPERA:
           'a white cryo-beam projector firing a straight cyan freezing ray that ices over as it goes',
       },

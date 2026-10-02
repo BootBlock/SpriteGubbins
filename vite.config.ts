@@ -256,6 +256,29 @@ export default defineConfig({
     ],
   },
 
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              // The icon catalogue's data — every entry's role and five looks, the damage schools and
+              // the world-to-family table — in a chunk of its own. It is read by the prompt compiler,
+              // so it would otherwise be folded into the shared `output` chunk, which it took past
+              // the bundler's 500 kB advisory on its own. A chunk of its own costs a first visit one
+              // more request and nothing more, since both are precached; and a change to the
+              // catalogue's words now leaves `output`'s hash, and every cached copy of it, alone.
+              // The helpers beside the data (`icon*.ts`) read the category pools, so the pattern
+              // leaves them where their readers are rather than pulling the pools in after them.
+              name: 'iconCatalogue',
+              test: /src[\\/]constants[\\/]iconCatalogue[\\/](?!icon)[^\\/]+\.ts$/,
+            },
+          ],
+        },
+      },
+    },
+  },
+
   worker: {
     format: 'es',
   },

@@ -37,7 +37,7 @@ export const VOLTAIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass-capped Leyden jar bursting in a ring of crackling blue arcs',
         MODERN: 'a sparking grey substation junction box blowing out in a ring of blue electric arcs',
         CYBERPUNK:
-          'a black EMP grenade with chrome end caps detonating in a round blue pulse ring of crackling arcs',
+          'a spherical chrome arc mine on three splayed legs, discharging a round ring of crackling blue arcs',
         SPACE_OPERA: 'a white ion-storm generator releasing a round shockwave of crackling blue ions',
       },
     },
@@ -105,7 +105,7 @@ export const VOLTAIC_ATTACKS: IconCatalogueGroup = {
           'a colossal brass Tesla tower crowned with a copper torus, throwing out crackling blue arcs',
         MODERN: 'a steel transmission pylon wreathed in a crackling blue arc storm',
         CYBERPUNK:
-          'a black EMP warhead with chrome stabiliser fins, detonating in a vast crackling blue pulse dome',
+          'a towering chrome capacitor spire stacked with coil rings, unleashing a vast dome of jagged blue lightning',
         SPACE_OPERA: 'a white capital-ship ion cannon unleashing a vast blue ion storm',
       },
     },

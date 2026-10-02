@@ -1,6 +1,6 @@
 import { fieldLabelFor } from '../constants/categories/index.ts';
-import { DAMAGE_SCHOOL_DEFINITIONS } from '../constants/iconCatalogue/damageSchools.ts';
 import type { IconCatalogueEntry } from '../types/iconCatalogue.ts';
+import { damageSchoolName } from './damageSchoolName.ts';
 import { iconLookText } from './iconLookText.ts';
 import { spokenIconState } from './spokenIconState.ts';
 
@@ -22,20 +22,19 @@ export function iconEntryGuidance(entry: IconCatalogueEntry, world: string): str
   return [
     slotParagraph(entry),
     `${where}, the sheet draws it as ${look}.`,
-    ...schoolParagraph(entry),
+    ...schoolParagraph(entry, world),
     shapeParagraph(entry),
   ].join('\n\n');
 }
 
 /**
  * Why a spell's line names a colour: the school's colour is the icon's own, ahead of the set's. Nothing
- * for an entry outside a school.
+ * for an entry outside a school. The school is named as `world` names it, as the line itself does.
  */
-function schoolParagraph(entry: IconCatalogueEntry): readonly string[] {
+function schoolParagraph(entry: IconCatalogueEntry, world: string): readonly string[] {
   if (entry.school === undefined) return [];
-  const { label } = DAMAGE_SCHOOL_DEFINITIONS[entry.school];
   return [
-    `It is a ${label} ability. Every icon of that school shares its colour, which leads the icon ahead of your set’s primary and accent colours, so a player tells the schools apart at a glance.`,
+    `It belongs to the ${damageSchoolName(entry.school, world)} school. Every icon of that school shares its colour, which leads the icon ahead of your set’s primary and accent colours, so a player tells the schools apart at a glance.`,
   ];
 }
 

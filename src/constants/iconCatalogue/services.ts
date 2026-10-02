@@ -20,7 +20,7 @@ export const SERVICES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass auctioneer bell with a polished mahogany gavel beside it',
         MODERN: 'a dark wooden gavel striking its block',
         CYBERPUNK:
-          'a chrome gavel with a neon-cyan striking end hovering over a black bidding pad that flares hot-pink',
+          'a chrome gavel with a neon-cyan striking end hovering over a black bidding pad that flares amber',
         SPACE_OPERA: 'a white exchange pylon with gold light streaming between two floating cargo cubes',
       },
     },
@@ -52,9 +52,9 @@ export const SERVICES: IconCatalogueGroup = {
       looks: {
         FANTASY: 'an iron-bound oak strongbox with a heavy padlock and gold coins at its lid',
         AGE_OF_STEAM: 'a round brass vault door with a spoked wheel at its centre',
-        MODERN: 'a grey steel safe with a dial and a lever',
+        MODERN: 'a grey steel safe with a spoked handle and a heavy hinge',
         CYBERPUNK:
-          'a black armoured vault cube with a glowing cyan keypad grid and a hot-pink seal running round its door',
+          'a black armoured vault cube with a glowing cyan lock panel and a crimson seal running round its door',
         SPACE_OPERA: 'a white vault pod held shut by a ring of blue energy clamps',
       },
     },
@@ -66,7 +66,7 @@ export const SERVICES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a pair of brass balance scales on a mahogany base',
         MODERN: 'a pair of curved arrows chasing each other in a circle, one green and one blue',
         CYBERPUNK:
-          'a pair of chrome data shards swapping places along curved neon-cyan and hot-pink arrows of light',
+          'a pair of chrome data shards swapping places along curved neon-cyan and amber arrows of light',
         SPACE_OPERA: 'a pair of white cargo cubes passing each other along a pale-blue beam',
       },
     },
@@ -125,7 +125,7 @@ export const SERVICES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a wooden coat hanger holding a tailored waistcoat',
         MODERN: 'a wire coat hanger holding a folded shirt',
         CYBERPUNK:
-          'a chrome coat hanger holding a jacket whose panels shift between neon-pink and cyan in a glitching shimmer',
+          'a chrome coat hanger holding a jacket whose panels shift between violet and cyan in a glitching shimmer',
         SPACE_OPERA: 'a white garment pod projecting a rotating blue holographic tunic',
       },
     },

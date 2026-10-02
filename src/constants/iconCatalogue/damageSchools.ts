@@ -12,8 +12,8 @@ import type { DamageSchool, DamageSchoolDefinition } from '../../types/iconCatal
  * keying removes whatever lies within it wherever it sits on the sheet. And every pair stays at least
  * 40 apart in OKLab (`pixelDistance`), since two schools a player cannot tell apart at 32 px are one
  * school. The first proposal failed the second: a pale slate kinetic against a pale sky cryo sat 24
- * apart, and an emerald nanite against a lime toxic 28, barely past the 12 to 21 a painted key field
- * drifts by. So kinetic became a warm steel, voltaic took the electric blue a cyberpunk game gives
+ * apart, and an emerald nanite against a lime toxic 28, under five of OKLab's just-noticeable steps
+ * each (`damageSchools.test.ts` says why 40 is the floor). So kinetic became a warm steel, voltaic took the electric blue a cyberpunk game gives
  * electrical damage, and nanite took the gold a fantasy game gives holy light.
  *
  * Each colour is said in words before its hex, so the model reads the hue before the figure.

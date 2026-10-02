@@ -466,3 +466,43 @@ follow-up commit:
 filter value now carries `school`. The palette block's colour rule names the inventory beside the
 subject in every category's prompt. The `output` chunk grows past Vite's advisory 500 kB warning
 (526.6 kB) because the catalogue is compiled into it; the precache stays under its ceiling.
+
+**Addendum — review fixes (2026-10-02).** A review of the phase 4 commit raised fifteen findings.
+Fourteen held and were fixed; one claim within them did not, as the last item says.
+
+- **Validation passes outrank the inventory's colours too.** A spell line names its school's hex,
+  and the inventory outranks the set's colours, so under `SILHOUETTE_ONLY` or `CLAY_RENDER` the
+  orange would have beaten the one flat fill. Both passes' prose and section 0's precedence sentence
+  now cover a colour an entry in section 4 names; the template change is mirrored into
+  `baseline-prompt-new.md`, and a spell sheet is compiled under both passes.
+- **No pick in a preset names its key colour.** The spellbook's three white-hot and white-spark looks
+  sat on a white key. Every cyberpunk look now avoids white (the cyberpunk sets take `PURE_WHITE`),
+  and a preset test holds every pick against its own key's colour words.
+- **Pink is the netrun school's alone.** Neon pink as a model reads it (`#FF10F0`, `#FF6EC7`) lies
+  inside the default magenta key's reach, measured; the netrun line pins its pink by hex clear of
+  every key. So every look outside that school that named pink, older shelves included, moved to crimson, amber,
+  violet or cyan, and a catalogue test holds the rule and shows the measurement biting.
+- **Lettering objects.** Runes, dials, gauges, keypads, a stopwatch, an open scroll, a progress bar
+  and capitalised acronyms (`EMP`, `APC`, `USB`, `UV`, `HUD`, `LED`) left every look that had them,
+  older shelves included; a catalogue test bans them, and a scroll must be rolled.
+- **Distinct silhouettes, standalone devices, no scenery.** The near-duplicate attacks and abilities
+  the review listed each took a silhouette of its own; looks implying a limb are devices; the
+  back-alley, street-side, asphalt, deck-grate, concrete, half-buried and basking-stone settings went;
+  the two weak toggle pairs change shape between states; the thermal fantasy looks lead with orange.
+- **Guidance and helpers.** A spell's card names its school as the world does (`damageSchoolName`),
+  and the filter's labels use `capitalised`.
+- **The skip guard covers what the sweeps skip.** Two sweeps gained the per-address skip in this phase
+  (marker and punctuation); the multi-facing sweep had it already, so the record's “three sweeps”
+  means two new and one existing. The guard that made the skip safe compiled the default subject at
+  two sheets. It now compiles every skipped subject (starter set and whole-catalogue rosters in both
+  looks), with the companion outputs on and with named anatomy, at every sheet and the index past the
+  last, under every stored mode and set: `src/test/iconSkippedPairings.ts`, run by three
+  `promptCompilerIconSkip*.test.ts` files side by side.
+- **Test precision.** The school floor is justified in the metric it measures, plain OKLab (40 is
+  about eight of CSS Color 4's 0.02 just-noticeable steps); the compile tests assert the inventory's
+  own section number; the preset docblock names the two full-bleed cyberpunk sets.
+- **Bundle.** The catalogue's data is a chunk of its own (`codeSplitting` group in `vite.config.ts`,
+  listed in `PRECACHE_SHAPES`): `output` is 367.1 kB and `iconCatalogue` 159.6 kB, and the 500 kB
+  advisory is gone without raising the limit. **The duplication the review reported does not hold:**
+  every look string was in `output` alone, and what `useSubjectStore` carries is the presets' pick ids,
+  not the catalogue.

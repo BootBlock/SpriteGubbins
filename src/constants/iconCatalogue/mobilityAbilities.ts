@@ -23,7 +23,7 @@ export const MOBILITY_ABILITIES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass steam-jet boot with a piston heel venting one hard blast of steam',
         MODERN: 'a black carbon-plated running shoe kicking up a spray of grit',
         CYBERPUNK:
-          'a chrome cyber-boot with twin heel thrusters firing a short white kinetic burst and a spray of sparks',
+          'a chrome cyber-boot with twin heel thrusters firing a short grey kinetic burst and a spray of sparks',
         SPACE_OPERA: 'a white jump-jet pack firing a single short burst from its twin nozzles',
       },
     },
@@ -32,7 +32,7 @@ export const MOBILITY_ABILITIES: IconCatalogueGroup = {
       role: 'Blink teleport',
       school: 'NETRUN',
       looks: {
-        FANTASY: 'a pair of shimmering pink rune rings joined by a leaping arc of sparks',
+        FANTASY: 'a pair of shimmering pink portal rings joined by a leaping arc of sparks',
         AGE_OF_STEAM: 'a brass transference coil flinging a pink spark between two copper rings',
         MODERN: 'a black smartphone with a pink location pin leaping along a dotted arc',
         CYBERPUNK:
@@ -49,7 +49,7 @@ export const MOBILITY_ABILITIES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a coiled brass spring heel on a riveted iron sole, bounding up in a puff of steam',
         MODERN: 'a fibreglass vaulting pole bent into a tall arc',
         CYBERPUNK:
-          'a chrome hydraulic jump-piston boot with its coiled strut compressed, white sparks spitting from the joint as it launches',
+          'a chrome hydraulic jump-piston with its coiled strut compressed, launching upward on a cone of grey exhaust',
         SPACE_OPERA: 'a white grav-boot sole blooming a ring of grey anti-gravity light',
       },
     },
@@ -62,7 +62,7 @@ export const MOBILITY_ABILITIES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a steam-driven iron winch drum reeling in a taut riveted chain',
         MODERN: 'a motorised rope ascender clamped onto a taut steel cable',
         CYBERPUNK:
-          'a chrome grapple launcher firing a barbed spike on a taut silver monofilament line, white sparks where the spike bites into concrete',
+          'a chrome grapple launcher firing a barbed spike on a taut silver monofilament line, the spike’s barbs flared open',
         SPACE_OPERA: 'a white magnetic grapple anchor reeling in a chain of linked grey energy rings',
       },
     },
@@ -72,11 +72,10 @@ export const MOBILITY_ABILITIES: IconCatalogueGroup = {
       school: 'KINETIC',
       looks: {
         FANTASY: 'a silver horseshoe ringed by a gusting spiral of wind',
-        AGE_OF_STEAM:
-          'a brass speed gauge with its needle pinned hard over and steam whistling from its valve',
-        MODERN: 'a carbon-fibre running blade prosthetic kicking up a spray of grit',
+        AGE_OF_STEAM: 'a brass steam turbine with its rotor spinning hard and steam whistling from its valve',
+        MODERN: 'a carbon-fibre running blade prosthesis standing alone, its curve flexed as if mid-stride',
         CYBERPUNK:
-          'a chrome sprint-servo actuator pack with spinning white turbine vents and a fan of sparks and asphalt grit kicked out behind it',
+          'a chrome sprint-servo actuator pack with spinning chrome turbine vents and a fan of sparks thrown out behind it',
         SPACE_OPERA: 'a white speed-boost emitter streaming three stacked grey chevrons of light',
       },
     },

@@ -21,7 +21,7 @@ export const MOUNTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass steam velocipede with a tall smokestack and spoked iron wheels',
         MODERN: 'a red sport motorcycle with a low fairing and twin chrome exhausts',
         CYBERPUNK:
-          'a low chrome hover-bike with twin thruster pods, a cracked windscreen and a neon-pink underglow',
+          'a low chrome hover-bike with twin thruster pods, a cracked windscreen and a neon-violet underglow',
         SPACE_OPERA: 'a sleek white speeder bike with swept fins and twin glowing blue drive nozzles',
       },
     },
@@ -33,7 +33,7 @@ export const MOUNTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a riveted iron steam tractor with armoured side plating and a tall smoking funnel',
         MODERN: 'a sand-coloured eight-wheeled armoured personnel carrier with a small roof turret',
         CYBERPUNK:
-          'a six-wheeled matte-black armoured APC with hazard-striped bull bars and a glowing red sensor strip across its slit windscreen',
+          'a six-wheeled matte-black troop carrier with hazard-striped bull bars and a glowing red sensor strip across its slit windscreen',
         SPACE_OPERA: 'a white hover tank with a smooth domed hull and a glowing blue repulsor skirt',
       },
     },
@@ -81,7 +81,7 @@ export const MOUNTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass-hulled sky skiff hung beneath a small canvas gasbag with a rear propeller',
         MODERN: 'a grey hovercraft with an inflated black skirt and a caged rear fan',
         CYBERPUNK:
-          'an open grav-skiff of scuffed chrome deck plating with a low rail and hot-pink grav emitters glowing underneath',
+          'an open grav-skiff of scuffed chrome deck plating with a low rail and amber grav emitters glowing underneath',
         SPACE_OPERA:
           'a white antigravity platform with a curved rail and a ring of soft blue repulsor lights',
       },

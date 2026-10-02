@@ -94,6 +94,13 @@
  * chunk into one the two share. The other three are existing modules cut out the same way:
  * `useSheetSubject` and `output`, which that hook reaches, and `TextField`, now that the dialog's
  * search box is one. What a first visit gains from those three is requests rather than bytes.
+ *
+ * **`iconCatalogue` is the catalogue's data, cut out of `output` on purpose** (`vite.config.ts`). The
+ * prompt compiler reads every entry's looks, so the bundler folded them into `output`, and the spells,
+ * emotes, companions and professions took that chunk to 526.7 kB, past the bundler's 500 kB advisory.
+ * A group of its own leaves `output` at 367.1 kB and the catalogue at 159.6; the bytes are the same and
+ * the precache gains one request. Nothing was duplicated before the split: each look string sat in
+ * `output` alone.
  */
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',
@@ -118,6 +125,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/Tooltip-*.js',
   'assets/componentBudget-*.js',
   'assets/database-*.js',
+  'assets/iconCatalogue-*.js',
   'assets/output-*.js',
   'assets/presets-*.js',
   'assets/quantiseDials-*.js',

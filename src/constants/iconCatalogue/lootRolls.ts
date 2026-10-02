@@ -19,8 +19,7 @@ export const LOOT_ROLLS: IconCatalogueGroup = {
         FANTASY: 'a carved bone die showing three black pips, tumbling mid-roll',
         AGE_OF_STEAM: 'a brass-cornered ivory die with red pips, resting on a green baize square',
         MODERN: 'a white plastic die with black pips, tilted on one corner',
-        CYBERPUNK:
-          'a translucent black acrylic die with neon-cyan pips and a hot-pink edge light, mid-tumble',
+        CYBERPUNK: 'a translucent black acrylic die with neon-cyan pips and an amber edge light, mid-tumble',
         SPACE_OPERA: 'a white holographic die with blue glowing pips spinning above a small emitter',
       },
     },

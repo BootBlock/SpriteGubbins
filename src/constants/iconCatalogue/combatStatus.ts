@@ -64,7 +64,7 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a small wooden hourglass with golden sand trickling down',
         AGE_OF_STEAM: 'a brass pocket watch with its lid open and its chain trailing',
-        MODERN: 'a yellow disc with a white clock dial and two plain pointers',
+        MODERN: 'a yellow disc with a plain dark crescent moon on it',
         CYBERPUNK: 'a black chrome hourglass with neon-amber nanite sand trickling through it',
         SPACE_OPERA: 'a white standby crystal pulsing slowly with amber light',
       },
@@ -77,7 +77,7 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass railway signal lamp shining red',
         MODERN: 'a red disc with a white horizontal bar across it',
         CYBERPUNK:
-          'a red neon no-entry disc with a white bar, buzzing with a faint flicker on a black backplate',
+          'a red neon no-entry disc with a black bar, buzzing with a faint flicker on a black backplate',
         SPACE_OPERA: 'a red force-field barrier shimmering over a white disc',
       },
     },
@@ -124,7 +124,7 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
       role: 'Threat warning',
       looks: {
         FANTASY: 'a red triangular shield with a jagged crack down its centre',
-        AGE_OF_STEAM: 'a brass pressure gauge with its needle pinned in the red',
+        AGE_OF_STEAM: 'a brass boiler safety valve venting a jet of steam, its lever glowing red-hot',
         MODERN: 'a red-and-orange triangle with a thick dark border',
         CYBERPUNK:
           'a pulsing neon-red triangle with a jagged bolt inside it, flickering over a black chrome plate',

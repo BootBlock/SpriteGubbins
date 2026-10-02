@@ -1,6 +1,7 @@
 import { DAMAGE_SCHOOL_DEFINITIONS } from '../constants/iconCatalogue/damageSchools.ts';
 import { DAMAGE_SCHOOLS } from '../types/iconCatalogue.ts';
 import type { IconCatalogueFilter } from '../types/iconCatalogue.ts';
+import { capitalised } from './capitalised.ts';
 import { damageSchoolName } from './damageSchoolName.ts';
 
 /** One option of the catalogue dialog's school filter. */
@@ -22,8 +23,7 @@ export function iconSchoolFilterChoices(world: string): readonly IconSchoolFilte
     { value: 'ALL', label: 'Every school' },
     ...DAMAGE_SCHOOLS.map((school) => {
       const { label } = DAMAGE_SCHOOL_DEFINITIONS[school];
-      const name = damageSchoolName(school, world);
-      const spoken = `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+      const spoken = capitalised(damageSchoolName(school, world));
       return {
         value: school,
         label: spoken === label ? label : `${spoken} (${label.toLowerCase()})`,

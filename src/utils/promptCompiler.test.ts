@@ -1123,7 +1123,7 @@ describe('generatePrompt — a render style that withholds the surface', () => {
    */
   const OUTRANKS_THE_COLOURS =
     'This sheet’s render style is a validation pass, and what it states about the surface ' +
-    'outranks the subject’s colour and material attributes.';
+    'outranks the colour and material attributes of the subject and of every inventory entry.';
 
   /** The lines section 2 prints for a style that describes a surface rather than withholding one. */
   const SURFACE_DETAIL = '- Surface-detail intensity: ';
@@ -1162,7 +1162,11 @@ describe('generatePrompt — a render style that withholds the surface', () => {
       const pass = promptText.validationPassFor(style);
       if (pass === null) throw new Error(`${style} should be a validation pass.`);
 
-      expect(withStyle(style), style).toContain(pass.text);
+      // The pass cites the inventory, whose number the compiler resolves on the sheet it is on.
+      const prompt = withStyle(style);
+      const inventory = /^## (\d+)\. COMPONENT INVENTORY$/m.exec(prompt)?.[1];
+      if (inventory === undefined) throw new Error('the prompt should carry an inventory section.');
+      expect(prompt, style).toContain(pass.text.replaceAll('[SEC:INVENTORY]', inventory));
     }
   });
 
@@ -2271,8 +2275,8 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
       // it: an assembly base draws sheets of its own (issue #283), so the default subject alone never
       // compiles OBJECT's standard sheets.
       for (const subject of assemblyBaseSubjectsOf(category)) {
-        // ICON alone compiles each resolved address once (`resolvedSheetAddress`); the test after
-        // this one holds ICON's skipped pairings to the prompt their resolution names.
+        // ICON alone compiles each resolved address once (`resolvedSheetAddress`), and
+        // `promptCompilerIconSkip*.test.ts` hold its skipped pairings to the prompt their resolution names.
         const compiled = new Set<string>();
         for (const directionalMode of DIRECTIONAL_MODES) {
           for (const directions of DIRECTION_SETS) {
@@ -2300,32 +2304,6 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
               }
             }
           }
-        }
-      }
-    }
-  });
-
-  it('compiles every ICON pairing the sweep skips to the prompt its resolution names', () => {
-    // The sweeps in this file compile each of ICON's resolved addresses once; this is what makes that
-    // skip safe. A stored mode and set ICON does not offer reach the compiler raw here, and the prompt is
-    // the one the offered pairing compiles.
-    const subject = defaultSubjectFor('ICON');
-    for (const sheetIndex of [0, 1]) {
-      const offered = generatePrompt(
-        'ICON',
-        subject,
-        withOutput({
-          directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
-          directions: 'SINGLE_FRONT',
-          sheetIndex,
-        }),
-      );
-      for (const directionalMode of DIRECTIONAL_MODES) {
-        for (const directions of DIRECTION_SETS) {
-          expect(
-            generatePrompt('ICON', subject, withOutput({ directionalMode, directions, sheetIndex })),
-            `${directionalMode}/${directions}/${String(sheetIndex)}`,
-          ).toBe(offered);
         }
       }
     }

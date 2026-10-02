@@ -21,7 +21,7 @@ export const PET_COMMANDS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass paw-print medallion crossed by a riveted cavalry sabre',
         MODERN: 'a black paw print crossed by a matte-black combat knife',
         CYBERPUNK:
-          'a neon-red paw print crossed by a chrome mantis-blade, a burst of white sparks where they meet',
+          'a neon-red paw print crossed by a chrome mantis-blade, a burst of steel sparks where they meet',
         SPACE_OPERA: 'a white paw print crossed by a glowing blue energy blade',
       },
     },
@@ -43,7 +43,7 @@ export const PET_COMMANDS: IconCatalogueGroup = {
         FANTASY: 'a paw print planted inside a carved stone ring',
         AGE_OF_STEAM: 'a brass paw print bolted inside a riveted iron ring',
         MODERN: 'a black paw print inside a solid grey circle',
-        CYBERPUNK: 'a chrome paw print locked inside a glowing hot-pink geofence ring',
+        CYBERPUNK: 'a chrome paw print locked inside a glowing amber geofence ring',
         SPACE_OPERA: 'a white paw print held in a ring of blue stasis light',
       },
     },

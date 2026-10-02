@@ -51,6 +51,16 @@ describe('iconEntryGuidance', () => {
     expect(iconEntryGuidance(entry('heal-minor'), 'Modern Day')).not.toContain('a hand, a face or a figure');
   });
 
+  it('names a spell’s school as the world does, as the line it describes does', () => {
+    expect(iconEntryGuidance(entry('thermal-strike'), 'High Fantasy')).toContain(
+      'It belongs to the fire school.',
+    );
+    expect(iconEntryGuidance(entry('thermal-strike'), 'Near-Future Cyberpunk')).toContain(
+      'It belongs to the thermal school.',
+    );
+    expect(iconEntryGuidance(entry('heal-minor'), 'High Fantasy')).not.toContain('school');
+  });
+
   it('says so when no world is set', () => {
     expect(iconEntryGuidance(entry('heal-minor'), '  ')).toContain(
       'With no World & Era set, the sheet draws it as',

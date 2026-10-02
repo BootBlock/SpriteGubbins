@@ -37,11 +37,13 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * square's backdrop is painted from the set's colours shaded towards black at its corners. Measured
  * over every hex colour ICON's *Primary Colours* and *Accent Colours* offer, shaded and washed that
  * way, `PURE_BLACK` reaches four primaries — the cyberpunk set's own Gunmetal among them — and
- * `MAGENTA_FF00FF` reaches Void Magenta, while `PURE_WHITE` reaches none. So the cyberpunk sets take
- * `PURE_WHITE`, which keeps the key safe when a reader swaps their colours for others the fields offer;
- * the spellbook's eight school colours are held out of every key's reach by `damageSchools.test.ts`,
- * so they leave the choice where the set's own colours put it.
- * The fantasy grid keeps `TRANSPARENT`, which no painted colour can be confused with.
+ * `MAGENTA_FF00FF` reaches Void Magenta, while `PURE_WHITE` reaches none. So the two full-bleed
+ * cyberpunk sets, the consumables and the spellbook, take `PURE_WHITE`, which keeps the key safe when
+ * a reader swaps their colours for others the fields offer; the spellbook's eight school colours are
+ * held out of every key's reach by `damageSchools.test.ts`, so they leave the choice where the set's
+ * own colours put it, and no cyberpunk look names white (`iconCatalogue.test.ts`). The fantasy grid
+ * keeps `TRANSPARENT`, which no painted colour can be confused with, and so does the cyberpunk emote
+ * wheel, whose isolated marks have no backdrop to shade.
  * `iconSetKeys.test.ts` holds all of this, and shows the black and magenta measurements failing.
  */
 export const ICON_SET_PRESETS: readonly PresetArchetype[] = [

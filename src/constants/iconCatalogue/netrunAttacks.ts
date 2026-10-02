@@ -21,10 +21,10 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
       role: 'Netrun direct-hit attack',
       school: 'NETRUN',
       looks: {
-        FANTASY: 'a glowing pink arcane missile trailing a wake of runic sparks',
+        FANTASY: 'a glowing pink arcane missile trailing a wake of arcane sparks',
         AGE_OF_STEAM: 'a brass aether pistol with a crystal valve chamber firing a pink aetheric spark',
         MODERN: 'a black smartphone firing a jagged pink malware bolt of pixel blocks',
-        CYBERPUNK: 'a jagged pink quickhack bolt of glitching pixel blocks leaping from a chrome cyberdeck',
+        CYBERPUNK: 'a jagged pink quickhack bolt of glitching pixel blocks, split like a forked arrow',
         SPACE_OPERA: 'a white entanglement pistol firing a twin-ghosted pink particle bolt',
       },
     },
@@ -33,12 +33,11 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
       role: 'Netrun area blast',
       school: 'NETRUN',
       looks: {
-        FANTASY: 'a pink runic circle bursting outward in a ring of arcane light',
+        FANTASY: 'a pink arcane circle of interlocking rings bursting outward in a ring of light',
         AGE_OF_STEAM:
           'a brass difference engine bursting in a ring of flying punch cards and pink aether sparks',
         MODERN: 'a black laptop at the centre of a ring of pink flood-attack packets bursting outward',
-        CYBERPUNK:
-          'a chrome ICE-breaker daemon orb detonating in a round pink glitch ring of shattered pixel blocks',
+        CYBERPUNK: 'a chrome daemon orb detonating in a round pink glitch ring of shattered pixel blocks',
         SPACE_OPERA: 'a white wormhole micro-gate bursting outward in a round pink probability ripple',
       },
     },
@@ -60,7 +59,7 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
       role: 'Netrun channelled attack',
       school: 'NETRUN',
       looks: {
-        FANTASY: 'a floating rune-carved crystal pouring a steady pink arcane beam',
+        FANTASY: 'a floating faceted crystal pouring a steady pink arcane beam',
         AGE_OF_STEAM:
           'a brass aether-engine emitter firing a steady pink aether beam through a crystal valve',
         MODERN: 'a black wireless router pouring a steady pink stream of malware packets',
@@ -76,8 +75,9 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a massive crystal warhammer swelling with pink mana as it smashes down',
         AGE_OF_STEAM: 'a heavy brass punch-card press stamping down in a burst of pink aether',
-        MODERN: 'a black USB killer stick discharging a single pink overload pulse',
-        CYBERPUNK: 'a chrome cyberdeck slamming one overloaded pink kill-daemon spike forward',
+        MODERN: 'a black power-surge killer stick discharging a single pink overload pulse',
+        CYBERPUNK:
+          'a long chrome daemon spike with a glitching pink crystal core, driving point-first in one blow',
         SPACE_OPERA:
           'a white quantum compressor ring crushing a pink probability sphere down to a single point',
       },
@@ -87,10 +87,10 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
       role: 'Netrun vulnerability debuff',
       school: 'NETRUN',
       looks: {
-        FANTASY: 'a cracked steel buckler with a glowing pink rune-ring branded on it',
+        FANTASY: 'a cracked steel buckler with a glowing pink arcane ring branded on it',
         AGE_OF_STEAM: 'a brass aether valve split open, a pink spark leaking through the crack',
         MODERN: 'a broken black padlock with a pink backdoor keyhole glowing in it',
-        CYBERPUNK: 'a hacked chrome optic implant with a pink exploit reticle glitching across its lens',
+        CYBERPUNK: 'a chrome hexagonal firewall panel with a pink glitch breach torn through its mesh',
         SPACE_OPERA: 'a white shield node with a pink wormhole micro-gate punched through it',
       },
     },
@@ -99,11 +99,10 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
       role: 'Netrun ultimate',
       school: 'NETRUN',
       looks: {
-        FANTASY: 'a vast pink arcane vortex swirling with orbiting runic rings',
+        FANTASY: 'a vast pink arcane vortex swirling with orbiting rings of light',
         AGE_OF_STEAM: 'a towering brass difference engine with its crystal valves blazing pink aether',
         MODERN: 'a black server rack with a pink worm of pixel coils spilling out of every port',
-        CYBERPUNK:
-          'a black-wall serpent of jagged pink pixel blocks coiling out of a cracked chrome cyberdeck',
+        CYBERPUNK: 'a black-wall serpent of jagged pink pixel blocks coiling through a cracked chrome ring',
         SPACE_OPERA: 'a white wormhole gate ring torn open on a swirling pink quantum rift',
       },
     },

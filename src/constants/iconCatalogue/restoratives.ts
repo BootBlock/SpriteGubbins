@@ -101,7 +101,7 @@ export const RESTORATIVES: IconCatalogueGroup = {
         FANTASY: 'a white ceramic phial of holy water sealed with a gold wax drop',
         AGE_OF_STEAM: 'a small round tin of medicinal salve with a stamped lid',
         MODERN: 'a white pill bottle with a child-proof cap and a blue band',
-        CYBERPUNK: 'a white antiviral cartridge with a violet glowing purge ring and chrome end caps',
+        CYBERPUNK: 'a matte-grey antiviral cartridge with a violet glowing purge ring and chrome end caps',
         SPACE_OPERA: 'a white sterilisation wand with a violet light at its tip',
       },
     },

@@ -24,7 +24,7 @@ export const THERMAL_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass flare pistol firing a red-hot coal shot trailing orange sparks',
         MODERN: 'a black flare gun firing a red signal flare round in a streak of smoke',
         CYBERPUNK:
-          'an incendiary smart-round in a chrome casing, its tip burning white-hot as it streaks forward trailing orange plasma',
+          'an incendiary smart-round in a chrome casing, its tip burning orange-hot as it streaks forward trailing orange plasma',
         SPACE_OPERA: 'a white plasma pistol firing an elongated orange plasma bolt',
       },
     },
@@ -33,11 +33,11 @@ export const THERMAL_ATTACKS: IconCatalogueGroup = {
       role: 'Thermal area blast',
       school: 'THERMAL',
       looks: {
-        FANTASY: 'a ring of orange flame bursting outward from a crimson fire core',
+        FANTASY: 'a ring of orange flame bursting outward from a blazing orange fire core',
         AGE_OF_STEAM: 'a burst brass boiler drum blowing out in a ring of orange fire and scalding steam',
         MODERN: 'a black napalm canister bursting into a wide orange fireball with black smoke curling up',
         CYBERPUNK:
-          'a chrome thermite charge with a blinking red diode blowing out in a white-hot ring of molten orange slag',
+          'a chrome thermite charge with a blinking red diode blowing out in a searing ring of molten orange slag',
         SPACE_OPERA: 'a white flare emitter releasing a round orange plasma nova',
       },
     },
@@ -49,7 +49,7 @@ export const THERMAL_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a ball of burning pitch dripping slow gobbets of orange flame',
         AGE_OF_STEAM: 'a glowing red-hot coal held in brass tongs, orange embers drifting off it',
         MODERN: 'a dripping glob of burning napalm gel trailing orange fire',
-        CYBERPUNK: 'a cracked chrome heat-sink glowing red-hot, molten orange solder dripping from its fins',
+        CYBERPUNK: 'a cracked chrome incendiary canister leaking a slow drip of burning orange plasma gel',
         SPACE_OPERA: 'a white hull plate with a glowing orange plasma scorch spreading across it',
       },
     },
@@ -76,7 +76,7 @@ export const THERMAL_ATTACKS: IconCatalogueGroup = {
           'a massive red-hot forge hammer slamming down on an iron anvil in a spray of orange sparks',
         MODERN: 'a heavy black thermite shell bursting white-hot in a shower of molten orange sparks',
         CYBERPUNK:
-          'an overclocked chrome heat-sink gauntlet glowing red-hot, venting a burst of orange plasma through its exhaust ports',
+          'an overclocked chrome plasma maul with red-hot heat-sink fins round its striking end, venting orange plasma as it swings down',
         SPACE_OPERA:
           'a white plasma warhammer with a molten orange core, swung down in an arc of searing plasma',
       },
@@ -99,7 +99,7 @@ export const THERMAL_ATTACKS: IconCatalogueGroup = {
       role: 'Thermal ultimate',
       school: 'THERMAL',
       looks: {
-        FANTASY: 'a blazing crimson phoenix with wings of orange flame spread wide',
+        FANTASY: 'a blazing orange phoenix with wings of flame spread wide',
         AGE_OF_STEAM:
           'a towering brass furnace engine with its firebox thrown open on a roaring blast of orange flame',
         MODERN: 'a black incendiary cluster bomb splitting into a fan of burning orange bomblets',

@@ -24,7 +24,8 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM:
           'a stoppered glass phial of green vitriol tumbling through the air, its cork popping free',
         MODERN: 'a black pressurised sprayer wand squirting a single glob of green acid',
-        CYBERPUNK: 'a chrome bio-weapon dart with a glowing green toxin vial in its tail fins',
+        CYBERPUNK:
+          'a chrome flechette dart with three swept fins, trailing a thin glowing green toxin vapour',
         SPACE_OPERA: 'a white bio-dart pistol firing a glowing green alien spore',
       },
     },
@@ -36,7 +37,7 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a bursting green spore pod releasing a ring of toxic pollen',
         AGE_OF_STEAM: 'a brass mustard-gas bellows puffing out a ring of sickly green gas',
         MODERN: 'a grey nerve-gas canister bursting into a round green cloud',
-        CYBERPUNK: 'a black gas drone with chrome rotors dumping a round corroding green chem cloud',
+        CYBERPUNK: 'a black quad-rotor gas drone dumping a round corroding green chem cloud',
         SPACE_OPERA: 'a white bio-plague pod cracking open in a round burst of green alien spores',
       },
     },
@@ -49,7 +50,7 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a glass venom phial with a cracked neck oozing green droplets',
         MODERN: 'a pitted steel plate with green acid dripping down it and eating holes through',
         CYBERPUNK:
-          'a nano-toxin vial in a chrome injector sleeve, a glowing green drop beading at its needle tip',
+          'a leaking chrome chem canister with a split seam, a slow drip of glowing green toxin falling from it',
         SPACE_OPERA: 'a white hull plate pitted by a creeping green alien fungal bloom',
       },
     },
@@ -75,7 +76,7 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a heavy brass alchemical mortar shell cracking open in a burst of green vitriol',
         MODERN: 'a black chemical grenade launcher firing one fat green-capped round',
         CYBERPUNK:
-          'a hulking chrome toxin-injector spike with a glowing green payload chamber, plunging down in one blow',
+          'a hulking chrome acid cannon with a bulbous glass tank of glowing green toxin, firing one heavy glob from its flared muzzle',
         SPACE_OPERA: 'a white bio-lance with a glowing green plague core, thrust forward in one heavy strike',
       },
     },
@@ -101,7 +102,7 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a towering brass alchemical still venting a roiling column of green gas',
         MODERN: 'a black chemical warhead with a hazard collar bursting into a green toxic mushroom cloud',
         CYBERPUNK:
-          'a black chrome-ribbed gas drone mothership releasing a roiling green corrosive chem storm',
+          'a cracked black bio-reactor tank venting a towering roiling column of acid-green chem smog',
         SPACE_OPERA: 'a giant white bio-plague seed pod splitting open on a swirling green spore storm',
       },
     },

@@ -8,6 +8,8 @@ import { BACKGROUND_KEY_COLORS } from '../backgroundKeyColors.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { DAMAGE_SCHOOL_DEFINITIONS } from '../iconCatalogue/damageSchools.ts';
 import { iconCatalogueEntry } from '../iconCatalogue/index.ts';
+import { lookFamilyOfWorld } from '../iconCatalogue/lookFamilyOfWorld.ts';
+import type { BackgroundKey } from '../../types/rendering.ts';
 import { ICON_SET_PRESETS } from './iconSets.ts';
 
 /**
@@ -36,6 +38,14 @@ import { ICON_SET_PRESETS } from './iconSets.ts';
  */
 
 const NAMED_HEX = /#[0-9a-f]{6}\b/gi;
+
+/** The words a look could name each key's colour in, or `null` for a field that has no colour. */
+const KEY_COLOUR_WORDS: Readonly<Record<BackgroundKey, RegExp | null>> = {
+  MAGENTA_FF00FF: /magenta|fuchsia|pink/i,
+  PURE_WHITE: /\bwhite\b/i,
+  PURE_BLACK: /\bblack\b/i,
+  TRANSPARENT: null,
+};
 
 /** The colours a preset names by hex, in the two fields that colour its icons. */
 function namedColours(subject: (typeof ICON_SET_PRESETS)[number]['subject']): readonly Rgba[] {
@@ -93,6 +103,24 @@ describe('the ICON presets’ background keys', () => {
         if (colour === null) throw new Error(`${school} names no colour`);
         const steps = preset.subject.icons?.look === 'FULL_BLEED_TILE' ? backdropSeries(colour) : [colour];
         for (const step of steps) expect(keyReaches(key, step), school).toBe(false);
+      }
+    },
+  );
+
+  it.each(ICON_SET_PRESETS.map((preset) => [preset.name, preset] as const))(
+    '%s draws no pick in the colour its key names',
+    (_name, preset) => {
+      // Section 0 forbids drawing anything in or near the key colour, and the keying takes it out of
+      // every square it lands in, so a look naming the key's colour — white sparks on a white key —
+      // asks for a hole.
+      const words = KEY_COLOUR_WORDS[preset.output.backgroundKey];
+      if (words === null) return;
+      const family = lookFamilyOfWorld(preset.subject.setting);
+      if (family === null) throw new Error(`${preset.name} names a world no family draws`);
+      for (const id of preset.subject.icons?.picks ?? []) {
+        const entry = iconCatalogueEntry(id);
+        if (entry === undefined) throw new Error(`${preset.name} picks ${id}, which the catalogue lacks`);
+        expect(entry.looks[family], id).not.toMatch(words);
       }
     },
   );

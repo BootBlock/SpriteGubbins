@@ -19,9 +19,9 @@ export const GATHERING_PROFESSIONS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a pelt stretched on a wooden drying rack with a bone-handled flaying knife beside it',
         AGE_OF_STEAM: 'a brass electromagnet on a chain lifting a tangle of scrap iron',
-        MODERN: 'a metal detector with its coil sweeping over a half-buried rusty tin',
+        MODERN: 'a metal detector with its round coil hovering over a rusty tin',
         CYBERPUNK:
-          'a crowbar wedged into a gutted vending machine, glowing chips and loose copper coils spilling out',
+          'a battered chrome scavenger’s grab-claw closing on a tangle of copper wire and salvaged chips',
         SPACE_OPERA: 'a white scavenger drone carrying a glowing alien relic shard in its grab claw',
       },
     },
@@ -33,7 +33,7 @@ export const GATHERING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a riveted iron minecart of coal on a short length of rail',
         MODERN: 'a yellow hard hat with a lamp, resting on a chunk of gold-flecked quartz',
         CYBERPUNK:
-          'a chrome core drill boring into black rock, a glowing hot-pink crystal core sliding out of its bit',
+          'a chrome core drill boring into black rock, a glowing violet crystal core sliding out of its bit',
         SPACE_OPERA:
           'a white mining drone clamped to a small asteroid, its blue beam carving out a glowing ore chunk',
       },
@@ -47,7 +47,7 @@ export const GATHERING_PROFESSIONS: IconCatalogueGroup = {
           'a brass aether condenser drawing a glowing wisp through a copper antenna into a glass bulb',
         MODERN: 'a black external hard drive cabled into a server blade with a row of blinking green lights',
         CYBERPUNK:
-          'a jack-in spike plugged into a dented street-side data node, a stream of glowing cyan data cubes pouring into a chrome shard',
+          'a chrome data shard drawing a stream of glowing cyan data cubes out of a cracked node port',
         SPACE_OPERA: 'a white probe drone siphoning a ribbon of glowing data from a floating crystal relay',
       },
     },
@@ -72,7 +72,7 @@ export const GATHERING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a spanner prising the cogs from a broken brass clockwork engine into a tin bucket',
         MODERN: 'a socket wrench beside a dismantled car alternator and a tray of loose bolts',
         CYBERPUNK:
-          'a plasma torch slicing open the chassis of a downed combat drone, chrome servos and glowing power cells spilling out',
+          'a plasma cutter torch slicing a combat drone’s chrome casing in half, a glowing power cell exposed inside',
         SPACE_OPERA: 'a white recycler cube breaking a wrecked fighter wing into streams of blue particles',
       },
     },
