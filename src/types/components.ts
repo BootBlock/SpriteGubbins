@@ -652,8 +652,9 @@ interface SheetPlanFields {
    * gradient, texture, vignette", and ICON's exclusion line bans backgrounds outright; read over a
    * painted square, both forbid the backdrop the look exists to draw. This field opens the
    * `OWN_BACKDROP` block that says the backdrop belongs to the component and the key fills only the
-   * gutters, switches ICON's exclusion, guard and audit text to their tile wording, and takes
-   * `gradient background` out of the Qwen and Stable Diffusion negatives (R13).
+   * gutters, switches ICON's exclusion and audit text to their square wording, and takes
+   * `gradient background` out of the Qwen and Stable Diffusion negatives (R13). ICON's guard follows
+   * the look through the sheet's `componentClass` instead, since it bans no background.
    *
    * **Never the overlay sheet, under either look.** Its pieces are laid over a finished tile by the
    * engine, so each has to stay open around its own shape: a veil or a ring arriving with a backdrop

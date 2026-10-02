@@ -126,10 +126,12 @@ export function wrapForModel(
      *
      * Read by the two negative blocks, Stable Diffusion's and Qwen's, because each carries `gradient
      * background` against a field that drifts — and on a sheet of full-bleed squares a model reads that
-     * term over the soft field behind every subject, which is the backdrop the sheet asks for (R13 of
+     * term over the field behind every subject, which is the backdrop the sheet asks for (R13 of
      * `docs/todo/icon-catalogue.md`). Neither channel can say "between the components only", so the term
      * comes out there; section 0 still states the uniform gutters. `scene background` stays, because a
-     * backdrop is never a scene. Midjourney's `--no` and Flux's leading sentence name no gradient.
+     * backdrop is never a scene. Midjourney's `--no` carries only the style's surface terms
+     * (`smooth gradients` among them on the flat and pixel styles, which `backdropDescription` forbids
+     * the backdrop too), never `gradient background`, and Flux's leading sentence names no gradient.
      */
     readonly ownBackdrop: boolean;
     /**

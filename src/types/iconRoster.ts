@@ -18,11 +18,10 @@
  *
  * **The look is the set's, not the icon's**, because a grid mixing squares and loose marks reads as two
  * packs. It reaches the icon sheets (`iconSheet`), the overlay sheet (`ICON_OVERLAY_PLANS`), ICON's
- * exclusion, guard and audit text through `SheetPlan.backdrop`, and the wrappers' negatives.
+ * exclusion and audit text and the wrappers' negatives through `SheetPlan.backdrop`, and ICON's guard
+ * through the sheet's `componentClass`.
  *
- * **Full-bleed is listed first because it is the default** — the starter roster's — for the use case the
- * catalogue was built for: a World of Warcraft–style action bar, whose icons are painted squares the
- * bar frames. The order is the control's order too.
+ * The order is the control's order. Which look a new set takes is `DEFAULT_ICON_LOOK`.
  */
 export const ICON_LOOKS = ['FULL_BLEED_TILE', 'ISOLATED_MARK'] as const;
 

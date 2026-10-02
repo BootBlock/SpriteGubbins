@@ -31,13 +31,13 @@ import type { PresetArchetype } from '../../types/preset.ts';
  *
  * **A full-bleed preset takes a key its squares' backdrops will not be keyed out with** (R15 of
  * `docs/todo/icon-catalogue.md`). Every pixel within the key's reach is removed wherever it sits, and a
- * backdrop is painted from the set's colours shaded towards black at its corners. The cyberpunk set's
- * neon glows and violet shadows lie in magenta's shading plane, which `keyDistance.ts` discounts, and a
- * black key takes the darkness its backdrops fall into, so it takes `PURE_WHITE`, which nothing in a
- * dark neon square is washed to; the prompt keeps its brightest glint off pure white. The fantasy
- * grid keeps `TRANSPARENT`, which no painted colour can be confused with. `iconSetKeys.test.ts` holds
- * every named colour of every ICON preset, and each full-bleed preset's shading of them, outside its
- * key's reach.
+ * square's backdrop is painted from the set's colours shaded towards black at its corners. Measured
+ * over every hex colour ICON's *Primary Colours* and *Accent Colours* offer, shaded and washed that
+ * way, `PURE_BLACK` reaches four primaries — the cyberpunk set's own Gunmetal among them — and
+ * `MAGENTA_FF00FF` reaches Void Magenta, while `PURE_WHITE` reaches none. So the cyberpunk set takes
+ * `PURE_WHITE`, which keeps its key safe when a reader swaps its colours for others the fields offer.
+ * The fantasy grid keeps `TRANSPARENT`, which no painted colour can be confused with.
+ * `iconSetKeys.test.ts` holds all of this, and shows the black and magenta measurements failing.
  */
 export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
   {

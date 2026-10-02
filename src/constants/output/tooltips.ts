@@ -142,7 +142,7 @@ export const OUTPUT_TOOLTIPS = {
   backgroundKey:
     'What the components sit on, so they can be cut out afterwards. Magenta is the default because white bleeds into light-coloured edges: white armour on a white field has no recoverable boundary.\n\n' +
     'Pick `TRANSPARENT` only if the target really returns alpha; most return a flat matte whatever you ask for. The prompt then asks for the file’s own alpha channel and rules out a drawn checkerboard or matte.\n\n' +
-    'Any other choice is reserved for the background: the prompt keeps that colour, and any shade near enough to be keyed out with it, off every component and out of a pinned palette’s colours.\n\nOn an icon set of full-bleed squares the key fills only the gutters, and each backdrop is kept clear of it. Pick one far from those backdrops: `PURE_WHITE` for a dark neon set.',
+    'Any other choice is reserved for the background: the prompt keeps that colour, and any shade near enough to be keyed out with it, off every component and out of a pinned palette’s colours.\n\nOn an icon set of full-bleed squares the key fills only the gutters, and each backdrop is kept clear of it. `PURE_WHITE` is the one key no colour the icon fields offer comes near, even shaded.',
   spriteTargetSize:
     'Sets an exact pixel size for one component, such as “48 × 96 px”. Leave it empty and the prompt omits the line. Only the `CUSTOM` resolution profile offers it.\n\n' +
     'On a sheet of parts that assemble into one subject — a cut-out rig, a pose library, an articulation sheet, an item’s part library — the label reads Target Assembled Size, the size describes the whole assembled subject, and the per-component readings below do not apply.\n\n' +

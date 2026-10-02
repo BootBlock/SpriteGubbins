@@ -36,8 +36,8 @@ const WORDING: Readonly<Record<IconLook, IconSheetWording>> = {
     componentClass: 'one icon of this one set, a square painted to its edge with its own backdrop',
     intro: `Each entry is a different icon of this one set, and each is a square tile painted edge to edge:
 the subject and its own backdrop together, with no frame, border or bevel along the tile’s edge,
-because the interface draws the frame. The backdrop is a soft field of colour, light and texture behind
-the subject, never a scene with a horizon, and it keeps a clear gap in value from the subject so the
+because the interface draws the frame. The backdrop is a field behind the subject, drawn as section
+[SEC:CONTRACT] states, never a scene with a horizon, and it keeps a clear gap in value from the subject so the
 subject’s silhouette reads against it. The set agrees on weight, margin, outline, light and backdrop
 treatment; an entry marked ×2 is one icon drawn once in each of its two states, in the order it names
 them. A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for

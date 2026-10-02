@@ -2,6 +2,7 @@ import { componentTally } from './componentTally.ts';
 import { CATEGORY_OPTIONS, fieldLabelFor } from '../constants/categories/index.ts';
 import {
   ASPECT_TEXT,
+  backdropDescription,
   BACKGROUND_KEY_TEXT,
   CATEGORY_AUDIT_TEXT,
   CATEGORY_EXCLUSION_TEXT,
@@ -68,11 +69,9 @@ export function promptValues(
     cameraElevation,
     batch,
     anatomy,
-    hardware,
     palette,
     keyColor,
     styleSettings,
-    reference,
     componentCount,
     rig,
     sizing: { profile, stated, text: statedText, component, nativeScale },
@@ -184,6 +183,9 @@ export function promptValues(
     // pure black contour on a pure black field would be the one line in section 2 asking for it.
     OUTLINE_DESCRIPTION: outlineDescription(output.renderStyle, styleSettings.outline, keyColor),
     LIGHTING_DESCRIPTION: lightingDescription(output.renderStyle, styleSettings.lighting),
+    // How a full-bleed square's backdrop takes the render style's surface, and where its outline runs.
+    // Supplied for every sheet, as the outline is; `[IF:OWN_BACKDROP]` decides whether it is read.
+    BACKDROP_DESCRIPTION: backdropDescription(output.renderStyle, styleSettings.outline),
     // Supplied for every style, as `PALETTE_DESCRIPTION` is, and `''` for the eight that describe a
     // finished surface — the template's own `[IF:VALIDATION_PASS]` is what decides whether the token
     // is still there to be filled.
@@ -193,13 +195,13 @@ export function promptValues(
     // whether the token is still there to be filled.
     NATIVE_GRID_SCALE: nativeScale === null ? '' : String(nativeScale),
 
-    HARDWARE_NAME: hardware?.name ?? '',
-    HARDWARE_CONSTRAINTS: hardware === null ? '' : describeHardware(hardware),
+    HARDWARE_NAME: facts.hardware?.name ?? '',
+    HARDWARE_CONSTRAINTS: facts.hardware === null ? '' : describeHardware(facts.hardware),
     PALETTE_NAME: palette?.name ?? '',
     PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette, keyColor),
 
-    STYLE_REFERENCE_NAME: reference?.name ?? '',
-    STYLE_REFERENCE_CHARACTERISTICS: reference === null ? '' : describeStyleReference(reference),
+    STYLE_REFERENCE_NAME: facts.reference?.name ?? '',
+    STYLE_REFERENCE_CHARACTERISTICS: facts.reference ? describeStyleReference(facts.reference) : '',
 
     PROJECTION_DESCRIPTION: PROJECTION_TEXT[projection],
     CAMERA_ELEVATION: String(cameraElevation),

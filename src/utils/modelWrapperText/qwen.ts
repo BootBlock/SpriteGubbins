@@ -49,7 +49,7 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * target, so the synonym went with the fixed strings.
  *
  * **`gradient background` comes out on a sheet of full-bleed squares** (`ownBackdrop`), because there
- * every subject sits on a soft field of its own and this block cannot say which background it means —
+ * every subject sits on a field of its own and this block cannot say which background it means —
  * see `wrapForModel`'s option, which records the reasoning for both negative blocks.
  */
 export function wrapForQwen(

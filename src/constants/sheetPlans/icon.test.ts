@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../categories/index.ts';
 import { ICON_CATALOGUE_GROUPS } from '../iconCatalogue/index.ts';
 import { DIRECTION_LISTS } from '../promptText/camera.ts';
+import { DEFAULT_ICON_LOOK } from '../iconCatalogue/defaultIconLook.ts';
 import { ICON_LOOKS } from '../../types/iconRoster.ts';
 import type { IconLook } from '../../types/iconRoster.ts';
 import type { SheetSubject } from '../../types/subject.ts';
@@ -49,7 +50,7 @@ describe('the ICON series', () => {
   it('opens on the overlay sheet, which is all a set with no icons draws', () => {
     // A subject with no roster is only ever hand-built, and takes the default look.
     expect(seriesOf({ anatomy: '', setting: '', clothing: '', face_head: '' })).toEqual([
-      ICON_OVERLAY_PLANS[ICON_LOOKS[0]],
+      ICON_OVERLAY_PLANS[DEFAULT_ICON_LOOK],
     ]);
     expect(seriesOf(subjectWith([]))).toEqual([ISOLATED_OVERLAY]);
   });
@@ -178,7 +179,7 @@ describe('the ICON look', () => {
       'with no frame, border or bevel along the tile’s edge, because the interface draws the frame',
     );
     expect(prose).toContain(
-      'a soft field of colour, light and texture behind the subject, never a scene with a horizon',
+      'The backdrop is a field behind the subject, drawn as section [SEC:CONTRACT] states, never a scene with a horizon',
     );
     // Subject Framing's margin is backdrop, so a padded subject never leaves the square unpainted.
     expect(prose).toContain('its backdrop fills the rest of the square to the edge');

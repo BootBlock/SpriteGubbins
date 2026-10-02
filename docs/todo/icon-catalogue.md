@@ -351,3 +351,30 @@ above now draw them, the cyberpunk one on a white key. `ICON_OVERLAY_SHEET` is g
 option `No drop shadow outside the icon’s own outline` is retired; a stored subject holding it keeps
 the text as typed. Every icon set's copied-sheet ticks are lost once, because the identity key now
 carries the look.
+
+**Addendum — review fixes (2026-10-02).** A review of the phase 3 commit found six defects, fixed in a
+follow-up commit:
+
+- Section 0 said "a backdrop keeps every rule a component keeps" while the icon sheet asked for a
+  backdrop of colour, light and texture, which handed a silhouette pass's single fill and a clay
+  pass's single material to the backdrop and contradicted flat, vector and pixel styles. The backdrop
+  is now drawn in the render style's own surface, derived from what the style already declares
+  (`backdropDescription`, over `validationPassFor`, `RENDER_STYLE_TRAITS` and `RENDER_STYLE_SURFACE`):
+  a validation pass takes one flat field of one other value and keeps its fill for the subject, a
+  pixel style takes hard bands or dithering on the pixel grid, a style negating smooth gradients takes
+  a flat or hard-banded field, and only a painted or rendered style takes soft light and texture. The
+  subject's interior detail and materials are its own, and the key reservation is stated for the
+  backdrop on its own line. Every render style is compiled under full-bleed against these rules and
+  against the Stable Diffusion negative.
+- Where the sheet draws an outline, section 0 now puts it round the subject's silhouette and never
+  along the square's edge.
+- The white key's rationale named colours the cyberpunk preset does not hold. It is now measured over
+  every hex colour ICON's colour fields offer, shaded and washed as a backdrop is: black reaches four
+  primaries, the preset's Gunmetal among them, magenta reaches Void Magenta, and white reaches none.
+  `PURE_WHITE` stands on that evidence, and the test holds it.
+- A wrapper comment said Midjourney names no gradient; it carries the style's surface terms, never
+  `gradient background`.
+- Two docblocks said `backdrop` switches the guard; it switches the exclusion and audit, and the
+  guard follows the look through `componentClass`.
+- The default look was written twice; `DEFAULT_ICON_LOOK` is now the one place, read by the starter
+  roster and by the series' fallback.

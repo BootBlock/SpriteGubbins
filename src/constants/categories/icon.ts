@@ -1,3 +1,4 @@
+import { DEFAULT_ICON_LOOK } from '../iconCatalogue/defaultIconLook.ts';
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
   ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
@@ -46,9 +47,9 @@ export const ICON: CategoryDefinition = {
   article: 'an',
   // Sixteen icons, so a fresh set fills exactly one icon sheet: the restoratives, boosts and tools an
   // action bar carries, and the system panels a micro-menu opens. Drawn as full-bleed squares, the look
-  // of the action bar the catalogue was built for — see `ICON_LOOKS`.
+  // of the action bar the catalogue was built for — see `DEFAULT_ICON_LOOK`.
   iconRoster: {
-    look: 'FULL_BLEED_TILE',
+    look: DEFAULT_ICON_LOOK,
     picks: [
       'heal-minor',
       'heal-major',

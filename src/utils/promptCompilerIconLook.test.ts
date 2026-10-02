@@ -5,7 +5,9 @@ import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { everySheetOf } from '../test/categoryProse.ts';
 import { renderContractOf, sectionOf } from '../test/promptSections.ts';
+import { RENDER_STYLE_SURFACE } from '../constants/promptText/index.ts';
 import { ICON_LOOKS } from '../types/iconRoster.ts';
+import { RENDER_STYLES } from '../types/rendering.ts';
 import type { IconLook } from '../types/iconRoster.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
@@ -75,7 +77,7 @@ describe('the full-bleed icon square in the compiled prompt', () => {
     expect(squares).toContain(
       'anything crossing a square’s edge, and any frame, border or bevel drawn along it',
     );
-    expect(squares).toContain('A square’s own backdrop of colour, light and texture is part of its icon');
+    expect(squares).toContain('A square’s own backdrop is part of its icon, never a slot plate');
     for (const prose of [marks, overlay]) {
       expect(prose).toContain('Backgrounds, environments, ground planes');
       expect(prose).not.toContain('backdrop');
@@ -146,5 +148,100 @@ describe('the full-bleed icon square in the wrappers', () => {
     for (const entry of entries) expect(inventory).toContain(`- ${entry.text}`);
     // The backdrop rule sits among the numbered items the directive protects, not in prose Sol may cut.
     expect(renderContractOf(prompt).includes(CONTRACT_BACKDROP)).toBe(look === 'FULL_BLEED_TILE');
+  });
+});
+
+describe('the full-bleed backdrop under every render style', () => {
+  /** Section 0 of a full-bleed icon sheet under `renderStyle`, its line breaks folded. */
+  const contractUnder = (overrides: Partial<OutputConfig>): string =>
+    flat(renderContractOf(iconPrompt('FULL_BLEED_TILE', 1, overrides)));
+  const SOFT = 'a soft field of colour, light and texture';
+
+  it.each(RENDER_STYLES)(
+    'states one backdrop rule under %s, and never hands it every component rule',
+    (renderStyle) => {
+      const prompt = flat(iconPrompt('FULL_BLEED_TILE', 1, { renderStyle }));
+      expect(prompt).not.toContain('a backdrop keeps every rule a component keeps');
+      expect(contractUnder({ renderStyle }).match(/The backdrop is /g)).toHaveLength(1);
+      expect(prompt).toContain(
+        'The interior detail and the materials section 1 names are the subject’s, never the backdrop’s.',
+      );
+    },
+  );
+
+  it.each(['SILHOUETTE_ONLY', 'CLAY_RENDER'] as const)(
+    'gives the %s pass’s single fill to the subject and the backdrop one flat field',
+    (renderStyle) => {
+      const prompt = flat(iconPrompt('FULL_BLEED_TILE', 1, { renderStyle }));
+      expect(prompt).toContain(
+        'one flat field of a single colour, a clear step in value from the subject, with no light, shade, texture or gradient across it',
+      );
+      expect(prompt).toContain('that fill or material is the subject’s');
+      // Nothing else on the sheet asks the backdrop for the light and texture the pass withholds.
+      expect(prompt).not.toMatch(/light(,| and) texture/);
+    },
+  );
+
+  it.each(['PIXEL_ART', 'RETRO_PIXEL_ART'] as const)(
+    'puts the %s backdrop on the pixel grid',
+    (renderStyle) => {
+      const contract = contractUnder({ renderStyle });
+      expect(contract).toContain('hard value bands or ordered dithering, never a smooth gradient');
+      expect(contract).not.toContain(SOFT);
+    },
+  );
+
+  it('keeps a flat vector backdrop to flat fills, as its “no gradients” line asks', () => {
+    const contract = contractUnder({ renderStyle: 'VECTOR_FLAT' });
+    expect(contract).toContain('a flat field of colour, or a few hard-edged bands of it');
+    expect(contract).not.toContain(SOFT);
+  });
+
+  it.each(['PAINTED_2D', 'RENDERED_3D'] as const)(
+    'gives the %s backdrop soft light and texture',
+    (renderStyle) => {
+      expect(contractUnder({ renderStyle })).toContain(SOFT);
+    },
+  );
+
+  it.each(RENDER_STYLES)('agrees with the negative prompts about gradients under %s', (renderStyle) => {
+    // Stable Diffusion and Qwen negate `smooth gradients` wherever the style's surface entry does, so
+    // the backdrop sentence must forbid one there and must not ask for a soft field.
+    const forbids = RENDER_STYLE_SURFACE[renderStyle].negatives.includes('smooth gradients');
+    const raw = iconPrompt('FULL_BLEED_TILE', 1, { renderStyle, targetModel: 'STABLE_DIFFUSION' });
+    const prompt = flat(raw);
+    expect(prompt.includes('smooth gradients')).toBe(forbids);
+    if (forbids) {
+      expect(flat(renderContractOf(raw))).toMatch(
+        /never a smooth gradient|no light, shade, texture or gradient/,
+      );
+      expect(prompt).not.toContain(SOFT);
+    }
+  });
+});
+
+describe('the outline on a full-bleed square', () => {
+  const ROUND_THE_SUBJECT =
+    'it runs round the subject’s own silhouette, and is never drawn along the square’s edge';
+
+  it('puts a pure black outer contour round the subject, never along the square’s edge', () => {
+    const prompt = iconPrompt('FULL_BLEED_TILE', 1, {
+      renderStyle: 'PAINTED_2D',
+      outlineStyle: 'PURE_BLACK_OUTLINE',
+    });
+    expect(flat(prompt)).toContain('A crisp, thin pure black outer contour line');
+    expect(flat(renderContractOf(prompt))).toContain(ROUND_THE_SUBJECT);
+  });
+
+  it('says nothing about an outline the sheet does not draw, or on an isolated mark', () => {
+    expect(flat(iconPrompt('FULL_BLEED_TILE', 1, { outlineStyle: 'OUTLINE_LESS_ALBEDO' }))).not.toContain(
+      ROUND_THE_SUBJECT,
+    );
+    expect(flat(iconPrompt('FULL_BLEED_TILE', 1, { renderStyle: 'SILHOUETTE_ONLY' }))).not.toContain(
+      ROUND_THE_SUBJECT,
+    );
+    expect(flat(iconPrompt('ISOLATED_MARK', 1, { outlineStyle: 'PURE_BLACK_OUTLINE' }))).not.toContain(
+      ROUND_THE_SUBJECT,
+    );
   });
 });

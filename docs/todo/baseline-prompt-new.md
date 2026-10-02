@@ -359,7 +359,11 @@ Satisfy this section before any aesthetic consideration.
    and that backdrop belongs to the component, not to the background: the background is only the
    gutters between the squares, so [DEFINE:BACKGROUND_KEY_DESCRIPTION] fills those gutters and never
    shows inside a square. What this item forbids the background it forbids the gutters, never a
-   square’s own backdrop, and a backdrop keeps every rule a component keeps.
+   square’s own backdrop. [DEFINE:BACKDROP_DESCRIPTION] The interior detail and the materials
+   section [SEC:SUBJECT] names are the subject’s, never the backdrop’s.
+[IF:KEY_COLOUR]
+   The backdrop keeps clear of the key colour as every part of a component does.
+[/IF]
 [/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.

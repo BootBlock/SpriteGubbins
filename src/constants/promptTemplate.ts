@@ -217,8 +217,11 @@ export const ONE_SIDED_FEATURES_HEADING = 'The one-sided features this subject c
  * backdrop the sheet asks for, so `[IF:OWN_BACKDROP]` (declared by the plan, `SheetPlan.backdrop`) hands
  * the backdrop to the component and the gutters to the key, and the self-audit checks both halves. It
  * names the field through `BACKGROUND_KEY_DESCRIPTION` rather than "the key colour", for the reason the
- * paragraph below gives: a transparent field has none. The reservation above already reaches the
- * backdrop, because the block says the backdrop is part of the component.
+ * paragraph below gives: a transparent field has none. It says how the backdrop is drawn through
+ * `BACKDROP_DESCRIPTION` (`backdropDescription`), in the render style's own surface discipline and
+ * with the outline kept round the subject, because "a backdrop keeps every rule a component keeps"
+ * handed a silhouette pass's single fill and a clay pass's single material to the backdrop as well.
+ * The key reservation is stated for the backdrop on its own line, where there is a key to reserve.
  *
  * **Three places said "the key colour" where the field may have none, and two of them were reached
  * by adding that clause.** The CONTRACT section's palette item and the STYLE section's
@@ -397,7 +400,11 @@ Satisfy this section before any aesthetic consideration.
    and that backdrop belongs to the component, not to the background: the background is only the
    gutters between the squares, so [DEFINE:BACKGROUND_KEY_DESCRIPTION] fills those gutters and never
    shows inside a square. What this item forbids the background it forbids the gutters, never a
-   square’s own backdrop, and a backdrop keeps every rule a component keeps.
+   square’s own backdrop. [DEFINE:BACKDROP_DESCRIPTION] The interior detail and the materials
+   section [SEC:SUBJECT] names are the subject’s, never the backdrop’s.
+[IF:KEY_COLOUR]
+   The backdrop keeps clear of the key colour as every part of a component does.
+[/IF]
 [/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.

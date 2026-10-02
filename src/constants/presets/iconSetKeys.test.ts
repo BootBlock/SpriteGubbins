@@ -18,8 +18,16 @@ import { ICON_SET_PRESETS } from './iconSets.ts';
  *
  * **A full-bleed preset is held further**, because each square paints a backdrop from the set's colours
  * and lets it fall towards black into its corners and wash a little towards its light. Every step of
- * that series stays out of reach too: it is what keeps a dark neon set off magenta, whose shading
- * discount (`keyDistance.ts`) reaches violet shadows, and off black, which its corners fall into.
+ * that series stays out of reach too.
+ *
+ * **And its key is measured against every colour ICON's fields offer, not only its own.** A reader
+ * swaps the colours on a preset more readily than its key, so a full-bleed key has to hold for any
+ * colour the *Primary Colours* and *Accent Colours* pools name by hex. Measured over that pool,
+ * `PURE_BLACK` reaches the shading of four primaries (Oxblood, Slate, Gunmetal and Midnight Navy, the
+ * cyberpunk preset's own Gunmetal among them), `MAGENTA_FF00FF` reaches Void Magenta outright, and
+ * `PURE_WHITE` reaches none of them plain or shaded — which is why it is the full-bleed presets' key
+ * wherever they have one. The last check below shows the first two failing, so the measurement is
+ * known to bite.
  */
 
 const NAMED_HEX = /#[0-9a-f]{6}\b/gi;
@@ -52,6 +60,19 @@ function backdropSeries(colour: Rgba): readonly Rgba[] {
   ]);
 }
 
+/** Every option of ICON's two colour fields that names a hex whose backdrop series `key` reaches. */
+function poolReachedBy(key: Rgba): readonly string[] {
+  return CATEGORY_OPTIONS.ICON.fields
+    .filter((field) => field.key === 'primary_colours' || field.key === 'accent_colours')
+    .flatMap((field) => field.options)
+    .filter((option) =>
+      (option.match(NAMED_HEX) ?? [])
+        .flatMap((hex) => fromHex(hex) ?? [])
+        .flatMap(backdropSeries)
+        .some((colour) => keyReaches(key, colour)),
+    );
+}
+
 describe('the ICON presets’ background keys', () => {
   it.each(ICON_SET_PRESETS.map((preset) => [preset.name, preset] as const))(
     '%s names no colour its key cuts away',
@@ -80,21 +101,24 @@ describe('the ICON presets’ background keys', () => {
     },
   );
 
-  it('bites on the two keys a dark neon set must not take', () => {
-    // The measurement this suite rests on, shown to fail where it should: the cyberpunk set's own
-    // gunmetal falls into black at a square's corners, and the accent pool's Void Magenta shades along
-    // the very plane the magenta key discounts.
-    const cyberpunk = fullBleed.find((preset) => preset.id === 'cyberpunk-action-bar-consumables');
-    const voidMagenta = CATEGORY_OPTIONS.ICON.fields
-      .find((field) => field.key === 'accent_colours')
-      ?.options.find((option) => option.startsWith('Void Magenta'));
+  it.each(fullBleed.map((preset) => [preset.name, preset] as const))(
+    '%s takes a key no colour ICON offers is shaded into',
+    (_name, preset) => {
+      const key = BACKGROUND_KEY_COLORS[preset.output.backgroundKey];
+      if (key === null) return;
+      expect(poolReachedBy(key)).toEqual([]);
+    },
+  );
+
+  it('bites on the two coloured-field keys a full-bleed set must not take', () => {
     const { MAGENTA_FF00FF: magenta, PURE_BLACK: black } = BACKGROUND_KEY_COLORS;
-    if (cyberpunk === undefined || voidMagenta === undefined || magenta === null || black === null) {
-      throw new Error('the fixtures this check reads should ship');
-    }
-    const gunmetal = namedColours(cyberpunk.subject).flatMap(backdropSeries);
-    expect(gunmetal.some((colour) => keyReaches(black, colour))).toBe(true);
-    const violet = (voidMagenta.match(NAMED_HEX) ?? []).flatMap((hex) => fromHex(hex) ?? []);
-    expect(violet.flatMap(backdropSeries).some((colour) => keyReaches(magenta, colour))).toBe(true);
+    if (magenta === null || black === null) throw new Error('both keys should name a colour');
+    expect(poolReachedBy(black)).toEqual([
+      'Deep Oxblood #7F1D1D & Bone',
+      'Slate #1E293B & Pale Ice',
+      'Gunmetal #2B2F36 & Chrome',
+      'Midnight Navy #0F172A & Neon Cyan',
+    ]);
+    expect(poolReachedBy(magenta)).toEqual(['Void Magenta #E879F9']);
   });
 });
