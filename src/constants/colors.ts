@@ -14,12 +14,17 @@
  * "Ti**tan**ium" and "**Tan**k" — painting a confidently wrong swatch. `utils/colorParser.ts`
  * documents the replacement rules; its tests pin them.
  *
+ * Every name paints its own value, which `colors.test.ts` enforces: two names sharing a value
+ * means one of them shows a swatch that is not its colour.
+ *
  * Adding an entry is safe. Adding a name that is a common English *word fragment* is not — it
  * will match wherever that fragment appears as a standalone word.
  */
 export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   cyan: '#06b6d4',
-  gold: '#f59e0b',
+  // Metallic gold, the value the option pools themselves write beside "Legendary Gold". It used to
+  // share `amber`'s value, which painted the two words alike.
+  gold: '#d4af37',
   crimson: '#ef4444',
   emerald: '#10b981',
   violet: '#8b5cf6',
@@ -32,7 +37,9 @@ export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   gunmetal: '#475569',
   navy: '#1e3a8a',
   silver: '#cbd5e1',
-  tan: '#d97706',
+  // The pale brown CSS and X11 call tan. It used to share `bronze`'s orange, so the "Dust Tan &
+  // Faded Denim" palette previewed as a bronze casting.
+  tan: '#d2b48c',
   indigo: '#6366f1',
   rust: '#9a3412',
   white: '#ffffff',
