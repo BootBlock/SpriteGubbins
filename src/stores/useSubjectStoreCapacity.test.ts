@@ -4,6 +4,8 @@ import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { canUndoStudio } from '../utils/studioHistory.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import { iconPickId } from '../utils/iconPickId.ts';
 
 /**
  * The roster's capacity, as the store enforces it on a tick.
@@ -22,13 +24,13 @@ function iconStudio(picks: readonly string[]): void {
   useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
   useSubjectStore.setState({
     category: 'ICON',
-    subject: { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks } },
+    subject: { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(picks) } },
   });
   useSubjectStore.getState().openStudio();
 }
 
 function picks(): readonly string[] {
-  return useSubjectStore.getState().subject.icons?.picks ?? [];
+  return (useSubjectStore.getState().subject.icons?.picks ?? []).map(iconPickId);
 }
 
 describe('the icon roster’s capacity', () => {

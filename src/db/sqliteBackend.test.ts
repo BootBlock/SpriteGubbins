@@ -6,6 +6,7 @@ import { FakeDatabaseWorker } from '../test/fakeDatabaseWorker.ts';
 import { openSqliteBackend } from './openSqliteBackend.ts';
 import { ICON_LOOKS } from '../types/iconRoster.ts';
 import type { SqliteBackend } from './sqliteBackend.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /** The thread the backend started, which every test here has to have got one of. */
 function thread(): FakeDatabaseWorker {
@@ -146,7 +147,7 @@ describe('SqliteBackend — the icon roster', () => {
     const backend = await open();
     const subject = {
       ...defaultSubjectFor('ICON'),
-      icons: { look, picks: ['system-sound', 'heal-major', 'pin-waypoint'] },
+      icons: { look, picks: cataloguePicks(['heal-major', 'system-sound', 'pin-waypoint']) },
     } as const;
     const saving = backend.saveSession({ category: 'ICON', subject, output: DEFAULT_OUTPUT_CONFIG });
     const sent = thread().calls.at(-1)?.request;
@@ -187,7 +188,7 @@ describe('SqliteBackend — the icon roster', () => {
           category: 'ICON',
           subject_json: JSON.stringify({
             ...defaultSubjectFor('ICON'),
-            icons: { look: 'ISOLATED_MARK', picks: ['retired-entry', 'elixir'] },
+            icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['retired-entry', 'elixir']) },
           }),
           output_json: JSON.stringify(DEFAULT_OUTPUT_CONFIG),
           updated_at: 1,
@@ -196,6 +197,6 @@ describe('SqliteBackend — the icon roster', () => {
     });
 
     const [preset] = await listing;
-    expect(preset?.subject.icons).toEqual({ look: 'ISOLATED_MARK', picks: ['elixir'] });
+    expect(preset?.subject.icons).toEqual({ look: 'ISOLATED_MARK', picks: cataloguePicks(['elixir']) });
   });
 });

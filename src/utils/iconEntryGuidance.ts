@@ -1,7 +1,9 @@
 import { fieldLabelFor } from '../constants/categories/index.ts';
 import type { IconCatalogueEntry } from '../types/iconCatalogue.ts';
+import type { CustomIconEntry, IconEntry } from '../types/iconRoster.ts';
 import { damageSchoolName } from './damageSchoolName.ts';
 import { iconLookText } from './iconLookText.ts';
+import { iconSlotNames } from './iconSlotNames.ts';
 import { spokenIconState } from './spokenIconState.ts';
 
 /**
@@ -13,15 +15,27 @@ import { spokenIconState } from './spokenIconState.ts';
  * through `iconLookText`, the resolver the sheet's inventory line uses, so the card and the prompt
  * cannot disagree about what is drawn or in which school's colour; `world` is the subject's *World &
  * Era* as it stands, typed text included.
+ *
+ * **An entry of the reader's own gets a shorter card from the same parts**: the sprites it names, that
+ * the look is theirs under every world, its school and its shape. Its look is not repeated, because the
+ * row shows it under the label as the reader wrote it, and a look written to its limit would take the
+ * card past the length a card is read at.
  */
-export function iconEntryGuidance(entry: IconCatalogueEntry, world: string): string {
-  const look = iconLookText(entry, world);
+export function iconEntryGuidance(entry: IconEntry, world: string): string {
   const field = fieldLabelFor('ICON', 'setting');
   const typed = world.trim();
   const where = typed === '' ? `With no ${field} set` : `Under your ${field}, “${typed}”`;
+  if ('look' in entry) {
+    return [
+      ownSlotParagraph(entry),
+      `${where}, the sheet draws your own look as you wrote it, as it would under any other. It stays on your set until you remove it, and Edit changes it.`,
+      ...ownSchoolParagraph(entry, world),
+      shapeParagraph(entry),
+    ].join('\n\n');
+  }
   return [
     slotParagraph(entry),
-    `${where}, the sheet draws it as ${look}.`,
+    `${where}, the sheet draws it as ${iconLookText(entry, world)}.`,
     ...schoolParagraph(entry, world),
     shapeParagraph(entry),
   ].join('\n\n');
@@ -38,6 +52,14 @@ function schoolParagraph(entry: IconCatalogueEntry, world: string): readonly str
   ];
 }
 
+/** The same fact for an entry of the reader's own, said in one sentence to leave room for their words. */
+function ownSchoolParagraph(entry: CustomIconEntry, world: string): readonly string[] {
+  if (entry.school === undefined) return [];
+  return [
+    `It belongs to the ${damageSchoolName(entry.school, world)} school, whose one colour leads the icon ahead of your set’s own colours.`,
+  ];
+}
+
 /** Which named slots ticking the entry adds — a pair names one per state. */
 function slotParagraph(entry: IconCatalogueEntry): string {
   if (entry.states === undefined) {
@@ -47,8 +69,16 @@ function slotParagraph(entry: IconCatalogueEntry): string {
   return `Ticking this adds two slots to your set, \`${entry.id}-${first}\` and \`${entry.id}-${second}\`: the names its two sprites take in the sheet’s manifest and in the sprite pack’s file names.`;
 }
 
+/** The sprite names an entry of the reader's own takes — one per state of a pair. */
+function ownSlotParagraph(entry: CustomIconEntry): string {
+  const slots = iconSlotNames(entry).map((slot) => `\`${slot}\``);
+  return slots.length === 1
+    ? `Your entry names its sprite ${slots.join('')} in the sheet’s manifest and the sprite pack.`
+    : `Your entry names its two sprites ${slots.join(' and ')} in the sheet’s manifest and the sprite pack.`;
+}
+
 /** Whether it is one drawing or a toggle pair, and whether it may show a figure. */
-function shapeParagraph(entry: IconCatalogueEntry): string {
+function shapeParagraph(entry: IconEntry): string {
   const drawings =
     entry.states === undefined
       ? 'It is one drawing, and counts as one of the set’s components.'

@@ -10,6 +10,8 @@ import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { canRedoStudio, canUndoStudio, studioUndoDepth } from '../utils/studioHistory.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import { iconPickId } from '../utils/iconPickId.ts';
 
 /**
  * The subject store's one piece of real logic is that a category and its answers move together —
@@ -640,13 +642,16 @@ describe('useSubjectStore', () => {
     function iconStudio(picks: readonly string[]): void {
       useSubjectStore.setState({
         category: 'ICON',
-        subject: { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks } },
+        subject: {
+          ...defaultSubjectFor('ICON'),
+          icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(picks) },
+        },
       });
       useSubjectStore.getState().openStudio();
     }
 
     function picks(): readonly string[] {
-      return useSubjectStore.getState().subject.icons?.picks ?? [];
+      return (useSubjectStore.getState().subject.icons?.picks ?? []).map(iconPickId);
     }
 
     it('ticks an icon into its catalogue place rather than onto the end', () => {
@@ -774,7 +779,10 @@ describe('useSubjectStore', () => {
     beforeEach(() => {
       useSubjectStore.setState({
         category: 'ICON',
-        subject: { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks: ['heal-minor'] } },
+        subject: {
+          ...defaultSubjectFor('ICON'),
+          icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['heal-minor']) },
+        },
       });
       useSubjectStore.getState().openStudio();
     });
@@ -782,7 +790,7 @@ describe('useSubjectStore', () => {
     it('draws the set in another look as one step Undo takes back and Redo replays', () => {
       useSubjectStore.getState().setIconLook('FULL_BLEED_TILE');
       expect(look()).toBe('FULL_BLEED_TILE');
-      expect(useSubjectStore.getState().subject.icons?.picks).toEqual(['heal-minor']);
+      expect(useSubjectStore.getState().subject.icons?.picks).toEqual(cataloguePicks(['heal-minor']));
       expect(studioUndoDepth(useSubjectStore.getState().history)).toBe(1);
 
       useSubjectStore.getState().undoStudio();

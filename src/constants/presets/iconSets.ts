@@ -2,6 +2,7 @@ import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
+import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
 
 /**
  * Icon sets — seven rosters a game actually asks for, each ticked from the catalogue.
@@ -74,7 +75,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Tier Pip ×3',
       icons: {
         look: 'FULL_BLEED_TILE',
-        picks: [
+        picks: cataloguePicks([
           'heal-minor',
           'heal-standard',
           'heal-major',
@@ -91,7 +92,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
           'container-treasure-chest',
           'quest-relic',
           'currency-precious-coin',
-        ],
+        ]),
       },
     },
     output: {
@@ -141,7 +142,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       // Sixteen panels, two of them toggles drawn in both states, so the set runs to a second sheet.
       icons: {
         look: 'ISOLATED_MARK',
-        picks: [
+        picks: cataloguePicks([
           'system-main-options',
           'system-settings',
           'system-character',
@@ -158,7 +159,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
           'system-log-off',
           'system-sound',
           'system-layout-lock',
-        ],
+        ]),
       },
     },
     output: {
@@ -206,7 +207,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
       icons: {
         look: 'ISOLATED_MARK',
-        picks: [
+        picks: cataloguePicks([
           'status-in-combat',
           'status-resting',
           'status-pvp-flagged',
@@ -221,7 +222,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
           'loot-greed',
           'loot-pass',
           'loot-salvage',
-        ],
+        ]),
       },
     },
     output: {
@@ -268,7 +269,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Favourite Star ×1',
       icons: {
         look: 'ISOLATED_MARK',
-        picks: [
+        picks: cataloguePicks([
           'pin-quest-available',
           'pin-quest-turn-in',
           'pin-quest-area',
@@ -282,7 +283,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
           'pin-treasure',
           'pin-dangerous-foe',
           'pin-respawn',
-        ],
+        ]),
       },
     },
     output: {
@@ -328,7 +329,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
       icons: {
         look: 'FULL_BLEED_TILE',
-        picks: [
+        picks: cataloguePicks([
           'heal-minor',
           'heal-standard',
           'heal-major',
@@ -345,7 +346,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
           'boost-move-speed',
           'throw-frag-grenade',
           'throw-smoke',
-        ],
+        ]),
       },
     },
     output: {
@@ -393,7 +394,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
       icons: {
         look: 'FULL_BLEED_TILE',
-        picks: [
+        picks: cataloguePicks([
           'kinetic-strike',
           'kinetic-finisher',
           'thermal-strike',
@@ -410,7 +411,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
           'netrun-ultimate',
           'nanite-strike',
           'nanite-blast',
-        ],
+        ]),
       },
     },
     output: {
@@ -458,7 +459,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
       icons: {
         look: 'ISOLATED_MARK',
-        picks: [
+        picks: cataloguePicks([
           'emote-wave',
           'emote-bow',
           'emote-salute',
@@ -475,7 +476,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
           'emote-heart',
           'emote-angry',
           'emote-peace',
-        ],
+        ]),
       },
     },
     output: {

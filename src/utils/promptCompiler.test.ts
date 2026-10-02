@@ -53,6 +53,8 @@ import { styleReferencePatch } from './styleReferencePatch.ts';
 import { BACKGROUND_KEY_COLORS } from '../constants/backgroundKeyColors.ts';
 import { fromHex } from './imageData.ts';
 import { keyReaches } from './keyReach.ts';
+import { iconPickId } from './iconPickId.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /** Two blank lines: what a block joined from a part that turned out to be empty leaves behind. */
 const BLANK_PARAGRAPH = '\n\n\n';
@@ -4007,7 +4009,7 @@ describe('generatePrompt — an icon set', () => {
   it('keeps the bust of a figure entry rather than calling it an error, on the sheet that lists it', () => {
     // The starter set draws the character panel's bust; a guard calling every entry describing anatomy
     // an error would have sent it to section 0's tripwire as a malformed specification.
-    expect(ICON.icons?.picks).toContain('system-character');
+    expect(ICON.icons?.picks.map(iconPickId)).toContain('system-character');
     const prompt = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 1 });
     const inventory = sectionOf(prompt, 'COMPONENT INVENTORY').replaceAll(/\s+/g, ' ');
     expect(inventory).toContain(
@@ -4041,7 +4043,10 @@ describe('generatePrompt — an icon set', () => {
   });
 
   it('agrees the count’s noun with a sheet of one icon, in section 0 and in the series list', () => {
-    const subject = { ...ICON, icons: { look: 'ISOLATED_MARK', picks: ['heal-minor'] } } as const;
+    const subject = {
+      ...ICON,
+      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['heal-minor']) },
+    } as const;
     const prompt = generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 1 });
     expect(prompt).toContain('Exactly 1 component, each visibly separate');
     expect(prompt).not.toMatch(/\b1 components\b/);

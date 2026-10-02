@@ -8,6 +8,13 @@ interface TextAreaFieldProps {
   readonly placeholder: string;
   /** How many lines the box shows before it scrolls. */
   readonly rows: number;
+  /**
+   * Why the value as it stands cannot be accepted, shown under the box in the error tone and wired as
+   * its accessible description with `aria-invalid`, or empty where it can — as `TextField`'s is, for
+   * the same one form: the icon catalogue's form for an icon of the reader's own, whose look is refused
+   * with a reason rather than cut short.
+   */
+  readonly problem?: string;
   readonly onChange: (value: string) => void;
 }
 
@@ -24,8 +31,18 @@ interface TextAreaFieldProps {
  * is for: a palette worth reading back shows several colours at once, and a box the size of an input
  * says the opposite of what it accepts.
  */
-export function TextAreaField({ label, tooltip, value, placeholder, rows, onChange }: TextAreaFieldProps) {
+export function TextAreaField({
+  label,
+  tooltip,
+  value,
+  placeholder,
+  rows,
+  problem = '',
+  onChange,
+}: TextAreaFieldProps) {
   const inputId = useId();
+  const problemId = useId();
+  const isInvalid = problem !== '';
 
   return (
     <div>
@@ -41,11 +58,19 @@ export function TextAreaField({ label, tooltip, value, placeholder, rows, onChan
         value={value}
         placeholder={placeholder}
         rows={rows}
+        aria-invalid={isInvalid}
+        aria-describedby={isInvalid ? problemId : undefined}
         onChange={(event) => {
           onChange(event.target.value);
         }}
-        className="w-full resize-y rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent"
+        className="w-full resize-y rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent aria-invalid:border-rose/60"
       />
+
+      {isInvalid && (
+        <p id={problemId} className="mt-1 text-xs leading-relaxed text-rose">
+          {problem}
+        </p>
+      )}
     </div>
   );
 }

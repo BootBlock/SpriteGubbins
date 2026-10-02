@@ -8,8 +8,9 @@ import { BACKGROUND_KEY_COLORS } from '../backgroundKeyColors.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { DAMAGE_SCHOOL_DEFINITIONS } from '../iconCatalogue/damageSchools.ts';
 import { iconCatalogueEntry } from '../iconCatalogue/index.ts';
+import { KEY_COLOUR_WORDS, wordNamed } from '../iconCatalogue/iconLookRules.ts';
 import { lookFamilyOfWorld } from '../iconCatalogue/lookFamilyOfWorld.ts';
-import type { BackgroundKey } from '../../types/rendering.ts';
+import { iconPickId } from '../../utils/iconPickId.ts';
 import { ICON_SET_PRESETS } from './iconSets.ts';
 
 /**
@@ -39,13 +40,10 @@ import { ICON_SET_PRESETS } from './iconSets.ts';
 
 const NAMED_HEX = /#[0-9a-f]{6}\b/gi;
 
-/** The words a look could name each key's colour in, or `null` for a field that has no colour. */
-const KEY_COLOUR_WORDS: Readonly<Record<BackgroundKey, RegExp | null>> = {
-  MAGENTA_FF00FF: /magenta|fuchsia|pink/i,
-  PURE_WHITE: /\bwhite\b/i,
-  PURE_BLACK: /\bblack\b/i,
-  TRANSPARENT: null,
-};
+/** The slot names a preset's roster ticks — every one a catalogue id, since a preset ships no custom entry. */
+function pickIds(preset: (typeof ICON_SET_PRESETS)[number]): readonly string[] {
+  return (preset.subject.icons?.picks ?? []).map(iconPickId);
+}
 
 /** The colours a preset names by hex, in the two fields that colour its icons. */
 function namedColours(subject: (typeof ICON_SET_PRESETS)[number]['subject']): readonly Rgba[] {
@@ -95,9 +93,7 @@ describe('the ICON presets’ background keys', () => {
       // full-bleed set, where the school's glow lights the square's backdrop too.
       const key = BACKGROUND_KEY_COLORS[preset.output.backgroundKey];
       if (key === null) return;
-      const schools = (preset.subject.icons?.picks ?? []).flatMap(
-        (id) => iconCatalogueEntry(id)?.school ?? [],
-      );
+      const schools = pickIds(preset).flatMap((id) => iconCatalogueEntry(id)?.school ?? []);
       for (const school of schools) {
         const colour = fromHex(DAMAGE_SCHOOL_DEFINITIONS[school].hex);
         if (colour === null) throw new Error(`${school} names no colour`);
@@ -114,13 +110,12 @@ describe('the ICON presets’ background keys', () => {
       // every square it lands in, so a look naming the key's colour — white sparks on a white key —
       // asks for a hole.
       const words = KEY_COLOUR_WORDS[preset.output.backgroundKey];
-      if (words === null) return;
       const family = lookFamilyOfWorld(preset.subject.setting);
       if (family === null) throw new Error(`${preset.name} names a world no family draws`);
-      for (const id of preset.subject.icons?.picks ?? []) {
+      for (const id of pickIds(preset)) {
         const entry = iconCatalogueEntry(id);
         if (entry === undefined) throw new Error(`${preset.name} picks ${id}, which the catalogue lacks`);
-        expect(entry.looks[family], id).not.toMatch(words);
+        expect(wordNamed(entry.looks[family], words), id).toBeUndefined();
       }
     },
   );
@@ -128,7 +123,9 @@ describe('the ICON presets’ background keys', () => {
   it('measures every school’s colour against the spellbook’s key', () => {
     const spellbook = ICON_SET_PRESETS.find((preset) => preset.id === 'cyberpunk-spellbook-combat-abilities');
     const schools = new Set(
-      (spellbook?.subject.icons?.picks ?? []).flatMap((id) => iconCatalogueEntry(id)?.school ?? []),
+      (spellbook === undefined ? [] : pickIds(spellbook)).flatMap(
+        (id) => iconCatalogueEntry(id)?.school ?? [],
+      ),
     );
     expect([...schools].sort()).toEqual([...DAMAGE_SCHOOLS].sort());
   });

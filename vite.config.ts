@@ -264,14 +264,19 @@ export default defineConfig({
             {
               // The icon catalogue's data — every entry's role and five looks, the damage schools and
               // the world-to-family table — in a chunk of its own. It is read by the prompt compiler,
-              // so it would otherwise be folded into the shared `output` chunk, which it took past
-              // the bundler's 500 kB advisory on its own. A chunk of its own costs a first visit one
-              // more request and nothing more, since both are precached; and a change to the
-              // catalogue's words now leaves `output`'s hash, and every cached copy of it, alone.
-              // The helpers beside the data (`icon*.ts`) read the category pools, so the pattern
-              // leaves them where their readers are rather than pulling the pools in after them.
-              name: 'iconCatalogue',
-              test: /src[\\/]constants[\\/]iconCatalogue[\\/](?!icon)[^\\/]+\.ts$/,
+              // so it would otherwise be folded into the shared chunk the compiler sits in, which it
+              // took past the bundler's 500 kB advisory on its own. A chunk of its own costs a first
+              // visit one more request and nothing more, since both are precached; and a change to the
+              // catalogue's words now leaves the shared chunk's hash, and every cached copy of it, alone.
+              // The helpers beside the data (`icon*.ts`, and `customIcon*.ts` and `cataloguePicks.ts`
+              // for the reader's own entries) read the category pools and the prompt text, so the
+              // pattern leaves them where their readers are rather than pulling those in after them.
+              // Named `iconCatalogueData` rather than after the directory because the bundler names the
+              // shared chunk after a module it carries, and since the reader's own entries arrived that
+              // is an `iconCatalogue` module: a group of that name would give two chunks one shape in
+              // `PRECACHE_SHAPES`, and the list would stop telling them apart.
+              name: 'iconCatalogueData',
+              test: /src[\\/]constants[\\/]iconCatalogue[\\/](?!icon|customIcon|cataloguePicks)[^\\/]+\.ts$/,
             },
           ],
         },

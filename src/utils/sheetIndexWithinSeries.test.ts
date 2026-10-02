@@ -3,10 +3,11 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { sheetIndexWithinSeries } from './sheetIndexWithinSeries.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /** An ICON subject holding `picks`: the overlay sheet, then one icon sheet per sixteen components. */
 function iconSubject(picks: readonly string[]): SubjectDefinition {
-  return { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks } };
+  return { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(picks) } };
 }
 
 describe('sheetIndexWithinSeries', () => {

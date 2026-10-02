@@ -6,6 +6,8 @@ import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { resolveSheetIndex, SHEET_INDEX_RANGE } from '../constants/sheetPlans/index.ts';
 import { standardSubject } from '../test/sheetSubject.ts';
 import { parseImageConfig, parseOutputConfig, parseSubject } from './configParsers.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import { RELIC, customPick } from '../test/customIcons.ts';
 
 /**
  * The component budget crossing the storage boundary.
@@ -310,7 +312,7 @@ describe('parseSubject — the icon roster', () => {
     const subject = {
       ...defaultSubjectFor('ICON'),
       setting: 'Near-Future Cyberpunk',
-      icons: { look: 'ISOLATED_MARK', picks: ['heal-major', 'system-sound'] },
+      icons: { look: 'ISOLATED_MARK', picks: [...cataloguePicks(['heal-major']), customPick(RELIC)] },
     } as const;
     expect(parseSubject(JSON.parse(JSON.stringify(subject)), 'ICON')).toEqual(subject);
   });
@@ -327,15 +329,18 @@ describe('parseSubject — the icon roster', () => {
     const stored = {
       ...defaultSubjectFor('ICON'),
       role: '48 × 48 Pixels',
-      icons: { look: 'ISOLATED_MARK', picks: ['retired-entry', 'elixir'] },
+      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['retired-entry', 'elixir']) },
     };
     const parsed = parseSubject(stored, 'ICON');
     expect(parsed.role).toBe('48 × 48 Pixels');
-    expect(parsed.icons).toEqual({ look: 'ISOLATED_MARK', picks: ['elixir'] });
+    expect(parsed.icons).toEqual({ look: 'ISOLATED_MARK', picks: cataloguePicks(['elixir']) });
   });
 
   it('carries no roster on a category that declares none', () => {
-    const stored = { ...defaultSubjectFor('CHARACTER'), icons: { look: 'ISOLATED_MARK', picks: ['elixir'] } };
+    const stored = {
+      ...defaultSubjectFor('CHARACTER'),
+      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['elixir']) },
+    };
     expect(parseSubject(stored, 'CHARACTER')).toEqual(defaultSubjectFor('CHARACTER'));
     expect(parseSubject(stored, 'CHARACTER')).not.toHaveProperty('icons');
   });

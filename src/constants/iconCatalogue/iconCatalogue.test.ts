@@ -7,9 +7,19 @@ import type { DamageSchool } from '../../types/iconCatalogue.ts';
 import { DEFAULT_ICON_LOOK } from './defaultIconLook.ts';
 import { ICON_CATALOGUE_GROUPS, iconCatalogueEntry, iconComponentCount } from './index.ts';
 import { ICON_ROSTER_CAPACITY, ICON_SERIES_LONGEST, ICONS_PER_SHEET } from './iconSheetLimits.ts';
+import {
+  ACRONYM,
+  FIGURE_WORDS,
+  KEY_COLOUR_WORDS,
+  LETTERING_OBJECTS,
+  ROLLED,
+  SCROLL,
+  wordNamed,
+} from './iconLookRules.ts';
 import { LOOK_FAMILY_OF_WORLD, lookFamilyOfWorld } from './lookFamilyOfWorld.ts';
 import { BACKGROUND_KEY_COLORS } from '../backgroundKeyColors.ts';
 import { fromHex } from '../../utils/imageData.ts';
+import { iconPickId } from '../../utils/iconPickId.ts';
 import { keyReaches } from '../../utils/keyReach.ts';
 
 /**
@@ -25,17 +35,7 @@ const ENTRIES = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries.map((entr
 /** Lower-case words joined by single hyphens — safe as a file name on every platform the pack reaches. */
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** Words that put a person, or part of one, in a drawing — what an entry declaring no `figure` may not. */
-const FIGURE_WORDS = /\b(?:hands?|faces?|heads?|busts?|figures?|persons?|people|torsos?|fingers?|arms?)\b/i;
-
 const SPELLS = ENTRIES.filter(({ entry }) => entry.school !== undefined);
-
-/** Objects that carry markings of their own: numbered faces, letterforms and open writing surfaces. */
-const LETTERING_OBJECTS =
-  /\b(?:runes?|runic|dials?|gauges?|gauged|keypads?|inscrib\w*|stopwatch(?:es)?|clock ?faces?)\b/i;
-
-/** A capitalised acronym — “EMP”, “LEDs” — which a model may letter onto the object it names. */
-const ACRONYM = /\b[A-Z]{2,}s?\b/;
 
 /** The hue words a look could name, each owned by at most one school. */
 const HUE_WORDS = [
@@ -202,7 +202,7 @@ describe('the icon catalogue', () => {
         const look = entry.looks[family];
         expect(look, `${entry.id} / ${family}`).not.toMatch(LETTERING_OBJECTS);
         expect(look, `${entry.id} / ${family}`).not.toMatch(ACRONYM);
-        if (/\bscrolls?\b/i.test(look)) expect(look, `${entry.id} / ${family}`).toMatch(/\brolled\b/i);
+        if (SCROLL.test(look)) expect(look, `${entry.id} / ${family}`).toMatch(ROLLED);
       }
     },
   );
@@ -218,7 +218,10 @@ describe('the icon catalogue', () => {
     for (const { entry } of ENTRIES) {
       if (entry.school === 'NETRUN') continue;
       for (const family of LOOK_FAMILIES) {
-        expect(entry.looks[family], `${entry.id} / ${family}`).not.toMatch(/pink|fuchsia|magenta/i);
+        expect(
+          wordNamed(entry.looks[family], KEY_COLOUR_WORDS.MAGENTA_FF00FF),
+          `${entry.id} / ${family}`,
+        ).toBeUndefined();
       }
     }
   });
@@ -226,7 +229,9 @@ describe('the icon catalogue', () => {
   it('names no white in a cyberpunk look, since the cyberpunk sets are cut out on a white key', () => {
     // `PURE_WHITE` is the key the cyberpunk presets take (`iconSets.ts`), and the keying removes every
     // pixel in its reach wherever it sits, so a white-hot core or white sparks would be holes.
-    for (const { entry } of ENTRIES) expect(entry.looks.CYBERPUNK, entry.id).not.toMatch(/\bwhite\b/i);
+    for (const { entry } of ENTRIES) {
+      expect(wordNamed(entry.looks.CYBERPUNK, KEY_COLOUR_WORDS.PURE_WHITE), entry.id).toBeUndefined();
+    }
   });
 
   it('outgrows one roster, so the whole catalogue is swept as several', () => {
@@ -238,9 +243,11 @@ describe('the icon catalogue', () => {
 
     const rosters = iconCatalogueRosters().filter((roster) => roster.look === DEFAULT_ICON_LOOK);
     expect(rosters.length).toBeGreaterThan(1);
-    expect(rosters.flatMap((roster) => roster.picks)).toEqual(ENTRIES.map(({ entry }) => entry.id));
+    expect(rosters.flatMap((roster) => roster.picks.map(iconPickId))).toEqual(
+      ENTRIES.map(({ entry }) => entry.id),
+    );
     for (const roster of rosters) {
-      const size = roster.picks.reduce((total, id) => total + componentsOf(id), 0);
+      const size = roster.picks.reduce((total, pick) => total + componentsOf(iconPickId(pick)), 0);
       expect(size).toBeLessThanOrEqual(ICON_ROSTER_CAPACITY);
     }
   });
@@ -289,9 +296,10 @@ describe('the starter roster', () => {
     if (roster === undefined) throw new Error('ICON declares no starter roster');
     // The look of the action bar the catalogue was built for — see `DEFAULT_ICON_LOOK`.
     expect(roster.look).toBe('FULL_BLEED_TILE');
-    expect(new Set(roster.picks).size).toBe(roster.picks.length);
+    const ids = roster.picks.map(iconPickId);
+    expect(new Set(ids).size).toBe(ids.length);
 
-    const entries = roster.picks.flatMap((id) => iconCatalogueEntry(id) ?? []);
+    const entries = ids.flatMap((id) => iconCatalogueEntry(id) ?? []);
     expect(entries).toHaveLength(roster.picks.length);
     const components = entries.reduce((total, entry) => total + iconComponentCount(entry), 0);
     expect(components).toBe(ICONS_PER_SHEET);

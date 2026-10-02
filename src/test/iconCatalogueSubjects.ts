@@ -1,5 +1,6 @@
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { ICON_CATALOGUE_GROUPS, iconComponentCount } from '../constants/iconCatalogue/index.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 import { chunkEntries } from '../utils/chunkEntries.ts';
 import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { LOOK_FAMILY_OF_WORLD } from '../constants/iconCatalogue/lookFamilyOfWorld.ts';
@@ -26,7 +27,9 @@ export function iconCatalogueRosters(): readonly IconRoster[] {
     group.entries.map((entry) => ({ id: entry.id, count: iconComponentCount(entry) })),
   );
   const runs = chunkEntries(lines, ICON_ROSTER_CAPACITY);
-  return ICON_LOOKS.flatMap((look) => runs.map((run) => ({ look, picks: run.map((line) => line.id) })));
+  return ICON_LOOKS.flatMap((look) =>
+    runs.map((run) => ({ look, picks: cataloguePicks(run.map((line) => line.id)) })),
+  );
 }
 
 /**

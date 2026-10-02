@@ -9,6 +9,7 @@ import { useSectionStore } from '../../stores/useSectionStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { IconRosterSection } from './IconRosterSection.tsx';
+import { cataloguePicks } from '../../constants/iconCatalogue/cataloguePicks.ts';
 
 /**
  * The studio's roster section: what the set amounts to, and the way into the catalogue.
@@ -21,7 +22,7 @@ function iconStudio(picks: readonly string[]): void {
   useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
   useSubjectStore.setState({
     category: 'ICON',
-    subject: { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks } },
+    subject: { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(picks) } },
   });
 }
 

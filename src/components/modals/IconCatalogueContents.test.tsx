@@ -9,6 +9,8 @@ import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { iconLookText } from '../../utils/iconLookText.ts';
 import { IconCatalogueContents } from './IconCatalogueContents.tsx';
+import { cataloguePicks } from '../../constants/iconCatalogue/cataloguePicks.ts';
+import { iconPickId } from '../../utils/iconPickId.ts';
 
 /**
  * The catalogue dialog: rows that tick into the studio's roster, group buttons that tick what the
@@ -24,13 +26,17 @@ function iconStudio(picks: readonly string[]): void {
   useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
   useSubjectStore.setState({
     category: 'ICON',
-    subject: { ...defaultSubjectFor('ICON'), setting: WORLD, icons: { look: 'ISOLATED_MARK', picks } },
+    subject: {
+      ...defaultSubjectFor('ICON'),
+      setting: WORLD,
+      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(picks) },
+    },
   });
   useSubjectStore.getState().openStudio();
 }
 
 function picks(): readonly string[] {
-  return useSubjectStore.getState().subject.icons?.picks ?? [];
+  return (useSubjectStore.getState().subject.icons?.picks ?? []).map(iconPickId);
 }
 
 function role(id: string): string {

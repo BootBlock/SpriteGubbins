@@ -17,9 +17,9 @@ import type { SeriesFor } from './modePlans.ts';
  * itself, so `TILESET_MODULAR` describes something an icon grid deliberately is not.
  *
  * **The series is a function of the subject**, which is why `SeriesFor` takes one. The icons are the
- * reader's picks from the catalogue (`constants/iconCatalogue/`), each a named slot, and each is drawn as
- * the look its world's family writes for it — so the roster decides how many sheets there are and the
- * *World & Era* decides what each line says. A subject with no roster, or an empty one, is the overlay
+ * reader's picks from the catalogue (`constants/iconCatalogue/`) and the entries they wrote themselves,
+ * each a named slot, and a catalogue pick is drawn as the look its world's family writes for it — so the
+ * roster decides how many sheets there are and the *World & Era* decides what each line says. A subject with no roster, or an empty one, is the overlay
  * sheet alone: the honest series for a set that has not picked an icon yet.
  *
  * **The roster's look picks every sheet's wording**, the overlay sheet's included, so a series never mixes

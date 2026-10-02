@@ -1,6 +1,6 @@
 # Icon catalogue — named icon sets drawn sixteen to a sheet
 
-> **Status:** 🟢 ACTIVE — phases 1–4 shipped; phase 5 next.
+> **Status:** 🟢 ACTIVE — phases 1–5 shipped; phase 6 next.
 
 ## 1. What is wrong
 
@@ -506,3 +506,112 @@ Fourteen held and were fixed; one claim within them did not, as the last item sa
   advisory is gone without raising the limit. **The duplication the review reported does not hold:**
   every look string was in `output` alone, and what `useSubjectStore` carries is the presets' pick ids,
   not the catalogue.
+
+### Phase 5 — custom entries in the roster (2026-10-02)
+
+**What shipped.**
+
+- **Types.** `src/types/iconRoster.ts` declares `CustomIconEntry` (`id`, `role`, `kind`, `school`
+  exactly when the kind is `SPELL`, `figure`, two optional `states` and one `look`), `IconEntry` (a
+  catalogue entry or a custom one) and `IconPick`, a union tagged by `source`: `{ source: 'CATALOGUE',
+  id }` or `{ source: 'CUSTOM', entry }`. `IconRoster.picks` is `readonly IconPick[]`. The starter
+  roster and the seven presets declare their ids through `cataloguePicks`. A catalogue pick stores only
+  its id, so a reworded look reaches every saved set; a custom pick stores its entry, since the roster is
+  the only place it exists.
+- **One gate.** `checkCustomIcon(draft, picks, replacing)` (`src/utils/`) is what the form, the store's
+  three actions and the roster parser all call. It refuses, field by field: an empty role or look; a
+  role, look or state past `CUSTOM_ICON_LIMITS` (48, 200 and 24 characters, sized above the catalogue's
+  longest role of 34 and look of 149); a `[` or `]` in any of them (R9: the inventory is resolved for
+  `[SEC:…]` citations, so a bracket either throws or is silently replaced by a section number); a role
+  or state with no plain letter or digit to name a slot; two states of one name; a spell with no school
+  and a school on anything else; a slot name — the entry's id, or `<id>-<state>` for each drawing of a
+  pair — that a catalogue entry or one of its pair's drawings, an overlay piece in either look
+  (`takenIconSlotNames`) or another pick on the roster already answers to; and an entry the set has no
+  room for. Each refusal says what is wrong and what to do (`CUSTOM_ICON_REFUSALS`). It collapses
+  whitespace, line breaks included, derives the id from the role with `slugify`, slugs the states as a
+  catalogue entry's are, and leaves the reader's spelling and punctuation alone.
+- **Warnings.** `customIconWarnings(draft, key)` reads the role, look and states against the rules the
+  catalogue was written to, now one file, `src/constants/iconCatalogue/iconLookRules.ts`, which
+  `iconCatalogue.test.ts` and `iconSetKeys.test.ts` read too, so the catalogue's rules and the
+  reader's warnings cannot drift: the words of the background key in force (`KEY_COLOUR_WORDS`, pink
+  spared on a netrun spell as in the catalogue), lettering (`letteringTermIn`, `LETTERING_OBJECTS`, a
+  capitalised acronym, an unrolled scroll) and a person or part of one on an entry not declaring
+  `figure`. A warning names the word and what the prompt will do with it (`CUSTOM_ICON_WARNING_TEXT`);
+  the entry is saved as written.
+- **Order and chunking.** `sortIconPicks` sorts by kind, the catalogue before the reader's own, then
+  the catalogue's order, and is stable, so the reader's own entries sit at the end of their kind's
+  shelves in the order they were added; a changed entry keeps its place unless its kind changes, when it
+  joins the end of its new kind. `iconComponentCount` counts either kind of entry, so the capacity, the
+  tally and `chunkEntries` treat a custom pair exactly as a catalogue pair and never split it.
+- **Readers.** `rosterIcon` resolves a pick to its entry and kind; `iconRosterEntries`,
+  `iconRosterTally` (now with a `custom` count), `iconRosterSummary` (“20 icons, 3 of them your own,
+  …”), `toggleIconPicks` (which touches catalogue picks alone), `sameIconRoster` (field by field),
+  `parseIconRoster`, `presetSearch`, `iconCatalogueSearch` and the test helpers read it.
+  `iconLookText` draws a custom look as written under every world, closing a spell on its school as a
+  catalogue spell does. `sheetIdentity` needed nothing: it keys on the drawn entries' labels and text.
+- **Store.** `useSubjectStore.addCustomIcon(draft)`, `updateCustomIcon(id, draft)` and
+  `removeCustomIcon(id)`, each one act on the studio's undo stack through `writeRoster`, so the sheet
+  index is clamped in the same act. Add and update return the check's refusals and change nothing when
+  there are any; an update equal to what it replaces records nothing. `SubjectState` moved to
+  `src/types/subjectState.ts`, which kept the store under the module-size target.
+- **Dialog.** *Add your own icon* opens `CustomIconForm` above the shelves: Role, Kind of icon, Damage
+  school (while the kind is a spell, named as the world names it — `damageSchoolChoices`, now shared
+  with the school filter), Shows a figure, Two states with First state and Second state, and Look, with
+  Add to your set or Save changes, and Cancel. A refusal shows under its field once the field holds text
+  or Add was pressed, wired through a new `problem` prop on `TextField` and `TextAreaField`
+  (`aria-invalid` and `aria-describedby`); warnings sit in a polite live region. Focus goes to the role
+  on opening, to the first refused field after a refused press, and back to the opener on closing. The
+  reader's own entries sit on shelves headed `<Kind>: your own` after the catalogue's last shelf of that
+  kind (`customIconShelves`, narrowed by the same `iconFilterMatch` as the catalogue's rows), each row
+  ticked with the reason it cannot be unticked, a *Your own* badge, and Edit and Remove; Remove raises a
+  notice that Undo brings it back.
+- **Guidance.** `CUSTOM_ICON_TOOLTIPS` for the eight fields; `addOwn`, `submitNew`, `submitChange`,
+  `cancelOwn`, `editOwn` and `removeOwn` in `ICON_CATALOGUE_ACTION_TOOLTIPS`; a custom row's card from
+  `iconEntryGuidance`; the Clear all card, the undo and redo cards and the studio history panel name the
+  new acts. The guidance suite walks the custom cards (one of each shape and one written to every limit,
+  under every world), the refusals, the notices and the warnings.
+- **Tests.** The check (every refusal and its message, the limits exactly, a replacement), the
+  warnings (each rule under each key, the netrun pink, the figure flag), the parser (round trip, a
+  hostile or malformed stored entry dropped in seventeen ways, a bare stored id dropped, the slot name
+  re-derived, a custom pair counted twice), ordering, the toggle, the tally, the summary, the shelves,
+  the store actions with Undo and Redo, compiles of an item, a spell under three worlds, a pair and a
+  figure, a pair kept whole across a sheet boundary, a hand-built `[SEC:X]` entry shown to throw and a
+  stored one shown never to reach the compiler, the form and the dialog's shelves, and the session,
+  history, saved preset and library pack on each backend (`localStorageBackendCustomIcons.test.ts`,
+  `sqliteBackendCustomIcons.test.ts`).
+
+**Where it departs from the plan, and why.**
+
+- **Validation is two utils, not one.** The refusals are `checkCustomIcon`, which the form, the store
+  and the parser share. The warnings are `customIconWarnings`, which the form alone reads, because they
+  are measured against the background key in force, which the parser has no business reading and which
+  can change after an entry is saved.
+- **Warned, not refused, for the content rules.** Each is a word match standing in for a judgement the
+  reader makes better: black is a hole on a black key and a fine colour on a white one, the key can
+  change after the entry is saved, a rune may be the carved ornament they want, and a hand may be the
+  point of the icon. Only what breaks the output whatever the reader means is refused. The catalogue's
+  other two content rules, no hue another school owns and no scenery, are not warned of: they keep the
+  shipped catalogue consistent with itself, and a reader's own world is theirs to judge.
+- **Slot names are unique beyond the roster.** A custom id may not take a catalogue entry's name even
+  where that entry is not ticked, since ticking it later would leave the reader with two icons one set
+  cannot hold, nor an overlay piece's, since the overlay sheet's files sit beside the icons'.
+- **A custom row cannot be unticked.** The roster is the only place the entry exists until the
+  library of phase 6, so an untick would be a removal; it says so under its label, and Remove, which
+  Undo takes back, is how it leaves. *Clear all* removes the reader's own entries with the rest.
+- **The parser keeps the stored order** rather than sorting, because the store writes every roster
+  sorted, and it derives a custom entry's slot name from its role rather than trusting the stored id.
+- **A custom row's card does not repeat its look**, which the row shows under its label: a look
+  written to its 200-character limit took the card past the 800 a card is held to.
+- **The catalogue's data chunk is `iconCatalogueData`.** The bundler names the shared chunk after a
+  module it carries, and with this phase's imports it chose an `iconCatalogue` one over `output`; the
+  data group, renamed, keeps the two apart in `PRECACHE_SHAPES`. The bytes did not move: the data
+  chunk is 159.6 kB as before and the shared one 372.7 kB.
+
+**What it breaks.** A roster stored before this change holds bare ids, which no longer parse as picks,
+so every session, history row, saved preset and library pack from before keeps its look and loses
+every icon. `IconRoster.picks` is `readonly IconPick[]`, and `toggleIconPicks`, `sortIconPicks`,
+`iconRosterTally` and `iconCatalogueSearch` take picks; the tally carries `custom`. `iconLookText`,
+`iconEntryGuidance` and `iconComponentCount` take either kind of entry. `KEY_COLOUR_WORDS` is a list of
+words per key, matched from the start of a word, rather than a pattern. *Clear all* removes the reader's
+own entries. The precache lists `iconCatalogue` and `iconCatalogueData` in place of `iconCatalogue` and
+`output`.

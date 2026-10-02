@@ -15,6 +15,7 @@ import {
   syncStudio,
   undoStudio,
 } from './studioHistory.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /**
  * The stack's one genuinely subtle rule: the cursor slot takes the live studio before the cursor
@@ -160,7 +161,10 @@ describe('an icon set’s roster in the studio history', () => {
     if (roster === undefined) throw new Error('ICON opens with no roster');
     const ticked: StudioPosition = {
       ...ICON_AT,
-      subject: { ...ICON_AT.subject, icons: { ...roster, picks: [...roster.picks, 'elixir'] } },
+      subject: {
+        ...ICON_AT.subject,
+        icons: { ...roster, picks: [...roster.picks, ...cataloguePicks(['elixir'])] },
+      },
     };
     expect(studioUndoDepth(recordStudio(openStudioHistory(ICON_AT), ICON_AT, ticked))).toBe(1);
   });

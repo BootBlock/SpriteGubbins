@@ -11,6 +11,7 @@ import type { OutputConfig } from '../types/output.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { iconLookText } from './iconLookText.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /**
  * The phase 4 content compiled: a spell sheet closing every line on its school and colour, and an
@@ -42,7 +43,7 @@ function groupIds(id: string): readonly string[] {
 }
 
 function iconSet(picks: readonly string[], look: IconLook, setting: string): SubjectDefinition {
-  return { ...defaultSubjectFor('ICON'), setting, icons: { look, picks } };
+  return { ...defaultSubjectFor('ICON'), setting, icons: { look, picks: cataloguePicks(picks) } };
 }
 
 /** Every icon sheet a subject compiles to, the overlay sheet left out. */

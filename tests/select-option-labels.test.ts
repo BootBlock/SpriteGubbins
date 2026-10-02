@@ -6,7 +6,9 @@ import { CATEGORY_OPTIONS } from '../src/constants/categories/index.ts';
 import { CATEGORY_DIRECTION_SETS } from '../src/constants/categoryDirectionSets.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/defaults.ts';
 import { HARDWARE_PROFILE_CHOICES } from '../src/constants/hardware/index.ts';
+import { ICON_KIND_CHOICES } from '../src/constants/iconCatalogue/iconKindChoices.ts';
 import { ICON_KIND_FILTER_CHOICES } from '../src/constants/iconCatalogue/iconKindFilterChoices.ts';
+import { damageSchoolChoices } from '../src/utils/damageSchoolChoices.ts';
 import { everyLookWorld } from '../src/test/iconCatalogueSubjects.ts';
 import { iconSchoolFilterChoices } from '../src/utils/iconSchoolFilterChoices.ts';
 import { TARGET_MODELS } from '../src/constants/models.ts';
@@ -71,10 +73,15 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   // rather than picked up from `choices.ts` because their libraries are far too large to file with
   // the option pools. The budget is the same one: the column does not care what the string means.
   HARDWARE_PROFILE_CHOICES: HARDWARE_PROFILE_CHOICES.map((choice) => choice.label),
+  ICON_KIND_CHOICES: ICON_KIND_CHOICES.map((choice) => choice.label),
   ICON_KIND_FILTER_CHOICES: ICON_KIND_FILTER_CHOICES.map((choice) => choice.label),
   // Named as the subject's world names each school, so every world a family or the fallback sends.
   iconSchoolFilterChoices: everyLookWorld().flatMap((world) =>
     iconSchoolFilterChoices(world).map((choice) => choice.label),
+  ),
+  // The school of an icon of the reader's own, named the same way.
+  damageSchoolChoices: everyLookWorld().flatMap((world) =>
+    damageSchoolChoices(world).map((choice) => choice.label),
   ),
   MODEL_CHOICES: TARGET_MODELS.map((model) => model.name),
   OPENING_VIEW_CHOICES: OPENING_VIEW_CHOICES.map((choice) => choice.label),

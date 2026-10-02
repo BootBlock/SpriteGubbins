@@ -101,6 +101,12 @@
  * A group of its own leaves `output` at 367.1 kB and the catalogue at 159.6; the bytes are the same and
  * the precache gains one request. Nothing was duplicated before the split: each look string sat in
  * `output` alone.
+ *
+ * **The reader's own icons renamed both lines without moving a byte between them.** The bundler names
+ * the shared chunk after a module it carries, and with that phase's imports the module it picks is an
+ * `iconCatalogue` one rather than an `output` one: the chunk that was
+ * `output` (372.7 kB with the form, the check and the copy) is now `iconCatalogue`, and the data
+ * group is named `iconCatalogueData` (159.6 kB, unchanged) so the two never share a shape here.
  */
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',
@@ -126,7 +132,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/componentBudget-*.js',
   'assets/database-*.js',
   'assets/iconCatalogue-*.js',
-  'assets/output-*.js',
+  'assets/iconCatalogueData-*.js',
   'assets/presets-*.js',
   'assets/quantiseDials-*.js',
   'assets/rolldown-runtime-*.js',

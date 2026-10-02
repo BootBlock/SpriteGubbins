@@ -2,9 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { iconCatalogueEntry } from '../constants/iconCatalogue/index.ts';
 import type { SheetSubject } from '../types/subject.ts';
 import { iconRosterEntries } from './iconRosterEntries.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 function subjectWith(picks: readonly string[], setting = 'Near-Future Cyberpunk'): SheetSubject {
-  return { anatomy: '', setting, clothing: '', face_head: '', icons: { look: 'ISOLATED_MARK', picks } };
+  return {
+    anatomy: '',
+    setting,
+    clothing: '',
+    face_head: '',
+    icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(picks) },
+  };
 }
 
 describe('iconRosterEntries', () => {

@@ -7,6 +7,8 @@ import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { batchComponentCount } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetIdentity, sheetRuns } from './sheetRuns.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import { iconPickId } from './iconPickId.ts';
 
 /**
  * The batch an N-direction rig actually is, once every sheet of it has been compiled.
@@ -251,13 +253,16 @@ describe('the identity of an icon set’s sheets', () => {
   const at = (sheetIndex: number): OutputConfig => ({ ...output, sheetIndex });
 
   function withPicks(picks: readonly string[]) {
-    return { ...ICON, icons: { look: ICON.icons?.look ?? 'FULL_BLEED_TILE', picks } } as const;
+    return {
+      ...ICON,
+      icons: { look: ICON.icons?.look ?? 'FULL_BLEED_TILE', picks: cataloguePicks(picks) },
+    } as const;
   }
 
   it('survives an icon added after the sheets already copied', () => {
     // Sixteen icons fill the first icon sheet, so the seventeenth opens a sheet of its own: the overlay
     // sheet and the full grid draw exactly what they drew before, and keep their ticks.
-    const picks = ICON.icons?.picks ?? [];
+    const picks = (ICON.icons?.picks ?? []).map(iconPickId);
     const grown = withPicks([...picks, 'elixir']);
     expect(sheetIdentity('ICON', grown, at(0))).toBe(sheetIdentity('ICON', ICON, at(0)));
     expect(sheetIdentity('ICON', grown, at(1))).toBe(sheetIdentity('ICON', ICON, at(1)));

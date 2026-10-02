@@ -1,8 +1,8 @@
 import { CATEGORY_OPTIONS } from '../constants/categories/index.ts';
-import { iconCatalogueEntry } from '../constants/iconCatalogue/index.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory } from '../types/subject.ts';
+import { rosterIcon } from './rosterIcon.ts';
 
 /**
  * Searching the preset library, as a pure function of the library and the query.
@@ -64,8 +64,9 @@ function normalise(text: string): string {
 function haystackFor(preset: PresetArchetype, collection: SubjectCategory): string {
   const subject = SUBJECT_FIELD_KEYS.map((key) => preset.subject[key]);
   // An icon set is found by the icons it holds as well as by its fields: a reader searching “stim” or
-  // “quest log” is asking for the set that draws one.
-  const icons = (preset.subject.icons?.picks ?? []).flatMap((id) => iconCatalogueEntry(id)?.role ?? []);
+  // “quest log” is asking for the set that draws one, and a saved set holding the reader's own relic is
+  // found by its role too.
+  const icons = (preset.subject.icons?.picks ?? []).flatMap((pick) => rosterIcon(pick)?.entry.role ?? []);
   const output = Object.values(preset.output).filter((value): value is string => typeof value === 'string');
 
   return normalise(

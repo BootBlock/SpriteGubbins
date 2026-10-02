@@ -18,6 +18,7 @@ import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /**
  * The localStorage backend is not a safety net — it is the backend the app genuinely runs on
@@ -745,7 +746,7 @@ describe('LocalStorageBackend — the studio session', () => {
   it.each(ICON_LOOKS)('round-trips a %s icon set’s roster with its subject', async (look) => {
     const subject = {
       ...defaultSubjectFor('ICON'),
-      icons: { look, picks: ['system-sound', 'heal-major', 'pin-waypoint'] },
+      icons: { look, picks: cataloguePicks(['heal-major', 'system-sound', 'pin-waypoint']) },
     } as const;
     await backend.saveSession(session({ category: 'ICON', subject }));
 
@@ -765,7 +766,7 @@ describe('LocalStorageBackend — the studio session', () => {
   it('drops a pick the catalogue no longer holds from a stored icon set', async () => {
     const subject = {
       ...defaultSubjectFor('ICON'),
-      icons: { look: 'ISOLATED_MARK', picks: ['retired-entry', 'elixir'] },
+      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['retired-entry', 'elixir']) },
     };
     storage.setItem(
       STORAGE_KEYS.studioSession,
@@ -774,7 +775,7 @@ describe('LocalStorageBackend — the studio session', () => {
 
     expect((await backend.loadSession())?.subject.icons).toEqual({
       look: 'ISOLATED_MARK',
-      picks: ['elixir'],
+      picks: cataloguePicks(['elixir']),
     });
   });
 

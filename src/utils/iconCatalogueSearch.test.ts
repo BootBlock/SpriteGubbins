@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
 import type { IconCatalogueFilter } from '../types/iconCatalogue.ts';
 import { iconCatalogueSearch } from './iconCatalogueSearch.ts';
@@ -11,9 +12,12 @@ function idsFor(
   picks: readonly string[] = [],
   world = 'High Fantasy',
 ): string[] {
-  return iconCatalogueSearch(ICON_CATALOGUE_GROUPS, { ...EVERYTHING, ...filter }, picks, world).flatMap(
-    (group) => group.entries.map((entry) => entry.id),
-  );
+  return iconCatalogueSearch(
+    ICON_CATALOGUE_GROUPS,
+    { ...EVERYTHING, ...filter },
+    cataloguePicks(picks),
+    world,
+  ).flatMap((group) => group.entries.map((entry) => entry.id));
 }
 
 describe('iconCatalogueSearch', () => {
@@ -72,7 +76,7 @@ describe('iconCatalogueSearch', () => {
     const groups = iconCatalogueSearch(
       ICON_CATALOGUE_GROUPS,
       { ...EVERYTHING, tickedOnly: true },
-      ['system-bags', 'heal-minor'],
+      cataloguePicks(['system-bags', 'heal-minor']),
       'Modern Day',
     );
     expect(groups.map((group) => group.id)).toEqual(['restoratives', 'system-panels']);

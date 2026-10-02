@@ -1,6 +1,5 @@
-import { ICON_KINDS } from '../../types/iconCatalogue.ts';
 import type { IconCatalogueFilter } from '../../types/iconCatalogue.ts';
-import { ICON_KIND_LABELS } from './iconKindLabels.ts';
+import { ICON_KIND_CHOICES } from './iconKindChoices.ts';
 
 /** One option of the catalogue dialog's kind filter. */
 interface IconKindFilterChoice {
@@ -14,5 +13,5 @@ interface IconKindFilterChoice {
  */
 export const ICON_KIND_FILTER_CHOICES: readonly IconKindFilterChoice[] = [
   { value: 'ALL', label: 'Every kind' },
-  ...ICON_KINDS.map((kind) => ({ value: kind, label: ICON_KIND_LABELS[kind] })),
+  ...ICON_KIND_CHOICES,
 ];

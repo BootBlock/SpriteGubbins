@@ -9,8 +9,9 @@ interface CheckboxFieldProps {
    * A second line under the label saying what this option stands for — shown always, and wired as the
    * control's accessible description.
    *
-   * Optional because one caller has one: the icon catalogue's rows, where the label is an icon's game
-   * role and this is the look it is drawn as under the subject's world. That look is what a reader
+   * Optional because one kind of caller has one: the icon catalogue's rows, the catalogue's and the
+   * reader's own alike, where the label is an icon's game role and this is the look it is drawn as
+   * under the subject's world. That look is what a reader
    * scans the list by, so it belongs on the row rather than behind the ⓘ.
    */
   readonly description?: string;

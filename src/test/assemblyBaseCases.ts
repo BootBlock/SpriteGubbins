@@ -1,5 +1,6 @@
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import { iconPickId } from '../utils/iconPickId.ts';
 import { assemblyBaseSubjectsOf } from './assemblyBaseSubjects.ts';
 
 /** One case of a sweep: its name, the category and the subject that selects one of its plan tables. */
@@ -28,9 +29,10 @@ export function assemblyBaseCases(): readonly AssemblyBaseCase[] {
 /** The case's name: its category and place in the walk, then the base, or the roster it draws. */
 function caseName(category: SubjectCategory, subject: SubjectDefinition, index: number): string {
   const { icons } = subject;
+  const [firstPick] = icons?.picks ?? [];
   const drawn =
     icons === undefined
       ? subject.anatomy || 'no base'
-      : `${icons.look}, ${String(icons.picks.length)} picks from ${icons.picks[0] ?? 'none'}`;
+      : `${icons.look}, ${String(icons.picks.length)} picks from ${firstPick === undefined ? 'none' : iconPickId(firstPick)}`;
   return `${category} subject ${String(index + 1)} (${drawn})`;
 }

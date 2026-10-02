@@ -22,6 +22,10 @@ import { ICON_CAPACITY_NOTICES } from '../iconCatalogue/iconCapacityNotices.ts';
 import { ICON_CATALOGUE_GROUPS } from '../iconCatalogue/index.ts';
 import { everyLookWorld } from '../../test/iconCatalogueSubjects.ts';
 import { iconEntryGuidance } from '../../utils/iconEntryGuidance.ts';
+import { CUSTOM_ICON_NOTICES } from '../iconCatalogue/customIconNotices.ts';
+import { CUSTOM_ICON_REFUSALS } from '../iconCatalogue/customIconRefusals.ts';
+import { CUSTOM_ICON_WARNING_TEXT } from '../iconCatalogue/customIconWarningText.ts';
+import { LONGEST_CUSTOM_ICON, RELIC, SALUTE, SPELL, TOGGLE } from '../../test/customIcons.ts';
 
 /**
  * Every module under `src/constants/`, so the guidance sets can be *found* rather than listed.
@@ -188,6 +192,37 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ['ICON_CAPACITY_NOTICES.row(short)', ICON_CAPACITY_NOTICES.row(2, 1)],
   ['ICON_CAPACITY_NOTICES.refused(one)', ICON_CAPACITY_NOTICES.refused(1)],
   ['ICON_CAPACITY_NOTICES.refused(several)', ICON_CAPACITY_NOTICES.refused(3)],
+  // The card behind a row of the reader's own, for one entry of each shape and one written to every
+  // limit, under every world: the same function, with the reader's words where the catalogue's go.
+  ...[RELIC, SPELL, TOGGLE, SALUTE, LONGEST_CUSTOM_ICON].flatMap((entry) =>
+    everyLookWorld().map(
+      (world) => [`iconEntryGuidance(own ${entry.id}, ${world})`, iconEntryGuidance(entry, world)] as const,
+    ),
+  ),
+  // What the form for an icon of the reader's own says beside a refused field, under every row of
+  // theirs, after a removal and as a warning — text shown under a control, on the
+  // `ICON_CAPACITY_NOTICES` footing.
+  ...Object.entries(CUSTOM_ICON_REFUSALS).flatMap(([key, text]) =>
+    typeof text === 'string' ? [[`CUSTOM_ICON_REFUSALS.${key}`, text] as const] : [],
+  ),
+  ['CUSTOM_ICON_REFUSALS.stateEmpty', CUSTOM_ICON_REFUSALS.stateEmpty('first')],
+  ['CUSTOM_ICON_REFUSALS.tooLong', CUSTOM_ICON_REFUSALS.tooLong('look', 201)],
+  ['CUSTOM_ICON_REFUSALS.brackets', CUSTOM_ICON_REFUSALS.brackets('state')],
+  [
+    'CUSTOM_ICON_REFUSALS.taken',
+    CUSTOM_ICON_REFUSALS.taken('heal-minor', 'the catalogue’s “Minor healing consumable”'),
+  ],
+  ['CUSTOM_ICON_NOTICES.yours', CUSTOM_ICON_NOTICES.yours],
+  ['CUSTOM_ICON_NOTICES.removed', CUSTOM_ICON_NOTICES.removed(RELIC.role)],
+  ...(['MAGENTA_FF00FF', 'PURE_WHITE', 'PURE_BLACK'] as const).map(
+    (key) =>
+      [
+        `CUSTOM_ICON_WARNING_TEXT.keyColour(${key})`,
+        CUSTOM_ICON_WARNING_TEXT.keyColour('white', key),
+      ] as const,
+  ),
+  ['CUSTOM_ICON_WARNING_TEXT.lettering', CUSTOM_ICON_WARNING_TEXT.lettering('dial')],
+  ['CUSTOM_ICON_WARNING_TEXT.figure', CUSTOM_ICON_WARNING_TEXT.figure('hand')],
 ];
 
 /** Flattens the records into `NAME.key` pairs, so a failure names the entry rather than a position. */
@@ -305,8 +340,15 @@ function blockLengths(text: string): number[] {
  * rather than a rule about names.** Its two branches are two written-out strings, so a sentence
  * appearing in both of them is a copy-paste inside one file and is meant to fail — which is how the
  * sentence about the search count came to be in `constants/guidanceSentences.ts`.
+ *
+ * `CUSTOM_ICON_WARNING_TEXT.keyColour` is one template literal filled with each key's colour, so its
+ * closing advice is one piece of writing however many keys it is rendered for.
  */
-const TEMPLATED_ORIGINS = ['accentSwatchGuidance', 'iconEntryGuidance'] as const;
+const TEMPLATED_ORIGINS = [
+  'accentSwatchGuidance',
+  'iconEntryGuidance',
+  'CUSTOM_ICON_WARNING_TEXT.keyColour',
+] as const;
 
 /** Where an entry's words are written: the entry itself, unless a template above wrote them. */
 function originOf(name: string): string {

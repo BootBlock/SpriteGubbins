@@ -6,13 +6,15 @@ import { ICON_CATALOGUE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.t
 import { useShowToast } from '../../hooks/useShowToast.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
+import type { IconPick } from '../../types/iconRoster.ts';
+import { iconPickId } from '../../utils/iconPickId.ts';
 import { iconRosterTally } from '../../utils/iconRosterTally.ts';
 import { Button } from '../common/Button.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { IconCatalogueRow } from './IconCatalogueRow.tsx';
 
 /** Picks for a subject with no roster, which the dialog is never opened over but has to type. */
-const NO_PICKS: readonly string[] = [];
+const NO_PICKS: readonly IconPick[] = [];
 
 interface IconCatalogueGroupSectionProps {
   /** The shelf as the dialog's filters leave it: only the entries they show. */
@@ -34,7 +36,7 @@ export function IconCatalogueGroupSection({ group }: IconCatalogueGroupSectionPr
   const showToast = useShowToast();
   const headingId = useId();
 
-  const ticked = new Set(picks);
+  const ticked = new Set(picks.map(iconPickId));
   const left = ICON_ROSTER_CAPACITY - iconRosterTally(picks).components;
   const ids = group.entries.map((entry) => entry.id);
   const tickedHere = ids.filter((id) => ticked.has(id)).length;

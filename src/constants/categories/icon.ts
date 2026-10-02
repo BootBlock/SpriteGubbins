@@ -6,6 +6,7 @@ import {
   SUBJECT_TYPE_ADDS_NO_COMPONENTS,
 } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
+import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
 
 /**
  * Icon sets — the action bars, bags, spellbooks, micro-menus and map pins a game reads at a glance.
@@ -50,7 +51,7 @@ export const ICON: CategoryDefinition = {
   // of the action bar the catalogue was built for — see `DEFAULT_ICON_LOOK`.
   iconRoster: {
     look: DEFAULT_ICON_LOOK,
-    picks: [
+    picks: cataloguePicks([
       'heal-minor',
       'heal-major',
       'mana-minor',
@@ -67,7 +68,7 @@ export const ICON: CategoryDefinition = {
       'system-quest-log',
       'system-world-map',
       'system-settings',
-    ],
+    ]),
   },
   fields: [
     {

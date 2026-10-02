@@ -2,13 +2,18 @@ import { fieldLabelFor } from '../constants/categories/index.ts';
 import { DAMAGE_SCHOOL_DEFINITIONS } from '../constants/iconCatalogue/damageSchools.ts';
 import { lookFamilyOfWorld } from '../constants/iconCatalogue/lookFamilyOfWorld.ts';
 import type { IconCatalogueEntry } from '../types/iconCatalogue.ts';
+import type { IconEntry } from '../types/iconRoster.ts';
 import { damageSchoolName } from './damageSchoolName.ts';
 
 /**
- * What one catalogue entry is drawn as in this world: the look its family writes, or — for a world the
- * family table does not name — the role itself, handed to the world to interpret. A spell closes on its
- * school: the name this world gives it, and the one colour by hex — `… — fire school, its dominant colour
- * orange #F97316`.
+ * What one entry is drawn as in this world: the look its family writes, or — for a world the family
+ * table does not name — the role itself, handed to the world to interpret. A spell closes on its school:
+ * the name this world gives it, and the one colour by hex — `… — fire school, its dominant colour orange
+ * #F97316`.
+ *
+ * **An entry of the reader's own carries one look**, written for the world their game is set in, so it
+ * is drawn as written under every *World & Era*; its school, where it has one, closes it as a catalogue
+ * spell's does.
  *
  * **The fallback names the field rather than guessing a family.** A reader who types `Dieselpunk Sky
  * Pirates` has said something no family captures, and drawing their potion as a fantasy flask would be
@@ -22,13 +27,17 @@ import { damageSchoolName } from './damageSchoolName.ts';
  * world. It is the entry's own colour, so the icon sheet's intro ranks it above the set's primary and
  * accent colours for that icon.
  */
-export function iconLookText(entry: IconCatalogueEntry, world: string): string {
-  const family = lookFamilyOfWorld(world);
-  const look =
-    family === null
-      ? `${entry.role.charAt(0).toLowerCase()}${entry.role.slice(1)}, drawn as the stated ${fieldLabelFor('ICON', 'setting')} would make it`
-      : entry.looks[family];
+export function iconLookText(entry: IconEntry, world: string): string {
+  const look = 'look' in entry ? entry.look : familyLook(entry, world);
   if (entry.school === undefined) return look;
   const { colourName, hex } = DAMAGE_SCHOOL_DEFINITIONS[entry.school];
   return `${look} — ${damageSchoolName(entry.school, world)} school, its dominant colour ${colourName} ${hex}`;
+}
+
+/** A catalogue entry's look in this world's family, or its role handed to a world no family names. */
+function familyLook(entry: IconCatalogueEntry, world: string): string {
+  const family = lookFamilyOfWorld(world);
+  return family === null
+    ? `${entry.role.charAt(0).toLowerCase()}${entry.role.slice(1)}, drawn as the stated ${fieldLabelFor('ICON', 'setting')} would make it`
+    : entry.looks[family];
 }

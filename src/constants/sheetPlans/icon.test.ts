@@ -10,6 +10,8 @@ import { componentTotal } from '../../utils/componentTotal.ts';
 import { iconSeries } from './icon.ts';
 import { ICON_OVERLAY_PLANS } from './iconOverlaySheet.ts';
 import { sheetSeriesFor } from './index.ts';
+import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
+import { iconPickId } from '../../utils/iconPickId.ts';
 
 const SINGLE_ONES = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
   .filter((entry) => entry.states === undefined)
@@ -22,7 +24,7 @@ function subjectWith(
   setting = 'High Fantasy',
   look: IconLook = 'ISOLATED_MARK',
 ): SheetSubject {
-  return { anatomy: '', setting, clothing: '', face_head: '', icons: { look, picks } };
+  return { anatomy: '', setting, clothing: '', face_head: '', icons: { look, picks: cataloguePicks(picks) } };
 }
 
 function seriesOf(subject: SheetSubject) {
@@ -64,7 +66,7 @@ describe('the ICON series', () => {
     );
     expect(series.map((sheet) => sheet.name)).toEqual(['Overlay pieces', 'Icons 1–16']);
     expect(entriesOf(series[1] ?? ISOLATED_OVERLAY).map((entry) => entry.label)).toEqual(
-      defaultSubjectFor('ICON').icons?.picks,
+      defaultSubjectFor('ICON').icons?.picks.map(iconPickId),
     );
     expect(series[0]).toBe(ICON_OVERLAY_PLANS.FULL_BLEED_TILE);
     expect(series[1]?.backdrop).toBe('OWN_SQUARE');

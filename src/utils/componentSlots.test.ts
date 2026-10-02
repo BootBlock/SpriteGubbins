@@ -11,6 +11,8 @@ import { iconCatalogueEntry } from '../constants/iconCatalogue/index.ts';
 import type { SheetSubject } from '../types/subject.ts';
 import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
 import { decliningSubject, standardSubject } from '../test/sheetSubject.ts';
+import { iconPickId } from './iconPickId.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /** A tail and a pair of horns, so every walk below carries anatomy as well as the plan's own. */
 const ANATOMY = [
@@ -304,11 +306,14 @@ describe('an icon set’s named slots', () => {
   }
 
   it('names every icon after the catalogue entry it is, in the roster’s order', () => {
-    expect(slotsAt(ICON, 1)).toEqual(ICON.icons?.picks);
+    expect(slotsAt(ICON, 1)).toEqual(ICON.icons?.picks.map(iconPickId));
   });
 
   it('names a two-state entry’s drawings after the entry and the state', () => {
-    const subject = { ...ICON, icons: { look: 'ISOLATED_MARK', picks: ['system-sound', 'elixir'] } } as const;
+    const subject = {
+      ...ICON,
+      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['system-sound', 'elixir']) },
+    } as const;
     const states = iconCatalogueEntry('system-sound')?.states ?? [];
     expect(slotsAt(subject, 1)).toEqual([...states.map((state) => `system-sound-${state}`), 'elixir']);
   });
