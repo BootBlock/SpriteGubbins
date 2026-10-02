@@ -764,3 +764,39 @@ the old code:
 written before this change imports with an empty icon library. `CUSTOM_ICON_NOTICES.yours` and the
 *Remove* button are gone: a custom row unticks. `customIconShelves` takes the library and returns rows.
 An existing database gains an empty `custom_icon_entries` table and keeps everything else.
+
+**Addendum — review fixes (2026-10-02).** A review of the phase 6 commit raised eleven findings. All
+eleven held when re-derived, and each was fixed in a follow-up commit with a test that fails against the
+old code:
+
+- **A refused rename of a library icon lost the draft.** The library store showed a change to a library
+  icon the set does not hold before its write landed, so the renamed row replaced the old slot, the
+  dialog closed the form as one whose entry had gone, and a refusal then restored the row with the form
+  and the draft already lost. Only an icon the set has just taken is shown early now; a library-only
+  change is shown once stored, so its form stays open with the draft on a refusal and closes only after
+  a write that landed.
+- **A Delete question outlived a project switch.** The row keeps its slot as its key, so an open question
+  stood over the other project's row of the same slot, or came back after Save to library. The question
+  now belongs to one library row (`useConfirmInPlace(subject)`) and drops, during render, whenever the
+  row shows another.
+- **A confirmed Delete on a ticked row sent the keyboard to the next row.** `confirm` takes a `home`, and
+  the row passes its own Save to library button.
+- **Library writes could interleave.** A refresh replaced the list wholesale, wiping a row another write
+  had shown early, and two writes could each pass a check the other was about to break. Writes and
+  deletes now run one at a time (`createSerialQueue`), each measured against what storage holds when its
+  turn comes, and rows shown early survive a refresh (`customIconLibraryWriter`). Storage cannot hold two
+  rows answering to one slot of a project.
+- **The custom row's card claimed a library copy on a row the library does not hold.** `iconEntryGuidance`
+  takes whether the library holds the entry, and says otherwise that an untick takes the icon away.
+- **Copy and counts.** The project form names the icon library among what a project files; the project
+  store, `App`, the pack noun's example, `findByNameIn` (whose name rule is the two preset collections')
+  and the spec's stores bullet were brought up to the four collections and the new store.
+- **Seams.** The held-elsewhere backend's test lists the library's read and two writes. The boot-time
+  discard derives its keys from `FILED_UNDER_A_PROJECT`, and a test walks that list through a project
+  delete and the discard, failing for a collection added without a sample.
+- **The dialog suites' accessibility coverage.** `control(name, role)`, `buttonReading`, `shelfHeaded`
+  and `formNamed` now assert the role and the computed accessible name of the one element they find,
+  with jest-dom's matchers, so a control that lost either fails; the docblock says what they check.
+- **An anti-alias case read a cache two others filled.** The comparison moved into the interior case,
+  which holds the measured interior below the recorded `both` by more than the `both` case's tolerance,
+  so the two independent cases together prove the strict inequality.

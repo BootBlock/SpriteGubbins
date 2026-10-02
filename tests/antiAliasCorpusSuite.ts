@@ -228,8 +228,8 @@ export function antiAliasCorpusSuite(sheets: readonly CorpusSheetName[]): void {
       return share;
     };
 
-    // The two modes are two cases, and their comparison a third reading what the two measured: one
-    // test measuring both passed the one-second limit a slow runner stands in for on the larger sheets.
+    // The two modes are two cases, each measuring one: one test measuring both passed the one-second
+    // limit a slow runner stands in for on the larger sheets.
     it.each(sheets)('moves the recorded share of %s at both kinds of boundary', (name) => {
       const expected = EXPECTED[name];
       expect(shareOf(name, 'BOTH', DEFAULT_ANTI_ALIAS_THRESHOLD), expected.note).toBeCloseTo(
@@ -238,23 +238,21 @@ export function antiAliasCorpusSuite(sheets: readonly CorpusSheetName[]): void {
       );
     });
 
-    it.each(sheets)('moves the recorded share of %s at its interior boundaries', (name) => {
-      const expected = EXPECTED[name];
-      expect(shareOf(name, 'INTERIOR', DEFAULT_ANTI_ALIAS_THRESHOLD), expected.note).toBeCloseTo(
-        expected.interior,
-        1,
-      );
-    });
-
-    it.each(sheets)('reaches more of %s at both kinds of boundary than at the interior alone', (name) => {
-      // `BOTH` is the union of the two kinds of boundary, so it can only reach more pixels than the
-      // interior alone — and on every one of these sheets it reaches strictly more, because all eight
-      // arrive with a field to key and therefore have a silhouette to soften. Measured rather than
-      // read off the table above, which would be the table asserting something about itself.
-      const both = shareOf(name, 'BOTH', DEFAULT_ANTI_ALIAS_THRESHOLD);
-      const interior = shareOf(name, 'INTERIOR', DEFAULT_ANTI_ALIAS_THRESHOLD);
-      expect(interior, EXPECTED[name].note).toBeLessThan(both);
-    });
+    it.each(sheets)(
+      'moves the recorded share of %s at its interior boundaries, under its share at both',
+      (name) => {
+        const expected = EXPECTED[name];
+        const interior = shareOf(name, 'INTERIOR', DEFAULT_ANTI_ALIAS_THRESHOLD);
+        expect(interior, expected.note).toBeCloseTo(expected.interior, 1);
+        // `BOTH` is the union of the two kinds of boundary, so it can only reach more pixels than the
+        // interior alone — and on every one of these sheets it reaches strictly more, because all eight
+        // arrive with a field to key and therefore have a silhouette to soften. The measured interior is
+        // held below the recorded `both` by more than the case above lets the measured `both` sit under
+        // it (`toBeCloseTo(…, 1)` admits less than 0.05), so the two cases together prove the measured
+        // interior under the measured `both`, without either reading what the other measured.
+        expect(interior, expected.note).toBeLessThan(expected.both - 0.05);
+      },
+    );
 
     it.each(sheets)('refuses the recorded share of %s’s boundaries', (name) => {
       const expected = EXPECTED[name];

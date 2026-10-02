@@ -68,7 +68,7 @@ describe('IconCatalogueContents', () => {
 
     const heal = iconCatalogueEntry('heal-minor');
     if (heal === undefined) throw new Error('No heal-minor');
-    expect(control(heal.role)).toHaveAccessibleDescription(iconLookText(heal, WORLD));
+    expect(control(heal.role, 'checkbox')).toHaveAccessibleDescription(iconLookText(heal, WORLD));
   });
 
   it('ticks and unticks an icon in the studio’s roster', async () => {
@@ -76,11 +76,11 @@ describe('IconCatalogueContents', () => {
     iconStudio(['system-bags']);
     render(<IconCatalogueContents />);
 
-    await user.click(control(role('heal-minor')));
+    await user.click(control(role('heal-minor'), 'checkbox'));
     expect(picks()).toEqual(['heal-minor', 'system-bags']);
-    expect(control(role('heal-minor'))).toBeChecked();
+    expect(control(role('heal-minor'), 'checkbox')).toBeChecked();
 
-    await user.click(control(role('system-bags')));
+    await user.click(control(role('system-bags'), 'checkbox'));
     expect(picks()).toEqual(['heal-minor']);
   });
 
@@ -90,10 +90,10 @@ describe('IconCatalogueContents', () => {
     render(<IconCatalogueContents />);
     if (RESTORATIVES === undefined) throw new Error('No restoratives group');
 
-    await user.click(control(`Tick all ${RESTORATIVES.label}`));
+    await user.click(control(`Tick all ${RESTORATIVES.label}`, 'button'));
     expect(picks()).toEqual(RESTORATIVES.entries.map((entry) => entry.id));
 
-    await user.click(control(`Untick all ${RESTORATIVES.label}`));
+    await user.click(control(`Untick all ${RESTORATIVES.label}`, 'button'));
     expect(picks()).toEqual([]);
   });
 
@@ -103,8 +103,8 @@ describe('IconCatalogueContents', () => {
     render(<IconCatalogueContents />);
     if (RESTORATIVES === undefined) throw new Error('No restoratives group');
 
-    await user.type(control('Search the catalogue'), 'healing consumable');
-    await user.click(control(`Tick all ${RESTORATIVES.label}`));
+    await user.type(control('Search the catalogue', 'textbox'), 'healing consumable');
+    await user.click(control(`Tick all ${RESTORATIVES.label}`, 'button'));
 
     // The three healing tiers and the healing-over-time patch match; the mana and stamina rows do not.
     expect(picks()).toEqual(['heal-minor', 'heal-standard', 'heal-major', 'regeneration']);
@@ -115,18 +115,18 @@ describe('IconCatalogueContents', () => {
     iconStudio(['heal-minor', 'system-bags']);
     render(<IconCatalogueContents />);
 
-    await user.selectOptions(control('Kind'), 'SYSTEM');
+    await user.selectOptions(control('Kind', 'combobox'), 'SYSTEM');
     expect(queryControl(role('heal-minor'))).toBeNull();
-    expect(control(role('system-bags'))).toBeInTheDocument();
+    expect(control(role('system-bags'), 'checkbox')).toBeInTheDocument();
 
-    await user.selectOptions(control('Kind'), 'ALL');
-    await user.click(control('Ticked only'));
+    await user.selectOptions(control('Kind', 'combobox'), 'ALL');
+    await user.click(control('Ticked only', 'checkbox'));
     const rows = Array.from(document.querySelectorAll('input[type=checkbox]'))
       .filter((box) => box.getAttribute('aria-describedby'))
       .map((box) => box.closest('li')?.querySelector('label')?.textContent);
     expect(rows).toEqual([role('heal-minor'), role('system-bags')]);
 
-    await user.type(control('Search the catalogue'), 'no such icon');
+    await user.type(control('Search the catalogue', 'textbox'), 'no such icon');
     expect(screen.getByText('No icon matches that search and those filters.')).toBeInTheDocument();
     expect(picks()).toEqual(['heal-minor', 'system-bags']);
   });
@@ -135,25 +135,25 @@ describe('IconCatalogueContents', () => {
     const user = userEvent.setup({ delay: null });
     iconStudio([]);
     render(<IconCatalogueContents />);
-    const kind = control('Kind');
+    const kind = control('Kind', 'combobox');
     expect(queryControl('School')).toBeNull();
 
     await user.selectOptions(kind, 'SPELL');
-    await user.selectOptions(control('School'), 'THERMAL');
+    await user.selectOptions(control('School', 'combobox'), 'THERMAL');
     const strike = iconCatalogueEntry('thermal-strike');
     if (strike === undefined) throw new Error('No thermal-strike');
     const look = iconLookText(strike, WORLD);
     expect(look).toContain('— thermal school, its dominant colour orange #F97316');
-    expect(control(strike.role)).toHaveAccessibleDescription(look);
+    expect(control(strike.role, 'checkbox')).toHaveAccessibleDescription(look);
     expect(queryControl(role('cryo-strike'))).toBeNull();
     expect(queryControl(role('heal-minor'))).toBeNull();
 
     await user.selectOptions(kind, 'ALL');
     expect(queryControl('School')).toBeNull();
-    expect(control(role('cryo-strike'))).toBeInTheDocument();
+    expect(control(role('cryo-strike'), 'checkbox')).toBeInTheDocument();
 
     await user.selectOptions(kind, 'SPELL');
-    expect(control('School')).toHaveValue('ALL');
+    expect(control('School', 'combobox')).toHaveValue('ALL');
     expect(picks()).toEqual([]);
   });
 
@@ -163,8 +163,10 @@ describe('IconCatalogueContents', () => {
     useSubjectStore.setState((state) => ({ subject: { ...state.subject, setting: 'High Fantasy' } }));
     render(<IconCatalogueContents />);
 
-    await user.selectOptions(control('Kind'), 'SPELL');
-    expect(within(control('School')).getByRole('option', { name: 'Fire (thermal)' })).toBeInTheDocument();
+    await user.selectOptions(control('Kind', 'combobox'), 'SPELL');
+    expect(
+      within(control('School', 'combobox')).getByRole('option', { name: 'Fire (thermal)' }),
+    ).toBeInTheDocument();
   });
 
   it('says an empty set is the overlay sheet alone', () => {
@@ -193,7 +195,7 @@ describe('IconCatalogueContents', () => {
       '19 icons, drawn as 19 of the 320 components a set can hold, on 3 sheets',
     );
 
-    await user.click(control(last.role));
+    await user.click(control(last.role, 'checkbox'));
     expect(status).toHaveTextContent(
       '20 icons, drawn as 20 of the 320 components a set can hold, on 3 sheets: the overlay sheet and 2 icon sheets.',
     );
@@ -204,7 +206,7 @@ describe('IconCatalogueContents', () => {
     iconStudio(['heal-minor', 'system-bags']);
     render(<IconCatalogueContents />);
 
-    await user.type(control('Search the catalogue'), 'healing consumable');
+    await user.type(control('Search the catalogue', 'textbox'), 'healing consumable');
     await user.click(buttonReading('Clear all'));
     expect(picks()).toEqual([]);
 

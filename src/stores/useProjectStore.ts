@@ -14,7 +14,8 @@ import { useUIStore } from './useUIStore.ts';
  * under, and the actions that make, rename and destroy one.
  *
  * **Moving the library in and out is not here**, and `useLibraryTransferStore` says why: a pack
- * carries all three collections together, so it is no more this store's than either of theirs.
+ * carries the projects and all three saved collections together, so it is no more this store's than
+ * any of theirs.
  * What is here is a project's own life — made, renamed, and destroyed along with what it holds.
  *
  * It reaches into the three collection stores, and only through their own actions — the same rule

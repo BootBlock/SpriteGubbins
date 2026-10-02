@@ -27,6 +27,8 @@ export interface CollectionPort {
  * ordering, because its statements either all land or none do.
  */
 export async function deleteProjectFrom(port: CollectionPort, id: string): Promise<void> {
+  // Each of `FILED_UNDER_A_PROJECT` in turn, written out so each keeps its own row type; the test of
+  // the cascade walks that list, so a collection added to it and not here fails there.
   const { presets, quantisePresets, customIcons, projects } = STORED_COLLECTIONS;
   await rewrite(port, presets, (rows) => rows.filter((row) => row.projectId !== id));
   await rewrite(port, quantisePresets, (rows) => rows.filter((row) => row.projectId !== id));

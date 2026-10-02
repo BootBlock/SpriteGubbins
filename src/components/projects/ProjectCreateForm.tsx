@@ -46,8 +46,9 @@ export function ProjectCreateForm() {
     <section className="glass-panel rounded-2xl border border-foundry-700 p-5 shadow-xl">
       <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">Start a project</h2>
       <p className="mt-1 text-xs text-ink-muted">
-        A project is where your saved studio presets and quantiser settings are filed. Everything you save
-        goes into one, and the Default project is where it goes until you choose otherwise.
+        A project is where your saved studio presets, quantiser settings and icon library are filed.
+        Everything you save goes into one, and the Default project is where it goes until you choose
+        otherwise.
       </p>
 
       <div className="mt-4 flex flex-wrap items-end gap-3">

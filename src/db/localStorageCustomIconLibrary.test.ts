@@ -3,6 +3,8 @@ import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { DEFAULT_PROJECT_ID, createDefaultProject } from '../constants/projects.ts';
 import { RELIC, SPELL, TOGGLE } from '../test/customIcons.ts';
 import { HARBOUR, savedIcon } from '../test/iconLibraryStudio.ts';
+import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
+import { FILED_UNDER_A_PROJECT } from './localStorageCollections.ts';
 import { LocalStorageBackend } from './localStorageBackend.ts';
 import { toCustomIconRow } from './localStorageRows.ts';
 import { STORAGE_KEYS } from './schema.ts';
@@ -163,4 +165,46 @@ describe('the icon library and the boot-time discard', () => {
 
     expect(await new LocalStorageBackend(bare).listCustomIcons()).toEqual([]);
   });
+});
+
+describe('every collection filed under a project', () => {
+  /** One row of each filed collection, under Harbour, written through the backend's own save. */
+  const SAVES: Readonly<Record<string, (backend: LocalStorageBackend) => Promise<void>>> = {
+    [STORAGE_KEYS.customPresets]: (into) =>
+      into.savePreset({ ...DEFAULT_PRESET, id: 'gull', projectId: HARBOUR.id, name: 'Gull', isCustom: true }),
+    [STORAGE_KEYS.quantisePresets]: (into) =>
+      into.saveQuantisePreset({
+        id: 'crisp',
+        projectId: HARBOUR.id,
+        name: 'Crisp',
+        description: '',
+        dials: QUANTISE_DEFAULT_DIALS,
+      }),
+    [STORAGE_KEYS.customIcons]: (into) => into.saveCustomIcon(savedIcon(RELIC, HARBOUR.id)),
+  };
+
+  const rowsUnder = (key: string): unknown[] => {
+    const rows: unknown = JSON.parse(storage.getItem(key) ?? '[]');
+    return Array.isArray(rows) ? rows : [];
+  };
+
+  it.each(FILED_UNDER_A_PROJECT.map((collection) => [collection.key] as const))(
+    'empties %s of a deleted project, and with the projects when they cannot be read',
+    async (key) => {
+      const save = SAVES[key];
+      if (save === undefined) throw new Error(`No sample row for ${key}: add one beside the others.`);
+      await backend.saveProject(HARBOUR);
+      await save(backend);
+      expect(rowsUnder(key)).toHaveLength(1);
+
+      await backend.deleteProject(HARBOUR.id);
+      expect(rowsUnder(key)).toEqual([]);
+
+      await backend.saveProject(HARBOUR);
+      await save(backend);
+      storage.setItem(STORAGE_KEYS.projects, '{not json');
+      new LocalStorageBackend(storage);
+      expect(rowsUnder(key)).toEqual([]);
+    },
+  );
 });

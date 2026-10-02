@@ -82,11 +82,12 @@ describe('the backend for a database another tab holds', () => {
     const database = await backendAfterRefusal('HELD_ELSEWHERE');
 
     // Empty rather than a rejection: every store hydrates at once, and refusing each would open the
-    // app under a stack of notifications describing one condition six times over.
+    // app under a stack of notifications describing one condition once per store.
     await expect(database.listProjects()).resolves.toEqual([]);
     await expect(database.listPresets()).resolves.toEqual([]);
     await expect(database.listQuantisePresets()).resolves.toEqual([]);
     await expect(database.listHistoryLogs()).resolves.toEqual([]);
+    await expect(database.listCustomIcons()).resolves.toEqual([]);
     await expect(database.loadSession()).resolves.toBeNull();
   });
 
@@ -113,6 +114,8 @@ describe('the backend for a database another tab holds', () => {
     await expect(database.deletePreset('x')).rejects.toThrow(HELD_ELSEWHERE_REFUSAL);
     await expect(database.saveQuantisePreset({} as never)).rejects.toThrow(HELD_ELSEWHERE_REFUSAL);
     await expect(database.deleteQuantisePreset('x')).rejects.toThrow(HELD_ELSEWHERE_REFUSAL);
+    await expect(database.saveCustomIcon({} as never)).rejects.toThrow(HELD_ELSEWHERE_REFUSAL);
+    await expect(database.deleteCustomIcon('x')).rejects.toThrow(HELD_ELSEWHERE_REFUSAL);
     await expect(database.deleteProject('x')).rejects.toThrow(HELD_ELSEWHERE_REFUSAL);
     await expect(database.addHistoryLog({} as never)).rejects.toThrow(HELD_ELSEWHERE_REFUSAL);
     await expect(database.deleteHistoryLog('x')).rejects.toThrow(HELD_ELSEWHERE_REFUSAL);

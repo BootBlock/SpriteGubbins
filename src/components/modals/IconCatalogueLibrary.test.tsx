@@ -53,16 +53,16 @@ describe('the catalogue dialog’s icon library', () => {
     const user = userEvent.setup({ delay: null });
     iconStudio([...cataloguePicks(['heal-minor']), customPick(RELIC)]);
     render(<IconCatalogueContents />);
-    expect(control(RELIC.role)).toBeChecked();
-    expect(control(SPELL.role)).not.toBeChecked();
+    expect(control(RELIC.role, 'checkbox')).toBeChecked();
+    expect(control(SPELL.role, 'checkbox')).not.toBeChecked();
 
-    await user.click(control(RELIC.role));
+    await user.click(control(RELIC.role, 'checkbox'));
     expect(rosterIds()).toEqual(['heal-minor']);
-    expect(control(RELIC.role)).not.toBeChecked();
+    expect(control(RELIC.role, 'checkbox')).not.toBeChecked();
     expect(libraryEntries()).toEqual([SPELL, RELIC]);
     expect(useUIStore.getState().toastMessage).toBeNull();
 
-    await user.click(control(RELIC.role));
+    await user.click(control(RELIC.role, 'checkbox'));
     expect(useSubjectStore.getState().subject.icons?.picks).toEqual([
       ...cataloguePicks(['heal-minor']),
       customPick(RELIC),
@@ -80,7 +80,7 @@ describe('the catalogue dialog’s icon library', () => {
     iconStudio(cataloguePicks(['heal-minor']));
     render(<IconCatalogueContents />);
 
-    await user.click(control(SPELL.role));
+    await user.click(control(SPELL.role, 'checkbox'));
     expect(rosterIds()).toEqual(['heal-minor', SPELL.id]);
   });
 
@@ -89,13 +89,13 @@ describe('the catalogue dialog’s icon library', () => {
     iconStudio([customPick(RELIC)]);
     render(<IconCatalogueContents />);
 
-    await user.click(control(`Delete ${RELIC.role} from library`));
-    const keep = control(`Cancel — keep ${RELIC.role} in your library`);
+    await user.click(control(`Delete ${RELIC.role} from library`, 'button'));
+    const keep = control(`Cancel — keep ${RELIC.role} in your library`, 'button');
     expect(keep).toHaveFocus();
     await user.click(keep);
     expect(libraryEntries()).toContainEqual(RELIC);
 
-    await user.click(control(`Delete ${RELIC.role} from library`));
+    await user.click(control(`Delete ${RELIC.role} from library`, 'button'));
     await user.click(buttonReading(`Delete “${RELIC.role}”`));
 
     await waitFor(() => {
@@ -104,8 +104,10 @@ describe('the catalogue dialog’s icon library', () => {
     expect((await backend.listCustomIcons()).map((icon) => icon.entry.id)).not.toContain(RELIC.id);
     expect(useUIStore.getState().toastMessage).toBe(CUSTOM_ICON_NOTICES.deleted(RELIC.role));
     expect(useSubjectStore.getState().subject.icons?.picks).toEqual([customPick(RELIC)]);
-    expect(control(RELIC.role)).toBeChecked();
-    expect(control(RELIC.role)).toHaveAccessibleDescription(`${RELIC.look} ${CUSTOM_ICON_NOTICES.setOnly}`);
+    expect(control(RELIC.role, 'checkbox')).toBeChecked();
+    expect(control(RELIC.role, 'checkbox')).toHaveAccessibleDescription(
+      `${RELIC.look} ${CUSTOM_ICON_NOTICES.setOnly}`,
+    );
   });
 
   it('takes an unticked entry off the shelf once it is deleted', async () => {
@@ -113,7 +115,7 @@ describe('the catalogue dialog’s icon library', () => {
     iconStudio([]);
     render(<IconCatalogueContents />);
 
-    await user.click(control(`Delete ${SPELL.role} from library`));
+    await user.click(control(`Delete ${SPELL.role} from library`, 'button'));
     await user.click(buttonReading(`Delete “${SPELL.role}”`));
 
     await waitFor(() => {
@@ -127,13 +129,13 @@ describe('the catalogue dialog’s icon library', () => {
     iconStudio([customPick(relic)]);
     render(<IconCatalogueContents />);
 
-    await user.click(control(`Save ${relic.role} to library`));
+    await user.click(control(`Save ${relic.role} to library`, 'button'));
 
     await waitFor(() => {
       expect(libraryEntries()).toContainEqual(relic);
     });
     expect(useUIStore.getState().toastMessage).toBe(CUSTOM_ICON_NOTICES.kept(relic.role));
-    expect(control(relic.role)).toHaveAccessibleDescription(relic.look);
+    expect(control(relic.role, 'checkbox')).toHaveAccessibleDescription(relic.look);
   });
 
   it('unticks an icon only the set holds as a removal, says Undo is the way back, and Undo is', async () => {
@@ -142,7 +144,7 @@ describe('the catalogue dialog’s icon library', () => {
     iconStudio([...cataloguePicks(['heal-minor']), customPick(relic)]);
     render(<IconCatalogueContents />);
 
-    await user.click(control(relic.role));
+    await user.click(control(relic.role, 'checkbox'));
 
     expect(rosterIds()).toEqual(['heal-minor']);
     expect(queryControl(relic.role)).toBeNull();
@@ -158,13 +160,15 @@ describe('the catalogue dialog’s icon library', () => {
     const older = { ...RELIC, look: 'an older keycard' };
     iconStudio([customPick(older)]);
     render(<IconCatalogueContents />);
-    expect(control(RELIC.role)).toHaveAccessibleDescription(`${older.look} ${CUSTOM_ICON_NOTICES.differs}`);
+    expect(control(RELIC.role, 'checkbox')).toHaveAccessibleDescription(
+      `${older.look} ${CUSTOM_ICON_NOTICES.differs}`,
+    );
 
-    await user.click(control(RELIC.role));
-    await user.click(control(RELIC.role));
+    await user.click(control(RELIC.role, 'checkbox'));
+    await user.click(control(RELIC.role, 'checkbox'));
 
     expect(useSubjectStore.getState().subject.icons?.picks).toEqual([customPick(RELIC)]);
-    expect(control(RELIC.role)).toHaveAccessibleDescription(RELIC.look);
+    expect(control(RELIC.role, 'checkbox')).toHaveAccessibleDescription(RELIC.look);
   });
 
   it('changes a library entry the set does not hold in the library alone', async () => {
@@ -172,8 +176,8 @@ describe('the catalogue dialog’s icon library', () => {
     iconStudio(cataloguePicks(['heal-minor']));
     render(<IconCatalogueContents />);
 
-    await user.click(control(`Edit ${SPELL.role}`));
-    const look = control('Look');
+    await user.click(control(`Edit ${SPELL.role}`, 'button'));
+    const look = control('Look', 'textbox');
     await user.clear(look);
     await user.type(look, 'a folding lattice of sparks');
     await user.click(buttonReading('Save changes'));
@@ -191,12 +195,12 @@ describe('the catalogue dialog’s icon library', () => {
     render(<IconCatalogueContents />);
 
     await user.click(addButton());
-    await user.type(control('Role'), SPELL.role);
-    await user.type(control('Look'), 'another lattice');
+    await user.type(control('Role', 'textbox'), SPELL.role);
+    await user.type(control('Look', 'textbox'), 'another lattice');
     await user.click(buttonReading('Add to your set'));
 
     expect(rosterIds()).toEqual([]);
-    expect(control('Role')).toHaveAccessibleDescription(
+    expect(control('Role', 'textbox')).toHaveAccessibleDescription(
       CUSTOM_ICON_REFUSALS.taken(SPELL.id, `your library’s “${SPELL.role}”`),
     );
   });
@@ -206,16 +210,18 @@ describe('the catalogue dialog’s icon library', () => {
     iconStudio([customPick(RELIC)]);
     render(<IconCatalogueContents />);
 
-    await user.selectOptions(control('Library'), HARBOUR.id);
+    await user.selectOptions(control('Library', 'combobox'), HARBOUR.id);
 
-    expect(control(TOGGLE.role)).not.toBeChecked();
+    expect(control(TOGGLE.role, 'checkbox')).not.toBeChecked();
     expect(queryControl(SPELL.role)).toBeNull();
     // The set's relic stays on the set, and says this project's library does not hold it.
-    expect(control(RELIC.role)).toHaveAccessibleDescription(`${RELIC.look} ${CUSTOM_ICON_NOTICES.setOnly}`);
+    expect(control(RELIC.role, 'checkbox')).toHaveAccessibleDescription(
+      `${RELIC.look} ${CUSTOM_ICON_NOTICES.setOnly}`,
+    );
 
     await user.click(addButton());
-    await user.type(control('Role'), 'Dock crane');
-    await user.type(control('Look'), 'a rusted crane hook');
+    await user.type(control('Role', 'textbox'), 'Dock crane');
+    await user.type(control('Look', 'textbox'), 'a rusted crane hook');
     await user.click(buttonReading('Add to your set'));
 
     await waitFor(() => {
@@ -229,11 +235,11 @@ describe('the catalogue dialog’s icon library', () => {
     iconStudio([]);
     render(<IconCatalogueContents />);
 
-    await user.type(control('Search the catalogue'), 'power lines');
-    expect(shelfHeaded('Spells and abilities: your own')).toContainElement(control(SPELL.role));
-    expect(control(SPELL.role)).not.toBeChecked();
+    await user.type(control('Search the catalogue', 'textbox'), 'power lines');
+    expect(shelfHeaded('Spells and abilities: your own')).toContainElement(control(SPELL.role, 'checkbox'));
+    expect(control(SPELL.role, 'checkbox')).not.toBeChecked();
 
-    await user.click(control('Ticked only'));
+    await user.click(control('Ticked only', 'checkbox'));
     expect(queryControl(SPELL.role)).toBeNull();
   });
 });

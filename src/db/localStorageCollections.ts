@@ -64,3 +64,13 @@ export const STORED_COLLECTIONS = {
     toRow: toCustomIconRow,
   } satisfies StoredCollection<SavedCustomIcon>,
 } as const;
+
+/**
+ * The collections whose every row is filed under a project: what a project's delete empties of that
+ * project, and what the boot-time discard empties with the projects (`discardIncompatibleLibrary.ts`).
+ */
+export const FILED_UNDER_A_PROJECT = [
+  STORED_COLLECTIONS.presets,
+  STORED_COLLECTIONS.quantisePresets,
+  STORED_COLLECTIONS.customIcons,
+] as const;

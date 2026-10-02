@@ -5,6 +5,7 @@ import type { IconCatalogueEntry } from '../types/iconCatalogue.ts';
 import { guidanceMarkupProblems } from './guidanceMarkupProblems.ts';
 import { iconEntryGuidance } from './iconEntryGuidance.ts';
 import { iconLookText } from './iconLookText.ts';
+import { RELIC } from '../test/customIcons.ts';
 
 /**
  * The card behind every catalogue row, written for every entry under every look a world can send.
@@ -65,5 +66,16 @@ describe('iconEntryGuidance', () => {
     expect(iconEntryGuidance(entry('heal-minor'), '  ')).toContain(
       'With no World & Era set, the sheet draws it as',
     );
+  });
+});
+
+describe('the card behind a row of the reader’s own', () => {
+  it('says the library keeps a copy only where the library holds the icon', () => {
+    const held = iconEntryGuidance(RELIC, 'Modern Day', true);
+    const setOnly = iconEntryGuidance(RELIC, 'Modern Day', false);
+
+    expect(held).toContain('your library keeps its own copy');
+    expect(setOnly).not.toContain('your library keeps');
+    expect(setOnly).toContain('unticking takes it away for good');
   });
 });

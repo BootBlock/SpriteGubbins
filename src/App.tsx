@@ -91,10 +91,10 @@ export function App() {
     void fetchCustomPresets();
   }, [fetchCustomPresets]);
 
-  // …and the projects both collections are filed under, which also makes the Default project on an
-  // install that has none. It is fetched here rather than by the Projects tab for the reason the
-  // two collections are: the save panels in the Studio and the Quantise tab both offer the list, so
-  // it has to be loaded whether or not that tab has ever been opened.
+  // …and the projects the saved collections are filed under, which also makes the Default project on
+  // an install that has none. It is fetched here rather than by the Projects tab for the reason the
+  // collections are: the save panels in the Studio and the Quantise tab and the icon catalogue's
+  // library all offer the list, so it has to be loaded whether or not that tab has ever been opened.
   useEffect(() => {
     void fetchProjects();
   }, [fetchProjects]);

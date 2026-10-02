@@ -193,10 +193,17 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ['ICON_CAPACITY_NOTICES.refused(one)', ICON_CAPACITY_NOTICES.refused(1)],
   ['ICON_CAPACITY_NOTICES.refused(several)', ICON_CAPACITY_NOTICES.refused(3)],
   // The card behind a row of the reader's own, for one entry of each shape and one written to every
-  // limit, under every world: the same function, with the reader's words where the catalogue's go.
+  // limit, under every world, held by the library and on the set alone: the same function, with the
+  // reader's words where the catalogue's go.
   ...[RELIC, SPELL, TOGGLE, SALUTE, LONGEST_CUSTOM_ICON].flatMap((entry) =>
-    everyLookWorld().map(
-      (world) => [`iconEntryGuidance(own ${entry.id}, ${world})`, iconEntryGuidance(entry, world)] as const,
+    everyLookWorld().flatMap((world) =>
+      [true, false].map(
+        (inLibrary) =>
+          [
+            `iconEntryGuidance(own ${entry.id}, ${world}, ${inLibrary ? 'in library' : 'set only'})`,
+            iconEntryGuidance(entry, world, inLibrary),
+          ] as const,
+      ),
     ),
   ),
   // What the form for an icon of the reader's own says beside a refused field, under a row of theirs

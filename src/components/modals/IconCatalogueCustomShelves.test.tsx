@@ -20,6 +20,7 @@ import { customIconDraftOf } from '../../utils/customIconDraftOf.ts';
 import {
   buttonReading,
   control,
+  formNamed,
   queryButtonReading,
   queryControl,
   shelfHeaded,
@@ -57,8 +58,9 @@ describe('the catalogue dialog’s own icons', () => {
 
     await user.click(addButton());
     expect(addButton()).toHaveAttribute('aria-expanded', 'true');
-    await user.type(control('Role'), RELIC.role);
-    await user.type(control('Look'), RELIC.look);
+    formNamed('Add your own icon');
+    await user.type(control('Role', 'textbox'), RELIC.role);
+    await user.type(control('Look', 'textbox'), RELIC.look);
     await user.click(buttonReading('Add to your set'));
 
     expect(rosterIds()).toEqual(['heal-minor', RELIC.id]);
@@ -70,7 +72,7 @@ describe('the catalogue dialog’s own icons', () => {
     await waitFor(async () => {
       expect((await backend.listCustomIcons()).map((icon) => icon.entry)).toEqual([RELIC]);
     });
-    const row = control(RELIC.role);
+    const row = control(RELIC.role, 'checkbox');
     expect(shelfHeaded('Items and consumables: your own')).toContainElement(row);
     expect(row).toBeChecked();
     expect(row).toHaveAccessibleDescription(RELIC.look);
@@ -95,8 +97,8 @@ describe('the catalogue dialog’s own icons', () => {
     iconStudio([customPick(RELIC)]);
     render(<IconCatalogueContents />);
 
-    await user.click(control(`Edit ${RELIC.role}`));
-    const look = control('Look');
+    await user.click(control(`Edit ${RELIC.role}`, 'button'));
+    const look = control('Look', 'textbox');
     expect(look).toHaveValue(RELIC.look);
     await user.clear(look);
     await user.type(look, 'a cracked keycard');
@@ -105,7 +107,7 @@ describe('the catalogue dialog’s own icons', () => {
     const changed = { ...RELIC, look: 'a cracked keycard' };
     expect(useSubjectStore.getState().subject.icons?.picks).toEqual([customPick(changed)]);
     await waitFor(() => {
-      expect(control(`Edit ${RELIC.role}`)).toHaveFocus();
+      expect(control(`Edit ${RELIC.role}`, 'button')).toHaveFocus();
     });
     // The same library row, changed rather than joined by a second.
     await waitFor(async () => {
@@ -136,8 +138,8 @@ describe('the catalogue dialog’s own icons', () => {
       useSubjectStore.getState().addCustomIcon(customIconDraftOf(RELIC), []);
       render(<IconCatalogueContents />);
 
-      await user.click(control(`Edit ${RELIC.role}`));
-      await user.type(control('Look'), ' and a chain');
+      await user.click(control(`Edit ${RELIC.role}`, 'button'));
+      await user.type(control('Look', 'textbox'), ' and a chain');
       await leave(user);
 
       expect(rosterIds()).not.toContain(RELIC.id);
@@ -158,7 +160,7 @@ describe('the catalogue dialog’s own icons', () => {
     iconStudio([customPick(RELIC)]);
     render(<IconCatalogueContents />);
 
-    await user.click(control(`Edit ${RELIC.role}`));
+    await user.click(control(`Edit ${RELIC.role}`, 'button'));
     await user.click(buttonReading('Clear all'));
 
     expect(rosterIds()).toEqual([]);
@@ -176,8 +178,8 @@ describe('the catalogue dialog’s own icons', () => {
     document.addEventListener('keydown', onKey);
 
     await user.click(addButton());
-    await user.type(control('Role'), 'Half-written relic');
-    const insideForm = fireEvent.keyDown(control('Role'), { key: 'Escape' });
+    await user.type(control('Role', 'textbox'), 'Half-written relic');
+    const insideForm = fireEvent.keyDown(control('Role', 'textbox'), { key: 'Escape' });
 
     expect(insideForm).toBe(false);
     expect(reachedDialog).not.toHaveBeenCalled();
@@ -187,7 +189,7 @@ describe('the catalogue dialog’s own icons', () => {
     });
 
     // Focus moves off the button first, so its guidance card is not open to take this Escape itself.
-    const search = control('Search the catalogue');
+    const search = control('Search the catalogue', 'textbox');
     await user.click(search);
     const outsideForm = fireEvent.keyDown(search, { key: 'Escape' });
     expect(outsideForm).toBe(true);
@@ -199,7 +201,9 @@ describe('the catalogue dialog’s own icons', () => {
     iconStudio([customPick(RELIC)]);
     render(<IconCatalogueContents />);
 
-    expect(control(RELIC.role)).toHaveAccessibleDescription(`${RELIC.look} ${CUSTOM_ICON_NOTICES.setOnly}`);
-    expect(control(`Save ${RELIC.role} to library`)).toBeInTheDocument();
+    expect(control(RELIC.role, 'checkbox')).toHaveAccessibleDescription(
+      `${RELIC.look} ${CUSTOM_ICON_NOTICES.setOnly}`,
+    );
+    expect(control(`Save ${RELIC.role} to library`, 'button')).toBeInTheDocument();
   });
 });

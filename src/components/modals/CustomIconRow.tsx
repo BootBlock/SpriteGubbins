@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useRef } from 'react';
 import { CUSTOM_ICON_NOTICES } from '../../constants/iconCatalogue/customIconNotices.ts';
 import { ICON_CATALOGUE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
@@ -34,7 +34,8 @@ interface CustomIconRowProps {
  *
  * **Delete confirms in place**, as a saved preset's row does: the library entry is stored data with no
  * undo, and the confirmation keeps the role on screen beside the question. A ticked copy stays on the
- * set, so the row remains, now offering Save to library.
+ * set, so the row remains, now offering Save to library, and the keyboard lands on that button. The
+ * question is about one library row, so it drops when the row shows another project's.
  */
 export const CustomIconRow = memo(function CustomIconRow({
   row,
@@ -45,8 +46,11 @@ export const CustomIconRow = memo(function CustomIconRow({
   onKeep,
 }: CustomIconRowProps) {
   const deleteCustomIcon = useCustomIconLibraryStore((state) => state.deleteCustomIcon);
-  const { isConfirming, attachAsk, attachCancel, ask, cancel, confirm } = useConfirmInPlace();
   const { entry, saved } = row;
+  // Keyed to the library row, so a question asked of one project's icon drops when the dialog shows
+  // another project's under the same slot, rather than deleting that one.
+  const { isConfirming, attachAsk, attachCancel, ask, cancel, confirm } = useConfirmInPlace(saved?.id);
+  const keepButton = useRef<HTMLButtonElement>(null);
   const note = row.differs
     ? CUSTOM_ICON_NOTICES.differs
     : row.ticked && saved === undefined
@@ -57,7 +61,7 @@ export const CustomIconRow = memo(function CustomIconRow({
     <li className="space-y-1.5">
       <CheckboxField
         label={entry.role}
-        tooltip={iconEntryGuidance(entry, world)}
+        tooltip={iconEntryGuidance(entry, world, saved !== undefined)}
         checked={row.ticked}
         description={iconLookText(entry, world)}
         note={note}
@@ -76,7 +80,11 @@ export const CustomIconRow = memo(function CustomIconRow({
               variant="destructive"
               size="sm"
               onClick={() => {
-                void confirm(() => deleteCustomIcon(saved.id));
+                // A ticked row stays, now offering Save to library, which is where the keyboard goes.
+                void confirm(
+                  () => deleteCustomIcon(saved.id),
+                  () => keepButton.current,
+                );
               }}
             >
               Delete “{entry.role}”
@@ -115,6 +123,7 @@ export const CustomIconRow = memo(function CustomIconRow({
               text={ICON_CATALOGUE_ACTION_TOOLTIPS.keepOwn}
             >
               <Button
+                ref={keepButton}
                 variant="view"
                 size="sm"
                 aria-label={`Save ${entry.role} to library`}

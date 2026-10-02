@@ -17,19 +17,21 @@ import { spokenIconState } from './spokenIconState.ts';
  * Era* as it stands, typed text included.
  *
  * **An entry of the reader's own gets a shorter card from the same parts**: the sprites it names, that
- * the look is theirs under every world and that the set and the library each hold a copy, its school
- * and its shape. Its look is not repeated, because the
+ * the look is theirs under every world, what an untick does — the library keeps its own copy where it
+ * holds one (`inLibrary`), and otherwise the untick takes the icon away — its school and its shape. Its look is not repeated, because the
  * row shows it under the label as the reader wrote it, and a look written to its limit would take the
  * card past the length a card is read at.
  */
-export function iconEntryGuidance(entry: IconEntry, world: string): string {
+export function iconEntryGuidance(entry: IconCatalogueEntry, world: string): string;
+export function iconEntryGuidance(entry: CustomIconEntry, world: string, inLibrary: boolean): string;
+export function iconEntryGuidance(entry: IconEntry, world: string, inLibrary = false): string {
   const field = fieldLabelFor('ICON', 'setting');
   const typed = world.trim();
   const where = typed === '' ? `With no ${field} set` : `Under your ${field}, “${typed}”`;
   if ('look' in entry) {
     return [
       ownSlotParagraph(entry),
-      `${where}, the sheet draws your own look as you wrote it, as it would under any other. Unticking takes it off your set, and your library keeps its own copy.`,
+      `${where}, the sheet draws your own look as you wrote it, as it would under any other. ${inLibrary ? 'Unticking takes it off your set, and your library keeps its own copy.' : 'Your library does not hold it, so unticking takes it away for good.'}`,
       ...ownSchoolParagraph(entry, world),
       shapeParagraph(entry),
     ].join('\n\n');

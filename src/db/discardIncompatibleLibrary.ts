@@ -1,10 +1,11 @@
 import { parseJson } from './readers.ts';
 import { parseProjectRow } from './rows.ts';
+import { FILED_UNDER_A_PROJECT } from './localStorageCollections.ts';
 import { STORAGE_KEYS } from './schema.ts';
 import type { WebStorageLike } from './webStorage.ts';
 
-/** The three saved collections, each filed under a project by id. */
-const FILED_KEYS = [STORAGE_KEYS.customPresets, STORAGE_KEYS.quantisePresets, STORAGE_KEYS.customIcons];
+/** The keys of the saved collections, each filed under a project by id. */
+const FILED_KEYS = FILED_UNDER_A_PROJECT.map((collection) => collection.key);
 
 /**
  * Whether the stored projects account for everything filed under them.

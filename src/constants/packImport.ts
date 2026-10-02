@@ -9,10 +9,10 @@ import type { PackItemNoun } from '../types/packImport.ts';
  *
  * **One noun, because there is now one pack.** The library used to travel as two files, the studio
  * archetypes and the quantiser's dial positions, with a noun each. It is one file now, holding the
- * projects and both collections, so a sentence counting it has to name what they have in common
- * rather than what either of them is: “12 saved items” covers three projects, seven archetypes and
- * two sets of dials, where any of the three specific words would be false of most of what was
- * counted.
+ * projects, both preset collections and each project's icon library, so a sentence counting it has to
+ * name what they have in common rather than what any of them is: “14 saved items” covers three
+ * projects, seven archetypes, two sets of dials and two icons, where any of the four specific words
+ * would be false of most of what was counted.
  */
 export const LIBRARY_PACK_ITEMS: PackItemNoun = {
   singular: 'saved item',
