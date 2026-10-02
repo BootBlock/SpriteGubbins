@@ -15,8 +15,13 @@
  * it (restoratives, the system panels, map pins) are what a reader actually ticks. Two kinds have
  * content so far; spells and abilities, social icons and companions join in phase 4 of
  * `docs/todo/icon-catalogue.md` with the groups that hold them.
+ *
+ * A list as well as a union, in the catalogue's shelving order, because the picker walks it: the kind
+ * filter offers each, and the roster summary counts each.
  */
-export type IconKind = 'ITEM' | 'SYSTEM';
+export const ICON_KINDS = ['ITEM', 'SYSTEM'] as const;
+
+export type IconKind = (typeof ICON_KINDS)[number];
 
 /**
  * The families of world an entry writes a look for.
@@ -75,6 +80,27 @@ export interface IconCatalogueEntry {
 export interface IconCatalogueGroup {
   /** Lower-case and hyphen-separated, unique across the catalogue. */
   readonly id: string;
+  /**
+   * The shelf's name as the catalogue dialog heads it — `Restoratives`, `Map pins` — in sentence case
+   * with no closing stop. It names the Tick all and Untick all buttons beside it as well, so two groups
+   * never share one.
+   */
+  readonly label: string;
   readonly kind: IconKind;
   readonly entries: readonly IconCatalogueEntry[];
+}
+
+/**
+ * What the catalogue dialog is narrowed to: the words searched for, the kind of shelf shown, and
+ * whether only the ticked icons are listed.
+ *
+ * View state rather than anything stored: the dialog holds it while it is open, and closing it shows
+ * the whole catalogue again next time.
+ */
+export interface IconCatalogueFilter {
+  /** Free text; every word must appear in the entry's role, its id, its look or its group's label. */
+  readonly query: string;
+  /** One kind of shelf, or `ALL`. */
+  readonly kind: IconKind | 'ALL';
+  readonly tickedOnly: boolean;
 }

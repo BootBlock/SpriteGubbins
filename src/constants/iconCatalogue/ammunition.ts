@@ -9,6 +9,7 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  */
 export const AMMUNITION: IconCatalogueGroup = {
   id: 'ammunition',
+  label: 'Ammunition',
   kind: 'ITEM',
   entries: [
     {

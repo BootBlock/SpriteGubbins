@@ -32,7 +32,7 @@ interface SelectFieldProps<T extends string | number> {
    * the sentence naming what withdrew it goes here — where a screen reader announces it with the
    * control, rather than in a paragraph beside it.
    *
-   * Optional because the other twenty-three have nothing of either kind to say, and twenty-three
+   * Optional because the other twenty-four have nothing of either kind to say, and twenty-four
    * call sites passing a permanently-empty string would bury the nine that do — while empty *is*
    * still accepted from those nine, as `CheckboxField`'s reason is, so a caller resolving the text
    * out of its table can hand over what it found rather than choosing between a prop and no prop.
@@ -48,8 +48,8 @@ interface SelectFieldProps<T extends string | number> {
    * `NumberField` and `CheckboxField` both show theirs.
    *
    * Optional here where those two require it, for the reason `description` is: two of the app's
-   * thirty-two selects — the rig mode and the resolution profile — have a setting that takes their
-   * value over, and the other thirty passing a permanently-empty string would bury the two that do.
+   * thirty-three selects — the rig mode and the resolution profile — have a setting that takes their
+   * value over, and the other thirty-one passing a permanently-empty string would bury the two that do.
    * The rig mode also carries its narrowing `description`, and the two say different things: this
    * one is the sheet taking the choice over, that one the sheet withdrawing an option from a choice
    * the reader still has.
@@ -73,7 +73,7 @@ interface SelectFieldProps<T extends string | number> {
    * Words that follow `label` in the control's accessible name, and appear nowhere on screen — for a
    * select rendered once for each item in a list, where `label` alone gives every copy one name.
    *
-   * One of the thirty-two passes it: `ProjectSelectField`, which `ProjectMoveField` renders on each
+   * One of the thirty-three passes it: `ProjectSelectField`, which `ProjectMoveField` renders on each
    * saved row to choose where its save moves. Those were a select called “Project” per saved item, beside an ⓘ called
    * “Guidance: Project”, so a reader moving control to control met a run of identical names with
    * nothing saying which save each would move — while the buttons in the same rows already named
@@ -95,9 +95,10 @@ interface SelectFieldProps<T extends string | number> {
 /**
  * A labelled dropdown over a closed set of choices.
  *
- * Thirty-two controls in this app are exactly this — the studio's output settings, the category, the
- * target model, the quantiser's dials, the atlas calculator's two and the settings dialog's one — so
- * it is one component rather than thirty-two copies of the same label, tooltip and `<select>` markup.
+ * Thirty-three controls in this app are exactly this — the studio's output settings, the category, the
+ * target model, the quantiser's dials, the atlas calculator's two, the settings dialog's one and the
+ * icon catalogue's kind filter — so it is one component rather than thirty-three copies of the same
+ * label, tooltip and `<select>` markup.
  *
  * A native `<select>` on purpose. It is keyboard-operable, type-to-select, and renders as the
  * platform's own picker on touch devices; `ComboBox` exists for the fields where free text is
@@ -145,7 +146,7 @@ export function SelectField<T extends string | number>({
       {/*
         The row the control and its action share. Always rendered, rather than only where an action
         was passed: a single-child flex row lays a `w-full` select out exactly as a bare one, so one
-        path serves all thirty-two call sites and there is no second arrangement to keep in step.
+        path serves all thirty-three call sites and there is no second arrangement to keep in step.
       */}
       <div className="flex items-center gap-2">
         <select

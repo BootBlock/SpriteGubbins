@@ -23,13 +23,14 @@ export const STUDIO_ACTION_TOOLTIPS = {
     'Puts the whole studio, Output Configuration included, back the way it stood before your last:\n\n' +
     '- category switch, Randomise or Reset\n' +
     '- preset load, or restore from the prompt history\n' +
-    '- assembly base that moved your sheet\n\n' +
+    '- assembly base that moved your sheet\n' +
+    '- tick or untick in the icon catalogue\n\n' +
     'Only those acts are recorded; editing a field records nothing. An edit you made after one of them is not lost, because Redo brings the studio back exactly as you left it. Nothing outside the Studio tab moves.\n\n' +
     'Ctrl+Z does the same, except while you are typing in a box, where it undoes your typing, or while a dialog is open.',
 
   redoSubject:
     'Steps forward again into a subject you have just stepped back from, which is the way out of an undo pressed once too often.\n\n' +
-    'Switching category, randomising, resetting, loading a subject or choosing an assembly base that moves your sheet replaces what was ahead of you, so this is offered only until you do one of those.\n\n' +
+    'Switching category, randomising, resetting, loading a subject, ticking icons or choosing an assembly base that moves your sheet replaces what was ahead of you, so this is offered only until you do one of those.\n\n' +
     REDO_KEYBOARD_SHORTCUTS,
 
   expandAll:

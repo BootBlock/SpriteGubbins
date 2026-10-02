@@ -50,6 +50,31 @@ const ENTRIES_BY_ID: ReadonlyMap<string, IconCatalogueEntry> = new Map(
 );
 
 /**
+ * Every entry's place in the catalogue's shelving order, counted across all the groups.
+ *
+ * A roster is kept in this order (`sortIconPicks`), so the sheets of a series draw a shelf's icons side
+ * by side — the restoratives on one sheet, the map pins on another — however the reader ticked them.
+ */
+const CATALOGUE_ORDER: ReadonlyMap<string, number> = new Map(
+  ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries).map((entry, at) => [entry.id, at] as const),
+);
+
+/** Every entry's group by the entry's id — how a pick is counted towards its kind. */
+const GROUPS_BY_ENTRY: ReadonlyMap<string, IconCatalogueGroup> = new Map(
+  ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries.map((entry) => [entry.id, group] as const)),
+);
+
+/** Where an entry sits in the catalogue's shelving order, or `undefined` for an id it does not hold. */
+export function iconCatalogueOrder(id: string): number | undefined {
+  return CATALOGUE_ORDER.get(id);
+}
+
+/** The group an entry is shelved in, or `undefined` for an id the catalogue does not hold. */
+export function iconCatalogueGroupOf(id: string): IconCatalogueGroup | undefined {
+  return GROUPS_BY_ENTRY.get(id);
+}
+
+/**
  * The catalogue entry a pick names, or `undefined` for an id the catalogue no longer holds — which a
  * roster parsed from storage drops rather than keeps, so a renamed entry costs a stored set that one
  * icon and nothing else.

@@ -10,6 +10,7 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  */
 export const CRAFTING_MATERIALS: IconCatalogueGroup = {
   id: 'crafting-materials',
+  label: 'Crafting materials',
   kind: 'ITEM',
   entries: [
     {

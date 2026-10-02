@@ -33,6 +33,14 @@ describe('the icon catalogue', () => {
     for (const id of groups) expect(id).toMatch(SLUG);
   });
 
+  it('heads every group with a label of its own, in sentence case', () => {
+    // A label names the group's Tick all and Untick all buttons as well as its heading, so two groups
+    // sharing one would give two pairs of buttons one accessible name.
+    const labels = ICON_CATALOGUE_GROUPS.map((group) => group.label);
+    expect(new Set(labels).size).toBe(labels.length);
+    for (const label of labels) expect(label).toMatch(/^[A-Z][a-z ]*[a-z]$/);
+  });
+
   it('gives no two-state drawing a slot name another entry already answers to', () => {
     // A pair's drawings are named `<id>-<state>`, so `sound-muted` beside an entry called that would
     // cut two sprites to one file.

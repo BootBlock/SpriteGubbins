@@ -10,6 +10,7 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  */
 export const MAP_PINS: IconCatalogueGroup = {
   id: 'map-pins',
+  label: 'Map pins',
   kind: 'SYSTEM',
   entries: [
     {

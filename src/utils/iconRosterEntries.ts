@@ -3,6 +3,7 @@ import type { ComponentEntry } from '../types/components.ts';
 import type { IconCatalogueEntry } from '../types/iconCatalogue.ts';
 import type { SheetSubject } from '../types/subject.ts';
 import { iconLookText } from './iconLookText.ts';
+import { spokenIconState } from './spokenIconState.ts';
 
 /**
  * The inventory lines a subject's icon roster asks for, one per pick, in the roster's order.
@@ -38,13 +39,8 @@ function rosterLine(entry: IconCatalogueEntry, world: string): ComponentEntry {
   return {
     label: entry.id,
     parts: entry.states.map((state) => `${entry.id}-${state}`),
-    text: `${entry.role} ×${String(count)}, one icon drawn ${spoken(first)} and then ${spoken(second)} — ${look}`,
+    text: `${entry.role} ×${String(count)}, one icon drawn ${spokenIconState(first)} and then ${spokenIconState(second)} — ${look}`,
     count,
     kind: 'structure',
   };
-}
-
-/** A state's slug as the prose says it — `not-ready` is “not ready”. */
-function spoken(state: string): string {
-  return state.replaceAll('-', ' ');
 }

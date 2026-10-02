@@ -47,11 +47,6 @@ import { appMarkup, sourceText, tailwindScanned } from './sourceFiles.ts';
  * creates. Rewriting those sentences to dodge the scanner would make them worse English in exchange
  * for a few hundred bytes.
  *
- * `filter` is the sixth and is not prose at all: it is a local variable and a parameter in
- * `src/test/pngScanlines.ts`, where a PNG scanline's filter byte has no other name. An identifier
- * is a candidate to the scanner exactly as a sentence is, and there is no more reason to rename one
- * than to reword the other.
- *
  * `transform` is the quantiser’s own word: the work that turns a sheet into its
  * quantised result is *the transform* across its hooks, stores, worker and comments. Until issue
  * #306 cut it, a sentence in one tooltip was the only place outside a comment that spelled it, which
@@ -70,7 +65,6 @@ import { appMarkup, sourceText, tailwindScanned } from './sourceFiles.ts';
  */
 export const PROSE_COLLISIONS: readonly string[] = [
   'backdrop-filter',
-  'filter',
   'invert',
   'isolate',
   'lowercase',

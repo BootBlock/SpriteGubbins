@@ -83,6 +83,7 @@ export interface UIState {
   readonly isHistoryModalOpen: boolean;
   readonly isSplitModalOpen: boolean;
   readonly isSettingsModalOpen: boolean;
+  readonly isIconCatalogueModalOpen: boolean;
   /** The deferred `beforeinstallprompt` event, or `null` when the app can't offer an install. */
   readonly deferredPWAInstallPrompt: BeforeInstallPromptEvent | null;
   /** Where this tab stands against the newest build, written by `src/workers/registerAppUpdates.ts`. */
@@ -163,6 +164,8 @@ export interface UIState {
   toggleSplitModal(): void;
   /** Open or close the settings dialog. Closes whichever other overlay was open. */
   toggleSettingsModal(): void;
+  /** Open or close the icon catalogue. Closes whichever other overlay was open. */
+  toggleIconCatalogueModal(): void;
   setInstallPrompt(prompt: BeforeInstallPromptEvent | null): void;
   setAppUpdate(update: AppUpdate): void;
 }
@@ -171,7 +174,7 @@ export interface UIState {
  * Every overlay shut.
  *
  * Spread ahead of the one being toggled, so opening any of them closes the rest by construction —
- * adding a fourth overlay needs this object updated once rather than a line added to three toggles,
+ * adding another overlay needs this object updated once rather than a line added to every toggle,
  * and the invariant below cannot be half-applied.
  */
 const ALL_OVERLAYS_CLOSED = {
@@ -179,6 +182,7 @@ const ALL_OVERLAYS_CLOSED = {
   isHistoryModalOpen: false,
   isSplitModalOpen: false,
   isSettingsModalOpen: false,
+  isIconCatalogueModalOpen: false,
 } as const;
 
 /**
@@ -290,6 +294,10 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   toggleSettingsModal: () => {
     set((state) => ({ ...ALL_OVERLAYS_CLOSED, isSettingsModalOpen: !state.isSettingsModalOpen }));
+  },
+
+  toggleIconCatalogueModal: () => {
+    set((state) => ({ ...ALL_OVERLAYS_CLOSED, isIconCatalogueModalOpen: !state.isIconCatalogueModalOpen }));
   },
 
   setInstallPrompt: (deferredPWAInstallPrompt) => {

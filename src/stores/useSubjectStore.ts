@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
+import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { plansFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { StudioHistory, StudioPosition } from '../types/studioHistory.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { resolveOutputForSubject } from '../utils/resolveOutputForSubject.ts';
+import { sheetIndexWithinSeries } from '../utils/sheetIndexWithinSeries.ts';
+import { toggleIconPicks } from '../utils/toggleIconPicks.ts';
 import {
   currentStudioPosition,
   openStudioHistory,
@@ -16,7 +19,8 @@ import {
 import { useOutputStore } from './useOutputStore.ts';
 
 /**
- * What is being drawn: the category and the sixteen answers that describe the subject.
+ * What is being drawn: the category, the sixteen answers that describe the subject, and — for an icon
+ * set — the roster of catalogue icons it asks for.
  *
  * Deliberately holds no compiled prompt, word count or token estimate. All three are functions of
  * this state and the output configuration, so they are derived where they are displayed — mirroring
@@ -49,6 +53,18 @@ export interface SubjectState {
    * where a history entry is the configuration that produced its prompt and takes the lot.
    */
   setStudio(category: SubjectCategory, subject: SubjectDefinition, writeOutput: () => void): void;
+  /**
+   * Tick or untick catalogue entries on the subject's icon roster, as one act an undo steps back over.
+   *
+   * The roster stays in catalogue order (`sortIconPicks`), and a tick that would take it past
+   * `ICON_ROSTER_CAPACITY` components is refused entry by entry: the ids that did not fit are returned
+   * so the caller can say so, and an empty list means every one was honoured. The sheet index is pulled
+   * back inside the series the new roster draws in the same act. Does nothing on a subject with no
+   * roster.
+   */
+  toggleIcons(ids: readonly string[], on: boolean): readonly string[];
+  /** Untick every icon on the roster, as one act, leaving the overlay sheet alone in the series. */
+  clearIcons(): void;
   /** Reroll every field from the current category's option pool. */
   randomizeSubject(): void;
   /** Back to the current category's defaults, without changing category. */
@@ -119,6 +135,16 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     });
   },
 
+  toggleIcons: (ids, on) => {
+    const toggled = toggleIconPicks(get().subject.icons?.picks ?? [], ids, on, ICON_ROSTER_CAPACITY);
+    writePicks(toggled.picks);
+    return get().subject.icons === undefined ? [] : toggled.refused;
+  },
+
+  clearIcons: () => {
+    writePicks([]);
+  },
+
   randomizeSubject: () => {
     act(() => {
       const { category, subject: before } = get();
@@ -183,6 +209,25 @@ function outputFollowing(
 function followBase(category: SubjectCategory, before: SubjectDefinition, after: SubjectDefinition): void {
   const output = outputFollowing(category, before, after);
   if (output !== null) useOutputStore.getState().setOutputConfig(output);
+}
+
+/**
+ * Put a new list of picks on the subject's roster as one act, with the sheet index pulled back inside
+ * the series it now draws.
+ *
+ * Both stores move in the one act, so an undo restores the tick and the sheet the reader was on
+ * together.
+ */
+function writePicks(picks: readonly string[]): void {
+  const { category, subject } = useSubjectStore.getState();
+  if (subject.icons === undefined) return;
+  const next = { ...subject, icons: { ...subject.icons, picks } };
+  act(() => {
+    useSubjectStore.setState({ subject: next });
+    const { output, setOutputConfig } = useOutputStore.getState();
+    const settled = sheetIndexWithinSeries(category, next, output);
+    if (settled !== output) setOutputConfig(settled);
+  });
 }
 
 /** The studio as it stands, across both stores — one entry's worth of state. */

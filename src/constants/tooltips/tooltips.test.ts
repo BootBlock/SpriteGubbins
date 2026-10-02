@@ -18,6 +18,10 @@ import { APP_TAB_CHOICES } from '../ui.ts';
 import { RESULT_PREVIEW_MODES_UNAVAILABLE } from '../previewModes.ts';
 import { presetCollectionGuidance } from './presets.ts';
 import { movePresetRefusal, moveQuantiseRefusal } from './projects.ts';
+import { ICON_CAPACITY_NOTICES } from '../iconCatalogue/iconCapacityNotices.ts';
+import { ICON_CATALOGUE_GROUPS } from '../iconCatalogue/index.ts';
+import { everyLookWorld } from '../../test/iconCatalogueSubjects.ts';
+import { iconEntryGuidance } from '../../utils/iconEntryGuidance.ts';
 
 /**
  * Every module under `src/constants/`, so the guidance sets can be *found* rather than listed.
@@ -170,6 +174,17 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ...Object.entries(IDENTITY_CAPTURE_UNAVAILABLE).map(
     ([key, text]) => [`IDENTITY_CAPTURE_UNAVAILABLE.${key}`, text] as const,
   ),
+  // The card behind every icon catalogue row, for every entry under every look a world can send and
+  // the hand-typed fallback — written by one function, so it is a templated origin below.
+  ...ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries).flatMap((entry) =>
+    everyLookWorld().map(
+      (world) => [`iconEntryGuidance(${entry.id}, ${world})`, iconEntryGuidance(entry, world)] as const,
+    ),
+  ),
+  // Why a catalogue row cannot be ticked, rendered under it as `CheckboxField`'s reason — the
+  // `TARGET_MODELS[].generatorSite.note` footing — in both of its wordings.
+  ['ICON_CAPACITY_NOTICES.row(full)', ICON_CAPACITY_NOTICES.row(1, 0)],
+  ['ICON_CAPACITY_NOTICES.row(short)', ICON_CAPACITY_NOTICES.row(2, 1)],
 ];
 
 /** Flattens the records into `NAME.key` pairs, so a failure names the entry rather than a position. */
@@ -233,6 +248,7 @@ const PLAIN_SURFACES = [
   'RESULT_PREVIEW_MODES_UNAVAILABLE',
   'movePresetRefusal',
   'moveQuantiseRefusal',
+  'ICON_CAPACITY_NOTICES.',
 ] as const;
 
 /** Whether an entry is rendered as plain text rather than as a card. */
@@ -287,7 +303,7 @@ function blockLengths(text: string): number[] {
  * appearing in both of them is a copy-paste inside one file and is meant to fail — which is how the
  * sentence about the search count came to be in `constants/guidanceSentences.ts`.
  */
-const TEMPLATED_ORIGINS = ['accentSwatchGuidance'] as const;
+const TEMPLATED_ORIGINS = ['accentSwatchGuidance', 'iconEntryGuidance'] as const;
 
 /** Where an entry's words are written: the entry itself, unless a template above wrote them. */
 function originOf(name: string): string {

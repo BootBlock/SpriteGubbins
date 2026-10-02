@@ -248,6 +248,19 @@ describe('useUIStore', () => {
     expect(useUIStore.getState().isSettingsModalOpen).toBe(false);
     expect(useUIStore.getState().isHistoryModalOpen).toBe(true);
   });
+
+  it('shuts every other overlay when the icon catalogue opens, and is shut by them', () => {
+    // The fifth overlay, checked in both directions for the reason the case above gives.
+    useUIStore.getState().toggleSplitModal();
+    useUIStore.getState().toggleIconCatalogueModal();
+
+    expect(useUIStore.getState().isIconCatalogueModalOpen).toBe(true);
+    expect(useUIStore.getState().isSplitModalOpen).toBe(false);
+
+    useUIStore.getState().toggleSettingsModal();
+    expect(useUIStore.getState().isIconCatalogueModalOpen).toBe(false);
+    expect(useUIStore.getState().isSettingsModalOpen).toBe(true);
+  });
 });
 
 describe('the view the app opens on', () => {

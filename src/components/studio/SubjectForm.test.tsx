@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../../constants/categories/index.ts';
+import { ICON_ROSTER_SECTION } from '../../constants/iconRosterSection.ts';
 import { SUBJECT_FIELD_GROUPS } from '../../constants/subjectGroups.ts';
 import { useSectionStore } from '../../stores/useSectionStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
@@ -95,5 +96,24 @@ describe('SubjectForm', () => {
 
     await user.click(screen.getByRole('button', { name: /expand all/i }));
     expect(openGroupCount()).toBe(SUBJECT_FIELD_GROUPS.length);
+  });
+
+  it('adds the icon roster’s group for a category that draws one, and folds it with the rest', async () => {
+    const user = userEvent.setup({ delay: null });
+    useSubjectStore.setState({ category: 'ICON', subject: defaultSubjectFor('ICON') });
+    render(<SubjectForm />);
+
+    expect(screen.getByRole('heading', { name: ICON_ROSTER_SECTION.heading, level: 3 })).toBeInTheDocument();
+    expect(openGroupCount()).toBe(SUBJECT_FIELD_GROUPS.length + 1);
+
+    await user.click(screen.getByRole('button', { name: /collapse all/i }));
+    expect(openGroupCount()).toBe(0);
+  });
+
+  it('shows no icon roster group for a category that draws none', () => {
+    useSubjectStore.setState({ category: 'CHARACTER', subject: defaultSubjectFor('CHARACTER') });
+    render(<SubjectForm />);
+
+    expect(screen.queryByRole('heading', { name: ICON_ROSTER_SECTION.heading })).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../constants/promptText/index.ts';
 import { DEFAULT_MODE_FOR } from '../constants/sheetPlans/index.ts';
+import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { canRedoStudio, canUndoStudio, studioUndoDepth } from '../utils/studioHistory.ts';
@@ -630,6 +631,116 @@ describe('useSubjectStore', () => {
 
       expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
       expect(useSubjectStore.getState().category).toBe('BUILDING');
+    });
+  });
+
+  describe('the icon roster', () => {
+    /** A fresh ICON studio holding `picks` in place of its starter set. */
+    function iconStudio(picks: readonly string[]): void {
+      useSubjectStore.setState({
+        category: 'ICON',
+        subject: { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks } },
+      });
+      useSubjectStore.getState().openStudio();
+    }
+
+    function picks(): readonly string[] {
+      return useSubjectStore.getState().subject.icons?.picks ?? [];
+    }
+
+    it('ticks an icon into its catalogue place rather than onto the end', () => {
+      iconStudio(['heal-minor', 'system-bags']);
+
+      const refused = useSubjectStore.getState().toggleIcons(['heal-major'], true);
+
+      expect(refused).toEqual([]);
+      expect(picks()).toEqual(['heal-minor', 'heal-major', 'system-bags']);
+    });
+
+    it('unticks an icon and leaves the rest in order', () => {
+      iconStudio(['heal-minor', 'heal-major', 'system-bags']);
+
+      useSubjectStore.getState().toggleIcons(['heal-major'], false);
+
+      expect(picks()).toEqual(['heal-minor', 'system-bags']);
+    });
+
+    it('ticks a whole group as one step, in its own order and without repeating what was ticked', () => {
+      iconStudio(['mana-minor']);
+      const restoratives = ICON_CATALOGUE_GROUPS[0]?.entries.map((entry) => entry.id) ?? [];
+
+      useSubjectStore.getState().toggleIcons([...restoratives].reverse(), true);
+
+      expect(picks()).toEqual(restoratives);
+      expect(studioUndoDepth(useSubjectStore.getState().history)).toBe(1);
+    });
+
+    it('clears the roster to the overlay sheet alone', () => {
+      iconStudio(['heal-minor', 'system-bags']);
+
+      useSubjectStore.getState().clearIcons();
+
+      expect(picks()).toEqual([]);
+    });
+
+    it('pulls the sheet index back inside a series the untick shortens, in the same act', () => {
+      // Twenty one-component icons are the overlay sheet and two icon sheets, and the reader is on the
+      // last of them when they untick the four icons it holds.
+      const twenty = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
+        .filter((entry) => entry.states === undefined)
+        .slice(0, 20)
+        .map((entry) => entry.id);
+      iconStudio(twenty);
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 2 } });
+      useSubjectStore.getState().openStudio();
+
+      useSubjectStore.getState().toggleIcons(twenty.slice(16), false);
+
+      expect(useOutputStore.getState().output.sheetIndex).toBe(1);
+
+      useSubjectStore.getState().undoStudio();
+      expect(picks()).toEqual(twenty);
+      expect(useOutputStore.getState().output.sheetIndex).toBe(2);
+    });
+
+    it('leaves the sheet index alone where the series still holds it', () => {
+      iconStudio(['heal-minor']);
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 } });
+      const before = useOutputStore.getState().output;
+
+      useSubjectStore.getState().toggleIcons(['heal-major'], true);
+
+      expect(useOutputStore.getState().output).toBe(before);
+    });
+
+    it('steps a tick back with Undo and forward again with Redo', () => {
+      iconStudio(['heal-minor']);
+
+      useSubjectStore.getState().toggleIcons(['system-bags'], true);
+      useSubjectStore.getState().undoStudio();
+      expect(picks()).toEqual(['heal-minor']);
+
+      useSubjectStore.getState().redoStudio();
+      expect(picks()).toEqual(['heal-minor', 'system-bags']);
+    });
+
+    it('records nothing for a tick or an untick that changes nothing', () => {
+      iconStudio(['heal-minor']);
+
+      useSubjectStore.getState().toggleIcons(['heal-minor'], true);
+      useSubjectStore.getState().toggleIcons(['system-bags'], false);
+
+      expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
+    });
+
+    it('does nothing to a subject with no roster', () => {
+      const before = useSubjectStore.getState().subject;
+
+      expect(useSubjectStore.getState().toggleIcons(['heal-minor'], true)).toEqual([]);
+      useSubjectStore.getState().clearIcons();
+
+      expect(useSubjectStore.getState().subject).toBe(before);
+      expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
     });
   });
 });

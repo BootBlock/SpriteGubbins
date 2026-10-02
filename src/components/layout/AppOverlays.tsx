@@ -7,7 +7,7 @@ import { Toast } from '../common/Toast.tsx';
 import { useUIStore } from '../../stores/useUIStore.ts';
 
 /*
-  The four overlays, each in a chunk of its own.
+  The five overlays, each in a chunk of its own.
 
   `lazy` wants a module whose default export is the component and every module here exports a named
   one, so each import is mapped rather than re-exported: a default added to the content file for the
@@ -30,6 +30,11 @@ const SheetSplitContents = lazy(() =>
 );
 const SettingsContents = lazy(() =>
   import('../modals/SettingsContents.tsx').then((module) => ({ default: module.SettingsContents })),
+);
+const IconCatalogueContents = lazy(() =>
+  import('../modals/IconCatalogueContents.tsx').then((module) => ({
+    default: module.IconCatalogueContents,
+  })),
 );
 
 /**
@@ -81,17 +86,19 @@ function LazyOverlay({
  * while an overlay is open it belongs *inside* the dialog — see `Modal` — because a modal dialog
  * paints above the whole document and makes the rest of it inert, so a toast out here would be
  * neither visible nor announced. `useUIStore` opens one overlay at a time, which is what lets this
- * read as a chain rather than four independent conditions.
+ * read as a chain rather than five independent conditions.
  */
 export function AppOverlays() {
   const isAtlasModalOpen = useUIStore((state) => state.isAtlasModalOpen);
   const isHistoryModalOpen = useUIStore((state) => state.isHistoryModalOpen);
   const isSplitModalOpen = useUIStore((state) => state.isSplitModalOpen);
   const isSettingsModalOpen = useUIStore((state) => state.isSettingsModalOpen);
+  const isIconCatalogueModalOpen = useUIStore((state) => state.isIconCatalogueModalOpen);
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
   const toggleHistoryModal = useUIStore((state) => state.toggleHistoryModal);
   const toggleSplitModal = useUIStore((state) => state.toggleSplitModal);
   const toggleSettingsModal = useUIStore((state) => state.toggleSettingsModal);
+  const toggleIconCatalogueModal = useUIStore((state) => state.toggleIconCatalogueModal);
 
   if (isAtlasModalOpen) {
     return (
@@ -141,6 +148,19 @@ export function AppOverlays() {
         panelClassName="glass-panel max-h-full w-full max-w-lg overflow-y-auto rounded-2xl border border-foundry-700 shadow-2xl"
       >
         <SettingsContents />
+      </LazyOverlay>
+    );
+  }
+
+  if (isIconCatalogueModalOpen) {
+    return (
+      <LazyOverlay
+        title="Icon catalogue"
+        icon="🗂️"
+        onClose={toggleIconCatalogueModal}
+        panelClassName="glass-panel flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foundry-700 shadow-2xl"
+      >
+        <IconCatalogueContents />
       </LazyOverlay>
     );
   }

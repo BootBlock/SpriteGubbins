@@ -33,7 +33,7 @@ import { callSitesPassing, callSitesWrappingAttribute } from './jsxCallSites.ts'
  */
 
 /** Every `<ControlTooltip>` the app renders, counted through the `text` its props type requires. */
-const CALL_SITE_COUNT = 88;
+const CALL_SITE_COUNT = 93;
 
 /**
  * Where the wrapped control is written with `disabled`, by the file that renders each.
@@ -52,6 +52,9 @@ const DISABLED_CAPABLE = [
   'src/components/common/SheetStepButtons.tsx',
   'src/components/modals/HistoryFooter.tsx',
   'src/components/modals/HistoryFooter.tsx',
+  'src/components/modals/IconCatalogueFooter.tsx',
+  'src/components/modals/IconCatalogueGroupSection.tsx',
+  'src/components/modals/IconCatalogueGroupSection.tsx',
   'src/components/projects/PresetDetailsForm.tsx',
   'src/components/projects/ProjectCreateForm.tsx',
   'src/components/projects/ProjectDetailsForm.tsx',

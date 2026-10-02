@@ -4,7 +4,7 @@ import { AppOverlays } from './AppOverlays.tsx';
 import { useUIStore } from '../../stores/useUIStore.ts';
 
 /**
- * The four overlays are each in a chunk of their own, and the frame they open in is deliberately
+ * The five overlays are each in a chunk of their own, and the frame they open in is deliberately
  * not: `Modal` opens a `<dialog showModal()>` on mount and closes it on unmount, so a frame inside
  * the lazy half would open one dialog for the wait and a second for the contents — the backdrop and
  * the panel's entrance played twice, and focus moved twice, every time a reader pressed the control.
@@ -20,6 +20,7 @@ describe('AppOverlays', () => {
     { open: 'isHistoryModalOpen', title: 'Prompt History' },
     { open: 'isSplitModalOpen', title: 'Split into separate sheets' },
     { open: 'isSettingsModalOpen', title: 'Settings' },
+    { open: 'isIconCatalogueModalOpen', title: 'Icon catalogue' },
   ] as const;
 
   for (const { open, title } of overlays) {
@@ -29,6 +30,7 @@ describe('AppOverlays', () => {
         isHistoryModalOpen: false,
         isSplitModalOpen: false,
         isSettingsModalOpen: false,
+        isIconCatalogueModalOpen: false,
         [open]: true,
       });
       render(<AppOverlays />);
@@ -60,6 +62,7 @@ describe('AppOverlays', () => {
       isHistoryModalOpen: false,
       isSplitModalOpen: false,
       isSettingsModalOpen: false,
+      isIconCatalogueModalOpen: false,
     });
     const { container } = render(<AppOverlays />);
 

@@ -19,6 +19,7 @@
 export { CHROME_TOOLTIPS } from './chrome.ts';
 export { DIALOG_TOOLTIPS } from './dialogs.ts';
 export { HISTORY_ACTION_TOOLTIPS } from './history.ts';
+export { ICON_CATALOGUE_ACTION_TOOLTIPS } from './iconCatalogue.ts';
 export { PALETTE_EXPORT_TOOLTIPS } from './paletteExport.ts';
 export { PRESET_ACTION_TOOLTIPS, presetCollectionGuidance } from './presets.ts';
 export { PROJECT_ACTION_TOOLTIPS, movePresetRefusal, moveQuantiseRefusal } from './projects.ts';

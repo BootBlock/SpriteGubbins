@@ -1,6 +1,6 @@
 # Icon catalogue — named icon sets drawn sixteen to a sheet
 
-> **Status:** 🟢 ACTIVE — phase 1 shipped; phase 2 next.
+> **Status:** 🟢 ACTIVE — phases 1–2 shipped; phase 3 next.
 
 ## 1. What is wrong
 
@@ -209,3 +209,68 @@ fixed in a follow-up commit:
 - The architecture copy names the icon roster, the canvas card says why an icon set is square, the
   exclusions card cites the character panel's bust, and `iconSheet.ts` names `capabilityRuns` as the
   reader of its shared assembly sentence.
+
+### Phase 2 — catalogue picker (2026-10-02)
+
+**What shipped.**
+
+- **Store actions.** `useSubjectStore.toggleIcons(ids, on)` and `clearIcons()`, each one act on the
+  studio's undo stack, so Undo and Redo restore a tick, a group tick or a clear. The roster is kept in
+  catalogue order (`sortIconPicks`, over `iconCatalogueOrder`), so a shelf's icons share a sheet
+  however they were ticked. `toggleIconPicks` measures each tick against `ICON_ROSTER_CAPACITY`,
+  refusing an entry that does not fit and still ticking a smaller one after it, and the action
+  returns the refused ids. `sheetIndexWithinSeries` pulls the sheet index back inside the new series
+  in the same act. A tick that changes nothing records nothing.
+- **Group labels and kinds.** `IconCatalogueGroup.label` on all 17 groups, now read by the dialog's
+  headings and its Tick all and Untick all buttons. `ICON_KINDS` returns as a list with readers:
+  `ICON_KIND_LABELS`, the dialog's `ICON_KIND_FILTER_CHOICES`, and the roster tally.
+  `iconCatalogueGroupOf` files a pick under its kind.
+- **Studio section.** *Icons on this set* (`ICON_ROSTER_SECTION`, `subject:icons`) folds with the
+  Subject Definition groups and joins their expand-all control, rendered only where the subject
+  carries a roster. It states the roster in plain text through `useIconRosterSummary`: icons,
+  components against the capacity, sheets counted from `sheetSeriesFor` with the overlay sheet named,
+  and icons per kind (`iconRosterTally`, `iconRosterSummary`). A view-tinted button opens the
+  catalogue.
+- **Catalogue dialog.** The fifth overlay (`useUIStore.isIconCatalogueModalOpen`), lazy-loaded
+  through `LazyOverlay`. It has a search box, a kind filter and a *Ticked only* filter
+  (`iconCatalogueSearch`, which matches every typed word against the role, the id, the group label
+  and the look the subject's world draws). Each shelf has a heading with its ticked count and Tick
+  all and Untick all for the rows shown. There is one memoised checkbox row per entry, labelled by
+  its role and described by its look under the current *World & Era*. The look comes through
+  `iconLookText`, the resolver the inventory line uses. The footer holds the summary as a polite
+  live region, *Clear all* and *Done*.
+- **Guidance.** Every row's card is written by `iconEntryGuidance`: the slot or slots it adds, the
+  look the sheet draws under the current world, and whether it is one drawing or a two-state pair
+  and whether it may show a figure. The filters carry `ICON_PICKER_TOOLTIPS` and the buttons carry
+  `ICON_CATALOGUE_ACTION_TOOLTIPS`. A row that cannot fit says why under its label, and a group tick
+  left short raises a notice (`ICON_CAPACITY_NOTICES`). `CheckboxField` gained an optional
+  `description`, wired as the control's accessible description. The undo and redo cards and the
+  studio history panel now name the catalogue's ticks among the acts they step over.
+- **Guards.** The guidance suite walks every row's card under one world per look family and the
+  typed fallback, as a templated origin. The figures suite holds the capacity and the sheet size to
+  their constants. The call-site counts, option-label budget, scrollable-region list and precache
+  shapes were brought up to date.
+
+**Where it departs from the plan, and why.**
+
+- **No look control.** One look exists, and a choice of one is not a choice; phase 3 adds the
+  control with `FULL_BLEED_TILE`.
+- **No school filter.** No spell is in the catalogue yet, so there is nothing to filter by school;
+  it arrives with the spell content in phase 4.
+- **No group `description`.** The label alone heads a shelf, and the rows' roles already say what it
+  holds, so a description would have had no reader that does not repeat them.
+- **The group buttons act on the rows the filters show**, not the whole shelf, so a search narrows
+  what Tick all ticks. The cards say so.
+- **The sheet index is clamped to the last sheet rather than reset to the first.** A roster
+  shrinking under a reader part-way through it leaves them nearest the sheet they were on.
+- **The capacity cannot be reached by the shipped catalogue.** The catalogue is 182 components
+  against 320, so the store's refusal is tested with the capacity moved to five, and the dialog's
+  per-row refusal shows only once the spells arrive.
+- **`STUDIO_HISTORY_LIMIT` rose from 20 to 50.** Ticks are frequent acts, and at twenty a reader
+  building an action bar pushed the category switch before it off the stack within one sitting.
+- **`filter` left `PROSE_COLLISIONS`.** The dialog's filter props spell the word in the app's own
+  markup, which made the exemption stale, as the build's dead-utilities guard reported.
+
+**What it breaks.** Nothing stored changes shape: a roster is persisted as phase 1 left it. A tick
+in the catalogue is now an act, so it drops whatever Redo had to step forward to.
+`IconCatalogueGroup` requires a `label`.

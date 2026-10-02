@@ -6,6 +6,7 @@ import { CATEGORY_OPTIONS } from '../src/constants/categories/index.ts';
 import { CATEGORY_DIRECTION_SETS } from '../src/constants/categoryDirectionSets.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/defaults.ts';
 import { HARDWARE_PROFILE_CHOICES } from '../src/constants/hardware/index.ts';
+import { ICON_KIND_FILTER_CHOICES } from '../src/constants/iconCatalogue/iconKindFilterChoices.ts';
 import { TARGET_MODELS } from '../src/constants/models.ts';
 import { PALETTE_CHOICES } from '../src/constants/palettes/index.ts';
 import { styleReferenceChoices } from '../src/constants/styleReferences/index.ts';
@@ -68,6 +69,7 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   // rather than picked up from `choices.ts` because their libraries are far too large to file with
   // the option pools. The budget is the same one: the column does not care what the string means.
   HARDWARE_PROFILE_CHOICES: HARDWARE_PROFILE_CHOICES.map((choice) => choice.label),
+  ICON_KIND_FILTER_CHOICES: ICON_KIND_FILTER_CHOICES.map((choice) => choice.label),
   MODEL_CHOICES: TARGET_MODELS.map((model) => model.name),
   OPENING_VIEW_CHOICES: OPENING_VIEW_CHOICES.map((choice) => choice.label),
   /*

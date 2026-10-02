@@ -59,4 +59,22 @@ describe('CheckboxField', () => {
 
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('shows its description under the label and announces it, before any reason', () => {
+    const description = 'a slim red stim-pack auto-injector';
+    render(
+      <CheckboxField
+        label="Minor healing consumable"
+        tooltip="Adds the slot heal-minor to your set."
+        checked={false}
+        description={description}
+        disabledReason={REASON}
+        onChange={vi.fn()}
+      />,
+    );
+    const checkbox = screen.getByRole('checkbox', { name: 'Minor healing consumable' });
+
+    expect(screen.getByText(description)).toBeInTheDocument();
+    expect(checkbox).toHaveAccessibleDescription(`${description} ${REASON}`);
+  });
 });
