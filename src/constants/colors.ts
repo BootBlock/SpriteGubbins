@@ -22,8 +22,8 @@
  */
 export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   cyan: '#06b6d4',
-  // Metallic gold, the value the option pools themselves write beside "Legendary Gold" and
-  // "Polished Gold". It used to share `amber`'s value, which painted the two words alike.
+  // Metallic gold, the value the option pools themselves write beside "Legendary Gold". It used to
+  // share `amber`'s value, which painted the two words alike.
   gold: '#d4af37',
   crimson: '#ef4444',
   emerald: '#10b981',
@@ -37,8 +37,8 @@ export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   gunmetal: '#475569',
   navy: '#1e3a8a',
   silver: '#cbd5e1',
-  // The pale brown CSS and X11 call tan. It used to share `bronze`'s orange, so a "Dust Tan"
-  // outfit previewed as a bronze casting.
+  // The pale brown CSS and X11 call tan. It used to share `bronze`'s orange, so the "Dust Tan &
+  // Faded Denim" palette previewed as a bronze casting.
   tan: '#d2b48c',
   indigo: '#6366f1',
   rust: '#9a3412',
