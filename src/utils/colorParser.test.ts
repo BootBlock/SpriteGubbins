@@ -29,7 +29,7 @@ describe('parseColorFromText', () => {
   });
 
   it('prefers an explicit hex over a colour name in the same string', () => {
-    // 'gold' maps to #f59e0b, but the author wrote a hex — that is the colour they meant.
+    // 'gold' maps to #d4af37, but the author wrote a hex — that is the colour they meant.
     expect(parseColorFromText('Polished Gold #123456')).toBe('#123456');
   });
 
