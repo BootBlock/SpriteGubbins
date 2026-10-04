@@ -10,7 +10,12 @@ import type { PixelGrid, SpriteBox } from '../../types/quantiser.ts';
 import { CELL_ANCHORS_X, CELL_ANCHORS_Y, SPRITE_CELL_SOURCES } from '../../types/spriteCell.ts';
 import type { SpriteCellChoice, SpriteCellSource } from '../../types/spriteCell.ts';
 import { cellBadgeText } from '../../utils/cellBadgeText.ts';
-import { oversizedSprites, resolveSpriteCell, targetFitsCell } from '../../utils/spriteCell.ts';
+import {
+  oversizedSprites,
+  resizingFitAllowed,
+  resolveSpriteCell,
+  targetFitsCell,
+} from '../../utils/spriteCell.ts';
 import { Badge } from '../common/Badge.tsx';
 import { NumberField } from '../common/NumberField.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
@@ -164,7 +169,7 @@ export function SpriteCellControls({ choice, onChange, target, grid, boxes }: Sp
 
           <SpriteFitChoice
             fit={cell.fit}
-            grid={grid}
+            resizable={resizingFitAllowed(grid)}
             onChange={(fit) => {
               onChange({ ...choice, fit });
             }}

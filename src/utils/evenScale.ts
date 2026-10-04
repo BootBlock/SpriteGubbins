@@ -15,8 +15,8 @@ import { spritePitch } from './spritePitch.ts';
  * **Then never larger than the largest sprite allows.** Boxes in one row are disjoint, but a sprite
  * may still be wider than the step where its neighbour is narrower, and a factor that took it past the
  * cell would need the refusal this fit exists to avoid. So the factor is also held to the largest that
- * fits every sprite — which is the whole rule on a sheet of one sprite, or one whose sprites share
- * neither a row nor a column, where there is no pitch to read.
+ * fits every sprite — which is the whole rule on a sheet of one sprite, where there is no pitch to
+ * read.
  *
  * Above 1 where the sheet was drawn smaller than the cell, which enlarges every sprite by the same
  * amount; see `resampleArea` for what enlarging by area does. `1` for a sheet with no sprites.
@@ -27,9 +27,16 @@ export function evenScale(boxes: readonly SpriteBox[], cell: SpriteCell): number
   if (boxes.length === 0) return 1;
   const pitch = spritePitch(boxes);
   const fits = boxes.map((box) => Math.min(cell.width / box.width, cell.height / box.height));
-  const steps = [
-    pitch.x === null ? Infinity : cell.width / pitch.x,
-    pitch.y === null ? Infinity : cell.height / pitch.y,
-  ];
-  return Math.min(...steps, ...fits);
+  return Math.min(stepFactor(cell.width, pitch.x), stepFactor(cell.height, pitch.y), ...fits);
+}
+
+/**
+ * The factor that makes one step of the grid one cell side, or no limit where there is no step.
+ *
+ * A step that is not a positive, finite length is no step: `spritePitch` promises never to return one,
+ * and this refuses one all the same, because a negative factor draws every sprite at 1 × 1 and a zero
+ * step makes an infinite one — the two ways a mismeasured grid used to reach the pack unnoticed.
+ */
+function stepFactor(side: number, pitch: number | null): number {
+  return pitch !== null && pitch > 0 && Number.isFinite(pitch) ? side / pitch : Infinity;
 }

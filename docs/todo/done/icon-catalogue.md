@@ -882,3 +882,30 @@ grid; `cellOffsets` is replaced by `cellPlacements` and `cellPivot` takes a regi
 takes `paletted`, as `SheetWriteJob`, `SheetDownload` and `QuantiseResult` now require it; and
 `DownloadControls`, `ComparisonToolbar` and `SpriteCellControls` take the grid. Nothing stored changes
 shape, and a pack cut as drawn writes the same sheet and sprite files as before.
+
+#### Phase 7 addendum — review fixes (2026-10-04)
+
+A high-effort review of phase 7 found five things, fixed in one further commit before it landed.
+
+- **`Scale evenly` could measure a negative or zero pitch.** `spritePitch` read its steps along
+  `spriteRows`'s rows, which widen to take every sprite they touch, so a painted icon reaching below
+  the top of the row beneath chained two rows of the grid into one, and the steps along it ran
+  backwards: a 2 × 2 sheet came out at a pitch of −5 and a factor of −25.6, every sprite drawn at
+  1 × 1, and a zero pitch gave an infinite factor. The pitch is now read between lines from
+  `spriteBands`, the narrowing half-overlap band `spriteStrips` already used, now shared and run on
+  either axis; line positions are sorted and a zero step is dropped, so a measured pitch is always
+  positive, and `evenScale` refuses one that is not positive and finite all the same. Tests: the
+  chained sheet (pitch and factor), and two hundred seeded grids of overrunning marks.
+- **The grid and `paletted` were drilled four components deep**, from `ImageComparison` through
+  `ComparisonToolbar` and `DownloadControls` to `SpriteCellControls`. `DownloadControls` now reads
+  them from the stores through `useShownResult`, gated by `succeededOnScreen`, the one rule
+  `useQuantiseWork` also applies to the result on screen; `SpriteFitChoice` takes only whether the
+  sheet may be resized. `ComparisonToolbar` no longer takes the grid, and `DownloadControls` no longer
+  takes the grid or `paletted`, which reverses that part of what phase 7 broke.
+- **The colour hold matched across all four channels**, so a pixel held to half coverage could land
+  on an opaque colour of a nearer hue and grow the silhouette. It now matches the colour only among
+  the sheet's colours at the coverage it was held to, as its docblock said.
+- **`SegmentedChoice`'s docblock** named one caller withholding values where there are two.
+- **Three weak tests.** The resampler's conservation test now runs on a translucent field and holds
+  alpha to its own bound, 255 times tighter than the colours'; the determinism test, which could not
+  fail, is gone; and an assertion in the fit's keyboard test that restated an earlier one is removed.

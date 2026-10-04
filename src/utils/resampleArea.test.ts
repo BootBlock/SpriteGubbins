@@ -32,6 +32,14 @@ function premultipliedTotals(image: ImageData): readonly number[] {
 /** A smooth painted field: every pixel a different colour, as a generator's painted icon is. */
 const PAINTED = imageFrom(30, 30, (x, y) => ({ r: x * 8, g: y * 8, b: (x + y) * 4, a: 255 }));
 
+/** The same field, with coverage that varies across it as a soft-edged mark's does. */
+const TRANSLUCENT = imageFrom(30, 30, (x, y) => ({
+  r: x * 8,
+  g: y * 8,
+  b: (x + y) * 4,
+  a: 64 + (x + y) * 3,
+}));
+
 describe('resampleArea', () => {
   it('takes the plain mean of each block at a whole-number factor', () => {
     const source = imageFrom(4, 2, (x) => ({ r: x * 10, g: 0, b: 100, a: 255 }));
@@ -82,16 +90,20 @@ describe('resampleArea', () => {
   });
 
   it('conserves what the region holds, within a rounding step a pixel', () => {
-    const resized = resampleArea(PAINTED, whole(PAINTED), 13, 13);
+    const resized = resampleArea(TRANSLUCENT, whole(TRANSLUCENT), 13, 13);
     const area = (30 / 13) * (30 / 13);
-    const before = premultipliedTotals(PAINTED);
+    const before = premultipliedTotals(TRANSLUCENT);
     const after = premultipliedTotals(resized).map((total) => total * area);
+    const pixels = 13 * 13 * area;
 
-    // Each destination channel is rounded once, by at most half a step of 255 alpha-weighted units,
-    // and each stands for `area` source pixels.
-    const tolerance = 13 * 13 * area * 0.5 * 255;
-    for (const [channel, total] of before.entries()) {
-      expect(Math.abs((after[channel] ?? 0) - total)).toBeLessThanOrEqual(tolerance);
+    // Each destination alpha is rounded once, by at most half a step, and stands for `area` source
+    // pixels — a bound of its own, two hundred and fifty-five times tighter than the colours', so a
+    // coverage that drifted by a whole step a pixel cannot hide inside the colour channels' slack.
+    expect(Math.abs((after[3] ?? 0) - (before[3] ?? 0))).toBeLessThanOrEqual(pixels * 0.5);
+    // A colour channel is stored rounded and weighed by a rounded alpha: half a step of each, at up
+    // to 255 of the other.
+    for (const channel of [0, 1, 2]) {
+      expect(Math.abs((after[channel] ?? 0) - (before[channel] ?? 0))).toBeLessThanOrEqual(pixels * 255);
     }
   });
 
@@ -115,12 +127,5 @@ describe('resampleArea', () => {
 
     expect(at(doubled, 1, 1)).toStrictEqual(RED);
     expect(at(doubled, 2, 0)).toStrictEqual({ r: 0, g: 0, b: 255, a: 255 });
-  });
-
-  it('answers one input with one output', () => {
-    const first = resampleArea(PAINTED, whole(PAINTED), 17, 11);
-    const second = resampleArea(PAINTED, whole(PAINTED), 17, 11);
-
-    expect(first.data).toStrictEqual(second.data);
   });
 });

@@ -56,4 +56,13 @@ describe('sheetColourHold', () => {
 
     expect(at(sheetColourHold(soft)(halfway), 0, 0)).toStrictEqual({ ...NAVY, a: 128 });
   });
+
+  it('matches a held pixel’s colour only among the sheet’s colours at the coverage it was held to', () => {
+    // Gold at half coverage is nearer opaque gold than translucent navy across all four channels, and
+    // matched that way it came out opaque: the edge it sat on grew by a pixel.
+    const sheet = imageFrom(3, 1, (x) => [GOLD, NAVY, { ...NAVY, a: 128 }][x] ?? CLEAR);
+    const edge = imageFrom(1, 1, () => ({ ...GOLD, a: 128 }));
+
+    expect(at(sheetColourHold(sheet)(edge), 0, 0)).toStrictEqual({ ...NAVY, a: 128 });
+  });
 });

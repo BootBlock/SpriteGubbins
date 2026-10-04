@@ -6,6 +6,7 @@ import { useSheetWriteStore } from '../../stores/useSheetWriteStore.ts';
 import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { FakeSheetWriteWorker } from '../../test/fakeSheetWriteWorker.ts';
+import { showNoResult, showResult } from '../../test/shownResult.ts';
 import type { PixelGrid, SpriteSegmentation } from '../../types/quantiser.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
 import type { SpriteCellChoice } from '../../types/spriteCell.ts';
@@ -48,6 +49,7 @@ beforeEach(() => {
 
 afterEach(() => {
   release = null;
+  showNoResult();
   vi.unstubAllGlobals();
 });
 
@@ -60,15 +62,11 @@ function draw(
   paletted = false,
 ) {
   useQuantiseDownloadStore.setState({ downloadScale: 1, downloadFormat, cellChoice });
+  // The scale and the palette standing are the result on screen's, which the stores hold.
+  if (resultImage === null) showNoResult();
+  else showResult(grid, paletted);
   render(
-    <DownloadControls
-      sourceName="armour.png"
-      resultImage={resultImage}
-      duplicates={[]}
-      sprites={sprites}
-      grid={resultImage === null ? null : grid}
-      paletted={paletted}
-    />,
+    <DownloadControls sourceName="armour.png" resultImage={resultImage} duplicates={[]} sprites={sprites} />,
   );
 }
 

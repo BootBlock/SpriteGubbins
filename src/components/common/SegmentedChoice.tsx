@@ -18,9 +18,9 @@ interface SegmentedChoiceProps<T extends string | number> {
   /**
    * Values that cannot be chosen right now, and the sentence that says why.
    *
-   * One reason for the whole set rather than one per value, because the one caller that needs this
-   * withholds four values for the same reason, and four copies of one sentence under a row of pills
-   * would read as four problems.
+   * One reason for the whole set rather than one per value, because each caller that needs this
+   * withholds its values for one reason — the preview layout four of them, the sprite fit two — and
+   * a copy of one sentence per pill under a row of pills would read as that many problems.
    */
   readonly unavailable?: { readonly values: readonly T[]; readonly reason: string } | undefined;
 }
@@ -32,10 +32,9 @@ interface SegmentedChoiceProps<T extends string | number> {
  * heatmap scale, the keying tolerance, the edge hardening, the download's magnification and format,
  * and the sprite cell's source, its two anchors and its fit — and one in the studio, an icon set's
  * look. Most of the Quantise tab's are a handful of stepped numbers where a slider would be the
- * obvious choice and
- * the wrong one — every one of them re-runs work proportional to the whole image, and a drag would spend a recompute
- * per pointer move on a sheet that may be sixteen megapixels. Stepped values reach the same range at
- * one recompute per click.
+ * obvious choice and the wrong one — every one of them re-runs work proportional to the whole image,
+ * and a drag would spend a recompute per pointer move on a sheet that may be sixteen megapixels.
+ * Stepped values reach the same range at one recompute per click.
  *
  * Extracted rather than written twice: the second copy is where the `aria-pressed` goes missing, and
  * that attribute is doing more than it looks — `index.css`'s forced-colours block keys the selected

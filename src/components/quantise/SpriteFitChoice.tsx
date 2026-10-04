@@ -1,17 +1,15 @@
 import { QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { SPRITE_FIT_LABELS, SPRITE_FIT_UNAVAILABLE } from '../../constants/spriteCell.ts';
-import type { PixelGrid } from '../../types/quantiser.ts';
 import { SPRITE_FITS } from '../../types/spriteCell.ts';
 import type { SpriteFit } from '../../types/spriteCell.ts';
-import { resizingFitAllowed } from '../../utils/spriteCell.ts';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 
 interface SpriteFitChoiceProps {
   /** The fit in force, which is `REFUSE` on a pixel-art sheet whatever is stored — see `resolveSpriteCell`. */
   readonly fit: SpriteFit;
-  /** The pixel scale the result was computed at, or `null` with no result yet. */
-  readonly grid: PixelGrid | null;
+  /** Whether the sheet may be resized at all, which is `resizingFitAllowed` of its scale. */
+  readonly resizable: boolean;
   readonly onChange: (fit: SpriteFit) => void;
 }
 
@@ -27,7 +25,7 @@ interface SpriteFitChoiceProps {
  * there, which is what the download will do. `SpriteCellControls` shows the row only where there is
  * a cell for the artwork to meet.
  */
-export function SpriteFitChoice({ fit, grid, onChange }: SpriteFitChoiceProps) {
+export function SpriteFitChoice({ fit, resizable, onChange }: SpriteFitChoiceProps) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="mr-1 flex items-center gap-1.5">
@@ -41,9 +39,7 @@ export function SpriteFitChoice({ fit, grid, onChange }: SpriteFitChoiceProps) {
         format={(option) => SPRITE_FIT_LABELS[option]}
         onChange={onChange}
         unavailable={
-          resizingFitAllowed(grid)
-            ? undefined
-            : { values: ['SCALE_SET', 'FILL_SQUARE'], reason: SPRITE_FIT_UNAVAILABLE }
+          resizable ? undefined : { values: ['SCALE_SET', 'FILL_SQUARE'], reason: SPRITE_FIT_UNAVAILABLE }
         }
       />
     </div>

@@ -22,11 +22,14 @@ import { nearestColorSearch } from './nearestColorSearch.ts';
  * The palette step is not run again; nothing is chosen, only matched — so every colour a sprite file
  * holds is one the sheet file beside it holds, and its indexed palette is a subset of the sheet's.
  *
- * **Coverage first, then colour.** The resample writes fractional coverage along every edge. Each
- * pixel's alpha is first taken to the nearest coverage the sheet itself uses — on a hard-edged sheet
- * that is opaque or clear, split at half coverage, so the silhouette neither grows nor shrinks — and
- * then the colour to the nearest of the sheet's colours, through `nearestColorSearch`, which holds an
- * opaque pixel to the opaque ones. A pixel taken to no coverage is written clear.
+ * **Coverage first, then colour, and the colour only among that coverage.** The resample writes
+ * fractional coverage along every edge. Each pixel's alpha is first taken to the nearest coverage the
+ * sheet itself uses — on a hard-edged sheet that is opaque or clear, split at half coverage, so the
+ * silhouette neither grows nor shrinks — and then the colour to the nearest of the sheet's colours
+ * *at that coverage*, through a `nearestColorSearch` over those colours alone. One search over every
+ * colour matches all four channels together, so a pixel held at half coverage could still land on an
+ * opaque colour of a nearer hue, and the silhouette grew wherever it did. A pixel taken to no
+ * coverage is written clear.
  *
  * Only for a sheet a palette step decided (`QuantiseResult.paletted`). A sheet left at its own colours
  * holds thousands, none of them a palette, and its resized edges are kept as the resample wrote them.
@@ -37,13 +40,15 @@ export function sheetColourHold(sheet: ImageData): (sprite: ImageData) => ImageD
   // Read once per sheet and asked once per sprite: the walk is over the whole sheet, magnified.
   const colours = [...colorHistogram(sheet).keys()].map(unpackColor);
   const levels = [...new Set([FULLY_TRANSPARENT, ...colours.map((colour) => colour.a)])];
-  const nearest = nearestColorSearch(colours);
+  const atLevel = new Map(
+    levels.map((level) => [level, nearestColorSearch(colours.filter((colour) => colour.a === level))]),
+  );
   return (sprite) =>
     remapColors(sprite, (colour): Rgba => {
       const a = nearestLevel(levels, colour.a);
       if (a === FULLY_TRANSPARENT) return CLEAR;
       const held = { ...colour, a };
-      return nearest(held) ?? held;
+      return atLevel.get(a)?.(held) ?? held;
     });
 }
 

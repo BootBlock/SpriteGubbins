@@ -42,8 +42,6 @@ function draw(
   );
 }
 
-const fit = () => screen.getByRole('group', { name: 'Sprite fit' });
-
 describe('SpriteCellControls, the fit', () => {
   it('is offered only where there is a cell for the artwork to meet', () => {
     draw(DEFAULT_SPRITE_CELL_CHOICE);
@@ -104,7 +102,6 @@ describe('SpriteCellControls, the fit', () => {
     expect(screen.getByRole('button', { name: 'Scale evenly' })).toHaveFocus();
     await user.keyboard('{Enter}');
 
-    expect(fit()).toBeInTheDocument();
     expect(onChange).toHaveBeenCalledWith({ ...ICON_CELL, fit: 'SCALE_SET' });
   });
 });

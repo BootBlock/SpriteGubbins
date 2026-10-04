@@ -6,12 +6,7 @@ import {
 import { DIFFERENCE_SCALES, PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/quantise.ts';
 import { PREVIEW_MODES } from '../../types/quantiser.ts';
-import type {
-  PixelGrid,
-  PreviewMode,
-  SpriteDuplicateGroup,
-  SpriteSegmentation,
-} from '../../types/quantiser.ts';
+import type { PreviewMode, SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
 import { DownloadControls } from './DownloadControls.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
@@ -38,10 +33,6 @@ interface ComparisonToolbarProps {
   readonly sprites: SpriteSegmentation | null;
   /** The duplicate reading over those sprites, which a manifest turns into links between them. */
   readonly duplicates: readonly SpriteDuplicateGroup[];
-  /** The pixel scale the result was computed at, which decides whether a cell's fit may resize. */
-  readonly grid: PixelGrid | null;
-  /** Whether a palette step decided the result's colours, which a resized sprite is held to. */
-  readonly paletted: boolean;
   /** Whether this toolbar is currently being rendered into a window of the panel's own. */
   readonly isDetached: boolean;
   /** Send the panel to a window of its own, or bring it back — whichever it is not doing now. */
@@ -67,8 +58,6 @@ export function ComparisonToolbar({
   resultImage,
   sprites,
   duplicates,
-  grid,
-  paletted,
   isDetached,
   onDetachToggle,
 }: ComparisonToolbarProps) {
@@ -135,8 +124,6 @@ export function ComparisonToolbar({
           resultImage={resultImage}
           sprites={sprites}
           duplicates={duplicates}
-          grid={grid}
-          paletted={paletted}
         />
 
         {/* Last in the row, and beside the download rather than among the pills on the left: those
