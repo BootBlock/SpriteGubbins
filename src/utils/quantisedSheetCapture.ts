@@ -14,6 +14,7 @@ import type {
 } from '../types/quantiser.ts';
 import { borderKeyShare } from './borderKeyShare.ts';
 import { sameKeying, sameReduction } from './quantiseSettings.ts';
+import { succeededOnScreen } from './succeededOnScreen.ts';
 
 /** Everything the studio can see of the Quantise tab, which is what decides whether it may read it. */
 export interface QuantisedSheetOffer {
@@ -96,24 +97,26 @@ export type QuantisedSheetCapture =
 export function quantisedSheetCapture(offer: QuantisedSheetOffer): QuantisedSheetCapture {
   const { source, grid, settled, failed, keying, reduction, studioKey } = offer;
   const unavailable = (reason: string): QuantisedSheetCapture => ({ kind: 'UNAVAILABLE', reason });
+  // Whether the tab is showing a result at all is the tab's own rule, asked rather than restated.
+  const shown = succeededOnScreen(source !== null, grid, settled);
 
   if (source === null) return unavailable(IDENTITY_CAPTURE_UNAVAILABLE.noSheet);
   // Ahead of the grid, because it is the more specific finding: a transform that failed did so at a
   // scale that was in force, and telling the reader to put one in force would send them looking for
   // a control that is already set.
   if (settled === null && failed) return unavailable(IDENTITY_CAPTURE_UNAVAILABLE.failed);
-  if (grid === null || settled === null) return unavailable(IDENTITY_CAPTURE_UNAVAILABLE.noResult);
+  if (shown === null) return unavailable(IDENTITY_CAPTURE_UNAVAILABLE.noResult);
 
-  if (!sameKeying(settled.settings.key, keying) || !sameReduction(settled.settings.reduction, reduction)) {
+  if (!sameKeying(shown.settings.key, keying) || !sameReduction(shown.settings.reduction, reduction)) {
     return unavailable(IDENTITY_CAPTURE_UNAVAILABLE.stale);
   }
 
   if (
     studioKey !== null &&
-    borderKeyShare(settled.result.image, studioKey, IDENTITY_KEY_SURVIVAL_TOLERANCE) >= KEY_OFFER_BORDER_SHARE
+    borderKeyShare(shown.result.image, studioKey, IDENTITY_KEY_SURVIVAL_TOLERANCE) >= KEY_OFFER_BORDER_SHARE
   ) {
     return unavailable(IDENTITY_CAPTURE_UNAVAILABLE.keyStillOn);
   }
 
-  return { kind: 'READY', sheet: { name: source.name, image: settled.result.image } };
+  return { kind: 'READY', sheet: { name: source.name, image: shown.result.image } };
 }

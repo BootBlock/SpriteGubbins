@@ -10,10 +10,11 @@ import type { PixelGrid } from '../types/quantiser.ts';
  * offered to the Download button, and contradicting the panel above it, which is at that moment
  * asking for a grid.
  *
- * **A function of its own because two places ask it.** `useQuantiseWork` hands the tab its result,
- * and `useShownResult` hands the download what that result was computed at, from the stores, so no
- * component has to carry either down through the panel. A second spelling of the rule would be a
- * second answer to "is a result on screen", free to disagree with the pane the reader is looking at.
+ * **A function of its own because three places ask it.** `useQuantiseWork` hands the tab its result;
+ * `useShownResult` hands the download what that result was computed at, from the stores, so no
+ * component has to carry either down through the panel; and `quantisedSheetCapture` offers the result
+ * to the studio's identity lock. A second spelling of the rule would be a second answer to "is a
+ * result on screen", free to disagree with the pane the reader is looking at.
  *
  * Generic over what is shown, since the hook asks it of two primitives rather than of the result.
  * Pure, as everything in this directory is.

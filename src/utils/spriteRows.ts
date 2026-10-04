@@ -19,8 +19,9 @@ import type { SpriteBox } from '../types/quantiser.ts';
  * it reaches into the band that row occupies, and the band grows to include it — which is what lets
  * one tall sprite in the middle of a row hold the shorter ones on either side of it together.
  *
- * **Any overlap joins, and the band widens.** That is deliberately not the rule `spriteStrips` uses,
- * and the two are answering different questions rather than duplicating one. This one has to place
+ * **Any overlap joins, and the band widens.** That is deliberately not the rule `spriteBands` uses for
+ * `spriteStrips` and `spritePitch`, and the two are answering different questions rather than
+ * duplicating one. This one has to place
  * *every* sprite the sheet holds, exactly once, in an order a reader would agree with; that one is
  * looking for the runs whose pitch is worth fitting, so it narrows its band to half-overlap and
  * drops what is left under `SMALLEST_STRIP_FRAMES`. A rule that admits fewer boxes into a row

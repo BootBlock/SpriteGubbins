@@ -895,7 +895,7 @@ A high-effort review of phase 7 found five things, fixed in one further commit b
   `spriteBands`, the narrowing half-overlap band `spriteStrips` already used, now shared and run on
   either axis; line positions are sorted and a zero step is dropped, so a measured pitch is always
   positive, and `evenScale` refuses one that is not positive and finite all the same. Tests: the
-  chained sheet (pitch and factor), and two hundred seeded grids of overrunning marks.
+  chained sheet (pitch and factor), two hundred seeded grids of overrunning marks, and the guard.
 - **The grid and `paletted` were drilled four components deep**, from `ImageComparison` through
   `ComparisonToolbar` and `DownloadControls` to `SpriteCellControls`. `DownloadControls` now reads
   them from the stores through `useShownResult`, gated by `succeededOnScreen`, the one rule
@@ -907,5 +907,11 @@ A high-effort review of phase 7 found five things, fixed in one further commit b
   the sheet's colours at the coverage it was held to, as its docblock said.
 - **`SegmentedChoice`'s docblock** named one caller withholding values where there are two.
 - **Three weak tests.** The resampler's conservation test now runs on a translucent field and holds
-  alpha to its own bound, 255 times tighter than the colours'; the determinism test, which could not
-  fail, is gone; and an assertion in the fit's keyboard test that restated an earlier one is removed.
+  alpha to its own bound, half a step a pixel. The colour bound doubled to a whole step a pixel,
+  because on a translucent field the stored alpha rounds as well as the colour, and the old bound only
+  held where every pixel was opaque. The determinism test, which could not fail, is gone, and so is an
+  assertion in the fit's keyboard test that restated an earlier one.
+- **The capture to the identity lock asked the same question a third time.** `quantisedSheetCapture`
+  decided for itself whether the tab was showing a result; it now asks `succeededOnScreen` too, after
+  its own check for a failed transform. The pitch guard is `gridStepFactor`, tested on its own,
+  since the fixed `spritePitch` gives `evenScale` nothing it would refuse.

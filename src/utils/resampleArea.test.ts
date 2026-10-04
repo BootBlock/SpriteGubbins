@@ -97,8 +97,8 @@ describe('resampleArea', () => {
     const pixels = 13 * 13 * area;
 
     // Each destination alpha is rounded once, by at most half a step, and stands for `area` source
-    // pixels — a bound of its own, two hundred and fifty-five times tighter than the colours', so a
-    // coverage that drifted by a whole step a pixel cannot hide inside the colour channels' slack.
+    // pixels — a bound of its own, half a step a pixel, so a coverage that drifted by a whole step a
+    // pixel cannot hide inside the colour channels' slack.
     expect(Math.abs((after[3] ?? 0) - (before[3] ?? 0))).toBeLessThanOrEqual(pixels * 0.5);
     // A colour channel is stored rounded and weighed by a rounded alpha: half a step of each, at up
     // to 255 of the other.

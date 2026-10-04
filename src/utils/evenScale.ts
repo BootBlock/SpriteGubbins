@@ -1,5 +1,6 @@
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { SpriteCell } from '../types/spriteCell.ts';
+import { gridStepFactor } from './gridStepFactor.ts';
 import { spritePitch } from './spritePitch.ts';
 
 /**
@@ -27,16 +28,5 @@ export function evenScale(boxes: readonly SpriteBox[], cell: SpriteCell): number
   if (boxes.length === 0) return 1;
   const pitch = spritePitch(boxes);
   const fits = boxes.map((box) => Math.min(cell.width / box.width, cell.height / box.height));
-  return Math.min(stepFactor(cell.width, pitch.x), stepFactor(cell.height, pitch.y), ...fits);
-}
-
-/**
- * The factor that makes one step of the grid one cell side, or no limit where there is no step.
- *
- * A step that is not a positive, finite length is no step: `spritePitch` promises never to return one,
- * and this refuses one all the same, because a negative factor draws every sprite at 1 × 1 and a zero
- * step makes an infinite one — the two ways a mismeasured grid used to reach the pack unnoticed.
- */
-function stepFactor(side: number, pitch: number | null): number {
-  return pitch !== null && pitch > 0 && Number.isFinite(pitch) ? side / pitch : Infinity;
+  return Math.min(gridStepFactor(cell.width, pitch.x), gridStepFactor(cell.height, pitch.y), ...fits);
 }
