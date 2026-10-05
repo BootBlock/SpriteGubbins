@@ -1,4 +1,5 @@
 import { resolveBackgroundKey } from '../constants/backgroundKeysFor.ts';
+import { resolvePalette } from '../constants/palettesFor.ts';
 import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import {
@@ -135,10 +136,13 @@ export function sheetDigest(category: SubjectCategory, subject: SheetSubject, ou
  * validation pass withdraws the budget without replacing it, and still leaves a pinned palette
  * standing: one material or one fill takes its colour from the list like anything else does, so the
  * two supersessions stack rather than collide. The budget named is the one the render style lets
- * the sheet be drawn under, which is the one the prompt states.
+ * the sheet be drawn under, which is the one the prompt states. The palette is the one the subject can
+ * take (`resolvePalette`), so a tint mask's header names the budget its prompt states, not a palette
+ * the prompt has dropped.
  */
-function colourDigest(output: OutputConfig, pass: ValidationPass | null): string {
-  const pinned = pinnedPalette(output);
+function colourDigest(subject: SheetSubject, output: OutputConfig, pass: ValidationPass | null): string {
+  const palette = resolvePalette(subject, output.palette);
+  const pinned = pinnedPalette({ palette, customPalette: output.customPalette });
   if (pinned === null) return pass === null ? styleSettingsFor(output).paletteLimit : '';
 
   // A machine is named by its stored identifier, as every other setting in this header is. The
@@ -147,7 +151,7 @@ function colourDigest(output: OutputConfig, pass: ValidationPass | null): string
   // comes off the resolved palette rather than the stored field, because a palette the reader never
   // named has one only once `pinnedPalette` has supplied it; the count comes off the field, because
   // asking the resolved palette's space for it would be a question with one possible answer.
-  const custom = output.palette === 'CUSTOM' ? output.customPalette : null;
+  const custom = palette === 'CUSTOM' ? output.customPalette : null;
   if (custom === null) return pinned.id;
 
   const count = custom.entries.length;
@@ -195,7 +199,7 @@ export function renderStyleDigest(
     pass === null ? output.surfaceDetail : '',
     sizing.profile,
     sizing.text,
-    colourDigest(output, pass),
+    colourDigest(subject, output, pass),
     settings.outline ?? '',
     settings.lighting ?? '',
   ]);

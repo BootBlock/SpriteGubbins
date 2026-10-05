@@ -4,6 +4,7 @@ import { resolveProjection } from '../constants/categoryProjections.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
+import { resolvePalette } from '../constants/palettesFor.ts';
 import type { HardwareProfile } from '../types/hardware.ts';
 import type { Palette } from '../types/palette.ts';
 import {
@@ -271,12 +272,14 @@ export function sheetFacts(
   // the contract says it has, which is the one arithmetic the whole template rests on.
   const anatomy = parseAdditionalAnatomy(subject.additional_anatomy);
 
-  // The machine and its colours, or `null` for `NONE`, for `FREE`, and for a `CUSTOM` palette with
-  // nothing loaded. Resolved once and read four times below, so the two blocks and the two flags
+  // The machine and its colours, or `null` for `NONE`, for `FREE`, for a `CUSTOM` palette with
+  // nothing loaded, and for any palette under a tint mask, which `resolvePalette` draws under `FREE`
+  // (audit finding M1) so section 0, section 2 and the self-audit never ask a grey mask for the Game
+  // Boy's greens. Resolved once and read four times below, so the two blocks and the two flags
   // that gate them cannot disagree about whether there is a machine — the failure mode being a
   // heading with nothing under it.
   const hardware = hardwareProfileFor(output.hardwareProfile);
-  const palette = pinnedPalette(output);
+  const palette = pinnedPalette({ ...output, palette: resolvePalette(subject, output.palette) });
   // The look this sheet is drawn to match, or `null` for `NONE`. Resolved once and read three times
   // below — the two values and the flag that gates their block — so a heading with nothing under it
   // is not expressible, exactly as it is not for the two above.

@@ -14,7 +14,7 @@ import { generatePrompt } from './promptCompiler.ts';
  *
  * A tint mask reaches an icon sheet in three places — section 1's statement that every colour is drawn
  * as its lightness in grey, the inventory's sentence about an entry's own colour, and the self-audit —
- * and the key it is drawn on, which is never `PURE_WHITE`. This suite holds them to one answer per
+ * and the key it is drawn on, which is never `PURE_WHITE`, and the palette, which is never pinned. This suite holds them to one answer per
  * sheet: all three on every icon sheet of a masked set under both looks, none on its overlay sheet,
  * whose pieces mark a state rather than a side, and none on a set in full colour.
  */
@@ -68,6 +68,19 @@ describe('a tint-masked icon set in the compiled prompt', () => {
       generatePrompt('ICON', subject, { ...white, backgroundKey: 'MAGENTA_FF00FF' }),
     );
     expect(generatePrompt('ICON', iconSet('ISOLATED_MARK', 'FULL_COLOUR'), white)).toContain('#FFFFFF');
+  });
+
+  it('draws a mask under FREE, wherever a pinned palette is stored', () => {
+    // Section 0, section 2 and the self-audit would otherwise ask a grey mask for the Game Boy's four
+    // greens, which hold no grey at all.
+    const subject = iconSet('ISOLATED_MARK', 'TINT_MASK');
+    const pinned = { ...OUTPUT, sheetIndex: 1, palette: 'GAME_BOY_DMG' } as const;
+    expect(generatePrompt('ICON', subject, pinned)).toBe(
+      generatePrompt('ICON', subject, { ...pinned, palette: 'FREE' }),
+    );
+    expect(generatePrompt('ICON', iconSet('ISOLATED_MARK', 'FULL_COLOUR'), pinned)).not.toBe(
+      generatePrompt('ICON', iconSet('ISOLATED_MARK', 'FULL_COLOUR'), { ...pinned, palette: 'FREE' }),
+    );
   });
 
   it.each(TARGET_MODEL_IDS)('keeps the mask through the %s wrapper', (targetModel) => {

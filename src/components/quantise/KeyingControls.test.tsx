@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { KEY_OFFER_NOTICE } from '../../constants/keyOffer.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { KeyingControls } from './KeyingControls.tsx';
+import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { tintMaskedIconSubject } from '../../test/tintMaskedIconSubject.ts';
 
 /**
  * The offer, which is the one thing on this panel that is about the sheet rather than the setting.
@@ -21,6 +24,18 @@ function show(overrides: Partial<Parameters<typeof KeyingControls>[0]> = {}) {
 describe('KeyingControls', () => {
   beforeEach(() => {
     useQuantiseStore.getState().clear();
+    useOutputStore.setState(useOutputStore.getInitialState());
+    useSubjectStore.setState(useSubjectStore.getInitialState());
+  });
+
+  it('names the key a tint mask is drawn on, not the white one stored', () => {
+    // The prompt moves a mask off `PURE_WHITE` (audit finding M1), so the tab keys what it states.
+    useOutputStore.getState().setOutputField('backgroundKey', 'PURE_WHITE');
+    useSubjectStore.setState({ category: 'ICON', subject: tintMaskedIconSubject() });
+    show();
+
+    expect(screen.getByText(/#FF00FF/i)).toBeInTheDocument();
+    expect(screen.queryByText(/#FFFFFF/i)).not.toBeInTheDocument();
   });
 
   it('offers to key a sheet that arrived with its field still on it', () => {

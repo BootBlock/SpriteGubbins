@@ -41,4 +41,15 @@ describe('outputForRoster', () => {
     expect(outputForRoster('ICON', mask, white)).toEqual({ ...white, backgroundKey: 'MAGENTA_FF00FF' });
     expect(outputForRoster('ICON', mask, black)).toBe(black);
   });
+
+  it('moves a tint mask off a pinned palette, and leaves a full-colour set’s alone', () => {
+    // A mask is drawn in neutral greys, which no pinned palette's hues can state (audit finding M1).
+    const pinned = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1, palette: 'GAME_BOY_DMG' } as const;
+
+    expect(outputForRoster('ICON', iconSubject(['heal-minor'], 'TINT_MASK'), pinned)).toEqual({
+      ...pinned,
+      palette: 'FREE',
+    });
+    expect(outputForRoster('ICON', iconSubject(['heal-minor']), pinned)).toBe(pinned);
+  });
 });

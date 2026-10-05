@@ -7,7 +7,6 @@ import {
   SILHOUETTE_THRESHOLDS,
 } from '../../constants/quantiser.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
-import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { BackgroundKeying } from '../../types/quantiser.ts';
 import { toHex } from '../../utils/imageData.ts';
@@ -18,6 +17,7 @@ import { ColorSwatch } from '../common/ColorSwatch.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 import { Button } from '../common/Button.tsx';
+import { useResolvedBackgroundKey } from '../../hooks/useResolvedBackgroundKey.ts';
 
 interface KeyingControlsProps {
   /**
@@ -76,7 +76,7 @@ interface KeyingControlsProps {
  * why it sits outside the block the toggle hides. See `hardenSilhouette`.
  */
 export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingControlsProps) {
-  const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
+  const backgroundKey = useResolvedBackgroundKey();
   const keyTolerance = useQuantiseStore((state) => state.keyTolerance);
   const silhouetteThreshold = useQuantiseStore((state) => state.silhouetteThreshold);
   const setKeyingEnabled = useQuantiseStore((state) => state.setKeyingEnabled);

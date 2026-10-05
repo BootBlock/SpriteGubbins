@@ -19,6 +19,8 @@ import { ImageDropVeil } from '../quantise/ImageDropVeil.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
 import { QuantiseWorkspace } from '../quantise/QuantiseWorkspace.tsx';
+import { useResolvedBackgroundKey } from '../../hooks/useResolvedBackgroundKey.ts';
+import { useResolvedPalette } from '../../hooks/useResolvedPalette.ts';
 
 /**
  * Turning a returned sheet into genuine pixel art, after the fact.
@@ -61,9 +63,9 @@ export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   // The style decides which budgets the sheet can be drawn under — see `resolvePaletteLimit`.
   const renderStyle = useOutputStore((state) => state.output.renderStyle);
-  const palette = useOutputStore((state) => state.output.palette);
+  const palette = useResolvedPalette();
   const customPalette = useOutputStore((state) => state.output.customPalette);
-  const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
+  const backgroundKey = useResolvedBackgroundKey();
   // In a store rather than here, because the workflow crosses tabs: the colour budget, the target
   // size and the background key are studio settings, and `App` unmounts this view when the user goes
   // to change one.

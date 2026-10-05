@@ -111,13 +111,14 @@ export function planAsDrawn(plan: SheetPlan, category: SubjectCategory, subject:
  * declined — the one question {@link planAsDrawn} asks of each line, over the fields `declined`
  * names.
  *
- * Two of `AttributeRole`'s three answers say yes, for two different reasons, and reading them
+ * Two of `AttributeRole`'s four answers say yes, for two different reasons, and reading them
  * through one predicate is what keeps the filter and the section 1 sentence from being two opinions
  * about the same plan. `'DRAWS_IT'` is the attribute and nothing else, so it goes with it.
  * `'VARIES_IN_IT'` draws none of it and exists to differ in it, so a subject that has none is
  * ordering tiles that must differ in a property it has just denied — and it goes for that reason
  * instead. `'DRAWS_IT_PARTLY'` stays, and a field declaring an `absentOption` may have none bound to
- * it.
+ * it. `'DRAWN_IN_IT'` stays too: the entry draws none of the attribute and is only drawn in its style,
+ * so a subject without one still has the piece to draw.
  */
 export function entryDeclinedBy(entry: ComponentEntry, declined: readonly DeclinableFieldKey[]): boolean {
   const bound = entry.attribute;

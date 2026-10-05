@@ -5,6 +5,8 @@ import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { FakePaletteReadWorker } from '../../test/fakePaletteReadWorker.ts';
 import { imageFrom } from '../../test/images.ts';
 import { IdentityPaletteCapture } from './IdentityPaletteCapture.tsx';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { tintMaskedIconSubject } from '../../test/tintMaskedIconSubject.ts';
 
 /**
  * The one thing about this control that types cannot state: **when** it reads the lock.
@@ -153,6 +155,16 @@ describe('IdentityPaletteCapture, while the sheet is measured off the tab’s th
         'Cyan visor across upper face; Palette: #1E1E24',
       );
     });
+  });
+
+  it('measures a tint mask’s sheet against the key its prompt states, not a stored white', async () => {
+    // A mask is drawn on magenta wherever `PURE_WHITE` is stored (audit finding M1).
+    useOutputStore.getState().setOutputField('backgroundKey', 'PURE_WHITE');
+    useSubjectStore.setState({ category: 'ICON', subject: tintMaskedIconSubject() });
+    const thread = await measuring();
+
+    expect(thread.posted[0]).toMatchObject({ kind: 'identity', backgroundKey: { r: 255, g: 0, b: 255 } });
+    useSubjectStore.setState(useSubjectStore.getInitialState());
   });
 
   it('measures again when the background key changes while the sheet is measured', async () => {

@@ -114,6 +114,12 @@
  * and the small `quantiseDials` (1.34 kB) are one chunk now, named `quantiseDials` (375.36 kB), and
  * `TextField` (1.01 kB) folds into the chunks that render it. Measured against the build immediately
  * before, the precache goes from 56 entries and 2719.45 KiB to 54 and 2729.66 KiB.
+ *
+ * **A tint mask's palette renamed one line and added one.** The studio and the Quantise tab now read
+ * the background key and the palette through `useResolvedBackgroundKey` and `useResolvedPalette`, so
+ * the shared chunk that carried `SheetStepButtons` is named after the second (15.27 kB, the step
+ * buttons' “Previous sheet” and “Next sheet” among it), and the first is cut out of the chunks that
+ * read it into one of its own (0.19 kB). The build reports 55 entries at 2767.80 KiB.
  */
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',
@@ -131,7 +137,6 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/SelectField-*.js',
   'assets/SettingsContents-*.js',
   'assets/SheetSplitContents-*.js',
-  'assets/SheetStepButtons-*.js',
   'assets/SpecTab-*.js',
   'assets/StudioTab-*.js',
   'assets/Tooltip-*.js',
@@ -148,6 +153,8 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/useExpectedComponents-*.js',
   'assets/useFileSave-*.js',
   'assets/useIconRosterSummary-*.js',
+  'assets/useResolvedBackgroundKey-*.js',
+  'assets/useResolvedPalette-*.js',
   'assets/useScrollableRegion-*.js',
   'assets/useSheetSubject-*.js',
   'assets/useShowToast-*.js',

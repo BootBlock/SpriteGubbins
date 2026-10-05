@@ -1,7 +1,10 @@
 import { useCallback } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../constants/backgroundKeyColors.ts';
+import { resolveBackgroundKey } from '../constants/backgroundKeysFor.ts';
 import { identityPaletteRequests } from '../stores/identityPaletteRequests.ts';
 import { useOutputStore } from '../stores/useOutputStore.ts';
+import { useSubjectStore } from '../stores/useSubjectStore.ts';
+import type { BackgroundKey } from '../types/rendering.ts';
 import type { ImportedImage } from '../types/quantiser.ts';
 import { withPaletteSegment } from '../utils/identityDigest.ts';
 import type { RequestTicket } from '../utils/requestSequence.ts';
@@ -44,7 +47,7 @@ export function useIdentityPaletteCapture(): (sheet: ImportedImage) => void {
  */
 function measure(sheet: ImportedImage, current: RequestTicket, showToast: (message: string) => void): void {
   // The key is read when the reading starts, and checked again when it lands — see below.
-  const { backgroundKey } = useOutputStore.getState().output;
+  const backgroundKey = keyInForce();
   const job = {
     kind: 'identity',
     image: sheet.image,
@@ -58,8 +61,8 @@ function measure(sheet: ImportedImage, current: RequestTicket, showToast: (messa
       // control, so a value captured earlier would discard whatever the reader typed while the
       // sheet was decoding and being read — and a key changed meanwhile would leave a palette
       // measured against a background the prompt no longer states, so it is measured again.
-      const { backgroundKey: keyNow, identityLock } = useOutputStore.getState().output;
-      if (keyNow !== backgroundKey) {
+      const { identityLock } = useOutputStore.getState().output;
+      if (keyInForce() !== backgroundKey) {
         measure(sheet, current, showToast);
         return;
       }
@@ -83,5 +86,18 @@ function measure(sheet: ImportedImage, current: RequestTicket, showToast: (messa
       const reason = error instanceof Error ? error.message : String(error);
       showToast(`Could not read the colours of ${sheet.name} — ${reason}. The identity lock is unchanged`);
     },
+  );
+}
+
+/**
+ * The key the sheet is drawn on, resolved through the subject as `useResolvedBackgroundKey` resolves it
+ * (`resolveBackgroundKey`), so a tint mask's sheet is measured against the key its prompt states rather
+ * than a `PURE_WHITE` the mask has withdrawn. Read out of the stores, because `measure` runs outside a
+ * render and again when a reading lands.
+ */
+function keyInForce(): BackgroundKey {
+  return resolveBackgroundKey(
+    useSubjectStore.getState().subject,
+    useOutputStore.getState().output.backgroundKey,
   );
 }

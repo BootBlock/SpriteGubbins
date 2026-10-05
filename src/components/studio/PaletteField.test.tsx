@@ -3,6 +3,8 @@ import { render, screen } from '@testing-library/react';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { PaletteField } from './PaletteField.tsx';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { tintMaskedIconSubject } from '../../test/tintMaskedIconSubject.ts';
 
 /**
  * The third of the three palettes this app settles, and the only one settled before any image
@@ -17,6 +19,21 @@ import { PaletteField } from './PaletteField.tsx';
 describe('PaletteField', () => {
   beforeEach(() => {
     useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, palette: 'FREE' } });
+    useSubjectStore.setState(useSubjectStore.getInitialState());
+  });
+
+  it('offers a tint mask only FREE, shows the palette it compiles to, and says why', () => {
+    // A mask is drawn in neutral greys, which no pinned palette's hues can state (audit finding M1).
+    useOutputStore.getState().setOutputField('palette', 'GAME_BOY_DMG');
+    useSubjectStore.setState({ category: 'ICON', subject: tintMaskedIconSubject() });
+    render(<PaletteField />);
+
+    const palette = screen.getByRole('combobox', { name: 'Palette' });
+    expect([...palette.querySelectorAll('option')].map((option) => option.value)).toEqual(['FREE']);
+    expect(palette).toHaveValue('FREE');
+    const description = document.getElementById(palette.getAttribute('aria-describedby') ?? '');
+    expect(description?.textContent).toContain('no fixed palette is offered');
+    expect(screen.queryByRole('button', { name: / — download / })).toBeNull();
   });
 
   it.each([

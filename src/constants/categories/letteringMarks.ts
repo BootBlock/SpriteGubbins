@@ -47,9 +47,9 @@ import { LETTERING_IS_A_COMPONENT } from '../promptText/exclusions.ts';
  *   stands where the signage does. PORTRAIT's `Barcode Brand On The Neck` and ITEM's
  *   `Factory Barcode & Batch Marks` both rest on that.
  * - **A rune, a sigil and a glyph are ornament.** ICON's `Motif Treatment` field offers
- *   `Carved Rune & Sigil Accent` under a tooltip naming “a drawn motif, never a letter or a numeral”, and
- *   INTERFACE's `Focal Glyph` field offers `No Glyph — Blank Face` and the same carving under the
- *   same sentence written about a glyph. EFFECT's `Runic Glyphs & Sigils` is a motif carried inside
+ *   `Carved Knotwork Inlay` under a tooltip naming “a drawn motif, never a letter or a numeral”, and
+ *   INTERFACE's `Focal Glyph` field offers `No Glyph — Blank Face` and `Rune & Sigil Carving` under
+ *   the same sentence written about a glyph. EFFECT's `Runic Glyphs & Sigils` is a motif carried inside
  *   the effect's own shape. Reading any of them as writing would fail the sheet on the mark it
  *   exists to draw.
  * - **A tally, a stamp and a brand are marks**, so `Kill Tally Marks`, `Tally Notches & Wear Marks`,

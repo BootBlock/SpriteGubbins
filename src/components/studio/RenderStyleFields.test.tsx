@@ -3,6 +3,8 @@ import { act, render, screen } from '@testing-library/react';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { RenderStyleFields } from './RenderStyleFields.tsx';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { tintMaskedIconSubject } from '../../test/tintMaskedIconSubject.ts';
 
 /**
  * That the colour budget is offered exactly when it decides something.
@@ -22,9 +24,19 @@ function budget(): HTMLElement | null {
 
 beforeEach(() => {
   useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
+  useSubjectStore.setState(useSubjectStore.getInitialState());
 });
 
 describe('RenderStyleFields', () => {
+  it('keeps the budget for a tint mask, whose stored palette the prompt drops', () => {
+    // A mask is drawn under `FREE` (audit finding M1), so the budget is the colour setting it states.
+    useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, palette: 'MEGA_DRIVE' } });
+    useSubjectStore.setState({ category: 'ICON', subject: tintMaskedIconSubject() });
+    render(<RenderStyleFields />);
+
+    expect(budget()).toBeInTheDocument();
+  });
+
   it('withdraws the budget the moment a palette supersedes it', () => {
     render(<RenderStyleFields />);
 

@@ -4,7 +4,6 @@ import { CUSTOM_ICON_TOOLTIPS } from '../../constants/iconCatalogue/customIconTo
 import { ICON_CATALOGUE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useIconLibrary } from '../../hooks/useIconLibrary.ts';
 import { useCustomIconLibraryStore } from '../../stores/useCustomIconLibraryStore.ts';
-import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import type { CustomIconField } from '../../types/customIconDraft.ts';
 import type { CustomIconFormValues } from '../../types/customIconFormValues.ts';
@@ -18,6 +17,7 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { TextAreaField } from '../common/TextAreaField.tsx';
 import { CustomIconIdentityFields } from './CustomIconIdentityFields.tsx';
 import { CustomIconStateFields } from './CustomIconStateFields.tsx';
+import { useResolvedBackgroundKey } from '../../hooks/useResolvedBackgroundKey.ts';
 
 /** Picks for a subject with no roster, which the dialog is never opened over but has to type. */
 const NO_PICKS: readonly IconPick[] = [];
@@ -52,7 +52,7 @@ export function CustomIconForm({ entry, onClose }: CustomIconFormProps) {
   const world = useSubjectStore((state) => state.subject.setting);
   const writeCustomIcon = useCustomIconLibraryStore((state) => state.writeCustomIcon);
   const library = useIconLibrary();
-  const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
+  const backgroundKey = useResolvedBackgroundKey();
   const [values, setValues] = useState<CustomIconFormValues>(() => customIconFormValues(entry));
   const [attempts, setAttempts] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);

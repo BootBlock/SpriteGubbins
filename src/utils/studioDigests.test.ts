@@ -14,6 +14,7 @@ import {
   sheetDigest,
   subjectGroupDigest,
 } from './studioDigests.ts';
+import { tintMaskedIconSubject } from '../test/tintMaskedIconSubject.ts';
 
 /**
  * What a folded group says it is set to.
@@ -125,6 +126,14 @@ describe('sheetDigest', () => {
 });
 
 describe('renderStyleDigest', () => {
+  it('names the budget, not a stored palette, for a tint mask, which is drawn under FREE', () => {
+    // The prompt drops a pinned palette for a mask (audit finding M1), so the header does too.
+    const output = withOutput({ palette: 'GAME_BOY_DMG' });
+    const digest = renderStyleDigest('ICON', tintMaskedIconSubject(), output);
+    expect(digest).not.toContain('GAME_BOY_DMG');
+    expect(digest).toContain(output.paletteLimit);
+  });
+
   it('covers all seven controls when they are all set', () => {
     // With no palette pinned, which is what leaves the colour budget as the group's colour setting.
     const output = withOutput({

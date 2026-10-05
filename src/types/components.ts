@@ -205,7 +205,7 @@ export interface ComponentEntry {
   readonly kind: ComponentKind;
   /**
    * Which subject attribute this entry is on the sheet for, and how it stands to it — see
-   * {@link AttributeBinding} for the field half and {@link AttributeRole} for the three answers to the
+   * {@link AttributeBinding} for the field half and {@link AttributeRole} for the four answers to the
    * second. Absent is the answer for every entry an attribute is merely painted onto, which is most
    * of them.
    *

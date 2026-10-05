@@ -20,9 +20,12 @@ export function backgroundKeysFor(subject: SheetSubject): readonly BackgroundKey
  * The key a configuration is drawn on: the stored one where the subject can take it, and otherwise the
  * first key the subject is offered.
  *
- * Resolved where a stored key meets a subject — the compiler, the Sheet panel's control, and the store
- * when a change of colour mode or of subject leaves a key behind (`resolveOutputForSubject`) — as the
- * canvas shape is by `resolveAspectRatio`, so the prompt, the control and the Quantise tab name one key.
+ * Resolved where a stored key meets a subject — the compiler (`sheetKey`), the studio's digests, the
+ * Sheet panel's control, the store when a change of colour mode or of subject leaves a key behind
+ * (`outputForRoster`, `resolveOutputForSubject`), and every reader outside the compiler: the Quantise
+ * tab, its capture button and the custom icon form through `useResolvedBackgroundKey`, and the identity
+ * palette capture out of the stores — as the canvas shape is by `resolveAspectRatio`, so the prompt, the
+ * controls and the Quantise tab name one key.
  */
 export function resolveBackgroundKey(subject: SheetSubject, key: BackgroundKey): BackgroundKey {
   const offered = backgroundKeysFor(subject);
