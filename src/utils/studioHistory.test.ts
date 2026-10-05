@@ -174,7 +174,7 @@ describe('an icon set’s roster in the studio history', () => {
     if (roster === undefined) throw new Error('ICON opens with no roster');
     const rebuilt: StudioPosition = {
       ...ICON_AT,
-      subject: { ...ICON_AT.subject, icons: { look: roster.look, picks: [...roster.picks] } },
+      subject: { ...ICON_AT.subject, icons: { ...roster, picks: [...roster.picks] } },
     };
     expect(studioUndoDepth(recordStudio(openStudioHistory(ICON_AT), ICON_AT, rebuilt))).toBe(0);
   });

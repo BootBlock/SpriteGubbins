@@ -1,5 +1,5 @@
 import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
-import type { IconLook } from '../../types/iconRoster.ts';
+import type { IconColourMode, IconLook } from '../../types/iconRoster.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts';
 import { ICON_GRID_COLUMNS } from '../iconCatalogue/iconSheetLimits.ts';
@@ -9,7 +9,7 @@ interface IconSheetWording {
   readonly assembly: string;
   readonly scaleExample: string;
   readonly componentClass: string;
-  /** Said after the grid sentence, closing on the colon the entries follow. */
+  /** Said after the grid sentence, before the colour sentence that closes on the colon the entries follow. */
   readonly intro: string;
   /** The sentences the outro opens with: how every icon fills its square. */
   readonly agreement: string;
@@ -44,8 +44,7 @@ because the interface draws the frame. The backdrop is a field behind the subjec
 [SEC:CONTRACT] states, never a scene with a horizon, and it keeps a clear gap in value from the subject so the
 subject’s silhouette reads against it. The set agrees on weight, margin, outline, light and backdrop
 treatment; an entry marked ×2 is one icon drawn once in each of its two states, in the order it names
-them. A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for
-it:`,
+them.`,
     agreement: `Every tile is the same square at the same size, and every subject fills its tile to the same margin,
 carries the same outline weight, and is lit as every other icon of the set is, on this sheet and on
 every other sheet of it — an icon that is heavier, larger or lit differently reads as belonging to
@@ -59,12 +58,23 @@ square to the edge, and nothing of the icon crosses that edge.`,
       'one icon and the icon beside it are drawn to the same weight, each filling its own cell to the same margin',
     componentClass: 'one icon of this one set',
     intro: `Each entry is a different icon of this one set, drawn so the set agrees on weight, margin, outline and
-light; an entry marked ×2 is one icon drawn once in each of its two states, in the order it names them.
-A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for it:`,
+light; an entry marked ×2 is one icon drawn once in each of its two states, in the order it names them.`,
     agreement: `Every icon fills the same cell to the same margin, carries the same outline weight, and is lit as
 every other icon of the set is, on this sheet and on every other sheet of it — an icon that is heavier,
 larger or lit differently reads as belonging to another pack.`,
   },
+};
+
+/**
+ * What an entry's own colour is under each colour mode, closing the intro on the colon the entries
+ * follow. Under a tint mask it is a value, as section 1 states every colour is (audit finding M1), so
+ * the inventory never asks for the hue section 1 has just turned to grey.
+ */
+const COLOUR_SENTENCES: Readonly<Record<IconColourMode, string>> = {
+  FULL_COLOUR:
+    'A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for it:',
+  TINT_MASK:
+    'A colour an entry names is that icon’s own, drawn as its lightness in grey as section [SEC:SUBJECT] states, and outranks the set’s primary and accent colours for it:',
 };
 
 /**
@@ -90,7 +100,12 @@ larger or lit differently reads as belonging to another pack.`,
  * the count it names the sheet — `Icons 17–32`, or `Icon 17` for a sheet of one — so the split drawer
  * tells two sheets of one set apart.
  */
-export function iconSheet(entries: readonly ComponentEntry[], first: number, look: IconLook): SheetPlan {
+export function iconSheet(
+  entries: readonly ComponentEntry[],
+  first: number,
+  look: IconLook,
+  colourMode: IconColourMode,
+): SheetPlan {
   const count = componentTotal(entries);
   const wording = WORDING[look];
   return {
@@ -115,11 +130,13 @@ export function iconSheet(entries: readonly ComponentEntry[], first: number, loo
     fit: 'SAME_SQUARE',
     scaleUnit: 'one icon',
     componentClass: wording.componentClass,
-    // The overlay sheet draws the *Applied Overlay*; no icon here carries one of its pieces, for the engine
-    // lays them on at runtime. A padlock or a crack an icon's own entry or *Condition & Finish* asks for
-    // is still the icon's, and section 1 says so.
+    // The overlay sheet draws its pieces in the *Overlay Style*; no icon here is drawn in it or carries
+    // one of those pieces, for the engine lays them on at runtime. A padlock or a crack an icon's own
+    // entry or *Condition & Finish* asks for is still the icon's, and section 1 says so.
     drawnElsewhere: 'clothing',
     ...(look === 'FULL_BLEED_TILE' ? { backdrop: 'OWN_SQUARE' } : {}),
+    // A tint mask is drawn in greys for the engine to tint, and section 1 says so (audit finding M1).
+    ...(colourMode === 'TINT_MASK' ? { tint: 'ENGINE_MASK' } : {}),
     assemblyFailure: {
       instruction:
         'Do not draw the icons placed on a hotbar or set into a finished screen anywhere on the sheet, including as a reference or key.',
@@ -130,7 +147,7 @@ export function iconSheet(entries: readonly ComponentEntry[], first: number, loo
     groups: [
       {
         heading: null,
-        intro: `${gridSentence(count)}\n${wording.intro}`,
+        intro: `${gridSentence(count)}\n${wording.intro}\n${COLOUR_SENTENCES[colourMode]}`,
         entries,
         outro: `${wording.agreement}
 No icon carries a letter, a numeral, a stack count or a key name: those are drawn by the engine at

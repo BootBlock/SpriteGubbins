@@ -4,7 +4,7 @@ import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import { FakeDatabaseWorker } from '../test/fakeDatabaseWorker.ts';
 import { openSqliteBackend } from './openSqliteBackend.ts';
-import { ICON_LOOKS } from '../types/iconRoster.ts';
+import { ICON_COLOUR_MODES, ICON_LOOKS } from '../types/iconRoster.ts';
 import type { SqliteBackend } from './sqliteBackend.ts';
 import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
@@ -143,26 +143,33 @@ describe('SqliteBackend — the icon roster', () => {
     };
   }
 
-  it.each(ICON_LOOKS)('round-trips a %s icon set’s roster through the session row', async (look) => {
-    const backend = await open();
-    const subject = {
-      ...defaultSubjectFor('ICON'),
-      icons: { look, picks: cataloguePicks(['heal-major', 'system-sound', 'pin-waypoint']) },
-    } as const;
-    const saving = backend.saveSession({ category: 'ICON', subject, output: DEFAULT_OUTPUT_CONFIG });
-    const sent = thread().calls.at(-1)?.request;
-    thread().answer({ id: thread().lastId('saveSession'), ok: true, value: undefined });
-    await saving;
-    if (sent?.kind !== 'saveSession') throw new Error('the session was not sent to the worker');
+  it.each(ICON_LOOKS.flatMap((look) => ICON_COLOUR_MODES.map((colourMode) => [look, colourMode] as const)))(
+    'round-trips a %s %s icon set’s roster through the session row',
+    async (look, colourMode) => {
+      const backend = await open();
+      const subject = {
+        ...defaultSubjectFor('ICON'),
+        icons: {
+          look,
+          colourMode,
+          picks: cataloguePicks(['heal-major', 'system-sound', 'pin-waypoint']),
+        },
+      } as const;
+      const saving = backend.saveSession({ category: 'ICON', subject, output: DEFAULT_OUTPUT_CONFIG });
+      const sent = thread().calls.at(-1)?.request;
+      thread().answer({ id: thread().lastId('saveSession'), ok: true, value: undefined });
+      await saving;
+      if (sent?.kind !== 'saveSession') throw new Error('the session was not sent to the worker');
 
-    const loading = backend.loadSession();
-    thread().answer({
-      id: thread().lastId('loadSession'),
-      ok: true,
-      value: storedRow(sent.session.category, sent.session.subject),
-    });
-    expect((await loading)?.subject).toEqual(subject);
-  });
+      const loading = backend.loadSession();
+      thread().answer({
+        id: thread().lastId('loadSession'),
+        ok: true,
+        value: storedRow(sent.session.category, sent.session.subject),
+      });
+      expect((await loading)?.subject).toEqual(subject);
+    },
+  );
 
   it('reads an ICON session row stored before the roster existed as the default icon set', async () => {
     const backend = await open();
@@ -188,7 +195,11 @@ describe('SqliteBackend — the icon roster', () => {
           category: 'ICON',
           subject_json: JSON.stringify({
             ...defaultSubjectFor('ICON'),
-            icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['retired-entry', 'elixir']) },
+            icons: {
+              look: 'ISOLATED_MARK',
+              colourMode: 'FULL_COLOUR',
+              picks: cataloguePicks(['retired-entry', 'elixir']),
+            },
           }),
           output_json: JSON.stringify(DEFAULT_OUTPUT_CONFIG),
           updated_at: 1,
@@ -197,6 +208,10 @@ describe('SqliteBackend — the icon roster', () => {
     });
 
     const [preset] = await listing;
-    expect(preset?.subject.icons).toEqual({ look: 'ISOLATED_MARK', picks: cataloguePicks(['elixir']) });
+    expect(preset?.subject.icons).toEqual({
+      look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
+      picks: cataloguePicks(['elixir']),
+    });
   });
 });

@@ -311,7 +311,7 @@ export const FONT: CategoryDefinition = {
         'Arcane Violet #8B5CF6',
         'Frost Cyan #22D3EE',
         'Poison Green #4ADE80',
-        'Void Magenta #E879F9',
+        'Neon Rose #FB7185',
         'Critical Orange #F97316',
         'Rare Blue #60A5FA',
         'Experience Lime #84CC16',

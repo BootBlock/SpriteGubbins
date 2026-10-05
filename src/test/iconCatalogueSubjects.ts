@@ -5,7 +5,7 @@ import { chunkEntries } from '../utils/chunkEntries.ts';
 import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { LOOK_FAMILY_OF_WORLD } from '../constants/iconCatalogue/lookFamilyOfWorld.ts';
 import { LOOK_FAMILIES } from '../types/iconCatalogue.ts';
-import { ICON_LOOKS } from '../types/iconRoster.ts';
+import { ICON_COLOUR_MODES, ICON_LOOKS } from '../types/iconRoster.ts';
 import type { IconRoster } from '../types/iconRoster.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 
@@ -21,15 +21,21 @@ export const UNMAPPED_WORLD = 'Clockwork Moon Colony';
  * The whole catalogue as rosters, in catalogue order, each holding as many entries as the roster's
  * capacity allows — one roster while the catalogue fits in one, and as many as it takes once it does not
  * — once in each look, since the look rewrites every sheet a roster draws.
+ *
+ * **The colour mode is swept by pairing rather than by product**: every look's rosters take one mode, the
+ * modes in turn, so each catalogue line compiles under both modes and the sweep stays the size it was.
+ * The mode adds one block to section 1 and changes one sentence of section 4, and nothing else it does
+ * depends on which icons a sheet holds.
  */
 export function iconCatalogueRosters(): readonly IconRoster[] {
   const lines = ICON_CATALOGUE_GROUPS.flatMap((group) =>
     group.entries.map((entry) => ({ id: entry.id, count: iconComponentCount(entry) })),
   );
   const runs = chunkEntries(lines, ICON_ROSTER_CAPACITY);
-  return ICON_LOOKS.flatMap((look) =>
-    runs.map((run) => ({ look, picks: cataloguePicks(run.map((line) => line.id)) })),
-  );
+  return ICON_LOOKS.flatMap((look, at) => {
+    const colourMode = ICON_COLOUR_MODES[at % ICON_COLOUR_MODES.length] ?? 'FULL_COLOUR';
+    return runs.map((run) => ({ look, colourMode, picks: cataloguePicks(run.map((line) => line.id)) }));
+  });
 }
 
 /**

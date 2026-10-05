@@ -48,6 +48,33 @@ beforeEach(() => {
 });
 
 describe('SheetFields', () => {
+  it('offers a tint-masked icon set no white key, shows the key it compiles to, and says why', () => {
+    // A mask's lightest grey runs too close to white for the white key (audit finding M1).
+    const icons = defaultSubjectFor('ICON').icons;
+    if (icons === undefined) throw new Error('ICON should open with a roster');
+    useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, backgroundKey: 'PURE_WHITE' } });
+    useSubjectStore.setState({
+      category: 'ICON',
+      subject: { ...defaultSubjectFor('ICON'), icons: { ...icons, colourMode: 'TINT_MASK' } },
+    });
+    render(<SheetFields />);
+
+    const key = screen.getByRole('combobox', { name: 'Background Key' });
+    const offered = [...key.querySelectorAll('option')].map((option) => option.value);
+    expect(offered).toEqual(['MAGENTA_FF00FF', 'PURE_BLACK', 'TRANSPARENT']);
+    expect(key).toHaveValue('MAGENTA_FF00FF');
+    expect(describedBy(key)).toContain('the PURE_WHITE key would cut out, so that key is not offered.');
+  });
+
+  it('offers a full-colour icon set every key, and says nothing about the list', () => {
+    useSubjectStore.setState({ category: 'ICON', subject: defaultSubjectFor('ICON') });
+    render(<SheetFields />);
+
+    const key = screen.getByRole('combobox', { name: 'Background Key' });
+    expect(key.querySelectorAll('option')).toHaveLength(4);
+    expect(key.getAttribute('aria-describedby') ?? '').toBe('');
+  });
+
   it('settles the rig when the sheet chosen is the rig itself', () => {
     render(<SheetFields />);
     expect(useOutputStore.getState().output.rigMode).toBe('POSE_LIBRARY');

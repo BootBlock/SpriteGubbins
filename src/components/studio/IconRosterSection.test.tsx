@@ -22,7 +22,10 @@ function iconStudio(picks: readonly string[]): void {
   useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
   useSubjectStore.setState({
     category: 'ICON',
-    subject: { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(picks) } },
+    subject: {
+      ...defaultSubjectFor('ICON'),
+      icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(picks) },
+    },
   });
 }
 
@@ -125,6 +128,38 @@ describe('IconRosterSection', () => {
     await user.keyboard('{Enter}');
 
     expect(useSubjectStore.getState().subject.icons?.look).toBe('FULL_BLEED_TILE');
+  });
+
+  it('offers the two colour modes as one named group, the set’s own pressed', () => {
+    iconStudio(['heal-minor']);
+    render(<IconRosterSection />);
+
+    const group = screen.getByRole('group', { name: 'Colour' });
+    expect(within(group).getByRole('button', { name: 'Full colour' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(group).getByRole('button', { name: 'Tint mask' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Guidance: Colour' })).toBeInTheDocument();
+  });
+
+  it('turns the set to a tint mask, and its white key off white, as a step Undo takes back', async () => {
+    const user = userEvent.setup({ delay: null });
+    iconStudio(['heal-minor']);
+    useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, backgroundKey: 'PURE_WHITE' } });
+    useSubjectStore.getState().openStudio();
+    render(<IconRosterSection />);
+
+    await user.click(screen.getByRole('button', { name: 'Tint mask' }));
+
+    expect(useSubjectStore.getState().subject.icons?.colourMode).toBe('TINT_MASK');
+    expect(useOutputStore.getState().output.backgroundKey).toBe('MAGENTA_FF00FF');
+    expect(screen.getByRole('button', { name: 'Tint mask' })).toHaveAttribute('aria-pressed', 'true');
+    act(() => {
+      useSubjectStore.getState().undoStudio();
+    });
+    expect(screen.getByRole('button', { name: 'Full colour' })).toHaveAttribute('aria-pressed', 'true');
+    expect(useOutputStore.getState().output.backgroundKey).toBe('PURE_WHITE');
   });
 
   it('renders nothing for a subject with no roster', () => {

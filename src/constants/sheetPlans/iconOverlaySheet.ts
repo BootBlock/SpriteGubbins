@@ -75,10 +75,16 @@ nothing about which icon they are looking at.`,
  * and a greyed copy of every icon is not. An icon whose second state genuinely differs in shape — a sound
  * toggle, a ready check — is a catalogue entry with two `states`, drawn as a pair on an icon sheet.
  *
- * **Unconditional, and *Applied Overlay* steers it rather than declining it.** The other categories whose
- * `clothing` names a separate piece answer a reader who wants none by taking the entries away; these
- * pieces are the overlay library itself, so a reader who left the field alone would lose a highlight and
- * a disabled state they never declined. So the field offers no “none”.
+ * **Unconditional, and drawn in the *Overlay Style*.** The other categories whose `clothing` names a
+ * separate piece answer a reader who wants none by taking the entries away; these pieces are the overlay
+ * library itself, so a reader who left the field alone would lose a highlight and a disabled state they
+ * never declined. So the field is the style every piece is drawn in rather than one piece of the library
+ * (audit finding O1): each entry is `'DRAWN_IN_IT'`, section 1 says so, and it offers no “none”. A piece
+ * the library lacks is the reader's to add in *Extra Overlay Pieces*, never a value of the style.
+ *
+ * **The tier marks are told apart by shape and by a count of pips, never by colour alone** (audit
+ * finding M2), so a colour-blind player, and a set the engine tints, still reads each tier. A pip is a
+ * dot rather than a numeral, which the lettering ban would remove.
  *
  * **One plan per look, and the same slots under both.** The entries, labels, parts and counts do not
  * change with the look, so a manifest names the same files whichever look the set takes; only the shape
@@ -159,17 +165,16 @@ copies of each of them:`,
         heading: 'Tier and overlay marks',
         intro: wording.marksIntro,
         entries: [
-          overlay('tier-mark', 'Tier marks ×4: one per rarity step above the common one', 4),
+          overlay(
+            'tier-mark',
+            'Tier marks ×4: one per rarity step above the common one, each a shape of its own carrying one to four pips in order, so a tier reads by its shape and its pip count and never by its colour alone',
+            4,
+          ),
           overlay('rarity-glow', wording.rarityGlow),
           overlay('locked-mark', 'Locked mark ×1'),
           overlay('new-item-flare', 'New item flare ×1'),
           overlay('broken-overlay', 'Broken or damaged overlay ×1'),
-          {
-            label: 'empty-mark',
-            text: 'Empty or absent mark ×1 — what is shown where the set has nothing to show',
-            count: 1,
-            kind: 'structure',
-          },
+          overlay('empty-mark', 'Empty or absent mark ×1 — what is shown where the set has nothing to show'),
         ],
         outro: `${wording.placement}
 No piece carries a letter, a numeral, a stack count or a key name: those are drawn by the engine at
@@ -179,7 +184,7 @@ runtime over the top of the sprite.`,
   };
 }
 
-/** One overlay piece, which draws the *Applied Overlay* the sheet is built around. */
+/** One overlay piece, drawn in the *Overlay Style* every piece of the library shares. */
 function overlay(label: string, text: string, count = 1): ComponentEntry {
-  return { label, text, count, kind: 'structure', attribute: { field: 'clothing', role: 'DRAWS_IT' } };
+  return { label, text, count, kind: 'structure', attribute: { field: 'clothing', role: 'DRAWN_IN_IT' } };
 }

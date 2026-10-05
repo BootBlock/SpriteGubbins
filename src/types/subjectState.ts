@@ -1,5 +1,5 @@
 import type { CustomIconDraft, CustomIconRefusal } from './customIconDraft.ts';
-import type { CustomIconEntry, IconLook } from './iconRoster.ts';
+import type { CustomIconEntry, IconColourMode, IconLook } from './iconRoster.ts';
 import type { StudioHistory } from './studioHistory.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from './subject.ts';
 
@@ -90,6 +90,15 @@ export interface SubjectState {
    * where it is. Does nothing on a subject with no roster, or when the look is already in force.
    */
   setIconLook(look: IconLook): void;
+  /**
+   * Colour the icon set another way, as one act an undo steps back over (audit finding M1).
+   *
+   * Like a look, it rewords the icon sheets and moves no sheet's count. A tint mask cannot take the
+   * `PURE_WHITE` key, so choosing one moves that key to the first the subject is offered in the same
+   * act (`resolveBackgroundKey`). Does nothing on a subject with no roster, or when the mode is already
+   * in force.
+   */
+  setIconColourMode(colourMode: IconColourMode): void;
   /** Reroll every field from the current category's option pool. */
   randomizeSubject(): void;
   /** Back to the current category's defaults, without changing category. */

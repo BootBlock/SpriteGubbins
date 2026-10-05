@@ -31,7 +31,10 @@ export function iconStudio(picks: readonly IconPick[]): void {
   useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
   useSubjectStore.setState({
     category: 'ICON',
-    subject: { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks } },
+    subject: {
+      ...defaultSubjectFor('ICON'),
+      icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks },
+    },
   });
   useSubjectStore.getState().openStudio();
 }

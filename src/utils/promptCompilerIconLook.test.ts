@@ -27,7 +27,7 @@ const OUTPUT: OutputConfig = { ...DEFAULT_OUTPUT_CONFIG, directionalMode: 'SINGL
 const ICON = defaultSubjectFor('ICON');
 
 function iconSet(look: IconLook): SubjectDefinition {
-  return { ...ICON, icons: { look, picks: ICON.icons?.picks ?? [] } };
+  return { ...ICON, icons: { look, colourMode: 'FULL_COLOUR', picks: ICON.icons?.picks ?? [] } };
 }
 
 /** The ICON prompt for one sheet of a set in `look` — sheet 0 is the overlay sheet, sheet 1 the icons. */

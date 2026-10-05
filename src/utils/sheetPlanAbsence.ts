@@ -1,6 +1,6 @@
 import { absentOptionFor } from '../constants/categories/index.ts';
 import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
-import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
+import type { AttributeRole, ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import type { RigContract } from '../types/rigContract.ts';
@@ -148,12 +148,24 @@ export function entryDeclinedBy(entry: ComponentEntry, declined: readonly Declin
  * order the scatter as loose sprites, which is what `sheetPlans/terrain.ts` argues against at length.
  */
 export function planDraws(plan: SheetPlan, key: DeclinableFieldKey): boolean {
+  return planBinds(plan, key, ['DRAWS_IT', 'DRAWS_IT_PARTLY']);
+}
+
+/**
+ * Whether this sheet's inventory is drawn in the style `key` describes — ICON's overlay sheet, whose
+ * every piece is drawn in the *Overlay Style* (`'DRAWN_IN_IT'`, audit finding O1).
+ *
+ * The other half of section 1's exception, and asked the same way {@link planDraws} is: of the plan
+ * as this subject draws it, so the sentence states what section 4 lists. Its answer and that one's are
+ * never both yes for one field, because a value is either a piece or the style of the pieces.
+ */
+export function planDrawsIn(plan: SheetPlan, key: DeclinableFieldKey): boolean {
+  return planBinds(plan, key, ['DRAWN_IN_IT']);
+}
+
+function planBinds(plan: SheetPlan, key: DeclinableFieldKey, roles: readonly AttributeRole[]): boolean {
   return plan.groups.some((group) =>
-    group.entries.some(
-      (entry) =>
-        entry.attribute?.field === key &&
-        (entry.attribute.role === 'DRAWS_IT' || entry.attribute.role === 'DRAWS_IT_PARTLY'),
-    ),
+    group.entries.some((entry) => entry.attribute?.field === key && roles.includes(entry.attribute.role)),
   );
 }
 

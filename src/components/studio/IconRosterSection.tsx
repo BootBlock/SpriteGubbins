@@ -1,3 +1,5 @@
+import { ICON_COLOUR_MODE_LABELS } from '../../constants/iconCatalogue/iconColourModeLabels.ts';
+import { ICON_COLOUR_MODE_TOOLTIPS } from '../../constants/iconCatalogue/iconColourModeTooltips.ts';
 import { ICON_LOOK_LABELS } from '../../constants/iconCatalogue/iconLookLabels.ts';
 import { ICON_LOOK_TOOLTIPS } from '../../constants/iconCatalogue/iconLookTooltips.ts';
 import { ICON_ROSTER_SECTION } from '../../constants/iconRosterSection.ts';
@@ -5,7 +7,7 @@ import { ICON_CATALOGUE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.t
 import { useIconRosterSummary } from '../../hooks/useIconRosterSummary.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
-import { ICON_LOOKS } from '../../types/iconRoster.ts';
+import { ICON_COLOUR_MODES, ICON_LOOKS } from '../../types/iconRoster.ts';
 import { Button } from '../common/Button.tsx';
 import { CollapsibleSection } from '../common/CollapsibleSection.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
@@ -25,15 +27,21 @@ import { Tooltip } from '../common/Tooltip.tsx';
  * It is a row of pills (`SegmentedChoice`) under a label carrying the card, as the Quantise tab's small
  * choices are, and each press is one act on the studio's undo stack (`setIconLook`).
  *
+ * **The colour mode follows it**, the other choice that rewrites a whole set at once: every icon sheet
+ * turns to a tint mask the engine colours by team, or back (audit finding M1). It is a second row of
+ * pills under a label of its own, and each press is one act too (`setIconColourMode`).
+ *
  * Rendered only for a subject carrying a roster, which is a subject of a category that declares one.
  */
 export function IconRosterSection() {
   const reading = useIconRosterSummary();
   const look = useSubjectStore((state) => state.subject.icons?.look);
   const setIconLook = useSubjectStore((state) => state.setIconLook);
+  const colourMode = useSubjectStore((state) => state.subject.icons?.colourMode);
+  const setIconColourMode = useSubjectStore((state) => state.setIconColourMode);
   const toggleIconCatalogueModal = useUIStore((state) => state.toggleIconCatalogueModal);
 
-  if (reading === null || look === undefined) return null;
+  if (reading === null || look === undefined || colourMode === undefined) return null;
 
   return (
     <CollapsibleSection {...ICON_ROSTER_SECTION} digest={reading.summary.digest}>
@@ -48,6 +56,19 @@ export function IconRosterSection() {
           value={look}
           format={(option) => ICON_LOOK_LABELS[option]}
           onChange={setIconLook}
+        />
+      </div>
+      <div>
+        <div className="mb-2 flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-ink-muted">Colour</span>
+          <Tooltip text={ICON_COLOUR_MODE_TOOLTIPS.colourMode} hint="Colour" />
+        </div>
+        <SegmentedChoice
+          label="Colour"
+          values={ICON_COLOUR_MODES}
+          value={colourMode}
+          format={(option) => ICON_COLOUR_MODE_LABELS[option]}
+          onChange={setIconColourMode}
         />
       </div>
       <p className="text-xs leading-relaxed text-ink-muted">{reading.summary.sentence}</p>

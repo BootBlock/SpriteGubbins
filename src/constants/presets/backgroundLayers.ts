@@ -89,7 +89,7 @@ export const BACKGROUND_LAYER_PRESETS: readonly PresetArchetype[] = [
       clothing: 'Rain Veil & Streaks',
       worn_details: 'Dithered Gradient Bands',
       primary_colours: 'Night Indigo #1E1B4B & Deep Blue',
-      accent_colours: 'Neon Magenta #E879F9',
+      accent_colours: 'Neon Rose #FB7185',
       materials: 'Glass, Steel & Concrete',
       // The ban that costs a bug report rather than a redraw: a ledge painted into the far band is a
       // ledge somebody will try to stand on.

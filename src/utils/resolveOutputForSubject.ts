@@ -1,3 +1,4 @@
+import { resolveBackgroundKey } from '../constants/backgroundKeysFor.ts';
 import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
@@ -12,13 +13,14 @@ import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
  * honour, resolved against what it can.
  *
  * **Two changes reach it, and they differ only in how much each can move.** A category switch can
- * move all eight claims below, because the modes, the facings, the cameras, the canvases and the looks
- * are all category-scoped, and because a rig contract is a document loaded for one subject. A change of
- * assembly base can move four — the sheet mode, the rig, the contract that rig carries and the sheet
- * index — because a base chooses the plans its category draws from (issue #283): a rigid object has
- * no rig sheet, and a nine-slice frame has no state library. The other four are functions of the
- * category alone and come back unchanged, so one function serves both rather than two that would have
- * to agree about the four they share. `useSubjectStore` asks it about a base only where the edit
+ * move all nine claims below, because the modes, the facings, the cameras, the canvases and the looks
+ * are all category-scoped, because a rig contract is a document loaded for one subject, and because a
+ * category's starter roster decides the background keys it can take. A change of assembly base can move
+ * four — the sheet mode, the rig, the contract that rig carries and the sheet index — because a base
+ * chooses the plans its category draws from (issue #283): a rigid object has no rig sheet, and a
+ * nine-slice frame has no state library. The other five come back unchanged from a base, so one
+ * function serves both rather than two that would have to agree about the claims they share. A change of
+ * colour mode moves the key alone, and `useSubjectStore` settles it where it writes the roster. `useSubjectStore` asks it about a base only where the edit
  * changes the plans, which is what leaves a reader's sheet index alone when they retype a value that
  * draws the same sheets.
  *
@@ -107,7 +109,10 @@ export function resolveOutputForSubject(
   // sheet, so a wide canvas carried in from a character becomes `SQUARE_1_1` and comes back unchanged
   // on every category that can use it.
   const aspectRatio = resolveAspectRatio(category, output.aspectRatio);
-  // The rig CONTRACT, which is the eighth claim and the only one that is a document rather than a
+  // And the background key, the claim a tint-masked icon set added (audit finding M1): a mask's lightest
+  // grey runs close enough to white that the `PURE_WHITE` key would cut it out, so a mask never keeps it.
+  const backgroundKey = resolveBackgroundKey(subject, output.backgroundKey);
+  // The rig CONTRACT, which is the ninth claim and the only one that is a document rather than a
   // choice between values this app offers. It names one skeleton — these fifteen slots, at these
   // sizes, jointed at these ends — so unlike the rig MODE it cannot survive becoming another kind of
   // subject. `resolveRigMode` deliberately keeps a cut-out rig across CHARACTER → CREATURE, and a
@@ -139,6 +144,7 @@ export function resolveOutputForSubject(
     cameraElevation === output.cameraElevation &&
     styleReference === output.styleReference &&
     aspectRatio === output.aspectRatio &&
+    backgroundKey === output.backgroundKey &&
     rigContract === output.rigContract &&
     output.sheetIndex === 0
   ) {
@@ -154,6 +160,7 @@ export function resolveOutputForSubject(
     cameraElevation,
     styleReference,
     aspectRatio,
+    backgroundKey,
     rigContract,
     // Cleared with the set exactly as the control clears it, and only then: a facing pinned against
     // `THREE_CLASSIC` is one `SINGLE_FRONT` never turns to, and leaving it behind would let a preset

@@ -1,3 +1,4 @@
+import { DEFAULT_ICON_COLOUR_MODE } from '../iconCatalogue/defaultIconColourMode.ts';
 import { DEFAULT_ICON_LOOK } from '../iconCatalogue/defaultIconLook.ts';
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import {
@@ -28,14 +29,29 @@ import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
  *
  * **Every option holds under both looks** (`IconRoster.look`). A full-bleed square paints its backdrop
  * behind the subject, so *Subject Framing* places the subject inside its square and the backdrop fills
- * the rest; the sheet's own prose says so. The exclusion against a slot plate holds because ICON's
- * exclusion line calls a square's backdrop part of the icon, and the option against a drop shadow is worded
- * "outside the icon" so it means the square's edge for one look and the mark's for the other.
+ * the rest; the sheet's own prose says so. That is why no option crops the subject, weights it off
+ * centre or sets wisps loose round it (audit finding O7): a mark alone has no square to crop it, sits
+ * where the interface puts its cell, and comes back with each wisp cut out as a sprite of its own.
+ *
+ * **Each field states one concern, and only this field states it** (audit findings O4 and O11).
+ * *Subject Framing* says which way a subject stands and *Silhouette Discipline* only the outline's rule;
+ * *Interior Detail* names the lines inside a form and never the outline or the light, which the outline
+ * system and the lighting model state; and a neon or hologram value sits in the one field it describes.
  *
  * **Lettering is banned here twice over**, and the second ban is this category's own. Section 0
  * forbids text anywhere on the sheet; an icon set has to be told again, because a stack count, a
  * cooldown number and a keybind letter are all things a real icon appears to carry — and every one
- * of them is drawn by the engine at runtime over the top of the sprite.
+ * of them is drawn by the engine at runtime over the top of the sprite. That ban, and the others the
+ * category's own exclusion line states, are why *Explicit Exclusions* offers none of them (audit
+ * finding O6): its pool holds the rules a game adds, which no sheet states unless the reader asks. No
+ * option names an object that brings letterforms with it (`LETTERING_OBJECTS`, audit finding O13).
+ *
+ * **Every light colour names its hex** (audit finding O2), because a word cannot be measured against a
+ * key: `iconSetKeys.test.ts` reads each one and holds it out of the full-bleed key's reach.
+ *
+ * ***Overlay Style* is how the overlay library is drawn, never a piece of it** (audit finding O1). The
+ * overlay sheet draws one fixed library, so a value naming a piece the library lacks promised a piece
+ * nobody drew; the pieces a game adds are *Extra Overlay Pieces*, and each piece is offered once.
  *
  * **The camera is left open, which is the one place this category is looser than INTERFACE.** A flat
  * front-on mark, a three-quarter potion bottle and an isometric building pin are all shipped icon
@@ -58,6 +74,7 @@ export const ICON: CategoryDefinition = {
   // order, as every roster is kept (`iconRosterShelving.test.ts`).
   iconRoster: {
     look: DEFAULT_ICON_LOOK,
+    colourMode: DEFAULT_ICON_COLOUR_MODE,
     picks: cataloguePicks([
       'heal-minor',
       'heal-major',
@@ -82,7 +99,7 @@ export const ICON: CategoryDefinition = {
       key: 'species',
       label: 'Where The Set Is Shown',
       tooltip:
-        'Where the game shows these icons, which decides how hard each one has to work. An action bar icon is found mid-fight at a glance, a bag icon is told apart from the neighbours it sits among, and a map pin sits over busy terrain.\n\n' +
+        'Where the game shows these icons, which decides how hard each one has to work. An action bar icon is found mid-fight at a glance, a bag icon is told apart from the neighbours it sits among, and a map pin or a HUD marker sits over a moving scene.\n\n' +
         SUBJECT_TYPE_ADDS_NO_COMPONENTS,
       options: [
         'Action Bar',
@@ -90,8 +107,15 @@ export const ICON: CategoryDefinition = {
         'Spellbook & Ability List',
         'Buff & Debuff Row',
         'Unit Frame & Status Row',
+        'Party & Squad Frames',
         'System Button Bar',
         'World Map & Minimap',
+        'HUD & Compass',
+        'Ping & Emote Wheel',
+        'Killfeed & Scoreboard',
+        'Quickhack Bar',
+        'Cyberware Slots',
+        'Lobby & Loadout',
         'Character Sheet',
         'Social Panels',
         'Vendor & Trade Windows',
@@ -102,48 +126,43 @@ export const ICON: CategoryDefinition = {
       key: 'gender',
       label: 'Rarity Tier',
       tooltip:
-        'How valuable or how loud the icons should read. Rarity is the emphasis axis an icon set has, and stating it apart from the colours keeps a common tier from arriving as bright as the legendary beside it, a difference the player should catch without reading.',
-      options: [
-        'Common',
-        'Uncommon',
-        'Rare',
-        'Epic',
-        'Legendary',
-        'Cursed & Corrupted',
-        'Unidentified & Unknown',
-        'Set & Matched Piece',
-        'Unique & One Of A Kind',
-        'Upgraded & Reforged',
-      ],
+        'How loud the whole set reads, from a plain common set to a rich, bright legendary one. One value holds for every icon on the set.\n\n' +
+        'A set that mixes tiers takes `Neutral, Tier Shown By Overlay Marks`: every icon is drawn at one even emphasis, and the tier marks the overlay sheet draws tell the tiers apart in your game.',
+      options: ['Neutral, Tier Shown By Overlay Marks', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'],
     },
     {
       key: 'age',
       label: 'Condition & Finish',
       tooltip:
-        'How much of a life the depicted things have had. It gives a tier ladder from one design, since the same blade drawn chipped, serviceable and pristine is three icons. Without it, the world pulls everything towards factory-new.',
+        'How much of a life the depicted things have had. Without it, the world pulls everything towards factory-new.\n\n' +
+        'Every value is drawn as a still: `Glitch-Sliced & Offset` cuts each subject into horizontal slices nudged sideways, never a flicker or a blur.',
       options: [
         'Pristine & Newly Made',
         'Serviceable & Lightly Used',
         'Chipped & Well Worn',
-        'Rusted & Neglected',
-        'Cracked & Failing',
-        'Ancient & Excavated',
-        'Enchanted & Unblemished',
-        'Freshly Dropped & Glossy',
-        'Sun-Faded & Bleached',
-        'Factory-Fresh Chrome',
         'Scuffed Street-Worn Kit',
         'Jury-Rigged & Patched',
-        'Glitching & Flickering',
+        'Rusted & Neglected',
+        'Cracked & Failing',
+        'Sun-Faded & Bleached',
+        'Ancient & Excavated',
+        'Glitch-Sliced & Offset',
       ],
     },
     {
       key: 'role',
       label: 'Smallest Display Size',
       tooltip:
-        'The smallest size the game draws these icons at. The sheet is drawn larger, so this is what every outline and accent has to survive: at 24 px only the silhouette and one bright colour are left, and any finer detail arrives as noise.\n\n' +
-        'The prompt states how far each icon is reduced to reach this size, and the narrowest stroke, gap and outline that survive it. A size you type, such as `20 × 20 Pixels` or `20 px`, is read the same way; a value with no size in it states no reduction.',
-      options: ['24 × 24 Pixels', '32 × 32 Pixels', '48 × 48 Pixels', '64 × 64 Pixels'],
+        'The smallest size the game draws these icons at. The sheet is drawn larger, so this is what every outline and accent has to survive: at 16 or 20 px, the size of a HUD marker, only the silhouette is left, and any finer detail arrives as noise.\n\n' +
+        'The prompt states how far each icon is reduced to reach this size, and the narrowest stroke, gap and outline that survive it. A size you type, such as `28 × 28 Pixels` or `28 px`, is read the same way; a value with no size in it states no reduction.',
+      options: [
+        '16 × 16 Pixels',
+        '20 × 20 Pixels',
+        '24 × 24 Pixels',
+        '32 × 32 Pixels',
+        '48 × 48 Pixels',
+        '64 × 64 Pixels',
+      ],
       // Section 2 states the reduction from the drawn size to this one (audit finding P6).
       rendering: 'DISPLAY_SIZE',
     },
@@ -175,7 +194,7 @@ export const ICON: CategoryDefinition = {
       key: 'build',
       label: 'Subject Framing',
       tooltip:
-        'How each icon’s subject sits in its square: how much of it the subject fills, and how much margin it keeps. Stating it once for the whole set stops one icon arriving with twice the visual weight of the next, the failure that makes a generated grid look like four different packs.\n\n' +
+        'How each icon’s subject sits in its square: how much of it the subject fills, the margin it keeps, and whether it stands upright or lies corner to corner. Stating it once stops one icon arriving with twice the visual weight of the next, which makes a grid look like four different packs.\n\n' +
         'On a full-bleed set the margin is backdrop, so the square stays painted to its edge whatever you choose.',
       options: [
         'Tightly Filling The Square',
@@ -184,24 +203,22 @@ export const ICON: CategoryDefinition = {
         'Small Centred Subject',
         'Diagonal, Corner To Corner',
         'Upright And Centred',
-        'Off-Centre Weighted Composition',
-        'Cropped Close On The Detail',
       ],
     },
     {
       key: 'silhouette',
       label: 'Silhouette Discipline',
       tooltip:
-        'The rule every icon’s outline follows, so the set reads as one family while each member stays distinct. At the smallest display size the outline is all that is left of an icon, so choose this before anything about the surface.',
+        'The rule every icon’s outline follows, so the set reads as one family while each member stays distinct. At the smallest display size the outline is all that is left of an icon, so choose this before anything about the surface.\n\n' +
+        '`Told Apart By Shape, Never By Colour` keeps every icon readable to a colour-blind player and under a tint your engine lays over it. Which way a subject stands is set by _Subject Framing_.',
       options: [
         'One Bold Readable Shape Each',
         'Distinct Outline For Every Icon',
-        'Shared Diagonal Thrust',
-        'Compact Centred Masses',
+        'Told Apart By Shape, Never By Colour',
+        'Compact Rounded Masses',
         'Strong Negative Space',
         'Chunky Low-Detail Forms',
         'Fine Elegant Linework',
-        'Upright Vertical Masses',
         'Radial & Symmetrical Forms',
       ],
     },
@@ -209,16 +226,14 @@ export const ICON: CategoryDefinition = {
       key: 'face_head',
       label: 'Motif Treatment',
       tooltip:
-        'How each icon carries its one focal detail, the thing that tells apart two icons sharing a silhouette.\n\n' +
+        'How each icon carries its one focal detail, the thing that tells apart two icons sharing a silhouette. The motif stays inside the subject’s own silhouette.\n\n' +
         'It is a drawn motif, never a letter or a numeral. The prompt forbids text anywhere on the sheet, because the engine draws a count or a key name over the sprite at runtime.',
       options: [
         'Plain Object, No Added Motif',
         'One Bright Focal Accent',
         'Emissive Core Glow',
         'Engraved Emblem On The Object',
-        'Carved Rune & Sigil Accent',
-        'Elemental Wisps Around The Subject',
-        'Neon Edge Light',
+        'Carved Knotwork Inlay',
         'Gem Inset At The Centre',
         'Holographic Accent Layer',
       ],
@@ -234,71 +249,64 @@ export const ICON: CategoryDefinition = {
     },
     {
       key: 'clothing',
-      label: 'Applied Overlay',
+      label: 'Overlay Style',
       tooltip:
-        'The overlay the set is built around, whose weight, colour and margin the other overlay pieces are matched to.\n\n' +
-        'The overlay sheet draws the whole overlay library, so this steers how those pieces look, not which you get. That is why there is no “none”: the prompt would tell the generator the set has no overlays and still order thirteen of them.',
+        'The style the overlay sheet draws every piece in: the disabled veil, the highlight and selection rings, the cooldown sweep, the tier marks, the rest of the library and any **Extra Overlay Pieces**. It sets their line, finish and edge, never which pieces you get, and no icon is drawn in it.\n\n' +
+        'Each piece is drawn opaque with hard edges, and your engine applies its transparency. A piece the library does not draw, such as an equipped tick, goes in **Extra Overlay Pieces**.',
       options: [
-        'Rarity Glow & Aura',
-        'Locked Padlock Mark',
-        'Cooldown Dimming Veil',
-        'New Item Flare & Sparkle',
-        'Equipped Corner Tick',
-        'Broken Crack Overlay',
-        'Enchanted Shimmer',
-        'Quantity Corner Plate',
-        'Set Bonus Ring',
-        'Cursed Shadow Bleed',
-        'Seasonal Frost Rime',
-        'Neon Scanline Flicker',
+        'Clean Flat Shapes',
+        'Bold Outlined Shapes',
+        'Stepped Glow Bands',
+        'Gilded Filigree Trim',
+        'Arcane Shimmer Facets',
+        'Cursed Shadow Tendrils',
+        'Frost Rime Crystals',
+        'Neon Tube Strokes',
       ],
     },
     {
       key: 'worn_details',
       label: 'Interior Detail',
       tooltip:
-        'How much detail the inside of each outline carries. Icons are read at a glance in a full grid, so restraint is usually right: every extra line costs contrast the silhouette and the accent need, and detail lost in downscaling shows only as noise.\n\n' +
-        'The prompt’s surface-detail level defers to it inside each icon. On a pixel-art sheet, `Hatched Line Shading`, `Etched Engraved Lines` and `Woodcut Line Engraving` are drawn as deliberate pixel lines rather than banned as microtexture.',
+        'Which lines the inside of each outline carries. Icons are read at a glance in a full grid, so restraint is usually right: every extra line costs contrast the silhouette and the accent need, and detail lost in downscaling shows only as noise. The outline system and the lighting model state the outline and the light.\n\n' +
+        'The prompt’s surface-detail level defers to it inside each icon. On a pixel-art sheet, `Hatched Line Shading` and `Etched Engraved Lines` are drawn as deliberate pixel lines rather than banned as microtexture.',
       options: [
         'Flat Fill, No Interior Detail',
-        'Two-Tone Block Shading',
-        'Single Rim Highlight',
-        'Soft Painterly Modelling',
+        'One Or Two Defining Lines',
+        'Panel & Seam Lines',
+        'Stitched Seams & Grain',
+        'Faceted Gem Cuts',
+        'Circuit-Trace Panel Lines',
         'Hatched Line Shading',
         'Etched Engraved Lines',
-        'Faceted Gem Cuts',
-        'Dithered Two-Colour Shading',
-        'Bold Outline & Flat Fill',
-        'Woodcut Line Engraving',
-        'Neon Rim Lighting',
-        'Circuit-Trace Panel Lines',
-        'Scanline Hologram Shimmer',
       ],
       // Section 2's surface-detail level defers to it, and a line technique it names is excepted from the
       // pixel discipline's microtexture ban (audit finding P11).
       rendering: 'INTERIOR_DETAIL',
-      lineTechniques: ['Hatched Line Shading', 'Etched Engraved Lines', 'Woodcut Line Engraving'],
+      lineTechniques: ['Hatched Line Shading', 'Etched Engraved Lines'],
     },
     {
       key: 'primary_colours',
       label: 'Primary Colours',
       tooltip:
-        'The dominant colours of the icons, by which the set is recognised across a grid. Two colours with a clear value gap keep an icon readable against whatever sits behind its subject: the plate the interface puts there, or the square’s own backdrop.',
+        'The dominant colours of the icons, by which the set is recognised across a grid. Two colours with a clear value gap keep an icon readable against whatever sits behind its subject: the plate the interface puts there, or the square’s own backdrop.\n\n' +
+        'Every light colour here names its hex, so the studio can hold it clear of a white background key.',
       options: [
         'Steel Grey & Cool Shadow',
         'Warm Leather Brown & Tan',
         'Aged Bronze & Verdigris',
-        'Deep Oxblood #7F1D1D & Bone',
-        'Slate #1E293B & Pale Ice',
+        'Deep Oxblood #7F1D1D & Bone #D9D4C7',
+        'Slate #1E293B & Pale Ice #BFD7E6',
         'Forest Green & Bark Brown',
-        'Bleached Sand & Rust',
-        'Matte Black & Bone White',
+        'Bleached Sand #D9C9A3 & Rust',
+        'Matte Black & Bone #D9D4C7',
         'Fresh Herb Green & Clay',
-        'Ocean Blue & Rope Cream',
+        'Ocean Blue & Rope Cream #DCD3BF',
         'Ember Red & Soot Black',
-        'Gunmetal #2B2F36 & Chrome',
+        'Gunmetal #2B2F36 & Brushed Steel #A8B0BA',
         'Midnight Navy #0F172A & Neon Cyan',
         'Carbon Black & Hazard Yellow',
+        'Asphalt Grey #374151 & Signal Teal #14B8A6',
       ],
     },
     {
@@ -315,11 +323,12 @@ export const ICON: CategoryDefinition = {
         'Legendary Gold #D4AF37',
         'Warning Amber #F59E0B',
         'Frost Cyan #22D3EE',
-        'Void Magenta #E879F9',
+        'Neon Rose #FB7185',
         'Stamina Yellow #FACC15',
         'Shadow Indigo #4338CA',
-        'Bleached Bone White',
+        'Bleached Bone #CFC6B0',
         'Electric Cyan #00E5FF',
+        'Signal Teal #14B8A6',
         'Hazard Orange #FF7A00',
         'Toxic Lime #A3E635',
       ],
@@ -328,7 +337,8 @@ export const ICON: CategoryDefinition = {
       key: 'materials',
       label: 'Surface Materials',
       tooltip:
-        'What the depicted things are made of and how light reads off them: polished metal takes a hard specular edge, cloth stays matte, glass shows what is behind it. At icon size this often separates two objects of the same shape.',
+        'What the depicted things are made of and how light reads off them: polished metal takes a hard specular edge, cloth stays matte, glass shows what is behind it. At icon size this often separates two objects of the same shape.\n\n' +
+        '`Pure Emissive Light, No Material` draws each subject as light alone, as a HUD glyph or a hologram is, with no surface for a material to show.',
       options: [
         'Forged Steel & Oiled Leather',
         'Carved Wood & Woven Cord',
@@ -344,41 +354,42 @@ export const ICON: CategoryDefinition = {
         'Carbon Fibre & Neon Tubing',
         'Scratched Chrome & Rubber Grip',
         'Moulded Polymer & LED Strip',
+        'Pure Emissive Light, No Material',
       ],
     },
     {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules that keep the interface’s job off the icon sheets. Lettering matters most: the engine draws stack counts, cooldown timers and keybinds at runtime, so an icon with one baked in serves one quantity, in one language, on one keyboard.\n\n' +
-        'A hand or a figure is excluded unless an icon’s own entry names one, so the character panel’s icon keeps its bust. On a full-bleed set, a square’s own backdrop is part of the icon, so the plate and scene options leave it alone.',
+        'A rule every icon keeps beyond those the prompt already states. Every icon sheet already bans lettering, a slot plate or frame, a scene behind the subject, a hand or figure an icon’s entry does not name, and any shadow outside the icon, so this list offers none of them.\n\n' +
+        '`No baked team or faction colour` suits a set your engine tints, and `No two icons told apart by hue alone` keeps the set readable to a colour-blind player.',
       options: [
-        'No lettering, numerals, stack counts or keybinds',
-        'No slot plate, frame or border behind the icon',
-        'No drop shadow cast outside the icon',
-        'No hand or figure an icon’s entry does not name',
-        'No background scene, tabletop or ground plane',
-        'No tooltip, panel or interface chrome around it',
-        'No motion lines or sparkle trail',
-        'No perspective floor under the subject',
+        'No real-world logo, brand or trademark',
+        'No real-world flag or insignia',
+        'No gore, blood or open wound',
+        'No baked team or faction colour',
+        'No two icons told apart by hue alone',
       ],
     },
     {
       key: 'additional_anatomy',
       label: 'Extra Overlay Pieces',
       tooltip:
-        'Further overlay pieces beyond those the overlay sheet already lists, each isolated in its own sprite slot on that sheet.\n\n' +
-        'List them with commas and `×N` for how many of each: “Equipped Corner Tick ×1, Tier Pip ×3” adds four components to the overlay sheet and to its stated count.',
+        'Further overlay pieces beyond those the overlay sheet already draws, each isolated in its own sprite slot on that sheet and drawn in the **Overlay Style**.\n\n' +
+        'List them with commas and `×N` for how many of each: “Equipped Corner Tick ×1, Above & Below Height Arrows ×2” adds three components to the overlay sheet and to its stated count.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Equipped Corner Tick ×1',
-        'Tier Pip ×3',
+        'Quantity Corner Plate ×1',
+        'Set Bonus Ring ×1',
         'Element Corner Badge ×4',
-        'Set Completion Pip ×1',
         'Favourite Star ×1',
-        'Stack Corner Plate ×1',
         'Upgrade Arrow ×1',
         'Seasonal Ribbon ×1',
+        'Edge-Of-View Pointer ×1',
+        'Above & Below Height Arrows ×2',
+        'Ping Acknowledged Tick ×1',
+        'Hostile Chevron ×1',
       ],
     },
   ],

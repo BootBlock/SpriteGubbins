@@ -644,7 +644,7 @@ describe('useSubjectStore', () => {
         category: 'ICON',
         subject: {
           ...defaultSubjectFor('ICON'),
-          icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(picks) },
+          icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(picks) },
         },
       });
       useSubjectStore.getState().openStudio();
@@ -765,6 +765,7 @@ describe('useSubjectStore', () => {
       expect(useSubjectStore.getState().toggleIcons(['heal-minor'], true)).toEqual([]);
       useSubjectStore.getState().clearIcons();
       useSubjectStore.getState().setIconLook('ISOLATED_MARK');
+      useSubjectStore.getState().setIconColourMode('TINT_MASK');
 
       expect(useSubjectStore.getState().subject).toBe(before);
       expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
@@ -781,7 +782,7 @@ describe('useSubjectStore', () => {
         category: 'ICON',
         subject: {
           ...defaultSubjectFor('ICON'),
-          icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['heal-minor']) },
+          icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(['heal-minor']) },
         },
       });
       useSubjectStore.getState().openStudio();
@@ -813,6 +814,61 @@ describe('useSubjectStore', () => {
       const before = useSubjectStore.getState().subject;
 
       useSubjectStore.getState().setIconLook('ISOLATED_MARK');
+
+      expect(useSubjectStore.getState().subject).toBe(before);
+      expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
+    });
+  });
+
+  describe('the icon colour mode', () => {
+    function colourMode() {
+      return useSubjectStore.getState().subject.icons?.colourMode;
+    }
+
+    beforeEach(() => {
+      useOutputStore.setState({
+        output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1, backgroundKey: 'PURE_WHITE' },
+      });
+      useSubjectStore.setState({
+        category: 'ICON',
+        subject: {
+          ...defaultSubjectFor('ICON'),
+          icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(['heal-minor']) },
+        },
+      });
+      useSubjectStore.getState().openStudio();
+    });
+
+    it('turns the set to a tint mask and its key off white in one step Undo takes back whole', () => {
+      // A mask's lightest grey runs too close to white for the white key (audit finding M1).
+      useSubjectStore.getState().setIconColourMode('TINT_MASK');
+      expect(colourMode()).toBe('TINT_MASK');
+      expect(useOutputStore.getState().output.backgroundKey).toBe('MAGENTA_FF00FF');
+      expect(useOutputStore.getState().output.sheetIndex).toBe(1);
+      expect(studioUndoDepth(useSubjectStore.getState().history)).toBe(1);
+
+      useSubjectStore.getState().undoStudio();
+      expect(colourMode()).toBe('FULL_COLOUR');
+      expect(useOutputStore.getState().output.backgroundKey).toBe('PURE_WHITE');
+
+      useSubjectStore.getState().redoStudio();
+      expect(colourMode()).toBe('TINT_MASK');
+      expect(useOutputStore.getState().output.backgroundKey).toBe('MAGENTA_FF00FF');
+    });
+
+    it('leaves a key the mask can take where it is', () => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, backgroundKey: 'TRANSPARENT' } });
+      const before = useOutputStore.getState().output;
+
+      useSubjectStore.getState().setIconColourMode('TINT_MASK');
+
+      expect(useOutputStore.getState().output).toBe(before);
+    });
+
+    it('records nothing for the colour mode already in force', () => {
+      const before = useSubjectStore.getState().subject;
+
+      useSubjectStore.getState().setIconColourMode('FULL_COLOUR');
 
       expect(useSubjectStore.getState().subject).toBe(before);
       expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);

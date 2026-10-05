@@ -312,7 +312,11 @@ describe('an icon set’s named slots', () => {
   it('names a two-state entry’s drawings after the entry and the state', () => {
     const subject = {
       ...ICON,
-      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['system-sound', 'elixir']) },
+      icons: {
+        look: 'ISOLATED_MARK',
+        colourMode: 'FULL_COLOUR',
+        picks: cataloguePicks(['system-sound', 'elixir']),
+      },
     } as const;
     const states = iconCatalogueEntry('system-sound')?.states ?? [];
     expect(slotsAt(subject, 1)).toEqual([...states.map((state) => `system-sound-${state}`), 'elixir']);

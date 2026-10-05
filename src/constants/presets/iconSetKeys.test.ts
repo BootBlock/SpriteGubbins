@@ -5,13 +5,16 @@ import { DAMAGE_SCHOOLS } from '../../types/iconCatalogue.ts';
 import { fromHex } from '../../utils/imageData.ts';
 import { keyReaches } from '../../utils/keyReach.ts';
 import { BACKGROUND_KEY_COLORS } from '../backgroundKeyColors.ts';
-import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { DAMAGE_SCHOOL_DEFINITIONS } from '../iconCatalogue/damageSchools.ts';
 import { iconCatalogueEntry } from '../iconCatalogue/index.ts';
 import { KEY_COLOUR_WORDS, wordWithin } from '../iconCatalogue/iconLookRules.ts';
 import { lookFamilyOfWorld } from '../iconCatalogue/lookFamilyOfWorld.ts';
 import { iconPickId } from '../../utils/iconPickId.ts';
 import { ICON_SET_PRESETS } from './iconSets.ts';
+import { PRESETS } from './index.ts';
+import { backgroundKeysFor, resolveBackgroundKey } from '../backgroundKeysFor.ts';
+import { CATEGORY_OPTIONS, defaultSubjectFor } from '../categories/index.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 
 /**
  * That no ICON preset paints with a colour its own background key would cut away (R15 of
@@ -32,10 +35,11 @@ import { ICON_SET_PRESETS } from './iconSets.ts';
  * swaps the colours on a preset more readily than its key, so a full-bleed key has to hold for any
  * colour the *Primary Colours* and *Accent Colours* pools name by hex. Measured over that pool,
  * `PURE_BLACK` reaches the shading of four primaries (Oxblood, Slate, Gunmetal and Midnight Navy, the
- * cyberpunk preset's own Gunmetal among them), `MAGENTA_FF00FF` reaches Void Magenta outright, and
- * `PURE_WHITE` reaches none of them plain or shaded — which is why it is the full-bleed presets' key
- * wherever they have one. The last check below shows the first two failing, so the measurement is
- * known to bite.
+ * cyberpunk preset's own Gunmetal among them), and `PURE_WHITE` reaches none of them plain or shaded —
+ * which is why it is the full-bleed presets' key wherever they have one. A check below shows the black
+ * key failing, so the measurement is known to bite. `MAGENTA_FF00FF` used to reach Void Magenta
+ * outright; the suites after this one hold every pool to the default key, and every near-white word to
+ * a hex these measurements can read.
  */
 
 const NAMED_HEX = /#[0-9a-f]{6}\b/gi;
@@ -150,15 +154,129 @@ describe('the ICON presets’ background keys', () => {
     },
   );
 
-  it('bites on the two coloured-field keys a full-bleed set must not take', () => {
-    const { MAGENTA_FF00FF: magenta, PURE_BLACK: black } = BACKGROUND_KEY_COLORS;
-    if (magenta === null || black === null) throw new Error('both keys should name a colour');
+  it('bites on the black key, which a full-bleed set must not take', () => {
+    const { PURE_BLACK: black } = BACKGROUND_KEY_COLORS;
+    if (black === null) throw new Error('the black key should name a colour');
     expect(poolReachedBy(black)).toEqual([
-      'Deep Oxblood #7F1D1D & Bone',
-      'Slate #1E293B & Pale Ice',
-      'Gunmetal #2B2F36 & Chrome',
+      'Deep Oxblood #7F1D1D & Bone #D9D4C7',
+      'Slate #1E293B & Pale Ice #BFD7E6',
+      'Gunmetal #2B2F36 & Brushed Steel #A8B0BA',
       'Midnight Navy #0F172A & Neon Cyan',
     ]);
-    expect(poolReachedBy(magenta)).toEqual(['Void Magenta #E879F9']);
+  });
+});
+
+/**
+ * The default key against every colour any category offers (audit finding O5).
+ *
+ * A fresh subject is drawn on `DEFAULT_OUTPUT_CONFIG`'s key, so a pooled colour that key reaches is a
+ * hole in every component painted with it, on a set nobody has configured yet. `Void Magenta #E879F9`
+ * was that colour on ICON and FONT, and as `Reward Magenta` and `Neon Magenta` on INTERFACE and
+ * BACKGROUND, where the cyberpunk parallax preset painted with it on the magenta key it never changed.
+ */
+describe('the default background key', () => {
+  const key = BACKGROUND_KEY_COLORS[DEFAULT_OUTPUT_CONFIG.backgroundKey];
+
+  it('reaches no colour any category’s pools name by hex', () => {
+    if (key === null) throw new Error('the default key should name a colour');
+    const reached = Object.entries(CATEGORY_OPTIONS).flatMap(([category, definition]) =>
+      definition.fields.flatMap((field) =>
+        field.options
+          .filter((option) =>
+            (option.match(NAMED_HEX) ?? []).some((hex) => {
+              const colour = fromHex(hex);
+              return colour !== null && keyReaches(key, colour);
+            }),
+          )
+          .map((option) => `${category}.${field.key}: ${option}`),
+      ),
+    );
+    expect(reached).toEqual([]);
+  });
+
+  it('shades no colour ICON offers into itself, so a fresh full-bleed set is safe on it', () => {
+    // A fresh ICON subject is a full-bleed set on this key, so its backdrops are held as the presets'
+    // are, along the whole backdrop series.
+    if (key === null) throw new Error('the default key should name a colour');
+    expect(defaultSubjectFor('ICON').icons?.look).toBe('FULL_BLEED_TILE');
+    expect(poolReachedBy(key)).toEqual([]);
+  });
+
+  it('bites on the colour the pools used to offer', () => {
+    const retired = fromHex('#E879F9');
+    if (key === null || retired === null) throw new Error('both should name a colour');
+    expect(keyReaches(key, retired)).toBe(true);
+  });
+});
+
+/**
+ * The near-white words, which no hex pins (audit finding O2).
+ *
+ * A full-bleed set takes `PURE_WHITE`, and a colour named only in words — `Chrome`, `Bone White`,
+ * `Pale Ice` — is never measured against it, so the pools' measurements above say nothing about the
+ * colours most likely to be keyed out. **Every near-white word in ICON's two colour pools therefore names
+ * its hex**, which is what puts it inside `poolReachedBy`'s measurement, and a preset on the white key
+ * names no near-white word without one in any field: chrome's mirror highlights reach white whatever the
+ * set's own colours are. The catalogue's looks name colours in words too, and are held to the white key
+ * by `KEY_COLOUR_WORDS`; whether a look's chrome belongs on a white-keyed preset is the catalogue's own
+ * audit (C2), not this one.
+ */
+const NEAR_WHITE = /\b(?:white|chrome|bone|ivory|pearl|silver|snow|cream|pale|bleached|ice)\b/i;
+
+/** Each part of a value that names a near-white word and no hex, split where a value names two colours. */
+function unhexedNearWhite(value: string): readonly string[] {
+  return value
+    .split(/[&,]/)
+    .map((part) => part.trim())
+    .filter((part) => NEAR_WHITE.test(part) && part.match(NAMED_HEX) === null);
+}
+
+describe('the near-white words', () => {
+  it('name their hex wherever ICON’s two colour pools offer one', () => {
+    const unhexed = CATEGORY_OPTIONS.ICON.fields
+      .filter((field) => field.key === 'primary_colours' || field.key === 'accent_colours')
+      .flatMap((field) => field.options.flatMap(unhexedNearWhite));
+    expect(unhexed).toEqual([]);
+  });
+
+  it.each(
+    ICON_SET_PRESETS.filter((preset) => preset.output.backgroundKey === 'PURE_WHITE').map(
+      (preset) => [preset.name, preset] as const,
+    ),
+  )('%s, on the white key, names no near-white word without its hex', (_name, preset) => {
+    const unhexed = CATEGORY_OPTIONS.ICON.fields.flatMap((field) =>
+      unhexedNearWhite(preset.subject[field.key]),
+    );
+    expect(unhexed).toEqual([]);
+  });
+
+  it('bites on the values the white-keyed presets used to name', () => {
+    expect(unhexedNearWhite('Gunmetal #2B2F36 & Chrome')).toEqual(['Chrome']);
+    expect(unhexedNearWhite('Scratched Chrome & Rubber Grip')).toEqual(['Scratched Chrome']);
+    expect(unhexedNearWhite('Matte Black & Bone White')).toEqual(['Bone White']);
+  });
+});
+
+/**
+ * A tint mask's key (audit finding M1): its lightest grey is the tint at full strength, close enough to
+ * white for the white key to cut it out, so no preset pairs the two and `resolveBackgroundKey` moves a
+ * stored white key off a mask wherever the two meet.
+ */
+describe('a tint mask’s background key', () => {
+  it.each(PRESETS.map((preset) => [preset.name, preset] as const))(
+    '%s takes a key its own subject is offered',
+    (_name, preset) => {
+      expect(backgroundKeysFor(preset.subject)).toContain(preset.output.backgroundKey);
+    },
+  );
+
+  it('ships a tint mask, and withholds the white key from it alone', () => {
+    const masks = ICON_SET_PRESETS.filter((preset) => preset.subject.icons?.colourMode === 'TINT_MASK');
+    expect(masks.map((preset) => preset.id)).toContain('cyberpunk-squad-hud-markers');
+    for (const mask of masks) {
+      expect(backgroundKeysFor(mask.subject)).not.toContain('PURE_WHITE');
+      expect(resolveBackgroundKey(mask.subject, 'PURE_WHITE')).toBe('MAGENTA_FF00FF');
+    }
+    expect(backgroundKeysFor(defaultSubjectFor('ICON'))).toContain('PURE_WHITE');
   });
 });

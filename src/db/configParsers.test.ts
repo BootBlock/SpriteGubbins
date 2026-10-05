@@ -312,9 +312,22 @@ describe('parseSubject — the icon roster', () => {
     const subject = {
       ...defaultSubjectFor('ICON'),
       setting: 'Near-Future Cyberpunk',
-      icons: { look: 'ISOLATED_MARK', picks: [...cataloguePicks(['heal-major']), customPick(RELIC)] },
+      icons: {
+        look: 'ISOLATED_MARK',
+        colourMode: 'TINT_MASK',
+        picks: [...cataloguePicks(['heal-major']), customPick(RELIC)],
+      },
     } as const;
     expect(parseSubject(JSON.parse(JSON.stringify(subject)), 'ICON')).toEqual(subject);
+  });
+
+  it('reads a roster stored before the colour mode existed as a set in full colour', () => {
+    // No migration: the starter's mode stands in for a missing one, as for any field a stored roster
+    // lacks (audit finding M1).
+    const stored = { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks: [] } };
+    expect(parseSubject(stored, 'ICON').icons?.colourMode).toBe('FULL_COLOUR');
+    const unknown = { ...stored, icons: { ...stored.icons, colourMode: 'TEAM_COLOUR' } };
+    expect(parseSubject(unknown, 'ICON').icons?.colourMode).toBe('FULL_COLOUR');
   });
 
   it('discards a whole ICON subject written before the roster existed', () => {
@@ -333,7 +346,11 @@ describe('parseSubject — the icon roster', () => {
     };
     const parsed = parseSubject(stored, 'ICON');
     expect(parsed.role).toBe('48 × 48 Pixels');
-    expect(parsed.icons).toEqual({ look: 'ISOLATED_MARK', picks: cataloguePicks(['elixir']) });
+    expect(parsed.icons).toEqual({
+      look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
+      picks: cataloguePicks(['elixir']),
+    });
   });
 
   it('carries no roster on a category that declares none', () => {

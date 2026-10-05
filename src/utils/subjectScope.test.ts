@@ -88,8 +88,9 @@ describe('section 1 on an icon sheet states what the set shares', () => {
 
   it('keeps the overlay’s pieces off the icons, but never an element an icon asks for itself', () => {
     const section = subjectOf(preset('cyberpunk-action-bar-consumables', 1));
-    expect(section).toContain('no\ncomponent on this sheet carries one of those pieces.');
-    expect(section).toContain('is part of that component and is drawn, however\nclosely it resembles');
+    const flat = section.replaceAll(/\s+/gu, ' ');
+    expect(flat).toContain('no component on this sheet is drawn in it or carries one of those pieces.');
+    expect(flat).toContain('is part of that component and is drawn, however closely it resembles');
     expect(section).not.toContain('component on this sheet carries it.');
   });
 });

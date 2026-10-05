@@ -75,8 +75,9 @@ export function sheetIdentity(
   const { covered } = sheetDirections(category, output, plan);
   const { icons, ...fields } = subject;
   const entries = plan.groups.flatMap((group) => group.entries.map((entry) => [entry.label, entry.text]));
-  // The look joins the key only where there is a roster, so every other category keeps the key it had.
-  const look = icons === undefined ? [] : [icons.look];
+  // The look joins the key only where there is a roster, so every other category keeps the key it had,
+  // and a tint mask only on the sheets it rewords: the overlay sheet keeps its colours under one.
+  const look = icons === undefined ? [] : [icons.look, ...(plan.tint === undefined ? [] : [plan.tint])];
   return JSON.stringify([category, fields, ...look, mode, plan.name, entries, covered]);
 }
 

@@ -41,7 +41,7 @@ import { planSlots } from './componentSlots.ts';
 import { componentTally } from './componentTally.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
-import { planAsDrawn, planDraws } from './sheetPlanAbsence.ts';
+import { planAsDrawn, planDraws, planDrawsIn } from './sheetPlanAbsence.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
 /**
@@ -372,10 +372,11 @@ describe('the plan table itself', () => {
     }
   });
 
-  it('lets a sheet leave an attribute to a sibling only where a sibling draws it and it does not', () => {
-    // `drawnElsewhere` is what puts “another sheet of this series draws it” into section 1, so a sheet
-    // declaring it has to sit in a series where some other sheet really draws the attribute as pieces,
-    // and must not draw any of it itself — or the sentence is false of the sheet it is printed on.
+  it('lets a sheet leave an attribute to a sibling only where a sibling draws in it and it does not', () => {
+    // `drawnElsewhere` is what puts “the style of the pieces another sheet of this series draws” into
+    // section 1, so a sheet declaring it has to sit in a series where some other sheet really draws its
+    // pieces in the attribute, and must draw none of it itself — or the sentence is false of the sheet
+    // it is printed on.
     let declared = 0;
     for (const category of SUBJECT_CATEGORIES) {
       for (const series of everySeriesOf(category)) {
@@ -383,9 +384,9 @@ describe('the plan table itself', () => {
           if (plan.drawnElsewhere === undefined) return;
           declared += 1;
           const key = plan.drawnElsewhere;
-          expect(planDraws(plan, key), `${category} / ${plan.name}`).toBe(false);
+          expect(planDraws(plan, key) || planDrawsIn(plan, key), `${category} / ${plan.name}`).toBe(false);
           expect(
-            series.some((other, at) => at !== index && planDraws(other, key)),
+            series.some((other, at) => at !== index && planDrawsIn(other, key)),
             `${category} / ${plan.name}`,
           ).toBe(true);
         });

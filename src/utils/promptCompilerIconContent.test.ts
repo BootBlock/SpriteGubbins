@@ -43,7 +43,11 @@ function groupIds(id: string): readonly string[] {
 }
 
 function iconSet(picks: readonly string[], look: IconLook, setting: string): SubjectDefinition {
-  return { ...defaultSubjectFor('ICON'), setting, icons: { look, picks: cataloguePicks(picks) } };
+  return {
+    ...defaultSubjectFor('ICON'),
+    setting,
+    icons: { look, colourMode: 'FULL_COLOUR', picks: cataloguePicks(picks) },
+  };
 }
 
 /** Every icon sheet a subject compiles to, the overlay sheet left out. */

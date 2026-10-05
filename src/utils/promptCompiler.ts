@@ -77,7 +77,7 @@ export function generatePrompt(
 
   return wrapForModel(prompt, output.targetModel, {
     aspectRatio: facts.aspectRatio,
-    backgroundKeyDescription: BACKGROUND_KEY_TEXT[output.backgroundKey],
+    backgroundKeyDescription: BACKGROUND_KEY_TEXT[facts.backgroundKey],
     frameIsAComponent: FRAME_IS_A_COMPONENT[category],
     letteringIsAComponent: LETTERING_IS_A_COMPONENT[category],
     surface: RENDER_STYLE_SURFACE[output.renderStyle],

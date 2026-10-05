@@ -1,3 +1,4 @@
+import { ROSTER_CHANGE_IS_ONE_UNDO_STEP } from '../guidanceSentences.ts';
 import { SPRITE_FIT_LABELS } from '../spriteCell.ts';
 import { ICON_LOOK_LABELS } from './iconLookLabels.ts';
 
@@ -20,5 +21,5 @@ export const ICON_LOOK_TOOLTIPS = {
 
 In the Quantise tab, the _${SPRITE_FIT_LABELS.FILL_SQUARE}_ fit brings squares to the size the studio targets, and _${SPRITE_FIT_LABELS.SCALE_SET}_ does the same for marks.
 
-The overlay pieces are shaped to match. Each change is a step Undo can take back.`,
+The overlay pieces are shaped to match. ${ROSTER_CHANGE_IS_ONE_UNDO_STEP}`,
 } as const;

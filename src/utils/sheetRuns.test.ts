@@ -255,7 +255,11 @@ describe('the identity of an icon set’s sheets', () => {
   function withPicks(picks: readonly string[]) {
     return {
       ...ICON,
-      icons: { look: ICON.icons?.look ?? 'FULL_BLEED_TILE', picks: cataloguePicks(picks) },
+      icons: {
+        look: ICON.icons?.look ?? 'FULL_BLEED_TILE',
+        colourMode: 'FULL_COLOUR',
+        picks: cataloguePicks(picks),
+      },
     } as const;
   }
 
@@ -283,8 +287,11 @@ describe('the identity of an icon set’s sheets', () => {
     // The look rewrites every sheet's prompt and leaves an icon line's text alone, so a key built from
     // the entries alone would keep the tick on a sheet the reader has not copied in its new look.
     const picks = ICON.icons?.picks ?? [];
-    const squares = { ...ICON, icons: { look: 'FULL_BLEED_TILE', picks } } as const;
-    const marks = { ...ICON, icons: { look: 'ISOLATED_MARK', picks } } as const;
+    const squares = {
+      ...ICON,
+      icons: { look: 'FULL_BLEED_TILE', colourMode: 'FULL_COLOUR', picks },
+    } as const;
+    const marks = { ...ICON, icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks } } as const;
     for (const sheetIndex of [0, 1]) {
       expect(sheetIdentity('ICON', squares, at(sheetIndex))).not.toBe(
         sheetIdentity('ICON', marks, at(sheetIndex)),

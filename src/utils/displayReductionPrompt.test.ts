@@ -57,7 +57,11 @@ describe('the smallest display size in section 2', () => {
 
   it('states the floor as a fraction of the square where no drawn size is stated', () => {
     const style = styleOf(
-      generatePrompt('ICON', defaultSubjectFor('ICON'), { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 }),
+      generatePrompt(
+        'ICON',
+        { ...defaultSubjectFor('ICON'), role: '24 × 24 Pixels' },
+        { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 },
+      ),
     );
     expect(style).toContain(
       `${DISPLAY_LINE}Every component is shown as small as 24 × 24 px, so one displayed pixel is 1/24 of the width of the square it is drawn to.`,

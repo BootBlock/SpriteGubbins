@@ -1,4 +1,6 @@
 import { COMPONENT_BUDGET_RANGE } from '../../constants/componentBudget.ts';
+import { backgroundKeysFor, resolveBackgroundKey } from '../../constants/backgroundKeysFor.ts';
+import { backgroundKeyWithdrawal } from '../../constants/backgroundKeyWithdrawal.ts';
 import { resolveAspectRatio } from '../../constants/categoryAspectRatios.ts';
 import {
   aspectRatioChoices,
@@ -154,8 +156,11 @@ export function SheetFields() {
       <SelectField
         label="Background Key"
         tooltip={OUTPUT_TOOLTIPS.backgroundKey}
-        value={output.backgroundKey}
-        choices={BACKGROUND_KEY_CHOICES}
+        // Resolved through the subject, as the canvas is through the category: a tint-masked icon set
+        // cannot take the white key, so a stored one shows as the key it compiles to (audit finding M1).
+        value={resolveBackgroundKey(subject, output.backgroundKey)}
+        choices={BACKGROUND_KEY_CHOICES.filter((choice) => backgroundKeysFor(subject).includes(choice.value))}
+        description={backgroundKeyWithdrawal(subject)}
         onChange={(value) => {
           setOutputField('backgroundKey', value);
         }}

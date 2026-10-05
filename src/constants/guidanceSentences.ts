@@ -231,3 +231,11 @@ export const MOVE_WAITS_FOR_THE_BUTTON =
  */
 export const FILTER_HIDES_ROWS_ONLY =
   'It hides rows and nothing more: your ticks, the set and the prompt stay as they are.';
+
+/**
+ * What an undo does to an icon set's whole-set choices, on the look and the colour mode.
+ *
+ * Both rewrite every sheet of a set at once and both are one act on the studio's undo stack, so each
+ * card says so in the same words because it is the same behaviour.
+ */
+export const ROSTER_CHANGE_IS_ONE_UNDO_STEP = 'Each change is a step Undo can take back.';

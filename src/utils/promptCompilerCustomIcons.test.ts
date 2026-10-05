@@ -30,7 +30,11 @@ const OUTPUT: OutputConfig = {
 const flat = (text: string): string => text.replaceAll(/\s+/g, ' ');
 
 function iconSet(picks: readonly IconPick[], setting = 'Near-Future Cyberpunk'): SubjectDefinition {
-  return { ...defaultSubjectFor('ICON'), setting, icons: { look: 'FULL_BLEED_TILE', picks } };
+  return {
+    ...defaultSubjectFor('ICON'),
+    setting,
+    icons: { look: 'FULL_BLEED_TILE', colourMode: 'FULL_COLOUR', picks },
+  };
 }
 
 function inventory(subject: SubjectDefinition, sheetIndex = 1): string {
@@ -96,7 +100,11 @@ describe('an icon of the reader’s own in the compiled prompt', () => {
     const { figure: _mark, ...unmarkedSalute } = SALUTE;
     const unmarked = {
       ...marked,
-      icons: { look: 'FULL_BLEED_TILE' as const, picks: [customPick(unmarkedSalute)] },
+      icons: {
+        look: 'FULL_BLEED_TILE' as const,
+        colourMode: 'FULL_COLOUR' as const,
+        picks: [customPick(unmarkedSalute)],
+      },
     };
     const sheet = generatePrompt('ICON', marked, { ...OUTPUT, sheetIndex: 1 });
 
@@ -133,7 +141,7 @@ describe('an icon of the reader’s own in the compiled prompt', () => {
     const stored = hostileStoredSubject();
     const roster = parseIconRoster(
       typeof stored === 'object' && stored !== null && 'icons' in stored ? stored.icons : null,
-      { look: 'FULL_BLEED_TILE', picks: [] },
+      { look: 'FULL_BLEED_TILE', colourMode: 'FULL_COLOUR', picks: [] },
     );
     const subject = { ...iconSet([]), icons: roster };
     const prompts = sheetSeriesFor('ICON', subject, OUTPUT.directionalMode, OUTPUT.directions).map(

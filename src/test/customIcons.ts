@@ -79,6 +79,7 @@ export function customIconSubject(): SubjectDefinition {
     setting: 'Near-Future Cyberpunk',
     icons: {
       look: 'FULL_BLEED_TILE',
+      colourMode: 'FULL_COLOUR',
       picks: [
         ...cataloguePicks(['heal-minor']),
         customPick(RELIC),

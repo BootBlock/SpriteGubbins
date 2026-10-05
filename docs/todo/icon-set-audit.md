@@ -1,6 +1,6 @@
 # Icon / Symbol Set — audit and fix plan
 
-> **Status:** 🟢 ACTIVE — phase 1 (the compiled prompt agreeing with itself) in progress; phases 2–5 open.
+> **Status:** 🟢 ACTIVE — phases 1 (the compiled prompt) and 2 (the options) landed; phases 3–5 open.
 
 ## 1. Why
 
@@ -178,3 +178,18 @@ a test, and "plausible" otherwise.
   the one scale a drawing fits its display at, so a drawn size and a display of different shapes state
   the right fraction and floors. **P12**: no wrapper negates a shadow a subject casts inside its
   full-bleed square; a drop shadow, outside it, stays negated.
+- **O1–O14 and M1–M4** landed in “Draw the overlay library in one style, keep every colour clear of
+  its key, and colour a multiplayer set by team”, which finishes **O6**.
+  - **O1**: the field is *Overlay Style*, the style every overlay piece is drawn in. Its entries are
+    `'DRAWN_IN_IT'`, so the overlay sheet’s section 1 and section 7 say so, and an icon sheet leaves the
+    style to it. Equipped ticks, quantity plates and set rings are *Extra Overlay Pieces*.
+  - **O5** reached past ICON. The default magenta key reached `#E879F9` on FONT, INTERFACE and BACKGROUND
+    too, and the Cyberpunk City Parallax preset painted with it, so every pool is now held to the default
+    key. **O2**’s rule covers the colour pools and the white-keyed presets’ fields. The catalogue’s looks
+    still name chrome on the two white-keyed presets, which is **C2**’s to decide.
+  - **M1**: a tint mask is `IconRoster.colourMode`, `SheetPlan.tint` on the icon sheets, and a key the
+    studio, the compiler and the store resolve off `PURE_WHITE` (`backgroundKeysFor`). The overlay
+    sheet keeps its colours, since its pieces mark a state rather than a side.
+  - **M3** names the off-screen arrow *Edge-Of-View Pointer*, because ICON’s negatives ban “screen”.
+  - **O7** removed `Cropped Close On The Detail`, so **T7** has no option left to fight; phase 3 confirms
+    that and closes it.

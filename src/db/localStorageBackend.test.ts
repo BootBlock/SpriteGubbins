@@ -12,7 +12,7 @@ import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import { DEFAULT_PROJECT_ID, createDefaultProject } from '../constants/projects.ts';
 import type { PromptHistoryLog } from '../types/history.ts';
-import { ICON_LOOKS } from '../types/iconRoster.ts';
+import { ICON_COLOUR_MODES, ICON_LOOKS } from '../types/iconRoster.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
@@ -745,15 +745,22 @@ describe('LocalStorageBackend — the studio session', () => {
     expect(loaded?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
   });
 
-  it.each(ICON_LOOKS)('round-trips a %s icon set’s roster with its subject', async (look) => {
-    const subject = {
-      ...defaultSubjectFor('ICON'),
-      icons: { look, picks: cataloguePicks(['heal-major', 'system-sound', 'pin-waypoint']) },
-    } as const;
-    await backend.saveSession(session({ category: 'ICON', subject }));
+  it.each(ICON_LOOKS.flatMap((look) => ICON_COLOUR_MODES.map((colourMode) => [look, colourMode] as const)))(
+    'round-trips a %s %s icon set’s roster with its subject',
+    async (look, colourMode) => {
+      const subject = {
+        ...defaultSubjectFor('ICON'),
+        icons: {
+          look,
+          colourMode,
+          picks: cataloguePicks(['heal-major', 'system-sound', 'pin-waypoint']),
+        },
+      } as const;
+      await backend.saveSession(session({ category: 'ICON', subject }));
 
-    expect((await backend.loadSession())?.subject).toEqual(subject);
-  });
+      expect((await backend.loadSession())?.subject).toEqual(subject);
+    },
+  );
 
   it('reads an ICON session stored before the roster existed as the default icon set', async () => {
     const { icons: _dropped, ...preCatalogue } = defaultSubjectFor('ICON');
@@ -768,7 +775,11 @@ describe('LocalStorageBackend — the studio session', () => {
   it('drops a pick the catalogue no longer holds from a stored icon set', async () => {
     const subject = {
       ...defaultSubjectFor('ICON'),
-      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['retired-entry', 'elixir']) },
+      icons: {
+        look: 'ISOLATED_MARK',
+        colourMode: 'FULL_COLOUR',
+        picks: cataloguePicks(['retired-entry', 'elixir']),
+      },
     };
     storage.setItem(
       STORAGE_KEYS.studioSession,
@@ -777,6 +788,7 @@ describe('LocalStorageBackend — the studio session', () => {
 
     expect((await backend.loadSession())?.subject.icons).toEqual({
       look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
       picks: cataloguePicks(['elixir']),
     });
   });

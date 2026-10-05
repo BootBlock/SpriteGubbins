@@ -31,6 +31,26 @@ export const ICON_LOOKS = ['FULL_BLEED_TILE', 'ISOLATED_MARK'] as const;
 export type IconLook = (typeof ICON_LOOKS)[number];
 
 /**
+ * How every icon of the set is coloured (audit finding M1).
+ *
+ * - `FULL_COLOUR` paints each icon in its own colours and the set's, as the prompt states them.
+ * - `TINT_MASK` draws each icon in neutral greys alone, each colour the prompt names drawn as its
+ *   lightness, so the engine can multiply a team or faction colour over it at runtime — the one icon
+ *   serving every side of a multiplayer match.
+ *
+ * **Set-wide, like the look**, because a grid mixing masks and coloured icons reads as two packs, and a
+ * game tints a whole HUD rather than one marker of it. It reaches the icon sheets through
+ * `SheetPlan.tint`, and the background key through `backgroundKeysFor`: a mask's lightest grey is the
+ * tint at full strength, close enough to white that the `PURE_WHITE` key would cut it out, so a mask
+ * never takes that key.
+ *
+ * The order is the control's order. A new set takes `DEFAULT_ICON_COLOUR_MODE`.
+ */
+export const ICON_COLOUR_MODES = ['FULL_COLOUR', 'TINT_MASK'] as const;
+
+export type IconColourMode = (typeof ICON_COLOUR_MODES)[number];
+
+/**
  * An icon the reader writes for their own game — a named quest relic, a faction's signature spell — where
  * the catalogue's archetypes have nothing to tick.
  *
@@ -79,9 +99,10 @@ export type IconPick =
   | { readonly source: 'CATALOGUE'; readonly id: string }
   | { readonly source: 'CUSTOM'; readonly entry: CustomIconEntry };
 
-/** The reader's icon set: the look it is drawn in, and the icons it holds. */
+/** The reader's icon set: the look it is drawn in, how it is coloured, and the icons it holds. */
 export interface IconRoster {
   readonly look: IconLook;
+  readonly colourMode: IconColourMode;
   /**
    * The icons, in the order the sheets draw them, each slot name at most once.
    *

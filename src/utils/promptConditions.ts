@@ -50,6 +50,7 @@ export function promptConditions(
     anatomyFacings,
     additionalAnatomyLine,
     clothingIsAComponent,
+    clothingStylesComponents,
     clothingDrawnElsewhere,
     oneSidedFeatures,
     interiorDetail,
@@ -157,6 +158,10 @@ export function promptConditions(
     // P8). Gates section 0's rule that every piece is drawn opaque at full strength — a veil as a solid
     // shape, a glow as hard-edged bands — and the self-audit's check on it. See `SheetPlan.opacity`.
     ENGINE_OPACITY: plan.opacity === 'ENGINE_APPLIED' ? 'yes' : '',
+    // A tint mask (audit finding M1): ICON's icon sheets under the roster's `TINT_MASK` are drawn in greys
+    // for the engine to tint, so section 1 turns every colour it names into a value, and the self-audit
+    // checks that no hue is left.
+    TINT_MASK: plan.tint === 'ENGINE_MASK' ? 'yes' : '',
     // Whether the subject states the interior-detail treatment section 2's surface-detail level defers
     // to (audit finding P11). Read off the fact, which is already `null` on a sheet whose section 1
     // describes the set it is laid over. See `utils/statedInteriorDetail.ts`.
@@ -229,13 +234,18 @@ export function promptConditions(
     // the answer are resolved in `sheetFacts` — whether the sheet draws it, and whether the line was
     // emitted at all.
     CLOTHING_IS_A_COMPONENT: clothingIsAComponent ? 'yes' : '',
+    // The exception's style shape (audit finding O1): ICON's overlay sheet draws every piece in the
+    // *Overlay Style*, so section 1 states it as the style of section 4, and section 7's glow and
+    // particle licence reads that line, since a `Stepped Glow Bands` style asks for the glow it names.
+    CLOTHING_STYLES_COMPONENTS: clothingStylesComponents ? 'yes' : '',
     // The exception's third shape (R3 of `docs/todo/done/icon-catalogue.md`): a sheet whose components carry
     // none of the attribute because another sheet of its series draws it. ICON's icon sheets are the
-    // case — the overlay sheet draws the *Applied Overlay*, and the icons are drawn bare for the engine
-    // to lay it on — so the paint rule stated over them would order an overlay painted onto every icon.
+    // case — the overlay sheet draws its pieces in the *Overlay Style*, and the icons are drawn bare for
+    // the engine to lay those pieces on — so the paint rule stated over them would order the style painted
+    // onto every icon.
     // The sentence is scoped to the overlay's own pieces: a padlock or a crack an icon's entry or another
     // field asks for is part of that icon and is drawn (audit finding P5). Section 7's glow and particle
-    // licence reads section 1 apart from that line for the same reason, or `Rarity Glow & Aura` would be
+    // licence reads section 1 apart from that line for the same reason, or `Stepped Glow Bands` would be
     // handed back to every icon the sentence has just taken it from (P7).
     CLOTHING_DRAWN_ELSEWHERE: clothingDrawnElsewhere ? 'yes' : '',
     // Which shape that exception sentence takes. On a multi-view sheet the anatomy turns with the

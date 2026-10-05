@@ -4,14 +4,14 @@ import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import type { CustomIconDraft, CustomIconRefusal } from '../types/customIconDraft.ts';
 import type { CustomIconEntry, IconRoster } from '../types/iconRoster.ts';
+import type { OutputConfig } from '../types/output.ts';
 import type { StudioHistory, StudioPosition } from '../types/studioHistory.ts';
-import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import type { SubjectState } from '../types/subjectState.ts';
 import { checkCustomIcon } from '../utils/checkCustomIcon.ts';
 import { iconPickId } from '../utils/iconPickId.ts';
 import { outputFollowingBase } from '../utils/outputFollowingBase.ts';
 import { resolveOutputForSubject } from '../utils/resolveOutputForSubject.ts';
-import { sheetIndexWithinSeries } from '../utils/sheetIndexWithinSeries.ts';
+import { outputForRoster } from '../utils/outputForRoster.ts';
 import { toggleIconPicks } from '../utils/toggleIconPicks.ts';
 import { withCustomIcon } from '../utils/withCustomIcon.ts';
 import {
@@ -42,11 +42,9 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
       const subject = defaultSubjectFor(category);
       set({ category, subject });
       // A category switch invalidates the most of the technical half; `resolveOutputForSubject`
-      // settles the seven claims a category can refuse. Written back only where something moved, so
+      // settles the claims a category can refuse. Written back only where something moved, so
       // a switch that decides nothing leaves that object alone.
-      const store = useOutputStore.getState();
-      const resolved = resolveOutputForSubject(category, subject, store.output, from);
-      if (resolved !== store.output) store.setOutputConfig(resolved);
+      settleOutput((output) => resolveOutputForSubject(category, subject, output, from));
     });
   },
 
@@ -93,11 +91,15 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
   updateCustomIcon: (id, draft, library) => saveCustomIcon(draft, id, library),
 
   removeCustomIcon: (id) => {
-    writeRoster(({ look, picks }) => ({ look, picks: picks.filter((pick) => iconPickId(pick) !== id) }));
+    writeRoster((roster) => ({ ...roster, picks: roster.picks.filter((pick) => iconPickId(pick) !== id) }));
   },
 
   setIconLook: (look) => {
     if (get().subject.icons?.look !== look) writeRoster((roster) => ({ ...roster, look }));
+  },
+
+  setIconColourMode: (colourMode) => {
+    if (get().subject.icons?.colourMode !== colourMode) writeRoster((roster) => ({ ...roster, colourMode }));
   },
 
   randomizeSubject: () => {
@@ -111,7 +113,7 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
         if (choice !== undefined) subject[field.key] = choice;
       }
       set({ subject });
-      followBase(category, before, subject);
+      settleOutput((output) => outputFollowingBase(category, before, subject, output));
     });
   },
 
@@ -120,7 +122,7 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
       const { category, subject: before } = get();
       const subject = defaultSubjectFor(category);
       set({ subject });
-      followBase(category, before, subject);
+      settleOutput((output) => outputFollowingBase(category, before, subject, output));
     });
   },
 
@@ -137,11 +139,16 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
   },
 }));
 
-/** Write {@link outputFollowingBase}'s answer, where it has one. */
-function followBase(category: SubjectCategory, before: SubjectDefinition, after: SubjectDefinition): void {
+/**
+ * Write the output configuration `settle` answers with for the one in force, where it answers with a
+ * different one: `resolveOutputForSubject` after a category switch, `outputFollowingBase` after a reroll
+ * or a reset, and `outputForRoster` after a roster change. Each hands back the same object, or `null`,
+ * for a change that decides nothing, and that writes nothing.
+ */
+function settleOutput(settle: (output: OutputConfig) => OutputConfig | null): void {
   const { output, setOutputConfig } = useOutputStore.getState();
-  const settled = outputFollowingBase(category, before, after, output);
-  if (settled !== null) setOutputConfig(settled);
+  const settled = settle(output);
+  if (settled !== null && settled !== output) setOutputConfig(settled);
 }
 
 /**
@@ -158,16 +165,18 @@ function saveCustomIcon(
   if (roster === undefined) return [];
   const { entry, refusals } = checkCustomIcon(draft, roster.picks, replacing, library);
   if (entry === null) return refusals;
-  writeRoster(({ look, picks }) => ({ look, picks: withCustomIcon(picks, entry, replacing) }));
+  writeRoster((roster) => ({ ...roster, picks: withCustomIcon(roster.picks, entry, replacing) }));
   return [];
 }
 
 /**
  * Put a changed roster on the subject as one act, with the sheet index pulled back inside the series it
- * now draws — a tick, a clear, a new look, or an entry of the reader's own added, changed or removed.
+ * now draws and the background key moved to one the set can take — a tick, a clear, a new look or colour
+ * mode, or an entry of the reader's own added, changed or removed.
  *
- * Both stores move in the one act, so an undo restores the roster and the sheet the reader was on
- * together. A look leaves the series its length, so for one the index never moves.
+ * Both stores move in the one act, so an undo restores the roster, the sheet the reader was on and the
+ * key together. A look or a colour mode leaves the series its length, so for one the index never moves;
+ * only a tint mask moves the key, off `PURE_WHITE` (`outputForRoster`).
  */
 function writeRoster(change: (roster: IconRoster) => IconRoster): void {
   const { category, subject } = useSubjectStore.getState();
@@ -175,9 +184,7 @@ function writeRoster(change: (roster: IconRoster) => IconRoster): void {
   const next = { ...subject, icons: change(subject.icons) };
   act(() => {
     useSubjectStore.setState({ subject: next });
-    const { output, setOutputConfig } = useOutputStore.getState();
-    const settled = sheetIndexWithinSeries(category, next, output);
-    if (settled !== output) setOutputConfig(settled);
+    settleOutput((output) => outputForRoster(category, next, output));
   });
 }
 

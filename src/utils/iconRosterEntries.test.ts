@@ -10,7 +10,7 @@ function subjectWith(picks: readonly string[], setting = 'Near-Future Cyberpunk'
     setting,
     clothing: '',
     face_head: '',
-    icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(picks) },
+    icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(picks) },
   };
 }
 

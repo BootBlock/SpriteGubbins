@@ -605,11 +605,15 @@ material, condition, finish or detail named there is drawn into one.
 [IF:CLOTHING_IS_A_COMPONENT]
 **[DEFINE:CLOTHING_LABEL]** is excepted: section [SEC:INVENTORY] draws it as components of its own.
 [/IF]
+[IF:CLOTHING_STYLES_COMPONENTS]
+**[DEFINE:CLOTHING_LABEL]** is excepted: it is the style every component in section [SEC:INVENTORY] is drawn in —
+its line, its finish and its edges — and what each component is stays its own entry’s.
+[/IF]
 [IF:CLOTHING_DRAWN_ELSEWHERE]
-**[DEFINE:CLOTHING_LABEL]** is excepted: another sheet of this series draws the pieces it governs, and no
-component on this sheet carries one of those pieces. An element that a component’s own entry in
-section [SEC:INVENTORY] names, or that another line above asks for, is part of that component and is drawn, however
-closely it resembles one of those pieces.
+**[DEFINE:CLOTHING_LABEL]** is excepted: it is the style of the pieces another sheet of this series draws,
+and no component on this sheet is drawn in it or carries one of those pieces. An element that a
+component’s own entry in section [SEC:INVENTORY] names, or that another line above asks for, is part of that
+component and is drawn, however closely it resembles one of those pieces.
 [/IF]
 [IF:ADDITIONAL_ANATOMY]
 [IF:ANATOMY_PER_VIEW]
@@ -624,6 +628,14 @@ separately and counts it as a component of its own.
 [/IF]
 [IF:SUBJECT_SCOPE=ONE_DESIGN]
 Do not infer props, weapons or equipment from the role: if it is not listed above, it does not exist.
+[/IF]
+[IF:TINT_MASK]
+
+**Every component is a tint mask**, drawn in neutral greys alone with no hue anywhere in it, because the
+engine multiplies a team or faction colour over it at runtime. Every colour this list or an entry in
+section [SEC:INVENTORY] names is drawn as its own lightness in grey, and a part told apart from its neighbour by
+colour, here or in section [SEC:STYLE], is told apart by a clear step in grey. The lightest greys are where the
+tint shows strongest.
 [/IF]
 [IF:SUBJECT_SCOPE=LAID_OVER]
 A component takes its shape, and any colour or value it has, from its own entry, and is drawn at the
@@ -1304,9 +1316,17 @@ Absent from the image entirely:
 [/IF]
 [/IF]
 [IF:SUBJECT_SCOPE=LAID_OVER]
+[IF:CLOTHING_STYLES_COMPONENTS!=yes]
 - Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle
   effect, that the inventory in section [SEC:INVENTORY] does not name. A glow or a particle effect it names
   belongs to its component and ends at a hard edge with it, never fading into the background.
+[/IF]
+[IF:CLOTHING_STYLES_COMPONENTS]
+- Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle
+  effect, that neither the inventory in section [SEC:INVENTORY] nor the **[DEFINE:CLOTHING_LABEL]** line of
+  section [SEC:SUBJECT] names. A glow or a particle effect either of them names belongs to its component and
+  ends at a hard edge with it, never fading into the background.
+[/IF]
 [/IF]
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
 
@@ -1380,6 +1400,10 @@ still be fixed.
 [N]. One camera and one scale across every component, and none lit differently from the rest — nothing
    on the sheet was drawn through a camera that moved.
 [/IF]
+[/IF]
+[IF:TINT_MASK]
+[N]. Every component is drawn in neutral greys alone, with no hue anywhere, and each colour the
+   specification names is drawn as its lightness in grey.
 [/IF]
 [IF:ENGINE_OPACITY]
 [N]. Every component is opaque at full strength — a veil or a wedge one solid shape, a glow or a halo

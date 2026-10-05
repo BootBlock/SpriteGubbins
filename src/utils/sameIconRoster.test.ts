@@ -4,7 +4,11 @@ import { RELIC, TOGGLE, customPick } from '../test/customIcons.ts';
 import type { CustomIconEntry, IconRoster } from '../types/iconRoster.ts';
 import { sameIconRoster } from './sameIconRoster.ts';
 
-const ROSTER: IconRoster = { look: 'ISOLATED_MARK', picks: cataloguePicks(['heal-minor', 'mana-minor']) };
+const ROSTER: IconRoster = {
+  look: 'ISOLATED_MARK',
+  colourMode: 'FULL_COLOUR',
+  picks: cataloguePicks(['heal-minor', 'mana-minor']),
+};
 
 /** {@link ROSTER} with the reader's own `entries` after its catalogue picks. */
 function withOwn(...entries: readonly CustomIconEntry[]): IconRoster {
@@ -13,7 +17,11 @@ function withOwn(...entries: readonly CustomIconEntry[]): IconRoster {
 
 describe('sameIconRoster', () => {
   it('compares two rosters by value', () => {
-    const copy: IconRoster = { look: 'ISOLATED_MARK', picks: cataloguePicks(['heal-minor', 'mana-minor']) };
+    const copy: IconRoster = {
+      look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
+      picks: cataloguePicks(['heal-minor', 'mana-minor']),
+    };
     expect(sameIconRoster(ROSTER, copy)).toBe(true);
   });
 
@@ -52,6 +60,8 @@ describe('sameIconRoster', () => {
 
   it('holds two absent rosters the same, and an absent one apart from any roster', () => {
     expect(sameIconRoster(undefined, undefined)).toBe(true);
-    expect(sameIconRoster(undefined, { look: 'ISOLATED_MARK', picks: [] })).toBe(false);
+    expect(sameIconRoster(undefined, { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: [] })).toBe(
+      false,
+    );
   });
 });

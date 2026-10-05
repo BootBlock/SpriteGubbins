@@ -24,7 +24,7 @@ function iconStudio(picks: readonly IconPick[] = cataloguePicks(['heal-minor']))
     subject: {
       ...defaultSubjectFor('ICON'),
       setting: 'High Fantasy',
-      icons: { look: 'ISOLATED_MARK', picks },
+      icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks },
     },
   });
   useSubjectStore.getState().openStudio();

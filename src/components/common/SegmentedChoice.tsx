@@ -30,8 +30,8 @@ interface SegmentedChoiceProps<T extends string | number> {
  *
  * Eleven controls in the Quantise tab are this — the preview layout, the preview magnification, the
  * heatmap scale, the keying tolerance, the edge hardening, the download's magnification and format,
- * and the sprite cell's source, its two anchors and its fit — and one in the studio, an icon set's
- * look. Most of the Quantise tab's are a handful of stepped numbers where a slider would be the
+ * and the sprite cell's source, its two anchors and its fit — and two in the studio, an icon set's
+ * look and its colour mode. Most of the Quantise tab's are a handful of stepped numbers where a slider would be the
  * obvious choice and the wrong one — every one of them re-runs work proportional to the whole image,
  * and a drag would spend a recompute per pointer move on a sheet that may be sixteen megapixels.
  * Stepped values reach the same range at one recompute per click.
@@ -45,7 +45,7 @@ interface SegmentedChoiceProps<T extends string | number> {
  * is solid `bg-tab`, where an *action* is the translucent, outlined `action-tab`. Keeping those two
  * apart is what stops "the zoom is at 4×" and "press this to download" reading as the same offer.
  * Its call sites were all in the Quantise tab, where this used to be the one indigo control in a jade
- * panel; the icon look is the first in the studio, and takes the studio's colour the same way.
+ * panel; the icon set's two are the studio's, and take the studio's colour the same way.
  *
  * **The pills carry no guidance card of their own**, and that is the same call `ComboBox` makes about
  * its options: a pill is one *value* of a setting, not a control in its own right, and the setting is

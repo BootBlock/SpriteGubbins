@@ -24,6 +24,7 @@ import {
   entryDeclinedBy,
   planAsDrawn,
   planDraws,
+  planDrawsIn,
 } from './sheetPlanAbsence.ts';
 import { slugify } from './slugify.ts';
 import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
@@ -160,11 +161,19 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
     expect(subjectSection.includes(`**${label}** is excepted: section`), where).toBe(
       planDraws(sheet.plan, 'clothing'),
     );
-    // The exception's other shape: a sheet that leaves the attribute to a sibling of its series says
-    // so, and only that sheet — ICON's icon sheets, whose overlay is the overlay sheet's.
-    expect(subjectSection.includes(`**${label}** is excepted: another sheet`), where).toBe(
-      sheet.plan.drawnElsewhere === 'clothing',
+    // The exception's style shape: a sheet whose pieces are drawn in the attribute says so, and only
+    // that sheet — ICON's overlay sheet, whose every piece is drawn in the *Overlay Style* (audit
+    // finding O1). A value is a piece or the style of the pieces, never both on one sheet.
+    expect(subjectSection.includes(`**${label}** is excepted: it is the style every component`), where).toBe(
+      planDrawsIn(sheet.plan, 'clothing'),
     );
+    expect(planDraws(sheet.plan, 'clothing') && planDrawsIn(sheet.plan, 'clothing'), where).toBe(false);
+    // And its shape for a sheet that leaves the attribute to a sibling of its series: ICON's icon
+    // sheets, whose overlay pieces are the overlay sheet's.
+    expect(
+      subjectSection.includes(`**${label}** is excepted: it is the style of the pieces another sheet`),
+      where,
+    ).toBe(sheet.plan.drawnElsewhere === 'clothing');
   });
 
   it.each(SHEET_CASES)('says nothing about a clothing line nobody wrote, on %s', (where, category, sheet) => {
@@ -215,11 +224,13 @@ describe('which categories draw the clothing value as components of their own', 
   /**
    * The content decision, pinned so it cannot drift back.
    *
-   * Six of the thirteen draw it: the *Armour & Cladding* a vehicle's hull is clad in, the *Applied
-   * Overlay* an engine lays over any icon in the set, the *Applied Atmosphere* a background scrolls
-   * at its own rate, the *Ornament & Trim* over an interface frame, the *Awning & Addons* on a
+   * Five of the thirteen draw it: the *Armour & Cladding* a vehicle's hull is clad in, the *Applied
+   * Atmosphere* a background scrolls at its own rate, the *Ornament & Trim* over an interface frame, the *Awning & Addons* on a
    * building's façade, and the *Mounting / Framework* an object stands on. Each is a piece an engine
    * has a reason to composite or to leave out, and each is one section 4 already listed.
+   *
+   * ICON draws it as neither a piece nor paint: its *Overlay Style* is the style every overlay piece
+   * is drawn in (audit finding O1), so its overlay sheet is `'DRAWN_IN_IT'` and no sheet draws it.
    *
    * The other seven are paint: a character's clothing is "drawn into the limb and torso surfaces", a
    * font's applied treatment "goes into the glyph", and TERRAIN's scatter layer and EFFECT's
@@ -235,7 +246,6 @@ describe('which categories draw the clothing value as components of their own', 
     'BUILDING',
     'VEHICLE',
     'INTERFACE',
-    'ICON',
     'BACKGROUND',
   ];
 

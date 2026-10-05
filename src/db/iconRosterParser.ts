@@ -1,7 +1,7 @@
 import { iconCatalogueEntry, iconComponentCount } from '../constants/iconCatalogue/index.ts';
 import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import type { CustomIconDraft } from '../types/customIconDraft.ts';
-import { ICON_LOOKS } from '../types/iconRoster.ts';
+import { ICON_COLOUR_MODES, ICON_LOOKS } from '../types/iconRoster.ts';
 import type { IconPick, IconRoster } from '../types/iconRoster.ts';
 import { checkCustomIcon } from '../utils/checkCustomIcon.ts';
 import { iconPickId } from '../utils/iconPickId.ts';
@@ -14,7 +14,8 @@ import { isRecord, pick } from './readers.ts';
  *
  * **Tolerant field by field, as `parseSubject` is.** A roster that is not a record, or whose picks are
  * not a list, has been damaged or edited by hand, and the category's starter roster (`fallback`) stands
- * in for that part. A look this build does not draw falls back to the starter's.
+ * in for that part. A look or a colour mode this build does not draw falls back to the starter's, which
+ * is also how a roster stored before the colour mode existed reads: as a set in the starter's colours.
  *
  * **A pick that does not parse is dropped**, which is what the project's no-compatibility rule asks of a
  * retired identifier or shape: it is not translated, and the set loses that one icon rather than gaining
@@ -38,8 +39,9 @@ import { isRecord, pick } from './readers.ts';
 export function parseIconRoster(value: unknown, fallback: IconRoster): IconRoster {
   if (!isRecord(value)) return fallback;
   const look = pick(value, 'look', fallback.look, ICON_LOOKS);
+  const colourMode = pick(value, 'colourMode', fallback.colourMode, ICON_COLOUR_MODES);
   const stored = value['picks'];
-  if (!Array.isArray(stored)) return { look, picks: fallback.picks };
+  if (!Array.isArray(stored)) return { look, colourMode, picks: fallback.picks };
 
   const picks: IconPick[] = [];
   let filled = 0;
@@ -52,7 +54,7 @@ export function parseIconRoster(value: unknown, fallback: IconRoster): IconRoste
     picks.push(parsed);
     filled += read.count;
   }
-  return { look, picks: sortIconPicks(picks) };
+  return { look, colourMode, picks: sortIconPicks(picks) };
 }
 
 /** A stored pick read as far as its shape, before the roster it joins is consulted. */

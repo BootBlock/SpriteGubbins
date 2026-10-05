@@ -939,7 +939,7 @@ describe('what a wrapper says about a shadow on a full-bleed square', () => {
   const iconSheet = (look: IconLook, targetModel: TargetModelId): string =>
     generatePrompt(
       'ICON',
-      { ...ICON_SUBJECT, icons: { look, picks: ICON_SUBJECT.icons?.picks ?? [] } },
+      { ...ICON_SUBJECT, icons: { look, colourMode: 'FULL_COLOUR', picks: ICON_SUBJECT.icons?.picks ?? [] } },
       withOutput({ targetModel, directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY', sheetIndex: 1 }),
     );
   const characterSheet = (targetModel: TargetModelId): string =>

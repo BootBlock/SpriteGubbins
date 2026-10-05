@@ -12,7 +12,11 @@ vi.mock('../constants/iconCatalogue/iconSheetLimits.ts', async (original) => ({
   ICON_ROSTER_CAPACITY: 3,
 }));
 
-const FALLBACK: IconRoster = { look: 'ISOLATED_MARK', picks: cataloguePicks(['heal-minor']) };
+const FALLBACK: IconRoster = {
+  look: 'ISOLATED_MARK',
+  colourMode: 'FULL_COLOUR',
+  picks: cataloguePicks(['heal-minor']),
+};
 
 /** A roster as storage holds it: written out and read back as plain JSON. */
 function stored(picks: readonly unknown[], look = 'ISOLATED_MARK'): unknown {
@@ -26,7 +30,11 @@ function storedCustom(fields: Record<string, unknown>): unknown {
 
 describe('parseIconRoster', () => {
   it.each(ICON_LOOKS)('reads a stored %s roster back unchanged', (look) => {
-    const roster: IconRoster = { look, picks: cataloguePicks(['heal-major', 'system-sound']) };
+    const roster: IconRoster = {
+      look,
+      colourMode: 'FULL_COLOUR',
+      picks: cataloguePicks(['heal-major', 'system-sound']),
+    };
     expect(parseIconRoster(stored(roster.picks, look), FALLBACK)).toEqual(roster);
   });
 
@@ -38,6 +46,7 @@ describe('parseIconRoster', () => {
     ];
     expect(parseIconRoster(stored(picks), FALLBACK)).toEqual({
       look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
       picks: cataloguePicks(['heal-major', 'elixir']),
     });
   });
@@ -46,6 +55,7 @@ describe('parseIconRoster', () => {
     // A bare id was a pick before the reader's own entries arrived; it is not translated.
     expect(parseIconRoster(stored(['heal-major', ...cataloguePicks(['elixir'])]), FALLBACK)).toEqual({
       look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
       picks: cataloguePicks(['elixir']),
     });
   });
@@ -53,10 +63,13 @@ describe('parseIconRoster', () => {
   it('falls back field by field where storage was damaged', () => {
     expect(parseIconRoster('not a roster', FALLBACK)).toBe(FALLBACK);
     expect(parseIconRoster(null, FALLBACK)).toBe(FALLBACK);
-    expect(parseIconRoster({ look: 'ISOLATED_MARK', picks: 'heal-major' }, FALLBACK)).toEqual(FALLBACK);
+    expect(
+      parseIconRoster({ look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: 'heal-major' }, FALLBACK),
+    ).toEqual(FALLBACK);
     // A look this build does not draw is a retired identifier, which falls back rather than translating.
     expect(parseIconRoster(stored(cataloguePicks(['elixir']), 'EMBOSSED_BUTTON'), FALLBACK)).toEqual({
       look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
       picks: cataloguePicks(['elixir']),
     });
   });
@@ -67,6 +80,7 @@ describe('parseIconRoster', () => {
     const picks = cataloguePicks(['heal-minor', 'heal-major', 'system-sound', 'elixir']);
     expect(parseIconRoster(stored(picks), FALLBACK)).toEqual({
       look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
       picks: cataloguePicks(['heal-minor', 'heal-major', 'elixir']),
     });
   });
@@ -93,6 +107,7 @@ describe('parseIconRoster — the reader’s own entries', () => {
     const picks = [customPick(SPELL), ...cataloguePicks(['heal-minor']), customPick(RELIC)];
     expect(parseIconRoster(stored(picks), FALLBACK)).toEqual({
       look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
       picks: [...cataloguePicks(['heal-minor']), customPick(RELIC), customPick(SPELL)],
     });
     expect(parseIconRoster(stored([customPick(TOGGLE)]), FALLBACK).picks).toEqual([customPick(TOGGLE)]);

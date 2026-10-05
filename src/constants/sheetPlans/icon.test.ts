@@ -24,7 +24,13 @@ function subjectWith(
   setting = 'High Fantasy',
   look: IconLook = 'ISOLATED_MARK',
 ): SheetSubject {
-  return { anatomy: '', setting, clothing: '', face_head: '', icons: { look, picks: cataloguePicks(picks) } };
+  return {
+    anatomy: '',
+    setting,
+    clothing: '',
+    face_head: '',
+    icons: { look, colourMode: 'FULL_COLOUR', picks: cataloguePicks(picks) },
+  };
 }
 
 function seriesOf(subject: SheetSubject) {

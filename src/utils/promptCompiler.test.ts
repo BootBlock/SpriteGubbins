@@ -4022,10 +4022,10 @@ describe('generatePrompt — an icon set', () => {
   const ICON = defaultSubjectFor('ICON');
   const ICON_OUTPUT = withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' });
   const ELSEWHERE =
-    '**Applied Overlay** is excepted: another sheet of this series draws the pieces it governs';
-  const COMPONENTS = '**Applied Overlay** is excepted: section';
+    '**Overlay Style** is excepted: it is the style of the pieces another sheet of this series draws';
+  const STYLES = '**Overlay Style** is excepted: it is the style every component in section 4 is drawn in';
 
-  it('excepts the overlay as drawn elsewhere on the icon sheets, and as components on the overlay sheet', () => {
+  it('excepts the overlay style as drawn elsewhere on the icon sheets, and as the style of the overlay sheet', () => {
     const overlay = sectionOf(
       generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 }),
       'SUBJECT DEFINITION',
@@ -4035,15 +4035,15 @@ describe('generatePrompt — an icon set', () => {
       'SUBJECT DEFINITION',
     );
 
-    expect(overlay).toContain(COMPONENTS);
-    expect(overlay).not.toContain(ELSEWHERE);
-    expect(icons).toContain(ELSEWHERE);
-    expect(icons).not.toContain(COMPONENTS);
+    expect(overlay.replaceAll(/\s+/gu, ' ')).toContain(STYLES);
+    expect(overlay).not.toContain('is excepted: section');
+    expect(icons.replaceAll(/\s+/gu, ' ')).toContain(ELSEWHERE);
+    expect(icons).not.toContain('is the style every component');
   });
 
   it('says nothing about an overlay line nobody wrote', () => {
     const icons = generatePrompt('ICON', { ...ICON, clothing: '' }, { ...ICON_OUTPUT, sheetIndex: 1 });
-    expect(icons).not.toContain('is excepted: another sheet of this series');
+    expect(icons).not.toContain('another sheet of this series draws');
   });
 
   it('states the drawn-elsewhere exception on no other category’s sheets', () => {
@@ -4055,7 +4055,7 @@ describe('generatePrompt — an icon set', () => {
             expect(
               generatePrompt(category, subject, { ...output, sheetIndex }),
               `${category}/${subject.anatomy}/${directionalMode}/${String(sheetIndex)}`,
-            ).not.toContain('is excepted: another sheet of this series');
+            ).not.toContain('another sheet of this series draws,');
           }
         }
       }
@@ -4101,7 +4101,10 @@ describe('generatePrompt — an icon set', () => {
     const ICONS_AGREE = 'Every icon fills the same cell to the same margin';
     const PIECES_AGREE = 'Every piece sits in a cell the size of one icon';
     // The isolated look's wording; `promptCompilerIconLook.test.ts` holds the full-bleed square's.
-    const isolated = { ...ICON, icons: { look: 'ISOLATED_MARK', picks: ICON.icons?.picks ?? [] } } as const;
+    const isolated = {
+      ...ICON,
+      icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: ICON.icons?.picks ?? [] },
+    } as const;
     const audit = (sheetIndex: number): string =>
       sectionOf(
         generatePrompt('ICON', isolated, { ...ICON_OUTPUT, sheetIndex }),
@@ -4116,7 +4119,7 @@ describe('generatePrompt — an icon set', () => {
   it('agrees the count’s noun with a sheet of one icon, in section 0 and in the series list', () => {
     const subject = {
       ...ICON,
-      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['heal-minor']) },
+      icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(['heal-minor']) },
     } as const;
     const prompt = generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 1 });
     expect(prompt).toContain('Exactly 1 component, each visibly separate');

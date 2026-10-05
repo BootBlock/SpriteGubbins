@@ -187,7 +187,7 @@ export function promptValues(
     // for a sheet section 3 turns to five yaws, contradicting itself at four of them.
     DEPTH_ORDER_DESCRIPTION: depthOrderDescription(coveredDirections, cameraElevation),
 
-    BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[output.backgroundKey],
+    BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[facts.backgroundKey],
     ASPECT_DESCRIPTION: ASPECT_TEXT[facts.aspectRatio],
     JOINT_CAP_DESCRIPTION: JOINT_CAP_TEXT[output.jointCapStyle],
     OVERLAP_MARGIN_DESCRIPTION: OVERLAP_MARGIN_TEXT[output.overlapMargin],

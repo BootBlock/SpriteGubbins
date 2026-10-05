@@ -103,7 +103,19 @@ export type AttributeRole =
    * beside the fourteen transitions — the sixteen the transition group's own intro says an autotiler
    * indexes — so the deliverable is whole and the reader has simply asked for less variation.
    */
-  | 'VARIES_IN_IT';
+  | 'VARIES_IN_IT'
+  /**
+   * The entry draws none of the attribute and is **drawn in the style it names** — ICON's overlay
+   * pieces, every one drawn in the *Overlay Style* (audit finding O1).
+   *
+   * The field used to name one overlay the set was built around, and seven of its twelve values named
+   * a piece the fixed library never drew while section 1 told the overlay sheet its inventory drew it.
+   * A style is the honest reading of a field whose sheet draws the same pieces whatever is chosen: it
+   * changes how each piece looks and never which pieces exist. So section 1 states the attribute as the
+   * style of every component in section 4 (`CLOTHING_STYLES_COMPONENTS`) rather than as a component,
+   * and the entry is never dropped, because a set with no style still has a disabled veil.
+   */
+  | 'DRAWN_IN_IT';
 
 /**
  * Which subject field an entry is conditional on, and how — the pair {@link AttributeRole} is half of.
@@ -201,12 +213,13 @@ export interface ComponentEntry {
    * Section 1 states that every fitted, applied and worn attribute it lists is painted onto the
    * component it sits on and never drawn as a separate piece. That rule was written for a
    * character's armour and fixed in the template, and the `clothing` key is a different thing in
-   * each category: *Armour & Cladding* on a vehicle, *Applied Overlay* on an icon, *Applied
-   * Atmosphere* on a background, *Ornament & Trim* on an interface, *Awning & Addons* on a building,
-   * *Mounting / Framework* on an object. Every one of those is a piece the inventory draws in its own
-   * right — so the prompt told the generator the cladding was paint and then listed a cladding panel
-   * as a component, which is exactly the §1-forbids / §4-requires contradiction the per-category
-   * plans exist to remove.
+   * each category: *Armour & Cladding* on a vehicle, *Applied Atmosphere* on a background, *Ornament &
+   * Trim* on an interface, *Awning & Addons* on a building, *Mounting / Framework* on an object. Every
+   * one of those is a piece the inventory draws in its own right — so the prompt told the generator the
+   * cladding was paint and then listed a cladding panel as a component, which is exactly the
+   * §1-forbids / §4-requires contradiction the per-category plans exist to remove. ICON's *Overlay
+   * Style* is neither paint nor a piece: it is the style its overlay pieces are drawn in
+   * (`'DRAWN_IN_IT'`).
    *
    * `face_head` is the second, on TERRAIN alone, and no paint rule is involved (issue #293). Its
    * *Focal Feature* is the one distinctive piece a field is composed around, which the feature library
@@ -726,16 +739,17 @@ interface SheetPlanFields {
   readonly assemblyFailure: AssemblyFailure;
   /**
    * A declinable attribute this sheet's components carry none of, because another sheet of its series
-   * draws it as pieces of their own — ICON's `clothing`, the *Applied Overlay*, which the overlay sheet
-   * draws and every icon sheet leaves off its icons for the engine to lay on at runtime.
+   * draws its pieces in it — ICON's `clothing`, the *Overlay Style*, which the overlay sheet draws every
+   * piece in and every icon sheet leaves off its icons for the engine to lay those pieces on at runtime.
    *
    * **Declared rather than derived**, because what the entries say cannot answer it. Section 1's paint
    * rule says every applied attribute is painted onto the component it sits on, and a sheet whose
    * entries bind none of the attribute is usually a sheet that paints it — a vehicle's directional
    * views paint the cladding its part library draws as panels. Only the plan knows that its icons are
    * drawn bare, so it says so here, and section 1 then excepts the attribute in those words
-   * (`CLOTHING_DRAWN_ELSEWHERE`). `sheetPlans.test.ts` holds a plan declaring it to a series in which
-   * another sheet does draw the attribute and this one does not.
+   * (`CLOTHING_DRAWN_ELSEWHERE`), which hold only where a sibling's entries are `'DRAWN_IN_IT'`.
+   * `sheetPlans.test.ts` holds a plan declaring it to a series in which another sheet does draw in the
+   * attribute and this one does not.
    *
    * **`clothing` alone**, because it is the one attribute section 1's paint rule is about and so the
    * one the compiler has a sentence for; a second key would be a declaration nothing reads.
@@ -810,6 +824,20 @@ interface SheetPlanFields {
    * **`ENGINE_APPLIED` alone**, for the reason {@link SheetPlan.backdrop} gives.
    */
   readonly opacity?: 'ENGINE_APPLIED';
+  /**
+   * That every component of this sheet is a tint mask: drawn in neutral greys alone, each colour the
+   * prompt names drawn as its lightness, for the engine to multiply a team or faction colour over at
+   * runtime (audit finding M1).
+   *
+   * **An ICON icon sheet's, where the roster asks for one** (`IconRoster.colourMode`). Section 1 states
+   * it beneath the colours it lists, so the set's colours and an entry's own become values rather than
+   * hues and the prompt never asks for a colour and a grey at once; the inventory's colour sentence and
+   * the self-audit say the same. The overlay sheet never declares it, because its pieces mark an icon's
+   * state rather than its side, and are drawn in the colours section 1 gives them.
+   *
+   * **`ENGINE_MASK` alone**, for the reason {@link SheetPlan.backdrop} gives.
+   */
+  readonly tint?: 'ENGINE_MASK';
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */

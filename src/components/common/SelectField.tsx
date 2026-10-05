@@ -17,27 +17,28 @@ interface SelectFieldProps<T extends string | number> {
    * once what the list is missing — shown under the control and wired as its accessible description.
    *
    * Orthogonal to `tooltip`, which explains the field and reads the same whatever is chosen. Six of
-   * the nine call sites are selects whose options differ from each other in a way no single
+   * the ten call sites are selects whose options differ from each other in a way no single
    * sentence can cover — the palette, the render style, the art style reference, the system profile,
    * the target generator and the sheet contents. Each of those has a table behind it holding a
    * different account of what some of its options mean, and this is where the row for the chosen one
    * is read out.
    *
-   * **The other three read the other way: the rig mode, the colour budget and the outline system.**
-   * Their options need no per-option account, but their *lists* narrow. Sheet contents that deliver a
+   * **The other four read the other way: the rig mode, the colour budget, the outline system and the
+   * background key.** Their options need no per-option account, but their *lists* narrow. Sheet contents that deliver a
    * sheet drawing each moving part once per position it takes do not offer the cut-out rig, because
    * that rig's first rule is that no piece commits to a position; and a render style whose own line
    * names a small palette or its own contour does not offer a budget or an outline that contradicts
-   * it. An option that disappears with no explanation reads as a control that failed to render, so
+   * it, and an icon set drawn as a tint mask does not offer the white key its greys would be cut by. An
+   * option that disappears with no explanation reads as a control that failed to render, so
    * the sentence naming what withdrew it goes here — where a screen reader announces it with the
    * control, rather than in a paragraph beside it.
    *
-   * Optional because the other twenty-seven have nothing of either kind to say, and twenty-seven
-   * call sites passing a permanently-empty string would bury the nine that do — while empty *is*
-   * still accepted from those nine, as `CheckboxField`'s reason is, so a caller resolving the text
+   * Optional because the other twenty-six have nothing of either kind to say, and twenty-six
+   * call sites passing a permanently-empty string would bury the ten that do — while empty *is*
+   * still accepted from those ten, as `CheckboxField`'s reason is, so a caller resolving the text
    * out of its table can hand over what it found rather than choosing between a prop and no prop.
-   * Seven of the nine need that in earnest — four whose tables are keyed on something the select can
-   * hold and the table has no row for, and the three narrowing lists, whose sentences apply to some
+   * Eight of the ten need that in earnest — four whose tables are keyed on something the select can
+   * hold and the table has no row for, and the four narrowing lists, whose sentences apply to some
    * sheets or styles and not others — and the other two never take it up: the target generator's is a guard over a miss
    * its own call site records as unreachable, and the sheet contents' table has a row for every mode
    * a category can offer, because both are keyed on the same closed union.

@@ -3,6 +3,7 @@ import { chunkEntries } from '../../utils/chunkEntries.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { iconRosterEntries } from '../../utils/iconRosterEntries.ts';
 import type { SheetPlan } from '../../types/components.ts';
+import { DEFAULT_ICON_COLOUR_MODE } from '../iconCatalogue/defaultIconColourMode.ts';
 import { DEFAULT_ICON_LOOK } from '../iconCatalogue/defaultIconLook.ts';
 import { ICON_OVERLAY_PLANS } from './iconOverlaySheet.ts';
 import { iconSheet } from './iconSheet.ts';
@@ -23,7 +24,8 @@ import type { SeriesFor } from './modePlans.ts';
  * sheet alone: the honest series for a set that has not picked an icon yet.
  *
  * **The roster's look picks every sheet's wording**, the overlay sheet's included, so a series never mixes
- * squares and loose marks. A subject with no roster takes `DEFAULT_ICON_LOOK`, which is only ever
+ * squares and loose marks, and its colour mode decides whether every icon sheet is a tint mask; the
+ * overlay sheet's pieces mark a state rather than a side, so they keep their colours. A subject with no roster takes `DEFAULT_ICON_LOOK` and `DEFAULT_ICON_COLOUR_MODE`, which is only ever
  * a hand-built subject: every ICON subject the app stores carries one.
  *
  * **The set used to be twelve icons the generator chose**, on one sheet with the overlay pieces. That
@@ -32,10 +34,11 @@ import type { SeriesFor } from './modePlans.ts';
  */
 export const iconSeries: SeriesFor = (_facings, subject) => {
   const look = subject.icons?.look ?? DEFAULT_ICON_LOOK;
+  const colourMode = subject.icons?.colourMode ?? DEFAULT_ICON_COLOUR_MODE;
   const icons: SheetPlan[] = [];
   let first = 1;
   for (const run of chunkEntries(iconRosterEntries(subject), ICONS_PER_SHEET)) {
-    icons.push(iconSheet(run, first, look));
+    icons.push(iconSheet(run, first, look, colourMode));
     first += componentTotal(run);
   }
   return [ICON_OVERLAY_PLANS[look], ...icons];
