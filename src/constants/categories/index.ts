@@ -1,6 +1,7 @@
 import type {
   CategoryDefinition,
   FieldOption,
+  FieldRendering,
   SubjectCategory,
   SubjectDefinition,
   SubjectFieldKey,
@@ -104,6 +105,17 @@ export function oneSidedFeatureFor(
 ): string | null {
   const field = CATEGORY_OPTIONS[category].fields.find((candidate) => candidate.key === key);
   return field?.oneSidedOptions?.[value] ?? null;
+}
+
+/**
+ * The field this category declares section 2 reads as `rendering`, or `null` where it declares none.
+ *
+ * Read rather than recognised, for the reason {@link absentOptionFor} is: a key means a different
+ * thing on each category, so `role` is a display size only where ICON's pool says so. At most one field
+ * per category declares each value, which `categories.test.ts` holds.
+ */
+export function renderingFieldFor(category: SubjectCategory, rendering: FieldRendering): FieldOption | null {
+  return CATEGORY_OPTIONS[category].fields.find((field) => field.rendering === rendering) ?? null;
 }
 
 /** A field's first option — the value that field defaults to. */

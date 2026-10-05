@@ -165,3 +165,5 @@ a test, and "plausible" otherwise.
 - **P1** landed in `0f595f0b`.
 - **P2, P3, P4, P5 and P12** landed in “Pose each icon beneath the set’s one camera, and lay the
   overlay pieces flat”.
+- **P6, P7, P8, P9, P10 and P11** landed in “State how far an icon set is reduced, and stop sections 2
+  and 7 overruling what it asks for”.

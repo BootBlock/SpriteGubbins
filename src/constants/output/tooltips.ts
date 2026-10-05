@@ -51,10 +51,10 @@ export const OUTPUT_TOOLTIPS = {
     'How much internal seam, panel and fold detail the prompt asks for on each component, within the palette limit.\n\n' +
     '- `MINIMAL` keeps base colours and essential joints, which a small sprite needs before detail turns to noise.\n' +
     '- `CLEAN_PRODUCTION` is the usual choice.\n' +
-    '- `TEXTURED` is for large pieces that will be seen close up.',
+    '- `TEXTURED` is for large pieces that will be seen close up.\n\nWhere an icon or font set states its **Interior Detail**, that decides what the inside of each form carries, and this level never adds detail it rules out.',
   resolutionProfile:
-    'The scale the sheet is drawn at, as a share of the sheet’s own component grid rather than in pixels, so it holds whatever canvas the generator returns.\n\n' +
-    `The largest component fills ${shareRange('HIGH_RESOLUTION')} of its cell height at high resolution and ${shareRange('MID_RESOLUTION')} at mid, and every other component is drawn to that scale, so a hand stays smaller than its torso. Each sheet fills its own grid, so a sheet of twelve components draws them larger than a sheet of thirty-four.\n\n` +
+    'The scale the sheet is drawn at, as a share of its own component grid rather than in pixels, so it holds on any canvas.\n\n' +
+    `The largest component fills ${shareRange('HIGH_RESOLUTION')} of its cell height at high resolution and ${shareRange('MID_RESOLUTION')} at mid, and the rest are drawn to its scale, so a hand stays smaller than its torso; an icon set draws every icon to one square that fills the share. Each sheet fills its own grid, so twelve components come out larger than thirty-four.\n\n` +
     '- `RETRO_16_BIT` states a height in pixels instead.\n' +
     '- `CUSTOM` states an exact size instead, in Target Component Size, which no other profile offers. Use it for a pixel grid, or for pieces on different sheets that must come out at one size.\n\n' +
     'A loaded rig contract sets `CUSTOM` on the sheet it describes, because the rig states every piece’s size.',

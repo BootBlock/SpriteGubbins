@@ -210,7 +210,41 @@ export interface FieldOption {
    * see `promptTemplate.ts`, which states both branches and why each exists.
    */
   readonly oneSidedOptions?: Readonly<Record<string, string>>;
+  /**
+   * What section 2 reads this field's value as, beyond the line section 1 prints for it — see
+   * {@link FieldRendering}.
+   *
+   * **Declared on the field, never recognised by category or key**, for the reason
+   * {@link FieldOption.absentOption} is: `role` is a display size on ICON and a role on a character,
+   * and `worn_details` is an interior-detail treatment on ICON and FONT and a set of marks everywhere
+   * else. Only the pool knows which, so `renderingFieldFor` in `constants/categories/index.ts` finds
+   * the field by this declaration, and `categories.test.ts` holds each value to one field per category.
+   */
+  readonly rendering?: FieldRendering;
+  /**
+   * The values of an `INTERIOR_DETAIL` pool that are line techniques the pixel discipline's microtexture
+   * ban names — etched strokes, hatching — so that section 2 excepts the one the subject states from
+   * that ban by name rather than cancelling it (audit finding P11).
+   *
+   * **Exact, like {@link FieldOption.oneSidedOptions}**: a typed value matches nothing here, and the
+   * ban then stands as written. `categories.test.ts` holds every entry to an option the pool offers,
+   * on a field declaring `INTERIOR_DETAIL`.
+   */
+  readonly lineTechniques?: readonly string[];
 }
+
+/**
+ * What section 2 reads a field as, beside the line section 1 prints for it.
+ *
+ * - `DISPLAY_SIZE`: the smallest size the game shows a component at. Section 2 states how far the drawing
+ *   is reduced to reach it and the narrowest stroke, gap and outline that survive the reduction, and the
+ *   sprite-scale discipline fires on it (audit finding P6). ICON's *Smallest Display Size*.
+ * - `INTERIOR_DETAIL`: the treatment of the inside of each form. Section 2's surface-detail level defers
+ *   to it, and a line technique it names is excepted from the microtexture ban (audit finding P11).
+ *   ICON's and FONT's *Interior Detail*; every other category's `worn_details` is a set of marks the
+ *   surface carries, which the surface-detail level already describes truly.
+ */
+export type FieldRendering = 'DISPLAY_SIZE' | 'INTERIOR_DETAIL';
 
 /**
  * A category's full definition: its display name, the article its identifier takes in the compiled

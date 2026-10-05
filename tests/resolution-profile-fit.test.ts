@@ -49,13 +49,19 @@ import { generatePrompt } from '../src/utils/promptCompiler.ts';
 const RESOLUTION_LINE = /^- Resolution profile: (.*)$/gm;
 
 /**
- * The only share this suite knows how to price.
+ * The only two shares this suite knows how to price.
  *
- * A reworded share — or one stated against anything but the largest component's cell — fails to
- * match rather than being scored some other way, because the frame is what decides the arithmetic and
- * guessing it wrong is the failure this suite is named after.
+ * A reworded share — or one stated against anything but a cell — fails to match rather than being
+ * scored some other way, because the frame is what decides the arithmetic and guessing it wrong is the
+ * failure this suite is named after.
+ *
+ * **The second is an icon sheet's** (`SheetPlan.fit`, audit finding P10): every component is drawn to one
+ * square of one size, and the square occupies the share. It is priced the same way, because every square
+ * is as large as the largest component and no larger, so each spends the `f²` of the page the largest
+ * component would.
  */
-const CELL_SHARE = /the largest component occupies (\d+)–(\d+)% of its cell height in the exploded grid/;
+const CELL_SHARE =
+  /(?:the largest component|every component is drawn to one square of the same size, however large or small the thing it depicts, and that square) occupies (\d+)–(\d+)% of its cell height in the exploded grid/;
 
 /**
  * What the layout section's “generously and uniformly spaced” costs, as a share of the page.

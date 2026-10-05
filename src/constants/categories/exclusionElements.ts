@@ -60,7 +60,7 @@ export interface ExcludedElement {
 /**
  * The elements, keyed by what the exclusion calls them.
  *
- * Eight, and each one is a pairing some category can make with itself. Four of them were made:
+ * Nine, and each one is a pairing some category can make with itself. Four of them were made:
  * `weapon` twice (the studio's own default subject, and the Cybernetic Attack Drone's cannons),
  * `cape` on the Sci-Fi Void Marine's cloak, and `facial feature` on the Isometric Cut-Out Rig's
  * single eye. Two more have gone. `backing` went when ICON's own pool stopped naming one: its two
@@ -115,6 +115,11 @@ export const EXCLUDED_ELEMENTS: Readonly<Record<string, ExcludedElement>> = {
   },
   flame: { bans: ['no flame', 'no lit flame'], names: ['flame'] },
   pedestal: { bans: ['no pedestal'], names: ['plinth'] },
+  // ICON's own pair (audit findings P7 and O6): `No motion lines or sparkle trail` is section 7's
+  // subject-specific ban, and `New Item Flare & Sparkle` is the *Applied Overlay* that styles the new
+  // item flare. Section 7's general glow and particle ban now excepts what section 1 names, so this
+  // ban is the one place left where the subject asks for a sparkle and removes it.
+  sparkle: { bans: ['no motion lines or sparkle trail'], names: ['sparkle'] },
 };
 
 /**

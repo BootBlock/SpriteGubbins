@@ -22,6 +22,7 @@ function bulletsFor(profile: ResolutionProfile, spriteTargetSize: string): strin
       profile,
       spriteTargetSize,
     ),
+    null,
   );
 }
 
@@ -95,7 +96,7 @@ describe('smallScaleDiscipline', () => {
       '24 × 24 px assembled',
     );
     expect(assembled).toBeNull();
-    expect(smallScaleDiscipline(assembled)).toBe('');
+    expect(smallScaleDiscipline(assembled, null)).toBe('');
     // The same words on a tileset, whose components *are* the thing priced, still fire — so the
     // withdrawal is about the sheet rather than about the size being small.
     expect(
@@ -110,5 +111,27 @@ describe('smallScaleDiscipline', () => {
       ),
     ).not.toBeNull();
     expect(bulletsFor('CUSTOM', '24 × 24 px assembled')).not.toBe('');
+  });
+  it('fires on the smallest display size where the drawing is reduced to reach it', () => {
+    // Audit finding P6: an icon drawn at 128 px and shown at 32 is sprite-sized where it is seen, and
+    // the bullets were never told so because the size it is drawn at is not. They now name the display
+    // size, and ask for a component that reads once reduced rather than at 1:1.
+    const reduced = { display: { width: 32, height: 32 }, drawn: { width: 128, height: 128 } };
+    const bullets = smallScaleDiscipline({ width: 128, height: 128 }, reduced);
+    expect(bullets).toContain('The smallest display size above is sprite scale');
+    expect(bullets).toContain('reads once reduced to its smallest display size');
+    expect(bullets).not.toContain('at 1:1');
+    // And where the drawn size is not stated at all, as on every profile but `CUSTOM`.
+    expect(smallScaleDiscipline(null, { display: { width: 24, height: 24 }, drawn: null })).toContain(
+      'The smallest display size above is sprite scale',
+    );
+  });
+
+  it('leaves a display past sprite scale to the drawn size, as before', () => {
+    const reduced = { display: { width: 48, height: 48 }, drawn: { width: 128, height: 128 } };
+    expect(smallScaleDiscipline({ width: 128, height: 128 }, reduced)).toBe('');
+    expect(smallScaleDiscipline({ width: 16, height: 16 }, null)).toContain(
+      'The target component size above',
+    );
   });
 });

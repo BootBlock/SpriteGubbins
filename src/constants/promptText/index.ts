@@ -42,11 +42,12 @@ export {
 } from './styleSettings.ts';
 export { RENDER_STYLE_SURFACE } from './renderStyleSurface.ts';
 export { smallScaleDiscipline } from './smallScale.ts';
+export { describeDisplayReduction } from './displayReduction.ts';
 export { VALIDATION_PASS_TEXT, validationPassFor } from './validationPass.ts';
 export { PALETTE_TEXT } from './palette.ts';
 export { BACKDROP_TEXT, backdropDescription } from './backdrop.ts';
 export { OUTLINE_BESIDE_BLACK_KEY_TEXT, OUTLINE_TEXT, outlineDescription } from './outline.ts';
-export { LIGHTING_TEXT, lightingDescription } from './lighting.ts';
+export { LIGHTING_HAS_KEY, LIGHTING_TEXT, lightingDescription } from './lighting.ts';
 export { describeHardware, describePalette, perComponentLimit } from './hardware.ts';
 export { describeStyleReference } from './styleReference.ts';
 export { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS, describeDirections, PROJECTION_TEXT } from './camera.ts';

@@ -1,5 +1,10 @@
 import { deliberates, returnsText, seesCanvasBeforeDelivery } from './targetCapabilities.ts';
-import { isPlanView, LETTERING_IS_A_COMPONENT, perComponentLimit } from '../constants/promptText/index.ts';
+import {
+  isPlanView,
+  LETTERING_IS_A_COMPONENT,
+  LIGHTING_HAS_KEY,
+  perComponentLimit,
+} from '../constants/promptText/index.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
 import { seriesStatesOneCapability } from './seriesCapability.ts';
 import { viewCoverage } from './viewCoverage.ts';
@@ -47,6 +52,7 @@ export function promptConditions(
     clothingIsAComponent,
     clothingDrawnElsewhere,
     oneSidedFeatures,
+    interiorDetail,
   } = facts;
   const views = viewCoverage(coveredDirections);
 
@@ -107,6 +113,11 @@ export function promptConditions(
     // it is run to check — while a flat fill of one colour has no surface for a light to fall on.
     // Asked of the style's shading, which is where `RENDER_STYLE_TRAITS` records that difference.
     LIGHTING_STATED: styleSettings.lighting === null ? '' : 'yes',
+    // Narrower again: whether that lighting has a key light, and so a direction for every component to
+    // share. Sections 3 and 9 asked every sheet for "one light direction" and a "key-light direction",
+    // and under a flat albedo or an unlit model the prompt has just said there is none (audit finding
+    // P9). Off the key, they ask every component to be lit alike instead. See `LIGHTING_HAS_KEY`.
+    KEY_LIGHT: styleSettings.lighting !== null && LIGHTING_HAS_KEY[styleSettings.lighting] ? 'yes' : '',
     // Whether the target component size names a native pixel grid this sheet delivers enlarged.
     // Gates three places at once: the carve-out in section 0's resampling rule, the block in
     // section 2 that states the grid and the multiple, and the self-audit's check on what the
@@ -142,6 +153,14 @@ export function promptConditions(
     // the background item's “no gradient, texture, vignette” forbids the backdrop the sheet asks for.
     // Asked of the plan, so the overlay sheet of the same set, which declares none, is never told it.
     OWN_BACKDROP: plan.backdrop === 'OWN_SQUARE' ? 'yes' : '',
+    // Whether the engine applies this sheet's opacity, which the overlay sheet declares (audit finding
+    // P8). Gates section 0's rule that every piece is drawn opaque at full strength — a veil as a solid
+    // shape, a glow as hard-edged bands — and the self-audit's check on it. See `SheetPlan.opacity`.
+    ENGINE_OPACITY: plan.opacity === 'ENGINE_APPLIED' ? 'yes' : '',
+    // Whether the subject states the interior-detail treatment section 2's surface-detail level defers
+    // to (audit finding P11). Read off the fact, which is already `null` on a sheet whose section 1
+    // describes the set it is laid over. See `utils/statedInteriorDetail.ts`.
+    INTERIOR_DETAIL_STATED: interiorDetail === null ? '' : 'yes',
     // Read from the resolved reference rather than the stored id, for the reason `HARDWARE_PROFILE`
     // is: a configuration naming a look this build no longer ships emits no heading rather than an
     // empty one.

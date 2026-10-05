@@ -15,6 +15,7 @@ import type { StyleSettings } from '../types/renderStyleTraits.ts';
 import { resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { oneSidedFeatures } from './oneSidedFeatures.ts';
+import { statedInteriorDetail, type StatedInteriorDetail } from './statedInteriorDetail.ts';
 import { pinnedPalette } from './pinnedPalette.ts';
 import type { StyleReference } from '../types/styleReference.ts';
 import type {
@@ -133,6 +134,15 @@ export interface SheetFacts {
    * Deriving it twice is how those two come to disagree about whether the sheet names any.
    */
   readonly oneSidedFeatures: readonly string[];
+  /**
+   * The interior-detail treatment section 2 defers to, or `null` — see `utils/statedInteriorDetail.ts`
+   * (audit finding P11).
+   *
+   * **`null` on a sheet whose section 1 describes the set it is laid over** (`LAID_OVER`): that section
+   * says no detail it names is drawn into a component, so section 2 deferring to one would put it back.
+   * A fact because a condition gates the deferral and a value names the line technique.
+   */
+  readonly interiorDetail: StatedInteriorDetail | null;
 }
 
 /** Resolve one studio configuration into the facts every phase below it reads. */
@@ -368,5 +378,6 @@ export function sheetFacts(
     // reader chose and every component carrying it is drawn at every facing the sheet covers. The
     // pools are what bound it — see `utils/oneSidedFeatures.ts`.
     oneSidedFeatures: oneSidedFeatures(category, subject),
+    interiorDetail: plan.subjectScope === 'LAID_OVER' ? null : statedInteriorDetail(category, subject),
   };
 }

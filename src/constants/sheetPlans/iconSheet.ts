@@ -24,6 +24,10 @@ interface IconSheetWording {
  * Its outro answers *Subject Framing* without naming the field, which may be cleared: however loose the
  * subject sits, the backdrop fills the rest, so a padded margin never leaves part of a square unpainted.
  *
+ * **Every icon is "lit as every other icon of the set is", never "from the same direction"** (audit
+ * finding P9): two of the three lighting models have no key light to share a direction with, and the
+ * agreement has to hold under all three.
+ *
  * **"Tile" stays out of the component class**, which `sheetClaims.test.ts` reads for component kinds a
  * sheet lists none of — and `tile` is TERRAIN's kind, the piece meant to repeat against its own copy.
  */
@@ -43,9 +47,9 @@ treatment; an entry marked ×2 is one icon drawn once in each of its two states,
 them. A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for
 it:`,
     agreement: `Every tile is the same square at the same size, and every subject fills its tile to the same margin,
-carries the same outline weight, and is lit from the same direction as every other icon of the set, on
-this sheet and on every other sheet of it — an icon that is heavier, larger or lit differently reads as
-belonging to another pack. However close or loose a subject sits, its backdrop fills the rest of the
+carries the same outline weight, and is lit as every other icon of the set is, on this sheet and on
+every other sheet of it — an icon that is heavier, larger or lit differently reads as belonging to
+another pack. However close or loose a subject sits, its backdrop fills the rest of the
 square to the edge, and nothing of the icon crosses that edge.`,
   },
   ISOLATED_MARK: {
@@ -57,9 +61,9 @@ square to the edge, and nothing of the icon crosses that edge.`,
     intro: `Each entry is a different icon of this one set, drawn so the set agrees on weight, margin, outline and
 light; an entry marked ×2 is one icon drawn once in each of its two states, in the order it names them.
 A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for it:`,
-    agreement: `Every icon fills the same cell to the same margin, carries the same outline weight, and is lit from
-the same direction as every other icon of the set, on this sheet and on every other sheet of it — an
-icon that is heavier, larger or lit differently reads as belonging to another pack.`,
+    agreement: `Every icon fills the same cell to the same margin, carries the same outline weight, and is lit as
+every other icon of the set is, on this sheet and on every other sheet of it — an icon that is heavier,
+larger or lit differently reads as belonging to another pack.`,
   },
 };
 
@@ -106,6 +110,9 @@ export function iconSheet(entries: readonly ComponentEntry[], first: number, loo
     // The agreement shape, for EFFECT's reason: these icons are not pieces of each other, so what has to
     // hold is that no member arrives at half the weight of the one beside it.
     scaleExample: wording.scaleExample,
+    // And unlike EFFECT's frames, each is drawn to one square of one size rather than to one scale: a coin
+    // fills its square to the set's margin as a sword does (audit finding P10).
+    fit: 'SAME_SQUARE',
     scaleUnit: 'one icon',
     componentClass: wording.componentClass,
     // The overlay sheet draws the *Applied Overlay*; no icon here carries one of its pieces, for the engine

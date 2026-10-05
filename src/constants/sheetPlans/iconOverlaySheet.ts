@@ -93,6 +93,12 @@ nothing about which icon they are looking at.`,
  * beneath, and a piece takes its colour and value from its own entry — the veil and the sweep are
  * dark under both looks — and the accent colour otherwise.
  *
+ * **Opaque at full strength, and the engine supplies the translucency.** A veil, a wedge, a halo and a
+ * glow are see-through in use, and drawn see-through on an opaque key they cannot keep clear of it. The
+ * plan declares `opacity`, so section 0 asks for each as a solid shape or as stepped bands with hard
+ * edges, and the self-audit checks it — see `SheetPlan.opacity`, which also says why the rule holds on a
+ * transparent background.
+ *
  * **Nothing here carries lettering**, for the reason `CATEGORY_EXCLUSION_TEXT` gives: a stack count, a
  * cooldown and a keybind are drawn by the engine at runtime over the top of the sprite.
  */
@@ -119,6 +125,11 @@ function overlaySheet(wording: OverlayWording): SheetPlan {
     // The agreement shape: these pieces are not parts of one another, so what has to hold is that no
     // piece arrives at half the weight of the one beside it.
     scaleExample: wording.scaleExample,
+    // Each piece is drawn to the square of the icon it is laid over, so all of them to one square.
+    fit: 'SAME_SQUARE',
+    // The veil, the wedge, the halo and the glow are translucent in use; the engine applies that, and
+    // every piece is drawn opaque at full strength (audit finding P8).
+    opacity: 'ENGINE_APPLIED',
     scaleUnit: 'one icon',
     componentClass: 'one overlay piece the engine lays over an icon of this one set',
     assemblyFailure: {

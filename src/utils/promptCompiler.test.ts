@@ -242,7 +242,7 @@ describe('generatePrompt — the subject', () => {
           withOutput({ resolutionProfile }),
         );
         expect(prompt).toContain(
-          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, plan.scaleUnit)}`,
+          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, plan.scaleUnit, plan.fit)}`,
         );
       }
     }
@@ -2588,13 +2588,23 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(icon).toContain('every component is designed silhouette-first');
 
     // A larger target keeps the generic discipline alone — no bullet, and no blank line where the
-    // optional was, which is what the OPTIONAL marker exists to guarantee.
+    // optional was, which is what the OPTIONAL marker exists to guarantee. The subject states no
+    // display size here, since a smaller one is what the next case is about.
     const large = generatePrompt(
+      'ICON',
+      { ...defaultSubjectFor('ICON'), role: '' },
+      withOutput({ ...spriteScale, spriteTargetSize: '128 × 128 px' }),
+    );
+    expect(large).not.toContain('silhouette-first');
+
+    // The same large drawing shown at the default 24 px is sprite-sized where it is seen, so the
+    // bullets fire on the display size and say so (audit finding P6).
+    const shownSmall = generatePrompt(
       'ICON',
       defaultSubjectFor('ICON'),
       withOutput({ ...spriteScale, spriteTargetSize: '128 × 128 px' }),
     );
-    expect(large).not.toContain('silhouette-first');
+    expect(shownSmall).toContain('- The smallest display size above is sprite scale');
 
     // A painted sheet drops the whole pixel-discipline block, sprite-sized target or not — these
     // are pixel rules, and a painted 16 px icon is a different discipline this section does not
@@ -3308,7 +3318,9 @@ describe('countWords and estimateTokens', () => {
  * deliberates.
  */
 describe('generatePrompt — the self-audit, per target', () => {
-  const AUDIT_MARKERS = ['Component count is exactly', 'One camera, one scale and one light direction'];
+  // The default lighting is a flat albedo, which has no key light, so the camera check asks every
+  // component to be lit alike rather than from one direction (audit finding P9).
+  const AUDIT_MARKERS = ['Component count is exactly', 'One camera and one scale across every component'];
 
   it('keeps the audit for the targets that work through the prompt', () => {
     // SEEDREAM is here because it is the case that breaks the shorthand: an *image* endpoint that

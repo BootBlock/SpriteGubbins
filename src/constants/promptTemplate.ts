@@ -422,6 +422,19 @@ Satisfy this section before any aesthetic consideration.
    The backdrop keeps clear of the key colour as every part of a component does.
 [/IF]
 [/IF]
+[IF:ENGINE_OPACITY]
+   Every component is drawn opaque at full strength, including one that is translucent in use: a veil
+   or a wedge is one solid shape, and a glow or a halo is two or three stepped bands of solid colour,
+   each with a hard edge. The engine applies each component’s opacity and blending when it lays it over
+   the artwork beneath, so nothing is drawn see-through, feathered or fading into the background.
+[IF:KEY_COLOUR]
+   Every band keeps clear of the key colour as every part of a component does.
+[/IF]
+[IF:KEY_COLOUR!=yes]
+   The alpha channel is fully opaque across every component and fully transparent between them, with
+   no partial alpha anywhere.
+[/IF]
+[/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
 [/IF]
@@ -645,6 +658,10 @@ Where this conflicts with anything above, the identity lock wins.
 - Style: [DEFINE:RENDER_STYLE_DESCRIPTION]
 [IF:VALIDATION_PASS!=yes]
 - Surface-detail intensity: [DEFINE:SURFACE_DETAIL_DESCRIPTION]
+[IF:INTERIOR_DETAIL_STATED]
+  Inside each form, the **[DEFINE:INTERIOR_DETAIL_FIELD]** section [SEC:SUBJECT] states decides what is drawn: this
+  level never adds detail it rules out, and never removes a line it asks for.
+[/IF]
 [/IF]
 - Resolution profile: [DEFINE:RESOLUTION_PROFILE_DESCRIPTION]
 [IF:ASSEMBLED_TARGET]
@@ -658,6 +675,7 @@ Where this conflicts with anything above, the identity lock wins.
 [IF:ASSEMBLED_TARGET!=yes]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target component size: [DEFINE:SPRITE_TARGET_SIZE]]
 [/IF]
+[OPTIONAL:DISPLAY_REDUCTION   | - Smallest display size: [DEFINE:DISPLAY_REDUCTION]]
 [IF:VALIDATION_PASS!=yes]
 [IF:PALETTE!=yes]
 - Palette strategy: [DEFINE:PALETTE_DESCRIPTION]
@@ -744,6 +762,7 @@ the grid above can hold means the component was not drawn on it.
 - Do not render materials as microtexture: no scratches, etched strokes, fabric weave, pores,
   grain, crosshatching, repeated reflective streaks, sparkle noise, scattered single-pixel
   highlights or painterly brush marks. Materials read through **colour and value blocking**.
+[OPTIONAL:INTERIOR_LINE_TECHNIQUE | - *[DEFINE:INTERIOR_LINE_TECHNIQUE]*, the **[DEFINE:INTERIOR_DETAIL_FIELD]** section [SEC:SUBJECT] states, is excepted from that ban: draw its lines as deliberate, contiguous runs of pixels no finer than the smallest feature above, never as scratches, grain or noise.]
 - **Do not produce smooth artwork that has been downscaled.** Every pixel is placed deliberately;
   the image must survive inspection at 1:1 with no anti-aliased edges.
 [OPTIONAL:SMALL_SCALE_DISCIPLINE | [DEFINE:SMALL_SCALE_DISCIPLINE]]
@@ -779,9 +798,16 @@ the grid above can hold means the component was not drawn on it.
 [/IF]
 
 **The camera never moves.** Camera position, camera elevation, **camera azimuth**, projection type,
+[IF:KEY_LIGHT]
 focal characteristics, sprite scale, pixel density and lighting direction are identical for every
 component on the sheet. A component drawn through a *different camera* — another elevation,
 projection, scale or key-light direction — is a defect.
+[/IF]
+[IF:KEY_LIGHT!=yes]
+focal characteristics, sprite scale, pixel density and lighting are identical for every component on
+the sheet. A component drawn through a *different camera* — another elevation, projection or scale —
+or lit differently from the rest is a defect.
+[/IF]
 
 **A direction is never produced by moving the camera.** It is produced by rotating the *component*
 about its own local vertical axis beneath that fixed camera. **Camera azimuth is fixed; object yaw
@@ -999,9 +1025,16 @@ and a component turned off it because the piece reads better that way is a defec
 ### One fixed camera, and a pose that comes from each entry
 
 **The camera never moves.** Camera position, camera elevation, **camera azimuth**, projection type,
+[IF:KEY_LIGHT]
 focal characteristics, sprite scale, pixel density and lighting direction are identical for every
 component on the sheet. A component drawn through a *different camera* — another elevation,
 projection, scale or key-light direction — is a defect.
+[/IF]
+[IF:KEY_LIGHT!=yes]
+focal characteristics, sprite scale, pixel density and lighting are identical for every component on
+the sheet. A component drawn through a *different camera* — another elevation, projection or scale —
+or lit differently from the rest is a defect.
+[/IF]
 
 **The camera is shared; the object’s yaw is not.** No component is a view of another, so each
 subject is posed as its own entry in section [SEC:INVENTORY] and the subject definition in section [SEC:SUBJECT] state —
@@ -1256,8 +1289,17 @@ Absent from the image entirely:
 - Anything annotating the sheet: arrows, callouts, colour swatches, grid lines, and frames or
   borders around the image or around a component.
 - [DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]
-- Motion blur, speed lines, glow bleeding beyond a component’s silhouette, and any particle
-  effect the inventory in section [SEC:INVENTORY] does not name.
+[IF:SUBJECT_SCOPE!=LAID_OVER]
+- Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle
+  effect, that neither section [SEC:SUBJECT] nor the inventory in section [SEC:INVENTORY] names. A glow or a particle
+  effect either of them names belongs to its component and ends at a hard edge with it, never fading
+  into the background.
+[/IF]
+[IF:SUBJECT_SCOPE=LAID_OVER]
+- Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle
+  effect, that the inventory in section [SEC:INVENTORY] does not name. A glow or a particle effect it names
+  belongs to its component and ends at a hard edge with it, never fading into the background.
+[/IF]
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
 
 **An attribute anywhere above that asks for one of these elements is already overruled** — the
@@ -1322,8 +1364,18 @@ still be fixed.
    [DEFINE:CATEGORY_ASSEMBLY_AUDIT].
 [/IF]
 [IF:ORIENTATION!=PICTURE_PLANE]
+[IF:KEY_LIGHT]
 [N]. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
+[/IF]
+[IF:KEY_LIGHT!=yes]
+[N]. One camera and one scale across every component, and none lit differently from the rest — nothing
+   on the sheet was drawn through a camera that moved.
+[/IF]
+[/IF]
+[IF:ENGINE_OPACITY]
+[N]. Every component is opaque at full strength — a veil or a wedge one solid shape, a glow or a halo
+   stepped bands with hard edges — and nothing on it is see-through or fades into the background.
 [/IF]
 [IF:ORIENTATION=PICTURE_PLANE]
 [N]. Every component lies flat in the picture plane, square to the screen, at one scale — no square

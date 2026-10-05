@@ -145,6 +145,22 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
     }
   });
 
+  it('declares each section 2 reading on one field at most, and line techniques only where they are read', () => {
+    // `renderingFieldFor` takes the first field declaring a reading, so a second would be silently
+    // ignored. And `lineTechniques` names values section 2 excepts from the microtexture ban by name, so
+    // one the pool does not offer never matches, and one on another reading is never read.
+    for (const rendering of ['DISPLAY_SIZE', 'INTERIOR_DETAIL'] as const) {
+      expect(fields.filter((field) => field.rendering === rendering).length, rendering).toBeLessThanOrEqual(
+        1,
+      );
+    }
+    for (const field of fields) {
+      if (field.lineTechniques === undefined) continue;
+      expect(field.rendering, `${category}.${field.key}`).toBe('INTERIOR_DETAIL');
+      for (const technique of field.lineTechniques) expect(field.options, technique).toContain(technique);
+    }
+  });
+
   it('declares nothing under additional_anatomy, whose entries are components of their own', () => {
     // The one field-wide exclusion, and it is about where the thing is drawn rather than about
     // whether it is one-sided. An attached module is an inventory entry in its own cell — `Missile

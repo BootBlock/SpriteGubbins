@@ -8,6 +8,22 @@ const FLAT_NEUTRAL_ALBEDO =
 const UNLIT_EMISSIVE_BAKED = 'Unlit flat diffuse, with no directional cast shadow';
 
 /**
+ * Whether each lighting model has a key light, and so a direction for every component to share.
+ *
+ * **Declared beside the words that state it**, because sections 3 and 9 ask every component for "one
+ * light direction" and a "key-light direction", and two of the three models have none:
+ * `FLAT_NEUTRAL_ALBEDO` is "even illumination with no directional key", and `UNLIT_EMISSIVE_BAKED` is
+ * unlit. Under those the prompt asked for agreement about a light it had just ruled out (audit finding
+ * P9), so the template states the direction only where this answers yes, and asks every component to be
+ * lit alike everywhere else.
+ */
+export const LIGHTING_HAS_KEY: Readonly<Record<LightingModel, boolean>> = {
+  FLAT_NEUTRAL_ALBEDO: false,
+  ISOMETRIC_TOP_LEFT: true,
+  UNLIT_EMISSIVE_BAKED: false,
+};
+
+/**
  * The lighting as section 2 states it, in the terms of the way the style shades.
  *
  * **The key light's shadow is the style's, not the light's.** It once said "hard shadow bands" for

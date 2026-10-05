@@ -640,7 +640,8 @@ interface SheetPlanFields {
    * the body it is mounted on. The sheets whose components are *not* parts of one another — an
    * effect's frames, a portrait's expressions, an icon family, a font's glyphs, a blend set's tiles
    * — have no such pair, so what has to hold instead is that the repeats agree, and each of those
-   * states that.
+   * states that. Of those, only the icon sheets draw every member to one square rather than to one
+   * scale, which {@link SheetPlan.fit} declares.
    *
    * It reads on from "One consistent scale across every component: ", so it is a lower-case clause
    * with no trailing stop.
@@ -767,6 +768,48 @@ interface SheetPlanFields {
    * a declaration nothing reads.
    */
   readonly backdrop?: 'OWN_SQUARE';
+  /**
+   * That every component of this sheet is drawn to one square of the same size, whatever it depicts —
+   * rather than to one scale, at which a small thing stays small beside a large one.
+   *
+   * **It decides how section 2's two share rungs state their share** (audit finding P10). They said the
+   * largest component occupies a share of its cell and every other is drawn to that same scale, which is
+   * the rule for a figure's pieces, a font's glyphs and an effect's frames — a hand stays smaller than its
+   * torso, a full stop smaller than a capital. An icon set is the opposite: a coin and a sword each fill
+   * their square to the one margin the set keeps and *Subject Framing* states, and a coin drawn at a
+   * sword's scale is a speck. A declaring sheet is told instead that every component is drawn to one
+   * square of one size, which occupies the share.
+   *
+   * **Declared rather than derived, and narrower than {@link SheetIdentity}.** `ONE_SET` covers a font, a
+   * blend set, a backdrop's layers and an interface kit, all drawn to one scale; and the agreement shape
+   * of {@link SheetPlan.scaleExample} covers an effect's frames, which grow and shrink at one scale. Only
+   * ICON's sheets draw each member to a square of its own, the overlay pieces included, since each is
+   * drawn to the square of the icon it is laid over.
+   *
+   * **`SAME_SQUARE` alone**, for the reason {@link SheetPlan.backdrop} gives: the other answer is the
+   * absence, and a second value would be a declaration nothing reads.
+   */
+  readonly fit?: 'SAME_SQUARE';
+  /**
+   * That the engine applies the opacity and blending of this sheet's components, so every one of them is
+   * drawn opaque at full strength (audit finding P8).
+   *
+   * **The overlay sheet's, under both looks.** Its disabled veil, cooldown wedge, highlight halo and rarity
+   * glow are translucent in use, and were asked for as a veil and a glow on an opaque key colour, beside
+   * section 0's rule that no part of a component comes near that colour — a soft glow fading into a white
+   * key cannot keep clear of it, and a half-transparent veil keyed off a field is half lost. A declaring
+   * sheet is told in section 0 that each piece is drawn opaque, a veil or a wedge as one solid shape and a
+   * glow as stepped bands with hard edges, and that the engine applies the opacity; the self-audit checks
+   * it, and section 7's glow exclusion asks a named glow for the same hard edge.
+   *
+   * **On a transparent background too.** Real alpha could be delivered there, but the engine applies its
+   * own opacity to the piece, and a piece arriving already faded would be faded twice, and come back from
+   * the quantiser as a fringe of half-keyed pixels. So the rule is one rule, and section 0 says the alpha
+   * channel is fully opaque on every component.
+   *
+   * **`ENGINE_APPLIED` alone**, for the reason {@link SheetPlan.backdrop} gives.
+   */
+  readonly opacity?: 'ENGINE_APPLIED';
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */

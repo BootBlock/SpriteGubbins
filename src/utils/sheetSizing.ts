@@ -2,14 +2,16 @@ import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import type { SheetPlan } from '../types/components.ts';
 import type { OutputConfig, ResolutionProfile, StatedTargetSize, TargetSize } from '../types/output.ts';
 import type { RigContract } from '../types/rigContract.ts';
-import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
+import type { SheetSubject, SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { statedTargetSize } from './componentTargetSize.ts';
+import { displayReduction, type DisplayReduction } from './displayReduction.ts';
 import { targetSizeField } from './targetSizeField.ts';
 import { nativeGridScale } from './nativeGridScale.ts';
 import { resolveResolutionProfile } from './resolveResolutionProfile.ts';
 
 /**
- * How big this sheet's things are, and the grid they are drawn on — one answer, read five ways.
+ * How big this sheet's things are, the grid they are drawn on, and how far they are reduced to be shown
+ * — one answer, read wherever the prompt states a size.
  *
  * **The words and the arithmetic have to come from one place.** Section 2 prints a phrase and the
  * native-grid derivation prices the pair inside it, so a prompt whose text said one figure while its
@@ -51,6 +53,15 @@ export interface SheetSizing {
    * carve-out without the figure it points at.
    */
   readonly nativeScale: number | null;
+  /**
+   * How far each component is reduced between {@link component} and the smallest size the game shows it
+   * at, or `null` where the subject states no display size or no reduction — see
+   * `utils/displayReduction.ts` (audit finding P6).
+   *
+   * Here for the reason {@link nativeScale} is: two values read it, section 2's *Smallest display size*
+   * line and the sprite-scale bullets, and both must agree about whether there is a reduction at all.
+   */
+  readonly display: DisplayReduction | null;
 }
 
 /**
@@ -99,7 +110,7 @@ export function sheetTargetSize(
 
 export function sheetSizing(
   category: SubjectCategory,
-  subject: SheetSubject,
+  subject: SubjectDefinition,
   output: OutputConfig,
   plan: SheetPlan,
   rig: RigContract | null,
@@ -120,5 +131,6 @@ export function sheetSizing(
       components,
       rig,
     ),
+    display: displayReduction(category, subject, component),
   };
 }

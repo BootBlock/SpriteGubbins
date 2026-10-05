@@ -140,8 +140,11 @@ export const ICON: CategoryDefinition = {
       key: 'role',
       label: 'Smallest Display Size',
       tooltip:
-        'The smallest size the game draws these icons at. The sheet is drawn larger, so this is what every outline and accent has to survive: at 24 px only the silhouette and one bright colour are left, and any finer detail arrives as noise.',
+        'The smallest size the game draws these icons at. The sheet is drawn larger, so this is what every outline and accent has to survive: at 24 px only the silhouette and one bright colour are left, and any finer detail arrives as noise.\n\n' +
+        'The prompt states how far each icon is reduced to reach this size, and the narrowest stroke, gap and outline that survive it. A size you type, such as `20 × 20 Pixels` or `20 px`, is read the same way; a value with no size in it states no reduction.',
       options: ['24 × 24 Pixels', '32 × 32 Pixels', '48 × 48 Pixels', '64 × 64 Pixels'],
+      // Section 2 states the reduction from the drawn size to this one (audit finding P6).
+      rendering: 'DISPLAY_SIZE',
     },
     {
       key: 'setting',
@@ -253,7 +256,8 @@ export const ICON: CategoryDefinition = {
       key: 'worn_details',
       label: 'Interior Detail',
       tooltip:
-        'How much detail the inside of each outline carries. Icons are read at a glance in a full grid, so restraint is usually right: every extra line costs contrast the silhouette and the accent need, and detail lost in downscaling shows only as noise.',
+        'How much detail the inside of each outline carries. Icons are read at a glance in a full grid, so restraint is usually right: every extra line costs contrast the silhouette and the accent need, and detail lost in downscaling shows only as noise.\n\n' +
+        'The prompt’s surface-detail level defers to it inside each icon. On a pixel-art sheet, `Hatched Line Shading`, `Etched Engraved Lines` and `Woodcut Line Engraving` are drawn as deliberate pixel lines rather than banned as microtexture.',
       options: [
         'Flat Fill, No Interior Detail',
         'Two-Tone Block Shading',
@@ -269,6 +273,10 @@ export const ICON: CategoryDefinition = {
         'Circuit-Trace Panel Lines',
         'Scanline Hologram Shimmer',
       ],
+      // Section 2's surface-detail level defers to it, and a line technique it names is excepted from the
+      // pixel discipline's microtexture ban (audit finding P11).
+      rendering: 'INTERIOR_DETAIL',
+      lineTechniques: ['Hatched Line Shading', 'Etched Engraved Lines', 'Woodcut Line Engraving'],
     },
     {
       key: 'primary_colours',

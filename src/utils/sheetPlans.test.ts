@@ -1078,8 +1078,10 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
 
   it('bans only the particles the inventory did not name', () => {
     const { exclusions } = sectionsOf({ ...defaultSubjectFor('EFFECT'), clothing: SPARKS });
-    expect(exclusions).toContain('any particle');
-    expect(exclusions).toContain('the inventory in section 4 does not name');
+    expect(exclusions).toContain('or particle');
+    // Section 1's own attributes are excepted too, so a motif the subject asks for is not cancelled by
+    // the line meant to stop unasked-for glow (audit finding P7).
+    expect(exclusions).toContain('that neither section 1 nor the inventory in section 4 names');
     // The unqualified form is what made the two sections contradict each other.
     expect(exclusions).not.toContain('silhouette, particle effects');
   });
@@ -1104,7 +1106,7 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
     const exclusions = sectionOf(prompt, 'EXCLUSIONS');
     const inventory = sectionOf(prompt, 'COMPONENT INVENTORY').toLowerCase();
 
-    expect(exclusions).toContain('any particle');
+    expect(exclusions).toContain('or particle');
     expect(inventory).not.toContain('particle');
     expect(inventory).not.toContain('spark');
   });
