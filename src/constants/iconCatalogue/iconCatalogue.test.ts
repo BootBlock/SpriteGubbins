@@ -13,9 +13,9 @@ import {
   KEY_COLOUR_WORDS,
   LETTERING_OBJECTS,
   NEAR_WHITE_WORDS,
-  RED_CROSS,
   UNWRITTEN,
   WRITING_SURFACE,
+  redCrossIn,
   wordNamed,
   wordWithin,
 } from './iconLookRules.ts';
@@ -203,18 +203,33 @@ describe('the icon catalogue', () => {
       // An upright red cross, above all on white, is the emblem international law reserves for medical
       // services; a medic's cross is green or white, and a refusal's mark is called a diagonal cross.
       for (const family of LOOK_FAMILIES) {
-        expect(entry.looks[family], `${entry.id} / ${family}`).not.toMatch(RED_CROSS);
+        expect(redCrossIn(entry.looks[family]), `${entry.id} / ${family}`).toBeUndefined();
       }
     },
   );
 
-  it('reads a red cross, and spares a diagonal one, a crosshair and crossed blades', () => {
-    expect('a bold red cross with rounded ends').toMatch(RED_CROSS);
-    expect('a neon-red cross of two glowing tubes').toMatch(RED_CROSS);
-    expect('a red diagonal cross of light').not.toMatch(RED_CROSS);
-    expect('a red crosshair reticle').not.toMatch(RED_CROSS);
-    expect('a glowing red crossed-blades emblem').not.toMatch(RED_CROSS);
-    expect('a red sash across a chest').not.toMatch(RED_CROSS);
+  it('reads a red cross in any order, and spares a diagonal one, a crosshair and crossed blades', () => {
+    for (const named of [
+      'a bold red cross with rounded ends',
+      'a neon-red cross of two glowing tubes',
+      'a cross of two riveted iron bars painted signal red',
+      'a crimson cross',
+      'two red crosses on white',
+      'a red and white medical cross',
+    ]) {
+      expect(redCrossIn(named), named).toBeDefined();
+    }
+    for (const spared of [
+      'a red diagonal cross of light',
+      'a diagonal red cross',
+      'a red diagonally set cross',
+      'a red crosshair reticle',
+      'a glowing red crossed-blades emblem',
+      'a red sash across a chest',
+      'a green tick on a red chip, and a white cross on a grey chip',
+    ]) {
+      expect(redCrossIn(spared), spared).toBeUndefined();
+    }
   });
 
   it.each(ENTRIES.map(({ entry }) => [entry.id, entry] as const))(

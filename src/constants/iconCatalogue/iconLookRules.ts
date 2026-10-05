@@ -136,13 +136,34 @@ export const COUNT_MARKER = /\d\s*×|×\s*\d|(?<![\p{L}\p{N}])[xX]\s*\d|\d[xX](?
  */
 export const LINE_SEPARATOR = /[—–]/;
 
+/** The words for red a look may colour a cross with — see {@link redCrossIn}. */
+const RED_WORDS = new Set(['red', 'crimson', 'scarlet', 'vermilion']);
+
 /**
- * A red cross the text does not call diagonal, up to two words between “red” and “cross”. Drawn
- * upright, and above all on white, it is the emblem international law reserves for medical services,
- * which a game may not use; a medic's cross is green or white, and a refusal's or a mute's mark is a
- * diagonal cross. A crosshair, crossed blades and a sash across a chest are not crosses.
+ * The first clause of `text` that names a cross and a red together without calling the cross diagonal,
+ * as written, or `undefined`. Drawn upright, and above all on white, a red cross is the emblem
+ * international law reserves for medical services, which a game may not use; a medic's cross is green
+ * or white, and a refusal's or a mute's mark is a diagonal cross.
+ *
+ * **Read a clause at a time, in any order**, because a look colours its cross before it (“a crimson
+ * cross”), after it (“a cross of iron bars painted signal red”) or with words between, and one
+ * pattern of “red” then “cross” let the second through. A clause ends at a comma, a semicolon, a colon
+ * or a dash, so the red of one half of a two-state look does not reach the cross of the other. A
+ * crosshair, crossed blades and a sash across a chest are not crosses; a cross-shaped part is one.
  */
-export const RED_CROSS = /\bred\b(?:[\s-]+(?!diagonal\b)\p{L}+){0,2}?[\s-]+cross(?!\p{L})/iu;
+export function redCrossIn(text: string): string | undefined {
+  return text
+    .split(/[,;:—–]/u)
+    .find((clause) => {
+      const words = clause.toLowerCase().split(/[^\p{L}]+/u);
+      return (
+        words.some((word) => word === 'cross' || word === 'crosses') &&
+        words.some((word) => RED_WORDS.has(word)) &&
+        !words.some((word) => word.startsWith('diagonal'))
+      );
+    })
+    ?.trim();
+}
 
 /**
  * The first of `words` that `text` contains anywhere, inside a longer word too, in any case, or

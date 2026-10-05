@@ -67,7 +67,7 @@ export function checkCustomIcon(
   const role = unclosed(collapsed(draft.role));
   const look = unclosed(collapsed(draft.look));
   const id = slugify(role);
-  refusals.push(...textRefusals('role', role, 'role'), ...textRefusals('look', look, 'look'));
+  refusals.push(...namedRefusals('role', role, id, 'role'), ...textRefusals('look', look, 'look'));
   if (role === '') refusals.push({ field: 'role', message: CUSTOM_ICON_REFUSALS.roleEmpty });
   else if (id === '') refusals.push({ field: 'role', message: CUSTOM_ICON_REFUSALS.roleUnnamed });
   if (look === '') refusals.push({ field: 'look', message: CUSTOM_ICON_REFUSALS.lookEmpty });
@@ -150,8 +150,8 @@ function statesOf(
   const second = collapsed(typed[1]);
   const slugs: readonly [string, string] = [slugify(first), slugify(second)];
   refusals.push(
-    ...stateRefusals('firstState', first, slugs[0]),
-    ...stateRefusals('secondState', second, slugs[1]),
+    ...namedRefusals('firstState', first, slugs[0], 'state'),
+    ...namedRefusals('secondState', second, slugs[1], 'state'),
   );
   if (slugs[0] === '') {
     refusals.push({ field: 'firstState', message: CUSTOM_ICON_REFUSALS.stateEmpty('first') });
@@ -164,17 +164,21 @@ function statesOf(
   return slugs;
 }
 
-/** The refusals one state earns as typed, and a count its slug alone shows. */
-function stateRefusals(
-  field: 'firstState' | 'secondState',
+/**
+ * The refusals a role or a state earns as typed, and a count its slug alone shows: the slug is the
+ * slot and file name, and a state's is what is stored and read back.
+ */
+function namedRefusals(
+  field: 'role' | 'firstState' | 'secondState',
   text: string,
   slug: string,
+  what: 'role' | 'state',
 ): readonly CustomIconRefusal[] {
-  const found = textRefusals(field, text, 'state');
-  const counted = found.some((refusal) => refusal.message === CUSTOM_ICON_REFUSALS.countMarker('state'));
+  const found = textRefusals(field, text, what);
+  const counted = found.some((refusal) => refusal.message === CUSTOM_ICON_REFUSALS.countMarker(what));
   return counted || !COUNT_MARKER.test(slug)
     ? found
-    : [...found, { field, message: CUSTOM_ICON_REFUSALS.countMarker('state') }];
+    : [...found, { field, message: CUSTOM_ICON_REFUSALS.countMarker(what) }];
 }
 
 /**

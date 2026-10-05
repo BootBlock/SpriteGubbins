@@ -340,8 +340,9 @@ a test, and "plausible" otherwise.
     every partial *World & Era* typed over one roster, and now keeps the last.
   - **The red cross**: the phase 4 question was swept. No look or preset outside ICON names a red cross.
     Inside it, the pass, mute, not-ready and treasure marks called an X a red cross, and the space-opera
-    pass and ready check drew it on a white disc; each is now a diagonal cross. `RED_CROSS` holds the
-    catalogue to that, and the form warns of one in a reader’s own look.
+    pass and ready check drew it on a white disc; each is now a diagonal cross. `redCrossIn` holds the
+    catalogue to that, reading each clause for a cross and a red in any order, and the form warns of one
+    in a reader’s own look.
   - **No change**, with the reason. The localStorage backend erases a stored library row its parser
     refuses on the next write, where SQLite keeps it hidden; both hide it, and before 1.0 a row that
     cannot be read is discarded rather than repaired. A second Escape after the custom icon form closes
@@ -353,3 +354,12 @@ a test, and "plausible" otherwise.
     to take *Scale evenly* rather than *Fill square* for the overlay sheet, which stretched each piece
     over the whole cell. Keeping each piece’s place needs the overlay sheet laid out on a grid the cut
     can read, a change to the prompt and the quantiser together.
+- The review of phase 5 landed in “Fix the review findings on the icon set audit’s phase 5”. **The red
+  cross**: one pattern of “red” then “cross” let a cross painted red after it, a crimson cross and red
+  crosses through, and flagged a cross called diagonal before its colour; `redCrossIn` reads each
+  clause for a cross and a red in any order, and the form reads the role, the look and each state
+  apart. **The sheet index**: a set with no icons is the overlay sheet alone, so its first ticks take
+  the reader to the first icon sheet rather than holding them on the overlay sheet. **The stated
+  step** is the sheet’s width over the cells each way, on both axes, as the prompt states the cell.
+  **The role** is held to the count rule as its slot name, as a state is. The two Quantise readers of
+  the studio’s sheet plan share `useSheetPlan`.

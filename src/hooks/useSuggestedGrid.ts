@@ -1,14 +1,11 @@
 import { useMemo } from 'react';
-import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
-import { useOutputStore } from '../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../stores/useQuantiseStore.ts';
-import { useSubjectStore } from '../stores/useSubjectStore.ts';
 import type { PixelGrid } from '../types/quantiser.ts';
 import { seatedCells } from '../utils/seatedCells.ts';
 import { targetSizeGrid } from '../utils/targetSizeGrid.ts';
 import { useComponentTarget } from './useComponentTarget.ts';
 import { useExpectedComponents } from './useExpectedComponents.ts';
-import { useSheetSubject } from './useSheetSubject.ts';
+import { useSheetPlan } from './useSheetPlan.ts';
 
 /**
  * The scale the studio's target size implies for the sheet on the Quantise tab, or `null` where there
@@ -29,16 +26,7 @@ export function useSuggestedGrid(): PixelGrid | null {
   const source = useQuantiseStore((state) => state.source);
   const target = useComponentTarget();
   const expected = useExpectedComponents();
-  const category = useSubjectStore((state) => state.category);
-  const subject = useSheetSubject();
-  const directionalMode = useOutputStore((state) => state.output.directionalMode);
-  const directions = useOutputStore((state) => state.output.directions);
-  const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
-
-  const plan = useMemo(
-    () => sheetPlanFor(category, subject, directionalMode, directions, sheetIndex),
-    [category, subject, directionalMode, directions, sheetIndex],
-  );
+  const plan = useSheetPlan();
 
   return useMemo(
     () =>

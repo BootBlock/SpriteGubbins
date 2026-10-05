@@ -9,10 +9,12 @@ import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
  * series, and its background key and palette moved to ones the set can take — or the same object where
  * none moves.
  *
- * **The overlay sheet stays the overlay sheet.** It closes the series (audit finding T6), so a reader on
- * it is moved to the new series' last sheet whatever the roster now holds, and a reader on an icon sheet
- * is kept among the icon sheets: a tick that adds a sheet would otherwise carry the first reader onto an
- * icon sheet by position, and an untick that removes one would carry the second onto the overlay sheet.
+ * **The overlay sheet stays the overlay sheet.** It closes the series (audit finding T6), so a reader
+ * who chose it from among the icon sheets is moved to the new series' last sheet whatever the roster now
+ * holds, and a reader on an icon sheet is kept among the icon sheets: a tick that adds a sheet would
+ * otherwise carry the first reader onto an icon sheet by position, and an untick that removes one would
+ * carry the second onto the overlay sheet. A set with no icons is the overlay sheet alone, which the
+ * reader is on because there is nothing else, so their first ticks take them to the first icon sheet.
  *
  * **An icon sheet is clamped to the last icon sheet rather than reset to the first**, which is where it
  * differs from `resolveOutputForSubject`. That one answers a change of *what* is drawn, where sheet three
@@ -38,7 +40,8 @@ export function outputForRoster(
   const was = sheetSeriesFor(category, before, directionalMode, directions).length;
   const { length } = sheetSeriesFor(category, after, directionalMode, directions);
   const held = resolveSheetIndex(category, before, directionalMode, directions, output.sheetIndex);
-  const sheetIndex = held === was - 1 ? length - 1 : Math.min(held, Math.max(0, length - 2));
+  const onOverlay = was > 1 && held === was - 1;
+  const sheetIndex = onOverlay ? length - 1 : Math.min(held, Math.max(0, length - 2));
   const backgroundKey = resolveBackgroundKey(after, output.targetModel, output.backgroundKey);
   const palette = resolvePalette(after, output.palette);
   if (

@@ -7,9 +7,9 @@ import {
   HEX_COLOUR,
   KEY_COLOUR_WORDS,
   LETTERING_OBJECTS,
-  RED_CROSS,
   UNWRITTEN,
   WRITING_SURFACE,
+  redCrossIn,
   wordNamed,
 } from '../constants/iconCatalogue/iconLookRules.ts';
 import type { CustomIconDraft } from '../types/customIconDraft.ts';
@@ -38,7 +38,7 @@ import { keyReaches } from './keyReach.ts';
  *   writing surface the text does not call blank, closed or rolled, or a capitalised acronym, which a
  *   model letters onto the object. A hex colour is not an acronym, so it is taken out of the text before
  *   the lettering is read.
- * - **A red cross not called diagonal** (`RED_CROSS`), which may be drawn as the protected emblem.
+ * - **A red cross not called diagonal** (`redCrossIn`), which may be drawn as the protected emblem.
  * - **A person or part of one** on an entry not declaring `figure`.
  *
  * The role, the look and the states are all read, since all three reach the inventory line.
@@ -58,7 +58,10 @@ export function customIconWarnings(draft: CustomIconDraft, key: BackgroundKey): 
   const lettering = letteringIn(text.replaceAll(HEX_COLOUR, ' '));
   if (lettering !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.lettering(lettering));
 
-  const cross = RED_CROSS.exec(text)?.[0];
+  // Each part on its own, so a red in the role is not read as the colour of a cross in the look.
+  const cross = [draft.role, draft.look, ...(draft.states ?? [])]
+    .map(redCrossIn)
+    .find((found) => found !== undefined);
   if (cross !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.redCross(cross));
 
   const figure = FIGURE_WORDS.exec(text)?.[0];

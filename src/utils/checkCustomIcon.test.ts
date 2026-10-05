@@ -224,6 +224,11 @@ describe('checkCustomIcon — what it refuses', () => {
     }
   });
 
+  it('refuses a role whose slot name shows a count the text typed hides', () => {
+    // `Éx5 relic` is the slot `x5-relic`, which the sheet's manifest and every reader of it name.
+    expect(messages({ role: 'Éx5 relic' }, [])).toEqual([CUSTOM_ICON_REFUSALS.countMarker('role')]);
+  });
+
   it('reads back every entry it accepts as that same entry', () => {
     const drafts = [
       { ...RELIC_DRAFT, states: ['Engagé', 'idle'] as const },

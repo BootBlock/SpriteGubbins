@@ -92,7 +92,10 @@ describe('customIconWarnings', () => {
 
   it('warns of a red cross that is not called diagonal', () => {
     expect(warn({ look: 'a white box with a red cross' })).toEqual([
-      CUSTOM_ICON_WARNING_TEXT.redCross('red cross'),
+      CUSTOM_ICON_WARNING_TEXT.redCross('a white box with a red cross'),
+    ]);
+    expect(warn({ look: 'a blank tag, a cross painted crimson' })).toEqual([
+      CUSTOM_ICON_WARNING_TEXT.redCross('a cross painted crimson'),
     ]);
     expect(warn({ look: 'a red diagonal cross' })).toEqual([]);
   });

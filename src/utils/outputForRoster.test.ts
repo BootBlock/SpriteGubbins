@@ -44,9 +44,15 @@ describe('outputForRoster', () => {
 
     expect(outputForRoster('ICON', before, iconSubject(singles(40)), onOverlay).sheetIndex).toBe(3);
     expect(outputForRoster('ICON', before, iconSubject(singles(10)), onOverlay).sheetIndex).toBe(1);
-    expect(
-      outputForRoster('ICON', iconSubject([]), iconSubject(singles(10)), DEFAULT_OUTPUT_CONFIG).sheetIndex,
-    ).toBe(1);
+  });
+
+  it('takes a reader from a set with no icons to its first icon sheet once they tick some', () => {
+    // The overlay sheet alone is the whole series of an empty set, so the reader did not choose it.
+    const empty = iconSubject([]);
+
+    expect(outputForRoster('ICON', empty, iconSubject(singles(10)), DEFAULT_OUTPUT_CONFIG)).toBe(
+      DEFAULT_OUTPUT_CONFIG,
+    );
   });
 
   it('keeps a reader on an icon sheet among the icon sheets when a tick adds one', () => {

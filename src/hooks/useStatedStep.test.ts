@@ -17,7 +17,7 @@ describe('useStatedStep', () => {
     useQuantiseStore.setState({ source: { name: 'sheet.png', image: createImage(1024, 768) } });
   });
 
-  it('reads an icon sheet’s cell as a quarter of the sheet each way, for a sheet of one icon too', () => {
+  it('reads an icon sheet’s cell as a quarter of the sheet’s width each way, for a sheet of one icon too', () => {
     useSubjectStore.setState({
       category: 'ICON',
       subject: {
@@ -26,7 +26,7 @@ describe('useStatedStep', () => {
       },
     });
 
-    expect(renderHook(() => useStatedStep()).result.current).toStrictEqual({ x: 256, y: 192 });
+    expect(renderHook(() => useStatedStep()).result.current).toStrictEqual({ x: 256, y: 256 });
   });
 
   it('states no step for a sheet whose plan states no grid, or where no sheet is loaded', () => {
