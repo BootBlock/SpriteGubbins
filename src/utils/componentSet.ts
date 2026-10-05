@@ -81,8 +81,9 @@ export function planComponentCount(plan: SheetPlan): number {
  *
  * A **`'run'` sheet** carries the anatomy only where it is the series' trunk — the first sheet,
  * whose inventory is the whole subject drawn to one facing per generation, so the anatomy is one
- * more piece of that facing's body — or where its plan declares `anatomy`, which ICON's overlay sheet
- * does from the end of its series (audit finding T6). The character and creature articulation sheets are `'run'`
+ * more piece of that facing's body — unless its plan declares `anatomy: 'ELSEWHERE'`, as every ICON sheet
+ * does: its overlay sheets list the reader's pieces among their own entries (`iconOverlaySheets`), and
+ * its icon sheets draw none. The character and creature articulation sheets are `'run'`
  * sheets that are *not* first, and they stay bare: their inventory is limbs for a trunk the core
  * sheets drew, and a tail beside them would hang on nothing.
  *
@@ -103,7 +104,6 @@ export function anatomyFacingsFor(
   const plan = sheetPlanFor(category, subject, mode, directions, sheetIndex);
   if (plan.facings !== 'run') return plan.facings;
   // Asked of the plan before the index, so a series that declares where its pieces go is never walked.
-  if (plan.anatomy === 'APPENDED') return 'run';
   if (plan.anatomy === 'ELSEWHERE') return null;
   return resolveSheetIndex(category, subject, mode, directions, sheetIndex) === 0 ? 'run' : null;
 }
@@ -290,7 +290,7 @@ export function componentBreakdownFor(
 ): string {
   const inventory = `### Component inventory: ${plan.name} — ${String(total)} in total
 
-${plan.groups.map(renderGroup).join('\n\n')}`;
+${[...(plan.opening === undefined ? [] : [plan.opening]), ...plan.groups.map(renderGroup)].join('\n\n')}`;
   if (facings === null || additional.length === 0) {
     return cite(inventory);
   }

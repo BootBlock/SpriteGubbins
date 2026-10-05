@@ -1,7 +1,7 @@
-import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
+import type { ComponentEntry, ComponentGroup } from '../../types/components.ts';
 import type { IconLook } from '../../types/iconRoster.ts';
 
-/** What one look writes into the overlay sheet; the entries' labels, parts and counts never change. */
+/** What one look writes into the overlay sheets; the entries' labels, parts and counts never change. */
 interface OverlayWording {
   readonly assembly: string;
   readonly scaleExample: string;
@@ -11,17 +11,30 @@ interface OverlayWording {
   readonly sweep: string;
   readonly rarityGlow: string;
   readonly marksIntro: string;
-  /** The outro's opening sentence: where a piece sits in the cell of the icon it marks. */
+  /** Said after the grid and cell sentences every overlay sheet opens with: where a piece stands in its cell. */
   readonly placement: string;
 }
 
+/** One look's overlay library: its wording, its groups, and the labels of the pieces that edge a square. */
+interface OverlayLibrary {
+  readonly wording: OverlayWording;
+  readonly groups: readonly ComponentGroup[];
+  readonly framing: ReadonlySet<string>;
+}
+
 /**
- * Each look's wording for the overlay sheet.
+ * Each look's wording for the overlay sheets.
  *
  * **Over a full-bleed tile, the pieces that cover an icon are squares.** An MMORPG's action bar dims a
  * whole button, rings and lights its square edge, and sweeps its cooldown as a wedge clipped to that
  * square; the overlays have to be drawn that shape, or the engine lays a round halo over a square icon.
  * Over an isolated mark there is no square to follow, so the pieces follow the mark, as they always have.
+ *
+ * **Each piece stands where it sits over the icon, inside its cell** (`SheetPlan.placement`). The pieces
+ * were once told to keep clear of the middle of a square that had no backdrop, so the Quantise tab cut
+ * each to its own bounding box and centred it, and a corner mark lost its corner. Under the full-bleed
+ * look the square is the tile square section 2 states at an exact share of the cell; under the isolated
+ * look it is the cell itself, which an isolated icon fills as its own.
  */
 const WORDING: Readonly<Record<IconLook, OverlayWording>> = {
   FULL_BLEED_TILE: {
@@ -35,11 +48,15 @@ const WORDING: Readonly<Record<IconLook, OverlayWording>> = {
     sweep:
       'Cooldown sweep ×2: a dark wedge clipped to the tile’s square and swept clockwise from the top edge — a quarter elapsed, and three quarters',
     rarityGlow: 'Rarity glow ×1 — the aura the highest tier carries, hugging the tile’s square edge',
-    marksIntro: `Small pieces laid over a finished tile to say something about it. Each is drawn within a square
-the size of one tile and clear of any icon, so it can be placed on any of them:`,
-    placement: `Every piece is drawn to the square of one tile, so it lands on the tile it marks without being
-scaled, and keeps clear of the middle of that square, where the subject sits, wherever it can — a mark
-that covers the thing it is describing tells the player nothing about which icon they are looking at.`,
+    marksIntro: `Small pieces laid over a finished tile to say something about it. Each is drawn clear of any icon,
+so it can be placed on any of them:`,
+    placement: `Inside its cell, every piece is drawn within the tile square section [SEC:STYLE] states, centred in
+the cell, and stands where it sits over the icon: a corner mark in its corner of that square, a ring
+just inside its edge, a veil across the whole of it. Only the piece is drawn, never the square, so a
+piece that covers less of the square leaves the rest of its cell empty, and it lands on the tile it
+marks without being moved or scaled. A mark stands clear of the middle of the square, where the
+subject sits, wherever it can — a mark that covers the thing it is describing tells the player
+nothing about which icon they are looking at.`,
   },
   ISOLATED_MARK: {
     assembly:
@@ -54,22 +71,18 @@ that covers the thing it is describing tells the player nothing about which icon
     rarityGlow: 'Rarity glow ×1 — the aura the highest tier carries',
     marksIntro: `Small pieces laid over a finished icon to say something about it. Each is drawn clear of any icon, so
 it can be placed on any of them:`,
-    placement: `An overlay is drawn to sit inside the same cell as the icon it marks, clear of the icon’s own
-silhouette wherever it can be — a mark that covers the thing it is describing tells the player
-nothing about which icon they are looking at.`,
+    placement: `Inside its cell, every piece stands where it sits over the icon, as though that icon filled the cell
+as it fills its own: a corner mark in its corner of the cell, a veil or a ring round the place the
+icon takes. Only the piece is drawn, never the cell, so it lands in the icon’s cell without being
+moved or scaled. A mark stands clear of the icon’s own silhouette wherever it can — a mark that
+covers the thing it is describing tells the player nothing about which icon they are looking at.`,
   },
 };
 
 /**
- * The last sheet of every ICON series, once per look: the state and overlay pieces the engine lays over
- * any icon of the set, drawn once for the whole set.
- *
- * **Its own sheet, once per set, and last.** The pieces used to share a sheet with twelve icons, which
- * capped a set at twelve and spent a third of every grid on pieces that do not change between grids. The
- * maintainer asked for them once per set, so they are a sheet of their own. It closes the series, after
- * the icons its pieces are matched to — opening it drew pieces matched to icons no sheet had drawn yet
- * (audit finding T6) — and declares `anatomy`, so the reader's *Extra Overlay Pieces* are drawn
- * here rather than on the series' first sheet (`anatomyFacingsFor`).
+ * The overlay library of an ICON set, once per look: the state and overlay pieces the engine lays over
+ * any icon of the set, drawn once for the whole set on the overlay sheets that close its series
+ * (`iconOverlaySheets`).
  *
  * **The state pieces are pieces rather than redrawn icons**, and that is the distinction worth holding:
  * a disabled icon is the same drawing under a veil the engine applies, so the veil is what the set owes,
@@ -87,71 +100,23 @@ nothing about which icon they are looking at.`,
  * finding M2), so a colour-blind player, and a set the engine tints, still reads each tier. A pip is a
  * dot rather than a numeral, which the lettering ban would remove.
  *
- * **One plan per look, and the same slots under both.** The entries, labels, parts and counts do not
+ * **One library per look, and the same slots under both.** The entries, labels, parts and counts do not
  * change with the look, so a manifest names the same files whichever look the set takes; only the shape
- * each piece is drawn to does. Neither plan declares `backdrop`: a piece the engine lays over an icon has
- * to stay open around its own shape, or it hides the icon it marks.
+ * each piece is drawn to does, and the square it stands in.
  *
- * **Flat, under no camera, and dressed in none of the icons' attributes.** The pieces used to take the
- * icons' projection, so a square ring and a cooldown wedge came back as isometric diamonds; the plan
- * declares `PICTURE_PLANE`, and section 3 tells them they lie flat and square to the screen. And
- * section 1 lists the icons' materials, colours and condition, which a wedge told it was painted with
- * them came back wearing; the plan declares `LAID_OVER`, so section 1 says those describe the icons
- * beneath, and a piece takes its colour and value from its own entry — the veil and the sweep are
- * dark under both looks — and the accent colour otherwise.
- *
- * **Opaque at full strength, and the engine supplies the translucency.** A veil, a wedge, a halo and a
- * glow are see-through in use, and drawn see-through on an opaque key they cannot keep clear of it. The
- * plan declares `opacity`, so section 0 asks for each as a solid shape or as stepped bands with hard
- * edges, and the self-audit checks it — see `SheetPlan.opacity`, which also says why the rule holds on a
- * transparent background.
- *
- * **Nothing here carries lettering**, for the reason `CATEGORY_EXCLUSION_TEXT` gives: a stack count, a
- * cooldown and a keybind are drawn by the engine at runtime over the top of the sprite.
+ * `framing` names the pieces that are edges round a square — the halo, the ring and the glow — so a
+ * sheet holding one declares `frames` (audit finding T2), and a sheet the cut leaves without one lets
+ * Midjourney negate a frame as it does on an icon sheet.
  */
-export const ICON_OVERLAY_PLANS: Readonly<Record<IconLook, SheetPlan>> = {
-  FULL_BLEED_TILE: overlaySheet(WORDING.FULL_BLEED_TILE),
-  ISOLATED_MARK: overlaySheet(WORDING.ISOLATED_MARK),
+export const ICON_OVERLAY_LIBRARY: Readonly<Record<IconLook, OverlayLibrary>> = {
+  FULL_BLEED_TILE: library(WORDING.FULL_BLEED_TILE),
+  ISOLATED_MARK: library(WORDING.ISOLATED_MARK),
 };
 
-function overlaySheet(wording: OverlayWording): SheetPlan {
+function library(wording: OverlayWording): OverlayLibrary {
   return {
-    name: 'Overlay pieces',
-    facings: 'run',
-    assembly: wording.assembly,
-    targetQuantity: 'COMPONENT',
-    extent: 'WHOLE',
-    identity: 'ONE_SET',
-    // The engine lays each piece over a finished icon in screen space, so a piece is a flat shape square
-    // to the screen and takes none of the icons' projection: a square ring stays square under any camera.
-    orientation: 'PICTURE_PLANE',
-    // Section 1 describes the icons these pieces are laid over, never the pieces.
-    subjectScope: 'LAID_OVER',
-    // The cooldown sweep is drawn at two stages.
-    posing: 'PER_POSITION',
-    // The agreement shape: these pieces are not parts of one another, so what has to hold is that no
-    // piece arrives at half the weight of the one beside it.
-    scaleExample: wording.scaleExample,
-    // Each piece is drawn to the square of the icon it is laid over, so all of them to one square.
-    fit: 'SAME_SQUARE',
-    // The veil, the wedge, the halo and the glow are translucent in use; the engine applies that, and
-    // every piece is drawn opaque at full strength (audit finding P8).
-    opacity: 'ENGINE_APPLIED',
-    // The selected ring and the highlight halo are edges round a square, so no wrapper negates a frame or
-    // a border here (audit finding T2).
-    frames: 'DRAWN',
-    // The reader's *Extra Overlay Pieces* belong to the overlay library, wherever it falls in the series.
-    anatomy: 'APPENDED',
-    scaleUnit: 'one icon',
-    componentClass: 'one overlay piece the engine lays over an icon of this one set',
-    assemblyFailure: {
-      instruction:
-        'Do not draw any piece already laid over an icon, or the pieces placed on a hotbar or a finished screen, anywhere on the sheet, including as a reference or key.',
-      exclusion:
-        'Any overlay piece shown laid over an icon or placed on a hotbar or other finished screen, and any picture of the pieces in use.',
-      audit:
-        'no piece arrives already laid over an icon, and nothing on the sheet is a hotbar or a finished screen',
-    },
+    wording,
+    framing: new Set(['highlight-halo', 'selected-ring', 'rarity-glow']),
     groups: [
       {
         heading: 'State pieces',
@@ -182,9 +147,6 @@ copies of each of them:`,
           overlay('broken-overlay', 'Broken or damaged overlay ×1'),
           overlay('empty-mark', 'Empty or absent mark ×1 — what is shown where the set has nothing to show'),
         ],
-        outro: `${wording.placement}
-No piece carries a letter, a numeral, a stack count or a key name: those are drawn by the engine at
-runtime over the top of the sprite.`,
       },
     ],
   };

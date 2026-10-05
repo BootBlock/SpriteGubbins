@@ -8,7 +8,7 @@ import type { IconLook } from '../../types/iconRoster.ts';
 import type { SheetSubject } from '../../types/subject.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { iconSeries } from './icon.ts';
-import { ICON_OVERLAY_PLANS } from './iconOverlaySheet.ts';
+import { LIBRARY_OVERLAY_SHEETS } from '../../test/libraryOverlaySheets.ts';
 import { iconSheet } from './iconSheet.ts';
 import { sheetSeriesFor } from './index.ts';
 import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
@@ -18,18 +18,20 @@ const SINGLE_ONES = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
   .filter((entry) => entry.states === undefined)
   .map((entry) => entry.id);
 
-const ISOLATED_OVERLAY = ICON_OVERLAY_PLANS.ISOLATED_MARK;
+const ISOLATED_OVERLAY = LIBRARY_OVERLAY_SHEETS.ISOLATED_MARK;
 
 function subjectWith(
   picks: readonly string[],
   setting = 'High Fantasy',
   look: IconLook = 'ISOLATED_MARK',
+  extras = '',
 ): SheetSubject {
   return {
     anatomy: '',
     setting,
     clothing: '',
     face_head: '',
+    additional_anatomy: extras,
     icons: { look, colourMode: 'FULL_COLOUR', picks: cataloguePicks(picks) },
   };
 }
@@ -48,6 +50,7 @@ function proseOf(sheet: ReturnType<typeof seriesOf>[number]): string {
     sheet.assembly,
     sheet.scaleExample,
     sheet.componentClass,
+    sheet.opening ?? '',
     ...sheet.groups.flatMap((group) => [group.intro ?? '', group.outro ?? '']),
     ...entriesOf(sheet).map((entry) => entry.text),
   ]
@@ -58,9 +61,9 @@ function proseOf(sheet: ReturnType<typeof seriesOf>[number]): string {
 describe('the ICON series', () => {
   it('is the overlay sheet alone for a set with no icons', () => {
     // A subject with no roster is only ever hand-built, and takes the default look.
-    expect(seriesOf({ anatomy: '', setting: '', clothing: '', face_head: '' })).toEqual([
-      ICON_OVERLAY_PLANS[DEFAULT_ICON_LOOK],
-    ]);
+    expect(
+      seriesOf({ anatomy: '', setting: '', clothing: '', face_head: '', additional_anatomy: '' }),
+    ).toEqual([LIBRARY_OVERLAY_SHEETS[DEFAULT_ICON_LOOK]]);
     expect(seriesOf(subjectWith([]))).toEqual([ISOLATED_OVERLAY]);
   });
 
@@ -75,14 +78,14 @@ describe('the ICON series', () => {
     expect(entriesOf(series[0] ?? ISOLATED_OVERLAY).map((entry) => entry.label)).toEqual(
       defaultSubjectFor('ICON').icons?.picks.map(iconPickId),
     );
-    expect(series.at(-1)).toBe(ICON_OVERLAY_PLANS.FULL_BLEED_TILE);
+    expect(series.at(-1)).toEqual(LIBRARY_OVERLAY_SHEETS.FULL_BLEED_TILE);
     expect(series[0]?.backdrop).toBe('OWN_SQUARE');
   });
 
   it('runs a longer roster to a second sheet, cut evenly and named for the positions each holds', () => {
     const picks = SINGLE_ONES.slice(0, 21);
     const [first, second, overlay, ...rest] = seriesOf(subjectWith(picks));
-    expect(overlay).toBe(ISOLATED_OVERLAY);
+    expect(overlay).toEqual(ISOLATED_OVERLAY);
     expect(rest).toEqual([]);
     expect(first?.name).toBe('Icons 1–11');
     expect(second?.name).toBe('Icons 12–21');
@@ -183,7 +186,7 @@ describe('the ICON series', () => {
   it.each(ICON_LOOKS)(
     'keeps the %s overlay sheet’s state and overlay pieces as the same named slots',
     (look) => {
-      const labels = entriesOf(ICON_OVERLAY_PLANS[look]).map((entry) => entry.label);
+      const labels = entriesOf(LIBRARY_OVERLAY_SHEETS[look]).map((entry) => entry.label);
       expect(labels).toEqual([
         'disabled-veil',
         'highlight-halo',
@@ -196,7 +199,7 @@ describe('the ICON series', () => {
         'broken-overlay',
         'empty-mark',
       ]);
-      expect(componentTotal(entriesOf(ICON_OVERLAY_PLANS[look]))).toBe(14);
+      expect(componentTotal(entriesOf(LIBRARY_OVERLAY_SHEETS[look]))).toBe(14);
     },
   );
 });
@@ -241,10 +244,10 @@ describe('the ICON look', () => {
   });
 
   it('shapes the full-bleed overlay pieces that cover an icon to the square of one tile', () => {
-    const text = entriesOf(ICON_OVERLAY_PLANS.FULL_BLEED_TILE).map((entry) => entry.text);
+    const text = entriesOf(LIBRARY_OVERLAY_SHEETS.FULL_BLEED_TILE).map((entry) => entry.text);
     expect(text.slice(0, 4).every((line) => /square/.test(line))).toBe(true);
-    expect(proseOf(ICON_OVERLAY_PLANS.FULL_BLEED_TILE)).toContain(
-      'Every piece is drawn to the square of one tile',
+    expect(proseOf(LIBRARY_OVERLAY_SHEETS.FULL_BLEED_TILE)).toContain(
+      'every piece is drawn within the tile square section [SEC:STYLE] states',
     );
   });
 });
@@ -266,7 +269,7 @@ describe('the cell an icon sheet is drawn on', () => {
       };
       expect(intro(16)).toContain(cell);
       expect(intro(2)).toContain(cell);
-      expect(intro(2)).toContain('leaves\nthe rest of its canvas empty rather than drawing them larger');
+      expect(intro(2)).toContain('leaves the rest of its canvas empty rather than drawing them larger');
     },
   );
 });

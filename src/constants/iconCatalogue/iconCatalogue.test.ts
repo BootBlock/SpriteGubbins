@@ -6,7 +6,7 @@ import { DAMAGE_SCHOOLS, ICON_KINDS, LOOK_FAMILIES } from '../../types/iconCatal
 import type { DamageSchool } from '../../types/iconCatalogue.ts';
 import { DEFAULT_ICON_LOOK } from './defaultIconLook.ts';
 import { ICON_CATALOGUE_GROUPS, iconCatalogueEntry, iconComponentCount } from './index.ts';
-import { ICON_ROSTER_CAPACITY, ICON_SERIES_LONGEST, ICONS_PER_SHEET } from './iconSheetLimits.ts';
+import { ICON_ROSTER_CAPACITY, ICONS_PER_SHEET } from './iconSheetLimits.ts';
 import {
   ACRONYM,
   FIGURE_WORDS,
@@ -420,12 +420,8 @@ describe('the look family a world draws from', () => {
 });
 
 describe('the icon sheet limits', () => {
-  it('draws a square grid, and bounds the series a full roster can take', () => {
+  it('draws a square grid of sixteen', () => {
     expect(ICONS_PER_SHEET).toBe(16);
-    // Twenty-two icon sheets, then the overlay sheet: a cut that fills each sheet holds at least fifteen
-    // on every one but the last, because a two-state entry that would straddle a boundary opens the next
-    // sheet instead, and the even cut the series makes takes no more sheets than that.
-    expect(ICON_SERIES_LONGEST).toBe(23);
   });
 });
 

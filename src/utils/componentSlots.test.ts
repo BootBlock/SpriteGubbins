@@ -323,15 +323,16 @@ describe('an icon set’s named slots', () => {
   });
 
   it('names the overlay pieces on the overlay sheet, which closes the series, with the reader’s extra pieces after them', () => {
+    const subject = { ...ICON, additional_anatomy: 'Equipped Corner Tick ×1' };
     const overlaySheet =
-      sheetSeriesFor('ICON', ICON, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
+      sheetSeriesFor('ICON', subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
     const slots = componentSlots(
       'ICON',
-      ICON,
+      subject,
       'SINGLE_DIRECTION_POSE_LIBRARY',
       'SINGLE_FRONT',
       overlaySheet,
-      parseAdditionalAnatomy('Equipped Corner Tick ×1'),
+      parseAdditionalAnatomy(subject.additional_anatomy),
       null,
     );
     expect(slots[0]).toBe('disabled-veil');

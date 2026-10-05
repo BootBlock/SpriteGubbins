@@ -11,9 +11,11 @@ import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
 function iconSubject(
   picks: readonly string[],
   colourMode: IconColourMode = 'FULL_COLOUR',
+  extras = 'NONE',
 ): SubjectDefinition {
   return {
     ...defaultSubjectFor('ICON'),
+    additional_anatomy: extras,
     icons: { look: 'ISOLATED_MARK', colourMode, picks: cataloguePicks(picks) },
   };
 }
@@ -44,6 +46,23 @@ describe('outputForRoster', () => {
 
     expect(outputForRoster('ICON', before, iconSubject(singles(40)), onOverlay).sheetIndex).toBe(3);
     expect(outputForRoster('ICON', before, iconSubject(singles(10)), onOverlay).sheetIndex).toBe(1);
+  });
+
+  it('keeps a reader on the same overlay sheet where the extra pieces fill two', () => {
+    // Ten extra pieces after the library's fourteen are two overlay sheets. Twenty icons are two icon
+    // sheets, so the overlay sheets are the third and the fourth; forty icons are three, so the same two
+    // overlay sheets become the fourth and the fifth.
+    const extras = 'Equipped Corner Tick ×10';
+    const before = iconSubject(singles(20), 'FULL_COLOUR', extras);
+    const after = iconSubject(singles(40), 'FULL_COLOUR', extras);
+    const onFirstOverlay = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 2 };
+    const onSecondOverlay = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 3 };
+
+    expect(outputForRoster('ICON', before, after, onFirstOverlay).sheetIndex).toBe(3);
+    expect(outputForRoster('ICON', before, after, onSecondOverlay).sheetIndex).toBe(4);
+    expect(outputForRoster('ICON', after, before, { ...onFirstOverlay, sheetIndex: 3 }).sheetIndex).toBe(2);
+    // An icon sheet stays among the icon sheets rather than landing on the first overlay sheet.
+    expect(outputForRoster('ICON', after, before, { ...onFirstOverlay, sheetIndex: 2 }).sheetIndex).toBe(1);
   });
 
   it('takes a reader from a set with no icons to its first icon sheet once they tick some', () => {

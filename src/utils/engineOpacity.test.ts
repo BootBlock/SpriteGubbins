@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { ICON_SET_PRESETS } from '../constants/presets/iconSets.ts';
 import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
-import { ICON_OVERLAY_PLANS } from '../constants/sheetPlans/iconOverlaySheet.ts';
+import { LIBRARY_OVERLAY_SHEETS } from '../test/libraryOverlaySheets.ts';
 import { renderContractOf, sectionOf } from '../test/promptSections.ts';
 import { reachableSheets } from '../test/reachableSheets.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -36,7 +36,7 @@ function overlaySheet(output: Partial<OutputConfig> = {}): string {
 
 describe('the overlay sheet’s opacity', () => {
   it('is declared by the overlay sheet under both looks', () => {
-    for (const plan of Object.values(ICON_OVERLAY_PLANS)) expect(plan.opacity).toBe('ENGINE_APPLIED');
+    for (const plan of Object.values(LIBRARY_OVERLAY_SHEETS)) expect(plan.opacity).toBe('ENGINE_APPLIED');
   });
 
   it('asks for every piece opaque on the key, and checks it in the self-audit', () => {

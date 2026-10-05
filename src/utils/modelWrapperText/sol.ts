@@ -299,6 +299,9 @@ export function wrapForSol(prompt: string, gated: SolGatedBlocks, sections: Sect
   const blocks = [
     gated.targetSize ? `- the target size line in section ${citeSection(sections, 'STYLE')}` : '',
     gated.displaySize ? `- the smallest display size line in section ${citeSection(sections, 'STYLE')}` : '',
+    gated.tileShare
+      ? `- the resolution profile line in section ${citeSection(sections, 'STYLE')}, and the share of a cell it states`
+      : '',
     gated.nativeGrid
       ? `- the block headed “${NATIVE_GRID_HEADING}” in section ${citeSection(sections, 'STYLE')}`
       : '',

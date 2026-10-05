@@ -1,5 +1,5 @@
 /**
- * How many icons one sheet draws, how many a roster may hold, and the longest series that allows.
+ * How many icons one sheet draws, and how many a roster may hold.
  *
  * **Sixteen to a sheet, four by four**, which the maintainer decided for the 128 px icon: a square sheet
  * seats a four-by-four grid with margin to spare, and sixteen is well inside what one generation returns
@@ -17,18 +17,6 @@ export const ICONS_PER_SHEET = ICON_GRID_COLUMNS * ICON_GRID_COLUMNS;
  * A bound on what storage may hold and on what the picker lets a reader tick, sized to the icons one
  * game's action bars, bags, spellbook, emotes and system menu need together. **The catalogue holds more
  * than that**, since it offers every world's archetypes and a set is one game's choice from them, so
- * ticking all of it is refused once the set is full. It is what {@link ICON_SERIES_LONGEST} is derived
- * from, and that in turn bounds a stored sheet index.
+ * ticking all of it is refused once the set is full.
  */
 export const ICON_ROSTER_CAPACITY = 320;
-
-/**
- * The most sheets an ICON series can take: the icon sheets a full roster fills, then the overlay sheet.
- *
- * **Not `capacity ÷ sixteen`**, because a two-state entry never splits across two sheets: where one
- * would straddle the boundary the sheet closes at fifteen and the pair opens the next. So a cut that
- * fills each sheet holds at least fifteen components on every sheet but the last, and a roster of `n`
- * components takes at most `⌊(n − 1) ÷ 15⌋ + 1` sheets. The series cuts with `balancedChunks`, which
- * evens the sheets out over that same number, so the bound holds for it too.
- */
-export const ICON_SERIES_LONGEST = 1 + Math.floor((ICON_ROSTER_CAPACITY - 1) / (ICONS_PER_SHEET - 1)) + 1;

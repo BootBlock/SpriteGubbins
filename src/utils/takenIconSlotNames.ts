@@ -1,5 +1,5 @@
 import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
-import { ICON_OVERLAY_PLANS } from '../constants/sheetPlans/iconOverlaySheet.ts';
+import { iconOverlaySheets } from '../constants/sheetPlans/iconOverlaySheets.ts';
 import { ICON_LOOKS } from '../types/iconRoster.ts';
 import { iconSlotNames } from './iconSlotNames.ts';
 import { planSlots } from './componentSlots.ts';
@@ -13,15 +13,16 @@ let built: ReadonlyMap<string, string> | undefined;
  *
  * **The whole catalogue, not only the ticked part**, so an entry written today does not collide with the
  * catalogue entry ticked tomorrow, which would leave the reader holding two icons the set cannot hold at
- * once. Each entry's id and each of its pair's drawings are taken. **The overlay sheet's pieces too**,
- * in both looks, line labels and drawn names alike: the overlay sheet closes every set's series, and its
+ * once. Each entry's id and each of its pair's drawings are taken. **The overlay library's pieces too**,
+ * in both looks, line labels and drawn names alike: the overlay sheets close every set's series, and their
  * files sit beside the icons' in the game's folder, so a reader's `Locked mark` would overwrite the
  * overlay's.
  */
 export function takenIconSlotNames(): ReadonlyMap<string, string> {
   built ??= new Map([
     ...ICON_LOOKS.flatMap((look) => {
-      const plan = ICON_OVERLAY_PLANS[look];
+      // The library alone, which a set with no extra pieces draws on one sheet.
+      const [plan] = iconOverlaySheets(look, []);
       const labels = plan.groups.flatMap((group) => group.entries.map((entry) => entry.label));
       return [...labels, ...planSlots(plan)].map((name) => [name, 'a piece of the overlay sheet'] as const);
     }),

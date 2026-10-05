@@ -234,17 +234,17 @@ describe('component counts', () => {
     // unstated yaw, and the diagonal half of a split core got no anatomy at all. A multi-view
     // sheet now draws each named piece at each of its own facings, exactly as the plan's entries
     // are drawn; a run sheet keeps one drawing per generation, but only where it is the series'
-    // trunk, or the sheet its plan declares carries the anatomy (ICON's overlay sheet, which closes its
-    // series) — the articulation runs stay bare, because their limbs hang on a trunk the core
-    // sheets carry.
+    // trunk — the articulation runs stay bare, because their limbs hang on a trunk the core sheets
+    // carry. ICON appends the pieces to no sheet: its overlay sheets list the ones the subject names
+    // among their own entries (`iconOverlaySheets`), which a list handed in beside the subject never
+    // reaches.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
     for (const { category, subject, mode, directions, sheetIndex } of SHEETS) {
       const series = sheetSeriesFor(category, subject, mode, directions);
       const plan = series[sheetIndex];
       if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
-      // Stated rather than read off the plans: ICON's overlay sheet, the last of its series, carries the
-      // pieces, and every other run series carries them on its first sheet.
-      const carrier = category === 'ICON' ? series.length - 1 : 0;
+      // Stated rather than read off the plans: every run series but ICON's carries them on its first sheet.
+      const carrier = category === 'ICON' ? -1 : 0;
       const views = plan.facings === 'run' ? (sheetIndex === carrier ? 1 : 0) : plan.facings.length;
       expect(
         componentCountFor(category, subject, mode, directions, sheetIndex, anatomy, null),

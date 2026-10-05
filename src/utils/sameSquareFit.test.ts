@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ICON_OVERLAY_PLANS } from '../constants/sheetPlans/iconOverlaySheet.ts';
+import { LIBRARY_OVERLAY_SHEETS } from '../test/libraryOverlaySheets.ts';
 import { reachableSheets } from '../test/reachableSheets.ts';
 import { generatePrompt } from './promptCompiler.ts';
 
@@ -34,7 +34,7 @@ describe('what occupies section 2’s share of a cell', () => {
   }, 30_000);
 
   it('is declared by every ICON sheet, and by no sheet of a set drawn to one scale', () => {
-    for (const plan of Object.values(ICON_OVERLAY_PLANS)) expect(plan.fit).toBe('SAME_SQUARE');
+    for (const plan of Object.values(LIBRARY_OVERLAY_SHEETS)) expect(plan.fit).toBe('SAME_SQUARE');
     const declaring = new Set(
       reachableSheets()
         .filter(({ plan }) => plan.fit === 'SAME_SQUARE')

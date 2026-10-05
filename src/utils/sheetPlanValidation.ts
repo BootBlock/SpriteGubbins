@@ -174,8 +174,11 @@ function seriesViolations(
   return violations;
 }
 
-/** Every structural problem in one sheet, against the facings of the set its series was built for. */
-function planViolations(
+/**
+ * Every structural problem in one sheet, against the facings of the set its series was built for.
+ * Exported so a hand-built plan can be held to the rules a shipped one never breaks.
+ */
+export function planViolations(
   category: SubjectCategory,
   mode: DirectionalMode,
   plan: SheetPlan,
@@ -208,6 +211,13 @@ function planViolations(
   }
   if (plan.groups.length === 0) {
     violations.push({ category, mode, message: `sheet “${plan.name}” has no component groups` });
+  }
+  if (plan.placement !== undefined && plan.cellGrid === undefined) {
+    violations.push({
+      category,
+      mode,
+      message: `sheet “${plan.name}” places its pieces in cells but states no cell grid`,
+    });
   }
   for (const group of plan.groups) {
     if (group.entries.length === 0) {

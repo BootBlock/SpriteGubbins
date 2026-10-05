@@ -58,10 +58,11 @@ const RESOLUTION_LINE = /^- Resolution profile: (.*)$/gm;
  * **The second is an icon sheet's** (`SheetPlan.fit`, audit finding P10): every component is drawn to one
  * square of one size, and the square occupies the share. It is priced the same way, because every square
  * is as large as the largest component and no larger, so each spends the `f²` of the page the largest
- * component would.
+ * component would. **A square in a fixed grid states one exact figure** (`TILE_SHARE`), which is priced
+ * as the top of a range is.
  */
 const CELL_SHARE =
-  /(?:the largest component|every component is drawn to one square of the same size, however large or small the thing it depicts, and that square) occupies (\d+)–(\d+)% of its cell height in the exploded grid/;
+  /(?:the largest component|every component is drawn to one square of the same size, however large or small the thing it depicts, and that square) occupies (?:\d+–(?<top>\d+)% of its cell height|exactly (?<exact>\d+)% of its cell’s width and height, centred in the cell) in the exploded grid/;
 
 /**
  * What the layout section's “generously and uniformly spaced” costs, as a share of the page.
@@ -128,10 +129,11 @@ describe('the resolution profile against the page it is drawn on', () => {
                   continue;
                 }
                 scored.add(`${category} / ${base} / ${directionalMode}`);
-                const top = Number(found[2]) / 100;
+                const percent = found.groups?.['top'] ?? found.groups?.['exact'] ?? '';
+                const top = Number(percent) / 100;
                 if (top * top > COVERAGE_CEILING) {
                   breaches.push(
-                    `${where}: ${String(found[2])}% of a cell covers ${(top * top).toFixed(2)} of the page`,
+                    `${where}: ${percent}% of a cell covers ${(top * top).toFixed(2)} of the page`,
                   );
                 }
               }

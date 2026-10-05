@@ -72,12 +72,14 @@ export function styleSectionValues(
     // The fit is the fourth. Both share rungs are a share of a cell on every sheet, because a share of
     // the sheet height was decided by the component count or by the layout on every plan that carried
     // one — see `SHARE_RANGE` — and the fit says what occupies it: the largest component, or the one
-    // square an icon sheet draws every icon to (audit finding P10).
+    // square an icon sheet draws every icon to (audit finding P10). The cell grid is the fifth: a square
+    // in a fixed grid is stated at one exact share of its cell, which the Quantise tab finds again.
     RESOLUTION_PROFILE_DESCRIPTION: resolutionProfileDescription(
       profile,
       stated?.quantity === 'ASSEMBLED',
       plan.scaleUnit,
       plan.fit,
+      plan.cellGrid,
     ),
     // A function of the target size as well as the profile, because `CUSTOM` is the one profile
     // that carries no scale of its own — see `minFeatureSize`. It carries its own unit, from the

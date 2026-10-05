@@ -2,6 +2,8 @@ import type { RenderStyle } from '../../types/rendering.ts';
 import type { ResolutionProfile, StatedTargetSize } from '../../types/output.ts';
 import type { RigContract } from '../../types/rigContract.ts';
 import type { SheetPlan } from '../../types/components.ts';
+import { statesTileShare } from './statesTileShare.ts';
+import { TILE_SHARE } from './tileShare.ts';
 
 /**
  * How the sheet is drawn, in the prose the prompt carries.
@@ -122,7 +124,8 @@ export function shareRange(profile: ShareProfile): string {
  * drawn as a speck beside the sword, against the icon sheet's own "each subject filling its square to
  * the same margin". So there the square occupies the share, and what fills the square is the sheet's
  * and the subject's framing to say. The share is the same figure either way, which is what
- * `tests/resolution-profile-fit.test.ts` prices.
+ * `tests/resolution-profile-fit.test.ts` prices. **A square in a fixed grid takes one exact figure**
+ * instead of the range (`fixedSquareText`), because the Quantise tab has to find it again.
  *
  * It names the grid rather than citing the layout section by number: `[SEC:LAYOUT]` cannot be used
  * here, because both of that heading's declarations sit inside an `[IF:…]` and
@@ -130,10 +133,34 @@ export function shareRange(profile: ShareProfile): string {
  * grid" is that section's own phrase for it, so the reference survives whatever number the heading
  * takes.
  */
-function shareText(profile: ShareProfile, fit: SheetPlan['fit']): string {
+function shareText(profile: ShareProfile, fit: SheetPlan['fit'], cellGrid: SheetPlan['cellGrid']): string {
+  if (statesTileShare(fit, cellGrid)) return fixedSquareText(profile);
   return fit === 'SAME_SQUARE'
     ? `every component is drawn to one square of the same size, however large or small the thing it depicts, and that square occupies ${shareRange(profile)} of its cell height in the exploded grid`
     : `the largest component occupies ${shareRange(profile)} of its cell height in the exploded grid, and every other component is drawn to that same scale`;
+}
+
+/**
+ * The one square of a sheet laid out in a fixed grid, at the exact share of its cell that every sheet of
+ * the set states (`TILE_SHARE`): an ICON set's icon and overlay sheets.
+ *
+ * **Exact, and stated under every profile**, because the Quantise tab finds the square again to place
+ * each overlay piece where it was drawn over its icon (`SheetPlan.placement`). The two share rungs state
+ * it in place of their range; the target size and the 16-bit height state it after their own figure,
+ * which says how detailed the square is rather than how much of its cell it fills.
+ */
+function fixedSquareText(profile: ResolutionProfile): string {
+  return `every component is drawn to one square of the same size, however large or small the thing it depicts, and that square occupies exactly ${String(TILE_SHARE[profile])}% of its cell’s width and height, centred in the cell in the exploded grid`;
+}
+
+/** A profile's own figure, followed by the fixed grid's square where the sheet draws to one. */
+function withFixedSquare(
+  profile: ResolutionProfile,
+  text: string,
+  fit: SheetPlan['fit'],
+  cellGrid: SheetPlan['cellGrid'],
+): string {
+  return statesTileShare(fit, cellGrid) ? `${text}; ${fixedSquareText(profile)}` : text;
 }
 
 /**
@@ -155,13 +182,25 @@ function shareText(profile: ShareProfile, fit: SheetPlan['fit']): string {
  * its quantity itself.
  */
 export const RESOLUTION_PROFILE_TEXT: Readonly<
-  Record<ResolutionProfile, (unit: string, fit: SheetPlan['fit']) => string>
+  Record<ResolutionProfile, (unit: string, fit: SheetPlan['fit'], cellGrid: SheetPlan['cellGrid']) => string>
 > = {
-  HIGH_RESOLUTION: (_unit, fit) => `High resolution — ${shareText('HIGH_RESOLUTION', fit)}`,
-  MID_RESOLUTION: (_unit, fit) => `Mid resolution — ${shareText('MID_RESOLUTION', fit)}`,
-  RETRO_16_BIT: (unit) => `16-bit retro scale — ${unit} is roughly 64–96 pixels tall`,
-  CUSTOM: () =>
-    'Custom — work to the target component size where one is stated, and to the sheet aspect otherwise',
+  HIGH_RESOLUTION: (_unit, fit, cellGrid) =>
+    `High resolution — ${shareText('HIGH_RESOLUTION', fit, cellGrid)}`,
+  MID_RESOLUTION: (_unit, fit, cellGrid) => `Mid resolution — ${shareText('MID_RESOLUTION', fit, cellGrid)}`,
+  RETRO_16_BIT: (unit, fit, cellGrid) =>
+    withFixedSquare(
+      'RETRO_16_BIT',
+      `16-bit retro scale — ${unit} is roughly 64–96 pixels tall`,
+      fit,
+      cellGrid,
+    ),
+  CUSTOM: (_unit, fit, cellGrid) =>
+    withFixedSquare(
+      'CUSTOM',
+      'Custom — work to the target component size where one is stated, and to the sheet aspect otherwise',
+      fit,
+      cellGrid,
+    ),
 };
 
 /**
@@ -215,6 +254,7 @@ export function resolutionProfileDescription(
   statesAssembled: boolean,
   scaleUnit: string,
   fit?: SheetPlan['fit'],
+  cellGrid?: SheetPlan['cellGrid'],
 ): string {
   // `RESOLUTION_PROFILE_TEXT` stays exported even though nothing else imports it: it is still the map
   // `[DEFINE:RESOLUTION_PROFILE_DESCRIPTION]` is filled from for three of the four profiles, and
@@ -222,8 +262,8 @@ export function resolutionProfileDescription(
   // Listing the token as *computed* there instead would say the map does not exist, and drop the
   // check that it still does.
   return profile === 'CUSTOM' && statesAssembled
-    ? CUSTOM_ASSEMBLED_TEXT
-    : RESOLUTION_PROFILE_TEXT[profile](scaleUnit, fit);
+    ? withFixedSquare('CUSTOM', CUSTOM_ASSEMBLED_TEXT, fit, cellGrid)
+    : RESOLUTION_PROFILE_TEXT[profile](scaleUnit, fit, cellGrid);
 }
 
 /**

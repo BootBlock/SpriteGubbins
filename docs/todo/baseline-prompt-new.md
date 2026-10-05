@@ -186,6 +186,16 @@ screen, and §3 states neither line above. `SUBJECT_SCOPE` (`SheetPlan.subjectSc
 of declaration for §1: one design, what a set shares above entries that carry their own, or the set
 a sheet of overlay pieces is laid over.
 
+**A sheet laid out in a fixed grid states its one square at one exact share of its cell**
+(`SheetPlan.cellGrid`, `TILE_SHARE`). An icon set’s icon sheets and overlay sheets all declare the
+four-across grid, so the `RESOLUTION_PROFILE_DESCRIPTION` line states their square at exactly 60% of
+its cell under high resolution and 45% under mid, and adds 60% after the figure of a target size or
+the 16-bit height. The overlay sheets also declare a `placement`: one piece to a cell, drawn within
+that square (`WITHIN_TILE`, the full-bleed look) or within the cell itself (`WITHIN_CELL`, the
+isolated look), standing where it sits over the icon. The Quantise tab finds each cell from the gaps
+between the pieces and keeps each piece where it was drawn. The overlay library and the reader’s
+*Extra Overlay Pieces* are cut across as many overlay sheets as they fill, sixteen cells to a sheet.
+
 ### `DIRECTIONS` — **NEW**
 
 Was hardcoded to three even though `DIRECTIONAL_MODE` implied it varied. An 8-direction set — what

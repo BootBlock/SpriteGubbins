@@ -320,11 +320,15 @@ export type DeclinableFieldKey = (typeof DECLINABLE_FIELD_KEYS)[number];
  * The subject fields a sheet's inventory is a function of: the assembly base, which chooses the plans
  * a category draws from (`sheetPlans/assemblyBases.ts`), the {@link DECLINABLE_FIELD_KEYS} values,
  * each of which can decline a piece of one (`utils/sheetPlanAbsence.ts`), and — for ICON — the roster
- * that lists the icons and the *World & Era* that decides how each is drawn (`sheetPlans/icon.ts`).
+ * that lists the icons, the *World & Era* that decides how each is drawn, and the *Extra Overlay Pieces*
+ * that decide how many overlay sheets the library fills (`sheetPlans/icon.ts`).
  *
  * **One record rather than a string per field**, because every function that resolves or counts a sheet
  * takes all of them, and adjacent string parameters are a set no type checker can tell apart when a call
  * site reorders them. A whole `SubjectDefinition` satisfies it, which is what the compiler hands down; a
  * studio control reading a few fields out of the store builds one.
  */
-export type SheetSubject = Pick<SubjectDefinition, 'anatomy' | 'setting' | DeclinableFieldKey | 'icons'>;
+export type SheetSubject = Pick<
+  SubjectDefinition,
+  'anatomy' | 'setting' | DeclinableFieldKey | 'icons' | 'additional_anatomy'
+>;

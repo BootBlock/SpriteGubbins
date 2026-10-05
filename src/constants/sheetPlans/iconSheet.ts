@@ -1,7 +1,8 @@
 import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
 import type { IconColourMode, IconLook } from '../../types/iconRoster.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
-import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts';
+import { ICON_CELL_SENTENCE } from './iconCellSentence.ts';
+import { iconGridSentence } from './iconGridSentence.ts';
 import { ICON_GRID_COLUMNS } from '../iconCatalogue/iconSheetLimits.ts';
 import { namesAFrame } from '../promptText/namesAFrame.ts';
 
@@ -133,11 +134,11 @@ export function iconSheet(
     cellGrid: ICON_GRID_COLUMNS,
     scaleUnit: 'one icon',
     componentClass: wording.componentClass,
-    // The overlay sheet draws its pieces in the *Overlay Style*; no icon here is drawn in it or carries
+    // The overlay sheets draw their pieces in the *Overlay Style*; no icon here is drawn in it or carries
     // one of those pieces, for the engine lays them on at runtime. A padlock or a crack an icon's own
     // entry or *Condition & Finish* asks for is still the icon's, and section 1 says so.
     drawnElsewhere: 'clothing',
-    // The reader's *Extra Overlay Pieces* go on the overlay sheet, which closes the series.
+    // The reader's *Extra Overlay Pieces* go on the overlay sheets, which close the series.
     anatomy: 'ELSEWHERE',
     ...(look === 'FULL_BLEED_TILE' ? { backdrop: 'OWN_SQUARE' } : {}),
     // A tint mask is drawn in greys for the engine to tint, and section 1 says so (audit finding M1).
@@ -155,7 +156,7 @@ export function iconSheet(
     groups: [
       {
         heading: null,
-        intro: `${gridSentence(count)}\n${CELL_SENTENCE}\n${wording.intro}\n${COLOUR_SENTENCES[colourMode]}`,
+        intro: `${iconGridSentence(count)}\n${ICON_CELL_SENTENCE}\n${wording.intro}\n${COLOUR_SENTENCES[colourMode]}`,
         entries,
         outro: `${wording.agreement}
 No icon carries a letter, a numeral, a stack count or a key name: those are drawn by the engine at
@@ -163,30 +164,4 @@ runtime over the top of the sprite.`,
       },
     ],
   };
-}
-
-/**
- * The cell every icon sheet of a series is drawn on, stated on each of them (audit finding T5).
- *
- * A grid stated only by its count let a generator fit the grid to the canvas, so a sheet of two drew its
- * icons in cells half the canvas wide while a full sheet's were a quarter. Every sheet names one
- * cell, a fraction of the canvas fixed by the four-across grid, so an icon is drawn at one size whichever
- * sheet holds it, and a short sheet leaves canvas empty rather than enlarging what it holds.
- */
-const CELL_SENTENCE = `Each drawing sits in a cell 1/${String(ICON_GRID_COLUMNS)} of the sheet’s width each way — the cell every icon sheet of this
-set is drawn on, so an icon is the same size on every sheet — and a sheet holding fewer drawings leaves
-the rest of its canvas empty rather than drawing them larger.`;
-
-/**
- * How the drawings sit on the sheet, from their count — `Sixteen drawings, four across and four down, in
- * the reading order below.` A short last row says how many it holds, so a sheet of seven is not read as a
- * grid with a gap to fill.
- */
-function gridSentence(count: number): string {
-  if (count === 1) return 'One drawing, alone in the middle of the sheet.';
-  const across = Math.min(count, ICON_GRID_COLUMNS);
-  const down = Math.ceil(count / ICON_GRID_COLUMNS);
-  const remainder = count % ICON_GRID_COLUMNS;
-  const lastRow = down > 1 && remainder !== 0 ? `, the last row holding ${spellNumber(remainder)}` : '';
-  return `${spellNumberCapitalised(count)} drawings, ${spellNumber(across)} across and ${spellNumber(down)} down${lastRow}, in the reading order below.`;
 }

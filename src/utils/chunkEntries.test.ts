@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ICON_ROSTER_CAPACITY,
-  ICON_SERIES_LONGEST,
-  ICONS_PER_SHEET,
-} from '../constants/iconCatalogue/iconSheetLimits.ts';
+import { ICON_ROSTER_CAPACITY, ICONS_PER_SHEET } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import type { ComponentEntry } from '../types/components.ts';
 import { chunkEntries } from './chunkEntries.ts';
 import { componentTotal } from './componentTotal.ts';
@@ -50,9 +46,10 @@ describe('chunkEntries', () => {
     expect(chunkEntries([], ICONS_PER_SHEET)).toEqual([]);
   });
 
-  it('stays inside the bound the stored sheet index is derived from, on the worst roster there is', () => {
-    // Fifteen singles and then a pair, over and over: every sheet closes at fifteen, which is the case
-    // `ICON_SERIES_LONGEST` is derived for. Built to the roster's whole capacity.
+  it('closes no sheet below fifteen on the worst roster there is', () => {
+    // Fifteen singles and then a pair, over and over: every sheet closes at fifteen, because a pair never
+    // splits across two sheets, so a roster of `n` takes at most `⌊(n − 1) ÷ 15⌋ + 1` sheets. Built to
+    // the roster's whole capacity.
     const entries: ComponentEntry[] = [];
     let filled = 0;
     for (let at = 0; filled < ICON_ROSTER_CAPACITY; at += 1) {
@@ -62,7 +59,9 @@ describe('chunkEntries', () => {
       filled += next.count;
     }
     const runs = chunkEntries(entries, ICONS_PER_SHEET);
-    expect(runs.length + 1).toBeLessThanOrEqual(ICON_SERIES_LONGEST);
+    expect(runs.length).toBeLessThanOrEqual(
+      1 + Math.floor((ICON_ROSTER_CAPACITY - 1) / (ICONS_PER_SHEET - 1)),
+    );
     expect(runs.slice(0, -1).every((run) => componentTotal(run) >= ICONS_PER_SHEET - 1)).toBe(true);
   });
 });

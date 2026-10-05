@@ -74,7 +74,9 @@ export function promptValues(
   // Empty on exactly the sheets that append no additional-anatomy block: the subject named nothing,
   // or this is a sheet of a series other than the one that draws them, where `anatomyFacingsFor`
   // answers `null` and the pieces are left off deliberately. That is the one question the two sentences below have to ask, so it is
-  // asked once here rather than twice there.
+  // asked once here rather than twice there. A sheet that lists the reader's pieces in a group of their
+  // own — ICON's overlay sheets (`ComponentGroup.additional`) — names its share in that line too, and
+  // heads the group with the same label, so it takes the exemption.
   const listedAdditions = additionalAnatomyLine === '' ? null : fieldLabelFor(category, 'additional_anatomy');
 
   // Every value below is the app's own prose, so each is resolved through `cite` once the record is

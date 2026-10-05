@@ -17,21 +17,26 @@ export interface IconRosterSummary {
  * What a roster asks for, in plain text: icons and how many of them are the reader's own, components
  * against `ICON_ROSTER_CAPACITY`, and the sheets of the series.
  *
- * **`sheets` is the series' own length, overlay sheet included**, handed in rather than worked out
- * here, because the series is the compiler's answer (`sheetSeriesFor`) and a summary counting sheets
- * by a rule of its own would disagree with the sheet list the first time the even cut
- * (`balancedChunks`) kept a two-state pair together.
+ * **`sheets` is the series' own count of each kind**, handed in rather than worked out here, because the
+ * series is the compiler's answer (`sheetSeriesFor`) and a summary counting sheets by a rule of its own
+ * would disagree with the sheet list the first time the even cut (`balancedChunks`) kept a two-state
+ * pair together. The overlay sheets are counted too, because the *Extra Overlay Pieces* can fill a
+ * second (`iconOverlaySheets`).
  */
-export function iconRosterSummary(tally: IconRosterTally, sheets: number): IconRosterSummary {
-  const iconSheets = sheets - 1;
+export function iconRosterSummary(
+  tally: IconRosterTally,
+  sheets: { readonly icons: number; readonly overlays: number },
+): IconRosterSummary {
+  const total = sheets.icons + sheets.overlays;
+  const overlays = sheets.overlays === 1 ? 'the overlay sheet' : `${String(sheets.overlays)} overlay sheets`;
   const sentence =
     tally.icons === 0
-      ? `No icons are ticked, so the series is the overlay sheet alone. A set holds up to ${String(ICON_ROSTER_CAPACITY)} components.`
-      : `${counted(tally.icons, 'icon')}${ownShare(tally)}, drawn as ${String(tally.components)} of the ${String(ICON_ROSTER_CAPACITY)} components a set can hold, on ${counted(sheets, 'sheet')}: ${counted(iconSheets, 'icon sheet')} and the overlay sheet.`;
+      ? `No icons are ticked, so the series is ${overlays} alone. A set holds up to ${String(ICON_ROSTER_CAPACITY)} components.`
+      : `${counted(tally.icons, 'icon')}${ownShare(tally)}, drawn as ${String(tally.components)} of the ${String(ICON_ROSTER_CAPACITY)} components a set can hold, on ${counted(total, 'sheet')}: ${counted(sheets.icons, 'icon sheet')} and ${overlays}.`;
   const kinds = ICON_KINDS.map((kind) => `${ICON_KIND_LABELS[kind]}: ${String(tally.byKind[kind])}.`).join(
     ' ',
   );
-  return { sentence, kinds, digest: `${counted(tally.icons, 'icon')} · ${counted(sheets, 'sheet')}` };
+  return { sentence, kinds, digest: `${counted(tally.icons, 'icon')} · ${counted(total, 'sheet')}` };
 }
 
 /** How many of the icons the reader wrote, as a clause after the icon count, or nothing for none. */

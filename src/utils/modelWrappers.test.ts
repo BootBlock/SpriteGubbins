@@ -345,7 +345,7 @@ describe('wrapForModel', () => {
     const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
 
     expect(wrapperOnly(prompt)).toContain(
-      `Shorten nothing in:\n\n- the target size line in section 2\n- the smallest display size line in section 2\n- the block headed “${NATIVE_GRID_HEADING}” in section 2`,
+      `Shorten nothing in:\n\n- the target size line in section 2\n- the smallest display size line in section 2\n- the resolution profile line in section 2, and the share of a cell it states\n- the block headed “${NATIVE_GRID_HEADING}” in section 2`,
     );
   });
 
@@ -622,6 +622,7 @@ describe('wrapForModel', () => {
         colours: true,
         targetSize: true,
         displaySize: true,
+        tileShare: true,
         transparent: true,
       },
       new Map([...shifted, ['RIG', 6]]),
@@ -631,7 +632,7 @@ describe('wrapForModel', () => {
       '- the numbered items of section 1\n- every colour section 2 names, with its hex code where it gives one\n- the block in section 4 headed',
     );
     expect(sol).toContain(
-      '- the target size line in section 3\n- the smallest display size line in section 3\n',
+      '- the target size line in section 3\n- the smallest display size line in section 3\n- the resolution profile line in section 3, and the share of a cell it states\n',
     );
     expect(sol).toContain('Section 1 asks for a transparent background.');
     expect(sol).toContain(

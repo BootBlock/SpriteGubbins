@@ -242,7 +242,7 @@ describe('generatePrompt — the subject', () => {
           withOutput({ resolutionProfile }),
         );
         expect(prompt).toContain(
-          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, plan.scaleUnit, plan.fit)}`,
+          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, plan.scaleUnit, plan.fit, plan.cellGrid)}`,
         );
       }
     }

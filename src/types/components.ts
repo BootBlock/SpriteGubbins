@@ -307,6 +307,20 @@ export interface ComponentGroup {
   readonly ends?: string;
   /** Prose after the bullets — a constraint that applies to the group as a whole. */
   readonly outro?: string;
+  /**
+   * That this group is the subject's own additional anatomy, which the plan lists among its entries
+   * rather than leaving `componentBreakdownFor` to append it after them.
+   *
+   * **ICON's overlay sheets list the reader's *Extra Overlay Pieces* this way.** Those pieces belong to
+   * the overlay library, and the library is cut across as many overlay sheets as it fills with them, so
+   * which sheet draws which piece is the series' decision (`iconOverlaySheets`). Listed as a group, each
+   * piece is drawn in the *Overlay Style* and laid out by the cell sentence the sheet opens with, as
+   * every library piece is.
+   *
+   * The flag is what lets the readers of the anatomy find these pieces where no block is appended: the
+   * category guard's exemption (`promptValues`) and the field's note (`additionalAnatomyNote`).
+   */
+  readonly additional?: true;
 }
 
 /**
@@ -589,6 +603,15 @@ interface SheetPlanFields {
    * change between runs.
    */
   readonly name: string;
+  /**
+   * Prose under the inventory heading, before the first group: how the whole sheet's drawings are laid
+   * out, where the groups below share one grid.
+   *
+   * **ICON's overlay sheets state their grid, cell and placement here**, above the library's headed
+   * groups, because a sentence about the whole sheet printed under one group's heading read as that
+   * group's. An icon sheet has one unheaded group, so its grid sentence opens that group's intro instead.
+   */
+  readonly opening?: string;
   readonly groups: readonly ComponentGroup[];
   /** Completes "The component set must assemble cleanly into: …". */
   readonly assembly: string;
@@ -852,19 +875,19 @@ interface SheetPlanFields {
    */
   readonly frames?: 'DRAWN';
   /**
-   * Whether this `'run'` sheet draws the subject's additional anatomy, where the series' first sheet is
-   * not the one that does (`anatomyFacingsFor`): `APPENDED` on the sheet that draws it, `ELSEWHERE` on
-   * the run sheets that leave it to that one.
+   * That this `'run'` sheet appends none of the subject's additional anatomy, even where it opens its
+   * series (`anatomyFacingsFor`). A run sheet that does not declare it appends the anatomy where it is
+   * the first sheet of its series, the trunk every other run series opens on.
    *
-   * **ICON's overlay sheet declares `APPENDED` and its icon sheets `ELSEWHERE`** (audit finding T6): the
-   * overlay sheet closes the series, after the icons its pieces are matched to, and the reader's *Extra
-   * Overlay Pieces* belong to it. A run sheet that declares neither draws the anatomy where it is the
-   * first sheet of its series, the trunk every other run series opens on.
+   * **Every ICON sheet declares it.** An icon sheet draws none of the reader's *Extra Overlay Pieces*,
+   * and an overlay sheet lists the share of them it draws among its own entries, in a group marked
+   * {@link ComponentGroup.additional} (audit finding T6, and the overlay sheet's cells): the library and
+   * the extras are cut across the overlay sheets as one run, so no sheet appends the whole field.
    *
    * **Declared on each sheet rather than found by walking the series**, because `anatomyFacingsFor` is
    * asked on every compile, count and slot list, and a series walk there slowed every ICON prompt.
    */
-  readonly anatomy?: 'APPENDED' | 'ELSEWHERE';
+  readonly anatomy?: 'ELSEWHERE';
   /**
    * How many cells each way this sheet's square grid is laid out in, where that is fixed whatever the
    * sheet holds — so the native-grid scale is fitted to those cells rather than to the drawings (audit
@@ -875,8 +898,28 @@ interface SheetPlanFields {
    * a pixel-art icon to be drawn wider than that cell, and two sheets of one set at different scales.
    * The grid rather than its count, because a step is the sheet's side over the cells each way, which a
    * count of cells does not say.
+   *
+   * **ICON's overlay sheets declare it too**, so they take the icon sheets' grid and scale, and the
+   * Quantise tab reads their pieces cell by cell ({@link SheetPlan.placement}).
    */
   readonly cellGrid?: number;
+  /**
+   * That each component is drawn at its place on the thing it is laid over, one to a cell of
+   * {@link SheetPlan.cellGrid}, and what that place is measured against.
+   *
+   * - `WITHIN_TILE`: inside its cell, a piece is drawn within the tile square every icon of the set is
+   *   drawn to, centred in the cell at the share section 2 states (`tileShare`), and stands where it
+   *   sits over the tile. ICON's overlay sheets under the full-bleed look.
+   * - `WITHIN_CELL`: the cell itself is the square a piece is placed in, as an isolated icon fills its
+   *   cell. ICON's overlay sheets under the isolated look.
+   *
+   * **Why the overlay sheet needs it.** A corner badge drawn in its corner of a square with no backdrop
+   * was cut to its own bounding box, and every cell anchor then centred it, so the mark lost its corner.
+   * Placed in a stated cell, the Quantise tab finds the cells from the gaps between the pieces
+   * (`cellLattice`) and keeps each piece where it was drawn (`SpriteFit` `IN_PLACE`). Rejected without
+   * a `cellGrid` by `sheetPlanValidation`, because a place in a cell needs a cell.
+   */
+  readonly placement?: 'WITHIN_CELL' | 'WITHIN_TILE';
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */

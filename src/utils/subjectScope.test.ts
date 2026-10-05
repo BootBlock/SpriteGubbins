@@ -3,7 +3,7 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG, OUTPUT_TOOLTIPS } from '../constants/output/index.ts';
 import { ICON_SET_PRESETS } from '../constants/presets/iconSets.ts';
 import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
-import { ICON_OVERLAY_PLANS } from '../constants/sheetPlans/iconOverlaySheet.ts';
+import { LIBRARY_OVERLAY_SHEETS } from '../test/libraryOverlaySheets.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { reachableSheets } from '../test/reachableSheets.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -71,7 +71,7 @@ describe('section 1 on the overlay sheet describes the icons beneath, never the 
     expect(section).not.toContain('It is lit under the lighting model');
   });
 
-  it.each(Object.entries(ICON_OVERLAY_PLANS))('names a dark veil and sweep under %s', (_look, plan) => {
+  it.each(Object.entries(LIBRARY_OVERLAY_SHEETS))('names a dark veil and sweep under %s', (_look, plan) => {
     // A piece whose entry names no colour or value takes the accent; a veil or a sweep in the accent
     // colour would light up the icon it is meant to dim.
     const texts = plan.groups

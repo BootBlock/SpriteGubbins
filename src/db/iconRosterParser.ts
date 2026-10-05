@@ -28,8 +28,7 @@ import { isRecord, pick } from './readers.ts';
  * whose slot name is taken is skipped, and so is a pick the set has no room left for under
  * `ICON_ROSTER_CAPACITY` components, as a tick past capacity is refused (`toggleIconPicks`) and a
  * custom entry is (`checkCustomIcon`). A repeat is skipped before the room is measured, so it never
- * costs the set a pick after it. No stored roster can ask for a series past the bound
- * `SHEET_INDEX_RANGE` is derived from.
+ * costs the set a pick after it.
  *
  * **The roster comes back in shelving order** (`sortIconPicks`), whatever order storage holds it in.
  * The store writes every roster in that order, so one it wrote reads back unchanged; one edited by hand

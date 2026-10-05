@@ -158,6 +158,8 @@ export function wrapForModel(
     readonly targetSize: boolean;
     /** Whether section 2 states the smallest display size, from `DISPLAY_REDUCTION`. Read by Sol. */
     readonly displaySize: boolean;
+    /** Whether section 2 states an exact share of a cell, from the plan (`statesTileShare`). Read by Sol. */
+    readonly tileShare: boolean;
     /**
      * Whether the sheet's key is `TRANSPARENT` on a target that asks for alpha through its tool call,
      * from the resolved key and `AlphaDelivery`'s `TOOL_CALL`. Read by Sol.
@@ -189,6 +191,7 @@ export function wrapForModel(
           colours: options.colours,
           targetSize: options.targetSize,
           displaySize: options.displaySize,
+          tileShare: options.tileShare,
           transparent: options.transparent,
         },
         options.sectionNumbers,

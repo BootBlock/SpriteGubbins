@@ -104,10 +104,17 @@ describe('matching a subject to its base', () => {
       setting: '',
       clothing: '',
       face_head: '',
+      additional_anatomy: '',
     });
     expect(rigid).not.toBe(CATEGORY_SHEET_PLANS.OBJECT);
     expect(
-      plansFor('OBJECT', { anatomy: '  single rigid object ', setting: '', clothing: '', face_head: '' }),
+      plansFor('OBJECT', {
+        anatomy: '  single rigid object ',
+        setting: '',
+        clothing: '',
+        face_head: '',
+        additional_anatomy: '',
+      }),
     ).toBe(rigid);
   });
 
@@ -119,26 +126,45 @@ describe('matching a subject to its base', () => {
         setting: '',
         clothing: '',
         face_head: '',
+        additional_anatomy: '',
       }),
     ).toBe(CATEGORY_SHEET_PLANS.OBJECT);
-    expect(plansFor('OBJECT', { anatomy: '', setting: '', clothing: '', face_head: '' })).toBe(
-      CATEGORY_SHEET_PLANS.OBJECT,
-    );
+    expect(
+      plansFor('OBJECT', { anatomy: '', setting: '', clothing: '', face_head: '', additional_anatomy: '' }),
+    ).toBe(CATEGORY_SHEET_PLANS.OBJECT);
   });
 
   it('falls back to a mode the base draws where it cannot take the category’s default', () => {
     // BACKGROUND defaults to its parallax set, and a single non-repeating panel is drawn by the layer
     // library alone, so the category default is no answer for it.
-    const panel = { anatomy: 'Single Non-Repeating Panel', setting: '', clothing: '', face_head: '' };
+    const panel = {
+      anatomy: 'Single Non-Repeating Panel',
+      setting: '',
+      clothing: '',
+      face_head: '',
+      additional_anatomy: '',
+    };
     expect(resolveMode('BACKGROUND', panel, 'TILESET_MODULAR')).toBe('SINGLE_DIRECTION_POSE_LIBRARY');
     // And the category default where the base does draw it, as before any base was declared.
-    const rigid = { anatomy: 'Single Rigid Object', setting: '', clothing: '', face_head: '' };
+    const rigid = {
+      anatomy: 'Single Rigid Object',
+      setting: '',
+      clothing: '',
+      face_head: '',
+      additional_anatomy: '',
+    };
     expect(resolveMode('OBJECT', rigid, 'CUTOUT_RIG_SINGLE_DIRECTION')).toBe(DEFAULT_MODE_FOR.OBJECT);
   });
 
   it('names the modes a base withholds, and none for the standard plans', () => {
     expect(
-      modesWithheldBy('OBJECT', { anatomy: 'Single Rigid Object', setting: '', clothing: '', face_head: '' }),
+      modesWithheldBy('OBJECT', {
+        anatomy: 'Single Rigid Object',
+        setting: '',
+        clothing: '',
+        face_head: '',
+        additional_anatomy: '',
+      }),
     ).toEqual(['CUTOUT_RIG_SINGLE_DIRECTION']);
     expect(
       modesWithheldBy('OBJECT', {
@@ -146,6 +172,7 @@ describe('matching a subject to its base', () => {
         setting: '',
         clothing: '',
         face_head: '',
+        additional_anatomy: '',
       }),
     ).toEqual([]);
     expect(
@@ -154,6 +181,7 @@ describe('matching a subject to its base', () => {
         setting: '',
         clothing: '',
         face_head: '',
+        additional_anatomy: '',
       }),
     ).toEqual(['SINGLE_DIRECTION_POSE_LIBRARY']);
   });

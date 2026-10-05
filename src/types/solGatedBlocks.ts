@@ -32,6 +32,12 @@ export interface SolGatedBlocks {
   /** Section 2's smallest display size line, which a stated display size emits (audit finding T3). */
   readonly displaySize: boolean;
   /**
+   * Whether section 2's resolution profile line states the sheet's one square at an exact share of its
+   * cell (`statesTileShare`), which the Quantise tab finds the square again by. A hand-off that rounds
+   * it to "most of the cell" leaves an overlay piece placed against a square of the wrong size.
+   */
+  readonly tileShare: boolean;
+  /**
    * Whether section 0 asks for a transparent background, which the image tool returns only when its
    * call sets the tool's `background` option (audit finding T1, `AlphaDelivery`'s `TOOL_CALL`).
    */

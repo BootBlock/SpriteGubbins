@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ICON_SERIES_LONGEST } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { COMPONENT_BUDGET_RANGE, NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
@@ -107,24 +106,18 @@ describe('parseOutputConfig — primaryDirection', () => {
 describe('parseOutputConfig — sheetIndex', () => {
   const sheetFrom = (stored: unknown): number => parseOutputConfig({ sheetIndex: stored }).sheetIndex;
 
-  it('keeps an index the longest series in the table actually holds', () => {
+  it('keeps any whole index, since an icon set has no longest series', () => {
+    // The overlay sheets an ICON series closes on are as many as the reader's extra pieces fill, so an
+    // index far past every fixed series can be a real sheet; one past its own series resolves to sheet
+    // one where the series is known.
     expect(sheetFrom(0)).toBe(0);
+    expect(sheetFrom(40)).toBe(40);
     expect(sheetFrom(SHEET_INDEX_RANGE.max)).toBe(SHEET_INDEX_RANGE.max);
-  });
-
-  it('is bounded by the plan table rather than by a number written down here', () => {
-    // Derived, so a pairing that grows a sheet admits one in the same edit. ICON's series is the
-    // longest now: a full roster at most sixteen icons to a sheet, which a pair that never splits can
-    // hold to fifteen, then the overlay sheet — twenty-three sheets for 320 components. FONT's glyph set is
-    // still the longest *fixed* series at four, and the eight-compass character series the longest
-    // directional one; an index past ICON's bound is corrupt storage rather than a choice.
-    expect(SHEET_INDEX_RANGE.min).toBe(0);
-    expect(SHEET_INDEX_RANGE.max).toBe(ICON_SERIES_LONGEST - 1);
-    expect(ICON_SERIES_LONGEST).toBe(23);
+    expect(SHEET_INDEX_RANGE).toEqual({ min: 0, max: Number.MAX_SAFE_INTEGER });
   });
 
   it('falls back for anything outside that, fractional, or not a number', () => {
-    for (const stored of [undefined, null, -1, 1.5, SHEET_INDEX_RANGE.max + 1, 9999, '1', NaN]) {
+    for (const stored of [undefined, null, -1, 1.5, SHEET_INDEX_RANGE.max + 1, Infinity, '1', NaN]) {
       expect(sheetFrom(stored), `${String(stored)} should not have been accepted`).toBe(
         DEFAULT_OUTPUT_CONFIG.sheetIndex,
       );

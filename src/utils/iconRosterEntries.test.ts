@@ -10,6 +10,7 @@ function subjectWith(picks: readonly string[], setting = 'Near-Future Cyberpunk'
     setting,
     clothing: '',
     face_head: '',
+    additional_anatomy: '',
     icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(picks) },
   };
 }
@@ -46,6 +47,8 @@ describe('iconRosterEntries', () => {
   it('skips an id the catalogue does not hold, and draws nothing for no roster', () => {
     const lines = iconRosterEntries(subjectWith(['retired-entry', 'heal-minor']));
     expect(lines.map((line) => line.label)).toEqual(['heal-minor']);
-    expect(iconRosterEntries({ anatomy: '', setting: '', clothing: '', face_head: '' })).toEqual([]);
+    expect(
+      iconRosterEntries({ anatomy: '', setting: '', clothing: '', face_head: '', additional_anatomy: '' }),
+    ).toEqual([]);
   });
 });

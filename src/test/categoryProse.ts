@@ -68,7 +68,7 @@ export function sheetsProseFor(category: SubjectCategory, sheets: readonly Sheet
  * words.
  */
 export function planProseFor(plan: SheetPlan): string {
-  const written: string[] = [plan.name, plan.assembly];
+  const written: string[] = [plan.name, plan.assembly, plan.opening ?? ''];
   for (const group of plan.groups) {
     written.push(group.heading ?? '', group.intro ?? '', group.ends ?? '', group.outro ?? '');
     for (const entry of group.entries) written.push(entry.label, entry.text);

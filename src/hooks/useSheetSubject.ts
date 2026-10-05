@@ -16,10 +16,11 @@ import type { SheetSubject } from '../types/subject.ts';
  *
  * **ICON's roster and its *World & Era* joined them** when the icon catalogue arrived: the roster is
  * the inventory itself, and the world decides how each of its lines reads. The roster is selected by
- * reference, which only a roster edit replaces.
+ * reference, which only a roster edit replaces. ICON's *Extra Overlay Pieces* came next, because the
+ * overlay library and those pieces are cut across as many overlay sheets as they fill.
  *
  * **Field by field rather than the whole subject**, which is the rule about selecting a store: a view
- * subscribing to `state.subject` re-renders on every keystroke in all sixteen fields, and these five
+ * subscribing to `state.subject` re-renders on every keystroke in all sixteen fields, and these six
  * are the ones that move a sheet's inventory. Memoised because every caller feeds the record to a
  * `useMemo` of its own, and a fresh object each render would defeat all of them.
  */
@@ -29,6 +30,7 @@ export function useSheetSubject(): SheetSubject {
   const clothing = useSubjectStore((state) => state.subject.clothing);
   const focalFeature = useSubjectStore((state) => state.subject.face_head);
   const icons = useSubjectStore((state) => state.subject.icons);
+  const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
 
   return useMemo(
     () => ({
@@ -36,8 +38,9 @@ export function useSheetSubject(): SheetSubject {
       setting,
       clothing,
       face_head: focalFeature,
+      additional_anatomy: additionalAnatomy,
       ...(icons === undefined ? {} : { icons }),
     }),
-    [anatomy, setting, clothing, focalFeature, icons],
+    [anatomy, setting, clothing, focalFeature, icons, additionalAnatomy],
   );
 }

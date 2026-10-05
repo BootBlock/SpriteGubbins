@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { anatomyFacingsFor } from '../../utils/componentSet.ts';
+import { drawsAdditionalAnatomy } from '../../utils/drawsAdditionalAnatomy.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
 import type { OutputConfig } from '../../types/output.ts';
 import { DECLINABLE_FIELD_KEYS, SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../../types/subject.ts';
@@ -26,8 +26,8 @@ function anatomySheetOutput(category: SubjectCategory, subject: SubjectDefinitio
   const { directionalMode, directions } = DEFAULT_OUTPUT_CONFIG;
   const { length } = sheetSeriesFor(category, subject, directionalMode, directions);
   const sheetIndex =
-    Array.from({ length }, (_, index) => index).find(
-      (index) => anatomyFacingsFor(category, subject, directionalMode, directions, index) !== null,
+    Array.from({ length }, (_, index) => index).find((index) =>
+      drawsAdditionalAnatomy(category, subject, directionalMode, directions, index),
     ) ?? 0;
   return { ...DEFAULT_OUTPUT_CONFIG, sheetIndex };
 }

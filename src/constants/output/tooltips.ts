@@ -3,6 +3,7 @@ import { NO_COMPONENT_BUDGET } from '../componentBudget.ts';
 import { NONE_LEAVES_SETTINGS_ALONE } from '../guidanceSentences.ts';
 import { PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
 import { shareRange } from '../promptText/renderStyle.ts';
+import { TILE_SHARE } from '../promptText/tileShare.ts';
 import { PALETTE_COLOR_COUNTS } from '../quantiser.ts';
 import { capitalised } from '../../utils/capitalised.ts';
 import { spokenList } from '../../utils/spokenList.ts';
@@ -47,7 +48,7 @@ export const OUTPUT_TOOLTIPS = {
     '- `TEXTURED` is for large pieces that will be seen close up.\n\nWhere an icon or font set states its **Interior Detail**, that decides what the inside of each form carries, and this level never adds detail it rules out.',
   resolutionProfile:
     'The scale the sheet is drawn at, as a share of its own component grid rather than in pixels, so it holds on any canvas.\n\n' +
-    `The largest component fills ${shareRange('HIGH_RESOLUTION')} of its cell height at high resolution and ${shareRange('MID_RESOLUTION')} at mid, and the rest are drawn to its scale, so a hand stays smaller than its torso; an icon set draws every icon to one square that fills the share. Each sheet fills its own grid, so twelve components come out larger than thirty-four.\n\n` +
+    `The largest component fills ${shareRange('HIGH_RESOLUTION')} of its cell height at high resolution and ${shareRange('MID_RESOLUTION')} at mid, and the rest are drawn to its scale, so a hand stays smaller than its torso. An icon set’s one square is exactly ${String(TILE_SHARE.HIGH_RESOLUTION)}% or ${String(TILE_SHARE.MID_RESOLUTION)}% of its cell. Each sheet fills its own grid, so twelve components come out larger than thirty-four.\n\n` +
     '- `RETRO_16_BIT` states a height in pixels instead.\n' +
     '- `CUSTOM` states an exact size instead, in Target Component Size, which no other profile offers. Use it for a pixel grid, or for pieces on different sheets that must come out at one size.\n\n' +
     'A loaded rig contract sets `CUSTOM` on the sheet it describes, because the rig states every piece’s size.',

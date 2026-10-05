@@ -12,6 +12,7 @@ import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { alphaDeliveryFor } from './targetCapabilities.ts';
 import { promptConditions } from './promptConditions.ts';
+import { statesTileShare } from '../constants/promptText/statesTileShare.ts';
 import { sheetFacts } from './promptFacts.ts';
 import { promptValues } from './promptValues.ts';
 import {
@@ -99,6 +100,7 @@ export function generatePrompt(
     colours: isSet(values.PRIMARY_COLOURS) || isSet(values.ACCENT_COLOURS),
     targetSize: isSet(values.SPRITE_TARGET_SIZE),
     displaySize: isSet(values.DISPLAY_REDUCTION),
+    tileShare: statesTileShare(facts.plan.fit, facts.plan.cellGrid),
     // A target that draws through a tool whose call can ask for alpha (`AlphaDelivery`'s `TOOL_CALL`).
     transparent:
       facts.backgroundKey === 'TRANSPARENT' && alphaDeliveryFor(output.targetModel).kind === 'TOOL_CALL',

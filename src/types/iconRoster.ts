@@ -20,7 +20,7 @@ import type { DamageSchool, IconCatalogueEntry, IconKind } from './iconCatalogue
  *   transparency — a map pin, a status badge or a button glyph the interface sets on its own plate.
  *
  * **The look is the set's, not the icon's**, because a grid mixing squares and loose marks reads as two
- * packs. It reaches the icon sheets (`iconSheet`), the overlay sheet (`ICON_OVERLAY_PLANS`), ICON's
+ * packs. It reaches the icon sheets (`iconSheet`), the overlay sheets (`iconOverlaySheets`), ICON's
  * exclusion and audit text and the wrappers' negatives through `SheetPlan.backdrop`, and ICON's guard
  * through the sheet's `componentClass`.
  *

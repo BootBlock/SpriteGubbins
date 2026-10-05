@@ -29,7 +29,7 @@ describe('useStatedStep', () => {
     expect(renderHook(() => useStatedStep()).result.current).toStrictEqual({ x: 256, y: 256 });
   });
 
-  it('states no step for a sheet whose plan states no grid, or where no sheet is loaded', () => {
+  it('reads the overlay sheet’s cell as the icon sheets’ cell, since it lays one piece to a cell of their grid', () => {
     useSubjectStore.setState({
       category: 'ICON',
       subject: {
@@ -38,11 +38,16 @@ describe('useStatedStep', () => {
       },
     });
     useOutputStore.setState({ output: { ...useOutputStore.getState().output, sheetIndex: 1 } });
-    // The second sheet of a one-icon set is the overlay sheet, which lays out no grid of cells.
+    expect(renderHook(() => useStatedStep()).result.current).toStrictEqual({ x: 256, y: 256 });
+  });
+
+  it('states no step for a sheet whose plan states no grid, or where no sheet is loaded', () => {
+    // A character's sheet draws its pieces in the grid they fill, not in cells stated in advance.
+    useSubjectStore.setState({ category: 'CHARACTER', subject: defaultSubjectFor('CHARACTER') });
     expect(renderHook(() => useStatedStep()).result.current).toBeNull();
 
+    useSubjectStore.setState({ category: 'ICON', subject: defaultSubjectFor('ICON') });
     useQuantiseStore.setState({ source: null });
-    useOutputStore.setState({ output: { ...useOutputStore.getState().output, sheetIndex: 0 } });
     expect(renderHook(() => useStatedStep()).result.current).toBeNull();
   });
 });

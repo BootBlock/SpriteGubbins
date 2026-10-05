@@ -28,7 +28,6 @@ import { decliningEverything, standardSubject } from '../test/sheetSubject.ts';
 import { sweepSubjectsOf } from '../test/sweepSubjectsOf.ts';
 import { iconCatalogueSubjects } from '../test/iconCatalogueSubjects.ts';
 import { ICON_GRID_COLUMNS, ICONS_PER_SHEET } from '../constants/iconCatalogue/iconSheetLimits.ts';
-import { ICON_OVERLAY_PLANS } from '../constants/sheetPlans/iconOverlaySheet.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
@@ -36,7 +35,8 @@ import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
-import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
+import { componentCountFor } from './componentSet.ts';
+import { drawsAdditionalAnatomy } from './drawsAdditionalAnatomy.ts';
 import { planSlots } from './componentSlots.ts';
 import { componentTally } from './componentTally.ts';
 import { generatePrompt } from './promptCompiler.ts';
@@ -295,7 +295,7 @@ describe('the plan table itself', () => {
     // ICON's icon sheets are built from the roster, so their names follow it; each answers by whether
     // it holds a two-state entry, which the assertion after the list holds them to.
     const isIconSheet = ({ category, plan }: (typeof EVERY_PLAN)[number]): boolean =>
-      category === 'ICON' && !Object.values(ICON_OVERLAY_PLANS).includes(plan);
+      category === 'ICON' && plan.placement === undefined;
     const posed = [
       ...new Set(
         EVERY_PLAN.filter((entry) => entry.plan.posing === 'PER_POSITION' && !isIconSheet(entry)).map(
@@ -1155,10 +1155,12 @@ describe('no category calls the subject’s own additions an error in the specif
   );
 
   /** Every sheet that appends no block, so no sentence on it may except one. */
-  const APPENDS_NOTHING = SHEETS.filter(
-    ({ category, subject, mode, directions, sheetIndex }) =>
-      anatomyFacingsFor(category, subject, mode, directions, sheetIndex) === null,
-  );
+  // Asked with the pieces typed in, because ICON's overlay sheets list the ones the subject names.
+  const APPENDS_NOTHING = SHEETS.filter(({ category, subject, mode, directions, sheetIndex }) => {
+    const option = POOLED.find((row) => row.category === category)?.option ?? '';
+    const typed = { ...subject, additional_anatomy: option };
+    return !drawsAdditionalAnatomy(category, typed, mode, directions, sheetIndex);
+  });
 
   it.each(SUBJECT_CATEGORIES)('%s splices the exemption into its opening claim', (category) => {
     const label = labelFor(category);
@@ -1203,12 +1205,12 @@ describe('no category calls the subject’s own additions an error in the specif
       const label = labelFor(category);
       const pieces = parseAdditionalAnatomy(option);
       // The sheet that draws the pieces: the first of most series, and ICON's overlay sheet, which closes its own.
-      const subject = defaultSubjectFor(category);
+      const subject = { ...defaultSubjectFor(category), additional_anatomy: option };
       const { directions } = DEFAULT_OUTPUT_CONFIG;
       const { length } = sheetSeriesFor(category, subject, mode, directions);
       const sheetIndex =
-        Array.from({ length }, (_, index) => index).find(
-          (index) => anatomyFacingsFor(category, subject, mode, directions, index) !== null,
+        Array.from({ length }, (_, index) => index).find((index) =>
+          drawsAdditionalAnatomy(category, subject, mode, directions, index),
         ) ?? 0;
       const prompt = promptFor(category, mode, option, sheetIndex);
       const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
@@ -1403,11 +1405,15 @@ describe('a BUILDING tileset is still a tileset', () => {
 describe('the declared count is the inventory’s own length', () => {
   it.each(SHEETS)(
     '$category / $mode / $directions / $sheet',
-    ({ category, subject, mode, directions, sheetIndex, sheet }) => {
+    ({ category, subject, mode, directions, sheetIndex }) => {
       const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1', sheetIndex, directions, subject);
+      // The pieces typed in, because ICON's overlay sheets list the ones the subject names — and three
+      // after the library's fourteen are a second overlay sheet, so the name is read from that series.
+      const typed = { ...subject, additional_anatomy: 'Demon Horn ×2, Tail ×1' };
+      const sheet = sheetSeriesFor(category, typed, mode, directions)[sheetIndex]?.name;
       const expected = componentCountFor(
         category,
-        subject,
+        typed,
         mode,
         directions,
         sheetIndex,
@@ -1421,7 +1427,7 @@ describe('the declared count is the inventory’s own length', () => {
       // Stated four times over; all four are the same sum or the sheet is silently wrong. The contract
       // agrees in number, since an icon set's last sheet can hold a single icon.
       expect(prompt).toContain(`Exactly ${componentTally(expected)}`);
-      expect(prompt).toContain(`### Component inventory: ${sheet} — ${String(expected)} in total`);
+      expect(prompt).toContain(`### Component inventory: ${sheet ?? ''} — ${String(expected)} in total`);
       expect(prompt).toContain(`Component count is exactly ${String(expected)}.`);
     },
   );

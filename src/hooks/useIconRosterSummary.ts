@@ -5,6 +5,7 @@ import { useSubjectStore } from '../stores/useSubjectStore.ts';
 import { iconRosterSummary } from '../utils/iconRosterSummary.ts';
 import type { IconRosterSummary } from '../utils/iconRosterSummary.ts';
 import { iconRosterTally } from '../utils/iconRosterTally.ts';
+import { overlaySheetCount } from '../utils/overlaySheetCount.ts';
 import type { IconRosterTally } from '../utils/iconRosterTally.ts';
 import { useSheetSubject } from './useSheetSubject.ts';
 
@@ -31,7 +32,8 @@ export function useIconRosterSummary(): IconRosterReading | null {
   return useMemo(() => {
     if (subject.icons === undefined) return null;
     const tally = iconRosterTally(subject.icons.picks);
-    const sheets = sheetSeriesFor(category, subject, directionalMode, directions).length;
-    return { tally, summary: iconRosterSummary(tally, sheets) };
+    const series = sheetSeriesFor(category, subject, directionalMode, directions);
+    const overlays = overlaySheetCount(series);
+    return { tally, summary: iconRosterSummary(tally, { icons: series.length - overlays, overlays }) };
   }, [category, subject, directionalMode, directions]);
 }

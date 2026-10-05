@@ -30,6 +30,7 @@ function fromStores(): number {
       setting: subject.setting,
       clothing: subject.clothing,
       face_head: subject.face_head,
+      additional_anatomy: subject.additional_anatomy,
       ...(subject.icons === undefined ? {} : { icons: subject.icons }),
     },
     output.directionalMode,

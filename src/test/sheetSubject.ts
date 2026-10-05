@@ -18,7 +18,7 @@ import type { DeclinableFieldKey, SheetSubject, SubjectCategory } from '../types
  * which takes the value from the pool rather than spelling it out.
  */
 export function standardSubject(): SheetSubject {
-  return { anatomy: '', setting: '', clothing: '', face_head: '' };
+  return { anatomy: '', setting: '', clothing: '', face_head: '', additional_anatomy: '' };
 }
 
 /**
@@ -57,6 +57,7 @@ export function decliningSubject(
     setting: subject.setting,
     clothing: valueFor('clothing'),
     face_head: valueFor('face_head'),
+    additional_anatomy: subject.additional_anatomy,
     ...(subject.icons === undefined ? {} : { icons: subject.icons }),
   };
 }

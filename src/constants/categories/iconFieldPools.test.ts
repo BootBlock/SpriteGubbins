@@ -9,7 +9,7 @@ import {
   UNWRITTEN,
   WRITING_SURFACE,
 } from '../iconCatalogue/iconLookRules.ts';
-import { ICON_OVERLAY_PLANS } from '../sheetPlans/iconOverlaySheet.ts';
+import { LIBRARY_OVERLAY_SHEETS } from '../../test/libraryOverlaySheets.ts';
 import { ICON } from './icon.ts';
 
 /**
@@ -58,14 +58,14 @@ describe('ICON’s option pools', () => {
   });
 
   it('draws every piece of the overlay library in the overlay style (O1)', () => {
-    for (const plan of Object.values(ICON_OVERLAY_PLANS)) {
+    for (const plan of Object.values(LIBRARY_OVERLAY_SHEETS)) {
       const roles = plan.groups.flatMap((group) => group.entries.map((entry) => entry.attribute));
       expect(roles.every((bound) => bound?.field === 'clothing' && bound.role === 'DRAWN_IN_IT')).toBe(true);
     }
   });
 
   it('tells the tier marks apart by shape and pip count, never by colour alone (M2)', () => {
-    for (const plan of Object.values(ICON_OVERLAY_PLANS)) {
+    for (const plan of Object.values(LIBRARY_OVERLAY_SHEETS)) {
       const tiers = plan.groups
         .flatMap((group) => group.entries)
         .find((entry) => entry.label === 'tier-mark');

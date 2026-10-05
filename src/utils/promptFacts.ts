@@ -30,7 +30,8 @@ import type {
 import type { SheetPlan } from '../types/components.ts';
 import type { RigContract } from '../types/rigContract.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
-import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
+import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
+import { anatomyLineFor } from './anatomyLineFor.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { sheetRigContract } from './sheetRigContract.ts';
@@ -324,24 +325,12 @@ export function sheetFacts(
   // Fitted to the cells a fixed grid declares, where the plan declares one (`seatedCells`).
   const sizing = sheetSizing(category, subject, output, plan, rig, seatedCells(plan, componentCount));
 
-  // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the
-  // same anatomy: a field reading `Tail ×0` cannot say one thing at the top of the prompt and
-  // another in the inventory. It also empties for `NONE`, which drops the line entirely rather than
-  // putting a bare sentinel in the highest-weighted section.
-  //
-  // **And it empties on a sheet that does not carry the anatomy**, for the same reason and a sharper
-  // one. Section 1's own prose excepts additional anatomy from its paint rule, as the field section
-  // 4 lists and counts separately — so naming a tail here on the articulation sheet, whose inventory
-  // has no tail in it and whose contract demands an exact count without one, is a contradiction
-  // inside one prompt. The generator resolves it by drawing an uncounted piece or by ignoring a
-  // line it was told was binding, and neither is recoverable.
-  //
   // The facings are held rather than a boolean, because the exception sentence has two shapes: a
   // multi-view sheet draws each piece at each of its facings, so its sentence has to say so, where
   // a run sheet draws each piece once. Held in a local as well, because `config` below gates both on
-  // it and reading it back off `values` would come out `string | undefined`.
+  // it and reading it back off `values` would come out `string | undefined`. Section 1's line is
+  // `anatomyLineFor`'s, which says why it empties on a sheet that draws none of the pieces.
   const anatomyFacings = anatomyFacingsFor(category, subject, mode, output.directions, output.sheetIndex);
-  const additionalAnatomyLine = anatomyFacings !== null ? anatomy.map(formatAnatomyComponent).join(', ') : '';
 
   return {
     mode,
@@ -367,7 +356,7 @@ export function sheetFacts(
     rig,
     sizing,
     anatomyFacings,
-    additionalAnatomyLine,
+    additionalAnatomyLine: anatomyLineFor(plan, anatomy, anatomyFacings),
     // Section 1's exception for the `clothing` line, in whichever of its three shapes this sheet takes.
     ...clothingException(category, subject, plan, series),
     // Asked of the subject rather than of the plan, because a one-sided feature is an attribute the
