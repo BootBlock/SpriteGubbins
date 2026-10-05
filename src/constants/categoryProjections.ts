@@ -40,7 +40,9 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   flat front-on mark, a three-quarter potion bottle and an isometric map pin are all shipped icon
  *   styles, so the angle the depicted object is drawn at is a genuine art-direction choice rather
  *   than a property of the deliverable. The cell is what an icon set has in common, and the cell is
- *   not a camera.
+ *   not a camera. The projection governs the subject inside an icon and nothing else: each icon is
+ *   posed for its own read beneath it, a full-bleed square stays flat on screen, and the overlay
+ *   pieces take no camera at all (`SheetPlan.orientation`).
  * - **FONT is the fourth, and it is ICON's near miss resolved the other way.** A glyph is a mark on
  *   a baseline with no object behind it, so there is nothing to be drawn at an angle: an engine
  *   renders text by blitting the sprite as it was drawn, and a letter delivered under any camera but

@@ -1,3 +1,4 @@
+import type { ComponentOrientation } from '../types/components.ts';
 import type { AspectRatio, TargetModelId } from '../types/output.ts';
 import type { RenderStyleSurface } from '../types/rendering.ts';
 import type { CategoryAssembly } from '../types/subject.ts';
@@ -121,6 +122,14 @@ export function wrapForModel(
      */
     readonly oneSidedFeatures: boolean;
     /**
+     * How the sheet's components are oriented beneath its camera, from the resolved plan's
+     * `orientation` — the answer `ORIENTATION` gave the template's own gates.
+     *
+     * Read by Sol, whose hand-off list names what section 3 carries: the object yaws on a sheet turned
+     * to them, the shared camera on an icon sheet, and the flat-piece rule on the overlay sheet.
+     */
+    readonly orientation: ComponentOrientation;
+    /**
      * Whether each component is a square carrying its own backdrop, from the plan's `backdrop` — the
      * answer `OWN_BACKDROP` gave the template's own gate.
      *
@@ -156,6 +165,7 @@ export function wrapForModel(
           palette: options.palette,
           rigGeometry: options.rigGeometry,
           oneSidedFeatures: options.oneSidedFeatures,
+          orientation: options.orientation,
         },
         options.sectionNumbers,
       );

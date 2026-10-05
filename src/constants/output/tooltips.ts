@@ -40,7 +40,7 @@ export const OUTPUT_TOOLTIPS = {
   sheetIndex:
     'Which part of this deliverable’s inventory the prompt below draws. Some sheet contents ask for more components than one generation returns, so the inventory splits: a standard character’s trunk views are one part (two on `EIGHT_COMPASS`) and its limbs another, and a winged, four-armed or taur body’s limbs take two.\n\n' +
     'This list counts parts, not generations, so it is often shorter than the “Sheet N of M” beside the prompt: a part drawn one facing at a time is generated once per direction you asked for.\n\n' +
-    'Work through them in the order the preview steps, and set the identity lock from the first sheet you accept so the rest depict the same individual. “Split into sheets” lays the whole batch out in one place.',
+    'Work through them in the order the preview steps, and set the identity lock from the first sheet you accept so the rest match it: the same subject, or more members of the same set. “Split into sheets” lays the whole batch out in one place.',
   // The option accounts are in `directionalModeTooltips.ts`, read out under the control for the mode
   // actually chosen: what a *setting* is reads the same whatever is selected, and what an *option*
   // is does not, so the two belong on different surfaces.
@@ -166,7 +166,7 @@ export const OUTPUT_TOOLTIPS = {
     'Regions to keep clear of fine detail so equipment can be overlaid later, such as `head, chest, back, hand_left, hand_right`. The prompt asks for those areas to stay flat and unbusy; it does not ask for anything to be drawn there. Leave it empty for none.',
 
   identityLock:
-    'A short digest of an already-accepted sheet, carried into the next one so it depicts the same individual. Concrete countable attributes reproduce: “three amber lights in a vertical row” survives a regeneration, “high-tech detailing” does not.\n\n' +
+    'A short digest of an already-accepted sheet, carried into the next one so it matches: the same subject, or further members of the same set drawn the same way. Concrete countable attributes reproduce: “three amber lights in a vertical row” survives a regeneration, “high-tech detailing” does not.\n\n' +
     'This is what holds a per-direction run series together.',
   emitComponentMap:
     'Adds a section asking the target to return a JSON component map beside the picture: the sheet’s grid, and for each component its place in reading order, its inventory name, what it attaches to and where it pivots in its cell.\n\n' +

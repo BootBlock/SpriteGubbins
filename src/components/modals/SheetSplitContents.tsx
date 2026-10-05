@@ -99,13 +99,13 @@ export function SheetSplitContents() {
         <div className="border-b border-foundry-700 bg-gold/10 px-6 py-3">
           <div className="mb-1 flex flex-wrap items-center gap-2">
             <Badge tone="attention">No identity lock</Badge>
-            <p className="text-xs font-bold text-gold">These sheets are not tied to one subject.</p>
+            <p className="text-xs font-bold text-gold">These sheets are not tied to each other.</p>
           </div>
           <p className="text-xs leading-relaxed text-ink-muted">
-            The identity lock is what makes sheet two depict the same individual as sheet one; without it each
-            run is free to return a different character in similar colours. Set it under &ldquo;Continuity
-            across sheets&rdquo;, ideally from the first sheet you accept — concrete countable attributes
-            reproduce, adjectives do not.
+            The identity lock is what makes sheet two match sheet one, whether they draw one subject or
+            members of one set; without it each run is free to return a different subject in similar colours,
+            or a set drawn another way. Set it under &ldquo;Continuity across sheets&rdquo;, ideally from the
+            first sheet you accept — concrete countable attributes reproduce, adjectives do not.
           </p>
         </div>
       ) : null}

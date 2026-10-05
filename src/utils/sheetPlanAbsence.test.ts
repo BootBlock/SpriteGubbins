@@ -196,10 +196,17 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
       // The anatomy paragraph's off position is the field's own `NONE`, which is what every category's
       // subject opens on, rather than a cleared field: both render no paragraph, and this is the one a
       // reader who touches nothing actually gets.
+      //
+      // A sheet whose section 1 describes the set its pieces are laid over states the opposite rule —
+      // nothing listed is drawn into a component — and the exceptions follow it the same way.
       const clothing = clothed ? pooledValue(category, 'clothing') : '';
       const section = subjectSectionAt(category, sheet, clothing, anatomy);
+      const rule =
+        sheet.plan.subjectScope === 'LAID_OVER'
+          ? 'no\nmaterial, condition, finish or detail named there is drawn into one.\n'
+          : 'never drawn as a separate piece.\n';
 
-      expect(section, where).toContain('never drawn as a separate piece.\n');
+      expect(section, where).toContain(rule);
     },
   );
 });

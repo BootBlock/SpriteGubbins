@@ -42,7 +42,12 @@ import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
  * styles, so the angle the depicted object is drawn at is a genuine art-direction choice rather than
  * a property of the deliverable. `categoryProjections.ts` therefore offers the whole list; the facings
  * are bound, and so is the canvas, which `categoryAspectRatios.ts` holds square for the four-by-four
- * grid.
+ * grid. **The camera is shared and the yaw is not**: an icon sheet declares `OWN_POSE`, so the prompt
+ * states one projection, elevation, light and scale for the set and poses each subject as its entry and
+ * *Subject Framing* say — upright, turned or corner to corner — rather than holding every icon at one
+ * object yaw. A full-bleed square lies flat on screen whatever the camera, which governs only the
+ * subject inside it, and the overlay sheet declares `PICTURE_PLANE`: its pieces are flat shapes under no
+ * camera at all, so a square ring never comes back an isometric diamond.
  */
 export const ICON: CategoryDefinition = {
   label: 'Icon / Symbol Set',

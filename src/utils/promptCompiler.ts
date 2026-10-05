@@ -89,6 +89,7 @@ export function generatePrompt(
     palette: facts.palette !== null,
     rigGeometry: facts.rig !== null,
     oneSidedFeatures: config.ONE_SIDED_FEATURES === 'yes',
+    orientation: facts.plan.orientation,
     ownBackdrop: config.OWN_BACKDROP === 'yes',
     // The headings' own numbers, from the same walk that resolved the prompt body's citations — so a
     // wrapper naming a section cannot come to name a different one than the prose does.

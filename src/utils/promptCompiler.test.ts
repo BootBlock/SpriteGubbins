@@ -1899,7 +1899,10 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
         const named = CATEGORY_PROJECTIONS[category].filter((offered) =>
           prompt.includes(`- Projection: ${promptText.PROJECTION_TEXT[offered]}`),
         );
-        expect(named, `${category} / ${projection} names no camera it is offered`).toHaveLength(1);
+        // A sheet of flat pieces — ICON's overlay sheet, its first — names no camera at all, which is
+        // the other answer that never names one the category refuses.
+        const flat = prompt.includes('no projection or camera angle applies to it.');
+        expect(named, `${category} / ${projection} names no camera it is offered`).toHaveLength(flat ? 0 : 1);
       }
     }
   });
@@ -4006,7 +4009,8 @@ describe('generatePrompt — the one ban that is per-category', () => {
 describe('generatePrompt — an icon set', () => {
   const ICON = defaultSubjectFor('ICON');
   const ICON_OUTPUT = withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' });
-  const ELSEWHERE = '**Applied Overlay** is excepted: another sheet of this series draws it';
+  const ELSEWHERE =
+    '**Applied Overlay** is excepted: another sheet of this series draws the pieces it governs';
   const COMPONENTS = '**Applied Overlay** is excepted: section';
 
   it('excepts the overlay as drawn elsewhere on the icon sheets, and as components on the overlay sheet', () => {
@@ -4105,7 +4109,7 @@ describe('generatePrompt — an icon set', () => {
     const prompt = generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 1 });
     expect(prompt).toContain('Exactly 1 component, each visibly separate');
     expect(prompt).not.toMatch(/\b1 components\b/);
-    expect(prompt).toContain('**Sheet 2 — Icon 1** *(this sheet)*: 1 component,');
+    expect(prompt).toContain('**Sheet 2 — Icon 1** *(this sheet)*: 1 component.');
   });
 
   it('bans a hand or figure only where no entry names one', () => {

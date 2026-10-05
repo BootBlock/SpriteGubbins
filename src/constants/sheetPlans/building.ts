@@ -32,6 +32,8 @@ export const BUILDING_TILESET: SheetPlan = {
   // One structure’s floor and walls, unlike TERRAIN’s blend set of two materials meeting: these are
   // the surfaces of one building, so what a subject holds constant holds across them.
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // Every tile is a different tile: the floor variants differ in scatter, and the corners in which corner they turn.
   posing: 'UNSTATED',
   // Neither piece the module library pairs is on a tile set, so the pair is drawn from the two
@@ -144,6 +146,8 @@ export const BUILDING_MODULE_LIBRARY: SheetPlan = {
   targetQuantity: 'COMPONENT',
   extent: 'PIECE',
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // The entrance module is drawn closed and open, which is one part at the two positions it takes.
   posing: 'PER_POSITION',
   scaleExample: 'an awning drawn beside the wall bay it hangs on is in proportion to it',
@@ -224,6 +228,8 @@ function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTup
     targetQuantity: 'COMPONENT',
     extent: 'PIECE',
     identity: 'ONE_SUBJECT',
+    orientation: 'SHEET_YAW',
+    subjectScope: 'ONE_DESIGN',
     // A yaw is the camera turning rather than the bay moving, so the repeated entries are views.
     posing: 'UNSTATED',
     // The façade fittings stay on the module library, so the awning that sheet pairs has no entry

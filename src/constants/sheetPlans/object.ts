@@ -49,6 +49,8 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   extent: 'PIECE',
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // The hatch is drawn closed, part-open and fully open, and the subassembly at three points of its travel.
   posing: 'PER_POSITION',
   scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
@@ -138,6 +140,8 @@ function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple
     targetQuantity: 'ASSEMBLED',
     extent: 'PIECE',
     identity: 'ONE_SUBJECT',
+    orientation: 'SHEET_YAW',
+    subjectScope: 'ONE_DESIGN',
     // The moving parts are drawn once per facing in matching positions, which is the camera turning.
     posing: 'UNSTATED',
     scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
@@ -190,6 +194,8 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   extent: 'PIECE',
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
   posing: 'AT_REST',
   scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
@@ -285,6 +291,8 @@ export const OBJECT_RIGID_STATES: SheetPlan = {
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // The one object, drawn once for each state it takes.
   posing: 'PER_POSITION',
   scaleExample:
@@ -321,6 +329,8 @@ function objectRigidViewSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
     targetQuantity: 'COMPONENT',
     extent: 'WHOLE',
     identity: 'ONE_SUBJECT',
+    orientation: 'SHEET_YAW',
+    subjectScope: 'ONE_DESIGN',
     // The one object at each yaw, which is the camera turning rather than anything on it moving.
     posing: 'UNSTATED',
     scaleExample: 'one view of the object and the view beside it are the same object drawn at the same scale',

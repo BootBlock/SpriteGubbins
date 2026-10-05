@@ -397,6 +397,59 @@ export type SheetIdentity =
   | 'ONE_SET';
 
 /**
+ * How each component of a sheet is oriented relative to the one camera the sheet states.
+ *
+ * **It decides what the CAMERA section says, and whether it states a yaw at all.** That section held
+ * every component at the sheet's object yaw — "Front — object yaw 0° … both sides are edge-on" — and
+ * called a component "turned off it because the piece reads better that way" a defect. That is the
+ * rule for a figure's trunk, a vehicle's views and an object's states, which are one subject turned
+ * beneath one camera. It is the wrong rule for an icon set, whose entries are different subjects: a
+ * potion reads best upright, a sword laid corner to corner, a map pin turned to the isometric grid,
+ * and ICON offers three-quarter and isometric styles and a diagonal *Subject Framing*. And it is the
+ * wrong rule for the overlay pieces the engine lays over a finished icon in screen space, which have no
+ * yaw and must take no projection: a square ring drawn under an isometric camera comes back a diamond.
+ *
+ * A sheet that is not `SHEET_YAW` drops the subject's own left and right, the one-sided-feature
+ * default, the yaw block and the primary assembly direction, and section 0's precedence order drops
+ * the object orientation and pivot compatibility, which mean nothing there.
+ *
+ * **Declared rather than derived, and a different question from {@link SheetIdentity}.** A font is one
+ * set drawn square to a front camera, and a terrain blend set is one set laid flat under whatever camera
+ * the map uses; both are `SHEET_YAW`. Only a run plan may declare anything else: a sheet of views turns
+ * one subject to each of its yaws by definition, which is why {@link ViewSheetPlan} narrows the field.
+ */
+export type ComponentOrientation =
+  /** Every component is turned to the object yaw, or each of the yaws, the sheet states. */
+  | 'SHEET_YAW'
+  /** Each entry's subject is posed for its own clearest read beneath the one camera the sheet shares. */
+  | 'OWN_POSE'
+  /** Every component is a flat shape lying in the picture plane, square to the screen, with no camera angle. */
+  | 'PICTURE_PLANE';
+
+/**
+ * What the SUBJECT section describes, relative to the components a sheet draws.
+ *
+ * **It decides how the SUBJECT section introduces its list, and what it says the list governs.** That
+ * section called itself "the sole authority for the subject's design" and closed "Do not infer props,
+ * weapons or equipment from the role: if it is not listed above, it does not exist" — the rule for one
+ * designed subject, and untrue above an icon sheet whose sixteen entries each state a design the list
+ * never mentions, and whose "role" field is a display size. On the overlay sheet the list is not even
+ * about the components: it describes the icons the pieces are laid over, and a cooldown wedge told that
+ * every listed material is "painted onto" it came back in forged steel and oiled leather.
+ *
+ * **Declared rather than derived.** {@link SheetIdentity} comes close and is a different question: a
+ * font is one set whose list is the typeface every glyph is drawn in, so it is `ONE_DESIGN`; an icon
+ * sheet is one set whose entries carry their own designs, so it is `SHARED_BY_SET`.
+ */
+export type SubjectScope =
+  /** The list is the whole design every component draws, and nothing it does not state exists. */
+  | 'ONE_DESIGN'
+  /** The list states what every member of the set shares; each member's own design is its entry. */
+  | 'SHARED_BY_SET'
+  /** The list describes the set the components are laid over, and never the components themselves. */
+  | 'LAID_OVER';
+
+/**
  * In what position this sheet's inventory draws each part that moves.
  *
  * **The statement that relates a plan's entries to the rig section beside them.** `rigMode` decides
@@ -547,6 +600,17 @@ interface SheetPlanFields {
    * the compiler reads to choose a paragraph, and neither can be read off the other.
    */
   readonly identity: SheetIdentity;
+  /**
+   * How this sheet's components are oriented beneath its camera — see {@link ComponentOrientation}.
+   *
+   * Beside {@link SheetPlan.identity} for the same reason that sits beside the extent: a fact about the
+   * inventory as a whole that the compiler reads to choose which paragraphs the CAMERA section states.
+   */
+  readonly orientation: ComponentOrientation;
+  /**
+   * What the SUBJECT section describes, relative to this sheet's components — see {@link SubjectScope}.
+   */
+  readonly subjectScope: SubjectScope;
   /**
    * In what position this sheet draws each part that moves — see {@link InventoryPosing}.
    *
@@ -713,6 +777,8 @@ interface RunSheetPlan extends SheetPlanFields {
 /** A sheet of views, drawing its pieces at each facing of the tuple — see {@link SheetFacings}. */
 export interface ViewSheetPlan extends SheetPlanFields {
   readonly facings: readonly [Direction, ...Direction[]];
+  /** A sheet of views turns its pieces to each of its yaws, so it is never posed any other way. */
+  readonly orientation: 'SHEET_YAW';
   /**
    * Which end of each piece this sheet draws at several yaws is its front, and which its rear — what
    * section 3 states as the evidence that a view turned rather than was redrawn.

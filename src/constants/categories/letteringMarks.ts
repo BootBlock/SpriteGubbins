@@ -168,8 +168,9 @@ export function letteringTermIn(text: string): string | undefined {
  * after the things they were sampled from.
  *
  * **`role` is read here, where `NON_DEPICTIVE_FIELDS` does not read it**, and the difference is what
- * that carve-out is for. Section 1's closing sentence disclaims one thing — “Do not infer props,
- * weapons or equipment from the role: if it is not listed above, it does not exist” — and nothing in
+ * that carve-out is for. Section 1's closing sentence on a sheet of one design disclaims one thing —
+ * “Do not infer props, weapons or equipment from the role: if it is not listed above, it does not
+ * exist” (`SubjectScope`) — and nothing in
  * the template tells a generator not to infer *lettering* from a role. BACKGROUND offers
  * `Credits & End Card` and `Title & Menu Backdrop`, and INTERFACE offers `Quest & Objective Log`;
  * none of the three names lettering today, but a role that did would reach section 1 unopposed.

@@ -255,8 +255,15 @@ describe('a subject with no facing is one sheet per plan, whatever set the confi
       // section 3 states the rotation as a figure, so a facing the subject cannot take is not a
       // wording problem but a number the generator will act on. Every sheet of the series is checked,
       // because each is compiled from its own copy of the specification.
-      expect(run.promptText).toContain('Directions required: Front');
-      expect(run.promptText).toContain('object yaw 0°');
+      // ICON's sheets state no yaw at all: each icon is posed for its own read beneath a shared camera,
+      // and the overlay pieces lie flat (`SheetPlan.orientation`).
+      if (category === 'ICON') {
+        expect(run.promptText).not.toContain('Directions required');
+        expect(run.promptText).not.toContain('object yaw 0°');
+      } else {
+        expect(run.promptText).toContain('Directions required: Front');
+        expect(run.promptText).toContain('object yaw 0°');
+      }
       expect(run.promptText).not.toContain('Front-three-quarter');
       expect(run.promptText).not.toContain('object yaw 45°');
     }

@@ -192,6 +192,8 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
   // Two materials by design, so the colour blocking and the material are what tells one tile from the
   // next rather than what they share.
   identity: 'ONE_SET',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // Every tile is a different tile: the variants differ in scatter, the transitions in which edge they carry.
   posing: 'UNSTATED',
   // A blend set's tiles are all one size by construction, so the agreement shape is the honest one
@@ -250,6 +252,8 @@ export const TERRAIN_FEATURE_LIBRARY: SheetPlan = {
   // A library of the ground’s pieces — a cliff face, a boulder, a rooted growth — whose shapes and
   // colours differ by design; the elevation edge’s outro is what holds its own pieces together.
   identity: 'ONE_SET',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // The ×2 and ×3 entries are distinct pieces — a straight run and one that breaks the line, a full
   // drop and a half-height ledge, three sizes of boulder — not one piece at several positions.
   posing: 'UNSTATED',

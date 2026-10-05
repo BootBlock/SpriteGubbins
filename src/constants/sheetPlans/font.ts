@@ -161,6 +161,8 @@ export const FONT_CAPITALS: SheetPlan = {
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
   identity: 'ONE_SET',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
   // The agreement shape, for EFFECT's reason and one more of its own: these components are not
@@ -198,6 +200,8 @@ export const FONT_LOWER_CASE: SheetPlan = {
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
   identity: 'ONE_SET',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
   scaleExample:
@@ -228,6 +232,8 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
   identity: 'ONE_SET',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // Digits and marks, each drawn once.
   posing: 'UNSTATED',
   scaleExample:
@@ -263,6 +269,8 @@ export const FONT_SYMBOLS: SheetPlan = {
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
   identity: 'ONE_SET',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // Symbols and operators, each drawn once.
   posing: 'UNSTATED',
   scaleExample:

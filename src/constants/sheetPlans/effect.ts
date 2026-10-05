@@ -117,6 +117,8 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // One phenomenon, one component per phase of its life: the artwork is the motion here.
   posing: 'PER_POSITION',
   // The agreement shape rather than a pair of pieces, because this sheet's components are not

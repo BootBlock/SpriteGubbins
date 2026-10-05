@@ -46,10 +46,11 @@ that covers the thing it is describing tells the player nothing about which icon
       'a library of state and overlay pieces at one cell size — each drawn to sit over any icon of the set at that icon’s own margin and weight, so the engine can lay any piece over any icon without either looking borrowed.',
     scaleExample:
       'one overlay piece and the overlay piece beside it are drawn to the same weight, each sitting in a cell the size of one icon',
-    veil: 'Disabled veil ×1 — what is laid over an icon to read as unavailable',
+    veil: 'Disabled veil ×1 — a flat dark shape laid over an icon to read as unavailable',
     halo: 'Highlight halo ×1 — what marks the icon under the pointer',
     ring: 'Selected ring ×1 — what marks the icon currently chosen',
-    sweep: 'Cooldown sweep ×2: a quarter elapsed, and three quarters',
+    sweep:
+      'Cooldown sweep ×2: a dark wedge swept clockwise from the top — a quarter elapsed, and three quarters',
     rarityGlow: 'Rarity glow ×1 — the aura the highest tier carries',
     marksIntro: `Small pieces laid over a finished icon to say something about it. Each is drawn clear of any icon, so
 it can be placed on any of them:`,
@@ -84,6 +85,14 @@ nothing about which icon they are looking at.`,
  * each piece is drawn to does. Neither plan declares `backdrop`: a piece the engine lays over an icon has
  * to stay open around its own shape, or it hides the icon it marks.
  *
+ * **Flat, under no camera, and dressed in none of the icons' attributes.** The pieces used to take the
+ * icons' projection, so a square ring and a cooldown wedge came back as isometric diamonds; the plan
+ * declares `PICTURE_PLANE`, and section 3 tells them they lie flat and square to the screen. And
+ * section 1 lists the icons' materials, colours and condition, which a wedge told it was painted with
+ * them came back wearing; the plan declares `LAID_OVER`, so section 1 says those describe the icons
+ * beneath, and a piece takes its colour and value from its own entry — the veil and the sweep are
+ * dark under both looks — and the accent colour otherwise.
+ *
  * **Nothing here carries lettering**, for the reason `CATEGORY_EXCLUSION_TEXT` gives: a stack count, a
  * cooldown and a keybind are drawn by the engine at runtime over the top of the sprite.
  */
@@ -100,6 +109,11 @@ function overlaySheet(wording: OverlayWording): SheetPlan {
     targetQuantity: 'COMPONENT',
     extent: 'WHOLE',
     identity: 'ONE_SET',
+    // The engine lays each piece over a finished icon in screen space, so a piece is a flat shape square
+    // to the screen and takes none of the icons' projection: a square ring stays square under any camera.
+    orientation: 'PICTURE_PLANE',
+    // Section 1 describes the icons these pieces are laid over, never the pieces.
+    subjectScope: 'LAID_OVER',
     // The cooldown sweep is drawn at two stages.
     posing: 'PER_POSITION',
     // The agreement shape: these pieces are not parts of one another, so what has to hold is that no

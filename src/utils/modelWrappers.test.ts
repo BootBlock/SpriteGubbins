@@ -489,6 +489,12 @@ describe('wrapForModel', () => {
     // the inventory moves the prompt body's own citations and would have left these behind, in the
     // two wrappers whose whole job is saying which blocks may not be shortened.
     const sol = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
+    const iconSheet = generatePrompt(
+      'ICON',
+      defaultSubjectFor('ICON'),
+      withOutput({ ...NATIVE_GRID_SHEET, sheetIndex: 1 }),
+    );
+    const yawSheet = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
     const rigSheet = characterRigPrompt({});
     const seedream = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'SEEDREAM' }));
 
@@ -506,7 +512,15 @@ describe('wrapForModel', () => {
 
     cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `- the numbered items of section ${n}\n`);
     cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `What section ${n} states under`);
-    cites(sol, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `yaws in section ${n}\n`);
+    // The CAMERA entry names what that section carries on each orientation: the overlay sheet's
+    // flat-piece rule, an icon sheet's shared camera, and a turned subject's yaws.
+    cites(
+      sol,
+      'PROJECTION, CAMERA AND OBJECT ORIENTATION',
+      (n) => `- section ${n}’s rule that every component lies flat in the picture plane\n`,
+    );
+    cites(iconSheet, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `as section ${n} states it\n`);
+    cites(yawSheet, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `yaws in section ${n}\n`);
     cites(sol, 'COMPONENT INVENTORY', (n) => `the inventory in section ${n}\n`);
     cites(sol, 'RENDER STYLE', (n) => `${NATIVE_GRID_HEADING}” in section ${n}\n`);
     cites(rigSheet, 'CUT-OUT RIG REQUIREMENTS', (n) => `${RIG_GEOMETRY_HEADING}” in section ${n}\n`);
@@ -531,7 +545,13 @@ describe('wrapForModel', () => {
     ]);
     const sol = wrapForSol(
       'body',
-      { nativeGrid: true, palette: true, rigGeometry: true, oneSidedFeatures: true },
+      {
+        nativeGrid: true,
+        palette: true,
+        rigGeometry: true,
+        oneSidedFeatures: true,
+        orientation: 'SHEET_YAW',
+      },
       new Map([...shifted, ['RIG', 6]]),
     );
 

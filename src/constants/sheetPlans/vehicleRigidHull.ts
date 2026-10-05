@@ -58,6 +58,8 @@ const VEHICLE_RIGID_STATES: SheetPlan = {
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // The one vehicle, drawn once for each state it takes.
   posing: 'PER_POSITION',
   scaleExample:
@@ -96,6 +98,8 @@ function rigidViewSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): Vie
     targetQuantity: 'COMPONENT',
     extent: 'WHOLE',
     identity: 'ONE_SUBJECT',
+    orientation: 'SHEET_YAW',
+    subjectScope: 'ONE_DESIGN',
     // The one vehicle at each yaw, which is the camera turning rather than anything on it moving.
     posing: 'UNSTATED',
     scaleExample:

@@ -159,3 +159,9 @@ a test, and "plausible" otherwise.
 - **U1**. Audit the catalogue dialog, custom icons, the project library, the roster summary, the
   stores and both storage backends, and the quantiser's 128 px resize and sprite pack for icon sets;
   drive each in a browser.
+
+## 4. Progress
+
+- **P1** landed in `0f595f0b`.
+- **P2, P3, P4, P5 and P12** landed in “Pose each icon beneath the set’s one camera, and lay the
+  overlay pieces flat”.

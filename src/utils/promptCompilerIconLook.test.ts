@@ -97,7 +97,9 @@ describe('the full-bleed icon square in the compiled prompt', () => {
     const squares = flat(sectionOf(iconPrompt('FULL_BLEED_TILE', 0), 'COMPONENT INVENTORY'));
     const marks = flat(sectionOf(iconPrompt('ISOLATED_MARK', 0), 'COMPONENT INVENTORY'));
     expect(squares).toContain('a dark wedge clipped to the tile’s square');
-    expect(marks).toContain('Cooldown sweep ×2: a quarter elapsed, and three quarters');
+    expect(marks).toContain(
+      'Cooldown sweep ×2: a dark wedge swept clockwise from the top — a quarter elapsed, and three quarters',
+    );
     expect(marks).not.toContain('square');
   });
 

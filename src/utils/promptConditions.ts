@@ -77,6 +77,17 @@ export function promptConditions(
     // holds its manner of drawing constant and never what tells one member from the next. Asked of the
     // resolved plan, so INTERFACE's state library and its nine-slice answer apart. See `SheetIdentity`.
     COMPONENTS_ARE_ONE_SET: plan.identity === 'ONE_SET' ? 'yes' : '',
+    // Which camera section 3 states and how each component is oriented beneath it, and which items
+    // section 0's precedence order ranks. A sheet turned to its yaws keeps the left-and-right rules, the
+    // yaw block and the primary assembly direction; an icon sheet shares the camera and poses each
+    // subject for its own read; the overlay sheet's pieces lie flat in the picture plane under no camera
+    // at all. Asked of the resolved plan, so the overlay sheet and the icon sheets of one series answer
+    // apart. See `ComponentOrientation`.
+    ORIENTATION: plan.orientation,
+    // How section 1 introduces its list and what it says the list governs: the whole design of one
+    // subject, what a set's members share above entries that each carry their own design, or the set a
+    // sheet of overlay pieces is laid over. See `SubjectScope`.
+    SUBJECT_SCOPE: plan.subjectScope,
     // Whether section 4's generic paragraph is this sheet's one statement of where a piece ends. A
     // sheet of whole drawings has no joins to end at, and a group carrying `ends` names its joins in
     // the subject's own words — so printing the paragraph as well would state one rule twice, ten
@@ -183,7 +194,9 @@ export function promptConditions(
     // being deleted — a subject the compiler cannot read still has to be checked, and asking the model
     // to pick a witness is all that is left for it. See `utils/oneSidedFeatureLedger.ts` for what the
     // named branch says instead, and why it is the better half.
-    ONE_SIDED_FEATURES: oneSidedFeatures.length > 0 ? 'yes' : '',
+    // Only a sheet turned to its yaws carries the ledger at all: the subject's own left and right are
+    // stated there and nowhere else, so on a sheet posed any other way there is no side to name.
+    ONE_SIDED_FEATURES: plan.orientation === 'SHEET_YAW' && oneSidedFeatures.length > 0 ? 'yes' : '',
     // Section 1's "painted onto, never a separate piece" rule names its exceptions, and this one is a
     // line that is often not there — cleared, `NONE`, or on an articulation sheet, which draws limbs
     // for a trunk the core sheets carry. Naming an absent line is worse here than anywhere else in
@@ -201,6 +214,8 @@ export function promptConditions(
     // none of the attribute because another sheet of its series draws it. ICON's icon sheets are the
     // case — the overlay sheet draws the *Applied Overlay*, and the icons are drawn bare for the engine
     // to lay it on — so the paint rule stated over them would order an overlay painted onto every icon.
+    // The sentence is scoped to the overlay's own pieces: a padlock or a crack an icon's entry or another
+    // field asks for is part of that icon and is drawn (audit finding P5).
     CLOTHING_DRAWN_ELSEWHERE: clothingDrawnElsewhere ? 'yes' : '',
     // Which shape that exception sentence takes. On a multi-view sheet the anatomy turns with the
     // trunk — section 4 lists each piece at every one of the sheet's facings and counts it per view

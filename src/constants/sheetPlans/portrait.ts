@@ -61,6 +61,8 @@ export const PORTRAIT_EXPRESSION_LIBRARY: SheetPlan = {
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // One face, drawn once for each expression it wears.
   posing: 'PER_POSITION',
   // EFFECT's shape rather than a pair of pieces, and for EFFECT's reason: this sheet's components

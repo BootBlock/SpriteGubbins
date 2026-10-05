@@ -1,3 +1,5 @@
+import type { ComponentOrientation } from './components.ts';
+
 /**
  * Which gated blocks, beyond the sections Sol always forwards, a prompt carries.
  *
@@ -14,4 +16,9 @@ export interface SolGatedBlocks {
   readonly rigGeometry: boolean;
   /** Section 3's ledger of the one-sided features this subject carries, from `ONE_SIDED_FEATURES`. */
   readonly oneSidedFeatures: boolean;
+  /**
+   * How the sheet's components are oriented, from the plan's own `orientation` — which decides whether
+   * section 3 states object yaws, a camera every subject is posed beneath, or flat pieces under none.
+   */
+  readonly orientation: ComponentOrientation;
 }

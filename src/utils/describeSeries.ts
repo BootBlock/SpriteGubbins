@@ -6,7 +6,8 @@ import type { SheetBatch } from './sheetBatch.ts';
 
 /**
  * The batch as the assembly-capability section lists it: one line per sheet, saying what it carries,
- * how many components are on it and which facings it draws — with this one marked.
+ * how many components are on it and, where it is turned to a yaw, which facings it draws — with this
+ * one marked.
  *
  * **The per-sheet counts are the point of it.** Section 0 ranks the component count and the
  * inventory above everything else, so a sheet out of a batch has to be told that the number it
@@ -35,11 +36,17 @@ export function describeSeries(
       const count = sheetComponentCount(category, subject, sheet, additional);
       const here = index + 1 === batch.ordinal ? ' *(this sheet)*' : '';
       // Named rather than counted where a sheet draws several, since "5 facings" tells the reader
-      // nothing about *which* five and therefore nothing about what this sheet may leave alone.
+      // nothing about *which* five and therefore nothing about what this sheet may leave alone. A sheet
+      // that is not turned to a yaw states none — an icon sheet poses each subject for its own read and
+      // the overlay sheet's pieces lie flat — so "drawn towards front" would be a direction it never asks.
       const facings =
-        sheet.covered.length > 1 ? `covering ${sheet.covered.join(', ')}` : `drawn towards ${sheet.assembly}`;
+        sheet.plan.orientation !== 'SHEET_YAW'
+          ? ''
+          : sheet.covered.length > 1
+            ? `, covering ${sheet.covered.join(', ')}`
+            : `, drawn towards ${sheet.assembly}`;
 
-      return `- **Sheet ${String(index + 1)} — ${sheet.plan.name}**${here}: ${componentTally(count)}, ${facings}.`;
+      return `- **Sheet ${String(index + 1)} — ${sheet.plan.name}**${here}: ${componentTally(count)}${facings}.`;
     })
     .join('\n');
 }

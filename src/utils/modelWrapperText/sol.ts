@@ -4,9 +4,18 @@ import {
   RIG_GEOMETRY_HEADING,
   SCOPE_AND_PRECEDENCE_HEADING,
 } from '../../constants/promptTemplate.ts';
+import type { ComponentOrientation } from '../../types/components.ts';
 import type { SolGatedBlocks } from '../../types/solGatedBlocks.ts';
 import { citeSection } from '../templateEngine.ts';
 import type { SectionNumbers } from '../templateEngine.ts';
+
+/** What the CAMERA section carries for each orientation, as the hand-off list names it. */
+const CAMERA_ENTRY: Readonly<Record<ComponentOrientation, (section: string) => string>> = {
+  SHEET_YAW: (section) => `- the object yaws in section ${section}`,
+  OWN_POSE: (section) => `- the camera every component shares, as section ${section} states it`,
+  PICTURE_PLANE: (section) =>
+    `- section ${section}’s rule that every component lies flat in the picture plane`,
+};
 
 /**
  * ChatGPT 5.6 Sol, which is the one target here that **cannot draw**.
@@ -175,6 +184,13 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * closing sentence counts nothing — "never anything in that list" — because a count written beside
  * a list whose length varies is a second statement of one fact.
  *
+ * **The CAMERA section's entry names what that section states, which depends on the sheet's
+ * orientation.** It read "the object yaws" on every sheet, and an icon sheet poses each subject for its
+ * own read beneath a shared camera and states no yaw at all, while the overlay sheet's pieces lie flat
+ * under no camera. Pointing at a block that is not there reads as an instruction rather than a fault,
+ * so `CAMERA_ENTRY` names the yaws, the shared camera or the flat-piece rule by
+ * `SolGatedBlocks.orientation`, the plan's own declaration.
+ *
  * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
  * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
  * citations out by hand as numerals, for the CONTRACT, STYLE, CAMERA and INVENTORY sections. The
@@ -265,7 +281,7 @@ export function wrapForSol(prompt: string, gated: SolGatedBlocks, sections: Sect
     gated.oneSidedFeatures
       ? `- the block in section ${citeSection(sections, 'CAMERA')} headed “${ONE_SIDED_FEATURES_HEADING}”`
       : '',
-    `- the object yaws in section ${citeSection(sections, 'CAMERA')}`,
+    CAMERA_ENTRY[gated.orientation](citeSection(sections, 'CAMERA')),
     `- the inventory in section ${citeSection(sections, 'INVENTORY')}`,
     sections.has('INVARIANTS')
       ? `- the render-critical invariants in section ${citeSection(sections, 'INVARIANTS')}`

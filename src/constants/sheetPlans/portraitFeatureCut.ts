@@ -124,6 +124,8 @@ export const PORTRAIT_FEATURE_CUT: SheetPlan = {
   targetQuantity: 'COMPONENT',
   extent: 'PIECE',
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // A brow, an eye and a mouth each appear once per shape the feeling puts them in.
   posing: 'PER_POSITION',
   // The one PORTRAIT sheet that holds a genuine pair: a mouth piece has to fit the space the head

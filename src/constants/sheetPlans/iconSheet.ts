@@ -77,6 +77,11 @@ icon that is heavier, larger or lit differently reads as belonging to another pa
  * grid is stated in drawings and the intro says what a ×2 line is; a sheet holding a sound toggle and a
  * potion is three drawings of two icons.
  *
+ * **Each icon is posed on its own, and its entry is its design.** The plan declares `OWN_POSE`, so section
+ * 3 states the camera the set shares and lets each subject turn or lie corner to corner for its clearest
+ * read, and `SHARED_BY_SET`, so section 1 states what the set shares rather than claiming to be the whole
+ * design above sixteen entries it never lists.
+ *
  * `first` is the roster position of this sheet's first drawing, counted in components from one, and with
  * the count it names the sheet — `Icons 17–32`, or `Icon 17` for a sheet of one — so the split drawer
  * tells two sheets of one set apart.
@@ -91,6 +96,11 @@ export function iconSheet(entries: readonly ComponentEntry[], first: number, loo
     targetQuantity: 'COMPONENT',
     extent: 'WHOLE',
     identity: 'ONE_SET',
+    // Each icon is a different subject, posed for its own read beneath the camera the set shares — an
+    // upright potion beside a sword laid corner to corner — so no yaw is stated for the sheet.
+    orientation: 'OWN_POSE',
+    // Section 1 states what the set shares; each icon's own design is its entry in section 4.
+    subjectScope: 'SHARED_BY_SET',
     // A two-state entry is drawn once per state, which is the inventory settling a change of position.
     posing: entries.some((entry) => entry.count > 1) ? 'PER_POSITION' : 'UNSTATED',
     // The agreement shape, for EFFECT's reason: these icons are not pieces of each other, so what has to
@@ -98,8 +108,9 @@ export function iconSheet(entries: readonly ComponentEntry[], first: number, loo
     scaleExample: wording.scaleExample,
     scaleUnit: 'one icon',
     componentClass: wording.componentClass,
-    // The overlay sheet draws the *Applied Overlay*; an icon here is drawn bare, for the engine to lay
-    // the overlay on at runtime.
+    // The overlay sheet draws the *Applied Overlay*; no icon here carries one of its pieces, for the engine
+    // lays them on at runtime. A padlock or a crack an icon's own entry or *Condition & Finish* asks for
+    // is still the icon's, and section 1 says so.
     drawnElsewhere: 'clothing',
     ...(look === 'FULL_BLEED_TILE' ? { backdrop: 'OWN_SQUARE' } : {}),
     assemblyFailure: {

@@ -69,6 +69,8 @@ const SHARED = {
   targetQuantity: 'ASSEMBLED',
   extent: 'PIECE',
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   scaleUnit: 'a full creature',
   componentClass: 'creature anatomy',
   assemblyFailure: FIGURE_ASSEMBLY_FAILURE,

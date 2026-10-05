@@ -55,6 +55,8 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   extent: 'PIECE',
   identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // The working end is drawn in two states, and the consumable part full and depleted.
   posing: 'PER_POSITION',
   scaleExample: 'a pommel drawn beside the body or shaft it caps is in proportion to it',
@@ -114,6 +116,8 @@ function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
     targetQuantity: 'ASSEMBLED',
     extent: 'PIECE',
     identity: 'ONE_SUBJECT',
+    orientation: 'SHEET_YAW',
+    subjectScope: 'ONE_DESIGN',
     // A yaw is the camera turning rather than the item moving, so the repeated entries are views.
     posing: 'UNSTATED',
     // No pommel on this sheet — the fittings stay on the part library — so the guard is the
