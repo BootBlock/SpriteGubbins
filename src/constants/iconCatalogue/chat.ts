@@ -112,7 +112,7 @@ export const CHAT: IconCatalogueGroup = {
         MODERN:
           'a grey podcast microphone in a round shock mount, and the same microphone under a red circle-and-bar for the second state',
         CYBERPUNK:
-          'a chrome clip-on mic pod with a glowing cyan mesh grille, and its grille gone dark with a red diode blinking for the second state',
+          'a brushed-steel clip-on mic pod with a glowing cyan mesh grille, and its grille gone dark with a red diode blinking for the second state',
         SPACE_OPERA:
           'a slim white boom-mic wand extended with a pale-blue tip light, and folded back flat against its base with a red ring for the second state',
       },

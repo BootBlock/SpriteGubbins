@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { SubjectFieldKey } from '../../types/subject.ts';
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import { COLOR_HEX_MAP } from '../colors.ts';
-import { LETTERING_OBJECTS } from '../iconCatalogue/iconLookRules.ts';
+import {
+  ACRONYM,
+  HEX_COLOUR,
+  LETTERING_OBJECTS,
+  UNWRITTEN,
+  WRITING_SURFACE,
+} from '../iconCatalogue/iconLookRules.ts';
 import { ICON_OVERLAY_PLANS } from '../sheetPlans/iconOverlaySheet.ts';
 import { ICON } from './icon.ts';
 
@@ -115,11 +121,26 @@ describe('ICON’s option pools', () => {
     ).toEqual([]);
   });
 
-  it('names no object that brings letterforms with it (O13)', () => {
+  it('names no object that brings letterforms with it (O13 and C3)', () => {
     const named = ICON.fields.flatMap((field) =>
       field.options.filter((option) => LETTERING_OBJECTS.test(option)),
     );
     expect(named).toEqual([]);
+  });
+
+  it('asks for no letters on what every icon is drawn as, held to the catalogue’s own rules (C3)', () => {
+    // An option of a field that describes the drawing reaches every icon of the set, so it is held to
+    // the rules the catalogue's looks are: no capitalised acronym, which a model letters onto the
+    // object (`Moulded Polymer & LED Strip` did), and no writing surface it does not call blank. *Where
+    // The Set Is Shown* names the screen the set sits in, never something drawn, and `NONE` is the
+    // empty choice of *Extra Overlay Pieces*.
+    const lettered = ICON.fields
+      .filter((field) => field.key !== 'species')
+      .flatMap((field) => field.options.filter((option) => option !== NO_ADDITIONAL_ANATOMY))
+      .map((option) => option.replaceAll(HEX_COLOUR, ' '))
+      .filter((option) => ACRONYM.test(option) || (WRITING_SURFACE.test(option) && !UNWRITTEN.test(option)));
+    expect(lettered).toEqual([]);
+    expect(ACRONYM.test('Moulded Polymer & LED Strip')).toBe(true);
   });
 
   it('offers exclusions the category’s own line does not already state (O6)', () => {

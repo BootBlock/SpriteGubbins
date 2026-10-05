@@ -7,7 +7,7 @@ import { keyReaches } from '../../utils/keyReach.ts';
 import { BACKGROUND_KEY_COLORS } from '../backgroundKeyColors.ts';
 import { DAMAGE_SCHOOL_DEFINITIONS } from '../iconCatalogue/damageSchools.ts';
 import { iconCatalogueEntry } from '../iconCatalogue/index.ts';
-import { KEY_COLOUR_WORDS, wordWithin } from '../iconCatalogue/iconLookRules.ts';
+import { KEY_COLOUR_WORDS, NEAR_WHITE_WORDS, wordNamed } from '../iconCatalogue/iconLookRules.ts';
 import { lookFamilyOfWorld } from '../iconCatalogue/lookFamilyOfWorld.ts';
 import { iconPickId } from '../../utils/iconPickId.ts';
 import { ICON_SET_PRESETS } from './iconSets.ts';
@@ -119,7 +119,7 @@ describe('the ICON presets’ background keys', () => {
       for (const id of pickIds(preset)) {
         const entry = iconCatalogueEntry(id);
         if (entry === undefined) throw new Error(`${preset.name} picks ${id}, which the catalogue lacks`);
-        expect(wordWithin(entry.looks[family], words), id).toBeUndefined();
+        expect(wordNamed(entry.looks[family], words), id).toBeUndefined();
       }
     },
   );
@@ -218,17 +218,16 @@ describe('the default background key', () => {
  * its hex**, which is what puts it inside `poolReachedBy`'s measurement, and a preset on the white key
  * names no near-white word without one in any field: chrome's mirror highlights reach white whatever the
  * set's own colours are. The catalogue's looks name colours in words too, and are held to the white key
- * by `KEY_COLOUR_WORDS`; whether a look's chrome belongs on a white-keyed preset is the catalogue's own
- * audit (C2), not this one.
+ * by `KEY_COLOUR_WORDS`, whose white words are these same `NEAR_WHITE_WORDS`: audit finding C2 decided
+ * that a look's chrome does not belong on a white-keyed preset either, so no cyberpunk look names one.
  */
-const NEAR_WHITE = /\b(?:white|chrome|bone|ivory|pearl|silver|snow|cream|pale|bleached|ice)\b/i;
 
 /** Each part of a value that names a near-white word and no hex, split where a value names two colours. */
 function unhexedNearWhite(value: string): readonly string[] {
   return value
     .split(/[&,]/)
     .map((part) => part.trim())
-    .filter((part) => NEAR_WHITE.test(part) && part.match(NAMED_HEX) === null);
+    .filter((part) => wordNamed(part, NEAR_WHITE_WORDS) !== undefined && part.match(NAMED_HEX) === null);
 }
 
 describe('the near-white words', () => {

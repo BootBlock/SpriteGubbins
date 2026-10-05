@@ -21,7 +21,7 @@ export const SYSTEM_PANELS: IconCatalogueGroup = {
         MODERN: 'a rounded white tile with three stacked grey bars',
         CYBERPUNK:
           'a black glass control deck with three stacked neon-cyan bars and a pulsing amber power diode in one corner',
-        SPACE_OPERA: 'a white command disc with three stacked pale-blue light bars floating above it',
+        SPACE_OPERA: 'a white command plinth with three stacked pale-blue light bars floating above it',
       },
     },
     {
@@ -31,7 +31,7 @@ export const SYSTEM_PANELS: IconCatalogueGroup = {
         FANTASY: 'an iron cogwheel wrapped in a twist of blue enchanted light',
         AGE_OF_STEAM: 'a pair of interlocking brass cogs with a small steam valve between them',
         MODERN: 'a flat grey gear wheel with a hollow centre',
-        CYBERPUNK: 'a chrome cog with a glowing cyan hub and a ring of tiny status diodes',
+        CYBERPUNK: 'a brushed-steel cog with a glowing cyan hub and a ring of tiny status diodes',
         SPACE_OPERA: 'a white ceramic gear with a soft blue light pulsing from its hub',
       },
     },
@@ -44,7 +44,7 @@ export const SYSTEM_PANELS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'an umber cameo of a head-and-shoulders bust silhouette in a brass locket',
         MODERN: 'a plain grey head-and-shoulders bust silhouette in a round white badge',
         CYBERPUNK:
-          'a head-and-shoulders bust silhouette traced in glowing cyan wireframe over a dark chrome dog tag',
+          'a head-and-shoulders bust silhouette traced in glowing cyan wireframe over a rounded gunmetal pendant plate',
         SPACE_OPERA:
           'a pale-blue holographic head-and-shoulders bust silhouette rising from a white emitter disc',
       },
@@ -68,7 +68,8 @@ export const SYSTEM_PANELS: IconCatalogueGroup = {
         FANTASY: 'a closed leather spellbook with a glowing blue star set into its cover',
         AGE_OF_STEAM: 'a brass-cornered engineering manual bound with a leather strap and a cog clasp',
         MODERN: 'a spiral-bound field notebook with a red elastic band',
-        CYBERPUNK: 'a chrome data shard etched with a glowing cyan circuit trace and a bright amber core',
+        CYBERPUNK:
+          'a brushed-steel data shard etched with a glowing cyan circuit trace and a bright amber core',
         SPACE_OPERA: 'a thin white holo-tablet projecting a slowly turning blue star',
       },
     },
@@ -101,7 +102,8 @@ export const SYSTEM_PANELS: IconCatalogueGroup = {
         FANTASY: 'a gold shield-shaped medal hanging from a red ribbon',
         AGE_OF_STEAM: 'a brass medal of honour with a starburst rim on a striped ribbon',
         MODERN: 'a gold trophy cup with two looped grips on a black plinth',
-        CYBERPUNK: 'a chrome star-shaped medal with a glowing gold core, hanging from a crimson lanyard',
+        CYBERPUNK:
+          'a brushed-steel star-shaped medal with a glowing gold core, hanging from a crimson lanyard',
         SPACE_OPERA: 'a white starburst decoration with a gold light pulsing at its centre',
       },
     },
@@ -113,18 +115,18 @@ export const SYSTEM_PANELS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a glass bell jar over a mounted brass butterfly',
         MODERN: 'a glass display case holding three small keepsakes on a white shelf',
         CYBERPUNK: 'a black wall rack of three glowing cyan specimen tubes, each holding a tiny trinket',
-        SPACE_OPERA: 'a white display pod with three small relics floating in blue stasis light',
+        SPACE_OPERA: 'a white reliquary capsule with three small relics floating in blue stasis light',
       },
     },
     {
       id: 'system-world-map',
       role: 'World map',
       looks: {
-        FANTASY: 'a curling parchment map with a red dotted trail and a compass rose',
+        FANTASY: 'a rolled parchment map tied with a red cord, a pair of brass dividers resting across it',
         AGE_OF_STEAM: 'a brass-framed globe on a tilted axis',
-        MODERN: 'a folded paper road map with a red pin in it',
+        MODERN: 'a folded paper road map, plain and wordless, with a red pin stuck in it',
         CYBERPUNK:
-          'a glowing cyan wireframe city grid projected above a black chrome holo-puck, one crimson pin rising from it',
+          'a glowing cyan wireframe city grid projected above a black steel holo-puck, one crimson pin rising from it',
         SPACE_OPERA: 'a pale-blue holographic planet with a white orbital track around it',
       },
     },
@@ -171,7 +173,7 @@ export const SYSTEM_PANELS: IconCatalogueGroup = {
         FANTASY: 'an arched oak door standing ajar, golden light spilling from the gap',
         AGE_OF_STEAM: 'a riveted iron ship door ajar, steam curling from the gap',
         MODERN: 'a plain grey door ajar with a bold arrow pointing through the gap',
-        CYBERPUNK: 'a sliding chrome blast door half open, a crimson light bleeding from the gap',
+        CYBERPUNK: 'a sliding brushed-steel blast door half open, a crimson light bleeding from the gap',
         SPACE_OPERA: 'a round white airlock hatch swung open on a thick hinge, blue light inside',
       },
     },
@@ -187,7 +189,7 @@ export const SYSTEM_PANELS: IconCatalogueGroup = {
         MODERN:
           'a grey speaker cone with three curved sound waves, and the waves replaced by a red cross for the second state',
         CYBERPUNK:
-          'a chrome speaker grille pulsing three neon-cyan sound waves, and dark with a glowing red slash across it for the second state',
+          'a brushed-steel speaker grille pulsing three neon-cyan sound waves, and dark with a glowing red slash across it for the second state',
         SPACE_OPERA:
           'a white sound emitter disc rippling with pale-blue rings, and dimmed with a red bar across it for the second state',
       },
@@ -202,7 +204,7 @@ export const SYSTEM_PANELS: IconCatalogueGroup = {
           'a brass padlock with its shackle raised and a key in it, and closed with the key gone for the second state',
         MODERN: 'a grey padlock with an open shackle, and shut for the second state',
         CYBERPUNK:
-          'a chrome maglock with its bolt retracted and a green diode lit, and the bolt thrown with a red diode lit for the second state',
+          'a brushed-steel maglock with its bolt retracted and a green diode lit, and the bolt thrown with a red diode lit for the second state',
         SPACE_OPERA:
           'a white force-lock seal with an open blue arc, and closed into a full glowing circle for the second state',
       },

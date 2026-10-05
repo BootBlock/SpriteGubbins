@@ -24,7 +24,7 @@ export const VOLTAIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass galvanic pistol with a glass coil chamber firing a crackling blue spark',
         MODERN: 'a black taser pistol firing two barbed probes on crackling blue wires',
         CYBERPUNK:
-          'a pair of chrome taser darts trailing coiled wire, crackling blue arcs leaping between their barbs',
+          'a pair of brushed-steel taser darts trailing coiled wire, crackling blue arcs leaping between their barbs',
         SPACE_OPERA: 'a white ion pistol firing a tight blue ion bolt',
       },
     },
@@ -37,7 +37,7 @@ export const VOLTAIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass-capped Leyden jar bursting in a ring of crackling blue arcs',
         MODERN: 'a sparking grey substation junction box blowing out in a ring of blue electric arcs',
         CYBERPUNK:
-          'a spherical chrome arc mine on three splayed legs, discharging a round ring of crackling blue arcs',
+          'a spherical brushed-steel arc mine on three splayed legs, discharging a round ring of crackling blue arcs',
         SPACE_OPERA: 'a white ion-storm generator releasing a round shockwave of crackling blue ions',
       },
     },
@@ -50,7 +50,7 @@ export const VOLTAIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a frayed brass-sheathed cable dripping crackling blue sparks',
         MODERN: 'a snapped black power line dangling and spitting blue sparks',
         CYBERPUNK:
-          'an overloaded chrome power cell, swollen and leaking crackling blue arcs from a split seam',
+          'an overloaded brushed-steel power cell, swollen and leaking crackling blue arcs from a split seam',
         SPACE_OPERA: 'a white ion-charge limpet clamped to a hull plate, pulsing out blue ion crackles',
       },
     },
@@ -64,7 +64,7 @@ export const VOLTAIC_ATTACKS: IconCatalogueGroup = {
           'a brass Tesla coil throwing a continuous crackling blue bolt straight out from its torus',
         MODERN: 'a black stun baton with a continuous blue arc dancing between its twin prongs',
         CYBERPUNK:
-          'a chrome arc-thrower cannon with coiled capacitor rings, holding a continuous jagged blue arc on its target',
+          'a brushed-steel arc-thrower cannon with coiled capacitor rings, holding a continuous jagged blue arc on its target',
         SPACE_OPERA: 'a white ion-cannon emitter firing a steady straight beam of blue ions',
       },
     },
@@ -77,7 +77,7 @@ export const VOLTAIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a heavy brass galvanic maul with a Leyden-jar core discharging in a blue flash',
         MODERN: 'a black high-voltage stun lance discharging one huge blue arc',
         CYBERPUNK:
-          'a chrome shock-maul with stacked capacitor rings fully charged, discharging one massive blue arc on impact',
+          'a brushed-steel shock-maul with stacked capacitor rings fully charged, discharging one massive blue arc on impact',
         SPACE_OPERA: 'a white ion pike bursting with a single overcharged blue discharge',
       },
     },
@@ -86,13 +86,14 @@ export const VOLTAIC_ATTACKS: IconCatalogueGroup = {
       role: 'Voltaic vulnerability debuff',
       school: 'VOLTAIC',
       looks: {
-        FANTASY: 'a dented steel breastplate with a glowing blue storm sigil crackling at its centre',
+        FANTASY:
+          'a dented steel breastplate with a glowing blue forked-lightning mark crackling at its centre',
         AGE_OF_STEAM: 'a copper conductor plate wired to two brass terminals, a blue spark jumping across it',
         MODERN: 'a wet steel plate with a crackling blue arc spreading across its puddled coating',
         CYBERPUNK:
-          'a chrome conductive-tagging dart stuck in black armour plating, a blue diode blinking and arcs skittering across the plate',
+          'a black armour plate with a brushed-steel conductive-tagging dart stuck in it, a blue diode blinking and arcs skittering across the plate',
         SPACE_OPERA:
-          'a white shield emitter flickering with blue ion burns, its energy dome breaking into crackling patches',
+          'a white energy-shield dome flickering with blue ion burns, breaking into crackling patches',
       },
     },
     {
@@ -105,7 +106,7 @@ export const VOLTAIC_ATTACKS: IconCatalogueGroup = {
           'a colossal brass Tesla tower crowned with a copper torus, throwing out crackling blue arcs',
         MODERN: 'a steel transmission pylon wreathed in a crackling blue arc storm',
         CYBERPUNK:
-          'a towering chrome capacitor spire stacked with coil rings, unleashing a vast dome of jagged blue lightning',
+          'a towering brushed-steel capacitor spire stacked with coil rings, unleashing a vast dome of jagged blue lightning',
         SPACE_OPERA: 'a white capital-ship ion cannon unleashing a vast blue ion storm',
       },
     },

@@ -32,7 +32,8 @@ export const PETS: IconCatalogueGroup = {
         FANTASY: 'a sleek black cat with a tiny silver crescent charm on its collar',
         AGE_OF_STEAM: 'a clockwork brass cat with a wind-up key in its side',
         MODERN: 'a ginger tabby cat sitting with its tail curled round its paws',
-        CYBERPUNK: 'a robo-cat with a matte-black alloy body, exposed chrome joints and glowing cyan eyes',
+        CYBERPUNK:
+          'a robo-cat with a matte-black alloy body, exposed brushed-steel joints and glowing cyan eyes',
         SPACE_OPERA: 'a white alien feline with long ears and soft glowing blue spots',
       },
     },
@@ -44,7 +45,7 @@ export const PETS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a clockwork brass bulldog with riveted plating and a tiny steam vent',
         MODERN: 'a tan-and-black shepherd dog in a black tactical harness',
         CYBERPUNK:
-          'a lean cyber-hound with a chrome spine, exposed hydraulic legs and a glowing red visor slit',
+          'a lean cyber-hound with a brushed-steel spine, exposed hydraulic legs and a glowing red visor slit',
         SPACE_OPERA: 'a white robotic hound with smooth ceramic panels and a blue light strip along its back',
       },
     },
@@ -55,7 +56,8 @@ export const PETS: IconCatalogueGroup = {
         FANTASY: 'a phoenix chick with flickering flame feathers',
         AGE_OF_STEAM: 'a clockwork brass owl with round glass lens eyes',
         MODERN: 'a scarlet macaw with long tail feathers',
-        CYBERPUNK: 'a cyber-raven with matte-black feathers, a chrome beak and one glowing red optic implant',
+        CYBERPUNK:
+          'a cyber-raven with matte-black feathers, a brushed-steel beak and one glowing red optic implant',
         SPACE_OPERA: 'a white alien songbird with translucent crest plumes glowing soft blue',
       },
     },
@@ -67,7 +69,7 @@ export const PETS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a clockwork brass crab with riveted pincers and a tiny chimney puffing steam',
         MODERN: 'a hermit crab peeking out of a spiral seashell',
         CYBERPUNK:
-          'a chrome spider-bot with eight jointed needle legs and a cluster of glowing red sensor eyes',
+          'a brushed-steel robot spider with eight jointed needle legs and a cluster of glowing red sensor eyes',
         SPACE_OPERA: 'a white six-legged scuttler bot with a domed shell and a blue scanning light',
       },
     },
@@ -79,7 +81,7 @@ export const PETS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a clockwork brass dragon with copper scales and steam curling from its snout',
         MODERN: 'a bearded dragon lizard with its spiny beard puffed out',
         CYBERPUNK:
-          'a small mechanical dragon of chrome scales with neon-violet wing membranes and glowing exhaust nostrils',
+          'a small mechanical dragon of brushed-steel scales with neon-violet wing membranes and glowing exhaust nostrils',
         SPACE_OPERA: 'a white crystalline star-dragon hatchling with glowing blue wing veins',
       },
     },
@@ -89,9 +91,9 @@ export const PETS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a small stone golem with glowing cracks running across its body',
         AGE_OF_STEAM: 'a brass automaton with a round boiler belly and a wind-up key in its back',
-        MODERN: 'a small white consumer robot on two wheels with a round display visor',
+        MODERN: 'a small white consumer robot on two wheels with a round blank display visor',
         CYBERPUNK:
-          'a stubby scrap-built security bot of welded chrome plates on caterpillar treads with a single glowing red optic',
+          'a stubby scrap-built security bot of welded brushed-steel plates on caterpillar treads with a single glowing red optic',
         SPACE_OPERA: 'a white astromech drone with a domed top and a blue holo-emitter',
       },
     },
@@ -103,7 +105,7 @@ export const PETS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a blob of glowing aether gel quivering inside a brass-caged bell jar',
         MODERN: 'a wobbling blob of glossy blue toy slime',
         CYBERPUNK:
-          'a quivering blob of chrome nanite gel with circuit-like ripples across its surface and a pair of glowing cyan eyes',
+          'a quivering blob of brushed-steel nanite gel with circuit-like ripples across its surface and a pair of glowing cyan eyes',
         SPACE_OPERA: 'a translucent violet plasma jelly with a softly glowing core',
       },
     },

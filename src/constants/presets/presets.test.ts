@@ -332,7 +332,7 @@ describe('the Unsung Saviour presets', () => {
     // shadows, so baked directional lighting would fight both.
     expect(characterRig.output.lightingModel).toBe('FLAT_NEUTRAL_ALBEDO');
     expect(promptFor(characterRig)).toContain(
-      lightingDescription(characterRig.output.renderStyle, 'FLAT_NEUTRAL_ALBEDO'),
+      lightingDescription(characterRig.output.renderStyle, 'FLAT_NEUTRAL_ALBEDO', characterRig.category),
     );
   });
 

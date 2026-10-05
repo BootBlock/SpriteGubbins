@@ -20,7 +20,7 @@ export const SERVICES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass auctioneer bell with a polished mahogany gavel beside it',
         MODERN: 'a dark wooden gavel striking its block',
         CYBERPUNK:
-          'a chrome gavel with a neon-cyan striking end hovering over a black bidding pad that flares amber',
+          'a brushed-steel gavel with a neon-cyan striking end hovering over a black bidding pad that flares amber',
         SPACE_OPERA: 'a white exchange pylon with gold light streaming between two floating cargo cubes',
       },
     },
@@ -31,8 +31,8 @@ export const SERVICES: IconCatalogueGroup = {
         FANTASY: 'a fat leather coin purse tied with a drawstring, gold coins spilling out of it',
         AGE_OF_STEAM: 'a brass cash register with a crank and an open coin drawer',
         MODERN: 'a brown paper shopping bag with twin cord grips',
-        CYBERPUNK: 'a chrome credit chip on a neon-yellow lanyard, its contact strip glowing gold',
-        SPACE_OPERA: 'a white trade pod with a stack of glowing gold credit wafers on top',
+        CYBERPUNK: 'a brushed-steel credit chip on a neon-yellow lanyard, its contact strip glowing gold',
+        SPACE_OPERA: 'a white trade kiosk with a stack of glowing gold credit wafers on top',
       },
     },
     {
@@ -42,7 +42,8 @@ export const SERVICES: IconCatalogueGroup = {
         FANTASY: 'an iron anvil with a smithing hammer resting on its horn',
         AGE_OF_STEAM: 'a brass adjustable spanner crossed with a riveting hammer',
         MODERN: 'a steel spanner crossed with a screwdriver',
-        CYBERPUNK: 'a chrome multitool spanner with a glowing orange weld tip throwing a spray of sparks',
+        CYBERPUNK:
+          'a brushed-steel multitool spanner with a glowing orange weld tip throwing a spray of sparks',
         SPACE_OPERA: 'a white repair drone with a blue welding beam reaching down from it',
       },
     },
@@ -55,7 +56,7 @@ export const SERVICES: IconCatalogueGroup = {
         MODERN: 'a grey steel safe with a spoked handle and a heavy hinge',
         CYBERPUNK:
           'a black armoured vault cube with a glowing cyan lock panel and a crimson seal running round its door',
-        SPACE_OPERA: 'a white vault pod held shut by a ring of blue energy clamps',
+        SPACE_OPERA: 'a white vault sphere held shut by a ring of blue energy clamps',
       },
     },
     {
@@ -66,8 +67,8 @@ export const SERVICES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a pair of brass balance scales on a mahogany base',
         MODERN: 'a pair of curved arrows chasing each other in a circle, one green and one blue',
         CYBERPUNK:
-          'a pair of chrome data shards swapping places along curved neon-cyan and amber arrows of light',
-        SPACE_OPERA: 'a pair of white cargo cubes passing each other along a pale-blue beam',
+          'a pair of brushed-steel data shards swapping places along curved neon-cyan and amber arrows of light',
+        SPACE_OPERA: 'a pair of white cargo cubes that pass each other along a pale-blue beam',
       },
     },
     {
@@ -78,8 +79,8 @@ export const SERVICES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass pneumatic tube canister with a work order rolled inside and a cog on its cap',
         MODERN: 'a clipboard with a blank work order and a spanner clipped to it',
         CYBERPUNK:
-          'a black fabricator cartridge with a glowing orange progress bar and a chrome gear on its end cap',
-        SPACE_OPERA: 'a white fabrication cube with a blue blueprint grid glowing on its top',
+          'a black fabricator cartridge with a glowing orange progress bar and a brushed-steel gear on its end cap',
+        SPACE_OPERA: 'a white fabricator printer with a blue blueprint grid glowing on its top',
       },
     },
     {
@@ -90,8 +91,9 @@ export const SERVICES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass pawnbroker hook holding a string-tied parcel',
         MODERN: 'a brown shopping bag with a curved return arrow over it',
         CYBERPUNK:
-          'a chrome credit chip circled by a glowing amber return arrow that loops back to its start',
-        SPACE_OPERA: 'a white cargo cube drawn back towards a pad by a curved blue tractor beam',
+          'a brushed-steel credit chip circled by a glowing amber return arrow that loops back to its start',
+        SPACE_OPERA:
+          'a white tractor-beam projector drawing a cargo cube back towards it along a curved blue beam',
       },
     },
     {
@@ -125,8 +127,8 @@ export const SERVICES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a wooden coat hanger holding a tailored waistcoat',
         MODERN: 'a wire coat hanger holding a folded shirt',
         CYBERPUNK:
-          'a chrome coat hanger holding a jacket whose panels shift between violet and cyan in a glitching shimmer',
-        SPACE_OPERA: 'a white garment pod projecting a rotating blue holographic tunic',
+          'a brushed-steel coat hanger holding a jacket whose panels shift between violet and cyan in a glitching shimmer',
+        SPACE_OPERA: 'a white fitting-room arch projecting a rotating blue holographic tunic',
       },
     },
   ],

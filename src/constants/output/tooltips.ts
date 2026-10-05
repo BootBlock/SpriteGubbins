@@ -1,10 +1,13 @@
+import { DRAWN_OVER_THE_GAME } from '../categoryEngineLighting.ts';
 import { NO_COMPONENT_BUDGET } from '../componentBudget.ts';
 import { NONE_LEAVES_SETTINGS_ALONE } from '../guidanceSentences.ts';
 import { PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
 import { shareRange } from '../promptText/renderStyle.ts';
 import { PALETTE_COLOR_COUNTS } from '../quantiser.ts';
-import type { RenderStyle } from '../../types/rendering.ts';
+import { capitalised } from '../../utils/capitalised.ts';
 import { spokenList } from '../../utils/spokenList.ts';
+import { coded } from './codedList.ts';
+import { verb } from './styleCountVerb.ts';
 import {
   NARROW_BUDGET_LIMITS,
   NARROW_BUDGET_STYLES,
@@ -12,16 +15,6 @@ import {
   ONE_LIGHT_STYLES,
   OWN_CONTOUR_STYLES,
 } from './narrowingStyles.ts';
-
-/** Identifiers in backticks, as a sentence lists them. */
-function coded(names: readonly string[]): string {
-  return spokenList(names.map((name) => `\`${name}\``));
-}
-
-/** `offers` or `offer`, for a list of styles. */
-function verb(styles: readonly RenderStyle[], singular: string, plural: string): string {
-  return styles.length === 1 ? singular : plural;
-}
 
 /**
  * Guidance shown against each control, keyed to the control it explains.
@@ -72,8 +65,9 @@ export const OUTPUT_TOOLTIPS = {
     '- `OUTLINE_LESS_ALBEDO` relies on value and hue contrast alone, which needs a busy scene to sit against.\n\n' +
     `${coded(OWN_CONTOUR_STYLES)} ${verb(OWN_CONTOUR_STYLES, 'draws its', 'draw their')} own contour line, so this sets its colour and \`OUTLINE_LESS_ALBEDO\` is not offered. Below about 32 px a pixel contour takes a serious share of the pixels, so a darker shade or none reads better. On a \`PURE_BLACK\` background a black outline is asked for as a very dark grey.`,
   lightingModel:
-    'The key light and shadow treatment baked into the sprite. `FLAT_NEUTRAL_ALBEDO` is what a game engine wants, because the engine lights the sprite itself and a baked highlight would fight its own.\n\n' +
-    'Choose a fixed key only when the scene lighting is fixed too, as it is in a locked isometric view. Its shadow follows the style: hard bands on a pixel sheet, soft graded shadow on a painted one.\n\n' +
+    'The key light and shadow treatment baked into the sprite. `FLAT_NEUTRAL_ALBEDO` suits a sprite the game engine lights, because a baked highlight would fight the engine’s own.\n\n' +
+    'For a sprite in the world, choose a fixed key only when the scene lighting is fixed too, as it is in a locked isometric view. Its shadow follows the style: hard bands on a pixel sheet, soft graded shadow on a painted one.\n\n' +
+    `${capitalised(spokenList(Object.values(DRAWN_OVER_THE_GAME)))} are drawn over the game, where no engine light reaches them, so for them a fixed key is a choice of look whatever the scene’s lighting: it bakes in the one light they will ever show.\n\n` +
     `${coded(ONE_LIGHT_STYLES)} ${verb(ONE_LIGHT_STYLES, 'shades', 'shade')} from a directional light, so ${verb(ONE_LIGHT_STYLES, 'it takes', 'they take')} \`${ONE_LIGHT}\` and this control is withdrawn.`,
   aspectRatio:
     'The shape of the sheet canvas, passed to the generator so it lays the component grid out inside the frame instead of cropping it.\n\n' +

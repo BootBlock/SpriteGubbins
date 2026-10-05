@@ -23,9 +23,9 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a giant barbed thorn flying point-first, dripping green venom',
         AGE_OF_STEAM:
           'a stoppered glass phial of green vitriol tumbling through the air, its cork popping free',
-        MODERN: 'a black pressurised sprayer wand squirting a single glob of green acid',
+        MODERN: 'a black pressurised squirt bottle shooting a single glob of green acid',
         CYBERPUNK:
-          'a chrome flechette dart with three swept fins, trailing a thin glowing green toxin vapour',
+          'a brushed-steel flechette dart with three swept fins, trailing a thin glowing green toxin vapour',
         SPACE_OPERA: 'a white bio-dart pistol firing a glowing green alien spore',
       },
     },
@@ -47,10 +47,10 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
       school: 'TOXIC',
       looks: {
         FANTASY: 'a twisted thorny vine dripping thick green venom',
-        AGE_OF_STEAM: 'a glass venom phial with a cracked neck oozing green droplets',
-        MODERN: 'a pitted steel plate with green acid dripping down it and eating holes through',
+        AGE_OF_STEAM: 'a squat glass venom jar with a cracked neck oozing green droplets',
+        MODERN: 'a pitted steel pipe with green acid dripping down it and eating holes through',
         CYBERPUNK:
-          'a leaking chrome chem canister with a split seam, a slow drip of glowing green toxin falling from it',
+          'a leaking brushed-steel chem canister with a split seam, a slow drip of glowing green toxin falling from it',
         SPACE_OPERA: 'a white hull plate pitted by a creeping green alien fungal bloom',
       },
     },
@@ -63,7 +63,7 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass alchemical sprayer nozzle pouring a steady stream of green vitriol',
         MODERN: 'a black chemical sprayer wand pouring a steady straight stream of green acid',
         CYBERPUNK:
-          'a chrome acid-spitter implant module with a flared nozzle, holding a steady jet of glowing green acid',
+          'a brushed-steel acid-spitter implant module with a flared nozzle, holding a steady jet of glowing green acid',
         SPACE_OPERA: 'a white bio-projector emitting a steady stream of glowing green spores',
       },
     },
@@ -76,7 +76,7 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a heavy brass alchemical mortar shell cracking open in a burst of green vitriol',
         MODERN: 'a black chemical grenade launcher firing one fat green-capped round',
         CYBERPUNK:
-          'a hulking chrome acid cannon with a bulbous glass tank of glowing green toxin, firing one heavy glob from its flared muzzle',
+          'a hulking brushed-steel acid cannon with a bulbous glass tank of glowing green toxin, firing one heavy glob from its flared muzzle',
         SPACE_OPERA: 'a white bio-lance with a glowing green plague core, thrust forward in one heavy strike',
       },
     },
@@ -85,12 +85,13 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
       role: 'Toxic vulnerability debuff',
       school: 'TOXIC',
       looks: {
-        FANTASY: 'a wooden shield eaten through by green rot, a thorny sigil marked at its centre',
+        FANTASY:
+          'a wooden shield eaten through by green rot, a glowing green thorny-bramble mark at its centre',
         AGE_OF_STEAM: 'a brass armour plate etched and bubbling where green vitriol has splashed it',
         MODERN: 'a steel plate corroding under green acid foam with a crosshair marker over it',
         CYBERPUNK:
-          'a chrome armour plate blistered by green chem corrosion, a glowing green bio-tag marker stuck to it',
-        SPACE_OPERA: 'a white hull plate infected by spreading green alien spore veins',
+          'a brushed-steel armour plate blistered by green chem corrosion, a glowing green bio-tag marker stuck to it',
+        SPACE_OPERA: 'a white deflector dome veined with spreading green alien spore growths',
       },
     },
     {
@@ -103,7 +104,7 @@ export const TOXIC_ATTACKS: IconCatalogueGroup = {
         MODERN: 'a black chemical warhead with a hazard collar bursting into a green toxic mushroom cloud',
         CYBERPUNK:
           'a cracked black bio-reactor tank venting a towering roiling column of acid-green chem smog',
-        SPACE_OPERA: 'a giant white bio-plague seed pod splitting open on a swirling green spore storm',
+        SPACE_OPERA: 'a giant white bio-plague spore tower erupting with a swirling green spore storm',
       },
     },
   ],

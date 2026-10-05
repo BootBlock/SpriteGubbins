@@ -23,7 +23,7 @@ const DIRECTIONAL = [
 describe('the light every component shares', () => {
   it('declares a key light exactly where section 2’s own words state one', () => {
     for (const lighting of LIGHTING_MODELS) {
-      const words = lightingDescription('PIXEL_ART', lighting);
+      const words = lightingDescription('PIXEL_ART', lighting, 'CHARACTER');
       expect(LIGHTING_HAS_KEY[lighting], words).toBe(words.includes('key light'));
     }
   });

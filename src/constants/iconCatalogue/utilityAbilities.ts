@@ -46,7 +46,7 @@ export const UTILITY_ABILITIES: IconCatalogueGroup = {
         MODERN:
           'a black pistol with its safety on and its slide closed, and firing with a white muzzle flash for the second state',
         CYBERPUNK:
-          'a chrome smart-gun slung low with its targeting link dark, and spitting a bright muzzle flash with its link lit for the second state',
+          'a brushed-steel smart-gun slung low with its targeting link dark, and spitting a bright muzzle flash with its link lit for the second state',
         SPACE_OPERA:
           'a white blaster rifle with its power cell dim, and blazing a grey-white bolt for the second state',
       },
@@ -58,13 +58,13 @@ export const UTILITY_ABILITIES: IconCatalogueGroup = {
       states: ['assault', 'guard'],
       looks: {
         FANTASY:
-          'a steel longsword angled point forward, and lowered behind a raised round shield for the second state',
+          'a steel spear with its point levelled forward, and grounded behind a raised round shield for the second state',
         AGE_OF_STEAM:
           'a cavalry sabre levelled for a charge, and planted point down before a riveted iron buckler for the second state',
         MODERN:
           'a black assault rifle levelled forward, and a black ballistic shield braced upright for the second state',
         CYBERPUNK:
-          'a chrome monoblade standing point forward with sparks along its edge, and sheathed behind a deployed hexagonal riot shield for the second state',
+          'a brushed-steel monoblade standing point forward with sparks along its edge, and sheathed behind a deployed hexagonal riot shield for the second state',
         SPACE_OPERA:
           'a white energy lance pointed forward, and a grey hexagonal barrier raised for the second state',
       },
@@ -78,7 +78,7 @@ export const UTILITY_ABILITIES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass direction-finding loop antenna pulsing rings of pink light',
         MODERN: 'a black thermal-imaging scope with a pink hotspot glowing on its lens',
         CYBERPUNK:
-          'a chrome cyber-optic implant with a hot-pink iris aperture emitting a sweeping wireframe sonar ping',
+          'a brushed-steel cyber-optic implant with a hot-pink iris aperture emitting a sweeping wireframe sonar ping',
         SPACE_OPERA: 'a white sensor drone casting a wide pink scanning cone',
       },
     },
@@ -88,9 +88,10 @@ export const UTILITY_ABILITIES: IconCatalogueGroup = {
       school: 'NEURAL',
       looks: {
         FANTASY: 'a silver mirror shard throwing three shimmering violet echoes of itself',
-        AGE_OF_STEAM: 'a brass phantasmagoria lantern throwing a flickering violet shadow from its lens',
+        AGE_OF_STEAM: 'a brass phantasmagoria projector throwing a flickering violet shadow from its lens',
         MODERN: 'a black chaff canister bursting a cloud of violet foil strips',
-        CYBERPUNK: 'a chrome hard-light decoy drone strobing a glitching violet holo-shell over itself',
+        CYBERPUNK:
+          'a brushed-steel hard-light decoy drone strobing a glitching violet holo-shell over itself',
         SPACE_OPERA: 'a white mirror-field pod scattering three violet phase-echo copies of itself',
       },
     },
@@ -99,11 +100,11 @@ export const UTILITY_ABILITIES: IconCatalogueGroup = {
       role: 'Hack a terminal',
       school: 'NETRUN',
       looks: {
-        FANTASY: 'a carved stone lock-box split open by a glowing pink key sigil',
+        FANTASY: 'a carved stone lock-box split open by a glowing pink arcane key',
         AGE_OF_STEAM: 'a brass difference engine with a pink spark leaping between its exposed cogs',
         MODERN: 'a black flash drive plugged into a grey terminal port glowing pink',
         CYBERPUNK:
-          'a coiled chrome jack cable spiked into a black terminal block, hot-pink intrusion sparks bursting from the port',
+          'a coiled brushed-steel jack cable spiked into a black terminal block, hot-pink intrusion sparks bursting from the port',
         SPACE_OPERA: 'a white console node with a pink holographic lock dissolving into pixels',
       },
     },

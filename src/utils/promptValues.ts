@@ -122,7 +122,7 @@ export function promptValues(
     SCALE_EXAMPLE_DESCRIPTION: plan.scaleExample,
 
     // Section 2's lines, which read one another's answers — see `styleSectionValues`.
-    ...styleSectionValues(output, facts),
+    ...styleSectionValues(category, output, facts),
 
     HARDWARE_NAME: facts.hardware?.name ?? '',
     HARDWARE_CONSTRAINTS: facts.hardware === null ? '' : describeHardware(facts.hardware),

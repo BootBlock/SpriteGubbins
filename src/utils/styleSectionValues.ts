@@ -12,6 +12,7 @@ import {
   VALIDATION_PASS_TEXT,
 } from '../constants/promptText/index.ts';
 import type { OutputConfig } from '../types/output.ts';
+import type { SubjectCategory } from '../types/subject.ts';
 import type { SheetFacts } from './promptFacts.ts';
 
 /**
@@ -26,7 +27,11 @@ import type { SheetFacts } from './promptFacts.ts';
  *
  * Every value is the app's own prose, so `promptValues` spreads this record into the half it cites over.
  */
-export function styleSectionValues(output: OutputConfig, facts: SheetFacts): Record<string, string> {
+export function styleSectionValues(
+  category: SubjectCategory,
+  output: OutputConfig,
+  facts: SheetFacts,
+): Record<string, string> {
   const {
     plan,
     palette,
@@ -108,7 +113,7 @@ export function styleSectionValues(output: OutputConfig, facts: SheetFacts): Rec
     // A function of the key as well as the style, because section 0 reserves the key colour and a
     // pure black contour on a pure black field would be the one line in section 2 asking for it.
     OUTLINE_DESCRIPTION: outline,
-    LIGHTING_DESCRIPTION: lightingDescription(output.renderStyle, styleSettings.lighting),
+    LIGHTING_DESCRIPTION: lightingDescription(output.renderStyle, styleSettings.lighting, category),
     // How a full-bleed square's backdrop takes the render style's surface, and where its outline runs.
     // Supplied for every sheet, as the outline is; `[IF:OWN_BACKDROP]` decides whether it is read.
     BACKDROP_DESCRIPTION: backdropDescription(output.renderStyle, styleSettings.outline),

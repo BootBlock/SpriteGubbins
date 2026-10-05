@@ -21,8 +21,8 @@ export const GATHERING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass electromagnet on a chain lifting a tangle of scrap iron',
         MODERN: 'a metal detector with its round coil hovering over a rusty tin',
         CYBERPUNK:
-          'a battered chrome scavenger’s grab-claw closing on a tangle of copper wire and salvaged chips',
-        SPACE_OPERA: 'a white scavenger drone carrying a glowing alien relic shard in its grab claw',
+          'a battered brushed-steel scavenger’s grab-claw closing on a tangle of copper wire and salvaged chips',
+        SPACE_OPERA: 'a white scavenger grab-claw gripping a glowing alien relic shard',
       },
     },
     {
@@ -33,9 +33,9 @@ export const GATHERING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a riveted iron minecart of coal on a short length of rail',
         MODERN: 'a yellow hard hat with a lamp, resting on a chunk of gold-flecked quartz',
         CYBERPUNK:
-          'a chrome core drill boring into black rock, a glowing violet crystal core sliding out of its bit',
+          'a brushed-steel core drill boring into black rock, a glowing violet crystal core sliding out of its bit',
         SPACE_OPERA:
-          'a white mining drone clamped to a small asteroid, its blue beam carving out a glowing ore chunk',
+          'a white mining laser clamped to a small asteroid, its blue beam carving out a glowing ore chunk',
       },
     },
     {
@@ -47,7 +47,7 @@ export const GATHERING_PROFESSIONS: IconCatalogueGroup = {
           'a brass aether condenser drawing a glowing wisp through a copper antenna into a glass bulb',
         MODERN: 'a black external hard drive cabled into a server blade with a row of blinking green lights',
         CYBERPUNK:
-          'a chrome data shard drawing a stream of glowing cyan data cubes out of a cracked node port',
+          'a brushed-steel data shard drawing a stream of glowing cyan data cubes out of a cracked node port',
         SPACE_OPERA: 'a white probe drone siphoning a ribbon of glowing data from a floating crystal relay',
       },
     },
@@ -59,7 +59,7 @@ export const GATHERING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass vasculum specimen tin lying open beside a pressed fern and a pair of snips',
         MODERN: 'a pair of red-handled secateurs beside a freshly cut sprig of rosemary',
         CYBERPUNK:
-          'a pair of chrome laser-pruning shears snipping a bioluminescent bud from a bubbling hydroponic grow-tube',
+          'a pair of brushed-steel laser-pruning shears snipping a bioluminescent bud from a bubbling hydroponic grow-tube',
         SPACE_OPERA: 'a white bio-sampler wand drawing a glowing alien seed pod into a stasis capsule',
       },
     },
@@ -72,7 +72,7 @@ export const GATHERING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a spanner prising the cogs from a broken brass clockwork engine into a tin bucket',
         MODERN: 'a socket wrench beside a dismantled car alternator and a tray of loose bolts',
         CYBERPUNK:
-          'a plasma cutter torch slicing a combat drone’s chrome casing in half, a glowing power cell exposed inside',
+          'a plasma cutter torch slicing a combat drone’s brushed-steel casing in half, a glowing power cell exposed inside',
         SPACE_OPERA: 'a white recycler cube breaking a wrecked fighter wing into streams of blue particles',
       },
     },
@@ -84,7 +84,7 @@ export const GATHERING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass-hinged tackle box lying open beside a hooked mackerel',
         MODERN: 'a landing net holding a striped bass',
         CYBERPUNK:
-          'a neon lure on a chrome line hooked into a bioluminescent three-eyed mutant fish dripping canal sludge',
+          'a neon lure on a brushed-steel line hooked into a bioluminescent three-eyed mutant fish dripping canal sludge',
         SPACE_OPERA: 'a white tractor-beam scoop lifting a translucent glowing alien fish',
       },
     },

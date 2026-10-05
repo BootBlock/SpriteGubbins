@@ -353,7 +353,7 @@ export const ICON: CategoryDefinition = {
         'Rough Iron & Charcoal Soot',
         'Carbon Fibre & Neon Tubing',
         'Scratched Chrome & Rubber Grip',
-        'Moulded Polymer & LED Strip',
+        'Moulded Polymer & Light Strip',
         'Pure Emissive Light, No Material',
       ],
     },

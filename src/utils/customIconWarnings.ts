@@ -7,8 +7,8 @@ import {
   HEX_COLOUR,
   KEY_COLOUR_WORDS,
   LETTERING_OBJECTS,
-  ROLLED,
-  SCROLL,
+  UNWRITTEN,
+  WRITING_SURFACE,
   wordNamed,
 } from '../constants/iconCatalogue/iconLookRules.ts';
 import type { CustomIconDraft } from '../types/customIconDraft.ts';
@@ -33,9 +33,10 @@ import { keyReaches } from './keyReach.ts';
  *   Quantise tab's own test (`keyReaches`), so `#FAFAFA` warns on a white key and `#F97316` does not.
  *   Pink on a netrun spell is spared, as in the catalogue, because the line pins the school's pink by
  *   hex clear of every key.
- * - **Lettering**: a word that asks for it, an object that carries it — a dial, a rune, a keypad, an
- *   unrolled scroll — or a capitalised acronym, which a model letters onto the object. A hex colour is
- *   not an acronym, so it is taken out of the text before the lettering is read.
+ * - **Lettering**: a word that asks for it, an object that carries it — a dial, a rune, a keypad — a
+ *   writing surface the text does not call blank, closed or rolled, or a capitalised acronym, which a
+ *   model letters onto the object. A hex colour is not an acronym, so it is taken out of the text before
+ *   the lettering is read.
  * - **A person or part of one** on an entry not declaring `figure`.
  *
  * The role, the look and the states are all read, since all three reach the inventory line.
@@ -83,5 +84,5 @@ function letteringIn(text: string): string | undefined {
   if (term !== undefined) return term;
   const found = LETTERING_OBJECTS.exec(text)?.[0] ?? ACRONYM.exec(text)?.[0];
   if (found !== undefined) return found;
-  return ROLLED.test(text) ? undefined : SCROLL.exec(text)?.[0];
+  return UNWRITTEN.test(text) ? undefined : WRITING_SURFACE.exec(text)?.[0];
 }

@@ -12,8 +12,9 @@ import {
   FIGURE_WORDS,
   KEY_COLOUR_WORDS,
   LETTERING_OBJECTS,
-  ROLLED,
-  SCROLL,
+  NEAR_WHITE_WORDS,
+  UNWRITTEN,
+  WRITING_SURFACE,
   wordNamed,
   wordWithin,
 } from './iconLookRules.ts';
@@ -22,6 +23,8 @@ import { BACKGROUND_KEY_COLORS } from '../backgroundKeyColors.ts';
 import { fromHex } from '../../utils/imageData.ts';
 import { iconPickId } from '../../utils/iconPickId.ts';
 import { keyReaches } from '../../utils/keyReach.ts';
+import { lookObject } from '../../test/lookObject.ts';
+import { ONE_OBJECT_GROUPS, sharedObjects } from '../../test/oneObjectSets.ts';
 
 /**
  * The catalogue's own contract: what every entry has to be for the sheets built from it to be right.
@@ -196,14 +199,15 @@ describe('the icon catalogue', () => {
     '%s names nothing that invites lettering onto the icon',
     (_id, entry) => {
       // Section 0 forbids text on the sheet, and a model fills a dial, a gauge or a keypad with
-      // numerals, a rune with a letterform, an open scroll with writing and a capitalised acronym with
-      // its own letters. `letteringTermIn` catches the words that ask for lettering; these are the
-      // objects that bring it with them.
+      // numerals, a rune or a sigil with a letterform, an open scroll or a map with writing and a
+      // capitalised acronym with its own letters. `letteringTermIn` catches the words that ask for
+      // lettering; these are the objects that bring it with them, and the surfaces that do unless the
+      // look calls them blank, closed or rolled (audit findings C2 and C3).
       for (const family of LOOK_FAMILIES) {
         const look = entry.looks[family];
         expect(look, `${entry.id} / ${family}`).not.toMatch(LETTERING_OBJECTS);
         expect(look, `${entry.id} / ${family}`).not.toMatch(ACRONYM);
-        if (SCROLL.test(look)) expect(look, `${entry.id} / ${family}`).toMatch(ROLLED);
+        if (WRITING_SURFACE.test(look)) expect(look, `${entry.id} / ${family}`).toMatch(UNWRITTEN);
       }
     },
   );
@@ -230,12 +234,67 @@ describe('the icon catalogue', () => {
     }
   });
 
-  it('names no white in a cyberpunk look, since the cyberpunk sets are cut out on a white key', () => {
-    // `PURE_WHITE` is the key the cyberpunk presets take (`iconSets.ts`), and the keying removes every
-    // pixel in its reach wherever it sits, so a white-hot core or white sparks would be holes.
+  it('names no near-white word in a cyberpunk look, since the cyberpunk sets are cut out on a white key', () => {
+    // `PURE_WHITE` is the key the full-bleed cyberpunk presets take (`iconSets.ts`), and the keying
+    // removes every pixel in its reach wherever it sits, so a white-hot core, white sparks or chrome's
+    // mirror highlights would be holes (audit finding C2, which decided the chrome O5 left open).
     for (const { entry } of ENTRIES) {
       expect(wordNamed(entry.looks.CYBERPUNK, KEY_COLOUR_WORDS.PURE_WHITE), entry.id).toBeUndefined();
     }
+  });
+
+  it('reads near white as the colours the white key takes, and spares a word that only starts alike', () => {
+    // Chrome's highlight, ivory, cream and frost lie inside the white key's reach outright; silver and
+    // pearl are close enough that their highlights do.
+    const white = BACKGROUND_KEY_COLORS.PURE_WHITE;
+    if (white === null) throw new Error('white names a colour');
+    for (const hex of ['#E5E7EB', '#FFFFF0', '#FFFDD0', '#E1F5FE']) {
+      expect(keyReaches(white, fromHex(hex) ?? white), hex).toBe(true);
+    }
+    expect(KEY_COLOUR_WORDS.PURE_WHITE).toBe(NEAR_WHITE_WORDS);
+    // The cyberpunk looks once named chrome on the white-keyed sets, which this reading catches.
+    expect(wordNamed('a pair of chrome defib paddles', NEAR_WHITE_WORDS)).toBe('chrome');
+    expect(wordNamed('frosted fins', NEAR_WHITE_WORDS)).toBe('frost');
+    expect(wordNamed('a whitish glow', NEAR_WHITE_WORDS)).toBe('white');
+    expect(wordNamed('a blackened blade', ['black'])).toBe('black');
+    expect(wordNamed('a painter’s palette', NEAR_WHITE_WORDS)).toBeUndefined();
+    expect(wordNamed('a paladin’s device', NEAR_WHITE_WORDS)).toBeUndefined();
+  });
+
+  it.each(
+    ICON_CATALOGUE_GROUPS.filter((group) => !ONE_OBJECT_GROUPS.has(group.id)).map(
+      (group) => [group.id, group] as const,
+    ),
+  )('%s draws no two of its entries as one object in any family', (_id, group) => {
+    // A player tells a shelf's icons apart by outline before hue, and a red–green colour-blind player
+    // or a grey tint mask by outline alone, so two entries drawn as one object in two colours are one
+    // icon to them (audit findings C1 and C2). Tier ladders and marked pairs are `ONE_OBJECT_SETS`.
+    for (const family of LOOK_FAMILIES) {
+      const shared = sharedObjects(group.entries.map(({ id, looks }) => ({ id, look: looks[family] })));
+      expect(shared, family).toEqual([]);
+    }
+  });
+
+  it('reads the object a look is drawn as', () => {
+    // The checks above hold only as far as this reading does, so it is shown on the grammar's cases.
+    expect(lookObject('a slim red stim-pack auto-injector, needle capped, with a glowing window')).toBe(
+      'injector',
+    );
+    expect(lookObject('a pair of crossed steel sabres with gold hilts')).toBe('sabre');
+    expect(lookObject('a short stack of copper coins with square holes')).toBe('coin');
+    expect(lookObject('a bursting green spore pod releasing a ring of pollen')).toBe('pod');
+    expect(lookObject('a rolled parchment scroll bound with a black ribbon')).toBe('scroll');
+    expect(lookObject('a small round-bellied flask of red potion')).toBe('flask');
+    expect(lookObject('a small wrapped parcel tied with string')).toBe('parcel');
+    expect(lookObject('a white paw print followed by a line of dots')).toBe('print');
+    expect(lookObject('a black folding hunting knife with a hooked blade')).toBe('knife');
+    expect(lookObject('a sliding blast door half open, a light bleeding from the gap')).toBe('door');
+    expect(lookObject('a green padlock sprung open')).toBe('padlock');
+    expect(lookObject('a carved wooden mask painted red with furrowed brows')).toBe('mask');
+    expect(lookObject('a small faceted blue energy crystal held in a cell')).toBe('crystal');
+    expect(lookObject('a white grav-anchor clamp pulling down with crushing gravity')).toBe('clamp');
+    expect(lookObject('a single bed with a white pillow')).toBe('bed');
+    expect(lookObject('a single outspread feathered wing in white and gold')).toBe('wing');
   });
 
   it('outgrows one roster, so the whole catalogue is swept as several', () => {
@@ -254,6 +313,35 @@ describe('the icon catalogue', () => {
       const size = roster.picks.reduce((total, pick) => total + componentsOf(iconPickId(pick)), 0);
       expect(size).toBeLessThanOrEqual(ICON_ROSTER_CAPACITY);
     }
+  });
+
+  it('shelves what a multiplayer cyberpunk game needs (M5)', () => {
+    // Pings and callouts, objectives and zones, killfeed and scoreboard marks, squad roles, cyberware
+    // slots, quickhacks, heat and standing, and faction archetypes, each writing all five looks.
+    const shelves = new Map(ICON_CATALOGUE_GROUPS.map((group) => [group.id, group.kind]));
+    expect(
+      Object.fromEntries(
+        [
+          'pings',
+          'objectives',
+          'killfeed',
+          'squad-roles',
+          'cyberware-slots',
+          'quickhacks',
+          'heat-and-standing',
+          'factions',
+        ].map((id) => [id, shelves.get(id)]),
+      ),
+    ).toEqual({
+      pings: 'SYSTEM',
+      objectives: 'SYSTEM',
+      killfeed: 'SYSTEM',
+      'squad-roles': 'SYSTEM',
+      'cyberware-slots': 'ITEM',
+      quickhacks: 'SPELL',
+      'heat-and-standing': 'SYSTEM',
+      factions: 'SOCIAL',
+    });
   });
 
   it('resolves an id to its entry, and a retired one to nothing', () => {

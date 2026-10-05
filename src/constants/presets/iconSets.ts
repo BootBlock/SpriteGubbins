@@ -322,7 +322,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
     id: 'cyberpunk-action-bar-consumables',
     name: 'Cyberpunk Action Bar — Consumables',
     description:
-      'Sixteen action-bar consumables for a cyberpunk MMORPG: stim-packs, neuro-boosts, detox pens and grenades, each a 128 px square painted edge to edge for the bar to frame and read mid-fight by one glowing accent.',
+      'Sixteen action-bar consumables for a cyberpunk MMORPG: stim-packs, neural jacks, detox inhalers and grenades, each its own shape on a 128 px square painted edge to edge for the bar to frame.',
     category: 'ICON',
     subject: {
       species: 'Action Bar',
@@ -338,7 +338,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       worn_details: 'Panel & Seam Lines',
       primary_colours: 'Gunmetal #2B2F36 & Brushed Steel #A8B0BA',
       accent_colours: 'Electric Cyan #00E5FF',
-      materials: 'Moulded Polymer & LED Strip',
+      materials: 'Moulded Polymer & Light Strip',
       exclusions: 'No gore, blood or open wound',
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
       icons: {
@@ -454,7 +454,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
     id: 'cyberpunk-emote-wheel',
     name: 'Cyberpunk Emote Wheel',
     description:
-      'Sixteen emotes for a cyberpunk MMORPG’s emote wheel, from a wave to a facepalm, each a chrome cyber-hand, an android face-plate or a neon avatar drawn alone for the wheel’s own slot to hold.',
+      'Sixteen emotes for a cyberpunk MMORPG’s emote wheel, from a wave to a facepalm, each a steel cyber-hand, an android face-plate or a neon avatar drawn alone for the wheel’s own slot to hold.',
     category: 'ICON',
     subject: {
       species: 'Ping & Emote Wheel',

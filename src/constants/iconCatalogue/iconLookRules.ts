@@ -18,13 +18,33 @@ export const FIGURE_WORDS =
   /\b(?:hands?|faces?|heads?|busts?|figures?|persons?|people|torsos?|fingers?|arms?)\b/i;
 
 /**
- * Objects that carry markings of their own: numbered faces, letterforms and open writing surfaces.
- * Section 0 forbids text on the sheet, and a model fills a dial, a gauge or a keypad with numerals and a
- * rune with a letterform. `letteringTermIn` catches the words that ask for lettering outright; these are
- * the objects that bring it with them.
+ * Objects that carry markings of their own: numbered faces and letterforms. Section 0 forbids text on
+ * the sheet, and a model fills a dial, a gauge or a keypad with numerals, a banknote with its value, a
+ * dog tag with a name, a compass rose with its four letters, and a rune, a sigil or a glyph with a
+ * letterform. `letteringTermIn` catches the words that ask for lettering outright; these are the objects
+ * that bring it with them, however the look describes them.
+ *
+ * **A sigil and a glyph are banned beside the rune** (audit finding C3). Other categories draw a rune
+ * or a sigil as carved ornament (`letteringMarks.ts`), but an icon is read at 16 to 32 px, where a
+ * carved ornament and a letter are one shape, and ICON alone forbids every letterform. A look that wants
+ * a mark names the picture it shows — a flame, a cracked ring — rather than a sigil of it.
  */
 export const LETTERING_OBJECTS =
-  /\b(?:runes?|runic|dials?|gauges?|gauged|keypads?|inscrib\w*|stopwatch(?:es)?|clock ?faces?)\b/i;
+  /\b(?:runes?|runic|sigils?|glyphs?|dials?|gauges?|gauged|keypads?|inscrib\w*|stopwatch(?:es)?|clock ?faces?|banknotes?|dog ?tags?|compass ?roses?)\b/i;
+
+/**
+ * Surfaces made to be written on — a scroll, a map, a page, a calendar, a screen — which a model fills
+ * with writing unless it is told the surface is empty. Unlike {@link LETTERING_OBJECTS} they are safe
+ * where the same text calls them {@link UNWRITTEN}: a rolled scroll, a blank page, a plain calendar grid.
+ *
+ * A word that only shares the spelling is spared: a map pin, a star-chart crystal, a display case, a
+ * peace sign and a life-sign are not surfaces anything is written on.
+ */
+export const WRITING_SURFACE =
+  /\b(?:scrolls?|(?<!star-)charts?|maps?(?! pins?\b)|pages?|ledgers?|almanacs?|calendars?|clipboards?|tickets?|labels?|(?<!-|peace )signs?|monitors?|screens?|displays?(?! (?:cases?|pods?)\b))\b/i;
+
+/** What makes a writing surface safe: rolled shut, closed, or stated to carry nothing. */
+export const UNWRITTEN = /\b(?:rolled|closed|blank|plain|unmarked|wordless)\b/i;
 
 /**
  * A capitalised acronym — “EMP”, “LEDs” — which a model may letter onto the object it names. Read from a
@@ -38,31 +58,57 @@ export const ACRONYM = /\b[A-Z]{2,}s?\b/;
  */
 export const HEX_COLOUR = /#(?:[0-9a-f]{6}|[0-9a-f]{3})(?![\p{L}\p{N}])/giu;
 
-/** A scroll, which a model writes on unless it is rolled. */
-export const SCROLL = /\bscrolls?\b/i;
-
-/** What makes a scroll safe: rolled shut, its writing out of sight. */
-export const ROLLED = /\brolled\b/i;
+/**
+ * The words that name white, or a colour or finish a model paints at or next to it: chrome and silver
+ * throw mirror highlights, and ivory, cream and frost lie inside the white key's reach outright
+ * (`iconCatalogue.test.ts` measures them). A word cannot be measured against a key, so a text on the
+ * white key names none of them (audit findings O2 and C2), and a colour it needs that light names its hex.
+ */
+export const NEAR_WHITE_WORDS: readonly string[] = [
+  'white',
+  'chrome',
+  'silver',
+  'pearl',
+  'ivory',
+  'snow',
+  'cream',
+  'bone',
+  'bleached',
+  'frost',
+  'pale',
+  'ice',
+];
 
 /**
- * The words a look could name each key's colour in, matched from the start of a word so `blackened` and
- * `pinkish` count, or none for a key that has no colour.
+ * The words a look could name each key's colour in, or none for a key that has no colour, read by
+ * {@link wordNamed}.
  *
  * Section 0 forbids drawing anything in or near the key colour, and the Quantise tab keys out every pixel
  * in its reach wherever it sits, so a look naming the key's colour — white sparks on a white key — asks
  * for a hole. Pink is magenta's because neon pink as a model reads it, `#FF10F0` or `#FF6EC7`, lies inside
- * the magenta key's reach, measured in `iconCatalogue.test.ts`.
+ * the magenta key's reach, measured in `iconCatalogue.test.ts`. White's are {@link NEAR_WHITE_WORDS},
+ * because chrome on a white key is a hole wherever its highlights fall.
  */
 export const KEY_COLOUR_WORDS: Readonly<Record<BackgroundKey, readonly string[]>> = {
   MAGENTA_FF00FF: ['magenta', 'fuchsia', 'pink'],
-  PURE_WHITE: ['white'],
+  PURE_WHITE: NEAR_WHITE_WORDS,
   PURE_BLACK: ['black'],
   TRANSPARENT: [],
 };
 
-/** The first of `words` that `text` names from the start of a word, in any case, or `undefined`. */
+/**
+ * The endings a colour word keeps its meaning under — `blackened`, `pinkish`, `whitish`, `silvered`,
+ * `pearlescent` — so {@link wordNamed} counts them and spares a word that only starts with the colour's
+ * letters: `palette` and `paleo` are not `pale`, nor `iceberg` a colour.
+ */
+const COLOUR_ENDINGS = String.raw`(?:s|es|ed|d|n|ned|ened|ish|y|er|est|ness|escent)?`;
+
+/** The first of `words` that `text` names as a word or one of its colour endings, in any case, or `undefined`. */
 export function wordNamed(text: string, words: readonly string[]): string | undefined {
-  return words.find((word) => new RegExp(String.raw`\b${word}`, 'i').test(text));
+  return words.find((word) => {
+    const stem = word.endsWith('e') ? `${word.slice(0, -1)}e?` : word;
+    return new RegExp(String.raw`\b${stem}${COLOUR_ENDINGS}\b`, 'i').test(text);
+  });
 }
 
 /**

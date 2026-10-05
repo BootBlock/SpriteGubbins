@@ -24,7 +24,7 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a burnished brass reflector lamp firing a single golden radium-glow bolt',
         MODERN: 'a black flare pistol firing a blazing yellow-white magnesium flare',
         CYBERPUNK: 'a needle-thin gold arrowhead of densely packed glinting nanites streaking forward',
-        SPACE_OPERA: 'a white emitter firing a needle-thin golden starlight bolt',
+        SPACE_OPERA: 'a white starlight pistol firing a needle-thin golden bolt',
       },
     },
     {
@@ -33,11 +33,11 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
       school: 'NANITE',
       looks: {
         FANTASY: 'a ring of golden holy light bursting outward from a radiant sunburst',
-        AGE_OF_STEAM: 'a brass flash-powder lamp bursting in a golden ring of light',
+        AGE_OF_STEAM: 'a brass flash-powder tray bursting in a golden ring of light',
         MODERN: 'a white magnesium flash charge bursting in a round blinding yellow ring',
         CYBERPUNK:
-          'a swarm of gold micro-drones bursting outward in a ring from a cracked chrome hive canister',
-        SPACE_OPERA: 'a white solar-flare emitter releasing a round golden stellar nova',
+          'a swarm of gold micro-drones bursting outward in a ring from a cracked brushed-steel hive canister',
+        SPACE_OPERA: 'a white solar-flare beacon releasing a round golden stellar nova',
       },
     },
     {
@@ -48,7 +48,8 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a silver chalice spilling slow drops of golden holy fire',
         AGE_OF_STEAM: 'a glass vial of glowing golden radium paint, a drop beading at its brass spout',
         MODERN: 'a black curing lamp searing a steel plate with a steady yellow glow',
-        CYBERPUNK: 'a chrome bolt slowly dissolving from its tip down under a spiral of eating gold nanobots',
+        CYBERPUNK:
+          'a brushed-steel bolt slowly dissolving from its tip down under a spiral of eating gold nanobots',
         SPACE_OPERA: 'a white hull plate blistering under a lingering golden starlight scorch',
       },
     },
@@ -60,7 +61,7 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a golden beam of holy light pouring down from a radiant halo',
         AGE_OF_STEAM: 'a burnished brass searchlight casting a straight golden beam',
         MODERN: 'a black laser designator holding a straight yellow laser beam',
-        CYBERPUNK: 'a chrome nano-emitter wand streaming a steady line of gold nanobots',
+        CYBERPUNK: 'a brushed-steel nano-emitter wand streaming a steady line of gold nanobots',
         SPACE_OPERA: 'a white starlight lance emitter firing a straight golden beam',
       },
     },
@@ -73,7 +74,7 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a heavy brass-bound radium maul with a glowing golden striking block',
         MODERN: 'a heavy black laser-guided bomb with a yellow designator dot on its nose',
         CYBERPUNK:
-          'a heavy chrome nano-forge ram with a wedge-shaped striking block glowing gold, slamming down in a burst of gold particles',
+          'a heavy brushed-steel nano-forge ram with a wedge-shaped striking block glowing gold, slamming down in a burst of gold particles',
         SPACE_OPERA: 'a white solar hammer with a captured golden star core, swung down',
       },
     },
@@ -82,12 +83,12 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
       role: 'Nanite vulnerability debuff',
       school: 'NANITE',
       looks: {
-        FANTASY: 'a cracked steel shield with a golden judgement sigil glowing at its centre',
+        FANTASY: 'a cracked steel shield with a golden balance-scales mark glowing at its centre',
         AGE_OF_STEAM: 'a brass reflector disc focusing a golden glare spot onto a scorched plate',
         MODERN: 'a steel plate with a yellow laser-designator dot inside a crosshair',
         CYBERPUNK:
-          'a chrome armour plate with a gold nanobot tracer tag clinging to it, tiny gold specks swarming its seams',
-        SPACE_OPERA: 'a white hull plate lit by a golden starlight targeting halo',
+          'a brushed-steel armour plate with a gold nanobot tracer tag clinging to it, tiny gold specks swarming its seams',
+        SPACE_OPERA: 'a white deflector dome lit by a golden starlight targeting halo',
       },
     },
     {
@@ -97,9 +98,9 @@ export const NANITE_ATTACKS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a colossal golden divine hammer descending through a ring of radiant light',
         AGE_OF_STEAM: 'a towering brass reflector array focusing a vast golden radium beam',
-        MODERN: 'a cluster of white magnesium flare bombs blazing with a vast blinding yellow light',
+        MODERN: 'a white magnesium starshell bursting into a vast canopy of blinding yellow light',
         CYBERPUNK:
-          'a colossal gold nanite orb hanging above a chrome containment ring, gold tendrils whipping out from its surface',
+          'a colossal gold nanite orb hanging above a brushed-steel containment ring, gold tendrils whipping out from its surface',
         SPACE_OPERA: 'a captured golden sun core blazing inside a white containment ring',
       },
     },

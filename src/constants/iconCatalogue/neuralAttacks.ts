@@ -24,7 +24,7 @@ export const NEURAL_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass mesmerist’s pendulum loosing a single violet spiral pulse',
         MODERN: 'a jagged violet psychic spike piercing a grey brainwave trace',
         CYBERPUNK:
-          'a chrome neural spike chip jamming into a sparking neural-link jack in a burst of violet feedback',
+          'a brushed-steel neural spike chip jamming into a sparking neural-link jack in a burst of violet feedback',
         SPACE_OPERA: 'a narrow white psionic dart of violet light',
       },
     },
@@ -36,7 +36,7 @@ export const NEURAL_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a ring of dark violet shadow bursting outward from a black void orb',
         AGE_OF_STEAM: 'a brass séance bell ringing out a ring of violet ectoplasm',
         MODERN: 'a black speaker cone emitting a round violet psychic shockwave',
-        CYBERPUNK: 'a chrome neuro-pulse grenade bursting in a round violet feedback ring',
+        CYBERPUNK: 'a brushed-steel neuro-pulse grenade bursting in a round violet feedback ring',
         SPACE_OPERA: 'a white psionic amplifier sphere releasing a round violet telepathic shockwave',
       },
     },
@@ -48,7 +48,8 @@ export const NEURAL_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a cracked black curse amulet dripping violet shadow',
         AGE_OF_STEAM: 'a brass-mounted spirit-photography plate oozing violet ectoplasm from its glass',
         MODERN: 'a grey brainwave trace blotted by a spreading violet migraine stain',
-        CYBERPUNK: 'a cracked chrome wetware chip smoking and spitting violet sparks of slow synapse burn',
+        CYBERPUNK:
+          'a cracked brushed-steel wetware implant that smokes and spits violet sparks of slow synapse burn',
         SPACE_OPERA: 'a white neural-dampener crystal clouding with slowly spreading violet psionic fog',
       },
     },
@@ -61,7 +62,7 @@ export const NEURAL_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass séance trumpet pouring a steady stream of violet ectoplasm',
         MODERN: 'a black transmitter dish holding a steady violet psychic wave',
         CYBERPUNK:
-          'a coiled chrome mind-hack cable plugged into a wetware port, a steady violet pulse racing along it',
+          'a coiled brushed-steel mind-hack cable plugged into a wetware port, a steady violet pulse racing along it',
         SPACE_OPERA: 'a white psionic lance emitter firing a straight violet psionic beam',
       },
     },
@@ -73,7 +74,7 @@ export const NEURAL_ATTACKS: IconCatalogueGroup = {
         FANTASY: 'a huge black scythe sweeping down in an arc of violet shadow',
         AGE_OF_STEAM: 'a brass-bound mesmeric orb slammed down and splitting in a violet spiral flash',
         MODERN: 'a black hypnotist’s pendulum crystal shattering in a single violet psychic flash',
-        CYBERPUNK: 'a chrome synapse-burn spike gun firing a single overloaded violet neural round',
+        CYBERPUNK: 'a brushed-steel synapse-burn spike gun firing a single overloaded violet neural round',
         SPACE_OPERA: 'a white psionic crusher ring clamping shut round a crushed violet orb',
       },
     },
@@ -82,11 +83,11 @@ export const NEURAL_ATTACKS: IconCatalogueGroup = {
       role: 'Neural vulnerability debuff',
       school: 'NEURAL',
       looks: {
-        FANTASY: 'a dark violet curse sigil glowing on a black stone slab',
+        FANTASY: 'a dark violet staring-eye curse mark glowing on a black stone slab',
         AGE_OF_STEAM: 'a brass hypnosis disc spinning a violet spiral on its polished front',
         MODERN: 'a grey sensor-pad headset with a pulsing violet target ring over its sensor',
         CYBERPUNK: 'a black braindance headset rig with a blinking violet tracking bug clamped to its band',
-        SPACE_OPERA: 'a white mind-shield halo cracking under a glowing violet psionic sigil',
+        SPACE_OPERA: 'a white mind-shield halo cracking under a glowing violet psionic eye mark',
       },
     },
     {
@@ -96,9 +97,9 @@ export const NEURAL_ATTACKS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a swirling violet void rift with dark tendrils reaching out of it',
         AGE_OF_STEAM: 'a towering brass mesmerism engine spinning a vast violet hypnotic spiral',
-        MODERN: 'a black satellite dish blasting a vast storm of crackling violet psychic waves',
+        MODERN: 'a black radio broadcast tower blasting a vast storm of crackling violet psychic waves',
         CYBERPUNK:
-          'a towering black chrome-ribbed broadcast mast unleashing a roaring violet neural overload storm',
+          'a towering black steel-ribbed broadcast mast unleashing a roaring violet neural overload storm',
         SPACE_OPERA: 'a white psionic monolith radiating a vast violet telepathic shockwave',
       },
     },

@@ -31,7 +31,7 @@ export const LOOT_ROLLS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a fat brass sovereign coin with a milled rim and a crowned star on it',
         MODERN: 'a pair of stacked gold coins catching the light',
         CYBERPUNK:
-          'a hexagonal chrome crypto-token with a glowing gold core and circuit traces round its rim',
+          'a hexagonal brushed-steel crypto-token with a glowing gold core and circuit traces round its rim',
         SPACE_OPERA: 'a gold credit wafer with a soft white light shining through its centre',
       },
     },
@@ -42,7 +42,7 @@ export const LOOT_ROLLS: IconCatalogueGroup = {
         FANTASY: 'a red cross of two crossed wooden staves bound with cord',
         AGE_OF_STEAM: 'a cross of two riveted iron bars painted signal red',
         MODERN: 'a bold red cross with rounded ends',
-        CYBERPUNK: 'a neon-red cross of two glowing tubes with a faint flicker and a dark chrome backplate',
+        CYBERPUNK: 'a neon-red cross of two glowing tubes with a faint flicker and a gunmetal backplate',
         SPACE_OPERA: 'a red cross of light hovering over a white disc',
       },
     },
@@ -53,7 +53,8 @@ export const LOOT_ROLLS: IconCatalogueGroup = {
         FANTASY: 'a cracked violet crystal crumbling into a puff of glittering arcane dust',
         AGE_OF_STEAM: 'a brass clockwork movement splitting apart into springs and tiny cogs',
         MODERN: 'a circuit board snapped in two with screws scattering from the break',
-        CYBERPUNK: 'a chrome cyberware module bursting apart into glowing cyan microchips and sparking wire',
+        CYBERPUNK:
+          'a brushed-steel cyberware module bursting apart into glowing cyan microchips and sparking wire',
         SPACE_OPERA: 'a white tech module dissolving into a swirl of blue glowing particles',
       },
     },

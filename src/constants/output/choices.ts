@@ -108,7 +108,7 @@ export const OUTLINE_STYLE_CHOICES: readonly OutputChoice<OutlineStyle>[] = [
 ];
 
 export const LIGHTING_MODEL_CHOICES: readonly OutputChoice<LightingModel>[] = [
-  { value: 'FLAT_NEUTRAL_ALBEDO', label: 'FLAT_NEUTRAL_ALBEDO (engine-lit — standard)' },
+  { value: 'FLAT_NEUTRAL_ALBEDO', label: 'FLAT_NEUTRAL_ALBEDO (even light, no key light)' },
   { value: 'ISOMETRIC_TOP_LEFT', label: 'ISOMETRIC_TOP_LEFT (fixed 45° top-left key light)' },
   { value: 'UNLIT_EMISSIVE_BAKED', label: 'UNLIT_EMISSIVE_BAKED (flat unlit diffuse)' },
 ];

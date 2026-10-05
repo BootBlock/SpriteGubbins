@@ -97,7 +97,7 @@ export const CRAFTING_MATERIALS: IconCatalogueGroup = {
         FANTASY: 'a small heap of shimmering violet arcane dust with sparkling motes above it',
         AGE_OF_STEAM: 'a stoppered glass ampoule of swirling luminous aether vapour',
         MODERN: 'a small zip bag of fine glittering silver powder',
-        CYBERPUNK: 'a clear chrome-capped capsule of shimmering violet nano-dust',
+        CYBERPUNK: 'a clear steel-capped capsule of shimmering violet nano-dust',
         SPACE_OPERA: 'a small glass sphere of swirling blue and gold stardust',
       },
     },

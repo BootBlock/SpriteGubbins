@@ -1,6 +1,6 @@
 # Icon / Symbol Set — audit and fix plan
 
-> **Status:** 🟢 ACTIVE — phases 1 (the compiled prompt), 2 (the options) and 3 (target models and the shape of a series) landed; phases 4–5 open.
+> **Status:** 🟢 ACTIVE — phases 1 (the compiled prompt), 2 (the options), 3 (target models and the shape of a series) and 4 (the catalogue) landed; phase 5 open.
 
 ## 1. Why
 
@@ -255,3 +255,46 @@ a test, and "plausible" otherwise.
   roster’s every line and sheet each time. It now builds a roster’s series once for each *World & Era*
   and shares it, and `lookFamilyOfWorld` reads a map. The sweep takes about 3 seconds against 7.5 to
   10 on `main`.
+- **C1–C4 and M5** landed in phase 4, in “Give every icon its own outline, keep chrome off the white
+  key, and shelve what a multiplayer cyberpunk game needs”.
+  - **C1**: the cyberpunk action bar’s nine injector pens are now an injector ladder for health and, for
+    the rest, a jack plug, a cartridge, a can, an inhaler, a nasal spray, a med-kit case, a servo
+    gauntlet, a nerve coil and an ankle brace. The fantasy, age-of-steam and space-opera restoratives
+    and boosts had the same fault, vials and capsules told apart by hue, and were redrawn the same way.
+    `lookObject` (in `src/test/`) reads the object a look is drawn as, and two tests hold it: no two
+    entries of a shelf share an object in any family, and no preset draws two of its icons as one
+    object across shelves. `ONE_OBJECT_SETS` names the shared objects that differ by a drawn mark — the
+    tier ladders, the quest giver’s star against its tick, the vendor against the buyback — and chat,
+    emotes and pet commands are one carrier marked differently by convention. The spellbook preset had
+    the same fault, three strikes drawn as one bullet, and its thermal and cryo strikes now differ.
+  - **C2**: every group’s five looks were swept, and about a hundred shared objects were redrawn across
+    the shelves. **The chrome O5 left open is decided against**: chrome’s mirror highlights reach the
+    white key, as ivory, cream and frost do outright, so no cyberpunk look names a near-white word, and
+    the two hundred that named chrome name brushed steel, black steel or gunmetal. `NEAR_WHITE_WORDS` is
+    the white key’s words for the catalogue, the presets’ key test and the warnings on a reader’s own
+    icons, and `wordNamed` now counts a colour’s endings (`whitish`, `frosted`) and spares a word that
+    only starts alike (`palette`, `paladin`). A writing surface — a map, a chart, a monitor —
+    must be called blank, plain, closed or rolled (`WRITING_SURFACE`, which replaces the scroll rule),
+    and a banknote, a dog tag and a compass rose join the objects that bring markings with them. The
+    figure audit found no undeclared person: the body words in non-figure looks belong to animals and
+    machines, and `palm-sized` and `thumb-drive` are idioms.
+  - **C3**: `LETTERING_OBJECTS` bans a sigil and a glyph beside the rune. Other categories draw them as
+    carved ornament (`letteringMarks.ts`), but an icon is read at 16 to 32 px, where an ornament and a
+    letter are one shape. Every look that named a sigil now names the picture it showed. The
+    options of every field that describes the drawing are held to the catalogue’s rules too, which
+    renamed `Moulded Polymer & LED Strip` to `Moulded Polymer & Light Strip`, since a model letters an
+    acronym onto the object. *Where The Set Is Shown* is exempt: it names a screen, never a drawing.
+  - **C4**: flat neutral lighting states its reason by category. An icon set, an interface kit and a
+    font are drawn over the game, where no engine light reaches them (`DRAWN_OVER_THE_GAME`), so their
+    prompts say the artwork looks the same wherever the interface places it, and the *Lighting Model*
+    card and its `FLAT_NEUTRAL_ALBEDO` label no longer call it the engine-lit standard. **ICON’s default
+    lighting is not changed**: the studio has no per-category default for any output control, every
+    claim a category makes is a refusal of a value it cannot honour, and flat lighting is an honest
+    look for an icon that two shipped presets take. The five presets that want a baked key light set one.
+  - **M5**: eight shelves, each writing all five looks — *Pings and callouts*, *Objectives and zones*,
+    *Killfeed and scoreboard*, *Squad roles*, and *Heat and standing* among the system icons beside the
+    map pins and the combat status, *Cyberware slots* beside the equipment slots, *Quickhacks* as
+    spells, each in the school of its effect, and *Faction archetypes* as social emblems. A capture point
+    is drawn whole and broken, and the four standings are a spiked triangle, a ring, a shield and a star,
+    so neither reads by colour alone. The shipped presets are unchanged; a squad HUD set can now tick
+    pings and objectives rather than map pins.

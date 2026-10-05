@@ -21,7 +21,7 @@ export const MOUNTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass steam velocipede with a tall smokestack and spoked iron wheels',
         MODERN: 'a red sport motorcycle with a low fairing and twin chrome exhausts',
         CYBERPUNK:
-          'a low chrome hover-bike with twin thruster pods, a cracked windscreen and a neon-violet underglow',
+          'a low brushed-steel hover-bike with twin thruster pods, a cracked windscreen and a neon-violet underglow',
         SPACE_OPERA: 'a sleek white speeder bike with swept fins and twin glowing blue drive nozzles',
       },
     },
@@ -57,7 +57,7 @@ export const MOUNTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass ornithopter with ribbed canvas wings and a small steam boiler',
         MODERN: 'a yellow open-cockpit gyrocopter with a long overhead rotor',
         CYBERPUNK:
-          'a tilt-rotor aerodyne with a black chrome hull, two ducted fans angled upward and neon-cyan running lights',
+          'a tilt-rotor aerodyne with a black steel hull, two ducted fans angled upward and neon-cyan running lights',
         SPACE_OPERA: 'a sleek white starfighter with swept wings and twin glowing blue engines',
       },
     },
@@ -69,7 +69,7 @@ export const MOUNTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a riveted brass submersible with round portholes and a spinning propeller',
         MODERN: 'a red jet ski kicking up a burst of white spray',
         CYBERPUNK:
-          'a black jet ski on chrome hydrofoil struts with neon-cyan hull strips and a glowing turbine intake',
+          'a black jet ski on brushed-steel hydrofoil struts with neon-cyan hull strips and a glowing turbine intake',
         SPACE_OPERA: 'a white teardrop hydro-skimmer pod trailing a glowing blue wake',
       },
     },
@@ -81,7 +81,7 @@ export const MOUNTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass-hulled sky skiff hung beneath a small canvas gasbag with a rear propeller',
         MODERN: 'a grey hovercraft with an inflated black skirt and a caged rear fan',
         CYBERPUNK:
-          'an open grav-skiff of scuffed chrome deck plating with a low rail and amber grav emitters glowing underneath',
+          'an open grav-skiff of scuffed steel deck plating with a low rail and amber grav emitters glowing underneath',
         SPACE_OPERA:
           'a white antigravity platform with a curved rail and a ring of soft blue repulsor lights',
       },
@@ -94,7 +94,7 @@ export const MOUNTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a clockwork brass lion with exposed gears and a riveted copper mane',
         MODERN: 'a mud-splattered all-terrain quad bike with knobbly tyres',
         CYBERPUNK:
-          'a sleek robotic panther of matte-black armour plates with exposed chrome joints and glowing red eyes',
+          'a sleek robotic panther of matte-black armour plates with exposed brushed-steel joints and glowing red eyes',
         SPACE_OPERA: 'a white six-legged alien beast with a smooth plated hide and glowing blue seams',
       },
     },
@@ -106,7 +106,7 @@ export const MOUNTS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass steam carriage with a tandem leather bench and a tall funnel',
         MODERN: 'a white two-seat golf buggy with a canvas canopy',
         CYBERPUNK:
-          'a matte-black sidecar motorbike with neon-cyan wheel rims and a chrome bullet-shaped sidecar',
+          'a matte-black sidecar motorbike with neon-cyan wheel rims and a brushed-steel bullet-shaped sidecar',
         SPACE_OPERA: 'a white two-seat hover car with a bubble canopy and a glowing blue drive ring',
       },
     },

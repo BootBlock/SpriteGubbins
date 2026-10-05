@@ -32,7 +32,7 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a red heraldic banner with a gold tower, hung from a crossbar',
         AGE_OF_STEAM: 'an enamelled brass guild badge in the shape of a cog wreathed in laurel',
-        MODERN: 'a blue pennant flag with a white star on a short pole',
+        MODERN: 'a blue shield-shaped crest badge with a white star at its centre',
         CYBERPUNK:
           'a black crew patch shaped like a shield, its jagged emblem stitched in glowing neon-green thread',
         SPACE_OPERA: 'a white fleet insignia shaped like a winged star with a blue light at its heart',
@@ -59,7 +59,7 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a crowd of five head-and-shoulders silhouettes beneath a red war banner',
         AGE_OF_STEAM: 'a row of five umber head-and-shoulders silhouettes beneath a brass bugle',
-        MODERN: 'a tight cluster of five grey head-and-shoulders silhouettes, the centre one red',
+        MODERN: 'a red bullhorn above a tight cluster of five grey head-and-shoulders silhouettes',
         CYBERPUNK:
           'a rank of five head-and-shoulders silhouettes in glowing violet wireframe, ranked beneath a hot red strike chevron',
         SPACE_OPERA: 'a wedge formation of five pale-blue holographic head-and-shoulders silhouettes',
@@ -83,11 +83,12 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
       figure: true,
       looks: {
         FANTASY: 'a lit candle beside a head-and-shoulders silhouette on a parchment roll',
-        AGE_OF_STEAM: 'a brass opera glass trained on an umber head-and-shoulders silhouette',
-        MODERN: 'a magnifying glass over a single grey head-and-shoulders silhouette',
+        AGE_OF_STEAM: 'a brass spyglass trained on an umber head-and-shoulders silhouette',
+        MODERN: 'a pair of grey binoculars trained on a single grey head-and-shoulders silhouette',
         CYBERPUNK:
-          'a head-and-shoulders silhouette in a glowing cyan wireframe, crossed by a bright scan line from a chrome scanner bar',
-        SPACE_OPERA: 'a pale-blue holographic head-and-shoulders silhouette inside a white scanning arc',
+          'a brushed-steel scanner bar sweeping a bright scan line across a glowing cyan wireframe head-and-shoulders silhouette',
+        SPACE_OPERA:
+          'a white scanning arc curved around a pale-blue holographic head-and-shoulders silhouette',
       },
     },
     {
@@ -96,8 +97,8 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a closed iron portcullis with a red ribbon across it',
         AGE_OF_STEAM: 'a brass door chain drawn across a shut iron grille',
-        MODERN: 'a grey speech bubble crossed through by a red diagonal bar',
-        CYBERPUNK: 'a black speech bubble with a glowing red firewall grid across it and a dead grey diode',
+        MODERN: 'a pair of grey foam earplugs crossed through by a red diagonal bar',
+        CYBERPUNK: 'a black firewall gate of glowing red grid bars, a dead grey diode on its post',
         SPACE_OPERA: 'a white comm bubble behind a flickering red energy barrier',
       },
     },
@@ -108,7 +109,8 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
         FANTASY: 'a red pennant on a short wooden spear driven into the ground',
         AGE_OF_STEAM: 'a brass alarm bell on a wall bracket with a red pull cord',
         MODERN: 'a red flag on a short white pole',
-        CYBERPUNK: 'a red holographic flag flickering above a chrome alert beacon with a hazard-striped base',
+        CYBERPUNK:
+          'a red holographic flag flickering above a brushed-steel alert beacon with a hazard-striped base',
         SPACE_OPERA: 'a white alert beacon with a pulsing red light and a red pennant of light',
       },
     },
@@ -121,7 +123,7 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
         MODERN: 'a pair of overlapping speech bubbles, one blue and one grey',
         CYBERPUNK:
           'a stack of three speech bubbles in neon cyan, amber and green, each with a tiny glowing diode',
-        SPACE_OPERA: 'a white comm dish beaming three pale-blue arcs',
+        SPACE_OPERA: 'a white comm dish that beams three pale-blue arcs',
       },
     },
     {
@@ -130,8 +132,9 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a tiny rolled scroll tied to a white feather',
         AGE_OF_STEAM: 'a slim brass speaking tube curling round into a small flared bell',
-        MODERN: 'a small purple speech bubble with a curled tail and three dots inside',
-        CYBERPUNK: 'a small violet speech bubble with a padlocked tail and a soft glowing encryption shimmer',
+        MODERN: 'a small purple paper aeroplane trailing a curled dotted line',
+        CYBERPUNK:
+          'a small brushed-steel earpiece pulsing a soft violet encryption shimmer, a tiny padlock on its side',
         SPACE_OPERA: 'a narrow white comm beam with a violet pulse travelling along it',
       },
     },
@@ -139,12 +142,12 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
       id: 'social-party-invite',
       role: 'Party invite',
       looks: {
-        FANTASY: 'a parchment envelope sealed with green wax pressed in a cross shape',
+        FANTASY: 'a small gilded summoning horn on a green cord with a green cross painted on its bell',
         AGE_OF_STEAM: 'a gilt-edged invitation card propped against a brass calling-card tray',
-        MODERN: 'a white envelope with a green plus-shaped cross on its flap',
+        MODERN: 'a plain white invitation card with a green plus-shaped cross on its front',
         CYBERPUNK:
-          'a chrome access chip with a glowing green plus-shaped cross and a neon-cyan contact strip',
-        SPACE_OPERA: 'a white beacon capsule with a green cross of light pulsing at its centre',
+          'a brushed-steel access chip with a glowing green plus-shaped cross and a neon-cyan contact strip',
+        SPACE_OPERA: 'a white beacon orb with a green cross of light pulsing at its centre',
       },
     },
     {
@@ -159,7 +162,7 @@ export const SOCIAL_PANELS: IconCatalogueGroup = {
         MODERN:
           'a black desk microphone, and the same microphone with a red diagonal slash for the second state',
         CYBERPUNK:
-          'a chrome collar-mic capsule pulsing neon-green sound waves, and dark with a glowing red slash across it for the second state',
+          'a brushed-steel collar-mic capsule pulsing neon-green sound waves, and dark with a glowing red slash across it for the second state',
         SPACE_OPERA:
           'a white comm stud rippling with blue rings, and dimmed with a red bar of light across it for the second state',
       },

@@ -21,7 +21,7 @@ export const CRAFTING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass clockwork prosthetic joint clamped in a vice beside a small screwdriver',
         MODERN: 'a carbon-fibre running-blade prosthesis with a hex key resting against it',
         CYBERPUNK:
-          'a gleaming chrome optic implant held in a surgical clamp, a ripperdoc laser welding a glowing neural port into its open housing',
+          'a gleaming brushed-steel optic implant held in a surgical clamp, a ripperdoc laser welding a glowing neural port into its open housing',
         SPACE_OPERA: 'a white nano-fabricator ring printing a sleek implant in blue light',
       },
     },
@@ -33,7 +33,7 @@ export const CRAFTING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a steam drop hammer pounding a red-hot sabre blade on a riveted anvil',
         MODERN: 'a gunsmith’s bench vice holding a stripped pistol slide beside a brass cleaning rod',
         CYBERPUNK:
-          'a computer-controlled mill carving a glowing red-hot mono-katana blade, chrome shavings spraying from its cutter',
+          'a computer-controlled mill carving a glowing red-hot mono-katana blade, brushed-steel shavings spraying from its cutter',
         SPACE_OPERA: 'a white forge cradle holding a plasma rifle as its barrel takes shape in blue light',
       },
     },
@@ -44,7 +44,8 @@ export const CRAFTING_PROFESSIONS: IconCatalogueGroup = {
         FANTASY: 'a bubbling glass alembic over a small flame, dripping into a corked potion vial',
         AGE_OF_STEAM: 'a brass and glass still with a coiled copper condenser dripping into a flask',
         MODERN: 'a conical lab flask spinning on a magnetic stirrer beside a rack of filled test tubes',
-        CYBERPUNK: 'a chrome centrifuge with a single glowing green synth vial spinning in its open drum',
+        CYBERPUNK:
+          'a brushed-steel centrifuge with a single glowing green synth vial spinning in its open drum',
         SPACE_OPERA:
           'a white molecular synthesiser pod assembling a glowing vial from a lattice of blue particles',
       },
@@ -57,7 +58,7 @@ export const CRAFTING_PROFESSIONS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a riveted brass pauldron clamped in a vice beside a pneumatic rivet gun',
         MODERN: 'an olive plate-carrier vest with a ceramic armour plate half slotted into its pouch',
         CYBERPUNK:
-          'a matte-black ballistic chest rig on a fabrication rack, a plasma welder fusing a glowing seam into its chrome trauma plates',
+          'a matte-black ballistic chest rig on a fabrication rack, a plasma welder fusing a glowing seam into its brushed-steel trauma plates',
         SPACE_OPERA: 'a white power-armour chest piece floating in a blue fabrication beam',
       },
     },
@@ -95,7 +96,7 @@ export const CRAFTING_PROFESSIONS: IconCatalogueGroup = {
         MODERN: 'a half-sewn denim jacket with tailor’s shears and a coiled tape measure',
         CYBERPUNK:
           'a robotic sewing rig needling glowing cyan smart-fibre into the seam of a black armoured trench coat',
-        SPACE_OPERA: 'a white loom ring weaving a shimmering silvery flight suit from threads of light',
+        SPACE_OPERA: 'a white robotic loom weaving a shimmering silvery flight suit from threads of light',
       },
     },
     {

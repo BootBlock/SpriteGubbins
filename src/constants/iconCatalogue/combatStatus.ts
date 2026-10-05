@@ -20,7 +20,7 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
         FANTASY: 'a pair of crossed steel sabres with gold hilts',
         AGE_OF_STEAM: 'a pair of crossed cavalry sabres over a brass gear',
         MODERN: 'a pair of crossed combat knives on a red disc',
-        CYBERPUNK: 'a pair of crossed chrome mono-katanas with glowing red edges throwing off sparks',
+        CYBERPUNK: 'a pair of crossed brushed-steel mono-katanas with glowing red edges throwing off sparks',
         SPACE_OPERA: 'a pair of crossed white energy blades humming with red light',
       },
     },
@@ -31,7 +31,7 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
         FANTASY: 'a pale crescent moon cradling a small golden star',
         AGE_OF_STEAM: 'a brass candle holder with a snuffed candle and a curl of smoke',
         MODERN: 'a white crescent moon on a navy-blue disc',
-        CYBERPUNK: 'a neon-violet crescent moon tube glowing softly against a black chrome backplate',
+        CYBERPUNK: 'a neon-violet crescent moon tube glowing softly against a black steel backplate',
         SPACE_OPERA: 'a white crescent of a planet edge-lit in soft blue',
       },
     },
@@ -43,7 +43,7 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a pair of crossed duelling pistols over a red pennant',
         MODERN: 'a red flag with a pair of crossed white bars',
         CYBERPUNK:
-          'a red holographic bounty crosshair locked over a black chrome dog tag, flickering with static',
+          'a red holographic bounty crosshair locked over a black steel tracker chip, flickering with static',
         SPACE_OPERA: 'a red targeting reticle glowing around a white insignia star',
       },
     },
@@ -54,7 +54,7 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
         FANTASY: 'a pale blue wisp of spirit flame drifting upwards',
         AGE_OF_STEAM: 'a snuffed brass oil lamp with a wisp of grey smoke rising',
         MODERN: 'a flat grey heart split by a jagged crack',
-        CYBERPUNK: 'a flatlined neon-green heart monitor trace on a cracked black glass slab',
+        CYBERPUNK: 'a flatlined neon-green heart trace on a cracked plain black glass slab',
         SPACE_OPERA: 'a dim white life-sign beacon with its blue light gone grey',
       },
     },
@@ -64,8 +64,8 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a small wooden hourglass with golden sand trickling down',
         AGE_OF_STEAM: 'a brass pocket watch with its lid open and its chain trailing',
-        MODERN: 'a yellow disc with a plain dark crescent moon on it',
-        CYBERPUNK: 'a black chrome hourglass with neon-amber nanite sand trickling through it',
+        MODERN: 'a yellow coffee mug with a curl of steam rising from it',
+        CYBERPUNK: 'a black steel hourglass with neon-amber nanite sand trickling through it',
         SPACE_OPERA: 'a white standby crystal pulsing slowly with amber light',
       },
     },
@@ -74,7 +74,7 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
       role: 'Busy',
       looks: {
         FANTASY: 'a closed oak door with an iron bar dropped across it',
-        AGE_OF_STEAM: 'a brass railway signal lamp shining red',
+        AGE_OF_STEAM: 'a brass railway buffer stop painted red, a heavy iron beam across its front',
         MODERN: 'a red disc with a white horizontal bar across it',
         CYBERPUNK:
           'a red neon no-entry disc with a black bar, buzzing with a faint flicker on a black backplate',
@@ -88,7 +88,8 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
         FANTASY: 'a small gold crown set with three red gems',
         AGE_OF_STEAM: 'a brass officer crown of laurel leaves with a cog at its front',
         MODERN: 'a simple gold crown with three points',
-        CYBERPUNK: 'a chrome crown of angular spikes with neon-gold edge lights and a glowing cyan gem',
+        CYBERPUNK:
+          'a brushed-steel crown of angular spikes with neon-gold edge lights and a glowing cyan gem',
         SPACE_OPERA: 'a white command chevron crowned with a gold star',
       },
     },
@@ -99,7 +100,7 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
         FANTASY: 'a gold key crossed over a bulging coin sack',
         AGE_OF_STEAM: 'a brass ring of keys hung from a strongbox lock',
         MODERN: 'a gold key with a round bow on a red ribbon',
-        CYBERPUNK: 'a chrome keycard with a glowing gold chip and a neon-cyan stripe along its edge',
+        CYBERPUNK: 'a brushed-steel keycard with a glowing gold chip and a neon-cyan stripe along its edge',
         SPACE_OPERA: 'a white crystalline access key with a gold light at its core',
       },
     },
@@ -112,9 +113,10 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
           'a green wax seal pressed with a tick, and a red wax seal pressed with a cross for the second state',
         AGE_OF_STEAM:
           'a brass railway semaphore blade raised with a green lamp lit, and lowered with a red lamp lit for the second state',
-        MODERN: 'a green disc with a white tick, and a red disc with a white cross for the second state',
+        MODERN:
+          'a green square button with a white tick, and a red square button with a white cross for the second state',
         CYBERPUNK:
-          'a neon-green tick glowing on a black chrome chip, and a neon-red cross on the same chip for the second state',
+          'a neon-green tick glowing on a black steel chip, and a neon-red cross on the same chip for the second state',
         SPACE_OPERA:
           'a white status disc glowing green with a tick of light, and glowing red with a cross for the second state',
       },
@@ -127,7 +129,7 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass boiler safety valve venting a jet of steam, its lever glowing red-hot',
         MODERN: 'a red-and-orange triangle with a thick dark border',
         CYBERPUNK:
-          'a pulsing neon-red triangle with a jagged bolt inside it, flickering over a black chrome plate',
+          'a pulsing neon-red triangle with a jagged bolt inside it, flickering over a black steel plate',
         SPACE_OPERA: 'a red hazard triangle of light with a white radar arc behind it',
       },
     },

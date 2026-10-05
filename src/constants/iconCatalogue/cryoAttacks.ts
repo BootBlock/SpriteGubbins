@@ -24,7 +24,7 @@ export const CRYO_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass air-rifle dart tipped with a spike of frozen brine',
         MODERN: 'a steel dart with a frosted cyan liquid-nitrogen tip and a vapour trail',
         CYBERPUNK:
-          'a cryo-round in a chrome casing with a glowing cyan coolant core, frost cracking across its tip',
+          'a jagged cyan cryo-crystal spike bursting from a brushed-steel launcher muzzle, cyan crystal crust cracking round its base',
         SPACE_OPERA: 'a white cryonic bolt shaped like a long crystal spear, leaving a cyan frost wake',
       },
     },
@@ -37,7 +37,7 @@ export const CRYO_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a riveted brass ice-box condenser bursting open in a ring of frozen brine shards',
         MODERN: 'a white carbon-dioxide canister bursting into a round cloud of freezing white vapour',
         CYBERPUNK:
-          'a ruptured chrome coolant line spraying a ring of cyan coolant that freezes into icicles as it flies',
+          'a ruptured brushed-steel coolant line spraying a ring of cyan coolant that freezes into icicles as it flies',
         SPACE_OPERA: 'a white absolute-zero field generator throwing out a round cyan frost nova',
       },
     },
@@ -51,7 +51,7 @@ export const CRYO_ATTACKS: IconCatalogueGroup = {
         MODERN:
           'a cracked liquid-nitrogen dewar flask with pale vapour spilling over its rim and frost creeping down its side',
         CYBERPUNK:
-          'a frost-locked chrome servo joint, cyan ice creeping through its gears and icicles hanging off it',
+          'a seized brushed-steel servo joint, cyan crystal creeping through its gears and cyan icicles hanging off it',
         SPACE_OPERA: 'a white hull plate with a lattice of cyan stasis frost slowly spreading across it',
       },
     },
@@ -64,7 +64,7 @@ export const CRYO_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass condenser nozzle blowing a straight jet of freezing brine spray',
         MODERN: 'a black liquid-nitrogen hose nozzle pouring a straight jet of white freezing vapour',
         CYBERPUNK:
-          'a chrome liquid-nitrogen injector gun with a frosted canister on top, holding a straight cyan cryo stream',
+          'a brushed-steel liquid-nitrogen injector gun with a cyan-glowing canister on top, holding a straight cyan cryo stream',
         SPACE_OPERA:
           'a white cryo-beam projector firing a straight cyan freezing ray that ices over as it goes',
       },
@@ -78,7 +78,7 @@ export const CRYO_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a heavy brass-bound ice maul with a block of frozen brine as its striking end',
         MODERN: 'a steel ice axe striking down into a frozen block that cracks apart in cyan shards',
         CYBERPUNK:
-          'a chrome cryo-hammer with a cyan coolant reservoir in its haft, shattering a frozen chrome plate',
+          'a brushed-steel cryo-hammer with a cyan coolant reservoir in its haft, shattering a frozen brushed-steel plate',
         SPACE_OPERA: 'a white stasis lance driving down into a cyan crystal block that shatters',
       },
     },
@@ -87,11 +87,12 @@ export const CRYO_ATTACKS: IconCatalogueGroup = {
       role: 'Cryo vulnerability debuff',
       school: 'CRYO',
       looks: {
-        FANTASY: 'a frost-rimed steel shield with a spiderweb of cracks spreading from a cyan ice sigil',
+        FANTASY:
+          'a frost-rimed steel shield with a spiderweb of cracks spreading from a glowing cyan snowflake mark at its centre',
         AGE_OF_STEAM: 'a frost-whitened brass armour plate crazed with brittle hairline cracks',
         MODERN: 'a frozen steel plate with a cyan crosshair marker sprayed over its crazed coat of ice',
         CYBERPUNK:
-          'a chrome armour panel crusted in cyan frost, a brittle crack running under a blinking cyan targeting reticle',
+          'a brushed-steel armour panel crusted in cyan crystal, a brittle crack running under a blinking cyan targeting reticle',
         SPACE_OPERA: 'a white shield emitter frozen over in cyan stasis frost, a crack splitting its dome',
       },
     },
@@ -105,7 +106,7 @@ export const CRYO_ATTACKS: IconCatalogueGroup = {
           'a towering brass refrigeration engine venting a roaring blizzard of frozen brine from its stacks',
         MODERN: 'a white industrial liquid-nitrogen tank venting a huge freezing cloud from a burst valve',
         CYBERPUNK:
-          'a chrome cryo-cannon rig fed by twin cyan coolant tanks, firing a blast that freezes into a jagged wall of ice',
+          'a brushed-steel cryo-cannon rig fed by twin cyan coolant tanks, firing a blast that freezes into a jagged wall of cyan crystal',
         SPACE_OPERA:
           'a white absolute-zero sphere suspended in a shell of cyan stasis frost and floating ice shards',
       },

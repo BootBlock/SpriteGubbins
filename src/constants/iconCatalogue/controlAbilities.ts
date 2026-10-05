@@ -23,7 +23,8 @@ export const CONTROL_ABILITIES: IconCatalogueGroup = {
         FANTASY: 'a forked bolt of blue lightning striking a dented iron helm, a ring of stars circling it',
         AGE_OF_STEAM: 'a pair of galvanic copper prongs with a crackling blue arc leaping between them',
         MODERN: 'a black taser with two barbed probes trailing coiled wires and a crackling blue arc',
-        CYBERPUNK: 'a chrome stun-prod baton with twin prongs, an electric-blue arc snapping between them',
+        CYBERPUNK:
+          'a brushed-steel stun-prod baton with twin prongs, an electric-blue arc snapping between them',
         SPACE_OPERA: 'a white stun-ring emitter discharging a halo of electric-blue rings',
       },
     },
@@ -49,7 +50,7 @@ export const CONTROL_ABILITIES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass clockwork escapement frozen mid-swing, its pendulum furred with cyan frost',
         MODERN: 'a black brake disc seized under a crust of cyan frost, ice cracking across its vents',
         CYBERPUNK:
-          'a chrome hourglass-shaped cryo capsule with its flow of cyan coolant frozen mid-fall and frost crusting its caps',
+          'a brushed-steel hourglass-shaped cryo capsule with its flow of cyan coolant frozen mid-fall and cyan crystal crusting its caps',
         SPACE_OPERA: 'a white stasis-field disc caught in a slowing spiral of cyan ice shards',
       },
     },
@@ -58,11 +59,11 @@ export const CONTROL_ABILITIES: IconCatalogueGroup = {
       role: 'Interrupt',
       school: 'NETRUN',
       looks: {
-        FANTASY: 'a pink arcane sigil cracked in two by a silver dagger',
+        FANTASY: 'a pink arcane orb cracked in two by a silver dagger',
         AGE_OF_STEAM: 'a brass telegraph key with its wire snipped and a pink spark leaping from the cut',
         MODERN: 'a black radio jammer with three stubby antennae throwing out a pink burst of interference',
         CYBERPUNK:
-          'a pink glitch-shard severing a coiled chrome data cable in two, sparks flying from the cut ends',
+          'a pink glitch-shard severing a coiled brushed-steel data cable in two, sparks flying from the cut ends',
         SPACE_OPERA: 'a white signal-cutter drone slicing a hot-pink comm beam in two',
       },
     },
@@ -75,8 +76,8 @@ export const CONTROL_ABILITIES: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a piston-driven brass battering ram slamming forward in a burst of steam',
         MODERN: 'a black steel breaching ram slamming forward with white impact rings',
         CYBERPUNK:
-          'a chrome hydraulic impact ram firing its piston outward in a burst of sparks and a concussive shock ring',
-        SPACE_OPERA: 'a white force-push emitter blasting a cone of rippling grey gravitic waves',
+          'a brushed-steel hydraulic impact ram firing its piston outward in a burst of sparks and a concussive shock ring',
+        SPACE_OPERA: 'a white force-push cannon blasting a cone of rippling grey gravitic waves',
       },
     },
     {
@@ -84,11 +85,11 @@ export const CONTROL_ABILITIES: IconCatalogueGroup = {
       role: 'Fear',
       school: 'NEURAL',
       looks: {
-        FANTASY: 'a jagged violet shadow sigil with black tendrils of dread dripping from it',
+        FANTASY: 'a jagged violet shadow mask, its eyeholes hollow, black tendrils of dread dripping from it',
         AGE_OF_STEAM: 'a brass mesmeric lamp casting a spinning violet spiral of dread',
-        MODERN: 'a black acoustic deterrent dish firing jagged violet shock rings',
+        MODERN: 'a black acoustic deterrent dish that fires jagged violet shock rings',
         CYBERPUNK:
-          'a chrome neuro-jammer dart lodged in a cracked neural-link socket, violet panic glitches spidering out of it in jagged shards',
+          'a brushed-steel neuro-jammer dart lodged in a cracked neural-link socket, violet panic glitches spidering out of it in jagged shards',
         SPACE_OPERA: 'a white psi-disruptor orb splitting the dark with jagged violet terror arcs',
       },
     },
@@ -100,9 +101,9 @@ export const CONTROL_ABILITIES: IconCatalogueGroup = {
         FANTASY:
           'a dented iron round shield struck by a sword pommel, white shock rings bursting from its boss',
         AGE_OF_STEAM: 'a brass ship’s bell struck hard, rippling white sound rings',
-        MODERN: 'a black megaphone blaring jagged white sound rings',
+        MODERN: 'a black megaphone blaring out jagged white sound rings',
         CYBERPUNK:
-          'a chrome aggro-beacon pylon blasting a hard strobe flash and a ring of target-lock chevrons',
+          'a brushed-steel aggro-beacon pylon blasting a hard strobe flash and a ring of target-lock chevrons',
         SPACE_OPERA: 'a white provocation beacon projecting a rotating target-lock reticle of grey light',
       },
     },

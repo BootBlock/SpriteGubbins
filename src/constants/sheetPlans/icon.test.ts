@@ -149,7 +149,7 @@ describe('the ICON series', () => {
     const [fantasy] = seriesOf(subjectWith(['heal-minor'], 'High Fantasy'));
     const [cyberpunk] = seriesOf(subjectWith(['heal-minor'], 'Near-Future Cyberpunk'));
     expect(entriesOf(fantasy ?? ISOLATED_OVERLAY)[0]?.text).toContain(
-      'a small round glass vial of red potion',
+      'a small round-bellied flask of red potion',
     );
     expect(entriesOf(cyberpunk ?? ISOLATED_OVERLAY)[0]?.text).toContain('stim-pack auto-injector');
   });

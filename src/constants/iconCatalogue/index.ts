@@ -35,6 +35,14 @@ import { TOOLS_AND_KEYS } from './toolsAndKeys.ts';
 import { TOXIC_ATTACKS } from './toxicAttacks.ts';
 import { UTILITY_ABILITIES } from './utilityAbilities.ts';
 import { VOLTAIC_ATTACKS } from './voltaicAttacks.ts';
+import { CYBERWARE_SLOTS } from './cyberwareSlots.ts';
+import { QUICKHACKS } from './quickhacks.ts';
+import { FACTIONS } from './factions.ts';
+import { PINGS } from './pings.ts';
+import { OBJECTIVES } from './objectives.ts';
+import { SQUAD_ROLES } from './squadRoles.ts';
+import { KILLFEED } from './killfeed.ts';
+import { HEAT_AND_STANDING } from './heatAndStanding.ts';
 
 /**
  * Every group of the icon catalogue, in the order the picker shelves them: by kind in `ICON_KINDS`
@@ -43,7 +51,9 @@ import { VOLTAIC_ATTACKS } from './voltaicAttacks.ts';
  *
  * **The order is the roster's order too** (`sortIconPicks`), so it decides which icons share a sheet:
  * a school's seven attacks sit together, the attack shelves follow `DAMAGE_SCHOOLS`, and the support,
- * mobility, control and utility abilities follow them. `iconCatalogue.test.ts` holds the shelves to
+ * mobility, control, utility abilities and quickhacks follow them. A multiplayer HUD's shelves sit
+ * together too (audit finding M5): the map pins, pings and objectives, then the combat status, squad
+ * roles, killfeed, and heat and standing. `iconCatalogue.test.ts` holds the shelves to
  * the kinds' order, so a group added out of place fails there rather than splitting a kind in two.
  */
 export const ICON_CATALOGUE_GROUPS: readonly IconCatalogueGroup[] = [
@@ -58,6 +68,7 @@ export const ICON_CATALOGUE_GROUPS: readonly IconCatalogueGroup[] = [
   QUEST_ITEMS,
   CONTAINERS,
   EQUIPMENT_SLOTS,
+  CYBERWARE_SLOTS,
   KINETIC_ATTACKS,
   THERMAL_ATTACKS,
   CRYO_ATTACKS,
@@ -70,8 +81,10 @@ export const ICON_CATALOGUE_GROUPS: readonly IconCatalogueGroup[] = [
   MOBILITY_ABILITIES,
   CONTROL_ABILITIES,
   UTILITY_ABILITIES,
+  QUICKHACKS,
   EMOTES,
   CHAT,
+  FACTIONS,
   MOUNTS,
   PETS,
   PET_COMMANDS,
@@ -82,7 +95,12 @@ export const ICON_CATALOGUE_GROUPS: readonly IconCatalogueGroup[] = [
   SERVICES,
   LOOT_ROLLS,
   MAP_PINS,
+  PINGS,
+  OBJECTIVES,
   COMBAT_STATUS,
+  SQUAD_ROLES,
+  KILLFEED,
+  HEAT_AND_STANDING,
 ];
 
 /** Every catalogue entry by its id — what a roster's picks are resolved through. */

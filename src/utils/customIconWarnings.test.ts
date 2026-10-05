@@ -26,16 +26,26 @@ describe('customIconWarnings', () => {
     expect(warn({ look }, key)).toEqual([CUSTOM_ICON_WARNING_TEXT.keyColour(word, key)]);
   });
 
+  it('warns of chrome and the other near-white words on the white key, and spares a word that only starts alike', () => {
+    expect(warn({ look: 'a chrome keycard' }, 'PURE_WHITE')).toEqual([
+      CUSTOM_ICON_WARNING_TEXT.keyColour('chrome', 'PURE_WHITE'),
+    ]);
+    expect(warn({ look: 'a frosted keycard' }, 'PURE_WHITE')).toEqual([
+      CUSTOM_ICON_WARNING_TEXT.keyColour('frost', 'PURE_WHITE'),
+    ]);
+    expect(warn({ look: 'a paladin keycard' }, 'PURE_WHITE')).toEqual([]);
+  });
+
   it('measures the colour against the key in force, and names none on a transparent key', () => {
     expect(warn({ look: 'a white keycard' }, 'MAGENTA_FF00FF')).toEqual([]);
     expect(warn({ look: 'a magenta keycard' }, 'TRANSPARENT')).toEqual([]);
   });
 
   it.each([
-    ['PURE_WHITE', 'a pale orb of #FFFFFF light', '#FFFFFF'],
-    ['PURE_WHITE', 'a pale orb of #fafafa light', '#fafafa'],
-    ['PURE_WHITE', 'a pale orb of #FFF light', '#FFF'],
-    ['MAGENTA_FF00FF', 'a sigil glowing #FF10F0', '#FF10F0'],
+    ['PURE_WHITE', 'a soft orb of #FFFFFF light', '#FFFFFF'],
+    ['PURE_WHITE', 'a soft orb of #fafafa light', '#fafafa'],
+    ['PURE_WHITE', 'a soft orb of #FFF light', '#FFF'],
+    ['MAGENTA_FF00FF', 'a spike glowing #FF10F0', '#FF10F0'],
     ['PURE_BLACK', 'a keycard of #000 lacquer', '#000'],
   ] as const)(
     'warns under %s of a hex colour the key reaches, and never calls it lettering',
@@ -45,9 +55,9 @@ describe('customIconWarnings', () => {
   );
 
   it('lets a hex colour the key does not reach pass, on any key', () => {
-    expect(warn({ look: 'a pale orb of #FFFFFF light' }, 'MAGENTA_FF00FF')).toEqual([]);
-    expect(warn({ look: 'an orb of #F97316 flame and #ABC frost' }, 'PURE_WHITE')).toEqual([]);
-    expect(warn({ look: 'a pale orb of #FFFFFF light' }, 'TRANSPARENT')).toEqual([]);
+    expect(warn({ look: 'a soft orb of #FFFFFF light' }, 'MAGENTA_FF00FF')).toEqual([]);
+    expect(warn({ look: 'an orb of #F97316 flame and #ABC haze' }, 'PURE_WHITE')).toEqual([]);
+    expect(warn({ look: 'a soft orb of #FFFFFF light' }, 'TRANSPARENT')).toEqual([]);
     // A capitalised word beside a hex is still an acronym.
     expect(warn({ look: 'an EMP orb of #F97316 light' }, 'PURE_WHITE')).toEqual([
       CUSTOM_ICON_WARNING_TEXT.lettering('EMP'),
@@ -67,12 +77,17 @@ describe('customIconWarnings', () => {
     ['a rune', 'a keycard carved with runes', 'runes'],
     ['a capitalised acronym', 'an EMP keycard', 'EMP'],
     ['an open scroll', 'a scroll of access codes', 'scroll'],
+    ['a sigil', 'a keycard stamped with a sigil', 'sigil'],
+    ['a dog tag', 'a dog tag on a chain', 'dog tag'],
+    ['a writing surface not called blank', 'a folded road map', 'map'],
   ])('warns of %s', (_what, look, word) => {
     expect(warn({ look })).toEqual([CUSTOM_ICON_WARNING_TEXT.lettering(word)]);
   });
 
-  it('lets a rolled scroll pass', () => {
+  it('lets a rolled scroll, a blank map and a map pin pass', () => {
     expect(warn({ look: 'a rolled scroll tied with wire' })).toEqual([]);
+    expect(warn({ look: 'a plain folded map' })).toEqual([]);
+    expect(warn({ look: 'a red map pin' })).toEqual([]);
   });
 
   it('warns of a person or part of one unless the entry shows a figure', () => {

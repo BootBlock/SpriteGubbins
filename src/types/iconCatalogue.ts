@@ -16,7 +16,7 @@
  *
  * - `ITEM`: things a character carries and uses up.
  * - `SPELL`: the abilities a spellbook and an action bar hold, every one in a {@link DamageSchool}.
- * - `SOCIAL`: emotes and the chat channels.
+ * - `SOCIAL`: emotes, the chat channels and the faction emblems a player sides with.
  * - `COMPANION`: mounts, pets and the commands a pet bar gives.
  * - `PROFESSION`: the crafting and gathering trades. A sixth kind beside the plan's five, because a
  *   trade is neither a companion nor a spell, and filing it under either would put a mining pick on

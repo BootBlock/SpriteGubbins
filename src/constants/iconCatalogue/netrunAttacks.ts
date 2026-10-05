@@ -37,7 +37,8 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM:
           'a brass difference engine bursting in a ring of flying punch cards and pink aether sparks',
         MODERN: 'a black laptop at the centre of a ring of pink flood-attack packets bursting outward',
-        CYBERPUNK: 'a chrome daemon orb detonating in a round pink glitch ring of shattered pixel blocks',
+        CYBERPUNK:
+          'a brushed-steel daemon orb detonating in a round pink glitch ring of shattered pixel blocks',
         SPACE_OPERA: 'a white wormhole micro-gate bursting outward in a round pink probability ripple',
       },
     },
@@ -48,8 +49,9 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a cracked crystal mana orb leaking pink arcane droplets',
         AGE_OF_STEAM: 'a cracked crystal aether valve in a brass collar, leaking pink aether droplets',
-        MODERN: 'a black smartphone with a pink virus blot spreading across its cracked display',
-        CYBERPUNK: 'a chrome data shard crawling with pink glitch corruption, pixel blocks flaking off it',
+        MODERN: 'a black flash drive oozing a spreading pink virus blot of pixel blocks',
+        CYBERPUNK:
+          'a brushed-steel data shard crawling with pink glitch corruption, pixel blocks flaking off it',
         SPACE_OPERA:
           'a white quantum processor crystal riddled with slowly spreading pink decoherence fractures',
       },
@@ -64,7 +66,7 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
           'a brass aether-engine emitter firing a steady pink aether beam through a crystal valve',
         MODERN: 'a black wireless router pouring a steady pink stream of malware packets',
         CYBERPUNK:
-          'a chrome cyberdeck with a plugged interface cable, holding a steady pink data beam on its target',
+          'a brushed-steel cyberdeck with a plugged interface cable, holding a steady pink data beam on its target',
         SPACE_OPERA: 'a white quantum-tether emitter holding a straight pink entanglement beam',
       },
     },
@@ -77,9 +79,9 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a heavy brass punch-card press stamping down in a burst of pink aether',
         MODERN: 'a black power-surge killer stick discharging a single pink overload pulse',
         CYBERPUNK:
-          'a long chrome daemon spike with a glitching pink crystal core, driving point-first in one blow',
+          'a long brushed-steel daemon spike with a glitching pink crystal core, driving point-first in one blow',
         SPACE_OPERA:
-          'a white quantum compressor ring crushing a pink probability sphere down to a single point',
+          'a white quantum compressor clamp crushing a pink probability sphere down to a single point',
       },
     },
     {
@@ -88,9 +90,9 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
       school: 'NETRUN',
       looks: {
         FANTASY: 'a cracked steel buckler with a glowing pink arcane ring branded on it',
-        AGE_OF_STEAM: 'a brass aether valve split open, a pink spark leaking through the crack',
+        AGE_OF_STEAM: 'a riveted brass aether boiler split open, a pink spark leaking through the crack',
         MODERN: 'a broken black padlock with a pink backdoor keyhole glowing in it',
-        CYBERPUNK: 'a chrome hexagonal firewall panel with a pink glitch breach torn through its mesh',
+        CYBERPUNK: 'a brushed-steel hexagonal firewall panel with a pink glitch breach torn through its mesh',
         SPACE_OPERA: 'a white shield node with a pink wormhole micro-gate punched through it',
       },
     },
@@ -100,9 +102,10 @@ export const NETRUN_ATTACKS: IconCatalogueGroup = {
       school: 'NETRUN',
       looks: {
         FANTASY: 'a vast pink arcane vortex swirling with orbiting rings of light',
-        AGE_OF_STEAM: 'a towering brass difference engine with its crystal valves blazing pink aether',
+        AGE_OF_STEAM: 'a towering brass aether turbine with its crystal valves blazing pink aether',
         MODERN: 'a black server rack with a pink worm of pixel coils spilling out of every port',
-        CYBERPUNK: 'a black-wall serpent of jagged pink pixel blocks coiling through a cracked chrome ring',
+        CYBERPUNK:
+          'a black-wall serpent of jagged pink pixel blocks coiling through a cracked brushed-steel ring',
         SPACE_OPERA: 'a white wormhole gate ring torn open on a swirling pink quantum rift',
       },
     },
