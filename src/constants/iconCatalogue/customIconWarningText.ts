@@ -10,7 +10,7 @@ import type { BackgroundKey } from '../../types/rendering.ts';
  */
 export const CUSTOM_ICON_WARNING_TEXT = {
   keyColour: (word: string, key: BackgroundKey): string =>
-    `“${word}” is the colour of your background key, ${BACKGROUND_KEY_TEXT[key]}, and keying the sheet cuts that colour out of the icon. Name another colour, or choose another key.`,
+    `“${word}” is at or near the colour of your background key, ${BACKGROUND_KEY_TEXT[key]}, and keying the sheet cuts that colour out of the icon. Name another colour, or choose another key.`,
 
   lettering: (word: string): string =>
     `“${word}” invites lettering, and the sheet forbids any text, so the generator either leaves it blank or letters it against the rules. Describe a blank or closed object instead.`,

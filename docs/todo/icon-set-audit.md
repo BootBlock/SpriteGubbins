@@ -167,3 +167,5 @@ a test, and "plausible" otherwise.
   overlay pieces flat”.
 - **P6, P7, P8, P9, P10 and P11** landed in “State how far an icon set is reduced, and stop sections 2
   and 7 overruling what it asks for”.
+- **B1, B2, B3, B4, B5 and B6** landed in “Keep every icon roster in shelving order, and name no world
+  a cleared World & Era does not state”, with the identity lock’s copy made true of a set’s series.

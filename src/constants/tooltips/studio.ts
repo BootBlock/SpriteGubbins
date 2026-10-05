@@ -50,7 +50,7 @@ export const STUDIO_ACTION_TOOLTIPS = {
     '- a cut-out rig covers one facing per sheet, so eight directions is eight runs\n' +
     '- an inventory too large for one sheet is split into parts, each generated once per facing if its components are drawn one facing at a time\n\n' +
     'Each row carries its own finished prompt, what it asks for, and whether you have copied it yet.\n\n' +
-    '**Set the identity lock from the first sheet you accept**, or the later runs are free to return a different individual in similar colours.',
+    '**Set the identity lock from the first sheet you accept**, or the later runs are free to drift from it: a different individual in similar colours, or members of a set drawn another way.',
 
   previousSheet:
     'Goes back one sheet in this batch, putting that sheet’s facing and its part of the inventory into the studio so the prompt recompiles for it.\n\n' +

@@ -22,7 +22,7 @@ type SortKey = readonly [kind: number, custom: number, place: number];
  * shares a sheet with the quest items and containers rather than with the system panels, and adding one
  * never moves the entries before it. Every custom entry of one kind sorts with the same key, so the
  * sort, which is stable, keeps them in the order the input holds them: the order they were added,
- * because every write goes through here. Moving a changed entry whose kind changed to the end of its
+ * because every write and every roster read from storage goes through here. Moving a changed entry whose kind changed to the end of its
  * new kind is `withCustomIcon`'s, which appends it rather than replacing it in place.
  */
 export function sortIconPicks(picks: readonly IconPick[]): readonly IconPick[] {

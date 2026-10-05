@@ -54,7 +54,8 @@ export const ICON: CategoryDefinition = {
   article: 'an',
   // Sixteen icons, so a fresh set fills exactly one icon sheet: the restoratives, boosts and tools an
   // action bar carries, and the system panels a micro-menu opens. Drawn as full-bleed squares, the look
-  // of the action bar the catalogue was built for — see `DEFAULT_ICON_LOOK`.
+  // of the action bar the catalogue was built for — see `DEFAULT_ICON_LOOK`. Declared in shelving
+  // order, as every roster is kept (`iconRosterShelving.test.ts`).
   iconRoster: {
     look: DEFAULT_ICON_LOOK,
     picks: cataloguePicks([
@@ -68,12 +69,12 @@ export const ICON: CategoryDefinition = {
       'throw-frag-grenade',
       'tool-key-common',
       'currency-common-coin',
+      'system-settings',
       'system-character',
       'system-bags',
       'system-abilities',
       'system-quest-log',
       'system-world-map',
-      'system-settings',
     ]),
   },
   fields: [

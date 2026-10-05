@@ -45,7 +45,11 @@ describe('iconLookText', () => {
   it('hands a world no family names to the role, drawn as that world would make it', () => {
     const fallback = 'minor healing consumable, drawn as the stated World & Era would make it';
     expect(iconLookText(entry('heal-minor'), 'Dieselpunk Sky Pirates')).toBe(fallback);
-    // A cleared world is the same case: there is nothing to choose a family by.
-    expect(iconLookText(entry('heal-minor'), '')).toBe(fallback);
+  });
+
+  it.each(['', '   '])('names no world where none is set (%j), since section 1 states none', (world) => {
+    expect(iconLookText(entry('heal-minor'), world)).toBe(
+      'minor healing consumable, drawn in its most familiar form, from no particular world or era',
+    );
   });
 });

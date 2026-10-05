@@ -1,8 +1,10 @@
+import { BACKGROUND_KEY_COLORS } from '../constants/backgroundKeyColors.ts';
 import { letteringTermIn } from '../constants/categories/letteringMarks.ts';
 import { CUSTOM_ICON_WARNING_TEXT } from '../constants/iconCatalogue/customIconWarningText.ts';
 import {
   ACRONYM,
   FIGURE_WORDS,
+  HEX_COLOUR,
   KEY_COLOUR_WORDS,
   LETTERING_OBJECTS,
   ROLLED,
@@ -11,6 +13,8 @@ import {
 } from '../constants/iconCatalogue/iconLookRules.ts';
 import type { CustomIconDraft } from '../types/customIconDraft.ts';
 import type { BackgroundKey } from '../types/rendering.ts';
+import { fromHex } from './imageData.ts';
+import { keyReaches } from './keyReach.ts';
 
 /**
  * What an entry of the reader's own names that the sheet's own rules will overrule, said as warnings —
@@ -23,11 +27,14 @@ import type { BackgroundKey } from '../types/rendering.ts';
  * the entry as written. What breaks the output whatever the reader means is `checkCustomIcon`'s, which
  * refuses.
  *
- * - **The key's colour**, under the background key in force: keying cuts it out of the icon. Pink on a
- *   netrun spell is spared, as in the catalogue, because the line pins the school's pink by hex clear of
- *   every key.
+ * - **The key's colour**, under the background key in force: keying cuts it out of the icon. A colour
+ *   named in words is matched by name (`KEY_COLOUR_WORDS`), and one written by hex is measured by the
+ *   Quantise tab's own test (`keyReaches`), so `#FAFAFA` warns on a white key and `#F97316` does not.
+ *   Pink on a netrun spell is spared, as in the catalogue, because the line pins the school's pink by
+ *   hex clear of every key.
  * - **Lettering**: a word that asks for it, an object that carries it — a dial, a rune, a keypad, an
- *   unrolled scroll — or a capitalised acronym, which a model letters onto the object.
+ *   unrolled scroll — or a capitalised acronym, which a model letters onto the object. A hex colour is
+ *   not an acronym, so it is taken out of the text before the lettering is read.
  * - **A person or part of one** on an entry not declaring `figure`.
  *
  * The role, the look and the states are all read, since all three reach the inventory line.
@@ -37,19 +44,35 @@ export function customIconWarnings(draft: CustomIconDraft, key: BackgroundKey): 
   const warnings: string[] = [];
 
   const spared = draft.kind === 'SPELL' && draft.school === 'NETRUN' ? ['pink'] : [];
-  const colour = wordNamed(
-    text,
-    KEY_COLOUR_WORDS[key].filter((word) => !spared.includes(word)),
-  );
+  const colour =
+    wordNamed(
+      text,
+      KEY_COLOUR_WORDS[key].filter((word) => !spared.includes(word)),
+    ) ?? hexWithinReach(text, key);
   if (colour !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.keyColour(colour, key));
 
-  const lettering = letteringIn(text);
+  const lettering = letteringIn(text.replaceAll(HEX_COLOUR, ' '));
   if (lettering !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.lettering(lettering));
 
   const figure = FIGURE_WORDS.exec(text)?.[0];
   if (!draft.figure && figure !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.figure(figure));
 
   return warnings;
+}
+
+/**
+ * The first hex colour in `text` the key takes with it, as the reader wrote it; a three-digit hex is
+ * measured as the six digits it stands for. None on a transparent key, which takes no colour.
+ */
+function hexWithinReach(text: string, key: BackgroundKey): string | undefined {
+  const keyColour = BACKGROUND_KEY_COLORS[key];
+  if (keyColour === null) return undefined;
+  return [...text.matchAll(HEX_COLOUR)]
+    .map(([hex]) => hex)
+    .find((hex) => {
+      const colour = fromHex(hex.length === 4 ? hex.replaceAll(/[0-9a-f]/giu, '$&$&') : hex);
+      return colour !== null && keyReaches(keyColour, colour);
+    });
 }
 
 /** The first word in `text` that asks for lettering or brings it with it, as the reader wrote it. */

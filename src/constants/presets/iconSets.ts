@@ -11,7 +11,8 @@ import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
  * that set only the fields would hand every reader the starter set whatever its card promised. Each
  * one carries the icons its card names — a loot grid's potions and materials, a system bar's panels, a
  * unit frame's status icons, a map's pins, an action bar's consumables, a spellbook's attacks and an
- * emote wheel's gestures — in the order its sheets draw them.
+ * emote wheel's gestures — declared in the catalogue's shelving order, which is the order its sheets
+ * draw them and the order the store keeps every roster in (`iconRosterShelving.test.ts`).
  *
  * **The camera is what the four older ones vary**, and it is the one place this category is looser than
  * INTERFACE: a flat front-on glyph, a three-quarter potion bottle and an isometric map pin are all
@@ -88,10 +89,10 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
           'material-ingot',
           'material-herb',
           'material-gemstone',
+          'currency-precious-coin',
+          'quest-relic',
           'container-small-bag',
           'container-treasure-chest',
-          'quest-relic',
-          'currency-precious-coin',
         ]),
       },
     },
@@ -208,6 +209,10 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       icons: {
         look: 'ISOLATED_MARK',
         picks: cataloguePicks([
+          'loot-need',
+          'loot-greed',
+          'loot-pass',
+          'loot-salvage',
           'status-in-combat',
           'status-resting',
           'status-pvp-flagged',
@@ -218,10 +223,6 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
           'status-loot-master',
           'status-ready-check',
           'status-threat',
-          'loot-need',
-          'loot-greed',
-          'loot-pass',
-          'loot-salvage',
         ]),
       },
     },
@@ -333,12 +334,12 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
           'heal-minor',
           'heal-standard',
           'heal-major',
-          'regeneration',
           'mana-minor',
           'mana-major',
           'stamina-restore',
           'cure-poison',
           'cure-affliction',
+          'regeneration',
           'revive',
           'elixir',
           'boost-strength',

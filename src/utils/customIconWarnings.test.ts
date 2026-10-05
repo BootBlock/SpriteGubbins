@@ -31,6 +31,29 @@ describe('customIconWarnings', () => {
     expect(warn({ look: 'a magenta keycard' }, 'TRANSPARENT')).toEqual([]);
   });
 
+  it.each([
+    ['PURE_WHITE', 'a pale orb of #FFFFFF light', '#FFFFFF'],
+    ['PURE_WHITE', 'a pale orb of #fafafa light', '#fafafa'],
+    ['PURE_WHITE', 'a pale orb of #FFF light', '#FFF'],
+    ['MAGENTA_FF00FF', 'a sigil glowing #FF10F0', '#FF10F0'],
+    ['PURE_BLACK', 'a keycard of #000 lacquer', '#000'],
+  ] as const)(
+    'warns under %s of a hex colour the key reaches, and never calls it lettering',
+    (key, look, hex) => {
+      expect(warn({ look }, key)).toEqual([CUSTOM_ICON_WARNING_TEXT.keyColour(hex, key)]);
+    },
+  );
+
+  it('lets a hex colour the key does not reach pass, on any key', () => {
+    expect(warn({ look: 'a pale orb of #FFFFFF light' }, 'MAGENTA_FF00FF')).toEqual([]);
+    expect(warn({ look: 'an orb of #F97316 flame and #ABC frost' }, 'PURE_WHITE')).toEqual([]);
+    expect(warn({ look: 'a pale orb of #FFFFFF light' }, 'TRANSPARENT')).toEqual([]);
+    // A capitalised word beside a hex is still an acronym.
+    expect(warn({ look: 'an EMP orb of #F97316 light' }, 'PURE_WHITE')).toEqual([
+      CUSTOM_ICON_WARNING_TEXT.lettering('EMP'),
+    ]);
+  });
+
   it('spares the pink of a netrun spell, whose line pins it by hex, but not its magenta', () => {
     const netrun = { kind: 'SPELL', school: 'NETRUN' } as const;
     expect(warn({ ...netrun, look: 'a hot pink data spike' })).toEqual([]);

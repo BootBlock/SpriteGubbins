@@ -61,21 +61,40 @@ describe('parseIconRoster', () => {
     });
   });
 
-  it('stops at the roster’s capacity, counting a two-state entry twice', () => {
-    // The capacity is three here (see the mock above), so the toggle that would make four ends the
-    // list, and nothing after it is read: a roster is cut where it overflows, never thinned.
+  it('skips a pick the set has no room for, counting a two-state entry twice, as a tick does', () => {
+    // The capacity is three here (see the mock above), so the toggle that would make four is skipped
+    // and the single after it, which still fits, is read, as `toggleIconPicks` would tick it.
     const picks = cataloguePicks(['heal-minor', 'heal-major', 'system-sound', 'elixir']);
     expect(parseIconRoster(stored(picks), FALLBACK)).toEqual({
       look: 'ISOLATED_MARK',
-      picks: cataloguePicks(['heal-minor', 'heal-major']),
+      picks: cataloguePicks(['heal-minor', 'heal-major', 'elixir']),
     });
+  });
+
+  it('skips a repeat before measuring the room, so it never costs the set a pick after it', () => {
+    // The toggle and its repeat would make four, past the capacity of three; the repeat is not a pick,
+    // so the single after it still joins.
+    const picks = cataloguePicks(['system-sound', 'system-sound', 'heal-minor']);
+    expect(parseIconRoster(stored(picks), FALLBACK).picks).toEqual(
+      cataloguePicks(['heal-minor', 'system-sound']),
+    );
+  });
+
+  it('returns the roster in shelving order, whatever order storage holds it in', () => {
+    const picks = cataloguePicks(['elixir', 'heal-major', 'heal-minor']);
+    expect(parseIconRoster(stored(picks), FALLBACK).picks).toEqual(
+      cataloguePicks(['heal-minor', 'heal-major', 'elixir']),
+    );
   });
 });
 
 describe('parseIconRoster — the reader’s own entries', () => {
-  it('reads an item, a spell and a pair back unchanged, in the order they were stored', () => {
+  it('reads an item, a spell and a pair back unchanged, each at the end of its kind’s shelves', () => {
     const picks = [customPick(SPELL), ...cataloguePicks(['heal-minor']), customPick(RELIC)];
-    expect(parseIconRoster(stored(picks), FALLBACK)).toEqual({ look: 'ISOLATED_MARK', picks });
+    expect(parseIconRoster(stored(picks), FALLBACK)).toEqual({
+      look: 'ISOLATED_MARK',
+      picks: [...cataloguePicks(['heal-minor']), customPick(RELIC), customPick(SPELL)],
+    });
     expect(parseIconRoster(stored([customPick(TOGGLE)]), FALLBACK).picks).toEqual([customPick(TOGGLE)]);
   });
 
@@ -121,8 +140,17 @@ describe('parseIconRoster — the reader’s own entries', () => {
 
   it('counts a custom pair twice against the capacity', () => {
     const picks = [...cataloguePicks(['heal-minor', 'heal-major']), customPick(TOGGLE), customPick(RELIC)];
-    expect(parseIconRoster(stored(picks), FALLBACK).picks).toEqual(
-      cataloguePicks(['heal-minor', 'heal-major']),
-    );
+    expect(parseIconRoster(stored(picks), FALLBACK).picks).toEqual([
+      ...cataloguePicks(['heal-minor', 'heal-major']),
+      customPick(RELIC),
+    ]);
+  });
+
+  it('skips a repeated entry before measuring the room, so it never costs the set a pick after it', () => {
+    const picks = [customPick(TOGGLE), customPick(TOGGLE), ...cataloguePicks(['heal-minor'])];
+    expect(parseIconRoster(stored(picks), FALLBACK).picks).toEqual([
+      ...cataloguePicks(['heal-minor']),
+      customPick(TOGGLE),
+    ]);
   });
 });

@@ -5,6 +5,7 @@ import { ICON_LOOKS } from '../types/iconRoster.ts';
 import type { IconPick, IconRoster } from '../types/iconRoster.ts';
 import { checkCustomIcon } from '../utils/checkCustomIcon.ts';
 import { iconPickId } from '../utils/iconPickId.ts';
+import { sortIconPicks } from '../utils/sortIconPicks.ts';
 import { readCustomIconDraft } from './customIconEntryParser.ts';
 import { isRecord, pick } from './readers.ts';
 
@@ -22,10 +23,17 @@ import { isRecord, pick } from './readers.ts';
  * hand-edited entry carrying `[SEC:…]` never reaches the compiler, whose citations it would break. A
  * custom entry's slot name is derived again from its role rather than trusted from storage.
  *
- * Repeats keep their first position, and the list stops at the last pick that fits in
- * `ICON_ROSTER_CAPACITY` components, so no stored roster can ask for a series past the bound
- * `SHEET_INDEX_RANGE` is derived from. The stored order is kept: the store writes every roster in
- * shelving order (`sortIconPicks`), so a roster read back is the one written.
+ * **Each pick is read as the store would add it, in the order it was stored**: a repeat or an entry
+ * whose slot name is taken is skipped, and so is a pick the set has no room left for under
+ * `ICON_ROSTER_CAPACITY` components, as a tick past capacity is refused (`toggleIconPicks`) and a
+ * custom entry is (`checkCustomIcon`). A repeat is skipped before the room is measured, so it never
+ * costs the set a pick after it. No stored roster can ask for a series past the bound
+ * `SHEET_INDEX_RANGE` is derived from.
+ *
+ * **The roster comes back in shelving order** (`sortIconPicks`), whatever order storage holds it in.
+ * The store writes every roster in that order, so one it wrote reads back unchanged; one edited by hand
+ * or imported out of order is sorted here, at the boundary, rather than by the reader's first tick,
+ * which would move icons they never touched onto other sheets.
  */
 export function parseIconRoster(value: unknown, fallback: IconRoster): IconRoster {
   if (!isRecord(value)) return fallback;
@@ -38,13 +46,13 @@ export function parseIconRoster(value: unknown, fallback: IconRoster): IconRoste
   for (const item of stored) {
     const read = readPick(item);
     if (read === null) continue;
-    if (filled + read.count > ICON_ROSTER_CAPACITY) break;
     const parsed = read.source === 'CATALOGUE' ? read.pick : customPick(read.draft, picks);
     if (parsed === null || picks.some((held) => iconPickId(held) === iconPickId(parsed))) continue;
+    if (filled + read.count > ICON_ROSTER_CAPACITY) continue;
     picks.push(parsed);
     filled += read.count;
   }
-  return { look, picks };
+  return { look, picks: sortIconPicks(picks) };
 }
 
 /** A stored pick read as far as its shape, before the roster it joins is consulted. */

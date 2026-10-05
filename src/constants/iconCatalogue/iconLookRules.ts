@@ -26,8 +26,17 @@ export const FIGURE_WORDS =
 export const LETTERING_OBJECTS =
   /\b(?:runes?|runic|dials?|gauges?|gauged|keypads?|inscrib\w*|stopwatch(?:es)?|clock ?faces?)\b/i;
 
-/** A capitalised acronym — “EMP”, “LEDs” — which a model may letter onto the object it names. */
+/**
+ * A capitalised acronym — “EMP”, “LEDs” — which a model may letter onto the object it names. Read from a
+ * text with its hex colours taken out (`HEX_COLOUR`), since `#FFFFFF` is a colour, not letters.
+ */
 export const ACRONYM = /\b[A-Z]{2,}s?\b/;
+
+/**
+ * A colour written by hex, six digits or three — `#F97316`, `#FFF` — which a model paints rather than
+ * letters, and which is measured against the key by value rather than by name.
+ */
+export const HEX_COLOUR = /#(?:[0-9a-f]{6}|[0-9a-f]{3})(?![\p{L}\p{N}])/giu;
 
 /** A scroll, which a model writes on unless it is rolled. */
 export const SCROLL = /\bscrolls?\b/i;

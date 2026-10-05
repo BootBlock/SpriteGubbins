@@ -61,6 +61,18 @@ describe('checkCustomIcon — what it accepts', () => {
     expect(entry?.look).toBe('a brass card, “scorched” at one end');
   });
 
+  it('takes off the punctuation a role or a look ends on, which the inventory line supplies', () => {
+    const { entry } = checkCustomIcon(
+      { ...RELIC_DRAFT, role: 'Nightcity keycard relic!', look: 'a brass card, scorched at one end. ;… ' },
+      [],
+      null,
+      [],
+    );
+    expect(entry?.role).toBe('Nightcity keycard relic');
+    expect(entry?.look).toBe('a brass card, scorched at one end');
+    expect(refusedFields({ look: ' . ' }, [])).toEqual(['look']);
+  });
+
   it('accepts texts at their limits exactly', () => {
     expect(refusedFields({ role: `R${'o'.repeat(47)}`, look: 'a'.repeat(200) }, [])).toEqual([]);
     expect(refusedFields({ states: ['o'.repeat(24), 'off'] }, [])).toEqual([]);

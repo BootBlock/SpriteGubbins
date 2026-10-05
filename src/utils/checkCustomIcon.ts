@@ -49,8 +49,10 @@ import { takenIconSlotNames } from './takenIconSlotNames.ts';
  * the key — a colour, a lettered object, a hand — is `customIconWarnings`', which warns and never refuses.
  *
  * **Normalised, never rewritten**: whitespace runs collapse to one space, since a line break inside an
- * inventory line would read as two lines, and the states become slugs, as a catalogue entry's are. The
- * reader's spelling and punctuation are their own. `replacing` names the entry an edit replaces, which
+ * inventory line would read as two lines; the role and the look lose the punctuation they end on, since
+ * the inventory line closes on its own full stop and `a chain.` would end it `..`; and the states become
+ * slugs, as a catalogue entry's are. The reader's spelling and the rest of their punctuation are their
+ * own. `replacing` names the entry an edit replaces, which
  * is measured as gone from the roster and the library alike. `library` is the active project's library
  * as the caller holds it: the roster parser and a pack's parser pass none, since a stored entry is read
  * on its own, and a re-tick passes the library without the entry being ticked.
@@ -62,8 +64,8 @@ export function checkCustomIcon(
   library: readonly CustomIconEntry[],
 ): CustomIconCheck {
   const refusals: CustomIconRefusal[] = [];
-  const role = collapsed(draft.role);
-  const look = collapsed(draft.look);
+  const role = unclosed(collapsed(draft.role));
+  const look = unclosed(collapsed(draft.look));
   const id = slugify(role);
   refusals.push(...textRefusals('role', role, 'role'), ...textRefusals('look', look, 'look'));
   if (role === '') refusals.push({ field: 'role', message: CUSTOM_ICON_REFUSALS.roleEmpty });
@@ -105,6 +107,14 @@ export function checkCustomIcon(
 /** A text with every run of whitespace, line breaks included, made one space, and its ends trimmed. */
 function collapsed(text: string): string {
   return text.replaceAll(/\s+/g, ' ').trim();
+}
+
+/**
+ * A text with the punctuation it ends on taken off — the full stop, comma, semicolon, colon, question or
+ * exclamation mark or ellipsis a reader closes a phrase with — since the line it joins supplies its own.
+ */
+function unclosed(text: string): string {
+  return text.replace(/[\s.,;:!?…]+$/u, '');
 }
 
 /** The refusals any one text earns on its own: its length, its brackets, a count, and a dash outside a look. */

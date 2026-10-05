@@ -21,6 +21,10 @@ import { damageSchoolName } from './damageSchoolName.ts';
  * draw the role as that world would make it, and the field's own label is how the inventory points at
  * that line.
  *
+ * **A cleared world names no world.** Section 1 omits a cleared field's line, so pointing at the stated
+ * *World & Era* would point at nothing; the role is drawn in its most familiar form instead, which is
+ * what the reader left open, and the materials and colours section 1 does state still apply to it.
+ *
  * **The school is said here, in the one resolver every reader of a look shares** — the sheet's inventory
  * line, the catalogue row's second line and its card, and the dialog's search — so the colour the prompt
  * asks for is the colour the row shows, and a search for “fire” finds the fire school in a fantasy
@@ -34,10 +38,15 @@ export function iconLookText(entry: IconEntry, world: string): string {
   return `${look} — ${damageSchoolName(entry.school, world)} school, its dominant colour ${colourName} ${hex}`;
 }
 
-/** A catalogue entry's look in this world's family, or its role handed to a world no family names. */
+/**
+ * A catalogue entry's look in this world's family, its role handed to a world no family names, or its
+ * role in its most familiar form where no world is set.
+ */
 function familyLook(entry: IconCatalogueEntry, world: string): string {
   const family = lookFamilyOfWorld(world);
-  return family === null
-    ? `${entry.role.charAt(0).toLowerCase()}${entry.role.slice(1)}, drawn as the stated ${fieldLabelFor('ICON', 'setting')} would make it`
-    : entry.looks[family];
+  if (family !== null) return entry.looks[family];
+  const role = `${entry.role.charAt(0).toLowerCase()}${entry.role.slice(1)}`;
+  return world.trim() === ''
+    ? `${role}, drawn in its most familiar form, from no particular world or era`
+    : `${role}, drawn as the stated ${fieldLabelFor('ICON', 'setting')} would make it`;
 }

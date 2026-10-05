@@ -86,8 +86,10 @@ export interface IconRoster {
    * The icons, in the order the sheets draw them, each slot name at most once.
    *
    * The order is the reading order across the series: the first sixteen components are the first icon
-   * sheet. An entry with two states is one pick worth two components. `sortIconPicks` keeps it in
-   * shelving order, with the reader's own entries at the end of their kind's shelves.
+   * sheet. An entry with two states is one pick worth two components. It is in shelving order wherever
+   * it comes from, with the reader's own entries at the end of their kind's shelves: the store writes it
+   * through `sortIconPicks`, `parseIconRoster` sorts what storage and an import hold, and
+   * `iconRosterShelving.test.ts` holds the starter roster and every preset to it.
    */
   readonly picks: readonly IconPick[];
 }
