@@ -257,10 +257,10 @@ export const ICON: CategoryDefinition = {
         'Clean Flat Shapes',
         'Bold Outlined Shapes',
         'Stepped Glow Bands',
-        'Gilded Filigree Trim',
+        'Filigree Scrollwork Trim',
         'Arcane Shimmer Facets',
-        'Cursed Shadow Tendrils',
-        'Frost Rime Crystals',
+        'Writhing Tendril Edges',
+        'Faceted Crystal Shards',
         'Neon Tube Strokes',
       ],
     },
@@ -290,7 +290,7 @@ export const ICON: CategoryDefinition = {
       label: 'Primary Colours',
       tooltip:
         'The dominant colours of the icons, by which the set is recognised across a grid. Two colours with a clear value gap keep an icon readable against whatever sits behind its subject: the plate the interface puts there, or the square’s own backdrop.\n\n' +
-        'Every light colour here names its hex, so the studio can hold it clear of a white background key.',
+        'None of these sits close enough to white for a white background key to cut it out.',
       options: [
         'Steel Grey & Cool Shadow',
         'Warm Leather Brown & Tan',

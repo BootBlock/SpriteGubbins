@@ -93,10 +93,7 @@ describe('an icon of the reader’s own in the compiled prompt', () => {
   it('rescues a hand the look names on every ICON sheet, and compiles the figure mark to nothing', () => {
     // The rescue sentences are unconditional on an ICON sheet, so they reach a custom look naming a
     // hand whether or not the entry is marked as showing a figure; no compiler code reads the mark.
-    const marked = {
-      ...iconSet([customPick(SALUTE)]),
-      exclusions: 'No hand or figure an icon’s entry does not name',
-    };
+    const marked = iconSet([customPick(SALUTE)]);
     const { figure: _mark, ...unmarkedSalute } = SALUTE;
     const unmarked = {
       ...marked,

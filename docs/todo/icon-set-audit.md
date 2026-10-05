@@ -194,11 +194,17 @@ a test, and "plausible" otherwise.
   - **O7** removed `Cropped Close On The Detail`, so **T7** has no option left to fight; phase 3 confirms
     that and closes it.
 - The review of phase 2 landed in “Draw a tint mask under no fixed palette, and key every reader to the
-  sheet’s own key”, as three findings. **M1**: a tint mask takes no pinned palette, because its neutral
-  greys contradicted a palette such as `GAME_BOY_DMG`, which has no grey. `palettesFor` offers it only
-  `FREE`, and the compiler, the studio’s digests, the Palette control, the colour budget and the store
-  resolve the palette through it, as they resolve the key. **M1**: the Quantise tab, its capture button,
-  the custom icon form and the identity palette capture read the key and the palette resolved through
-  the subject (`useResolvedBackgroundKey`, `useResolvedPalette`), not as stored. Three docblocks that
-  named three attribute roles or a removed motif option now state the four roles and
-  `Carved Knotwork Inlay`.
+  sheet’s own key”, as three findings on **M1** and its docblocks. **The palette**: a tint mask takes no
+  pinned palette, because its neutral greys contradicted a palette such as `GAME_BOY_DMG`, which has no
+  grey. `palettesFor` offers it only `FREE`, and the compiler, the studio’s digests, the Palette control,
+  the colour budget and the store resolve the palette through it, as they resolve the key. **The
+  readers**: the Quantise tab and its capture button read the key and the palette resolved through the
+  subject (`useResolvedBackgroundKey`, `useResolvedPalette`), not as stored, and the custom icon form and
+  the identity palette capture read the key that way. **The docblocks**: three that named three
+  attribute roles or a removed motif option now state the four roles and `Carved Knotwork Inlay`.
+- The second review of phase 2 landed in “Name no colour in an overlay style, and make the tint mask’s
+  docblocks name the palette”. **O1**: three *Overlay Style* values named a colour of their own, which
+  section 1’s accent sentence for the overlay sheet forbids, so they are now `Filigree Scrollwork Trim`,
+  `Writhing Tendril Edges` and `Faceted Crystal Shards`. **O2**: the *Primary Colours* card no longer
+  claims the studio checks its colours against the key. **M1**: four docblocks name the palette a tint
+  mask withdraws.

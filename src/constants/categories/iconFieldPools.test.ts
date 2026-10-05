@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SubjectFieldKey } from '../../types/subject.ts';
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { COLOR_HEX_MAP } from '../colors.ts';
 import { LETTERING_OBJECTS } from '../iconCatalogue/iconLookRules.ts';
 import { ICON_OVERLAY_PLANS } from '../sheetPlans/iconOverlaySheet.ts';
 import { ICON } from './icon.ts';
@@ -37,6 +38,17 @@ describe('ICON’s option pools', () => {
     expect([...styles, ...extras].filter((option) => library.test(option))).toEqual([]);
     expect(extras).toContain('Equipped Corner Tick ×1');
     expect(extras).toContain('Quantity Corner Plate ×1');
+  });
+
+  it('names no colour in an overlay style, since the overlay sheet draws every piece in the accent colours (O1)', () => {
+    // Section 1 colours a piece whose entry names none in the Accent Colours, and in no other colour the
+    // list names, so a style that brought a colour of its own (gilded, frost, shadow) would contradict it.
+    const colours = Object.keys(COLOR_HEX_MAP).join('|');
+    const named = new RegExp(
+      String.raw`\b(?:${colours}|gild\w*|gilt|frost\w*|rime|ic[ey]|shadow\w*|ember\w*|blood\w*)\b`,
+      'iu',
+    );
+    expect(pool('clothing').filter((style) => named.test(style))).toEqual([]);
   });
 
   it('draws every piece of the overlay library in the overlay style (O1)', () => {

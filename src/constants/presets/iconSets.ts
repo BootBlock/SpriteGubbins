@@ -55,9 +55,10 @@ import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
  * others the fields offer, and name no chrome or other near-white word without its hex; the spellbook's eight school colours are
  * held out of every key's reach by `damageSchools.test.ts`, so they leave the choice where the set's
  * own colours put it, and no cyberpunk look names white (`iconCatalogue.test.ts`). The fantasy grid
- * keeps `TRANSPARENT`, which no painted colour can be confused with, and so does the cyberpunk emote
- * wheel, whose isolated marks have no backdrop to shade, and the two multiplayer sets: a tint mask's
- * lightest grey runs too close to white for the white key, so `backgroundKeysFor` never offers it one.
+ * keeps `TRANSPARENT`, which no painted colour can be confused with, and so do the cyberpunk emote
+ * wheel and the loadout slots, whose isolated marks have no backdrop to shade, and the squad markers:
+ * a tint mask's lightest grey runs too close to white for the white key, so `backgroundKeysFor` never
+ * offers it one.
  * `iconSetKeys.test.ts` holds all of this, and shows each measurement biting on the values it retired.
  */
 export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
@@ -77,7 +78,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       silhouette: 'One Bold Readable Shape Each',
       face_head: 'One Bright Focal Accent',
       anatomy: 'Icons With Engine-Applied Overlays',
-      clothing: 'Gilded Filigree Trim',
+      clothing: 'Filigree Scrollwork Trim',
       worn_details: 'One Or Two Defining Lines',
       primary_colours: 'Aged Bronze & Verdigris',
       accent_colours: 'Health Red #EF4444',
@@ -519,7 +520,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
     id: 'cyberpunk-squad-hud-markers',
     name: 'Cyberpunk Squad HUD Markers',
     description:
-      'Squad markers for a multiplayer cyberpunk HUD, from the waypoint to the downed teammate, each drawn in grey as a tint mask your engine colours by team and told apart by its shape alone at 20 px.',
+      'Squad markers for a multiplayer cyberpunk HUD, from the waypoint to the respawn point, each drawn in grey as a tint mask your engine colours by team and told apart by its shape alone at 20 px.',
     category: 'ICON',
     subject: {
       species: 'HUD & Compass',

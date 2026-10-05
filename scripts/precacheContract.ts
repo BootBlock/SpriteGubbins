@@ -119,7 +119,7 @@
  * the background key and the palette through `useResolvedBackgroundKey` and `useResolvedPalette`, so
  * the shared chunk that carried `SheetStepButtons` is named after the second (15.27 kB, the step
  * buttons' “Previous sheet” and “Next sheet” among it), and the first is cut out of the chunks that
- * read it into one of its own (0.19 kB). The build reports 55 entries at 2767.80 KiB.
+ * read it into one of its own (0.19 kB). The build reports 55 entries at 2767.79 KiB.
  */
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',

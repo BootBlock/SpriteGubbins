@@ -21,7 +21,7 @@ export function palettesFor(subject: SheetSubject): readonly PaletteId[] {
  * Resolved wherever a stored palette meets a subject, as `resolveBackgroundKey` is for the key — the
  * compiler (`promptFacts`), the studio's digests, the Palette control and the budget it withdraws, the
  * store when a change of colour mode or of subject leaves a palette behind (`outputForRoster`,
- * `resolveOutputForSubject`), and the Quantise tab through `useResolvedPalette` — so the prompt, the
+ * `resolveOutputForSubject`), and the Quantise tab and its capture button through `useResolvedPalette` — so the prompt, the
  * controls and the quantiser name one palette.
  */
 export function resolvePalette(subject: SheetSubject, palette: PaletteId): PaletteId {

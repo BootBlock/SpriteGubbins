@@ -136,7 +136,7 @@ describe('a spell sheet in the compiled prompt', () => {
 describe('an emote sheet in the compiled prompt', () => {
   const subject = {
     ...iconSet(EMOTES, 'ISOLATED_MARK', 'Near-Future Cyberpunk'),
-    exclusions: 'No hand or figure an icon’s entry does not name',
+    exclusions: 'No gore, blood or open wound',
   };
   const sheets = iconSheets(subject);
 
@@ -162,7 +162,8 @@ describe('an emote sheet in the compiled prompt', () => {
     expect(exclusions).toContain(
       'A hand, face or figure an entry names is part of that icon’s subject and is drawn as the entry describes it.',
     );
-    expect(exclusions).toContain('No hand or figure an icon’s entry does not name');
+    // The reader's own rule stands beside the category's.
+    expect(exclusions).toContain('No gore, blood or open wound');
     // The guard leaves a figure that is an icon's subject alone, and the audit checks only what no
     // entry names.
     expect(flat(sheet)).toContain(

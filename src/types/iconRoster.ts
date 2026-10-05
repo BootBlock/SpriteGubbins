@@ -40,9 +40,10 @@ export type IconLook = (typeof ICON_LOOKS)[number];
  *
  * **Set-wide, like the look**, because a grid mixing masks and coloured icons reads as two packs, and a
  * game tints a whole HUD rather than one marker of it. It reaches the icon sheets through
- * `SheetPlan.tint`, and the background key through `backgroundKeysFor`: a mask's lightest grey is the
- * tint at full strength, close enough to white that the `PURE_WHITE` key would cut it out, so a mask
- * never takes that key.
+ * `SheetPlan.tint`, the background key through `backgroundKeysFor`, and the palette through
+ * `palettesFor`. A mask's lightest grey is the tint at full strength, close enough to white that the
+ * `PURE_WHITE` key would cut it out, so a mask never takes that key; and its greys have no hue for a
+ * pinned palette to name, so a mask is drawn under `FREE`.
  *
  * The order is the control's order. A new set takes `DEFAULT_ICON_COLOUR_MODE`.
  */

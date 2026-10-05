@@ -171,12 +171,13 @@ function saveCustomIcon(
 
 /**
  * Put a changed roster on the subject as one act, with the sheet index pulled back inside the series it
- * now draws and the background key moved to one the set can take — a tick, a clear, a new look or colour
- * mode, or an entry of the reader's own added, changed or removed.
+ * now draws and the background key and palette moved to ones the set can take — a tick, a clear, a new
+ * look or colour mode, or an entry of the reader's own added, changed or removed.
  *
- * Both stores move in the one act, so an undo restores the roster, the sheet the reader was on and the
- * key together. A look or a colour mode leaves the series its length, so for one the index never moves;
- * only a tint mask moves the key, off `PURE_WHITE` (`outputForRoster`).
+ * Both stores move in the one act, so an undo restores the roster, the sheet the reader was on, the key
+ * and the palette together. A look or a colour mode leaves the series its length, so for one the index
+ * never moves; only a tint mask moves the key, off `PURE_WHITE`, and the palette, onto `FREE`
+ * (`outputForRoster`).
  */
 function writeRoster(change: (roster: IconRoster) => IconRoster): void {
   const { category, subject } = useSubjectStore.getState();
