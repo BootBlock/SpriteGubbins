@@ -14,7 +14,7 @@ import { ICON } from './icon.ts';
 
 /**
  * ICON's option pools, each holding one concern and offering nothing the prompt or another field
- * already states (the options findings of `docs/todo/icon-set-audit.md`, phase 2).
+ * already states (the options findings of `docs/todo/done/icon-set-audit.md`, phase 2).
  *
  * Each check names the values it was written against, so a pool drifting back fails here rather than in
  * a compiled prompt that contradicts itself.

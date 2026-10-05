@@ -13,6 +13,7 @@ import {
   KEY_COLOUR_WORDS,
   LETTERING_OBJECTS,
   NEAR_WHITE_WORDS,
+  RED_CROSS,
   UNWRITTEN,
   WRITING_SURFACE,
   wordNamed,
@@ -195,6 +196,26 @@ describe('the icon catalogue', () => {
       }
     },
   );
+
+  it.each(ENTRIES.map(({ entry }) => [entry.id, entry] as const))(
+    '%s draws no red cross a model could take for the protected emblem',
+    (_id, entry) => {
+      // An upright red cross, above all on white, is the emblem international law reserves for medical
+      // services; a medic's cross is green or white, and a refusal's mark is called a diagonal cross.
+      for (const family of LOOK_FAMILIES) {
+        expect(entry.looks[family], `${entry.id} / ${family}`).not.toMatch(RED_CROSS);
+      }
+    },
+  );
+
+  it('reads a red cross, and spares a diagonal one, a crosshair and crossed blades', () => {
+    expect('a bold red cross with rounded ends').toMatch(RED_CROSS);
+    expect('a neon-red cross of two glowing tubes').toMatch(RED_CROSS);
+    expect('a red diagonal cross of light').not.toMatch(RED_CROSS);
+    expect('a red crosshair reticle').not.toMatch(RED_CROSS);
+    expect('a glowing red crossed-blades emblem').not.toMatch(RED_CROSS);
+    expect('a red sash across a chest').not.toMatch(RED_CROSS);
+  });
 
   it.each(ENTRIES.map(({ entry }) => [entry.id, entry] as const))(
     '%s names nothing that invites lettering onto the icon',

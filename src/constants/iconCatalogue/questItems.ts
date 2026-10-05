@@ -39,7 +39,7 @@ export const QUEST_ITEMS: IconCatalogueGroup = {
       id: 'quest-chart-fragment',
       role: 'Chart fragment',
       looks: {
-        FANTASY: 'a torn corner of plain old parchment with a dotted trail ending in a red cross',
+        FANTASY: 'a torn corner of plain old parchment with a dotted trail ending in a red diagonal cross',
         AGE_OF_STEAM: 'a torn scrap of plain sea-stained parchment pinned beneath a brass compass',
         MODERN: 'a torn aerial photograph with a red circle drawn on it',
         CYBERPUNK: 'a cracked holo-chip projecting a jagged cyan wireframe of city blocks',

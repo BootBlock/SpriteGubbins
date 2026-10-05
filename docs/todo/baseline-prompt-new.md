@@ -1824,7 +1824,7 @@ Emit unmodified. Correct for a conversational model, and the only target that ca
 > that space widens each time a category is added.
 
 > **Corrected again — the frame decision is per sheet, and `--no` opens with the category's
-> assembly terms** (audit finding T2 of `docs/todo/icon-set-audit.md`). ICON answered the frame
+> assembly terms** (audit finding T2 of `docs/todo/done/icon-set-audit.md`). ICON answered the frame
 > question for its whole series, so the overlay sheet's rings kept `frame, border` out of every icon
 > sheet too, where the plate and frame a generator adds are exactly what the category bans. The sheet
 > now answers: `FRAME_IS_A_COMPONENT` speaks for a category whose every sheet draws a frame, and

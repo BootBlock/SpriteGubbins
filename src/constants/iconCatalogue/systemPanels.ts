@@ -187,7 +187,7 @@ export const SYSTEM_PANELS: IconCatalogueGroup = {
         AGE_OF_STEAM:
           'a brass gramophone horn with curved sound waves leaving its bell, and plugged with a cork for the second state',
         MODERN:
-          'a grey speaker cone with three curved sound waves, and the waves replaced by a red cross for the second state',
+          'a grey speaker cone with three curved sound waves, and the waves replaced by a red diagonal cross for the second state',
         CYBERPUNK:
           'a brushed-steel speaker grille pulsing three neon-cyan sound waves, and dark with a glowing red slash across it for the second state',
         SPACE_OPERA:

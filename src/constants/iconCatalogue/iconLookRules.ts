@@ -137,6 +137,14 @@ export const COUNT_MARKER = /\d\s*×|×\s*\d|(?<![\p{L}\p{N}])[xX]\s*\d|\d[xX](?
 export const LINE_SEPARATOR = /[—–]/;
 
 /**
+ * A red cross the text does not call diagonal, up to two words between “red” and “cross”. Drawn
+ * upright, and above all on white, it is the emblem international law reserves for medical services,
+ * which a game may not use; a medic's cross is green or white, and a refusal's or a mute's mark is a
+ * diagonal cross. A crosshair, crossed blades and a sash across a chest are not crosses.
+ */
+export const RED_CROSS = /\bred\b(?:[\s-]+(?!diagonal\b)\p{L}+){0,2}?[\s-]+cross(?!\p{L})/iu;
+
+/**
  * The first of `words` that `text` contains anywhere, inside a longer word too, in any case, or
  * `undefined` — the stricter reading the catalogue's own looks are held to, so `hotpink` and
  * `neonmagenta` count. A reader's text is read by {@link wordNamed}, which a word merely containing a

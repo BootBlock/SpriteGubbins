@@ -104,5 +104,14 @@ export function customIconLibraryWriter(
     set((state) => ({ icons: state.icons.filter((held) => held.id !== id) }));
   }
 
-  return { store, refresh, remove };
+  /**
+   * Run a storage change that rewrites libraries wholesale — a project's delete, a pack's import — in
+   * the queue's turn, so a write already queued lands before it rather than after, where it would file
+   * a row under a project the change had just removed or over a library it had just replaced.
+   */
+  function hold<T>(task: () => Promise<T>): Promise<T> {
+    return queue(task);
+  }
+
+  return { store, refresh, remove, hold };
 }

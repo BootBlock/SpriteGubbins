@@ -254,6 +254,7 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
       ] as const,
   ),
   ['CUSTOM_ICON_WARNING_TEXT.lettering', CUSTOM_ICON_WARNING_TEXT.lettering('dial')],
+  ['CUSTOM_ICON_WARNING_TEXT.redCross', CUSTOM_ICON_WARNING_TEXT.redCross('red cross')],
   ['CUSTOM_ICON_WARNING_TEXT.figure', CUSTOM_ICON_WARNING_TEXT.figure('hand')],
 ];
 

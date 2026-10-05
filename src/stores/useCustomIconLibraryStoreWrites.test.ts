@@ -6,9 +6,11 @@ import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
 import { RELIC, RELIC_DRAFT, SPELL, customPick } from '../test/customIcons.ts';
 import { customIconDraftOf } from '../utils/customIconDraftOf.ts';
-import { iconLibrary, iconStudio, libraryEntries, savedIcon } from '../test/iconLibraryStudio.ts';
+import { HARBOUR, iconLibrary, iconStudio, libraryEntries, savedIcon } from '../test/iconLibraryStudio.ts';
 import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 import { useCustomIconLibraryStore } from './useCustomIconLibraryStore.ts';
+import { useLibraryTransferStore } from './useLibraryTransferStore.ts';
+import { useProjectStore } from './useProjectStore.ts';
 import { useUIStore } from './useUIStore.ts';
 
 /**
@@ -45,6 +47,12 @@ vi.mock('../db/database.ts', () => ({
 }));
 
 const store = () => useCustomIconLibraryStore.getState();
+
+/** One turn of the event loop, by which every promise not waiting on a held save has settled. */
+const settled = (): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 
 /** The rows storage holds under `slot` in the Default project. */
 async function storedUnder(slot: string): Promise<readonly SavedCustomIcon[]> {
@@ -112,5 +120,44 @@ describe('library writes in flight together', () => {
     expect(await Promise.all([first, second])).toEqual([true, false]);
     expect(await storedUnder('shared-name')).toHaveLength(1);
     expect(await storedUnder(badge.id)).toHaveLength(1);
+  });
+});
+
+describe('library writes in flight across a change that rewrites the libraries', () => {
+  it('lands a write to a project before that project’s delete, so the delete takes it too', async () => {
+    const held = backend as HeldSaves;
+    held.hold();
+    const writing = store().writeCustomIcon(HARBOUR.id, RELIC_DRAFT, null);
+    const deleting = useProjectStore.getState().deleteProject(HARBOUR.id);
+    // Every step either can take before the held save is taken, so the delete is as far on as it gets.
+    await settled();
+
+    held.let();
+    await Promise.all([writing, deleting]);
+
+    expect((await backend.listCustomIcons()).filter((icon) => icon.projectId === HARBOUR.id)).toEqual([]);
+    expect(libraryEntries(HARBOUR.id)).toEqual([]);
+  });
+
+  it('lands a write before a pack replaces the library, so the pack is what storage holds', async () => {
+    const held = backend as HeldSaves;
+    held.hold();
+    const writing = store().writeCustomIcon(DEFAULT_PROJECT_ID, RELIC_DRAFT, null);
+    const kept = savedIcon(SPELL);
+    useLibraryTransferStore.setState({
+      pendingImport: {
+        projects: useProjectStore.getState().projects,
+        presets: [],
+        quantisePresets: [],
+        customIcons: [kept],
+      },
+    });
+    const importing = useLibraryTransferStore.getState().confirmLibraryImport();
+    await settled();
+
+    held.let();
+    await Promise.all([writing, importing]);
+
+    expect(await backend.listCustomIcons()).toEqual([kept]);
   });
 });

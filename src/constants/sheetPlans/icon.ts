@@ -10,8 +10,8 @@ import { ICON_OVERLAY_PLANS } from './iconOverlaySheet.ts';
 import { iconSheet } from './iconSheet.ts';
 import type { SeriesFor } from './modePlans.ts';
 
-/** Each roster's series, by the world it was written for, held only while the roster is. */
-const BUILT = new WeakMap<IconRoster, Map<string, SheetSeries>>();
+/** Each roster's series for the last world it was asked for, held only while the roster is. */
+const BUILT = new WeakMap<IconRoster, { readonly world: string; readonly series: SheetSeries }>();
 
 /**
  * What an ICON subject asks for: the reader's roster at most sixteen icons to a sheet, then the overlay
@@ -49,16 +49,18 @@ const BUILT = new WeakMap<IconRoster, Map<string, SheetSeries>>();
  * building it resolves every pick's look, cuts the roster and writes every icon sheet, so rebuilding it
  * per question made one compile of a set some forty times the cost of a character's. The
  * series is a function of the roster and the *World & Era* alone, and the roster is read-only to its
- * depth, so a roster the store has not replaced is a series already built.
+ * depth, so a roster the store has not replaced is a series already built. **Only the last world is
+ * kept for each roster**: the field is typed a keystroke at a time over one roster, and a series kept
+ * for every partial name would outlive the typing in the studio's undo stack.
  */
 export const iconSeries: SeriesFor = (_facings, subject) => {
   const roster = subject.icons;
   if (roster === undefined) return [ICON_OVERLAY_PLANS[DEFAULT_ICON_LOOK]];
-  const byWorld = BUILT.get(roster) ?? new Map<string, SheetSeries>();
-  BUILT.set(roster, byWorld);
-  const built = byWorld.get(subject.setting) ?? buildSeries(roster, subject);
-  byWorld.set(subject.setting, built);
-  return built;
+  const held = BUILT.get(roster);
+  if (held?.world === subject.setting) return held.series;
+  const series = buildSeries(roster, subject);
+  BUILT.set(roster, { world: subject.setting, series });
+  return series;
 };
 
 function buildSeries(roster: IconRoster, subject: SheetSubject): SheetSeries {

@@ -6,7 +6,7 @@ import { PRESETS } from './index.ts';
 
 /**
  * That every roster the app declares is already in shelving order, each icon once (B2 and B6 of
- * `docs/todo/icon-set-audit.md`).
+ * `docs/todo/done/icon-set-audit.md`).
  *
  * The store writes every roster through `sortIconPicks` and the parser sorts every roster it reads, so a
  * declaration out of that order is the one way a roster can reach the studio unsorted. The first tick

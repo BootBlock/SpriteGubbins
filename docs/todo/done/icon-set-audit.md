@@ -1,6 +1,6 @@
 # Icon / Symbol Set — audit and fix plan
 
-> **Status:** 🟢 ACTIVE — phases 1 (the compiled prompt), 2 (the options), 3 (target models and the shape of a series) and 4 (the catalogue) landed; phase 5 open.
+> **Status:** ✅ COMPLETE — all five phases landed: the compiled prompt, the options, target models and the shape of a series, the catalogue, and the studio, storage and quantise. One question is left to the maintainer, under **U1** in the Progress section.
 
 ## 1. Why
 
@@ -310,3 +310,46 @@ a test, and "plausible" otherwise.
   white that international law reserves, and now draw a green or white cross. The quickhacks called
   *Synapse burnout* and *Cripple movement*, and the *mantis blades*, took one published game’s own
   names, and are now *Neural overload*, *Servo lock* and *monoblades*.
+- **U1** landed in phase 5, in “Keep an icon set’s reader on their sheet, read custom states back as
+  accepted, and size a short icon sheet as a full one” and the commit that closes the audit. The
+  catalogue dialog, custom icons, the project library, the roster summary, the stores, both storage
+  backends and the quantiser’s cut were driven in Edge, on SQLite over OPFS and on the localStorage
+  fallback, and read by four audits.
+  - **The sheet index**: the overlay sheet now closes the series, but a roster change still clamped the
+    index by position, so a tick that added an icon sheet moved a reader off the overlay sheet, and an
+    untick that removed one moved a reader onto it. `outputForRoster` keeps the overlay sheet last and
+    an icon sheet among the icon sheets. A reset swapped the roster without that clamp and left the
+    index past the starter set’s series, so the next tick carried the reader back to a far sheet;
+    `outputForReset` settles both.
+  - **Custom icon states**: a state was checked as typed and stored as its slug, and a slug that lost an
+    accented letter could show a count the text hid (`éx5` became `x5`), so an entry accepted at the form
+    was refused on reload and left both the library and the set. The slug is now checked too.
+  - **The catalogue**: the search matched inside words, so “ping” showed seventeen shelves; it now
+    matches each word from its start. The social kind held the faction emblems under “Emotes and chat”,
+    and is now “Emotes, chat and factions”. The item card said “uses up” of the equipment and cyberware
+    slots, the custom item card promised a sheet beside the quest items, and a spell’s card promised a
+    school told apart by hue on a tint mask, which draws it in grey; each now says what is so.
+  - **The Quantise tab**: its suggested grid seated the drawings, not the sixteen cells an icon sheet
+    states, so a short sheet was offered a scale up to six times too coarse. `SheetPlan.cells` is now
+    `SheetPlan.cellGrid`, the cells each way, read by the prompt and the tab through `seatedCells`.
+    *Scale evenly* had no step to measure on a sheet of one icon and filled the cell with it; it now
+    reads the step the studio’s sheet states (`SpriteCell.statedStep`).
+  - **The library**: a project delete and a pack import ran beside the library writer’s queue, so an
+    icon still being saved could land after either, under a project that was gone or over a library
+    just replaced. Both now take the writer’s turn (`holdLibrary`). The series cache kept a series for
+    every partial *World & Era* typed over one roster, and now keeps the last.
+  - **The red cross**: the phase 4 question was swept. No look or preset outside ICON names a red cross.
+    Inside it, the pass, mute, not-ready and treasure marks called an X a red cross, and the space-opera
+    pass and ready check drew it on a white disc; each is now a diagonal cross. `RED_CROSS` holds the
+    catalogue to that, and the form warns of one in a reader’s own look.
+  - **No change**, with the reason. The localStorage backend erases a stored library row its parser
+    refuses on the next write, where SQLite keeps it hidden; both hide it, and before 1.0 a row that
+    cannot be read is discarded rather than repaired. A second Escape after the custom icon form closes
+    dismisses the tooltip on the button that takes focus back, as WCAG 1.4.13 asks, and a third closes
+    the dialog.
+  - **Open, for the maintainer**: the overlay sheet draws each piece within a tile-sized square at the
+    place it sits on the icon, but the square has no backdrop, so the quantiser cuts each piece to its
+    own bounding box and every cell centres it; a corner mark loses its corner. The Fit card now says
+    to take *Scale evenly* rather than *Fill square* for the overlay sheet, which stretched each piece
+    over the whole cell. Keeping each piece’s place needs the overlay sheet laid out on a grid the cut
+    can read, a change to the prompt and the quantiser together.

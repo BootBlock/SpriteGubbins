@@ -154,7 +154,7 @@ describe('the ICON series', () => {
     expect(entriesOf(cyberpunk ?? ISOLATED_OVERLAY)[0]?.text).toContain('stim-pack auto-injector');
   });
 
-  it('builds a roster’s series once for each world, and anew for a roster the store replaces', () => {
+  it('builds a roster’s series once for its world, and anew for another world or a replaced roster', () => {
     // Every reader asks for the series by the subject, and one compile asks several times for each
     // sheet it lists, so a series rebuilt per question made one compile of a large set some forty times
     // the cost of a character's. A shared series is only correct while it stays keyed to what wrote it:
@@ -164,14 +164,20 @@ describe('the ICON series', () => {
     expect(seriesOf(subject)).toBe(series);
     expect(seriesOf({ ...subject })).toBe(series);
 
-    const elsewhere = seriesOf({ ...subject, setting: 'Near-Future Cyberpunk' });
-    expect(elsewhere).not.toBe(series);
-    expect(entriesOf(elsewhere[0] ?? ISOLATED_OVERLAY)).not.toEqual(entriesOf(series[0] ?? ISOLATED_OVERLAY));
-
     const icons = subject.icons ?? { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: [] };
     const replaced = seriesOf({ ...subject, icons: { ...icons, picks: icons.picks.slice(0, 1) } });
     expect(replaced).toHaveLength(2);
     expect(seriesOf(subject)).toBe(series);
+
+    const elsewhere = seriesOf({ ...subject, setting: 'Near-Future Cyberpunk' });
+    expect(elsewhere).not.toBe(series);
+    expect(entriesOf(elsewhere[0] ?? ISOLATED_OVERLAY)).not.toEqual(entriesOf(series[0] ?? ISOLATED_OVERLAY));
+
+    // Only the last world is kept for a roster, since the world is typed a keystroke at a time over one
+    // roster and a series per partial name would outlive the typing: going back builds it again, alike.
+    const again = seriesOf(subject);
+    expect(again).not.toBe(series);
+    expect(again).toEqual(series);
   });
 
   it.each(ICON_LOOKS)(

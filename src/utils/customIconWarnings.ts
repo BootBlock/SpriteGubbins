@@ -7,6 +7,7 @@ import {
   HEX_COLOUR,
   KEY_COLOUR_WORDS,
   LETTERING_OBJECTS,
+  RED_CROSS,
   UNWRITTEN,
   WRITING_SURFACE,
   wordNamed,
@@ -37,6 +38,7 @@ import { keyReaches } from './keyReach.ts';
  *   writing surface the text does not call blank, closed or rolled, or a capitalised acronym, which a
  *   model letters onto the object. A hex colour is not an acronym, so it is taken out of the text before
  *   the lettering is read.
+ * - **A red cross not called diagonal** (`RED_CROSS`), which may be drawn as the protected emblem.
  * - **A person or part of one** on an entry not declaring `figure`.
  *
  * The role, the look and the states are all read, since all three reach the inventory line.
@@ -55,6 +57,9 @@ export function customIconWarnings(draft: CustomIconDraft, key: BackgroundKey): 
 
   const lettering = letteringIn(text.replaceAll(HEX_COLOUR, ' '));
   if (lettering !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.lettering(lettering));
+
+  const cross = RED_CROSS.exec(text)?.[0];
+  if (cross !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.redCross(cross));
 
   const figure = FIGURE_WORDS.exec(text)?.[0];
   if (!draft.figure && figure !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.figure(figure));

@@ -9,7 +9,7 @@ import { generatePrompt } from './promptCompiler.ts';
 
 /**
  * That an icon line points at section 1's *World & Era* line only where section 1 has one (B1 of
- * `docs/todo/icon-set-audit.md`).
+ * `docs/todo/done/icon-set-audit.md`).
  *
  * A world no look family names hands each role to the world the reader typed, which section 1 states
  * word for word. A cleared world has no line there, since section 1 omits a cleared field, so an icon

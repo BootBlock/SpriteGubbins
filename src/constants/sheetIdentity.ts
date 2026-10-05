@@ -25,5 +25,5 @@ export const SHEET_IDENTITY_GUIDANCE = {
   /** A configuration that is one generation: nothing to step to, and nothing to get out of step. */
   single:
     DOWNLOADS_RECORD_THE_STUDIO +
-    ' It is a statement about the studio, not a reading of your image — nothing here can tell whether the sheet you dropped is the one named above. This configuration is a single generation, so there is no position to keep in step; change the category or the direction set in the Studio tab and this line follows.',
+    ' It is a statement about the studio, not a reading of your image — nothing here can tell whether the sheet you dropped is the one named above. This configuration is a single generation, so there is no position to keep in step; change the category, the direction set or, on an icon set, the icons ticked in the Studio tab and this line follows.',
 } as const;

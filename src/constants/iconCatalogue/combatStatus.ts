@@ -110,15 +110,15 @@ export const COMBAT_STATUS: IconCatalogueGroup = {
       states: ['ready', 'not-ready'],
       looks: {
         FANTASY:
-          'a green wax seal pressed with a tick, and a red wax seal pressed with a cross for the second state',
+          'a green wax seal pressed with a tick, and a red wax seal pressed with a diagonal cross for the second state',
         AGE_OF_STEAM:
           'a brass railway semaphore blade raised with a green lamp lit, and lowered with a red lamp lit for the second state',
         MODERN:
-          'a green square button with a white tick, and a red square button with a white cross for the second state',
+          'a green square button with a white tick, and a red square button with a white diagonal cross for the second state',
         CYBERPUNK:
-          'a neon-green tick glowing on a black steel chip, and a neon-red cross on the same chip for the second state',
+          'a neon-green tick glowing on a black steel chip, and a neon-red diagonal cross on the same chip for the second state',
         SPACE_OPERA:
-          'a white status disc glowing green with a tick of light, and glowing red with a cross for the second state',
+          'a white status disc glowing green with a tick of light, and glowing red with a diagonal cross for the second state',
       },
     },
     {

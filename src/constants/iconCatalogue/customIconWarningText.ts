@@ -15,6 +15,9 @@ export const CUSTOM_ICON_WARNING_TEXT = {
   lettering: (word: string): string =>
     `“${word}” invites lettering, and the sheet forbids any text, so the generator either leaves it blank or letters it against the rules. Describe a blank or closed object instead.`,
 
+  redCross: (words: string): string =>
+    `“${words}” may be drawn as the emblem international law reserves for medical services, which a game may not use. Draw a medic’s cross in green or white, or call a refusal’s mark a diagonal cross.`,
+
   figure: (word: string): string =>
     `“${word}” puts a person or part of one in the drawing. The sheet draws a hand or figure an entry names, but a hand holding an object crowds a small icon, so the catalogue draws its objects on their own. Tick “Shows a figure” if the icon is meant to show one.`,
 } as const;

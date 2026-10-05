@@ -90,6 +90,13 @@ describe('customIconWarnings', () => {
     expect(warn({ look: 'a red map pin' })).toEqual([]);
   });
 
+  it('warns of a red cross that is not called diagonal', () => {
+    expect(warn({ look: 'a white box with a red cross' })).toEqual([
+      CUSTOM_ICON_WARNING_TEXT.redCross('red cross'),
+    ]);
+    expect(warn({ look: 'a red diagonal cross' })).toEqual([]);
+  });
+
   it('warns of a person or part of one unless the entry shows a figure', () => {
     expect(warn({ look: 'a keycard in a gloved hand' })).toEqual([CUSTOM_ICON_WARNING_TEXT.figure('hand')]);
     expect(warn({ look: 'a keycard in a gloved hand', figure: true })).toEqual([]);

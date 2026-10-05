@@ -57,6 +57,11 @@ export interface CustomIconLibraryState {
   keepCustomIcon(projectId: string, entry: CustomIconEntry): Promise<void>;
   /** Delete one library entry. Every set that holds a copy keeps it. */
   deleteCustomIcon(id: string): Promise<void>;
+  /**
+   * Run a storage change that rewrites the libraries — a project delete, a pack import — after every
+   * library write already queued, and before any queued after it.
+   */
+  holdLibrary<T>(task: () => Promise<T>): Promise<T>;
 }
 
 /** One project's library entries, as the check measures them. */
@@ -69,7 +74,7 @@ function notify(message: string): void {
 }
 
 export const useCustomIconLibraryStore = create<CustomIconLibraryState>((set, get) => {
-  const { store, refresh, remove } = customIconLibraryWriter(get, set);
+  const { store, refresh, remove, hold } = customIconLibraryWriter(get, set);
 
   return {
     icons: [],
@@ -82,6 +87,8 @@ export const useCustomIconLibraryStore = create<CustomIconLibraryState>((set, ge
         notify(storageFailure('Could not load your icon library', error));
       }
     },
+
+    holdLibrary: hold,
 
     chooseProject: (projectId) => {
       set({ chosenProjectId: projectId });

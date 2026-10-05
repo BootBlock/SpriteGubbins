@@ -173,7 +173,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     try {
       const database = await getDatabase();
-      await database.deleteProject(id);
+      // In the library writer's turn, so an icon still being saved into this project lands first and
+      // goes with it, rather than after, as a row filed under a project that no longer exists.
+      await useCustomIconLibraryStore.getState().holdLibrary(() => database.deleteProject(id));
       set({ projects: await database.listProjects() });
       await usePresetStore.getState().fetchCustomPresets();
       await useQuantisePresetStore.getState().fetchQuantisePresets();

@@ -121,7 +121,9 @@ export const useLibraryTransferStore = create<LibraryTransferState>((set, get) =
     set({ isTransferring: true, pendingImport: null });
     try {
       const database = await getDatabase();
-      await database.replaceLibrary(imported);
+      // In the library writer's turn, as a project delete is, so no icon still being saved lands over
+      // the library the pack has just replaced.
+      await useCustomIconLibraryStore.getState().holdLibrary(() => database.replaceLibrary(imported));
       // Re-read rather than set from the pack: each collection is ordered by the backend, and the
       // rows it now holds are what the rest of the app is about to render.
       await useProjectStore.getState().fetchProjects();

@@ -39,11 +39,12 @@ export const LOOT_ROLLS: IconCatalogueGroup = {
       id: 'loot-pass',
       role: 'Pass',
       looks: {
-        FANTASY: 'a red cross of two crossed wooden staves bound with cord',
-        AGE_OF_STEAM: 'a cross of two riveted iron bars painted signal red',
-        MODERN: 'a bold red cross with rounded ends',
-        CYBERPUNK: 'a neon-red cross of two glowing tubes with a faint flicker and a gunmetal backplate',
-        SPACE_OPERA: 'a red cross of light hovering over a white disc',
+        FANTASY: 'a red diagonal cross of two wooden staves bound with cord',
+        AGE_OF_STEAM: 'a diagonal cross of two riveted iron bars painted signal red',
+        MODERN: 'a bold red diagonal cross with rounded ends',
+        CYBERPUNK:
+          'a neon-red diagonal cross of two glowing tubes with a faint flicker and a gunmetal backplate',
+        SPACE_OPERA: 'a red diagonal cross of light hovering over a dark navy disc',
       },
     },
     {
