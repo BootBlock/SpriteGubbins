@@ -37,7 +37,10 @@ export const LOOK_FAMILY_OF_WORLD: Readonly<Record<string, LookFamily>> = {
  * assembly base, or `null` for a world the table does not name.
  */
 export function lookFamilyOfWorld(world: string): LookFamily | null {
-  const typed = world.trim().toLowerCase();
-  const match = Object.entries(LOOK_FAMILY_OF_WORLD).find(([option]) => option.toLowerCase() === typed);
-  return match?.[1] ?? null;
+  return FAMILY_BY_FOLDED_WORLD.get(world.trim().toLowerCase()) ?? null;
 }
+
+/** The table keyed by each world case-folded, so a lookup folds only the world it is asked about. */
+const FAMILY_BY_FOLDED_WORLD: ReadonlyMap<string, LookFamily> = new Map(
+  Object.entries(LOOK_FAMILY_OF_WORLD).map(([world, family]) => [world.toLowerCase(), family]),
+);

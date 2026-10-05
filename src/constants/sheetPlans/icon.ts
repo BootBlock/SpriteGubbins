@@ -2,12 +2,16 @@ import { ICONS_PER_SHEET } from '../iconCatalogue/iconSheetLimits.ts';
 import { balancedChunks } from '../../utils/balancedChunks.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { iconRosterEntries } from '../../utils/iconRosterEntries.ts';
-import type { SheetPlan } from '../../types/components.ts';
-import { DEFAULT_ICON_COLOUR_MODE } from '../iconCatalogue/defaultIconColourMode.ts';
+import type { SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { IconRoster } from '../../types/iconRoster.ts';
+import type { SheetSubject } from '../../types/subject.ts';
 import { DEFAULT_ICON_LOOK } from '../iconCatalogue/defaultIconLook.ts';
 import { ICON_OVERLAY_PLANS } from './iconOverlaySheet.ts';
 import { iconSheet } from './iconSheet.ts';
 import type { SeriesFor } from './modePlans.ts';
+
+/** Each roster's series, by the world it was written for, held only while the roster is. */
+const BUILT = new WeakMap<IconRoster, Map<string, SheetSeries>>();
 
 /**
  * What an ICON subject asks for: the reader's roster at most sixteen icons to a sheet, then the overlay
@@ -26,8 +30,8 @@ import type { SeriesFor } from './modePlans.ts';
  *
  * **The roster's look picks every sheet's wording**, the overlay sheet's included, so a series never mixes
  * squares and loose marks, and its colour mode decides whether every icon sheet is a tint mask; the
- * overlay sheet's pieces mark a state rather than a side, so they keep their colours. A subject with no roster takes `DEFAULT_ICON_LOOK` and `DEFAULT_ICON_COLOUR_MODE`, which is only ever
- * a hand-built subject: every ICON subject the app stores carries one.
+ * overlay sheet's pieces mark a state rather than a side, so they keep their colours. A subject with no roster draws the overlay sheet in `DEFAULT_ICON_LOOK`, which is only ever a
+ * hand-built subject: every ICON subject the app stores carries one.
  *
  * **The icon sheets are cut as evenly as the roster allows** (`balancedChunks`, audit finding T5), so a
  * set of eighteen is two sheets of nine rather than sixteen and a last sheet of two drawn twice as large.
@@ -39,17 +43,32 @@ import type { SeriesFor } from './modePlans.ts';
  * **The set used to be twelve icons the generator chose**, on one sheet with the overlay pieces. That
  * left a reader who needed a game's own action bar, bags and system panels no way to ask for them, and
  * no way to name the files the quantiser cuts out.
+ *
+ * **Built once per roster and world, and shared.** Every reader asks for the series by the subject —
+ * one compile asks several times for each sheet it lists, and the studio asks on every render — and
+ * building it resolves every pick's look, cuts the roster and writes every icon sheet, so rebuilding it
+ * per question made one compile of a set some forty times the cost of a character's. The
+ * series is a function of the roster and the *World & Era* alone, and the roster is read-only to its
+ * depth, so a roster the store has not replaced is a series already built.
  */
 export const iconSeries: SeriesFor = (_facings, subject) => {
-  const look = subject.icons?.look ?? DEFAULT_ICON_LOOK;
-  const colourMode = subject.icons?.colourMode ?? DEFAULT_ICON_COLOUR_MODE;
+  const roster = subject.icons;
+  if (roster === undefined) return [ICON_OVERLAY_PLANS[DEFAULT_ICON_LOOK]];
+  const byWorld = BUILT.get(roster) ?? new Map<string, SheetSeries>();
+  BUILT.set(roster, byWorld);
+  const built = byWorld.get(subject.setting) ?? buildSeries(roster, subject);
+  byWorld.set(subject.setting, built);
+  return built;
+};
+
+function buildSeries(roster: IconRoster, subject: SheetSubject): SheetSeries {
   const icons: SheetPlan[] = [];
   let first = 1;
   for (const run of balancedChunks(iconRosterEntries(subject), ICONS_PER_SHEET)) {
-    icons.push(iconSheet(run, first, look, colourMode));
+    icons.push(iconSheet(run, first, roster.look, roster.colourMode));
     first += componentTotal(run);
   }
-  const overlay = ICON_OVERLAY_PLANS[look];
+  const overlay = ICON_OVERLAY_PLANS[roster.look];
   const [head, ...rest] = icons;
   return head === undefined ? [overlay] : [head, ...rest, overlay];
-};
+}

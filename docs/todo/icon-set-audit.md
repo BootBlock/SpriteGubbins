@@ -249,3 +249,9 @@ a test, and "plausible" otherwise.
   card and the `TRANSPARENT` label no longer hedge a case the list now filters out, and Sol’s request
   is gated on `AlphaDelivery`’s `TOOL_CALL`. **T2**: three tests that chose their sheet with the
   function under test, or matched a word the exclusions always carry, now state what they expect.
+- The landing of phase 3 found one compile of an ICON set some forty times the cost of a character’s,
+  which put the typographic-marks sweep past its 30-second limit on CI. Every reader asks for the series
+  by the subject, several times for each sheet `describeSeries` lists, and `iconSeries` rebuilt the
+  roster’s every line and sheet each time. It now builds a roster’s series once for each *World & Era*
+  and shares it, and `lookFamilyOfWorld` reads a map. The sweep takes about 3 seconds against 7.5 to
+  10 on `main`.

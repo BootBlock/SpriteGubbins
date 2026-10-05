@@ -154,6 +154,26 @@ describe('the ICON series', () => {
     expect(entriesOf(cyberpunk ?? ISOLATED_OVERLAY)[0]?.text).toContain('stim-pack auto-injector');
   });
 
+  it('builds a roster’s series once for each world, and anew for a roster the store replaces', () => {
+    // Every reader asks for the series by the subject, and one compile asks several times for each
+    // sheet it lists, so a series rebuilt per question made one compile of a large set some forty times
+    // the cost of a character's. A shared series is only correct while it stays keyed to what wrote it:
+    // the world rewrites every line, and a replaced roster may hold other icons.
+    const subject = subjectWith(SINGLE_ONES.slice(0, 40), 'High Fantasy');
+    const series = seriesOf(subject);
+    expect(seriesOf(subject)).toBe(series);
+    expect(seriesOf({ ...subject })).toBe(series);
+
+    const elsewhere = seriesOf({ ...subject, setting: 'Near-Future Cyberpunk' });
+    expect(elsewhere).not.toBe(series);
+    expect(entriesOf(elsewhere[0] ?? ISOLATED_OVERLAY)).not.toEqual(entriesOf(series[0] ?? ISOLATED_OVERLAY));
+
+    const icons = subject.icons ?? { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: [] };
+    const replaced = seriesOf({ ...subject, icons: { ...icons, picks: icons.picks.slice(0, 1) } });
+    expect(replaced).toHaveLength(2);
+    expect(seriesOf(subject)).toBe(series);
+  });
+
   it.each(ICON_LOOKS)(
     'keeps the %s overlay sheet’s state and overlay pieces as the same named slots',
     (look) => {
