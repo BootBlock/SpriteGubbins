@@ -65,6 +65,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // image. Checking the plan before the render is true of any target that deliberates.
       seesCanvasBeforeDelivery: false,
       emitsText: true,
+      // No model is named, so no vendor has documented whether it returns alpha, and nothing is withdrawn
+      // on its behalf: the reader may be pasting into a target that does (audit finding T1).
+      alpha: { kind: 'NO_VENDOR' },
       // The one entry with nobody to cite. It names no model, so there is no vendor page to hold a
       // figure and no product a figure would be about — which is a different answer from Midjourney
       // below, where a vendor exists and publishes none, and the reason the two are separate states
@@ -185,6 +188,13 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // first — two images, or one that no longer matches the composition it was written to.
       seesCanvasBeforeDelivery: false,
       emitsText: true,
+      // The image tool Sol calls takes the option: “Transparent backgrounds are available in preview;
+      // set `background: "transparent"` to request one. Use `png` (the default) or `webp`; `jpeg`
+      // isn't supported with transparent backgrounds.” Sol composes that call, so its wrapper tells it to
+      // set the option (audit finding T1). The Images in ChatGPT help page is said to promise a
+      // transparent background on request too, and is not cited: it refused every fetch on 5 October
+      // 2026, so its wording could not be read. https://developers.openai.com/api/docs/guides/tools-image-generation
+      alpha: { kind: 'TOOL_CALL' },
       // The *input* ceiling, not the 1,050,000 context window: the window is input plus the
       // 128,000 output tokens reserved against it, and what this field is measured against is the
       // prompt alone. https://developers.openai.com/api/docs/models/gpt-5.6-sol
@@ -247,6 +257,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // anything is delivered. https://ai.google.dev/gemini-api/docs/image-generation
       seesCanvasBeforeDelivery: true,
       emitsText: true,
+      // Neither the image-generation guide nor the model page mentions transparency, alpha or RGBA, as
+      // searched on 5 October 2026, so a sheet asked for alpha comes back opaque (audit finding T1).
+      // https://ai.google.dev/gemini-api/docs/image-generation
+      alpha: { kind: 'UNDOCUMENTED' },
       // "Input token limit: 131,072", and Outputs "Image and Text" — which is what earns the
       // component map. https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image
       promptBudget: {
@@ -277,6 +291,8 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // https://ai.google.dev/gemini-api/docs/image-generation
       seesCanvasBeforeDelivery: true,
       emitsText: true,
+      // The same finding, from the same guide and https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image
+      alpha: { kind: 'UNDOCUMENTED' },
       // https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image
       promptBudget: {
         kind: 'CEILING',
@@ -327,6 +343,11 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // renders" — and nothing about looking at the result, so its audit is of the plan.
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // **ByteDance document alpha, and not for a prompt.** Their `background` parameter “Controls whether
+      // to generate an image with an alpha channel”, and “is supported only for image-to-image generation
+      // with exactly one input image that has an alpha channel”. A sheet this app composes is text to
+      // image, so for it the answer is none (audit finding T1). https://docs.byteplus.com/en/docs/ModelArk/1541523
+      alpha: { kind: 'UNDOCUMENTED' },
       // **Guidance, and it is published — which is why it is no longer silence.** ByteDance state
       // it on the `prompt` parameter itself: “Use no more than 300 Chinese characters or 600 English
       // words. Excessively long prompts may scatter information, causing the model to overlook
@@ -396,6 +417,11 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // The 3.0 entries of the API reference state only “Image format: PNG”. Its one alpha sentence is
+      // about `qwen-image-2.1-pro`, a different model, and Qwen-Image-Layered decomposes an existing
+      // image rather than drawing one (audit finding T1).
+      // https://help.aliyun.com/en/model-studio/qwen-image-generation-and-editing-api-reference
+      alpha: { kind: 'UNDOCUMENTED' },
       // "Supports input of up to 4.5k tokens", on Alibaba's model page for `qwen-image-3.0-pro`. The
       // figure was first taken from launch coverage and cited to an API reference that did not carry
       // it; this is the page that does.
@@ -453,6 +479,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // No page documents a transparent generation. The Editor exports “a transparent PNG of the areas you
+      // erased”, which is an edit made afterwards rather than an output (audit finding T1).
+      // https://docs.midjourney.com/hc/en-us/articles/32764383466893-Editor
+      alpha: { kind: 'UNDOCUMENTED' },
       promptBudget: {
         kind: 'UNPUBLISHED',
         note: 'Midjourney publish no prompt length anywhere in their documentation, only advice to keep prompts short.',
@@ -476,6 +506,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // Neither model card mentions transparency; an alpha channel takes an extension the weights do not
+      // ship with (audit finding T1). https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0
+      alpha: { kind: 'UNDOCUMENTED' },
       // **Both halves of the note below are the front end's, because there is no vendor page to
       // cite.** Stability publish weights rather than a prompt syntax, which is the whole finding
       // recorded at length in `utils/modelWrapperText/stableDiffusion.ts`. The target is the weights,
@@ -585,6 +618,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // Black Forest Labs document no transparent output for FLUX.2; the one alpha channel in their
+      // documentation is an inpainting *input* to FLUX.1 Fill (audit finding T1). https://docs.bfl.ml/llms-full.txt
+      alpha: { kind: 'UNDOCUMENTED' },
       promptBudget: {
         kind: 'CEILING',
         limit: 512,
@@ -638,6 +674,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // The same finding for the hosted tier: its `output_format` takes `jpeg`, `png` and `webp`, and no
+      // parameter asks for alpha. https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[pro]
+      alpha: { kind: 'UNDOCUMENTED' },
       promptBudget: {
         kind: 'CEILING',
         limit: 32_000,
@@ -722,6 +761,15 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // “`gpt-image-2.5-sunburst` and `gpt-image-2.5-flare`, including their `2026-09-08` snapshots,
+      // support `opaque` and `transparent` backgrounds”, on the `background` property of the OpenAPI
+      // file, and for `gpt-image-2` “this support is in preview”. A request option rather than prompt
+      // text, so the Background Key control tells the reader to set it (audit finding T1).
+      // https://github.com/openai/openai-openapi/blob/master/openapi.yaml
+      alpha: {
+        kind: 'REQUEST_PARAMETER',
+        note: 'GPT Image returns an alpha channel only when your request sets background to “transparent” and output_format to “png” or “webp”.',
+      },
       // "The maximum length is 32000 characters for the GPT image models." Recorded in characters
       // because that is the unit OpenAI states it in, and taken from OpenAI's own published OpenAPI
       // description of the `prompt` field rather than from the rendered reference page, which draws

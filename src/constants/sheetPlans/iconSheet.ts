@@ -3,6 +3,7 @@ import type { IconColourMode, IconLook } from '../../types/iconRoster.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts';
 import { ICON_GRID_COLUMNS } from '../iconCatalogue/iconSheetLimits.ts';
+import { namesAFrame } from '../promptText/frameWords.ts';
 
 /** What one look writes into an icon sheet; everything else about the sheet is the same under both. */
 interface IconSheetWording {
@@ -137,6 +138,9 @@ export function iconSheet(
     ...(look === 'FULL_BLEED_TILE' ? { backdrop: 'OWN_SQUARE' } : {}),
     // A tint mask is drawn in greys for the engine to tint, and section 1 says so (audit finding M1).
     ...(colourMode === 'TINT_MASK' ? { tint: 'ENGINE_MASK' } : {}),
+    // An entry that names a frame or a border draws one, so Midjourney may not negate either on this sheet
+    // (audit finding T2); every other icon sheet negates them as the decorative surround they are.
+    ...(entries.some((entry) => namesAFrame(entry.text)) ? { frames: 'DRAWN' } : {}),
     assemblyFailure: {
       instruction:
         'Do not draw the icons placed on a hotbar or set into a finished screen anywhere on the sheet, including as a reference or key.',

@@ -1,6 +1,6 @@
 import { COMPONENT_BUDGET_RANGE } from '../../constants/componentBudget.ts';
 import { backgroundKeysFor, resolveBackgroundKey } from '../../constants/backgroundKeysFor.ts';
-import { backgroundKeyWithdrawal } from '../../constants/backgroundKeyWithdrawal.ts';
+import { backgroundKeyNote } from '../../constants/backgroundKeyNote.ts';
 import { resolveAspectRatio } from '../../constants/categoryAspectRatios.ts';
 import {
   aspectRatioChoices,
@@ -47,6 +47,7 @@ export function SheetFields() {
   // the reader chooses it — so both lists read those fields too, through `useSheetSubject`.
   const subject = useSheetSubject();
   const category = useSubjectStore((state) => state.category);
+  const backgroundKey = resolveBackgroundKey(subject, output.targetModel, output.backgroundKey);
 
   // Only the modes this subject can actually be drawn on. Offering the others is what put a
   // tileset's floors and walls one click away from a character, and a rig sheet one click away from
@@ -156,11 +157,14 @@ export function SheetFields() {
       <SelectField
         label="Background Key"
         tooltip={OUTPUT_TOOLTIPS.backgroundKey}
-        // Resolved through the subject, as the canvas is through the category: a tint-masked icon set
-        // cannot take the white key, so a stored one shows as the key it compiles to (audit finding M1).
-        value={resolveBackgroundKey(subject, output.backgroundKey)}
-        choices={BACKGROUND_KEY_CHOICES.filter((choice) => backgroundKeysFor(subject).includes(choice.value))}
-        description={backgroundKeyWithdrawal(subject)}
+        // Resolved through the subject and the target, as the canvas is through the category: a
+        // tint-masked icon set cannot take the white key (audit finding M1), and a target that documents
+        // no alpha output cannot take TRANSPARENT (T1), so a stored key shows as the key it compiles to.
+        value={backgroundKey}
+        choices={BACKGROUND_KEY_CHOICES.filter((choice) =>
+          backgroundKeysFor(subject, output.targetModel).includes(choice.value),
+        )}
+        description={backgroundKeyNote(subject, output.targetModel, backgroundKey)}
         onChange={(value) => {
           setOutputField('backgroundKey', value);
         }}

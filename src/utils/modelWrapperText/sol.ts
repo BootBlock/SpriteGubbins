@@ -278,6 +278,9 @@ export function wrapForSol(prompt: string, gated: SolGatedBlocks, sections: Sect
   // the list never names a block the prompt does not carry.
   const carried = [
     `- the numbered items of section ${citeSection(sections, 'CONTRACT')}`,
+    gated.colours
+      ? `- every colour section ${citeSection(sections, 'SUBJECT')} names, with its hex code where it gives one`
+      : '',
     gated.oneSidedFeatures
       ? `- the block in section ${citeSection(sections, 'CAMERA')} headed “${ONE_SIDED_FEATURES_HEADING}”`
       : '',
@@ -294,6 +297,8 @@ export function wrapForSol(prompt: string, gated: SolGatedBlocks, sections: Sect
   // Each entry cites its own section, because they are no longer all in one. The citation is made
   // only inside its gate: `citeSection` throws for a section the prompt does not carry.
   const blocks = [
+    gated.targetSize ? `- the target size line in section ${citeSection(sections, 'STYLE')}` : '',
+    gated.displaySize ? `- the smallest display size line in section ${citeSection(sections, 'STYLE')}` : '',
     gated.nativeGrid
       ? `- the block headed “${NATIVE_GRID_HEADING}” in section ${citeSection(sections, 'STYLE')}`
       : '',
@@ -318,6 +323,16 @@ ${blocks.join('\n')}
 A figure is what the delivered sheet can be held to. Restating one of these in your own words keeps
 the idea and drops the figure, which leaves the image nothing to be measured against.`;
 
+  // The one option this app knows the tool's call can carry beyond the prompt, and the only route to the
+  // alpha channel the CONTRACT section asks for: OpenAI's tool guide says to “set `background:
+  // "transparent"` to request one”, with `png` or `webp` (audit finding T1).
+  const transparency = gated.transparent
+    ? `
+
+Section ${citeSection(sections, 'CONTRACT')} asks for a transparent background. Request it in the call itself: set the image
+tool’s \`background\` option to \`transparent\` and its output format to \`png\` or \`webp\`.`
+    : '';
+
   return `[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]
 You are not the model that draws this sheet: you will call an image tool, and a GPT Image model
 renders whatever that call carries. So the call is where a sheet loses its component count, its
@@ -334,7 +349,7 @@ act on it yourself before you make the call, and leave it out of what you send.
 Make exactly one image-tool call, and make it: render the sheet rather than describe it. You see the
 image only when the reader does, so the self-audit in section ${citeSection(sections, 'LAYOUT')} is a check of what that call carries,
 made before you make it — never a second call or an edit of the image afterwards. Where the text
-below says to draw, it states what the image your call obtains must show.${otherFigures}
+below says to draw, it states what the image your call obtains must show.${transparency}${otherFigures}
 
 ${prompt}`;
 }

@@ -29,7 +29,7 @@ export function outputForRoster(
 ): OutputConfig {
   const { length } = sheetSeriesFor(category, subject, output.directionalMode, output.directions);
   const sheetIndex = Math.min(output.sheetIndex, Math.max(0, length - 1));
-  const backgroundKey = resolveBackgroundKey(subject, output.backgroundKey);
+  const backgroundKey = resolveBackgroundKey(subject, output.targetModel, output.backgroundKey);
   const palette = resolvePalette(subject, output.palette);
   if (
     sheetIndex === output.sheetIndex &&

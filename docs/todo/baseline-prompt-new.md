@@ -1823,6 +1823,16 @@ Emit unmodified. Correct for a conversational model, and the only target that ca
 > something is forbidden, so every entry in it is a claim about the whole configuration space, and
 > that space widens each time a category is added.
 
+> **Corrected again — the frame decision is per sheet, and `--no` opens with the category's
+> assembly terms** (audit finding T2 of `docs/todo/icon-set-audit.md`). ICON answered the frame
+> question for its whole series, so the overlay sheet's rings kept `frame, border` out of every icon
+> sheet too, where the plate and frame a generator adds are exactly what the category bans. The sheet
+> now answers: `FRAME_IS_A_COMPONENT` speaks for a category whose every sheet draws a frame, and
+> `SheetPlan.frames` for one sheet — the overlay sheet, and an icon sheet whose own entry names a
+> frame or a border. And `--no` was the one negative channel that never named the assembled whole a
+> sheet fails as; it now leads with `CATEGORY_ASSEMBLY`'s terms, as the Stable Diffusion and Qwen
+> blocks do, every word of which is already held clear of what the category's sheets ask for.
+
 ### `STABLE_DIFFUSION` (SD 1.5 / SDXL)
 ```
 [template]

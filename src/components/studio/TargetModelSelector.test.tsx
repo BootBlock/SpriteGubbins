@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { TARGET_MODELS } from '../../constants/models.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
@@ -96,4 +97,20 @@ describe('the generator link beside the target model', () => {
       expect(screen.queryByRole('link')).not.toBeInTheDocument();
     },
   );
+
+  it('moves a TRANSPARENT key off a target that documents no alpha, in the same act (audit finding T1)', async () => {
+    useOutputStore.setState({
+      output: { ...DEFAULT_OUTPUT_CONFIG, targetModel: 'GPT_IMAGE', backgroundKey: 'TRANSPARENT' },
+    });
+    render(<TargetModelSelector />);
+
+    await userEvent.selectOptions(selector(), 'MIDJOURNEY');
+    expect(useOutputStore.getState().output).toMatchObject({
+      targetModel: 'MIDJOURNEY',
+      backgroundKey: 'MAGENTA_FF00FF',
+    });
+
+    await userEvent.selectOptions(selector(), 'CHATGPT_5_6_SOL');
+    expect(useOutputStore.getState().output.backgroundKey).toBe('MAGENTA_FF00FF');
+  });
 });

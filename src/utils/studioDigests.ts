@@ -123,7 +123,7 @@ export function sheetDigest(category: SubjectCategory, subject: SheetSubject, ou
     // four values above two entirely different inventories.
     series.length > 1 ? sheetPlanFor(category, subject, mode, output.directions, output.sheetIndex).name : '',
     output.componentBudget === NO_COMPONENT_BUDGET ? 'uncapped' : `budget ${String(output.componentBudget)}`,
-    resolveBackgroundKey(subject, output.backgroundKey),
+    resolveBackgroundKey(subject, output.targetModel, output.backgroundKey),
     resolveAspectRatio(category, output.aspectRatio),
   ]);
 }

@@ -213,7 +213,31 @@ export interface TargetCapabilities {
   readonly emitsText: boolean;
   /** What the vendor publishes about prompt length, including that they publish nothing. */
   readonly promptBudget: PromptBudget;
+  /** Whether, and how, the target returns a sheet with an alpha channel. See {@link AlphaDelivery}. */
+  readonly alpha: AlphaDelivery;
 }
+
+/**
+ * How a target returns a transparent background, which is what the `TRANSPARENT` key asks for (audit
+ * finding T1).
+ *
+ * **Four states, for the reason {@link PromptBudget} has four**: an absent alpha channel is several
+ * findings, and they need different answers.
+ *
+ * - `TOOL_CALL` — the model draws through an image tool whose call can ask for a transparent
+ *   background, so its wrapper tells it to set that option.
+ * - `REQUEST_PARAMETER` — the endpoint returns alpha only when the reader's own request sets an option
+ *   the prompt cannot set; `note` says which, and the Background Key control shows it.
+ * - `UNDOCUMENTED` — the vendor documents no transparent output for a prompt alone, so `TRANSPARENT`
+ *   is withdrawn (`backgroundKeysFor`): a sheet asked for alpha comes back with a drawn checkerboard
+ *   or a flat matte, which the Quantise tab cannot key.
+ * - `NO_VENDOR` — no model is named, so nothing is withdrawn on its behalf.
+ */
+export type AlphaDelivery =
+  | { readonly kind: 'TOOL_CALL' }
+  | { readonly kind: 'REQUEST_PARAMETER'; readonly note: string }
+  | { readonly kind: 'UNDOCUMENTED' }
+  | { readonly kind: 'NO_VENDOR' };
 
 /**
  * A width and a height in pixels, for the two things this app measures that are not a component:

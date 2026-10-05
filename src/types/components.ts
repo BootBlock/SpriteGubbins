@@ -838,6 +838,19 @@ interface SheetPlanFields {
    * **`ENGINE_MASK` alone**, for the reason {@link SheetPlan.backdrop} gives.
    */
   readonly tint?: 'ENGINE_MASK';
+  /**
+   * That this sheet draws a frame or a border as part of a component, so Midjourney's `--no` may not
+   * name either (audit finding T2) — the per-sheet half of `FRAME_IS_A_COMPONENT`, which answers for a
+   * category whose every sheet draws one.
+   *
+   * **ICON's overlay sheet declares it**, because its selected ring and highlight halo are edges round
+   * a square by construction. **An icon sheet declares it where an entry names a frame or a border**
+   * (`namesAFrame`) — a map pin's dashed border, a portrait in a gilded oval frame — and on every other
+   * icon sheet the plate and frame a generator adds are negated like any decorative surround.
+   *
+   * **`DRAWN` alone**, for the reason {@link SheetPlan.backdrop} gives.
+   */
+  readonly frames?: 'DRAWN';
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */

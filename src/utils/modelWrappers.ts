@@ -84,10 +84,11 @@ export function wrapForModel(
     /**
      * What this category's assembled-whole failure is called, from `CATEGORY_ASSEMBLY`.
      *
-     * The three targets with somewhere to say it read it — Flux as the clause closing its leading
-     * sentence, Stable Diffusion and Qwen as the run opening their negative blocks. All three stated
-     * it in a figure's vocabulary on every category until this was passed, so the highest-weighted
-     * term on a terrain sheet named a subject that sheet cannot contain.
+     * The four targets with somewhere to say it read it — Flux as the clause closing its leading
+     * sentence, Stable Diffusion and Qwen as the run opening their negative blocks, and Midjourney as
+     * the first entries of `--no`, which carried none of it until audit finding T2. The first three
+     * stated it in a figure's vocabulary on every category until this was passed, so the
+     * highest-weighted term on a terrain sheet named a subject that sheet cannot contain.
      */
     readonly assembly: CategoryAssembly;
     /**
@@ -151,6 +152,14 @@ export function wrapForModel(
      * docblock says why.
      */
     readonly ownBackdrop: boolean;
+    /** Whether section 1 states a colour line, from the subject's colour fields. Read by Sol. */
+    readonly colours: boolean;
+    /** Whether section 2 states a target size, from the `SPRITE_TARGET_SIZE` value. Read by Sol. */
+    readonly targetSize: boolean;
+    /** Whether section 2 states the smallest display size, from `DISPLAY_REDUCTION`. Read by Sol. */
+    readonly displaySize: boolean;
+    /** Whether the sheet's key is `TRANSPARENT`, from the resolved key. Read by Sol. */
+    readonly transparent: boolean;
     /**
      * Every section name this prompt carries and the number its heading landed on, from
      * `sectionNumbers`.
@@ -174,6 +183,10 @@ export function wrapForModel(
           rigGeometry: options.rigGeometry,
           oneSidedFeatures: options.oneSidedFeatures,
           orientation: options.orientation,
+          colours: options.colours,
+          targetSize: options.targetSize,
+          displaySize: options.displaySize,
+          transparent: options.transparent,
         },
         options.sectionNumbers,
       );
@@ -186,6 +199,7 @@ export function wrapForModel(
         options.letteringIsAComponent,
         options.surface,
         options.ownBackdrop,
+        options.assembly,
       );
 
     case 'STABLE_DIFFUSION':
@@ -228,7 +242,7 @@ export function wrapForModel(
       );
 
     case 'SEEDREAM':
-      return wrapForSeedream(prompt, options.sectionNumbers);
+      return wrapForSeedream(prompt, options.sectionNumbers, options.orientation);
 
     case 'GPT_IMAGE':
     case 'GEMINI_FLASH_IMAGE':

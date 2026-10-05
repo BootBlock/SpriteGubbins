@@ -90,14 +90,12 @@ function measure(sheet: ImportedImage, current: RequestTicket, showToast: (messa
 }
 
 /**
- * The key the sheet is drawn on, resolved through the subject as `useResolvedBackgroundKey` resolves it
+ * The key the sheet is drawn on, resolved through the subject and the target as `useResolvedBackgroundKey` resolves it
  * (`resolveBackgroundKey`), so a tint mask's sheet is measured against the key its prompt states rather
  * than a `PURE_WHITE` the mask has withdrawn. Read out of the stores, because `measure` runs outside a
  * render and again when a reading lands.
  */
 function keyInForce(): BackgroundKey {
-  return resolveBackgroundKey(
-    useSubjectStore.getState().subject,
-    useOutputStore.getState().output.backgroundKey,
-  );
+  const { targetModel, backgroundKey } = useOutputStore.getState().output;
+  return resolveBackgroundKey(useSubjectStore.getState().subject, targetModel, backgroundKey);
 }

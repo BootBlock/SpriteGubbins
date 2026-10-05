@@ -50,8 +50,11 @@ const SECTION_REFERENCE = /\[SEC:([A-Z0-9_]+)\]/g;
  */
 const RESIDUAL_BLOCK_MARKER = /\[(?:OPTIONAL|IF|SECTION|SEC):|\[\/IF\]|\[N\]/;
 
-/** A value counts as set when it holds something other than whitespace. */
-function isSet(value: string | undefined): boolean {
+/**
+ * A value counts as set when it holds something other than whitespace — which is whether its
+ * `[OPTIONAL:…]` line is emitted, so the compiler asks it too when it tells Sol which lines to protect.
+ */
+export function isSet(value: string | undefined): boolean {
   return value !== undefined && value.trim() !== '';
 }
 

@@ -264,9 +264,11 @@ describe('the near-white words', () => {
  */
 describe('a tint mask’s background key', () => {
   it.each(PRESETS.map((preset) => [preset.name, preset] as const))(
-    '%s takes a key its own subject is offered',
+    '%s takes a key its own subject and target are offered',
     (_name, preset) => {
-      expect(backgroundKeysFor(preset.subject)).toContain(preset.output.backgroundKey);
+      expect(backgroundKeysFor(preset.subject, preset.output.targetModel)).toContain(
+        preset.output.backgroundKey,
+      );
     },
   );
 
@@ -274,9 +276,9 @@ describe('a tint mask’s background key', () => {
     const masks = ICON_SET_PRESETS.filter((preset) => preset.subject.icons?.colourMode === 'TINT_MASK');
     expect(masks.map((preset) => preset.id)).toContain('cyberpunk-squad-hud-markers');
     for (const mask of masks) {
-      expect(backgroundKeysFor(mask.subject)).not.toContain('PURE_WHITE');
-      expect(resolveBackgroundKey(mask.subject, 'PURE_WHITE')).toBe('MAGENTA_FF00FF');
+      expect(backgroundKeysFor(mask.subject, 'GENERIC')).not.toContain('PURE_WHITE');
+      expect(resolveBackgroundKey(mask.subject, 'GENERIC', 'PURE_WHITE')).toBe('MAGENTA_FF00FF');
     }
-    expect(backgroundKeysFor(defaultSubjectFor('ICON'))).toContain('PURE_WHITE');
+    expect(backgroundKeysFor(defaultSubjectFor('ICON'), 'GENERIC')).toContain('PURE_WHITE');
   });
 });

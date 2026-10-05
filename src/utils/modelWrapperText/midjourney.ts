@@ -1,6 +1,7 @@
 import { MIDJOURNEY_VERSION } from '../../constants/models.ts';
 import type { AspectRatio } from '../../types/output.ts';
 import type { RenderStyleSurface } from '../../types/rendering.ts';
+import type { CategoryAssembly } from '../../types/subject.ts';
 
 /** Midjourney's aspect flag for each sheet format. */
 const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
@@ -59,6 +60,17 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  * inventory asks for. The caller answers from `FRAME_IS_A_COMPONENT`. This is the same judgement the doc
  * comment above already records for `background` — a term stays out of `--no` where excluding it
  * would take the sheet's own subject with it.
+ *
+ * **The category's assembly terms lead the list** (audit finding T2), as they open Stable Diffusion's
+ * and Qwen's blocks: `CATEGORY_ASSEMBLY` names the assembled whole a sheet fails as — a menu screen on
+ * an icon sheet, a posed figure on a character's — and `--no` was the one negative channel that never
+ * said it. The word-by-word reading below costs nothing here, because the rule on
+ * `CategoryAssembly.negatives` already holds every word of every term clear of what the category's
+ * sheets ask for, and `categoryAssembly.test.ts` checks it.
+ *
+ * **`frame, border` is decided per sheet**, from `FRAME_IS_A_COMPONENT` and the sheet's own
+ * `SheetPlan.frames`: ICON's overlay sheet draws rings round a square, and its icon sheets draw none
+ * unless an entry names one, so the term comes out of the one and stays in the other.
  *
  * **`text` and `labels` come out on the same test, and they are the sharpest case of it.** A glyph
  * set's components are characters, so those two entries name the subject of the sheet — the same
@@ -161,8 +173,10 @@ export function wrapForMidjourney(
   letteringIsAComponent: boolean,
   surface: RenderStyleSurface,
   ownBackdrop: boolean,
+  assembly: CategoryAssembly,
 ): string {
   const negatives = [
+    ...assembly.negatives,
     ...(letteringIsAComponent ? [] : ['text', 'labels']),
     ...(ownBackdrop ? [] : ['cast shadow']),
     ...surface.negatives,

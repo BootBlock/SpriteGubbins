@@ -62,7 +62,7 @@ export interface CategoryAssembly {
   readonly statement: string;
   /**
    * The same failure as bare concepts a negative prompt can carry, weighted by Stable Diffusion and
-   * stated flat by Qwen.
+   * stated flat by Qwen and Midjourney's `--no`.
    *
    * **A term belongs here only where no word of it names something any of this category's prompts
    * requires.** That is the `--no` rule in `wrapForMidjourney` — a term belongs only while no

@@ -1,5 +1,11 @@
 import { TARGET_MODELS } from '../constants/models.ts';
-import type { PromptBudget, PromptBudgetFigure, TargetCapabilities, TargetModelId } from '../types/output.ts';
+import type {
+  AlphaDelivery,
+  PromptBudget,
+  PromptBudgetFigure,
+  TargetCapabilities,
+  TargetModelId,
+} from '../types/output.ts';
 
 /**
  * What each target generator can do with the prompt, looked up by id.
@@ -129,4 +135,13 @@ function promptBudgetFor(target: TargetModelId): PromptBudget {
 export function promptBudgetFigureFor(target: TargetModelId): PromptBudgetFigure | null {
   const budget = promptBudgetFor(target);
   return budget.kind === 'CEILING' || budget.kind === 'GUIDANCE' ? budget : null;
+}
+
+/**
+ * How this target returns a transparent background, if it can — see {@link AlphaDelivery}. Read by
+ * `backgroundKeysFor`, which withdraws `TRANSPARENT` where the vendor documents none, by the Background
+ * Key control's note, and by Sol's wrapper, which tells Sol to set the image tool's option.
+ */
+export function alphaDeliveryFor(target: TargetModelId): AlphaDelivery {
+  return capabilitiesFor(target).alpha;
 }

@@ -114,7 +114,7 @@ export const FONT_SET_PRESETS: readonly PresetArchetype[] = [
       surfaceDetail: 'TEXTURED',
       lightingModel: 'FLAT_NEUTRAL_ALBEDO',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
-      backgroundKey: 'TRANSPARENT',
+      backgroundKey: 'MAGENTA_FF00FF',
       aspectRatio: 'WIDE_16_9',
       targetModel: 'GEMINI_PRO_IMAGE',
     },

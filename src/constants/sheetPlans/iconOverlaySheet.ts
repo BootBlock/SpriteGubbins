@@ -136,6 +136,9 @@ function overlaySheet(wording: OverlayWording): SheetPlan {
     // The veil, the wedge, the halo and the glow are translucent in use; the engine applies that, and
     // every piece is drawn opaque at full strength (audit finding P8).
     opacity: 'ENGINE_APPLIED',
+    // The selected ring and the highlight halo are edges round a square, so no wrapper negates a frame or
+    // a border here (audit finding T2).
+    frames: 'DRAWN',
     scaleUnit: 'one icon',
     componentClass: 'one overlay piece the engine lays over an icon of this one set',
     assemblyFailure: {

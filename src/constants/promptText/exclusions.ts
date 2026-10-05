@@ -473,8 +473,8 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, CategorySente
  * Whether a frame or a border can be a *component* of this category's sheet rather than annotation
  * drawn around one.
  *
- * Read in exactly one place, and it exists because that place cannot say what section 0 says.
- * Midjourney's `--no` takes things to avoid — a multi-word entry is read as one of them, but never
+ * Read in exactly one place, beside the sheet's own `SheetPlan.frames`, and it exists because that
+ * place cannot say what section 0 says. Midjourney's `--no` takes things to avoid — a multi-word entry is read as one of them, but never
  * as a *placement* — so the wrapper cannot express "no border **around the image or around a
  * component**", which is a relation to the rest of the sheet rather than a thing. The term is either
  * in the negative prompt and suppressing the subject, or out of it. For every category but one a
@@ -504,15 +504,13 @@ export const FRAME_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = 
   // the head for exactly that reason, so a border on one is the surround this term exists to
   // suppress.
   PORTRAIT: false,
-  // INTERFACE's answer, for INTERFACE's reason, and it took a review pass to get here. The *plate*
-  // an icon sits in is genuinely that category's component and this one's exclusions ban it, which
-  // is what made `false` look right. But `ICON_OVERLAY_PLANS`' state group, under either look, requires a selected ring
-  // and a highlight halo, and those are edges around something by construction: `--no border`
-  // suppresses exactly them, and `--no` cannot express the placement that would separate an edge the
-  // sheet requires from a surround a generator adds. The rule `modelWrapperText/midjourney.ts`
-  // states for this term is that it stays out wherever excluding it would take the sheet's own
-  // subject with it, and one of that sheet's two groups is that subject.
-  ICON: true,
+  // **The overlay sheet's answer is INTERFACE's, and the icon sheets' is not** (audit finding T2). The
+  // overlay sheet's selected ring and highlight halo are edges round a square by construction, so `--no
+  // border` would suppress exactly them; an icon sheet draws no frame, and the plate and frame a
+  // generator adds round an icon are what its exclusions ban. This record answered for both sheets at
+  // once and so negated neither, which is why the answer moved to the sheet: the overlay plan declares
+  // `frames`, and so does an icon sheet whose own entry names a frame or a border (`namesAFrame`).
+  ICON: false,
   // A band has edges but no border: it is cut to a strip and butted against its own copy, so a frame
   // drawn round one is the surround this term suppresses — and a border would sit exactly where the
   // seam has to be invisible.

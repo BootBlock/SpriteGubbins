@@ -357,7 +357,7 @@ export function sheetFacts(
     anatomy,
     hardware,
     palette,
-    ...sheetKey(subject, output.backgroundKey),
+    ...sheetKey(subject, output.targetModel, output.backgroundKey),
     reference,
     validationPass,
     styleSettings: styleSettingsFor(output),

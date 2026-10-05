@@ -146,7 +146,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
     id: 'desert-outpost-pod',
     name: 'Desert Outpost Pod',
     description:
-      'A rendered 3D structure at one facing on transparency, with no colour budget and no outline. The building preset to reach for when the sheet is a render rather than art.',
+      'A rendered 3D structure at one facing on a magenta key, with no colour budget and no outline. The building preset to reach for when the sheet is a render rather than art.',
     category: 'BUILDING',
     subject: {
       species: 'Sci-Fi Landing Pad',
@@ -174,7 +174,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       directions: 'SINGLE_FRONT',
-      backgroundKey: 'TRANSPARENT',
+      backgroundKey: 'MAGENTA_FF00FF',
       rigMode: 'NONE',
       aspectRatio: 'WIDE_16_9',
       targetModel: 'GEMINI_FLASH_IMAGE',

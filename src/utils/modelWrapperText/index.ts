@@ -30,7 +30,7 @@
 
 export { wrapForFlux } from './flux.ts';
 export { wrapForMidjourney } from './midjourney.ts';
-export { wrapForQwen } from './qwen.ts';
+export { QWEN_NEGATIVE_BLOCK, wrapForQwen } from './qwen.ts';
 export { wrapForSeedream } from './seedream.ts';
 export { wrapForSol } from './sol.ts';
-export { wrapForStableDiffusion } from './stableDiffusion.ts';
+export { STABLE_DIFFUSION_NEGATIVE_BLOCK, wrapForStableDiffusion } from './stableDiffusion.ts';

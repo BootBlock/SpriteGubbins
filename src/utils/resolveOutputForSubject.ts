@@ -112,7 +112,7 @@ export function resolveOutputForSubject(
   const aspectRatio = resolveAspectRatio(category, output.aspectRatio);
   // And the background key, the claim a tint-masked icon set added (audit finding M1): a mask's lightest
   // grey runs close enough to white that the `PURE_WHITE` key would cut it out, so a mask never keeps it.
-  const backgroundKey = resolveBackgroundKey(subject, output.backgroundKey);
+  const backgroundKey = resolveBackgroundKey(subject, output.targetModel, output.backgroundKey);
   // And the palette, the same claim's second half: a mask is drawn in neutral greys, which no pinned
   // palette's hues can state, so a mask is drawn under `FREE` (`resolvePalette`).
   const palette = resolvePalette(subject, output.palette);

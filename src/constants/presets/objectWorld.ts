@@ -58,7 +58,7 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
     id: 'lowpoly-camp-station',
     name: 'Low-Poly Camp Station',
     description:
-      'Faceted low-poly geometry with the palette off and the detail down, on transparency. A prop is read by its facets here, and drawn seams would only compete with them.',
+      'Faceted low-poly geometry with the palette off and the detail down, on a magenta key. A prop is read by its facets here, and drawn seams would only compete with them.',
     category: 'OBJECT',
     subject: {
       species: 'Healing Station',
@@ -89,7 +89,7 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       resolutionProfile: 'MID_RESOLUTION',
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
-      backgroundKey: 'TRANSPARENT',
+      backgroundKey: 'MAGENTA_FF00FF',
       rigMode: 'NONE',
       aspectRatio: 'WIDE_16_9',
       targetModel: 'FLUX_API',

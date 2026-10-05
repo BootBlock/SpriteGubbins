@@ -152,7 +152,7 @@ export const BACKGROUND_LAYER_PRESETS: readonly PresetArchetype[] = [
       surfaceDetail: 'TEXTURED',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
-      backgroundKey: 'TRANSPARENT',
+      backgroundKey: 'MAGENTA_FF00FF',
       aspectRatio: 'WIDE_16_9',
       targetModel: 'GEMINI_PRO_IMAGE',
     },

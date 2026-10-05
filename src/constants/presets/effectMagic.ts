@@ -61,7 +61,7 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
       surfaceDetail: 'TEXTURED',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       lightingModel: 'UNLIT_EMISSIVE_BAKED',
-      backgroundKey: 'TRANSPARENT',
+      backgroundKey: 'MAGENTA_FF00FF',
       aspectRatio: 'ULTRAWIDE_21_9',
       targetModel: 'GEMINI_PRO_IMAGE',
     },
