@@ -13,7 +13,7 @@ import { lookObject } from './lookObject.ts';
  * - **A marked pair** draws a mark on one object: a quest giver's star and a turn-in's tick on one
  *   marker, and a vendor's purse with a return arrow for the buyback — the convention a player knows.
  */
-export const ONE_OBJECT_SETS: readonly (readonly string[])[] = [
+const ONE_OBJECT_SETS: readonly (readonly string[])[] = [
   ['heal-minor', 'heal-standard', 'heal-major'],
   ['mana-minor', 'mana-major'],
   ['tool-key-common', 'tool-key-master'],
@@ -21,13 +21,6 @@ export const ONE_OBJECT_SETS: readonly (readonly string[])[] = [
   ['pin-quest-available', 'pin-quest-turn-in'],
   ['service-vendor', 'service-buyback'],
 ];
-
-/**
- * The groups whose every entry is one carrier marked differently, by convention: a chat channel is a
- * speech bubble with its channel's mark inside, an emote is a gesture of a hand or a face, and a pet
- * command is a paw print with the command's mark. The mark is drawn, so it reads without colour.
- */
-export const ONE_OBJECT_GROUPS: ReadonlySet<string> = new Set(['chat', 'emotes', 'pet-commands']);
 
 /** The ids that share one object in `lookObject`'s reading and are not permitted to. */
 export function sharedObjects(

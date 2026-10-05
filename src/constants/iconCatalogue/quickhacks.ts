@@ -2,10 +2,10 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
 
 /**
  * The quickhacks a netrunner uploads into a target’s implants: a short circuit, an overheat, a cryo
- * lock-up, a contagion, a synapse burnout, a weapon glitch, a crippled stride, a sonic shock, a system
+ * lock-up, a contagion, a neural overload, a weapon glitch, a crippled stride, a sonic shock, a system
  * collapse, a network ping and a memory wipe.
  *
- * **Eleven hacks across seven schools, told apart by silhouette.** Each is led by its own school’s
+ * **Eleven hacks across eight schools, told apart by silhouette.** Each is led by its own school’s
  * colour and no look names another school’s hue, but three schools hold two hacks apiece, so what keeps
  * them apart on an action bar is the object each is drawn as: a fused chip, a venting heat-sink, a
  * seized joint, a dissolving memory shard. Code is drawn as pixel blocks and shapes, never as characters.
@@ -66,8 +66,8 @@ export const QUICKHACKS: IconCatalogueGroup = {
       },
     },
     {
-      id: 'quickhack-synapse-burnout',
-      role: 'Synapse burnout quickhack',
+      id: 'quickhack-neural-overload',
+      role: 'Neural overload quickhack',
       school: 'NEURAL',
       looks: {
         FANTASY: 'a black candle burning down to its stub in a violet flame',
@@ -91,8 +91,8 @@ export const QUICKHACKS: IconCatalogueGroup = {
       },
     },
     {
-      id: 'quickhack-cripple-movement',
-      role: 'Cripple movement quickhack',
+      id: 'quickhack-servo-lock',
+      role: 'Servo lock quickhack',
       school: 'KINETIC',
       looks: {
         FANTASY: 'an iron ball and chain with a heavy shackle',

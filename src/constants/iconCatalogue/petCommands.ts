@@ -21,7 +21,7 @@ export const PET_COMMANDS: IconCatalogueGroup = {
         AGE_OF_STEAM: 'a brass paw-print medallion crossed by a riveted cavalry sabre',
         MODERN: 'a black paw print crossed by a matte-black combat knife',
         CYBERPUNK:
-          'a neon-red paw print crossed by a brushed-steel mantis-blade, a burst of steel sparks where they meet',
+          'a neon-red paw print crossed by a brushed-steel monoblade, a burst of steel sparks where they meet',
         SPACE_OPERA: 'a white paw print crossed by a glowing blue energy blade',
       },
     },

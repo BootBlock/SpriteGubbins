@@ -3,7 +3,7 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
 /**
  * The abilities that move a character: a dash, a blink, a leap, a grapple and a sprint.
  *
- * **Each movement is drawn as the gear or sigil that makes it, so the five never share a silhouette.**
+ * **Each movement is drawn as the gear or the effect that makes it, so the five never share a silhouette.**
  * A dash is a short burst from a heel, a leap a compressed spring, a sprint a sustained drive and a
  * grapple a line pulled taut, and none of them is the grappling hook the tools shelf carries. Every one
  * is kinetic, the physical school, because the body does the work; the blink alone is netrun, the

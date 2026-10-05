@@ -7,8 +7,8 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  *
  * **Each mark is told apart by its outline alone,** because a killfeed shows it at about 16 px and
  * often as a grey tint mask coloured by team. So no two share an object in one world. A streak is a
- * row of shapes rather than a count, a precision shot is a pierced target rather than anything
- * anatomical, and an elimination is a struck-out mark rather than a body.
+ * row of shapes rather than a count, a precision shot is a pierced target or a sight rather than
+ * anything anatomical, and an elimination is a struck-out mark rather than a body.
  */
 export const KILLFEED: IconCatalogueGroup = {
   id: 'killfeed',

@@ -6,8 +6,9 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  *
  * **Each badge is one object a role carries, never the person carrying it,** and each is a different
  * object with a different outline, so a player still tells the roles apart at 20 px once the engine has
- * greyed the badge to a tint mask in their team’s colour. The commander’s badge is a standard or a baton
- * rather than a crown, which is the group leader’s.
+ * greyed the badge to a tint mask in their team’s colour. The commander’s badge is a standard, a baton, a
+ * radio or a beacon rather than a crown, which is the group leader’s. The medic’s cross is green or
+ * white, never the red cross on white that international law reserves.
  */
 export const SQUAD_ROLES: IconCatalogueGroup = {
   id: 'squad-roles',
@@ -51,11 +52,11 @@ export const SQUAD_ROLES: IconCatalogueGroup = {
       id: 'role-medic',
       role: 'Medic role',
       looks: {
-        FANTASY: 'a red cross stitched on a round linen patch',
-        AGE_OF_STEAM: 'a leather doctor’s bag with brass clasps and a red cross',
-        MODERN: 'a red cross on a white circle',
+        FANTASY: 'a green cross stitched on a round linen patch',
+        AGE_OF_STEAM: 'a leather doctor’s bag with brass clasps and a green cross',
+        MODERN: 'a white cross on a green circle',
         CYBERPUNK: 'a glowing neon-green cross on a gunmetal hexagon',
-        SPACE_OPERA: 'a white medi-drone with a red cross of light on its hull',
+        SPACE_OPERA: 'a white medi-drone with a green cross of light on its hull',
       },
     },
     {

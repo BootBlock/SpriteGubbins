@@ -322,7 +322,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
     id: 'cyberpunk-action-bar-consumables',
     name: 'Cyberpunk Action Bar — Consumables',
     description:
-      'Sixteen action-bar consumables for a cyberpunk MMORPG: stim-packs, neural jacks, detox inhalers and grenades, each its own shape on a 128 px square painted edge to edge for the bar to frame.',
+      'Sixteen action-bar consumables for a cyberpunk MMORPG: stim-packs in three sizes, a neural jack, a detox inhaler and grenades, each told apart by shape on a 128 px square painted edge to edge for the bar to frame.',
     category: 'ICON',
     subject: {
       species: 'Action Bar',

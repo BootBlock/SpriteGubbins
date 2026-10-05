@@ -1,4 +1,4 @@
-import { spokenList } from '../../utils/spokenList.ts';
+import { spokenList } from './spokenList.ts';
 
 /** Identifiers in backticks, as a sentence of guidance lists them: `` `A`, `B` and `C` ``. */
 export function coded(names: readonly string[]): string {

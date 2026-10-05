@@ -6,8 +6,8 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  *
  * **Three healing tiers that differ in size and in nothing else a player could misread.** An action bar
  * holds the minor and the major side by side, so each look grows the same object rather than swapping
- * it for another: a slim injector against a heavy one, a small flask against a large one. The two
- * ability-resource tiers do the same.
+ * it for another: a slim injector against a heavy one, a small flask against a large one. The
+ * ability-resource tiers grow one object where the family has one to grow, a bottle or a crystal.
  *
  * **Every other restorative is an object of its own** (audit finding C1). The cyberpunk looks once drew
  * nine of an action bar's sixteen icons as injector pens told apart by hue, which a red–green
@@ -25,7 +25,7 @@ export const RESTORATIVES: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a small round-bellied flask of red potion, stoppered with cork',
         AGE_OF_STEAM: 'a small brown apothecary bottle of red tonic with a wax-sealed stopper',
-        MODERN: 'a compact first-aid pouch with a red cross panel and a zip pull',
+        MODERN: 'a compact first-aid pouch with a white-cross green panel and a zip pull',
         CYBERPUNK: 'a slim red stim-pack auto-injector, needle capped, with a glowing amber dose window',
         SPACE_OPERA: 'a palm-sized white medi-gel capsule with a soft red glow at its core',
       },
@@ -36,7 +36,7 @@ export const RESTORATIVES: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a round-bellied glass flask of red potion with a twine-tied cork',
         AGE_OF_STEAM: 'a ribbed green-glass tonic bottle of red elixir with a brass cap',
-        MODERN: 'a white first-aid kit box with a red cross and a moulded carry handle',
+        MODERN: 'a white first-aid kit box with a green cross and a moulded carry handle',
         CYBERPUNK:
           'a twin-chamber red trauma injector with a brushed-steel plunger and two glowing amber dose windows',
         SPACE_OPERA: 'a long white medi-gel cartridge, its red core pulsing through frosted casing',
@@ -48,7 +48,7 @@ export const RESTORATIVES: IconCatalogueGroup = {
       looks: {
         FANTASY: 'a large round-bellied flask of glowing red potion with a gilded stopper',
         AGE_OF_STEAM: 'a tall brass-banded glass bottle of red restorative with a pressure valve',
-        MODERN: 'an orange trauma bag with a red cross, side pockets and a shoulder strap',
+        MODERN: 'an orange trauma bag with a green cross, side pockets and a shoulder strap',
         CYBERPUNK:
           'a heavy red trauma-pack injector gun with a pistol grip, a hazard-striped barrel and a bright amber cartridge',
         SPACE_OPERA: 'a red nanite-repair canister with a glowing ring at its waist and a domed white cap',

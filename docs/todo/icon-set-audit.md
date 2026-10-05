@@ -257,9 +257,9 @@ a test, and "plausible" otherwise.
   10 on `main`.
 - **C1–C4 and M5** landed in phase 4, in “Give every icon its own outline, keep chrome off the white
   key, and shelve what a multiplayer cyberpunk game needs”.
-  - **C1**: the cyberpunk action bar’s nine injector pens are now an injector ladder for health and, for
-    the rest, a jack plug, a cartridge, a can, an inhaler, a nasal spray, a med-kit case, a servo
-    gauntlet, a nerve coil and an ankle brace. The fantasy, age-of-steam and space-opera restoratives
+  - **C1**: of the cyberpunk action bar’s nine injector pens, three stay as the health ladder, and the
+    other six are now a jack plug, a can, an inhaler, a med-kit case, a servo gauntlet and a nerve coil;
+    two of the bar’s three cartridges are now a nasal spray and an ankle brace. The fantasy, age-of-steam and space-opera restoratives
     and boosts had the same fault, vials and capsules told apart by hue, and were redrawn the same way.
     `lookObject` (in `src/test/`) reads the object a look is drawn as, and two tests hold it: no two
     entries of a shelf share an object in any family, and no preset draws two of its icons as one
@@ -284,13 +284,14 @@ a test, and "plausible" otherwise.
     options of every field that describes the drawing are held to the catalogue’s rules too, which
     renamed `Moulded Polymer & LED Strip` to `Moulded Polymer & Light Strip`, since a model letters an
     acronym onto the object. *Where The Set Is Shown* is exempt: it names a screen, never a drawing.
-  - **C4**: flat neutral lighting states its reason by category. An icon set, an interface kit and a
-    font are drawn over the game, where no engine light reaches them (`DRAWN_OVER_THE_GAME`), so their
-    prompts say the artwork looks the same wherever the interface places it, and the *Lighting Model*
-    card and its `FLAT_NEUTRAL_ALBEDO` label no longer call it the engine-lit standard. **ICON’s default
-    lighting is not changed**: the studio has no per-category default for any output control, every
-    claim a category makes is a refusal of a value it cannot honour, and flat lighting is an honest
-    look for an icon that two shipped presets take. The five presets that want a baked key light set one.
+  - **C4**: flat neutral lighting states its reason by category. An icon set, an interface kit, a font
+    and a dialogue portrait are drawn over the game, where no engine light reaches them
+    (`DRAWN_OVER_THE_GAME`), so their prompts say the artwork looks the same wherever the interface
+    places it, and the *Lighting & Shading Model* card and its `FLAT_NEUTRAL_ALBEDO` label no longer
+    call it the engine-lit standard. **ICON’s default lighting is not changed**: the studio has no
+    per-category default for any output control, every claim a category makes is a refusal of a value
+    it cannot honour, and flat lighting is an honest look for an icon that two shipped presets take.
+    The five presets that want a baked key light set one.
   - **M5**: eight shelves, each writing all five looks — *Pings and callouts*, *Objectives and zones*,
     *Killfeed and scoreboard*, *Squad roles*, and *Heat and standing* among the system icons beside the
     map pins and the combat status, *Cyberware slots* beside the equipment slots, *Quickhacks* as
@@ -298,3 +299,14 @@ a test, and "plausible" otherwise.
     is drawn whole and broken, and the four standings are a spiked triangle, a ring, a shield and a star,
     so neither reads by colour alone. The shipped presets are unchanged; a squad HUD set can now tick
     pings and objectives rather than map pins.
+- The review of phase 4 landed in “Fix the review findings on the icon set audit’s phase 4”. **C2**:
+  `wordNamed` read the bare stem of a word ending in “e” as the colour, so “bond” named bone and “pal”
+  pale; it now drops
+  the “e” only before a vowel ending. Two docblocks still drew abilities as sigils. **C4**: a dialogue
+  portrait is drawn over the game too, so it joins `DRAWN_OVER_THE_GAME`. **C1**: the preset check
+  skipped every figure rather than the shelves of one marked carrier, and now names the one preset it
+  cannot read, the emote wheel. Several new docblocks and the action bar’s card claimed more than
+  their looks drew, and are corrected. The medic badge and the first-aid looks drew the red cross on
+  white that international law reserves, and now draw a green or white cross. The quickhacks called
+  *Synapse burnout* and *Cripple movement*, and the *mantis blades*, took one published game’s own
+  names, and are now *Neural overload*, *Servo lock* and *monoblades*.

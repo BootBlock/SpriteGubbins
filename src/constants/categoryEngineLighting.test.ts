@@ -7,7 +7,8 @@ import { lightingDescription } from './promptText/lighting.ts';
 
 /**
  * That flat neutral lighting gives the engine's reason only where an engine lights the sprite (audit
- * finding C4): an icon set, an interface kit and a font are drawn over the game, where no light reaches.
+ * finding C4): an icon set, an interface kit, a font and a dialogue portrait are drawn over the game,
+ * where no light reaches.
  */
 describe('the reason flat neutral lighting gives', () => {
   const ENGINE_REASON = 'a game engine can light the sprite itself';
@@ -26,7 +27,7 @@ describe('the reason flat neutral lighting gives', () => {
   it('draws ICON over the game, and every world sprite in it', () => {
     expect(litByEngine('ICON')).toBe(false);
     expect(litByEngine('CHARACTER')).toBe(true);
-    expect(Object.keys(DRAWN_OVER_THE_GAME).sort()).toEqual(['FONT', 'ICON', 'INTERFACE']);
+    expect(Object.keys(DRAWN_OVER_THE_GAME).sort()).toEqual(['FONT', 'ICON', 'INTERFACE', 'PORTRAIT']);
   });
 
   it('leaves a key light’s line alone in every category', () => {

@@ -5,7 +5,7 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  * a cleanse, a revive, an empowerment, haste and a cut to the damage taken.
  *
  * **Each one is the effect, never the item that delivers it.** The restoratives shelf already holds
- * the injector, the potion and the defibrillator, so an ability is drawn as a beam, a sigil, a drone
+ * the injector, the potion and the defibrillator, so an ability is drawn as a beam, a mark, a drone
  * or an implant at work. The heals, the cleanse and the revive are nanite, the holy school; the
  * shield and haste are voltaic, which carries the storm’s charge and speed; the empowerment is
  * netrun, the arcane school; and the damage reduction is kinetic, because it is plate and nothing

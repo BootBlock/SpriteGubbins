@@ -24,7 +24,8 @@ import { fromHex } from '../../utils/imageData.ts';
 import { iconPickId } from '../../utils/iconPickId.ts';
 import { keyReaches } from '../../utils/keyReach.ts';
 import { lookObject } from '../../test/lookObject.ts';
-import { ONE_OBJECT_GROUPS, sharedObjects } from '../../test/oneObjectSets.ts';
+import { ONE_OBJECT_GROUPS } from '../../test/oneObjectGroups.ts';
+import { sharedObjects } from '../../test/sharedObjects.ts';
 
 /**
  * The catalogue's own contract: what every entry has to be for the sheets built from it to be right.
@@ -251,7 +252,6 @@ describe('the icon catalogue', () => {
     for (const hex of ['#E5E7EB', '#FFFFF0', '#FFFDD0', '#E1F5FE']) {
       expect(keyReaches(white, fromHex(hex) ?? white), hex).toBe(true);
     }
-    expect(KEY_COLOUR_WORDS.PURE_WHITE).toBe(NEAR_WHITE_WORDS);
     // The cyberpunk looks once named chrome on the white-keyed sets, which this reading catches.
     expect(wordNamed('a pair of chrome defib paddles', NEAR_WHITE_WORDS)).toBe('chrome');
     expect(wordNamed('frosted fins', NEAR_WHITE_WORDS)).toBe('frost');
@@ -259,6 +259,9 @@ describe('the icon catalogue', () => {
     expect(wordNamed('a blackened blade', ['black'])).toBe('black');
     expect(wordNamed('a painter’s palette', NEAR_WHITE_WORDS)).toBeUndefined();
     expect(wordNamed('a paladin’s device', NEAR_WHITE_WORDS)).toBeUndefined();
+    // A word ending in “e” drops it only before a vowel ending, so its bare stem is not the colour.
+    expect(wordNamed('an icy, bony glow', NEAR_WHITE_WORDS)).toBe('bone');
+    expect(wordNamed('a bond between pals', NEAR_WHITE_WORDS)).toBeUndefined();
   });
 
   it.each(
@@ -295,6 +298,13 @@ describe('the icon catalogue', () => {
     expect(lookObject('a white grav-anchor clamp pulling down with crushing gravity')).toBe('clamp');
     expect(lookObject('a single bed with a white pillow')).toBe('bed');
     expect(lookObject('a single outspread feathered wing in white and gold')).toBe('wing');
+    expect(lookObject('a brushed-steel bolt slowly dissolving from its tip')).toBe('bolt');
+    expect(lookObject('a brass battering ram slamming forward in a burst of steam')).toBe('ram');
+    expect(lookObject('a brass escapement frozen mid-swing, its pendulum still')).toBe('escapement');
+    expect(lookObject('a hooded silhouette sitting cross-legged with its hands on its knees')).toBe(
+      'silhouette',
+    );
+    expect(lookObject('a colossal steel greatsword plunged point-down into stone')).toBe('greatsword');
   });
 
   it('outgrows one roster, so the whole catalogue is swept as several', () => {

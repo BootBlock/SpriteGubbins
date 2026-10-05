@@ -8,7 +8,7 @@ import type { IconCatalogueGroup } from '../../types/iconCatalogue.ts';
  * **Each slot is the implant that fills it, never the body it fills.** A look names one object — a
  * co-processor wafer, a bio-pump, a knuckle-plate — and no limb or feature of a person, so the slots
  * are told apart by eleven different outlines. A fantasy world draws the enchantment or charm worn for
- * that system, and the age of steam a clockwork or galvanic device.
+ * that system, and the age of steam a brass device.
  */
 export const CYBERWARE_SLOTS: IconCatalogueGroup = {
   id: 'cyberware-slots',
@@ -112,7 +112,7 @@ export const CYBERWARE_SLOTS: IconCatalogueGroup = {
         FANTASY: 'a steel vambrace of giant strength set with a glowing topaz',
         AGE_OF_STEAM: 'a brass pneumatic ram with copper hoses and a pressure valve',
         MODERN: 'a black powered exoskeleton sleeve with steel actuators',
-        CYBERPUNK: 'a pair of gunmetal mantis blades folded along carbon housings with glowing crimson edges',
+        CYBERPUNK: 'a pair of gunmetal monoblades folded along carbon housings with glowing crimson edges',
         SPACE_OPERA: 'a white hard-light blade emitter bracer with a soft blue edge',
       },
     },

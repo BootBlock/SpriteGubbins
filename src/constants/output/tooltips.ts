@@ -6,8 +6,8 @@ import { shareRange } from '../promptText/renderStyle.ts';
 import { PALETTE_COLOR_COUNTS } from '../quantiser.ts';
 import { capitalised } from '../../utils/capitalised.ts';
 import { spokenList } from '../../utils/spokenList.ts';
-import { coded } from './codedList.ts';
-import { verb } from './styleCountVerb.ts';
+import { coded } from '../../utils/coded.ts';
+import { styleCountVerb } from '../../utils/styleCountVerb.ts';
 import {
   NARROW_BUDGET_LIMITS,
   NARROW_BUDGET_STYLES,
@@ -57,18 +57,18 @@ export const OUTPUT_TOOLTIPS = {
   paletteLimit:
     'The total colour budget across the whole sheet, which keeps every component looking like one set. The prompt states it, but **do not expect the returned sheet to be inside it**: a generated image usually arrives carrying tens or hundreds of thousands of colours.\n\n' +
     `The Quantise tab is where the budget comes true. It reduces a returned sheet to ${String(PALETTE_COLOR_COUNTS.STRICT_32_COLOR)} colours chosen from that sheet under \`STRICT_32_COLOR\`, ${String(PALETTE_COLOR_COUNTS.RESTRAINED_64_COLOR)} under \`RESTRAINED_64_COLOR\` and ${String(PALETTE_COLOR_COUNTS.EXPANDED_ALBEDO)} under \`EXPANDED_ALBEDO\`, and leaves an \`UNRESTRICTED\` sheet’s colours as they arrived.\n\n` +
-    `\`STRICT_32_COLOR\` and \`RESTRAINED_64_COLOR\` suit pixel work. ${coded(NARROW_BUDGET_STYLES)} ${verb(NARROW_BUDGET_STYLES, 'offers', 'offer')} only ${coded(NARROW_BUDGET_LIMITS)}. Painted, cel-shaded and 3D styles usually want \`UNRESTRICTED\`, because a hard colour count fights the blending they depend on.`,
+    `\`STRICT_32_COLOR\` and \`RESTRAINED_64_COLOR\` suit pixel work. ${coded(NARROW_BUDGET_STYLES)} ${styleCountVerb(NARROW_BUDGET_STYLES, 'offers', 'offer')} only ${coded(NARROW_BUDGET_LIMITS)}. Painted, cel-shaded and 3D styles usually want \`UNRESTRICTED\`, because a hard colour count fights the blending they depend on.`,
   outlineStyle:
     'How a component’s boundary is drawn where it meets the background. A pixel style draws it one pixel wide, and most others as a thin line.\n\n' +
     '- `DARK_LOCAL_CONTOUR`, a darker shade of each local colour, keeps parts separable without flattening them.\n' +
     '- `PURE_BLACK_OUTLINE` gives the harder retro read.\n' +
     '- `OUTLINE_LESS_ALBEDO` relies on value and hue contrast alone, which needs a busy scene to sit against.\n\n' +
-    `${coded(OWN_CONTOUR_STYLES)} ${verb(OWN_CONTOUR_STYLES, 'draws its', 'draw their')} own contour line, so this sets its colour and \`OUTLINE_LESS_ALBEDO\` is not offered. Below about 32 px a pixel contour takes a serious share of the pixels, so a darker shade or none reads better. On a \`PURE_BLACK\` background a black outline is asked for as a very dark grey.`,
+    `${coded(OWN_CONTOUR_STYLES)} ${styleCountVerb(OWN_CONTOUR_STYLES, 'draws its', 'draw their')} own contour line, so this sets its colour and \`OUTLINE_LESS_ALBEDO\` is not offered. Below about 32 px a pixel contour takes a serious share of the pixels, so a darker shade or none reads better. On a \`PURE_BLACK\` background a black outline is asked for as a very dark grey.`,
   lightingModel:
     'The key light and shadow treatment baked into the sprite. `FLAT_NEUTRAL_ALBEDO` suits a sprite the game engine lights, because a baked highlight would fight the engine’s own.\n\n' +
-    'For a sprite in the world, choose a fixed key only when the scene lighting is fixed too, as it is in a locked isometric view. Its shadow follows the style: hard bands on a pixel sheet, soft graded shadow on a painted one.\n\n' +
-    `${capitalised(spokenList(Object.values(DRAWN_OVER_THE_GAME)))} are drawn over the game, where no engine light reaches them, so for them a fixed key is a choice of look whatever the scene’s lighting: it bakes in the one light they will ever show.\n\n` +
-    `${coded(ONE_LIGHT_STYLES)} ${verb(ONE_LIGHT_STYLES, 'shades', 'shade')} from a directional light, so ${verb(ONE_LIGHT_STYLES, 'it takes', 'they take')} \`${ONE_LIGHT}\` and this control is withdrawn.`,
+    'In the world, choose a fixed key only when the scene lighting is fixed too, as in a locked isometric view. Its shadow follows the style: hard bands on pixel art, soft on paint.\n\n' +
+    `${capitalised(spokenList(Object.values(DRAWN_OVER_THE_GAME)))} are drawn over the game, where no engine light reaches, so for them a fixed key is purely a look: the one light they will ever show.\n\n` +
+    `${coded(ONE_LIGHT_STYLES)} ${styleCountVerb(ONE_LIGHT_STYLES, 'shades', 'shade')} from a directional light, so ${styleCountVerb(ONE_LIGHT_STYLES, 'it takes', 'they take')} \`${ONE_LIGHT}\` and this control is withdrawn.`,
   aspectRatio:
     'The shape of the sheet canvas, passed to the generator so it lays the component grid out inside the frame instead of cropping it.\n\n' +
     '- `WIDE_16_9` fits the usual wide grid.\n' +

@@ -100,14 +100,23 @@ export const KEY_COLOUR_WORDS: Readonly<Record<BackgroundKey, readonly string[]>
  * The endings a colour word keeps its meaning under — `blackened`, `pinkish`, `whitish`, `silvered`,
  * `pearlescent` — so {@link wordNamed} counts them and spares a word that only starts with the colour's
  * letters: `palette` and `paleo` are not `pale`, nor `iceberg` a colour.
+ *
+ * A word ending in “e” drops it only before an ending that starts with a vowel — `whitish`, `icy`,
+ * `bony` — so the bare stem never counts: `bond` is not `bone`, nor `pal` `pale`.
  */
-const COLOUR_ENDINGS = String.raw`(?:s|es|ed|d|n|ned|ened|ish|y|er|est|ness|escent)?`;
+const COLOUR_ENDINGS = String.raw`(?:s|es|ed|n|ned|ened|ish|y|er|est|ness|escent)?`;
+
+/** The endings after a final “e”: those that keep it, and those that take its place. */
+const E_KEPT_ENDINGS = String.raw`(?:s|d|n|ned|ness|r|st)?`;
+const E_DROPPED_ENDINGS = String.raw`(?:ish|y|ed|er|est|ened|escent)`;
 
 /** The first of `words` that `text` names as a word or one of its colour endings, in any case, or `undefined`. */
 export function wordNamed(text: string, words: readonly string[]): string | undefined {
   return words.find((word) => {
-    const stem = word.endsWith('e') ? `${word.slice(0, -1)}e?` : word;
-    return new RegExp(String.raw`\b${stem}${COLOUR_ENDINGS}\b`, 'i').test(text);
+    const forms = word.endsWith('e')
+      ? `(?:${word}${E_KEPT_ENDINGS}|${word.slice(0, -1)}${E_DROPPED_ENDINGS})`
+      : `${word}${COLOUR_ENDINGS}`;
+    return new RegExp(String.raw`\b${forms}\b`, 'i').test(text);
   });
 }
 
