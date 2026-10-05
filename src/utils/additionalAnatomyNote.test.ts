@@ -8,7 +8,8 @@ import { componentSlots } from './componentSlots.ts';
 /**
  * What the *Extra Overlay Pieces* field says under itself (audit finding T8): a piece named like one the
  * overlay library already draws, which used to be drawn twice and renamed without a word, pieces enough
- * to push a sheet past the ceiling, which only the budget notice for the sheet on screen reported, and
+ * to push a sheet past the ceiling, which only the budget notice for the sheet on screen reported (a sheet
+ * the pieces are appended to, since the overlay sheets lay a piece across as many as it fills), and
  * pieces enough to add an overlay sheet to the series.
  */
 const ICONS = defaultSubjectFor('ICON');
@@ -68,9 +69,19 @@ describe('additionalAnatomyNote', () => {
     );
   });
 
-  it('says when one piece pushes its sheet past the ceiling', () => {
-    expect(noteFor('Favourite Star ×50')).toContain(
-      `The pieces in Extra Overlay Pieces bring the “Overlay pieces 15–64” sheet to 50 components, past the ${String(PRACTICAL_COMPONENT_CEILING)} one generation reliably returns.`,
+  it('lays one piece worth several sheets across them, so no overlay sheet passes the ceiling', () => {
+    const note = noteFor('Favourite Star ×50');
+    expect(note).toContain('they add three sheets to the series');
+    expect(note).not.toContain('past the');
+  });
+
+  it('says when one piece pushes a sheet it is appended to past the ceiling', () => {
+    // A character's pieces are appended to its sheet whole, so the ceiling is still reachable there.
+    const subject = { ...defaultSubjectFor('CHARACTER'), additional_anatomy: 'Tentacle ×50' };
+    expect(
+      additionalAnatomyNote('CHARACTER', subject, parseAdditionalAnatomy('Tentacle ×50'), SERIES),
+    ).toContain(
+      `The pieces in Additional Genuine Anatomy bring the “Pose library” sheet to 87 components, past the ${String(PRACTICAL_COMPONENT_CEILING)} one generation reliably returns.`,
     );
   });
 });

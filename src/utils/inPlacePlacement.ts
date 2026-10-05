@@ -7,7 +7,8 @@ import type { SpriteCell, SpritePlacement } from '../types/spriteCell.ts';
  * cells were not read or no cell holds the piece.
  *
  * **The square the piece was placed against becomes the cell.** The cell is the lattice cell whose
- * region holds the piece's centre — a piece the reader joined across two cells takes its first member's
+ * region holds the piece's box centre (`latticeCellOf`) — a piece the reader joined across two cells is
+ * placed against the cell its centre falls in, reaches past that square, and is refused by `outOfPlace`
  * — and its square is the tile square, or the cell itself on an isolated look (`LatticeCell.square`). One
  * factor maps the square's width onto the file's, `f`, and the piece's own box is drawn at `f` times its
  * size, `f` times its offset from the square's corner in. So a corner badge drawn in the top-right of

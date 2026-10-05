@@ -7,14 +7,18 @@ const LIBRARY: ComponentGroup = { heading: 'Library', entries: [] };
 const YOURS: ComponentGroup = { heading: 'Yours', entries: [], additional: true };
 
 function library(label: string, count: number): OverlayLine {
-  return { group: LIBRARY, entry: { label, text: `${label} ×${String(count)}`, count }, count };
+  return {
+    group: LIBRARY,
+    entry: { label, text: `${label} ×${String(count)}`, count, kind: 'structure' },
+    count,
+  };
 }
 
 function yours(name: string, count: number): OverlayLine {
   const label = name.toLowerCase();
   return {
     group: YOURS,
-    entry: { label, text: `${name} ×${String(count)}`, count },
+    entry: { label, text: `${name} ×${String(count)}`, count, kind: 'structure' },
     count,
     piece: { name, count },
   };

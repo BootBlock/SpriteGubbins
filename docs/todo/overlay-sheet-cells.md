@@ -120,4 +120,15 @@ The maintainer chose the most correct option for each.
   never measured as tiles. The segmentation carries the sheet's size. The fit `IN_PLACE`, the naming
   `CELL`, the pivot `TILE_CENTRE` and manifest version 6 are new, and `SegmentedChoice` takes a reason
   per group of withheld values. `TILE_TOLERANCE` (a fifth) is reasoned rather than measured.
+- **The review** settled four more choices:
+  - **A reader's piece is laid across sheets only where keeping it whole would cost one**
+    (`overlayRuns`). Whole lines are kept where they fill the fewest sheets the drawings need; otherwise
+    each reader's piece is cut into its drawings, balanced with the library's whole lines, and joined
+    back into one line per sheet naming its drawings (`parts`). The library's lines are never split.
+  - **Only the veil and the halo measure the tile square**, and each is held to the stated share on its
+    own, so one astray piece is refused rather than outvoted in a median.
+  - **The isolated look draws each piece within section 2's share of the cell**, centred, so its
+    placement sentence and section 2 state one square; the Quantise tab still maps the whole cell.
+  - **Editing the *Extra Overlay Pieces* settles the sheet index** (`outputForField`) by the rule a
+    roster change takes, and a look or colour mode chosen with no icons ticked moves no one.
 - **Step 10 is open**: no overlay sheet generated from the new prompt is in `test_sprites/` yet.
