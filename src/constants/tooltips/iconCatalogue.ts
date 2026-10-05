@@ -11,7 +11,7 @@ import { ICON_ROSTER_CAPACITY, ICONS_PER_SHEET } from '../iconCatalogue/iconShee
  * to the project's library too, which keeps its own copy and which Undo does not reach.
  */
 export const ICON_CATALOGUE_ACTION_TOOLTIPS = {
-  openCatalogue: `Opens the icon catalogue, where you tick the icons this set draws. Each icon you tick becomes a named slot on an icon sheet, at most ${String(ICONS_PER_SHEET)} components to a sheet before the overlay sheet, and the compiled prompt follows at once.\n\nEvery tick is a step Undo can take back.`,
+  openCatalogue: `Opens the icon catalogue, where you tick the icons this set draws. Each icon you tick becomes a named slot on an icon sheet, at most ${String(ICONS_PER_SHEET)} components to a sheet before the overlay sheets, and the compiled prompt follows at once.\n\nEvery tick is a step Undo can take back.`,
 
   tickGroup: `Ticks every icon this group is showing under the current search and filters, as one step Undo can take back. An icon that would take the set past its ${String(ICON_ROSTER_CAPACITY)} components is left unticked, and a notice says how many.`,
 
@@ -19,7 +19,7 @@ export const ICON_CATALOGUE_ACTION_TOOLTIPS = {
     'Unticks every icon this group is showing under the current search and filters, as one step Undo can take back. The icon sheets are cut again as evenly as the set allows, so icons can move to other sheets.',
 
   clearAll:
-    'Unticks every icon on your set, including any the search is hiding and the icons you wrote yourself, as one step Undo can take back. Your own icons stay in your library to tick again. The series goes back to the overlay sheet alone, and the prompt follows.',
+    'Unticks every icon on your set, including any the search is hiding and the icons you wrote yourself, as one step Undo can take back. Your own icons stay in your library to tick again. The series goes back to the overlay sheets alone, and the prompt follows.',
 
   addOwn:
     'Opens a form for an icon the catalogue does not hold, such as a quest relic or a spell only your game has. You name its role, its kind and what it looks like. It joins your set as a named slot like any ticked icon, and the library of the project chosen beside this keeps it for later sets.',

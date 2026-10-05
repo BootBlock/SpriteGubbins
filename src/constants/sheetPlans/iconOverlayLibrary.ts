@@ -32,9 +32,12 @@ interface OverlayLibrary {
  *
  * **Each piece stands where it sits over the icon, inside its cell** (`SheetPlan.placement`). The pieces
  * were once told to keep clear of the middle of a square that had no backdrop, so the Quantise tab cut
- * each to its own bounding box and centred it, and a corner mark lost its corner. Under the full-bleed
- * look the square is the tile square section 2 states at an exact share of the cell; under the isolated
- * look it is the cell itself, which an isolated icon fills as its own.
+ * each to its own bounding box and centred it, and a corner mark lost its corner. Under both looks a
+ * piece is drawn within the share of the cell section 2 states for every sheet of the set, where the icon
+ * it marks sits in its own cell, so section 2's one square and this sentence never disagree. The looks
+ * differ in what the Quantise tab maps onto the file: the tile square under the full-bleed look, as the
+ * icons' *Fill square* cut does, and the whole cell under the isolated look, as their *Scale evenly* cut
+ * does (`SheetPlan.placement`).
  */
 const WORDING: Readonly<Record<IconLook, OverlayWording>> = {
   FULL_BLEED_TILE: {
@@ -71,11 +74,12 @@ nothing about which icon they are looking at.`,
     rarityGlow: 'Rarity glow ×1 — the aura the highest tier carries',
     marksIntro: `Small pieces laid over a finished icon to say something about it. Each is drawn clear of any icon, so
 it can be placed on any of them:`,
-    placement: `Inside its cell, every piece stands where it sits over the icon, as though that icon filled the cell
-as it fills its own: a corner mark in its corner of the cell, a veil or a ring round the place the
-icon takes. Only the piece is drawn, never the cell, so it lands in the icon’s cell without being
-moved or scaled. A mark stands clear of the icon’s own silhouette wherever it can — a mark that
-covers the thing it is describing tells the player nothing about which icon they are looking at.`,
+    placement: `Inside its cell, every piece is drawn within the share of the cell section [SEC:STYLE] states, centred
+in the cell — the place an icon of this set takes in its own cell — and stands where it sits over
+that icon: a corner mark at a corner of that place, a ring round it, a veil over it. Only the piece is
+drawn, never the cell, so it lands in the icon’s cell without being moved or scaled. A mark stands
+clear of the icon’s own silhouette wherever it can — a mark that covers the thing it is describing
+tells the player nothing about which icon they are looking at.`,
   },
 };
 
@@ -125,10 +129,9 @@ copies of each of them:`,
         entries: [
           { ...overlay('disabled-veil', wording.veil), fillsTile: true },
           { ...overlay('highlight-halo', wording.halo), fillsTile: true },
-          { ...overlay('selected-ring', wording.ring), fillsTile: true },
+          overlay('selected-ring', wording.ring),
           {
             ...overlay('cooldown-sweep', wording.sweep, 2),
-            fillsTile: true,
             parts: ['cooldown-sweep-quarter', 'cooldown-sweep-three-quarters'],
           },
         ],
@@ -142,7 +145,7 @@ copies of each of them:`,
             'Tier marks ×4: one per rarity step above the common one, each a shape of its own carrying one to four pips in order, so a tier reads by its shape and its pip count and never by its colour alone',
             4,
           ),
-          { ...overlay('rarity-glow', wording.rarityGlow), fillsTile: true },
+          overlay('rarity-glow', wording.rarityGlow),
           overlay('locked-mark', 'Locked mark ×1'),
           overlay('new-item-flare', 'New item flare ×1'),
           overlay('broken-overlay', 'Broken or damaged overlay ×1'),

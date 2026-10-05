@@ -1,5 +1,6 @@
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { SpriteDecision, SpriteEdit, SpritePin } from '../types/spriteAssignment.ts';
+import { boundingRegion } from './boundingRegion.ts';
 import { locateSprite } from './spritePin.ts';
 import { disjointSet } from './unionFind.ts';
 
@@ -190,15 +191,7 @@ function claimedName(
  * not an estimate. It is what the speck floor and the panel's largest-sprite reading are stated in.
  */
 function joinBoxes(members: readonly SpriteBox[]): SpriteBox {
-  const left = Math.min(...members.map((box) => box.left));
-  const top = Math.min(...members.map((box) => box.top));
-  return {
-    left,
-    top,
-    width: Math.max(...members.map((box) => box.left + box.width)) - left,
-    height: Math.max(...members.map((box) => box.top + box.height)) - top,
-    pixels: members.reduce((total, box) => total + box.pixels, 0),
-  };
+  return { ...boundingRegion(members), pixels: members.reduce((total, box) => total + box.pixels, 0) };
 }
 
 /** Narrows away the `undefined` an index lookup admits; every index here came from the list itself. */

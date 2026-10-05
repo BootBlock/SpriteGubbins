@@ -2445,7 +2445,7 @@ export const QUANTISE_TOOLTIPS = {
     '- As drawn places each sprite at its own size, and refuses one larger than the cell. Pixel art wants this.\n' +
     '- Scale evenly resizes every sprite by one factor, so one step of the sheet’s grid fills one cell. Use it for isolated marks.\n' +
     '- Fill square crops each sprite to its centred square and resizes it to fill the cell. Use it for full-bleed squares.\n' +
-    '- Keep place keeps each piece where it was drawn on the icon, so a corner badge stays in its corner. Only an icon set’s overlay sheet takes it, and it takes no other fit.\n\n' +
+    '- Keep place keeps each piece where it was drawn on the icon, so a corner badge stays in its corner. Only an icon set’s overlay sheets take it, and they take no other fit.\n\n' +
     'Use a scaling fit with Studio target to bring a painted icon set to 128 × 128 px. Each new pixel averages the pixels it covers. A sheet with a pixel scale above 1 is never resized.',
 
   downloadScale:

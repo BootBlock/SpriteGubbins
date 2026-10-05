@@ -23,7 +23,7 @@ import { Tooltip } from '../common/Tooltip.tsx';
  * against the capacity, sheets — which is also what decides how many generations it takes.
  *
  * **The look comes first**, because it is the one choice here that rewrites every sheet of the set at
- * once — the icon sheets, the overlay sheet and the files cut from them — where a tick moves one icon.
+ * once — the icon sheets, the overlay sheets and the files cut from them — where a tick moves one icon.
  * It is a row of pills (`SegmentedChoice`) under a label carrying the card, as the Quantise tab's small
  * choices are, and each press is one act on the studio's undo stack (`setIconLook`).
  *

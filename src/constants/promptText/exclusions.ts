@@ -211,7 +211,8 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, (plan: Sh
  * **It is a function of the sheet, not a sentence the record states.** The block it exempts is
  * conditional — `componentBreakdownFor` appends nothing when the subject named no pieces, and
  * `anatomyFacingsFor` returns `null` on every sheet of a series but the one that draws the pieces —
- * the first, or ICON's overlay sheet, which closes its series — and that is what keeps a tail off the
+ * the first, and on ICON none, whose overlay sheets list the pieces in a group of their own under the
+ * same label (`drawsAdditionalAnatomy`) — and that is what keeps a tail off the
  * articulation sheets that would have nothing to hang it on. An unconditional clause
  * therefore shipped an exception with no members on the commonest prompt the app composes — the
  * default subject names none — and on every later sheet of a series besides: the character and
@@ -509,8 +510,9 @@ export const FRAME_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = 
   // overlay sheet's selected ring and highlight halo are edges round a square by construction, so `--no
   // border` would suppress exactly them; an icon sheet draws no frame, and the plate and frame a
   // generator adds round an icon are what its exclusions ban. This record answered for both sheets at
-  // once and so negated neither, which is why the answer moved to the sheet: the overlay plan declares
-  // `frames`, and so does an icon sheet whose own entry names a frame or a border (`namesAFrame`).
+  // once and so negated neither, which is why the answer moved to the sheet: an overlay sheet holding
+  // the ring, the halo or the glow declares `frames`, and so does any sheet whose own entry names a
+  // frame or a border (`namesAFrame`).
   ICON: false,
   // A band has edges but no border: it is cut to a strip and butted against its own copy, so a frame
   // drawn round one is the surround this term suppresses — and a border would sit exactly where the

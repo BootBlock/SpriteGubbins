@@ -136,8 +136,8 @@ describe('checkCustomIcon — what it refuses', () => {
   it.each([
     ['a catalogue entry’s id', 'Heal minor', 'heal-minor', 'the catalogue’s “Minor healing consumable”'],
     ['a catalogue pair’s drawing', 'System sound muted', 'system-sound-muted', 'the catalogue’s “Sound”'],
-    ['an overlay piece', 'Locked mark', 'locked-mark', 'a piece of the overlay sheet'],
-    ['an overlay piece’s drawing', 'Tier mark 2', 'tier-mark-2', 'a piece of the overlay sheet'],
+    ['an overlay piece', 'Locked mark', 'locked-mark', 'a piece of the overlay sheets'],
+    ['an overlay piece’s drawing', 'Tier mark 2', 'tier-mark-2', 'a piece of the overlay sheets'],
     [
       'an entry of the reader’s own',
       'Nightcity  keycard relic!',

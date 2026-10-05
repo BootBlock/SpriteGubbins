@@ -65,7 +65,7 @@ export const SPRITE_FIT_PLACED_ONLY =
 
 /** Why *Keep place* is withheld off a placement sheet, which has no cells to keep a piece in. Plain text. */
 export const SPRITE_FIT_IN_PLACE_UNAVAILABLE =
-  'Keep place is for a sheet that lays one piece in each cell, such as an icon set’s overlay sheet.';
+  'Keep place is for a sheet that lays one piece in each cell, such as the overlay sheets of an icon set.';
 
 /**
  * How large a cell side may be, in drawn pixels.

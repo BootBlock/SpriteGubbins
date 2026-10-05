@@ -18,7 +18,11 @@ import { overlaySheetCount } from './overlaySheetCount.ts';
  * adds a sheet would otherwise carry the first reader onto another sheet by position, and an untick that
  * removes one would carry the second onto an overlay sheet. A set with no icons is the overlay sheets
  * alone, which the reader is on because there is nothing else, so their first ticks take them to the
- * first icon sheet. The overlay sheets are counted by `overlaySheetCount`.
+ * first icon sheet; a look or colour mode chosen with no icons ticked leaves them where they are.
+ *
+ * **The extra overlay pieces settle the index the same way** (`useSubjectStore`'s `setField`): typing
+ * pieces that add or remove an overlay sheet keeps a reader on an icon sheet where they were, and one
+ * on an overlay sheet on the same overlay sheet, or the last where that one has gone. The overlay sheets are counted by `overlaySheetCount`.
  *
  * **An icon sheet is clamped to the last icon sheet rather than reset to the first**, which is where it
  * differs from `resolveOutputForSubject`. That one answers a change of *what* is drawn, where sheet three
@@ -46,7 +50,7 @@ export function outputForRoster(
   const icons = iconSheetsOf(now);
   const held = resolveSheetIndex(category, before, directionalMode, directions, output.sheetIndex);
   const sheetIndex =
-    was === 0
+    was === 0 && icons > 0
       ? 0
       : held >= was
         ? Math.min(icons + held - was, now.length - 1)

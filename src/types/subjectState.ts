@@ -80,7 +80,7 @@ export interface SubjectState {
   removeCustomIcon(id: string): void;
   /**
    * Empty the roster, as one act: every catalogue icon unticked and every icon of the reader's own
-   * taken off the set, leaving the overlay sheet alone in the series. The library keeps its entries.
+   * taken off the set, leaving the overlay sheets alone in the series. The library keeps its entries.
    */
   clearIcons(): void;
   /**

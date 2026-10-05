@@ -9,7 +9,7 @@ import type { StudioHistory, StudioPosition } from '../types/studioHistory.ts';
 import type { SubjectState } from '../types/subjectState.ts';
 import { checkCustomIcon } from '../utils/checkCustomIcon.ts';
 import { iconPickId } from '../utils/iconPickId.ts';
-import { outputFollowingBase } from '../utils/outputFollowingBase.ts';
+import { outputForField } from '../utils/outputForField.ts';
 import { resolveOutputForSubject } from '../utils/resolveOutputForSubject.ts';
 import { outputForReset } from '../utils/outputForReset.ts';
 import { outputForRoster } from '../utils/outputForRoster.ts';
@@ -56,10 +56,12 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     // despite never being recorded. A base whose plans cannot draw the stored sheet is the exception:
     // it settles the mode, the rig and the sheet index, and typing the old base back returns the field
     // without returning those, so that edit is an act. It records only on the keystroke whose plans
-    // move the output, never on the keystrokes between.
+    // move the output, never on the keystrokes between. An icon set's *Extra Overlay Pieces* are the
+    // second: they decide how many overlay sheets close the series, so an edit that adds or removes
+    // one keeps the reader on the sheet they were on (`outputForRoster`).
     const { category, subject } = get();
     const next = { ...subject, [key]: value };
-    const output = outputFollowingBase(category, subject, next, useOutputStore.getState().output);
+    const output = outputForField(category, subject, next, useOutputStore.getState().output);
     if (output === null) {
       set({ subject: next });
       return;
@@ -114,7 +116,7 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
         if (choice !== undefined) subject[field.key] = choice;
       }
       set({ subject });
-      settleOutput((output) => outputFollowingBase(category, before, subject, output));
+      settleOutput((output) => outputForField(category, before, subject, output));
     });
   },
 
@@ -142,7 +144,7 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
 
 /**
  * Write the output configuration `settle` answers with for the one in force, where it answers with a
- * different one: `resolveOutputForSubject` after a category switch, `outputFollowingBase` after a reroll,
+ * different one: `resolveOutputForSubject` after a category switch, `outputForField` after a field edit or a reroll,
  * `outputForReset` after a reset, and `outputForRoster` after a roster change. Each hands back the same
  * object, or `null`, for a change that decides nothing, and that writes nothing.
  */

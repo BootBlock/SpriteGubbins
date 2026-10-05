@@ -29,7 +29,7 @@ interface OverlayLine {
  * own pieces past the sixteen cells of one sheet used to be appended to it regardless, so a sheet asked
  * for more drawings than it has cells. The library and the extras are now one run of lines, in that
  * order, cut by `balancedChunks` as the icon sheets are, so eighteen pieces are two sheets of nine. A
- * single extra marked past sixteen still takes a sheet of its own, which the field's note reports.
+ * piece marked past sixteen is split into lines of sixteen first, so no sheet holds more than its cells.
  *
  * **One piece to a cell, at its place on the icon** (`SheetPlan.placement`). Every sheet opens with the
  * grid sentence and the cell sentence the icon sheets state, then the look's placement sentence, so the
@@ -68,7 +68,7 @@ export function iconOverlaySheets(
     heading: fieldLabelFor('ICON', 'additional_anatomy'),
     intro:
       'Further pieces of the same library, each drawn as its own component in the style every piece shares:',
-    entries: extras.map((piece) => extraEntry(piece, taken)),
+    entries: extras.flatMap((piece) => extraEntries(piece, taken)),
     additional: true,
   };
   const lines: OverlayLine[] = [...groups, yours].flatMap((group) =>
@@ -88,31 +88,49 @@ export function iconOverlaySheets(
 }
 
 /**
- * One of the reader's own pieces, as a line of the library drawn in the *Overlay Style*, under a label
- * no line before it answers to.
+ * One of the reader's own pieces, as the lines of the library it is drawn on in the *Overlay Style*,
+ * under a label no line before it answers to.
  *
  * **Unique across the whole library, not only its own sheet.** `componentSlots` numbers a repeat within
  * one sheet, and the cut can put a reader's `Selected Ring` on the second overlay sheet and the
  * library's on the first, where two files of one name would land in one folder. So the label takes the
  * first numbered suffix that neither it nor any of its drawings shares with a line already listed —
  * `tier-mark-2` is a drawing of the library's tier marks, so a reader's `Tier Mark` becomes `tier-mark-5`.
- * A name that slugs to nothing keeps its empty label, which `componentSlots` names by position.
+ * A name that slugs to nothing — one typed in a script with no Latin letters — is labelled
+ * `extra-overlay-piece`, numbered the same way, since a name left empty would be named by its place on
+ * its own sheet and repeat across sheets.
+ *
+ * **A piece marked past the sixteen cells of one sheet is split into lines of sixteen**, each naming its
+ * drawings in turn (`parts`), so the cut can lay them across as many sheets as they fill. Left whole, it
+ * took a sheet of its own that stated a grid of sixteen cells and drew ninety-nine.
  */
-function extraEntry(piece: AnatomyComponent, taken: Set<string>): ComponentEntry {
-  const base = slugify(piece.name);
-  const labelled = (label: string): ComponentEntry => ({
+function extraEntries(piece: AnatomyComponent, taken: Set<string>): readonly ComponentEntry[] {
+  const base = slugify(piece.name) || 'extra-overlay-piece';
+  const whole = (label: string): ComponentEntry => ({
     label,
     text: formatAnatomyComponent(piece),
     count: piece.count,
     kind: 'structure',
     attribute: { field: 'clothing', role: 'DRAWN_IN_IT' },
   });
-  let entry = labelled(base);
-  for (let suffix = 2; base !== '' && namesOf(entry).some((name) => taken.has(name)); suffix += 1) {
-    entry = labelled(`${base}-${String(suffix)}`);
+  let entry = whole(base);
+  for (let suffix = 2; namesOf(entry).some((name) => taken.has(name)); suffix += 1) {
+    entry = whole(`${base}-${String(suffix)}`);
   }
   for (const name of namesOf(entry)) taken.add(name);
-  return entry;
+  if (piece.count <= ICONS_PER_SHEET) return [entry];
+  const drawings = entrySlots(entry, 'run');
+  const lines: ComponentEntry[] = [];
+  for (let start = 0; start < piece.count; start += ICONS_PER_SHEET) {
+    const parts = drawings.slice(start, start + ICONS_PER_SHEET);
+    lines.push({
+      ...entry,
+      text: `${formatAnatomyComponent({ name: piece.name, count: parts.length })}: drawings ${String(start + 1)} to ${String(start + parts.length)} of the ${String(piece.count)}`,
+      count: parts.length,
+      parts,
+    });
+  }
+  return lines;
 }
 
 /** What a line of an overlay sheet answers to: its label, and the name of each of its drawings. */
@@ -166,7 +184,9 @@ runtime over the top of the sprite.`,
       : {}),
     // The reader's pieces are listed above, in the group marked `additional`.
     anatomy: 'ELSEWHERE',
-    opening: `${iconGridSentence(count)}\n${ICON_CELL_SENTENCE}\n${wording.placement}`,
+    // A sheet of one piece states the first cell, where the Quantise tab reads it, rather than the
+    // middle of the sheet an icon sheet of one is drawn in.
+    opening: `${count === 1 ? 'One drawing, in the first cell, at the top left of the sheet.' : iconGridSentence(count)}\n${ICON_CELL_SENTENCE}\n${wording.placement}`,
     scaleUnit: 'one icon',
     componentClass: 'one overlay piece the engine lays over an icon of this one set',
     assemblyFailure: {

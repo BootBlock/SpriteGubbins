@@ -252,10 +252,11 @@ export interface ComponentEntry {
    */
   readonly attribute?: AttributeBinding;
   /**
-   * That each component of this line covers the whole tile square of a placement sheet
-   * (`SheetPlan.placement`): ICON's disabled veil, highlight halo, selected ring, cooldown sweeps and
-   * rarity glow. The Quantise tab measures the tile square from the pieces in those cells
-   * (`cellLattice`), and places every other piece against it.
+   * That each component of this line is the whole tile square of a placement sheet
+   * (`SheetPlan.placement`), its box the square itself: ICON's disabled veil and highlight halo. The
+   * Quantise tab measures the tile square from the pieces in those cells (`latticeSquares`), and places
+   * every other piece against it. The selected ring stands just inside the square, a quarter sweep fills
+   * one quadrant of it and the rarity glow may reach past it, so none of them is the square.
    */
   readonly fillsTile?: true;
   /**
@@ -838,7 +839,7 @@ interface SheetPlanFields {
    * That the engine applies the opacity and blending of this sheet's components, so every one of them is
    * drawn opaque at full strength (audit finding P8).
    *
-   * **The overlay sheet's, under both looks.** Its disabled veil, cooldown wedge, highlight halo and rarity
+   * **Every overlay sheet's, under both looks.** Its disabled veil, cooldown wedge, highlight halo and rarity
    * glow are translucent in use, and were asked for as a veil and a glow on an opaque key colour, beside
    * section 0's rule that no part of a component comes near that colour — a soft glow fading into a white
    * key cannot keep clear of it, and a half-transparent veil keyed off a field is half lost. A declaring
@@ -873,8 +874,9 @@ interface SheetPlanFields {
    * name either (audit finding T2) — the per-sheet half of `FRAME_IS_A_COMPONENT`, which answers for a
    * category whose every sheet draws one.
    *
-   * **ICON's overlay sheet declares it**, because its selected ring and highlight halo are edges round
-   * a square by construction. **An icon sheet declares it where an entry names a frame or a border**
+   * **An ICON overlay sheet holding the selected ring, the highlight halo or the rarity glow declares
+   * it**, because those are edges round a square by construction; an overlay sheet the cut leaves
+   * without them declares it only where one of its own entries names a frame. **An icon sheet declares it where an entry names a frame or a border**
    * (`namesAFrame`) — a map pin's dashed border, a portrait in a gilded oval frame — and on every other
    * icon sheet the plate and frame a generator adds are negated like any decorative surround.
    *
@@ -914,11 +916,14 @@ interface SheetPlanFields {
    * That each component is drawn at its place on the thing it is laid over, one to a cell of
    * {@link SheetPlan.cellGrid}, and what that place is measured against.
    *
-   * - `WITHIN_TILE`: inside its cell, a piece is drawn within the tile square every icon of the set is
-   *   drawn to, centred in the cell at the share section 2 states (`tileShare`), and stands where it
-   *   sits over the tile. ICON's overlay sheets under the full-bleed look.
-   * - `WITHIN_CELL`: the cell itself is the square a piece is placed in, as an isolated icon fills its
-   *   cell. ICON's overlay sheets under the isolated look.
+   * - `WITHIN_TILE`: the Quantise tab places a piece against the tile square every icon of the set is
+   *   drawn to, centred in the cell at the share section 2 states (`TILE_SHARE`), and maps that square
+   *   onto the file, as the icons' *Fill square* cut does. ICON's overlay sheets under the full-bleed look.
+   * - `WITHIN_CELL`: it places a piece against the whole cell and maps the cell onto the file, as the
+   *   icons' *Scale evenly* cut does. ICON's overlay sheets under the isolated look.
+   *
+   * Either way the prompt draws each piece within that centred share of its cell, where it sits over
+   * the icon, so section 2's one square holds on every overlay sheet.
    *
    * **Why the overlay sheet needs it.** A corner badge drawn in its corner of a square with no backdrop
    * was cut to its own bounding box, and every cell anchor then centred it, so the mark lost its corner.

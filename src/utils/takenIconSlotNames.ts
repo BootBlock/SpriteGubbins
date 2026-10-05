@@ -24,7 +24,7 @@ export function takenIconSlotNames(): ReadonlyMap<string, string> {
       // The library alone, which a set with no extra pieces draws on one sheet.
       const [plan] = iconOverlaySheets(look, []);
       const labels = plan.groups.flatMap((group) => group.entries.map((entry) => entry.label));
-      return [...labels, ...planSlots(plan)].map((name) => [name, 'a piece of the overlay sheet'] as const);
+      return [...labels, ...planSlots(plan)].map((name) => [name, 'a piece of the overlay sheets'] as const);
     }),
     ...ICON_CATALOGUE_GROUPS.flatMap((group) =>
       group.entries.flatMap((entry) =>

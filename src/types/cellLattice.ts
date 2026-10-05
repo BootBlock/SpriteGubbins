@@ -5,8 +5,8 @@ import type { SheetRegion } from './spriteCell.ts';
  * What a placement sheet's cells are read against: the sheet's size, the grid it states, where a piece
  * stands in its cell, and the tile square's stated share of the cell.
  *
- * `tileCells` are the cells the plan puts a full-tile piece in — the veil, the halo, the ring, the two
- * sweeps and the glow (`ComponentEntry.fillsTile`) — counted from zero in reading order, which is the
+ * `tileCells` are the cells the plan puts a piece that is the whole tile square in — the veil and the
+ * halo (`ComponentEntry.fillsTile`) — counted from zero in reading order, which is the
  * order the prompt lays one piece to a cell. The tile square is measured from the pieces found there.
  */
 export interface LatticeRequest {

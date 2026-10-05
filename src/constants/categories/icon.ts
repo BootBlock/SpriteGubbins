@@ -242,7 +242,7 @@ export const ICON: CategoryDefinition = {
       key: 'anatomy',
       label: 'Set Assembly Base',
       tooltip:
-        'How the set is cut so the engine can build every state. Each icon is drawn once, and the state and overlay pieces are drawn on a sheet of their own for the engine to lay over any icon.\n\n' +
+        'How the set is cut so the engine can build every state. Each icon is drawn once, and the state and overlay pieces are drawn on overlay sheets of their own for the engine to lay over any icon.\n\n' +
         'There is one value because every set is cut this way. A layered backing and a swappable motif are a different deliverable, and neither is drawn.\n\n' +
         ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: ['Icons With Engine-Applied Overlays'],
@@ -251,7 +251,7 @@ export const ICON: CategoryDefinition = {
       key: 'clothing',
       label: 'Overlay Style',
       tooltip:
-        'The style the overlay sheet draws every piece in: the disabled veil, the highlight and selection rings, the cooldown sweep, the tier marks, the rest of the library and any **Extra Overlay Pieces**. It sets their line, finish and edge, never which pieces you get, and no icon is drawn in it.\n\n' +
+        'The style the overlay sheets draw every piece in: the disabled veil, the highlight and selection rings, the cooldown sweep, the tier marks, the rest of the library and any **Extra Overlay Pieces**. It sets their line, finish and edge, never which pieces you get, and no icon is drawn in it.\n\n' +
         'Each piece is drawn opaque with hard edges, and your engine applies its transparency. A piece the library does not draw, such as an equipped tick, goes in **Extra Overlay Pieces**.',
       options: [
         'Clean Flat Shapes',
@@ -375,8 +375,8 @@ export const ICON: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Extra Overlay Pieces',
       tooltip:
-        'Further overlay pieces beyond those the overlay sheet already draws, each isolated in its own sprite slot on that sheet and drawn in the **Overlay Style**.\n\n' +
-        'List them with commas and `×N` for how many of each: “Equipped Corner Tick ×1, Above & Below Height Arrows ×2” adds three components to the overlay sheet and to its stated count.',
+        'Further overlay pieces beyond the library the overlay sheets already draw, each in a cell and sprite slot of its own and drawn in the **Overlay Style**.\n\n' +
+        'List them with commas and `×N` for how many of each: “Equipped Corner Tick ×1, Above & Below Height Arrows ×2” adds three components. The library and your pieces fill sixteen cells to an overlay sheet, so a third piece adds another overlay sheet to the series.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Equipped Corner Tick ×1',
