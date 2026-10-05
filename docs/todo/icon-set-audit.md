@@ -240,3 +240,12 @@ a test, and "plausible" otherwise.
   - **T8**: the overlay sheet keeps its size, and the *Extra Overlay Pieces* field says under itself when
     a piece repeats one the sheet already draws, or when the pieces push it past
     `PRACTICAL_COMPONENT_CEILING` (`additionalAnatomyNote`, on every category’s field).
+- The review of phase 3 landed in “Fit an icon sheet’s native grid to its cells, and make the series
+  order true everywhere it is stated”. **T5**: the native-grid scale was fitted to each sheet’s own
+  drawings, so a pixel-art sheet of two icons asked for 14× or more, an icon wider than the cell the
+  same prompt fixes; an icon sheet declares `SheetPlan.cells`, and every icon sheet of a set takes one
+  scale. **T6**: the specification, the roster summary (“2 icon sheets and the overlay sheet”), the
+  modes table and several test comments still put the overlay sheet first. **T1**: the Background Key
+  card and the `TRANSPARENT` label no longer hedge a case the list now filters out, and Sol’s request
+  is gated on `AlphaDelivery`’s `TOOL_CALL`. **T2**: three tests that chose their sheet with the
+  function under test, or matched a word the exclusions always carry, now state what they expect.

@@ -862,6 +862,15 @@ interface SheetPlanFields {
    * **`APPENDED` alone**, for the reason {@link SheetPlan.backdrop} gives.
    */
   readonly anatomy?: 'APPENDED';
+  /**
+   * How many cells this sheet's grid is laid out in, where that is fixed whatever the sheet holds — so
+   * the native-grid scale is fitted to those cells rather than to the drawings (audit finding T5).
+   *
+   * **An ICON icon sheet declares `ICONS_PER_SHEET`**, because it states one cell, 1/4 of the sheet's
+   * width each way, on every sheet of a series. Fitted to its own drawings instead, a sheet of two asked
+   * a pixel-art icon to be drawn wider than that cell, and two sheets of one set at different scales.
+   */
+  readonly cells?: number;
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */

@@ -59,7 +59,7 @@ const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
  * uses**, because a native grid is derived from a *component* size and no CHARACTER plan states one:
  * that category's components are the parts of a figure, and the size a reader states for such a
  * sheet is the figure they assemble into. See `utils/componentTargetSize.ts`. An ICON narrows every
- * direction set to `SINGLE_FRONT`, so its first sheet, the overlay pieces, comes out at a whole
+ * direction set to `SINGLE_FRONT`, so its first sheet, an icon sheet, comes out at a whole
  * multiple above 1× on this square canvas whatever `DEFAULT_OUTPUT_CONFIG` names.
  */
 const NATIVE_GRID_SHEET = {
@@ -1128,10 +1128,11 @@ describe('Midjourney on an icon series', () => {
 
   it('keeps a frame and a border on an icon sheet whose own entry draws one', () => {
     const subject = { ...STARTER, icons: { ...STARTER.icons!, picks: cataloguePicks(['pin-quest-area']) } };
-    expect(generatePrompt('ICON', subject, withOutput({ targetModel: 'GENERIC', sheetIndex: 0 }))).toMatch(
-      /border/,
-    );
+    // The entry's own look names the border, in the inventory, rather than the exclusions' “frame, border”.
+    const prompt = generatePrompt('ICON', subject, withOutput({ targetModel: 'GENERIC', sheetIndex: 0 }));
+    expect(sectionOf(prompt, 'COMPONENT INVENTORY')).toMatch(/dotted border/);
     expect(negatedOn(subject, /^Icon /)).not.toContain('border');
+    expect(negatedOn(subject, /^Icon /)).not.toContain('frame');
   });
 
   it('opens with the category’s assembled whole on every sheet', () => {

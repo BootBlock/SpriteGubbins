@@ -1899,8 +1899,8 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
         const named = CATEGORY_PROJECTIONS[category].filter((offered) =>
           prompt.includes(`- Projection: ${promptText.PROJECTION_TEXT[offered]}`),
         );
-        // A sheet of flat pieces — ICON's overlay sheet, its first — names no camera at all, which is
-        // the other answer that never names one the category refuses.
+        // A sheet of flat pieces — ICON's overlay sheet — names no camera at all, which is the other
+        // answer that never names one the category refuses.
         const flat = prompt.includes('no projection or camera angle applies to it.');
         expect(named, `${category} / ${projection} names no camera it is offered`).toHaveLength(flat ? 0 : 1);
       }

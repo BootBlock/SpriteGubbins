@@ -6,7 +6,7 @@ import type { SubjectDefinition } from '../types/subject.ts';
 import { outputForRoster } from './outputForRoster.ts';
 import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
-/** An ICON subject holding `picks`: the overlay sheet, then one icon sheet per sixteen components. */
+/** An ICON subject holding `picks`: an icon sheet per sixteen components or part of it, then the overlay sheet. */
 function iconSubject(
   picks: readonly string[],
   colourMode: IconColourMode = 'FULL_COLOUR',

@@ -45,7 +45,8 @@ export function wrapForModel(
     readonly aspectRatio: AspectRatio;
     readonly backgroundKeyDescription: string;
     /**
-     * Whether a frame or a border is one of this sheet's components, from `FRAME_IS_A_COMPONENT`.
+     * Whether a frame or a border is one of this sheet's components, from `FRAME_IS_A_COMPONENT` for a
+     * category whose every sheet draws one or the sheet's own `SheetPlan.frames` (audit finding T2).
      *
      * Only Midjourney reads it, and only because `--no` negates a thing where section 0 negates a
      * *placement* — a limit no entry width gets round, which is what `wrapForMidjourney` says at
@@ -86,8 +87,7 @@ export function wrapForModel(
      *
      * The four targets with somewhere to say it read it — Flux as the clause closing its leading
      * sentence, Stable Diffusion and Qwen as the run opening their negative blocks, and Midjourney as
-     * the first entries of `--no`, which carried none of it until audit finding T2. The first three
-     * stated it in a figure's vocabulary on every category until this was passed, so the
+     * the first entries of `--no` (audit finding T2). The first three stated it in a figure's vocabulary on every category until this was passed, so the
      * highest-weighted term on a terrain sheet named a subject that sheet cannot contain.
      */
     readonly assembly: CategoryAssembly;
@@ -158,7 +158,10 @@ export function wrapForModel(
     readonly targetSize: boolean;
     /** Whether section 2 states the smallest display size, from `DISPLAY_REDUCTION`. Read by Sol. */
     readonly displaySize: boolean;
-    /** Whether the sheet's key is `TRANSPARENT`, from the resolved key. Read by Sol. */
+    /**
+     * Whether the sheet's key is `TRANSPARENT` on a target that asks for alpha through its tool call,
+     * from the resolved key and `AlphaDelivery`'s `TOOL_CALL`. Read by Sol.
+     */
     readonly transparent: boolean;
     /**
      * Every section name this prompt carries and the number its heading landed on, from

@@ -114,8 +114,8 @@ describe('parseOutputConfig — sheetIndex', () => {
 
   it('is bounded by the plan table rather than by a number written down here', () => {
     // Derived, so a pairing that grows a sheet admits one in the same edit. ICON's series is the
-    // longest now: the overlay sheet and then a full roster sixteen icons to a sheet, which a pair that
-    // never splits can stretch to fifteen — twenty-three sheets for 320 components. FONT's glyph set is
+    // longest now: a full roster at most sixteen icons to a sheet, which a pair that never splits can
+    // hold to fifteen, then the overlay sheet — twenty-three sheets for 320 components. FONT's glyph set is
     // still the longest *fixed* series at four, and the eight-compass character series the longest
     // directional one; an index past ICON's bound is corrupt storage rather than a choice.
     expect(SHEET_INDEX_RANGE.min).toBe(0);

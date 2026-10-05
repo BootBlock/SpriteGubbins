@@ -115,7 +115,7 @@ export const CATEGORY_SHEET_PLANS: Readonly<Record<SubjectCategory, ModePlans>> 
   // One mode, for the reasons `sheetPlans/icon.ts` gives. The absent `TILESET_MODULAR` is the one
   // worth naming here: an icon grid is cells sitting apart with clear margin between them, which is
   // the opposite of pieces that butt against copies of themselves. The one series in the table built
-  // from the subject: the overlay sheet, then the reader's roster sixteen icons to a sheet.
+  // from the subject: the reader's roster at most sixteen icons to a sheet, then the overlay sheet.
   ICON: {
     SINGLE_DIRECTION_POSE_LIBRARY: iconSeries,
   },

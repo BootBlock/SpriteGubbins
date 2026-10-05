@@ -25,7 +25,7 @@ describe('iconRosterSummary', () => {
     );
 
     expect(summary.sentence).toBe(
-      '20 icons, drawn as 21 of the 320 components a set can hold, on 3 sheets: the overlay sheet and 2 icon sheets.',
+      '20 icons, drawn as 21 of the 320 components a set can hold, on 3 sheets: 2 icon sheets and the overlay sheet.',
     );
     expect(summary.kinds).toBe(
       'Items and consumables: 8. Spells and abilities: 5. Emotes and chat: 1. Mounts and pets: 0. Professions: 0. Interface and system: 6.',
@@ -37,7 +37,7 @@ describe('iconRosterSummary', () => {
     const summary = iconRosterSummary(items(1), 2);
 
     expect(summary.sentence).toBe(
-      '1 icon, drawn as 1 of the 320 components a set can hold, on 2 sheets: the overlay sheet and 1 icon sheet.',
+      '1 icon, drawn as 1 of the 320 components a set can hold, on 2 sheets: 1 icon sheet and the overlay sheet.',
     );
     expect(summary.digest).toBe('1 icon · 2 sheets');
   });

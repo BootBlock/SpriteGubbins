@@ -320,7 +320,8 @@ export function sheetFacts(
   // How big this sheet's things are and the grid they are drawn on, resolved together so the phrase
   // section 2 prints and the arithmetic under it cannot name different figures. See `sheetSizing.ts`
   // for why a loaded contract supersedes the field, and for the three ways there is no native grid.
-  const sizing = sheetSizing(category, subject, output, plan, rig, componentCount);
+  // Fitted to the cells a fixed grid declares, where the plan declares one (`SheetPlan.cells`).
+  const sizing = sheetSizing(category, subject, output, plan, rig, plan.cells ?? componentCount);
 
   // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the
   // same anatomy: a field reading `Tail ×0` cannot say one thing at the top of the prompt and

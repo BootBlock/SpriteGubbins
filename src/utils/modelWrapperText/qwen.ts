@@ -2,6 +2,13 @@ import type { RenderStyleSurface } from '../../types/rendering.ts';
 import type { CategoryAssembly } from '../../types/subject.ts';
 
 /**
+ * What opens the block bound for the `negative_prompt` request field, which the budget notice leaves out
+ * of what it measures: Alibaba's 4.5K-token figure is for `text`, and this block is not sent there
+ * (audit finding T4, `promptFieldText`).
+ */
+export const QWEN_NEGATIVE_BLOCK = 'negative_prompt: ';
+
+/**
  * Qwen-Image, which earns a negative block where Flux cannot take one: Alibaba document
  * `negative_prompt` as a parameter of the image API, as "The negative prompt that describes content
  * you do not want to appear in the image."
@@ -55,13 +62,6 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * backdrop inside its square, and `drop shadow`, the one cast outside it, is the only shadow left to
  * negate.
  */
-/**
- * What opens the block bound for the `negative_prompt` request field, which the budget notice leaves out
- * of what it measures: Alibaba's 4.5K-token figure is for `text`, and this block is not sent there
- * (audit finding T4, `promptFieldText`).
- */
-export const QWEN_NEGATIVE_BLOCK = 'negative_prompt: ';
-
 export function wrapForQwen(
   prompt: string,
   surface: RenderStyleSurface,

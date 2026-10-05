@@ -180,8 +180,8 @@ describe('IconCatalogueContents', () => {
 
   it('counts the set in its footer as the sheet list does, and announces it', async () => {
     const user = userEvent.setup({ delay: null });
-    // Twenty one-component icons once the last is ticked: sixteen on the first icon sheet, four on the
-    // second.
+    // Twenty one-component icons once the last is ticked: ten on each of two icon sheets, then the
+    // overlay sheet.
     const singles = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
       .filter((entry) => entry.states === undefined)
       .slice(0, 20);
@@ -197,7 +197,7 @@ describe('IconCatalogueContents', () => {
 
     await user.click(control(last.role, 'checkbox'));
     expect(status).toHaveTextContent(
-      '20 icons, drawn as 20 of the 320 components a set can hold, on 3 sheets: the overlay sheet and 2 icon sheets.',
+      '20 icons, drawn as 20 of the 320 components a set can hold, on 3 sheets: 2 icon sheets and the overlay sheet.',
     );
   });
 

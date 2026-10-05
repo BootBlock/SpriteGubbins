@@ -265,7 +265,7 @@ describe('the identity of an icon set’s sheets', () => {
     } as const;
   }
 
-  it('survives an icon added after the sheets already copied', () => {
+  it('survives an icon that fills the last icon sheet without cutting the set again', () => {
     // Thirty-one icons are cut sixteen and fifteen, so the thirty-second fills the second sheet and moves
     // no other icon: the full first grid and the overlay sheet, which closes the series at whatever index
     // it falls, draw exactly what they drew before, and keep their ticks.
@@ -281,6 +281,22 @@ describe('the identity of an icon set’s sheets', () => {
       sheetIdentity('ICON', before, at(overlayOf(before))),
     );
     expect(sheetIdentity('ICON', grown, at(0))).toBe(sheetIdentity('ICON', before, at(0)));
+  });
+
+  it('changes for the first icon sheet where a new icon cuts the set again, and keeps the overlay sheet', () => {
+    // Sixteen icons are one sheet; a seventeenth cuts them nine and eight (audit finding T5), so the
+    // first sheet draws something else and its ticks go, while the overlay sheet draws what it drew.
+    const defaults = (ICON.icons?.picks ?? []).map(iconPickId);
+    const extra = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries).find(
+      (entry) => entry.states === undefined && !defaults.includes(entry.id),
+    );
+    if (extra === undefined) {
+      throw new Error('the catalogue should hold a single icon the starter roster lacks.');
+    }
+    const full = withPicks(defaults);
+    const grown = withPicks([...defaults, extra.id]);
+    expect(sheetIdentity('ICON', grown, at(0))).not.toBe(sheetIdentity('ICON', full, at(0)));
+    expect(sheetIdentity('ICON', grown, at(2))).toBe(sheetIdentity('ICON', full, at(1)));
   });
 
   it('changes for the sheet the new icon joins', () => {

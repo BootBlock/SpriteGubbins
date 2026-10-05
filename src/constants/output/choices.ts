@@ -52,7 +52,7 @@ export const BACKGROUND_KEY_CHOICES: readonly OutputChoice<BackgroundKey>[] = [
   { value: 'MAGENTA_FF00FF', label: 'MAGENTA_FF00FF (#FF00FF — keyable, recommended)' },
   { value: 'PURE_WHITE', label: 'PURE_WHITE (#FFFFFF — bleeds into light edges)' },
   { value: 'PURE_BLACK', label: 'PURE_BLACK (#000000)' },
-  { value: 'TRANSPARENT', label: 'TRANSPARENT (alpha, where the target supports it)' },
+  { value: 'TRANSPARENT', label: 'TRANSPARENT (the file’s alpha channel)' },
 ];
 
 // The rig modes are **not** here, and the absence is deliberate: which of them a category can be

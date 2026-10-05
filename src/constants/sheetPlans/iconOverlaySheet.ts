@@ -66,9 +66,9 @@ nothing about which icon they are looking at.`,
  *
  * **Its own sheet, once per set, and last.** The pieces used to share a sheet with twelve icons, which
  * capped a set at twelve and spent a third of every grid on pieces that do not change between grids. The
- * maintainer asked for them once per set, so they are a sheet of their own. It opened the series until
- * audit finding T6, which drew pieces matched to icons no sheet had drawn yet; it closes it now, after
- * the icons it is matched to, and declares `anatomy`, so the reader's *Extra Overlay Pieces* are drawn
+ * maintainer asked for them once per set, so they are a sheet of their own. It closes the series, after
+ * the icons its pieces are matched to — opening it drew pieces matched to icons no sheet had drawn yet
+ * (audit finding T6) — and declares `anatomy`, so the reader's *Extra Overlay Pieces* are drawn
  * here rather than on the series' first sheet (`anatomyFacingsFor`).
  *
  * **The state pieces are pieces rather than redrawn icons**, and that is the distinction worth holding:

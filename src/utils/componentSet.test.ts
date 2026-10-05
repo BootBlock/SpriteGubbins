@@ -242,8 +242,9 @@ describe('component counts', () => {
       const series = sheetSeriesFor(category, subject, mode, directions);
       const plan = series[sheetIndex];
       if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
-      const declared = series.findIndex((candidate) => candidate.anatomy === 'APPENDED');
-      const carrier = declared === -1 ? 0 : declared;
+      // Stated rather than read off the plans: ICON's overlay sheet, the last of its series, carries the
+      // pieces, and every other run series carries them on its first sheet.
+      const carrier = category === 'ICON' ? series.length - 1 : 0;
       const views = plan.facings === 'run' ? (sheetIndex === carrier ? 1 : 0) : plan.facings.length;
       expect(
         componentCountFor(category, subject, mode, directions, sheetIndex, anatomy, null),

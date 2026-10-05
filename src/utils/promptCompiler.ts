@@ -10,6 +10,7 @@ import {
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { wrapForModel } from './modelWrappers.ts';
+import { alphaDeliveryFor } from './targetCapabilities.ts';
 import { promptConditions } from './promptConditions.ts';
 import { sheetFacts } from './promptFacts.ts';
 import { promptValues } from './promptValues.ts';
@@ -98,7 +99,9 @@ export function generatePrompt(
     colours: isSet(values.PRIMARY_COLOURS) || isSet(values.ACCENT_COLOURS),
     targetSize: isSet(values.SPRITE_TARGET_SIZE),
     displaySize: isSet(values.DISPLAY_REDUCTION),
-    transparent: facts.backgroundKey === 'TRANSPARENT',
+    // A target that draws through a tool whose call can ask for alpha (`AlphaDelivery`'s `TOOL_CALL`).
+    transparent:
+      facts.backgroundKey === 'TRANSPARENT' && alphaDeliveryFor(output.targetModel).kind === 'TOOL_CALL',
     // The headings' own numbers, from the same walk that resolved the prompt body's citations — so a
     // wrapper naming a section cannot come to name a different one than the prose does.
     sectionNumbers: numbers,

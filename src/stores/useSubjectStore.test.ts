@@ -710,8 +710,8 @@ describe('useSubjectStore', () => {
     });
 
     it('pulls the sheet index back inside a series the untick shortens, in the same act', () => {
-      // Twenty one-component icons are the overlay sheet and two icon sheets, and the reader is on the
-      // last of them when they untick the four icons it holds.
+      // Twenty one-component icons are two icon sheets and the overlay sheet, and the reader is on the
+      // last of them when they untick four icons, which leaves one icon sheet and the overlay sheet.
       const twenty = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
         .filter((entry) => entry.states === undefined)
         .slice(0, 20)

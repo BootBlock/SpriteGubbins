@@ -2,6 +2,13 @@ import type { RenderStyleSurface } from '../../types/rendering.ts';
 import type { CategoryAssembly } from '../../types/subject.ts';
 
 /**
+ * What opens the block a front end takes in its own negative-prompt field, which the budget notice
+ * leaves out of what it measures: CLIP's window is the positive prompt's (audit finding T4,
+ * `promptFieldText`).
+ */
+export const STABLE_DIFFUSION_NEGATIVE_BLOCK = 'Negative prompt: ';
+
+/**
  * Stable Diffusion's negative block, weighted on the two failures that actually recur: assembling
  * the figure instead of exploding it, and adding shadows.
  *
@@ -72,13 +79,6 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * does `floor shadow`**, which on that sheet names the contact shadow a subject casts on the backdrop
  * inside its square — a shadow the sheet asks for. `drop shadow`, cast outside the square, stays.
  */
-/**
- * What opens the block a front end takes in its own negative-prompt field, which the budget notice
- * leaves out of what it measures: CLIP's window is the positive prompt's (audit finding T4,
- * `promptFieldText`).
- */
-export const STABLE_DIFFUSION_NEGATIVE_BLOCK = 'Negative prompt: ';
-
 export function wrapForStableDiffusion(
   prompt: string,
   surface: RenderStyleSurface,

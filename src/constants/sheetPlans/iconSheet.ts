@@ -2,8 +2,8 @@ import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
 import type { IconColourMode, IconLook } from '../../types/iconRoster.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts';
-import { ICON_GRID_COLUMNS } from '../iconCatalogue/iconSheetLimits.ts';
-import { namesAFrame } from '../promptText/frameWords.ts';
+import { ICON_GRID_COLUMNS, ICONS_PER_SHEET } from '../iconCatalogue/iconSheetLimits.ts';
+import { namesAFrame } from '../promptText/namesAFrame.ts';
 
 /** What one look writes into an icon sheet; everything else about the sheet is the same under both. */
 interface IconSheetWording {
@@ -129,6 +129,8 @@ export function iconSheet(
     // And unlike EFFECT's frames, each is drawn to one square of one size rather than to one scale: a coin
     // fills its square to the set's margin as a sword does (audit finding P10).
     fit: 'SAME_SQUARE',
+    // The grid every icon sheet of the series is laid out in, which the native-grid scale is fitted to.
+    cells: ICONS_PER_SHEET,
     scaleUnit: 'one icon',
     componentClass: wording.componentClass,
     // The overlay sheet draws its pieces in the *Overlay Style*; no icon here is drawn in it or carries
@@ -165,7 +167,7 @@ runtime over the top of the sprite.`,
  * The cell every icon sheet of a series is drawn on, stated on each of them (audit finding T5).
  *
  * A grid stated only by its count let a generator fit the grid to the canvas, so a sheet of two drew its
- * icons in cells half the canvas wide while a full sheet's were a quarter. Every sheet now names one
+ * icons in cells half the canvas wide while a full sheet's were a quarter. Every sheet names one
  * cell, a fraction of the canvas fixed by the four-across grid, so an icon is drawn at one size whichever
  * sheet holds it, and a short sheet leaves canvas empty rather than enlarging what it holds.
  */

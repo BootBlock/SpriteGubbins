@@ -43,13 +43,13 @@ beforeEach(() => {
 });
 
 describe('IconRosterSection', () => {
-  it('counts twenty icons as the overlay sheet and two icon sheets', () => {
+  it('counts twenty icons as two icon sheets and the overlay sheet', () => {
     iconStudio(singles(20));
     render(<IconRosterSection />);
 
     expect(
       screen.getByText(
-        '20 icons, drawn as 20 of the 320 components a set can hold, on 3 sheets: the overlay sheet and 2 icon sheets.',
+        '20 icons, drawn as 20 of the 320 components a set can hold, on 3 sheets: 2 icon sheets and the overlay sheet.',
       ),
     ).toBeInTheDocument();
   });
