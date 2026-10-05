@@ -104,7 +104,17 @@ describe('the overlay sheets', () => {
   });
 
   it('splits a reader’s piece only where keeping it whole would cost a sheet', () => {
-    // Whole, a `Mark ×17` behind the library's fourteen is a third sheet of one drawing.
+    // Thirty-two drawings fill two sheets, but whole lines cut the library, the marks and the glyphs
+    // onto three.
+    const costly = iconOverlaySheets('ISOLATED_MARK', parseAdditionalAnatomy('Mark ×9, Glyph ×9'));
+    expect(costly.map((sheet) => componentTotal(entriesOf(sheet)))).toEqual([16, 16]);
+    expect(
+      costly
+        .flatMap(entriesOf)
+        .filter((entry) => entry.label === 'glyph')
+        .map((entry) => entry.text),
+    ).toEqual(['Glyph ×9']);
+    // Whole, a `Mark ×17` behind the library's fourteen is a second sheet asked for seventeen drawings.
     const split = iconOverlaySheets('ISOLATED_MARK', parseAdditionalAnatomy('Mark ×17'));
     expect(split.map((sheet) => componentTotal(entriesOf(sheet)))).toEqual([16, 15]);
     expect(

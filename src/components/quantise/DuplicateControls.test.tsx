@@ -25,7 +25,6 @@ const SEGMENTED: SpriteSegmentation = {
   boxes: [boxAt(2, 2), boxAt(20, 2), boxAt(40, 2)],
   specks: 0,
   width: 1024,
-  height: 1024,
 };
 
 const ONE_GROUP: readonly SpriteDuplicateGroup[] = [

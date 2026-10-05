@@ -249,7 +249,6 @@ describe('quantiseImage', () => {
       boxes: [{ left: 1, top: 1, width: 2, height: 2, pixels: 4 }],
       specks: 0,
       width: 4,
-      height: 4,
     });
   });
 
@@ -819,7 +818,6 @@ describe('quantiseImage symmetry', () => {
       boxes: [BRIDGED_BOX],
       specks: 0,
       width: 12,
-      height: 8,
     });
     expect(after.sprites.kind).toBe('SEGMENTED');
     expect(after.sprites).not.toEqual(before.sprites);

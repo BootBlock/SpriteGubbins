@@ -1,6 +1,7 @@
 import { DEFAULT_ICON_COLOUR_MODE } from '../iconCatalogue/defaultIconColourMode.ts';
 import { DEFAULT_ICON_LOOK } from '../iconCatalogue/defaultIconLook.ts';
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { ICONS_PER_SHEET } from '../iconCatalogue/iconSheetLimits.ts';
 import {
   ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
   HEX_CODE_PINS_THE_HUE,
@@ -50,7 +51,7 @@ import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
  * key: `iconSetKeys.test.ts` reads each one and holds it out of the full-bleed key's reach.
  *
  * ***Overlay Style* is how the overlay library is drawn, never a piece of it** (audit finding O1). The
- * overlay sheet draws one fixed library, so a value naming a piece the library lacks promised a piece
+ * overlay sheets draw one fixed library, so a value naming a piece the library lacks promised a piece
  * nobody drew; the pieces a game adds are *Extra Overlay Pieces*, and each piece is offered once.
  *
  * **The camera is left open, which is the one place this category is looser than INTERFACE.** A flat
@@ -376,7 +377,7 @@ export const ICON: CategoryDefinition = {
       label: 'Extra Overlay Pieces',
       tooltip:
         'Further overlay pieces beyond the library the overlay sheets already draw, each in a cell and sprite slot of its own and drawn in the **Overlay Style**.\n\n' +
-        'List them with commas and `×N` for how many of each: “Equipped Corner Tick ×1, Above & Below Height Arrows ×2” adds three components. The library and your pieces fill sixteen cells to an overlay sheet, so a third piece adds another overlay sheet to the series.',
+        `List them with commas and \`×N\` for how many of each: “Equipped Corner Tick ×1, Above & Below Height Arrows ×2” adds three components. An overlay sheet holds ${String(ICONS_PER_SHEET)} pieces, so pieces past the cells the library leaves add overlay sheets to the series, and the note under this field says when they do.`,
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Equipped Corner Tick ×1',

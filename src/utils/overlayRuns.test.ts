@@ -36,6 +36,15 @@ describe('overlayRuns', () => {
   });
 
   it('lays a reader’s piece across two runs where whole lines would take a third', () => {
+    // Eight drawings fill two runs of four, but whole lines cut them three, three and two.
+    const runs = overlayRuns([library('Veil', 3), yours('Star', 3), yours('Moon', 2)], 4);
+    expect(textsOf(runs)).toEqual([
+      ['Veil ×3', 'Star ×1: drawing 1 of the 3'],
+      ['Star ×2: drawings 2 to 3 of the 3', 'Moon ×2'],
+    ]);
+  });
+
+  it('lays a reader’s piece worth more than a run across runs, naming its drawings in turn', () => {
     const runs = overlayRuns([library('Veil', 3), yours('Mark', 5)], 4);
     expect(textsOf(runs)).toEqual([
       ['Veil ×3', 'Mark ×1: drawing 1 of the 5'],

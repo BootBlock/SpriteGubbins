@@ -177,7 +177,6 @@ describe('spriteSegments', () => {
       boxes: [{ left: 2, top: 2, width: 4, height: 4, pixels: 16 }],
       specks: 1,
       width: 20,
-      height: 20,
     });
   });
 
@@ -195,7 +194,6 @@ describe('spriteSegments', () => {
       boxes: [{ left: 2, top: 2, width: 5, height: 5, pixels: 17 }],
       specks: 0,
       width: 20,
-      height: 20,
     });
   });
 
@@ -205,7 +203,6 @@ describe('spriteSegments', () => {
       boxes: [],
       specks: 0,
       width: 16,
-      height: 16,
     });
   });
 

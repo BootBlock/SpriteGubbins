@@ -8,7 +8,7 @@ import type {
   ManifestSprite,
   SpriteManifest,
 } from '../types/spriteManifest.ts';
-import { latticeCellOf } from './inPlacePlacement.ts';
+import { latticeCellOf } from './latticeCellOf.ts';
 import { cellPivot, cellPlacements } from './spriteCell.ts';
 import { scaleBoxes } from './sheetLayout.ts';
 

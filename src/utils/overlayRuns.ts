@@ -15,11 +15,12 @@ interface Drawing extends OverlayLine {
  *
  * `balancedChunks` never splits a line, which is right for the library, whose tier marks and sweep stages
  * are compared side by side. A reader's piece is a run of like drawings, and kept whole it can cost a
- * generation: fourteen library pieces and a `Mark ×17` are thirty-one drawings, which two sheets hold,
- * but whole lines cut them fourteen, sixteen and one. So where whole lines need more sheets than the
- * drawings fill, or a piece is worth more than a sheet, each reader's piece is cut into its drawings,
- * balanced with the library's lines, and the drawings a sheet holds are joined back into one line naming
- * them in turn (`ComponentEntry.parts`): `Mark ×15: drawings 1 to 15 of the 17`. Pure.
+ * generation: fourteen library pieces, a `Mark ×9` and a `Glyph ×9` are thirty-two drawings, which two
+ * sheets hold, but whole lines cut them fourteen, nine and nine. And a piece worth more than a sheet,
+ * kept whole, is a sheet asked for more drawings than it has cells. So where whole lines need more
+ * sheets than the drawings fill, or a piece is worth more than a sheet, each reader's piece is cut into
+ * its drawings, balanced with the library's lines, and the drawings a sheet holds are joined back into
+ * one line naming them in turn (`ComponentEntry.parts`): `Mark ×7: drawings 3 to 9 of the 9`. Pure.
  */
 export function overlayRuns(
   lines: readonly OverlayLine[],

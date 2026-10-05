@@ -26,8 +26,8 @@ export interface LatticeCell {
   readonly region: SheetRegion;
   /**
    * The square a piece in this cell is placed against: the cell under `WITHIN_CELL`, and under
-   * `WITHIN_TILE` the full-tile piece's own box where the cell holds one, or a square of the tile side
-   * centred in the cell.
+   * `WITHIN_TILE` the full-tile piece's own box squared to its longer side where the cell holds one, or a
+   * square of the tile side centred in the cell.
    */
   readonly square: SheetRegion;
 }

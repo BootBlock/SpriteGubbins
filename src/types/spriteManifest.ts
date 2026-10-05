@@ -49,9 +49,8 @@ import type { SubjectCategory } from './subject.ts';
  *
  * **Where `named` is false the two cannot be joined at all**, and that is the honest answer rather
  * than a gap: positional names mean the pieces could not be matched to the inventory one for one, so
- * neither key identifies anything. {@link SpriteManifest.naming} says which of the two routes a
- * named file took, for a consumer that wants to treat a checked assignment differently from an
- * inferred one.
+ * neither key identifies anything. {@link SpriteManifest.naming} says which route a named file
+ * took, for a consumer that wants to treat a checked assignment differently from an inferred one.
  */
 
 /**
@@ -141,7 +140,9 @@ export interface ManifestSprite {
    * {@link pivotSource} says so. The default anchor is bottom-centre, which reproduces the paragraph
    * above exactly. It is a point on the *box* either way, in the sheet's own coordinates —
    * {@link placement} is what moves it into a cell. Under the `FILL_SQUARE` fit it is a point on the
-   * square that was cut from the box, since that square is the artwork the cell holds.
+   * square that was cut from the box, since that square is the artwork the cell holds. Under the
+   * `IN_PLACE` fit no anchor applies: it is the centre of the tile square the piece was drawn against
+   * (`TILE_CENTRE`), the point every piece of a placement sheet shares with the icon it is laid over.
    */
   readonly pivot: { readonly x: number; readonly y: number };
   /** Where {@link pivot} came from — see {@link PivotSource}. */
@@ -320,9 +321,10 @@ export interface SpriteManifest {
   /**
    * How the inventory names were given out, or `null` wherever {@link SpriteManifest.named} is false.
    *
-   * **Two routes to the same claim, and a consumer is entitled to know which.** `READING_ORDER` is
+   * **Three routes to the same claim, and a consumer is entitled to know which.** `READING_ORDER` is
    * the rule the prompt states and this app applied on its own: the *n*th sprite is the *n*th
-   * component, asserted because the counts agreed. `ASSIGNED` means a person looked at the sheet and
+   * component, asserted because the counts agreed. `CELL` is a placement sheet's: each piece takes the
+   * name of the component the prompt put in the cell it was found in. `ASSIGNED` means a person looked at the sheet and
    * said which sprite is which — a stronger warrant, and one that survives a sheet whose count was
    * right and whose order was not, which counting alone cannot detect at all.
    *
@@ -380,8 +382,9 @@ export interface ManifestCell {
   readonly height: number;
   readonly anchor: SpriteAnchor;
   /**
-   * How the artwork met the cell: placed as drawn, resized by one factor for the whole sheet, or
-   * cropped to its centred square and resized to fill. See `SpriteFit`.
+   * How the artwork met the cell: placed as drawn, resized by one factor for the whole sheet,
+   * cropped to its centred square and resized to fill, or kept where it was drawn against its tile
+   * square. See `SpriteFit`.
    */
   readonly fit: SpriteFit;
 }

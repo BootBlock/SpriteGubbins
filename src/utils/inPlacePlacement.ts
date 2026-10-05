@@ -1,6 +1,6 @@
-import type { LatticeCell } from '../types/cellLattice.ts';
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { SpriteCell, SpritePlacement } from '../types/spriteCell.ts';
+import { latticeCellOf } from './latticeCellOf.ts';
 
 /**
  * Where a piece of a placement sheet lands in its file under `IN_PLACE`, or `null` where the sheet's
@@ -12,7 +12,9 @@ import type { SpriteCell, SpritePlacement } from '../types/spriteCell.ts';
  * — and its square is the tile square, or the cell itself on an isolated look (`LatticeCell.square`). One
  * factor maps the square's width onto the file's, `f`, and the piece's own box is drawn at `f` times its
  * size, `f` times its offset from the square's corner in. So a corner badge drawn in the top-right of
- * the tile square is the top-right of the file, and every piece of the set is scaled alike.
+ * the tile square is the top-right of the file, and every piece of the set is scaled alike. Each edge is
+ * rounded rather than the offset and the size apart, so a piece flush with its square's edge is flush
+ * with the file's, never a pixel past it.
  *
  * **`f` is 1 on a sheet with a pixel scale** (`SpriteCell.resamples`, from `resizingFitAllowed`): the
  * lattice reading has brought pixel art down to one file pixel per drawn pixel, and resampling it would
@@ -23,22 +25,13 @@ export function inPlacePlacement(box: SpriteBox, cell: SpriteCell): SpritePlacem
   const square = latticeCellOf(box, cell)?.square;
   if (square === undefined || square.width <= 0) return null;
   const factor = cell.resamples ? cell.width / square.width : 1;
+  const x = Math.round((box.left - square.left) * factor);
+  const y = Math.round((box.top - square.top) * factor);
   return {
     source: { left: box.left, top: box.top, width: box.width, height: box.height },
-    x: Math.round((box.left - square.left) * factor),
-    y: Math.round((box.top - square.top) * factor),
-    width: Math.max(1, Math.round(box.width * factor)),
-    height: Math.max(1, Math.round(box.height * factor)),
+    x,
+    y,
+    width: Math.max(1, Math.round((box.left + box.width - square.left) * factor) - x),
+    height: Math.max(1, Math.round((box.top + box.height - square.top) * factor) - y),
   };
-}
-
-/** The lattice cell whose region holds this box's centre, or `undefined` for none. */
-export function latticeCellOf(box: SpriteBox, cell: SpriteCell): LatticeCell | undefined {
-  if (cell.lattice?.kind !== 'CELLS') return undefined;
-  const x = box.left + box.width / 2;
-  const y = box.top + box.height / 2;
-  return cell.lattice.cells.find(
-    ({ region }) =>
-      x >= region.left && x < region.left + region.width && y >= region.top && y < region.top + region.height,
-  );
 }

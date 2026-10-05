@@ -62,7 +62,6 @@ export function spriteSegments(image: ImageData, gap: number): SpriteSegmentatio
     boxes: mergeNearby(sprites, gap),
     specks,
     width: image.width,
-    height: image.height,
   };
 }
 

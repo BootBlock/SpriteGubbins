@@ -16,7 +16,8 @@ import { roundedRegion } from './roundedRegion.ts';
  * blown up to fill the file. **Each of those pieces is held to the share the prompt states**, within
  * `TILE_TOLERANCE`, and one that disagrees is a failure naming it; the side is their median, or the
  * stated share where the sheet holds none of them. A veil or a halo is placed against its own box,
- * which is the square; every other piece against a square of that side centred in its cell.
+ * squared to its longer side about its centre, so a tile drawn a pixel off square still lies wholly in
+ * its square; every other piece against a square of that side centred in its cell.
  */
 export function latticeSquares(
   boxes: readonly SpriteBox[],
@@ -64,7 +65,10 @@ function squareOf(
 ): SheetRegion {
   if (request.placement === 'WITHIN_CELL') return region;
   const own = joined.get(index);
-  if (own !== undefined && tiles.includes(index)) return own;
+  if (own !== undefined && tiles.includes(index)) {
+    const long = Math.max(own.width, own.height);
+    return roundedRegion(own.left + (own.width - long) / 2, own.top + (own.height - long) / 2, long, long);
+  }
   return roundedRegion(
     region.left + (region.width - side) / 2,
     region.top + (region.height - side) / 2,

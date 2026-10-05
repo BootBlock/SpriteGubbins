@@ -27,9 +27,10 @@ interface AxisEdges {
  * 4. A row's or column's outer edge is its inner boundary less or plus the median measured step, or the
  *    pitch the even gaps measure, which is the nominal step where they measure none.
  * 5. The square a piece is placed against is the cell under `WITHIN_CELL`. Under `WITHIN_TILE` it is
- *    the full-tile piece's own box where the cell holds one, and otherwise a square of the tile side
- *    centred in the cell. The side is the median short side of the full-tile pieces found, held to
- *    the share the prompt states within `TILE_TOLERANCE`, or that share where none was found.
+ *    the full-tile piece's own box, squared to its longer side, where the cell holds one, and otherwise
+ *    a square of the tile side centred in the cell. Only the veil and the halo are full-tile pieces;
+ *    each is held to the share the prompt states within `TILE_TOLERANCE`, and the side is the median
+ *    of their short sides, or that share where none was found (`latticeSquares`).
  *
  * A boundary with no gap near it, a piece past the grid's last column, or a tile that disagrees with
  * the stated share is a failure naming the boxes, never a fall back to centring. Pure.
