@@ -146,8 +146,9 @@ function recordProse(): readonly string[] {
  * keyed by profile onto a *function* of the sheet's own scale unit, and `recordProse` above skips a
  * function by design — so all four of its sentences, and `CUSTOM`'s assembled wording, left this
  * walk without anything failing. `resolutionProfileDescription` is the composer that puts them back,
- * driven over every unit a plan states and both answers to *does the stated size name the assembly*,
- * which is the whole space the two branches of that function cover.
+ * driven over every pairing of a unit and a `fit` that a plan states — a sheet drawing every component
+ * to one square states its share in words of its own (audit finding P10) — and both answers to *does
+ * the stated size name the assembly*, which is the whole space the function's branches cover.
  *
  * **The category's exclusion line, guard and audit joined it for the same reason** (issue #278). All
  * three are handed the sheet now, so none of them is a string `recordProse` can reach — and the
@@ -156,7 +157,10 @@ function recordProse(): readonly string[] {
  * under both answers to whether the sheet lists any.
  */
 function composedProse(): readonly string[] {
-  const units = new Set(addressedPlans().map((plan) => plan.scaleUnit));
+  // Keyed on both, so a unit stated by plans of each `fit` is walked under each.
+  const scales = new Map(
+    addressedPlans().map(({ scaleUnit, fit }) => [`${scaleUnit}|${String(fit)}`, { scaleUnit, fit }]),
+  );
   return [
     ...addressedSheets().flatMap(({ category, plan }) => [
       promptText.CATEGORY_EXCLUSION_TEXT[category](plan),
@@ -175,10 +179,10 @@ function composedProse(): readonly string[] {
     ...Object.values(HARDWARE_PROFILES).flatMap((profile) =>
       profile === null ? [] : [promptText.describeHardware(profile)],
     ),
-    ...[...units].flatMap((unit) =>
+    ...[...scales.values()].flatMap(({ scaleUnit, fit }) =>
       RESOLUTION_PROFILES.flatMap((profile) =>
         [true, false].map((statesAssembled) =>
-          promptText.resolutionProfileDescription(profile, statesAssembled, unit),
+          promptText.resolutionProfileDescription(profile, statesAssembled, scaleUnit, fit),
         ),
       ),
     ),

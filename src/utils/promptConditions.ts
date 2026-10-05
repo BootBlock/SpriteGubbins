@@ -234,7 +234,9 @@ export function promptConditions(
     // case — the overlay sheet draws the *Applied Overlay*, and the icons are drawn bare for the engine
     // to lay it on — so the paint rule stated over them would order an overlay painted onto every icon.
     // The sentence is scoped to the overlay's own pieces: a padlock or a crack an icon's entry or another
-    // field asks for is part of that icon and is drawn (audit finding P5).
+    // field asks for is part of that icon and is drawn (audit finding P5). Section 7's glow and particle
+    // licence reads section 1 apart from that line for the same reason, or `Rarity Glow & Aura` would be
+    // handed back to every icon the sentence has just taken it from (P7).
     CLOTHING_DRAWN_ELSEWHERE: clothingDrawnElsewhere ? 'yes' : '',
     // Which shape that exception sentence takes. On a multi-view sheet the anatomy turns with the
     // trunk — section 4 lists each piece at every one of the sheet's facings and counts it per view

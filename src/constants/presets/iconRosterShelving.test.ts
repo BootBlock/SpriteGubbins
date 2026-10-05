@@ -14,8 +14,12 @@ import { PRESETS } from './index.ts';
  * tick of a sheet already drawn. A repeated id would print the icon twice until that tick. **Held over
  * the registry**, so a preset added later is covered without being named here.
  */
+const STARTER = CATEGORY_OPTIONS.ICON.iconRoster?.picks;
+// Thrown rather than defaulted: an empty stand-in would pass the shelving check below with nothing in it.
+if (STARTER === undefined || STARTER.length === 0) throw new Error('ICON should declare a starter roster.');
+
 const DECLARED = [
-  { name: 'ICON’s starter roster', picks: CATEGORY_OPTIONS.ICON.iconRoster?.picks ?? [] },
+  { name: 'ICON’s starter roster', picks: STARTER },
   ...PRESETS.flatMap((preset) =>
     preset.subject.icons === undefined ? [] : [{ name: preset.id, picks: preset.subject.icons.picks }],
   ),

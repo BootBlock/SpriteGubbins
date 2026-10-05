@@ -169,3 +169,12 @@ a test, and "plausible" otherwise.
   and 7 overruling what it asks for”.
 - **B1, B2, B3, B4, B5 and B6** landed in “Keep every icon roster in shelving order, and name no world
   a cleared World & Era does not state”, with the identity lock’s copy made true of a set’s series.
+- **O6** is half landed with B1–B6: the `sparkle` pairing in `src/constants/categories/exclusionElements.ts`
+  reports `No motion lines or sparkle trail` against `New Item Flare & Sparkle` as a contradiction. The
+  pool restating the category’s own line stays open for phase 2.
+- The review of phase 1 landed in “Fix the review findings on the icon set audit’s phase 1”, as part of
+  three findings. **P7**: section 7 reads section 1 apart from its *Applied Overlay* line on an icon
+  sheet, so the overlay’s glow and sparkle are not handed back to every icon. **P6**: the reduction is
+  the one scale a drawing fits its display at, so a drawn size and a display of different shapes state
+  the right fraction and floors. **P12**: no wrapper negates a shadow a subject casts inside its
+  full-bleed square; a drop shadow, outside it, stays negated.

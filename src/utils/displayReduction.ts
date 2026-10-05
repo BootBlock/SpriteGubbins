@@ -20,7 +20,28 @@ import { parseDisplaySize } from './displaySize.ts';
  */
 export interface DisplayReduction {
   readonly display: TargetSize;
-  readonly drawn: TargetSize | null;
+  readonly drawn: DrawnSize | null;
+}
+
+/** The size a component is drawn at, and the scale that size fits its display at. */
+export interface DrawnSize {
+  readonly size: TargetSize;
+  readonly fit: FitScale;
+}
+
+/**
+ * The scale a drawing fits its display at, `min(display.width / drawn.width, display.height /
+ * drawn.height)`, kept as the two edges of the binding axis so the fraction stays exact: `shown /
+ * drawn` is the scale, and every figure section 2 states is read off it.
+ *
+ * **One scale, not the smaller edge of each.** A drawing is reduced whole, so the axis that runs out
+ * of display first sets the scale for both; comparing the smaller edges agrees with that only while
+ * the two sizes share a shape. A `128 × 64` drawing shown at `24 × 48` is reduced to 3/16 by its
+ * width, where the smaller edges, 24 and 64, would have stated 3/8 and a stroke floor half as wide.
+ */
+export interface FitScale {
+  readonly shown: number;
+  readonly drawn: number;
 }
 
 /**
@@ -36,11 +57,12 @@ const SMALLEST_STATED_DISPLAY = 3;
  *
  * `null` covers a category declaring no `DISPLAY_SIZE` field, a value with no size in it
  * (`parseDisplaySize`), a display too small to hold a two-pixel stroke with anything beside it
- * ({@link SMALLEST_STATED_DISPLAY}), and a component drawn no larger than it is shown — which is no
- * reduction, and leaves section 2's own pixel floor to govern.
+ * ({@link SMALLEST_STATED_DISPLAY}), and a component that fits its display at a scale of one or more
+ * ({@link FitScale}) — which is no reduction, and leaves section 2's own pixel floor to govern.
  *
- * **Keyed on the smaller edge of each**, for the reason `minFeatureSize` keys on it: that is the edge
- * detail runs out on.
+ * The display's smaller edge is what {@link SMALLEST_STATED_DISPLAY} is held against, and what the
+ * floors are stated against where no drawn size is stated: a square drawn to an unknown size fits its
+ * display at the display's smaller edge, whichever edge that is.
  */
 export function displayReduction(
   category: SubjectCategory,
@@ -51,8 +73,16 @@ export function displayReduction(
   if (field === null) return null;
   const display = parseDisplaySize(subject[field.key]);
   if (display === null || smallerEdge(display) < SMALLEST_STATED_DISPLAY) return null;
-  if (drawn !== null && smallerEdge(drawn) <= smallerEdge(display)) return null;
-  return { display, drawn };
+  if (drawn === null) return { display, drawn: null };
+  const fit = fitScale(display, drawn);
+  return fit.shown < fit.drawn ? { display, drawn: { size: drawn, fit } } : null;
+}
+
+/** The edges of the axis whose display-over-drawn ratio is the smaller, compared without dividing. */
+function fitScale(display: TargetSize, drawn: TargetSize): FitScale {
+  return display.width * drawn.height <= display.height * drawn.width
+    ? { shown: display.width, drawn: drawn.width }
+    : { shown: display.height, drawn: drawn.height };
 }
 
 /** The smaller of a size's two edges. */

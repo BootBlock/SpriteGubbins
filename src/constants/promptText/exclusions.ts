@@ -67,9 +67,13 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, (plan: Sh
   // this category rather than incidental to it: it read "…glow bleeding beyond a component's
   // silhouette, particle effects", which was true of six categories and became false the moment a
   // seventh could ask for a spark shower in section 4 and be told in section 8 that particle effects
-  // were absent from the image entirely. It is now qualified — "any particle effect the inventory in
-  // section 4 does not name" — which is the same repair VEHICLE's audit line took, and which leaves
-  // the ban exactly as strong for the six whose inventories name none.
+  // were absent from the image entirely. It was qualified to "any particle effect the inventory in
+  // section 4 does not name", the same repair VEHICLE's audit line took, which left the ban exactly as
+  // strong for the six whose inventories name none. It now reads two ways (audit finding P7): a glow
+  // or particle effect "that neither section 1 nor the inventory in section 4 names" — section 1 read
+  // apart from its *Applied Overlay* line where another sheet draws that attribute — and, on the
+  // overlay sheet, whose section 1 describes the icons beneath it, one "that the inventory in section 4
+  // does not name". Either way a named one belongs to its component and ends at a hard edge with it.
   //
   // **Every noun in the source ban is bound to its own relation, and the closing sentence names the
   // effect types that collide with one.** The ban began as a seven-noun list with a single modifier

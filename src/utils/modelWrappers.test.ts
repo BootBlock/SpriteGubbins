@@ -15,7 +15,8 @@ import {
   SCOPE_AND_PRECEDENCE_HEADING,
 } from '../constants/promptTemplate.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
-import type { OutputConfig } from '../types/output.ts';
+import type { IconLook } from '../types/iconRoster.ts';
+import type { OutputConfig, TargetModelId } from '../types/output.ts';
 import { RENDER_STYLES } from '../types/rendering.ts';
 import type { RenderStyle } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
@@ -924,5 +925,68 @@ describe('what a wrapper says about text', () => {
     // And Flux, whose claim is prose in the leading sentence rather than a term in a list.
     const flux = generatePrompt(category, subject, withOutput({ targetModel: 'FLUX' }));
     expect(flux.includes('no cast shadow, no text,'), `FLUX / ${category}`).toBe(!lettering);
+  });
+});
+
+describe('what a wrapper says about a shadow on a full-bleed square', () => {
+  /**
+   * A full-bleed icon square asks for the contact shadow its subject casts on the backdrop inside it
+   * (audit finding P12), so no wrapper may negate a shadow cast there; a shadow outside the square, on
+   * the gutters, stays negated wherever a channel names it. An isolated mark and a character carry no
+   * backdrop of their own, and keep every shadow term they had.
+   */
+  const ICON_SUBJECT = defaultSubjectFor('ICON');
+  const iconSheet = (look: IconLook, targetModel: TargetModelId): string =>
+    generatePrompt(
+      'ICON',
+      { ...ICON_SUBJECT, icons: { look, picks: ICON_SUBJECT.icons?.picks ?? [] } },
+      withOutput({ targetModel, directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY', sheetIndex: 1 }),
+    );
+  const characterSheet = (targetModel: TargetModelId): string =>
+    generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), withOutput({ targetModel }));
+
+  /** A negative block's or `--no` flag's entries, split on the comma so `cast shadow` stays one entry. */
+  function negativesOf(prompt: string): readonly string[] {
+    const line = /^(?:Negative prompt: |negative_prompt: |--ar .*? --no )(.+)$/m.exec(prompt)?.[1];
+    if (line === undefined) throw new Error('the wrapper should carry a negative channel.');
+    return line.replace(/\.$/, '').split(', ');
+  }
+
+  const CAST_INSIDE = {
+    QWEN_IMAGE: ['cast shadow', 'contact shadow'],
+    STABLE_DIFFUSION: ['floor shadow'],
+    MIDJOURNEY: ['cast shadow'],
+  } as const;
+  const CAST_OUTSIDE = {
+    QWEN_IMAGE: ['drop shadow'],
+    STABLE_DIFFUSION: ['drop shadow'],
+    MIDJOURNEY: [],
+  } as const;
+
+  it.each(Object.keys(CAST_INSIDE) as (keyof typeof CAST_INSIDE)[])(
+    'has %s negate no shadow cast inside a full-bleed square, and keep the one outside it',
+    (targetModel) => {
+      const fullBleed = negativesOf(iconSheet('FULL_BLEED_TILE', targetModel));
+      for (const term of CAST_INSIDE[targetModel]) expect(fullBleed).not.toContain(term);
+      for (const term of CAST_OUTSIDE[targetModel]) expect(fullBleed).toContain(term);
+
+      for (const [where, prompt] of [
+        ['isolated mark', iconSheet('ISOLATED_MARK', targetModel)],
+        ['character', characterSheet(targetModel)],
+      ] as const) {
+        const entries = negativesOf(prompt);
+        for (const term of [...CAST_INSIDE[targetModel], ...CAST_OUTSIDE[targetModel]]) {
+          expect(entries, `${where} / ${term}`).toContain(term);
+        }
+      }
+    },
+  );
+
+  it('has Flux forbid a drop shadow rather than a cast one on a full-bleed square', () => {
+    const fullBleed = iconSheet('FULL_BLEED_TILE', 'FLUX');
+    expect(fullBleed).toContain('with no drop shadow, no text, and');
+    expect(fullBleed).not.toContain('no cast shadow');
+    expect(iconSheet('ISOLATED_MARK', 'FLUX')).toContain('with no cast shadow, no text, and');
+    expect(characterSheet('FLUX_API')).toContain('with no cast shadow, no text, and');
   });
 });

@@ -162,11 +162,16 @@ export function toHex(color: Rgba): string {
  * The inverse of {@link toHex}: `#RRGGBB` back to an opaque colour.
  *
  * Beside it because they are one convention read in two directions, and the pair is what stops the
- * palette library and the quantiser disagreeing about what `#0F380F` is. Deliberately strict —
- * exactly six digits, with the hash — since its only inputs are the literals in
- * `src/constants/palettes/`, which a test checks are all written that way. `parseColorFromText` is
- * the *lenient* reader and belongs to the free-text fields; a second lenient one here would be a
- * second answer to a question that already has one.
+ * palette library and the quantiser disagreeing about what `#0F380F` is. **Deliberately strict —
+ * exactly six digits, with the hash — and each caller brings its own input to that form**, so whatever
+ * leniency a caller allows is visible where it is allowed: the machine palettes' literals
+ * (`fixedPaletteColors`, `describeHardware`), which a test checks are all written that way; a custom
+ * palette file's entries (`parseCustomPalette`), where an entry in any other form is refused by the
+ * `null` below; a pasted list (`parsePaletteText`), whose own expression captures six digits and adds
+ * the hash; and a custom icon's look (`customIconWarnings`), whose three-digit shorthand
+ * `expandShortHex` writes out first. `parseColorFromText` is the *lenient* reader and belongs to the
+ * free-text fields; a second lenient one here would be a second answer to a question that already has
+ * one.
  *
  * Returns `null` on anything else rather than a fallback colour, so a malformed entry drops out of
  * the palette instead of silently becoming black.

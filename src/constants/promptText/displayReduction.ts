@@ -20,6 +20,11 @@ import type { DisplayReduction } from '../../utils/displayReduction.ts';
  *
  * `nativeGrid` is the compiler's `NATIVE_GRID` answer: where the stated size is a native pixel grid,
  * the drawn size and the floors are counted in native pixels, as the pixel-discipline floor is.
+ *
+ * **Every stated figure is read off the one fit scale** (`FitScale`): the fraction is that scale, and a
+ * displayed pixel is `drawn / shown` drawn pixels, rounded up, so a floor of two displayed pixels is
+ * `ceil(2 / scale)` and the outline's one is `ceil(1 / scale)`. Where no size is stated the square's
+ * share of a displayed pixel is one over the display's smaller edge, which is the edge a square fits by.
  */
 export function describeDisplayReduction(
   reduction: DisplayReduction,
@@ -28,21 +33,21 @@ export function describeDisplayReduction(
 ): string {
   const { display, drawn } = reduction;
   const shown = `Every component is shown as small as ${size(display)} px`;
-  const shownEdge = Math.min(display.width, display.height);
 
   if (drawn === null) {
+    const shownEdge = Math.min(display.width, display.height);
     const outline = outlined
       ? `, and the outline this section states is never thinner than ${fraction(1, shownEdge)} of it, one displayed pixel, whatever width it names`
       : '';
     return `${shown}, so one displayed pixel is ${fraction(1, shownEdge)} of the width of the square it is drawn to. No stroke, gap or accent is narrower than ${fraction(2, shownEdge)} of that width, so each keeps at least two displayed pixels once reduced${outline}.`;
   }
 
-  const drawnEdge = Math.min(drawn.width, drawn.height);
+  const { fit } = drawn;
   const unit = nativeGrid ? 'native pixels' : 'delivered pixels';
   const outline = outlined
-    ? `, and the outline this section states is never thinner than ${String(Math.ceil(drawnEdge / shownEdge))} ${unit}, one displayed pixel, whatever width it names`
+    ? `, and the outline this section states is never thinner than ${String(Math.ceil(fit.drawn / fit.shown))} ${unit}, one displayed pixel, whatever width it names`
     : '';
-  return `${shown}, ${fraction(shownEdge, drawnEdge)} of the ${size(drawn)} ${nativeGrid ? 'native pixels' : 'px'} it is drawn at. No stroke, gap or accent is narrower than ${String(Math.ceil((2 * drawnEdge) / shownEdge))} ${unit}, so each keeps at least two displayed pixels once reduced${outline}.`;
+  return `${shown}, ${fraction(fit.shown, fit.drawn)} of the ${size(drawn.size)} ${nativeGrid ? 'native pixels' : 'px'} it is drawn at. No stroke, gap or accent is narrower than ${String(Math.ceil((2 * fit.drawn) / fit.shown))} ${unit}, so each keeps at least two displayed pixels once reduced${outline}.`;
 }
 
 /** `W × H`, as section 2 writes every size. */

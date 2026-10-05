@@ -50,7 +50,10 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  *
  * **`gradient background` comes out on a sheet of full-bleed squares** (`ownBackdrop`), because there
  * every subject sits on a field of its own and this block cannot say which background it means —
- * see `wrapForModel`'s option, which records the reasoning for both negative blocks.
+ * see `wrapForModel`'s option, which records the reasoning for both negative blocks. **So do `cast
+ * shadow` and `contact shadow`**: that sheet asks for the contact shadow a subject casts on the
+ * backdrop inside its square, and `drop shadow`, the one cast outside it, is the only shadow left to
+ * negate.
  */
 export function wrapForQwen(
   prompt: string,
@@ -65,9 +68,7 @@ export function wrapForQwen(
     ...(letteringIsAComponent ? [] : ['text', 'labels', 'captions']),
     'watermark',
     'signature',
-    'cast shadow',
-    'drop shadow',
-    'contact shadow',
+    ...(ownBackdrop ? ['drop shadow'] : ['cast shadow', 'drop shadow', 'contact shadow']),
     ...(ownBackdrop ? [] : ['gradient background']),
     'scene background',
     'ground plane',

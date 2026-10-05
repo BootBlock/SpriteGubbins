@@ -68,7 +68,9 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * applied here rather than stored there, because it is this channel's convention and not Qwen's.
  *
  * **`gradient background` comes out on a sheet of full-bleed squares** (`ownBackdrop`), for the reason
- * `wrapForModel`'s option gives: the term would be read over the backdrop each square carries.
+ * `wrapForModel`'s option gives: the term would be read over the backdrop each square carries. **So
+ * does `floor shadow`**, which on that sheet names the contact shadow a subject casts on the backdrop
+ * inside its square — a shadow the sheet asks for. `drop shadow`, cast outside the square, stays.
  */
 export function wrapForStableDiffusion(
   prompt: string,
@@ -84,7 +86,7 @@ export function wrapForStableDiffusion(
     'watermark',
     'signature',
     ...(letteringIsAComponent ? [] : ['labels']),
-    'floor shadow',
+    ...(ownBackdrop ? [] : ['floor shadow']),
     'drop shadow',
     ...(ownBackdrop ? [] : ['gradient background']),
     'scene background',

@@ -13,6 +13,7 @@ import {
 } from '../constants/iconCatalogue/iconLookRules.ts';
 import type { CustomIconDraft } from '../types/customIconDraft.ts';
 import type { BackgroundKey } from '../types/rendering.ts';
+import { expandShortHex } from './expandShortHex.ts';
 import { fromHex } from './imageData.ts';
 import { keyReaches } from './keyReach.ts';
 
@@ -62,7 +63,8 @@ export function customIconWarnings(draft: CustomIconDraft, key: BackgroundKey): 
 
 /**
  * The first hex colour in `text` the key takes with it, as the reader wrote it; a three-digit hex is
- * measured as the six digits it stands for. None on a transparent key, which takes no colour.
+ * measured as the six digits it stands for (`expandShortHex`). None on a transparent key, which takes
+ * no colour.
  */
 function hexWithinReach(text: string, key: BackgroundKey): string | undefined {
   const keyColour = BACKGROUND_KEY_COLORS[key];
@@ -70,7 +72,7 @@ function hexWithinReach(text: string, key: BackgroundKey): string | undefined {
   return [...text.matchAll(HEX_COLOUR)]
     .map(([hex]) => hex)
     .find((hex) => {
-      const colour = fromHex(hex.length === 4 ? hex.replaceAll(/[0-9a-f]/giu, '$&$&') : hex);
+      const colour = fromHex(expandShortHex(hex));
       return colour !== null && keyReaches(keyColour, colour);
     });
 }

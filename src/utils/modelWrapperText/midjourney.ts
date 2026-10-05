@@ -112,6 +112,13 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  * negates the placement section 0 forbids without touching the form shadow beside it. Section 0
  * states that ban in the prompt body as well, which Midjourney reads in full.
  *
+ * **Save on a sheet of full-bleed squares (`ownBackdrop`), where it comes out.** That sheet asks for
+ * the contact shadow each subject casts on the backdrop inside its square, so the entry opposes the
+ * prompt under both readings: whole, it negates that placement; decomposed, it is a bare `shadow`
+ * against the shading the sheet asks for. Nothing replaces it — `drop shadow`, the shadow outside a
+ * square, would decompose to the same bare `shadow` — and the ban on shadows in the gutters is stated
+ * in the prompt body, which Midjourney reads in full.
+ *
  * `blurred edges` and `anti-aliased edges` decompose to a bare `edges` at -0.5, on exactly the
  * styles whose section 2 line asserts a hard one, and `smooth gradients` to a bare `smooth`. Those
  * are real and they are all the **same kind** of wrong: a sheet that argues with its own style
@@ -153,10 +160,11 @@ export function wrapForMidjourney(
   frameIsAComponent: boolean,
   letteringIsAComponent: boolean,
   surface: RenderStyleSurface,
+  ownBackdrop: boolean,
 ): string {
   const negatives = [
     ...(letteringIsAComponent ? [] : ['text', 'labels']),
-    'cast shadow',
+    ...(ownBackdrop ? [] : ['cast shadow']),
     ...surface.negatives,
     ...(frameIsAComponent ? [] : ['frame', 'border']),
   ];

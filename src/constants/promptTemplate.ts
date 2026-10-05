@@ -1290,10 +1290,18 @@ Absent from the image entirely:
   borders around the image or around a component.
 - [DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]
 [IF:SUBJECT_SCOPE!=LAID_OVER]
+[IF:CLOTHING_DRAWN_ELSEWHERE!=yes]
 - Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle
   effect, that neither section [SEC:SUBJECT] nor the inventory in section [SEC:INVENTORY] names. A glow or a particle
   effect either of them names belongs to its component and ends at a hard edge with it, never fading
   into the background.
+[/IF]
+[IF:CLOTHING_DRAWN_ELSEWHERE]
+- Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle
+  effect, that neither section [SEC:SUBJECT], apart from its **[DEFINE:CLOTHING_LABEL]** line, nor the inventory in
+  section [SEC:INVENTORY] names. A glow or a particle effect either of them names belongs to its component and
+  ends at a hard edge with it, never fading into the background.
+[/IF]
 [/IF]
 [IF:SUBJECT_SCOPE=LAID_OVER]
 - Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle

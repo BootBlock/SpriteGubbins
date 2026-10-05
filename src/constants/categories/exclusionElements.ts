@@ -117,8 +117,10 @@ export const EXCLUDED_ELEMENTS: Readonly<Record<string, ExcludedElement>> = {
   pedestal: { bans: ['no pedestal'], names: ['plinth'] },
   // ICON's own pair (audit findings P7 and O6): `No motion lines or sparkle trail` is section 7's
   // subject-specific ban, and `New Item Flare & Sparkle` is the *Applied Overlay* that styles the new
-  // item flare. Section 7's general glow and particle ban now excepts what section 1 names, so this
-  // ban is the one place left where the subject asks for a sparkle and removes it.
+  // item flare. Section 7's general glow and particle ban now excepts what each sheet asks for — the
+  // inventory of the overlay sheet that draws the flare, and section 1 on an icon sheet apart from the
+  // overlay line it leaves to that sheet — so this ban is the one place left where the subject asks for
+  // a sparkle and removes it.
   sparkle: { bans: ['no motion lines or sparkle trail'], names: ['sparkle'] },
 };
 

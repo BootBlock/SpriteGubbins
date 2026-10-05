@@ -37,9 +37,11 @@ import { CATEGORY_AUDIT_TEXT, CATEGORY_EXCLUSION_TEXT } from './exclusions.ts';
  * list.
  *
  * **Two neighbouring collisions are deliberately out of this walk, and both are answered elsewhere
- * rather than absent.** Section 8's *static* bullet bans "any particle effect the inventory in
- * section 4 does not name", which meets OBJECT's `Weather Particle Sheet` and `Explosion Burst
- * Effect` — but it answers itself in the same sentence, which is the whole of what was missing here.
+ * rather than absent.** The exclusions section's *static* bullet bans a particle effect "that neither
+ * section 1 nor the inventory in section 4 names" — or, on ICON's overlay sheet, one "that the
+ * inventory in section 4 does not name" — which meets OBJECT's `Weather Particle Sheet` and
+ * `Explosion Burst Effect`; but either branch answers itself in the same sentence, which is the whole
+ * of what was missing here.
  * And EFFECT's own `exclusions` pool opens with `No character, hand or weapon in frame`, which a
  * reader may hold beside `Slash / Weapon Trail`: that one is the *user's* sentence rather than the
  * app's, and section 8's closing paragraph is the app's answer to it. Neither is a case of a rule

@@ -61,6 +61,12 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * form shadow is the shading that gives a component its volume — and it is `RENDERED_3D`'s and
  * `CLAY_RENDER`'s subject. The unqualified plural took both.
  *
+ * **On a sheet of full-bleed squares (`ownBackdrop`) it is "no drop shadow" instead**, because that
+ * sheet asks for the contact shadow each subject casts on the backdrop inside its square, which "no
+ * cast shadow" forbade. What it still forbids is a shadow outside the square, on the gutters, and a
+ * drop shadow is the name that shadow goes by. This sentence is the only statement of the ban the open
+ * weights read, so it is narrowed rather than dropped.
+ *
  * **`no text` is the sheet's too, and on one category it is the opposite of what the sheet needs.**
  * A glyph set's components *are* lettering, so the strongest position in the strongest sentence this
  * wrapper writes would be spent negating the subject — and Flux has no negative channel to correct it
@@ -80,13 +86,15 @@ export function wrapForFlux(
   surface: RenderStyleSurface,
   letteringIsAComponent: boolean,
   assembly: CategoryAssembly,
+  ownBackdrop: boolean,
 ): string {
   // Two clauses take `and`, three take a serial comma before it. Interpolating the middle clause on
   // its own left the two-clause form reading "no cast shadow, and …", which is the one category this
   // branch is for — so the whole closing run is written per shape rather than patched in the middle.
+  const shadow = ownBackdrop ? 'no drop shadow' : 'no cast shadow';
   const closing = letteringIsAComponent
-    ? `no cast shadow and ${assembly.statement}`
-    : `no cast shadow, no text, and ${assembly.statement}`;
+    ? `${shadow} and ${assembly.statement}`
+    : `${shadow}, no text, and ${assembly.statement}`;
   return `The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with ${closing}. Every part is drawn ${surface.statement}.
 
 ${prompt}`;

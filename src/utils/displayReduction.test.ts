@@ -13,8 +13,30 @@ describe('displayReduction', () => {
   it('states the display against a drawn size larger than it', () => {
     expect(displayReduction('ICON', icon('32 × 32 Pixels'), DRAWN)).toEqual({
       display: { width: 32, height: 32 },
-      drawn: DRAWN,
+      drawn: { size: DRAWN, fit: { shown: 32, drawn: 128 } },
     });
+  });
+
+  it('fits the drawing by the axis that runs out of display first, whatever the shapes', () => {
+    // 24/128 across beats 48/64 down, so the width binds — the smaller edges, 24 and 64, would not say so.
+    expect(displayReduction('ICON', icon('24 × 48 Pixels'), { width: 128, height: 64 })?.drawn?.fit).toEqual({
+      shown: 24,
+      drawn: 128,
+    });
+    expect(displayReduction('ICON', icon('48 × 24 Pixels'), { width: 64, height: 128 })?.drawn?.fit).toEqual({
+      shown: 24,
+      drawn: 128,
+    });
+  });
+
+  it('states a reduction where the smaller edges tie but the shapes do not', () => {
+    // 128 × 64 shown at 64 × 128 is halved to fit, though both smaller edges are 64.
+    expect(displayReduction('ICON', icon('64 × 128 Pixels'), { width: 128, height: 64 })?.drawn?.fit).toEqual(
+      {
+        shown: 64,
+        drawn: 128,
+      },
+    );
   });
 
   it('states the display alone where the sheet states no drawn size', () => {
@@ -27,6 +49,8 @@ describe('displayReduction', () => {
   it('states none where the drawing is no larger than it is shown', () => {
     expect(displayReduction('ICON', icon('32 × 32 Pixels'), { width: 32, height: 32 })).toBeNull();
     expect(displayReduction('ICON', icon('64 × 64 Pixels'), { width: 24, height: 24 })).toBeNull();
+    // 32 × 16 fits a 64 × 32 display at a scale of 2, which is an enlargement rather than a reduction.
+    expect(displayReduction('ICON', icon('64 × 32 Pixels'), { width: 32, height: 16 })).toBeNull();
   });
 
   it('states none for a value with no size in it, or one too small to hold a stroke', () => {

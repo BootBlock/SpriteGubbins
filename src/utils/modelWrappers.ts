@@ -141,6 +141,14 @@ export function wrapForModel(
      * backdrop is never a scene. Midjourney's `--no` carries only the style's surface terms
      * (`smooth gradients` among them on the flat and pixel styles, which `backdropDescription` forbids
      * the backdrop too), never `gradient background`, and Flux's leading sentence names no gradient.
+     *
+     * **Read by Midjourney and Flux as well, for the shadow.** Section 7 of that sheet asks for the
+     * contact shadow a subject casts on the backdrop inside its square, so no wrapper negates a shadow
+     * cast there: Qwen's `cast shadow` and `contact shadow`, Stable Diffusion's `floor shadow`,
+     * Midjourney's `cast shadow` and Flux's "no cast shadow" come out (audit finding P12). A shadow
+     * outside the square stays negated wherever a channel can name it without the bare word — `drop
+     * shadow` in the two negative blocks, "no drop shadow" in Flux's sentence — and each wrapper's own
+     * docblock says why.
      */
     readonly ownBackdrop: boolean;
     /**
@@ -177,6 +185,7 @@ export function wrapForModel(
         options.frameIsAComponent,
         options.letteringIsAComponent,
         options.surface,
+        options.ownBackdrop,
       );
 
     case 'STABLE_DIFFUSION':
@@ -205,6 +214,7 @@ export function wrapForModel(
         options.surface,
         options.letteringIsAComponent,
         options.assembly,
+        options.ownBackdrop,
       );
 
     case 'QWEN_IMAGE':

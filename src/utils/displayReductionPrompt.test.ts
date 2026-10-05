@@ -35,6 +35,26 @@ describe('the smallest display size in section 2', () => {
     }
   });
 
+  it('states the one scale a drawing of another shape fits its display at', () => {
+    // `CUSTOM` takes any pair: 128 × 64 shown at 24 × 48 fits by its width, at 3/16, so a displayed pixel
+    // is 5⅓ delivered pixels. Comparing the smaller edges stated 3/8 and a 6 px stroke floor.
+    const style = styleOf(
+      generatePrompt(
+        'ICON',
+        { ...defaultSubjectFor('ICON'), role: '24 × 48 Pixels' },
+        {
+          ...DEFAULT_OUTPUT_CONFIG,
+          resolutionProfile: 'CUSTOM',
+          spriteTargetSize: '128 × 64 px per icon',
+          sheetIndex: 1,
+        },
+      ),
+    );
+    expect(style).toContain(
+      `${DISPLAY_LINE}Every component is shown as small as 24 × 48 px, 3/16 of the 128 × 64 px it is drawn at. No stroke, gap or accent is narrower than 11 delivered pixels`,
+    );
+  });
+
   it('states the floor as a fraction of the square where no drawn size is stated', () => {
     const style = styleOf(
       generatePrompt('ICON', defaultSubjectFor('ICON'), { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 }),

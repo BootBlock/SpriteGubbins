@@ -116,7 +116,10 @@ describe('smallScaleDiscipline', () => {
     // Audit finding P6: an icon drawn at 128 px and shown at 32 is sprite-sized where it is seen, and
     // the bullets were never told so because the size it is drawn at is not. They now name the display
     // size, and ask for a component that reads once reduced rather than at 1:1.
-    const reduced = { display: { width: 32, height: 32 }, drawn: { width: 128, height: 128 } };
+    const reduced = {
+      display: { width: 32, height: 32 },
+      drawn: { size: { width: 128, height: 128 }, fit: { shown: 32, drawn: 128 } },
+    };
     const bullets = smallScaleDiscipline({ width: 128, height: 128 }, reduced);
     expect(bullets).toContain('The smallest display size above is sprite scale');
     expect(bullets).toContain('reads once reduced to its smallest display size');
@@ -128,7 +131,10 @@ describe('smallScaleDiscipline', () => {
   });
 
   it('leaves a display past sprite scale to the drawn size, as before', () => {
-    const reduced = { display: { width: 48, height: 48 }, drawn: { width: 128, height: 128 } };
+    const reduced = {
+      display: { width: 48, height: 48 },
+      drawn: { size: { width: 128, height: 128 }, fit: { shown: 48, drawn: 128 } },
+    };
     expect(smallScaleDiscipline({ width: 128, height: 128 }, reduced)).toBe('');
     expect(smallScaleDiscipline({ width: 16, height: 16 }, null)).toContain(
       'The target component size above',

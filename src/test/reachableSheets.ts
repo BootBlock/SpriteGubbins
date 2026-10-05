@@ -25,8 +25,8 @@ export interface ReachableSheet {
  * roster's twenty-odd sheets then outgrew the one-second limit a slow runner stands in for. Resolving a
  * plan compiles no prompt, so the sheets are listed and divided here and each test compiles one prompt.
  *
- * Shared by `utils/componentBoundary.test.ts` and `utils/identityConsistency.test.ts`, which sweep the
- * same sheets for two different declarations.
+ * Shared by the per-sheet sweeps, each of which holds every reachable sheet to what its plan declares
+ * — a boundary, an orientation, a backdrop, a scope — rather than enumerating its own.
  */
 export function reachableSheets(): readonly ReachableSheet[] {
   return assemblyBaseCases().flatMap(([name, category, subject]) =>
