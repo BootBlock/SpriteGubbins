@@ -33,6 +33,8 @@ const FILL: SpriteCell = {
   anchor: { x: 'CENTRE', y: 'MIDDLE' },
   fit: 'FILL_SQUARE',
   statedStep: null,
+  lattice: null,
+  resamples: true,
 };
 
 describe('buildManifest, under a fit that resizes', () => {

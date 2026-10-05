@@ -15,9 +15,9 @@ import type { SpriteCellChoice } from '../types/spriteCell.ts';
  * 128 × 128 files, and the target size a cell can be read from is a studio setting, so going to the
  * studio and back is the ordinary case. Held in the panel, the trip dropped the reader back to a PNG
  * and the bounding-box cut. The cell's fit travels with it, so the next painted sheet of a set is
- * resized as the last was — apart from the overlay sheet that closes a full-bleed icon set, whose
- * pieces are marks rather than squares, so the reader turns `FILL_SQUARE` to `SCALE_SET` for it, as the
- * Fit card says.
+ * resized as the last was. The overlay sheets that close an icon set take `IN_PLACE` whatever is held
+ * here (`resolveSpriteCell`), so the stored fit is still the icon sheets' when the reader returns to
+ * them.
  *
  * **What a reader wants of the file, not a fact about the sheet**, so nothing here falls to a new
  * sheet or to `clear`: the next sheet of a series leaves by the same route as the last. Nothing is

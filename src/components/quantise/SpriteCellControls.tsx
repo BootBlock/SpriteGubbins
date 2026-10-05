@@ -1,13 +1,9 @@
 import { QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
-import {
-  CELL_ANCHOR_X_LABELS,
-  CELL_ANCHOR_Y_LABELS,
-  SPRITE_CELL_SIDE_RANGE,
-  SPRITE_CELL_SOURCE_LABELS,
-} from '../../constants/spriteCell.ts';
+import { SPRITE_CELL_SIDE_RANGE, SPRITE_CELL_SOURCE_LABELS } from '../../constants/spriteCell.ts';
+import type { CellLattice } from '../../types/cellLattice.ts';
 import type { TargetSize } from '../../types/output.ts';
 import type { PixelGrid, SpriteBox } from '../../types/quantiser.ts';
-import { CELL_ANCHORS_X, CELL_ANCHORS_Y, SPRITE_CELL_SOURCES } from '../../types/spriteCell.ts';
+import { SPRITE_CELL_SOURCES } from '../../types/spriteCell.ts';
 import type { SheetStep, SpriteCellChoice, SpriteCellSource } from '../../types/spriteCell.ts';
 import { cellBadgeText } from '../../utils/cellBadgeText.ts';
 import {
@@ -20,6 +16,7 @@ import { Badge } from '../common/Badge.tsx';
 import { NumberField } from '../common/NumberField.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
+import { SpriteAnchorChoice } from './SpriteAnchorChoice.tsx';
 import { SpriteFitChoice } from './SpriteFitChoice.tsx';
 
 interface SpriteCellControlsProps {
@@ -41,6 +38,8 @@ interface SpriteCellControlsProps {
   readonly grid: PixelGrid | null;
   /** The grid step the studio's sheet states, which `Scale evenly` reads where the sprites give none. */
   readonly statedStep: SheetStep | null;
+  /** A placement sheet's cells, or `null` off one, which `Keep place` places each piece in — see `useCellLattice`. */
+  readonly lattice: CellLattice | null;
   /**
    * The sprites the segmentation found, in the 1:1 result's coordinates.
    *
@@ -64,7 +63,8 @@ interface SpriteCellControlsProps {
  *
  * **Every control here is off unless it can do something.** The two size boxes appear only under
  * `Fixed`, since the other two sources state their own size; the anchor and the fit appear only where
- * there is a cell for artwork to sit in; and `Studio target` is absent while the studio states no
+ * there is a cell for artwork to sit in, and the anchor not under `Keep place`, which places each piece
+ * where it was drawn rather than against an edge; and `Studio target` is absent while the studio states no
  * size; `SpriteFitChoice` says how its own pills are held back on a pixel-art sheet. See `SpriteCell`
  * for what the whole arrangement is for, and `spriteCellSource` for what a reader is told about it.
  */
@@ -74,6 +74,7 @@ export function SpriteCellControls({
   target,
   grid,
   statedStep,
+  lattice,
   boxes,
 }: SpriteCellControlsProps) {
   const sources = SPRITE_CELL_SOURCES.filter(
@@ -87,8 +88,9 @@ export function SpriteCellControls({
   // download will actually do.
   const source = sources.includes(choice.source) ? choice.source : SPRITE_CELL_SOURCES[0];
   // The fit in force is derived for the same reason: on a pixel-art sheet a stored resizing fit
-  // resolves to `REFUSE`, so that is the pill shown pressed, beside the reason the others are held.
-  const cell = resolveSpriteCell({ ...choice, source }, target, grid, statedStep);
+  // resolves to `REFUSE`, and on a placement sheet every fit to `IN_PLACE`, so that is the pill shown
+  // pressed, beside the reason the others are held.
+  const cell = resolveSpriteCell({ ...choice, source }, target, grid, statedStep, lattice);
   const over = cell === null ? [] : oversizedSprites(boxes, cell);
 
   return (
@@ -144,41 +146,21 @@ export function SpriteCellControls({
 
       {cell !== null && (
         <>
-          <div className="flex items-center gap-1.5">
-            <span className="mr-1 flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-ink-muted">Across</span>
-              <Tooltip text={QUANTISE_TOOLTIPS.spriteCellAnchorX} hint="Across" />
-            </span>
-            <SegmentedChoice
-              label="Anchor across the cell"
-              values={CELL_ANCHORS_X}
-              value={choice.anchor.x}
-              format={(anchor) => CELL_ANCHOR_X_LABELS[anchor]}
-              onChange={(x) => {
-                onChange({ ...choice, anchor: { ...choice.anchor, x } });
+          {/* No anchors under `Keep place`, which places each piece where it was drawn rather than
+              against an edge of the cell: the pills would be a setting the cut ignores. */}
+          {cell.fit !== 'IN_PLACE' && (
+            <SpriteAnchorChoice
+              anchor={choice.anchor}
+              onChange={(anchor) => {
+                onChange({ ...choice, anchor });
               }}
             />
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="mr-1 flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-ink-muted">Down</span>
-              <Tooltip text={QUANTISE_TOOLTIPS.spriteCellAnchorY} hint="Down" />
-            </span>
-            <SegmentedChoice
-              label="Anchor down the cell"
-              values={CELL_ANCHORS_Y}
-              value={choice.anchor.y}
-              format={(anchor) => CELL_ANCHOR_Y_LABELS[anchor]}
-              onChange={(y) => {
-                onChange({ ...choice, anchor: { ...choice.anchor, y } });
-              }}
-            />
-          </div>
+          )}
 
           <SpriteFitChoice
             fit={cell.fit}
             resizable={resizingFitAllowed(grid)}
+            placed={lattice !== null}
             onChange={(fit) => {
               onChange({ ...choice, fit });
             }}

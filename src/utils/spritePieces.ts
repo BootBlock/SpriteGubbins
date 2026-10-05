@@ -22,6 +22,12 @@ import { disjointSet } from './unionFind.ts';
  * fragments of one blade joined in a chain come back as one piece, and the group's root is its
  * lowest index, which is its earliest sprite in reading order.
  *
+ * **On a placement sheet the cell joins first** (`cellOf`, from `cellLattice`). Each cell holds one
+ * piece by the prompt's contract, so a tier mark and its separate pips are one piece before the reader
+ * says anything, and the pieces come in cell order, which is the order the prompt lays them out in.
+ * *Leave out* and *Join* still apply on top: a fragment left out leaves its cell's piece, and a join
+ * across two cells makes one piece of both.
+ *
  * Pure, as everything in this directory is.
  */
 
@@ -32,6 +38,8 @@ export interface ShapedPiece {
   readonly memberIndices: readonly number[];
   /** The inventory name a member claimed, or `null` where nobody claimed one. */
   readonly claimed: string | null;
+  /** The placement-sheet cell its earliest member was drawn in, or `null` off a placement sheet. */
+  readonly cell: number | null;
 }
 
 /** The grouping, the decision that survived for each sprite, and what did not survive at all. */
@@ -63,7 +71,11 @@ export interface ShapedSheet {
   readonly lost: number;
 }
 
-export function shapeSheet(boxes: readonly SpriteBox[], edits: readonly SpriteEdit[]): ShapedSheet {
+export function shapeSheet(
+  boxes: readonly SpriteBox[],
+  edits: readonly SpriteEdit[],
+  cellOf: readonly number[] | null,
+): ShapedSheet {
   const decisions: (SpriteDecision | null)[] = boxes.map(() => null);
   const decidedAt: (SpritePin | null)[] = boxes.map(() => null);
   const claimed = new Set<number>();
@@ -84,6 +96,13 @@ export function shapeSheet(boxes: readonly SpriteBox[], edits: readonly SpriteEd
   }
 
   const groups = disjointSet(boxes.length);
+  // The fragments of one cell are one piece before any join the reader made.
+  const firstIn = new Map<number, number>();
+  for (const [index, cell] of (cellOf ?? []).entries()) {
+    const first = firstIn.get(cell);
+    if (first === undefined) firstIn.set(cell, index);
+    else groups.union(first, index);
+  }
   const joinTarget: (number | null)[] = boxes.map(() => null);
   for (const [index, decision] of decisions.entries()) {
     if (decision?.kind !== 'JOIN') continue;
@@ -104,18 +123,22 @@ export function shapeSheet(boxes: readonly SpriteBox[], edits: readonly SpriteEd
     groups.union(index, partner);
   }
 
-  return buildPieces(boxes, decisions, decidedAt, joinTarget, groups, lost);
+  return buildPieces(boxes, { decisions, decidedAt, joinTarget, cellOf }, groups, lost);
 }
 
-/** The grouping turned into pieces, in reading order of each piece's earliest surviving member. */
+/**
+ * The grouping turned into pieces, in reading order of each piece's earliest surviving member — or, on
+ * a placement sheet, in the order of the cells those members were drawn in.
+ */
 function buildPieces(
   boxes: readonly SpriteBox[],
-  decisions: readonly (SpriteDecision | null)[],
-  decidedAt: readonly (SpritePin | null)[],
-  joinTarget: readonly (number | null)[],
+  resolved: Pick<ShapedSheet, 'decisions' | 'decidedAt' | 'joinTarget'> & {
+    readonly cellOf: readonly number[] | null;
+  },
   groups: ReturnType<typeof disjointSet>,
   lost: number,
 ): ShapedSheet {
+  const { decisions, decidedAt, joinTarget, cellOf } = resolved;
   // Keyed by the group's root, which `disjointSet` guarantees is its lowest index — so walking the
   // sprites in index order inserts the pieces in reading order too, and each piece's members arrive
   // in it. A root that is itself left out still keys its group; what orders the pieces is the first
@@ -130,13 +153,17 @@ function buildPieces(
   }
 
   const pieceOf: (number | null)[] = boxes.map(() => null);
-  const pieces = [...byRoot.values()].map((memberIndices, piece) => {
+  const cellOfPiece = (memberIndices: readonly number[]): number | null =>
+    cellOf === null ? null : (cellOf[memberIndices[0] ?? -1] ?? null);
+  const ordered = [...byRoot.values()].sort((a, b) => (cellOfPiece(a) ?? 0) - (cellOfPiece(b) ?? 0));
+  const pieces = ordered.map((memberIndices, piece) => {
     for (const index of memberIndices) pieceOf[index] = piece;
     const members = memberIndices.map((index) => boxes[index]).filter(isBox);
     return {
       box: joinBoxes(members),
       memberIndices,
       claimed: claimedName(memberIndices, decisions),
+      cell: cellOfPiece(memberIndices),
     };
   });
 

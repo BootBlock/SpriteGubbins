@@ -1,4 +1,5 @@
 import { SPRITE_CELL_SIDE_RANGE } from '../constants/spriteCell.ts';
+import type { CellLattice } from '../types/cellLattice.ts';
 import type { TargetSize } from '../types/output.ts';
 import type { PixelGrid, SpriteBox } from '../types/quantiser.ts';
 import type {
@@ -8,9 +9,11 @@ import type {
   SheetStep,
   SpriteCell,
   SpriteCellChoice,
+  SpriteFit,
   SpritePlacement,
 } from '../types/spriteCell.ts';
 import { evenScale } from './evenScale.ts';
+import { inPlacePlacement } from './inPlacePlacement.ts';
 
 /**
  * Cutting each sprite into a fixed cell instead of into its own bounding box.
@@ -63,17 +66,37 @@ export function resolveSpriteCell(
   target: TargetSize | null,
   grid: PixelGrid | null,
   statedStep: SheetStep | null,
+  lattice: CellLattice | null,
 ): SpriteCell | null {
   if (choice.source === 'BOX') return null;
-  // The second degradation, and the same shape: a resizing fit on a sheet with a pixel scale is a
-  // stored choice the sheet cannot honour, and the control withholds it there for that reason.
-  const { anchor } = choice;
-  const fit = resizingFitAllowed(grid) ? choice.fit : 'REFUSE';
-  if (choice.source === 'FIXED') {
-    return { width: choice.fixed.width, height: choice.fixed.height, anchor, fit, statedStep };
-  }
-  if (target === null || !targetFitsCell(target)) return null;
-  return { width: target.width, height: target.height, anchor, fit, statedStep };
+  const size =
+    choice.source === 'FIXED' ? choice.fixed : target !== null && targetFitsCell(target) ? target : null;
+  if (size === null) return null;
+  const resamples = resizingFitAllowed(grid);
+  return {
+    width: size.width,
+    height: size.height,
+    anchor: choice.anchor,
+    fit: resolvedFit(choice.fit, resamples, lattice),
+    statedStep,
+    lattice,
+    resamples,
+  };
+}
+
+/**
+ * The fit a cut takes, for the one the reader stored.
+ *
+ * **A placement sheet takes `IN_PLACE` whatever is stored**, as a pixel-art sheet takes `REFUSE`: its
+ * pieces are drawn at their place on the icon, and any other fit would cut each to its own box and move
+ * it. **Off a placement sheet a stored `IN_PLACE` is `REFUSE`**, the fit with no cells to read. The
+ * second degradation is the pixel scale's: a resizing fit on a sheet with a pixel scale is a stored
+ * choice the sheet cannot honour, and the control withholds it there for that reason.
+ */
+function resolvedFit(stored: SpriteFit, resamples: boolean, lattice: CellLattice | null): SpriteFit {
+  if (lattice !== null) return 'IN_PLACE';
+  if (stored === 'IN_PLACE') return 'REFUSE';
+  return resamples ? stored : 'REFUSE';
 }
 
 /**
@@ -118,6 +141,7 @@ export function targetFitsCell(target: TargetSize): boolean {
  * Empty where every sprite fits, which is the case the whole feature exists to produce.
  */
 export function oversizedSprites(boxes: readonly SpriteBox[], cell: SpriteCell): readonly number[] {
+  if (cell.fit === 'IN_PLACE') return outOfPlace(boxes, cell);
   // A resizing fit brings every sprite inside the cell by construction — see `cellPlacements`.
   if (cell.fit !== 'REFUSE') return [];
   const over: number[] = [];
@@ -152,6 +176,9 @@ export function oversizedSprites(boxes: readonly SpriteBox[], cell: SpriteCell):
 export function cellPlacements(boxes: readonly SpriteBox[], cell: SpriteCell): readonly SpritePlacement[] {
   const factor = cell.fit === 'SCALE_SET' ? evenScale(boxes, cell) : 1;
   return boxes.map((box) => {
+    // Under `IN_PLACE` a piece no cell holds has been refused before the writer reaches here.
+    const inPlace = cell.fit === 'IN_PLACE' ? inPlacePlacement(box, cell) : null;
+    if (inPlace !== null) return inPlace;
     const { source, width, height } = drawnAt(box, cell, factor);
     return {
       source,
@@ -170,7 +197,9 @@ function drawnAt(
   factor: number,
 ): { readonly source: SheetRegion; readonly width: number; readonly height: number } {
   const region = { left: box.left, top: box.top, width: box.width, height: box.height };
-  if (cell.fit === 'REFUSE') return { source: region, width: box.width, height: box.height };
+  if (cell.fit === 'REFUSE' || cell.fit === 'IN_PLACE') {
+    return { source: region, width: box.width, height: box.height };
+  }
   if (cell.fit === 'SCALE_SET') {
     return {
       source: region,
@@ -236,10 +265,34 @@ export function oversizeReason(
   const first = over[0];
   const box = first === undefined ? undefined : boxes[first];
   if (first === undefined || box === undefined) return '';
+  if (cell.lattice?.kind === 'FAILED') return `the sheet’s cells could not be read: ${cell.lattice.reason}`;
   const rest = over.length - 1;
   const others = rest === 0 ? '' : ` and ${String(rest)} more ${rest === 1 ? 'does' : 'do'} not fit either`;
   // The positional name a sheet that could not be named falls back to is itself `sprite-04`, so the
   // clause reads the same way whether the sheet is named or numbered.
   const named = names[first] ?? `piece ${String(first + 1)}`;
+  if (cell.fit === 'IN_PLACE') {
+    return `${named} reaches past its ${String(cell.width)} × ${String(cell.height)} cell where it was drawn${others} — re-generate the sheet with each piece inside its tile square`;
+  }
   return `${named} is ${String(box.width)} × ${String(box.height)} drawn pixels, larger than the ${String(cell.width)} × ${String(cell.height)} cell${others} — raise the cell, or re-generate the sheet at the scale the prompt asked for`;
+}
+
+/**
+ * The pieces of a placement sheet that do not land inside the cell under `IN_PLACE`: every piece where
+ * the cells could not be read, and otherwise each piece no cell holds or whose place reaches past the
+ * file's edge. A piece drawn across its tile square's edge is refused rather than clipped, because the
+ * part the clip would take is part of the mark.
+ */
+function outOfPlace(boxes: readonly SpriteBox[], cell: SpriteCell): readonly number[] {
+  if (cell.lattice?.kind !== 'CELLS') return boxes.map((_box, index) => index);
+  return boxes.flatMap((box, index) => {
+    const placed = inPlacePlacement(box, cell);
+    const inside =
+      placed !== null &&
+      placed.x >= 0 &&
+      placed.y >= 0 &&
+      placed.x + placed.width <= cell.width &&
+      placed.y + placed.height <= cell.height;
+    return inside ? [] : [index];
+  });
 }

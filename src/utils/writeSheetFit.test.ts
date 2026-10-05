@@ -29,6 +29,8 @@ const ICON_CELL: SpriteCell = {
   anchor: { x: 'CENTRE', y: 'MIDDLE' },
   fit: 'REFUSE',
   statedStep: null,
+  lattice: null,
+  resamples: true,
 };
 
 /** The look a set is drawn in, and the fit its guidance sends a reader to. */
@@ -153,6 +155,7 @@ describe('a pixel-art sheet, packed into a cell', () => {
       { ...DEFAULT_SPRITE_CELL_CHOICE, source: 'FIXED', fixed: { width: 8, height: 8 }, fit: 'SCALE_SET' },
       null,
       4,
+      null,
       null,
     );
     const written = await writeSheet(

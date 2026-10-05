@@ -214,7 +214,7 @@ function describeWriting(written: WrittenSheet): string {
  * not be matched to the pieces one for one, so it is the tab telling a reader their generator
  * returned a different set from the one it was asked for.
  *
- * **The three routes are named apart** because the reader has to be able to tell their own work from
+ * **The routes are named apart** because the reader has to be able to tell their own work from
  * the app's inference. `READING_ORDER` is a claim the app made by counting, which is exactly the
  * claim a misordered sheet defeats; `ASSIGNED` is one a person checked. A toast that called both of
  * them "named from the inventory" would hide the difference at the only moment it is actionable.
@@ -224,6 +224,7 @@ function describeSprites(sprites: number, naming: SpriteNaming | null): string {
   const counted = `${String(sprites)} ${sprites === 1 ? 'sprite' : 'sprites'}`;
   if (naming === 'ASSIGNED') return `${counted}, named as you assigned them`;
   if (naming === 'READING_ORDER') return `${counted}, named from the inventory in reading order`;
+  if (naming === 'CELL') return `${counted}, named from the inventory by the cell each was drawn in`;
   return `${counted}, numbered rather than named — the pieces do not match the inventory`;
 }
 

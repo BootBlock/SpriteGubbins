@@ -45,6 +45,13 @@ export const SPRITE_ASSIGNMENT_GUIDANCE = {
   readingOrder:
     'Every component the prompt asked for has exactly one sprite, so each piece carries the inventory’s own name. Those names come from position alone — the prompt fixes the order the components are drawn in, and this sheet is being read in that order. Check the labels in the preview against the artwork before you download: a generator that drew two limbs the other way round produces exactly this state, with the right count and two wrong names, and the count cannot tell you so.',
 
+  /**
+   * Each piece of a placement sheet takes the inventory name of the cell it was drawn in
+   * (`SpriteNaming` `CELL`), so an empty cell leaves its neighbours their names.
+   */
+  byCell:
+    'Each piece carries the inventory name of the cell it was drawn in, because this sheet lays one piece to a cell in the inventory’s order. A cell the generator left empty leaves its neighbours their own names. Check the labels in the preview against the artwork before you download.',
+
   /** At least one name was assigned by hand, and the set still comes out complete. */
   assigned:
     'Every component the prompt asked for has exactly one sprite, and at least one of them is named the way you said rather than by its position. The manifest records that, so a pipeline reading the pack can tell a name a person checked from one the app inferred by counting. Anything you left on “reading order” takes whichever inventory name is still free, in order, so naming two sprites does not disturb the rest.',

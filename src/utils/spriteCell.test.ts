@@ -28,15 +28,17 @@ const CELL: SpriteCell = {
   anchor: { x: 'CENTRE', y: 'BOTTOM' },
   fit: 'REFUSE',
   statedStep: null,
+  lattice: null,
+  resamples: true,
 };
 
 describe('resolveSpriteCell', () => {
   it('answers with no cell at all where each sprite keeps its bounding box', () => {
-    expect(resolveSpriteCell(choice({ source: 'BOX' }), { width: 20, height: 20 }, 1, null)).toBeNull();
+    expect(resolveSpriteCell(choice({ source: 'BOX' }), { width: 20, height: 20 }, 1, null, null)).toBeNull();
   });
 
   it('takes the studio’s own component size where that is the source', () => {
-    const cell = resolveSpriteCell(choice({ source: 'TARGET' }), { width: 20, height: 12 }, 1, null);
+    const cell = resolveSpriteCell(choice({ source: 'TARGET' }), { width: 20, height: 12 }, 1, null, null);
 
     expect(cell).toStrictEqual({
       width: 20,
@@ -44,6 +46,8 @@ describe('resolveSpriteCell', () => {
       anchor: { x: 'CENTRE', y: 'BOTTOM' },
       fit: 'REFUSE',
       statedStep: null,
+      lattice: null,
+      resamples: true,
     });
   });
 
@@ -51,14 +55,14 @@ describe('resolveSpriteCell', () => {
     // The control does not offer that position while there is no target, and this is what makes the
     // absence safe wherever the two are out of step — a size guessed here would be a cut nobody
     // asked for.
-    expect(resolveSpriteCell(choice({ source: 'TARGET' }), null, 1, null)).toBeNull();
+    expect(resolveSpriteCell(choice({ source: 'TARGET' }), null, 1, null, null)).toBeNull();
   });
 
   it('degrades where the studio states a size larger than a cell may be', () => {
     // The control does not offer the position either, so this is the same guard on both sides of
     // one question rather than a second answer to it.
     expect(
-      resolveSpriteCell(choice({ source: 'TARGET' }), { width: 2048, height: 2048 }, 1, null),
+      resolveSpriteCell(choice({ source: 'TARGET' }), { width: 2048, height: 2048 }, 1, null, null),
     ).toBeNull();
   });
 
@@ -66,7 +70,7 @@ describe('resolveSpriteCell', () => {
     const typed = choice({ source: 'FIXED', fixed: { width: 24, height: 32 } });
 
     // And it is the typed size rather than the studio's, even where the studio states one.
-    expect(resolveSpriteCell(typed, { width: 20, height: 12 }, 1, null)).toMatchObject({
+    expect(resolveSpriteCell(typed, { width: 20, height: 12 }, 1, null, null)).toMatchObject({
       width: 24,
       height: 32,
     });

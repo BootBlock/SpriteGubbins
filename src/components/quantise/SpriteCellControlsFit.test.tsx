@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DEFAULT_SPRITE_CELL_CHOICE, SPRITE_FIT_UNAVAILABLE } from '../../constants/spriteCell.ts';
+import {
+  DEFAULT_SPRITE_CELL_CHOICE,
+  SPRITE_FIT_IN_PLACE_UNAVAILABLE,
+  SPRITE_FIT_PLACED_ONLY,
+  SPRITE_FIT_UNAVAILABLE,
+} from '../../constants/spriteCell.ts';
+import type { CellLattice } from '../../types/cellLattice.ts';
 import type { PixelGrid, SpriteBox } from '../../types/quantiser.ts';
 import type { SpriteCellChoice } from '../../types/spriteCell.ts';
 import { SpriteCellControls } from './SpriteCellControls.tsx';
@@ -30,6 +36,7 @@ function draw(
   choice: SpriteCellChoice,
   grid: PixelGrid | null = 1,
   onChange: (next: SpriteCellChoice) => void = () => undefined,
+  lattice: CellLattice | null = null,
 ) {
   return render(
     <SpriteCellControls
@@ -38,6 +45,7 @@ function draw(
       target={{ width: 128, height: 128 }}
       grid={grid}
       statedStep={null}
+      lattice={lattice}
       boxes={BOXES}
     />,
   );
@@ -104,5 +112,40 @@ describe('SpriteCellControls, the fit', () => {
     await user.keyboard('{Enter}');
 
     expect(onChange).toHaveBeenCalledWith({ ...ICON_CELL, fit: 'SCALE_SET' });
+  });
+
+  it('withholds Keep place off a placement sheet, and says what it is for', () => {
+    draw(ICON_CELL);
+    const keep = screen.getByRole('button', { name: 'Keep place' });
+    expect(keep).toHaveAttribute('aria-disabled', 'true');
+    expect(keep).toHaveAccessibleDescription(SPRITE_FIT_IN_PLACE_UNAVAILABLE);
+    expect(screen.getByRole('button', { name: 'Scale evenly' })).toHaveAttribute('aria-disabled', 'false');
+  });
+
+  it('keeps each piece in place on a placement sheet, withholding every other fit and the anchors', () => {
+    // Four 260-pixel tiles on a 300-pixel step: each cell's square is its own tile.
+    const cells = BOXES.map((box, index) => {
+      const region = { left: index * 300, top: 0, width: 300, height: 300 };
+      return {
+        index,
+        region,
+        square: { left: box.left, top: box.top, width: box.width, height: box.height },
+      };
+    });
+    const lattice: CellLattice = { kind: 'CELLS', cells, cellOf: [0, 1, 2, 3], tileSide: 260 };
+    draw({ ...ICON_CELL, fit: 'SCALE_SET' }, 1, () => undefined, lattice);
+
+    expect(screen.getByRole('button', { name: 'Keep place' })).toHaveAttribute('aria-pressed', 'true');
+    for (const name of ['As drawn', 'Scale evenly', 'Fill square']) {
+      expect(screen.getByRole('button', { name })).toHaveAccessibleDescription(SPRITE_FIT_PLACED_ONLY);
+    }
+    expect(screen.queryByRole('group', { name: 'Anchor across the cell' })).toBeNull();
+    expect(screen.getByText('128 × 128 cell, each piece in place at 49%')).toBeInTheDocument();
+  });
+
+  it('says where a placement sheet’s cells could not be read', () => {
+    const lattice: CellLattice = { kind: 'FAILED', reason: 'no gap', boxes: [0] };
+    draw(ICON_CELL, 1, () => undefined, lattice);
+    expect(screen.getByText('Cells not found on this sheet')).toBeInTheDocument();
   });
 });

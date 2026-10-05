@@ -2434,18 +2434,19 @@ export const QUANTISE_TOOLTIPS = {
 
   spriteCellAnchorX:
     'Where the artwork sits across its cell when the cell is wider than the piece. Centre suits anything symmetric about its own middle. An edge suits a limb: a rig turns a piece about its joint, so a centred forearm swings from its own middle and the elbow comes apart.\n\n' +
-    'Your choice is also the horizontal half of the manifest’s pivot, so an importer that reads it lands the piece where you cut it. For an icon set, choose Centre.',
+    'Your choice is also the horizontal half of the manifest’s pivot, so an importer that reads it lands the piece where you cut it. For an icon set, choose Centre. It does not apply under Keep place, which keeps each piece where it was drawn.',
 
   spriteCellAnchorY:
     'Where the artwork sits down its cell. Bottom is the default, because a ground-standing sprite is placed by its feet. Top suits a piece hanging from a socket, such as an arm from a shoulder; Middle suits one that turns about its centre, such as a wheel.\n\n' +
-    'It is also the vertical half of the pivot the manifest states. For an icon set, choose Middle, so every icon sits in the middle of its square.',
+    'It is also the vertical half of the pivot the manifest states. For an icon set, choose Middle, so every icon sits in the middle of its square. It does not apply under Keep place.',
 
   spriteCellFit:
     'How each sprite meets its cell. Only the files you save change.\n\n' +
-    '- As drawn places each sprite at its own size. A sprite larger than the cell refuses the download. Pixel art wants this.\n' +
-    '- Scale evenly resizes every sprite by one factor, chosen so one step of the sheet’s grid fills one cell, so icons keep their relative sizes. Use it for isolated marks.\n' +
-    '- Fill square crops each sprite to the square at its centre and resizes it to fill the cell. Use it for full-bleed squares, not for an icon set’s overlay sheet of marks.\n\n' +
-    'Use a scaling fit to bring a painted icon set to 128 × 128 px, with Studio target, Centre and Middle. Each new pixel averages the pixels it covers, held to the sheet’s palette where one applies. A sheet with a pixel scale above 1 is always placed as drawn.',
+    '- As drawn places each sprite at its own size, and refuses one larger than the cell. Pixel art wants this.\n' +
+    '- Scale evenly resizes every sprite by one factor, so one step of the sheet’s grid fills one cell. Use it for isolated marks.\n' +
+    '- Fill square crops each sprite to its centred square and resizes it to fill the cell. Use it for full-bleed squares.\n' +
+    '- Keep place keeps each piece where it was drawn on the icon, so a corner badge stays in its corner. Only an icon set’s overlay sheet takes it, and it takes no other fit.\n\n' +
+    'Use a scaling fit with Studio target to bring a painted icon set to 128 × 128 px. Each new pixel averages the pixels it covers. A sheet with a pixel scale above 1 is never resized.',
 
   downloadScale:
     'How many file pixels one drawn pixel is written as when you save. `1×` is the sheet’s own size, which is what an engine imports. Larger rungs write each pixel as a solid square, never resampled, for a copy you can see without magnifying. A Fit that scales resizes each sprite into the magnified cell.\n\n' +

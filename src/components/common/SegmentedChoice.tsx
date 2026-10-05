@@ -16,13 +16,15 @@ interface SegmentedChoiceProps<T extends string | number> {
   readonly format: (value: T) => string;
   readonly onChange: (value: T) => void;
   /**
-   * Values that cannot be chosen right now, and the sentence that says why.
+   * Values that cannot be chosen right now, in groups, each with the sentence that says why.
    *
-   * One reason for the whole set rather than one per value, because each caller that needs this
-   * withholds its values for one reason — the preview layout four of them, the sprite fit two — and
-   * a copy of one sentence per pill under a row of pills would read as that many problems.
+   * One reason per group rather than one per value, because values withheld together are withheld for
+   * one reason — the preview layout four of them — and a copy of one sentence per pill under a row of
+   * pills would read as that many problems. Several groups where the reasons differ: the sprite fit
+   * withholds its two resizing fits on a pixel-art sheet and *Keep place* off a placement sheet, and a
+   * reader on a pill is told the reason that pill is withheld for.
    */
-  readonly unavailable?: { readonly values: readonly T[]; readonly reason: string } | undefined;
+  readonly unavailable?: readonly { readonly values: readonly T[]; readonly reason: string }[] | undefined;
 }
 
 /**
@@ -71,8 +73,11 @@ export function SegmentedChoice<T extends string | number>({
   unavailable,
 }: SegmentedChoiceProps<T>) {
   const reasonId = useId();
-  const blocked = (option: T) => unavailable?.values.includes(option) === true;
-  const anyBlocked = values.some(blocked);
+  const groups = (unavailable ?? []).filter((group) =>
+    values.some((option) => group.values.includes(option)),
+  );
+  const groupOf = (option: T) => groups.findIndex((group) => group.values.includes(option));
+  const blocked = (option: T) => groupOf(option) >= 0;
   return (
     <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1.5">
       {values.map((option) => (
@@ -81,7 +86,7 @@ export function SegmentedChoice<T extends string | number>({
           type="button"
           aria-pressed={option === value}
           aria-disabled={blocked(option)}
-          aria-describedby={blocked(option) ? reasonId : undefined}
+          aria-describedby={blocked(option) ? `${reasonId}-${String(groupOf(option))}` : undefined}
           onClick={() => {
             if (!blocked(option)) onChange(option);
           }}
@@ -95,11 +100,11 @@ export function SegmentedChoice<T extends string | number>({
       ))}
       {/* Inside the group, on a line of its own under the pills, so the reason is read as part of
           the control it explains wherever the caller places the row. */}
-      {anyBlocked && (
-        <p id={reasonId} className="basis-full text-xs text-ink-faint">
-          {unavailable?.reason}
+      {groups.map((group, at) => (
+        <p key={group.reason} id={`${reasonId}-${String(at)}`} className="basis-full text-xs text-ink-faint">
+          {group.reason}
         </p>
-      )}
+      ))}
     </div>
   );
 }

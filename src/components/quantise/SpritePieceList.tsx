@@ -139,15 +139,17 @@ export function SpritePieceList({ assignment, inventory, busy }: SpritePieceList
 function namingLabel(assignment: SpriteAssignment, inventory: readonly string[]): string {
   if (assignment.naming === 'ASSIGNED') return 'named as you assigned';
   if (assignment.naming === 'READING_ORDER') return 'named in reading order';
+  if (assignment.naming === 'CELL') return 'named by cell';
   if (inventory.length === 0) return 'numbered — the studio names no sheet';
   return 'numbered — the pieces do not match the inventory';
 }
 
-/** Which paragraph the state calls for — see `SPRITE_ASSIGNMENT_GUIDANCE`, which holds all six. */
+/** Which paragraph the state calls for — see `SPRITE_ASSIGNMENT_GUIDANCE`, which holds all seven. */
 function guidanceFor(assignment: SpriteAssignment, inventory: readonly string[]): string {
   if (inventory.length === 0) return SPRITE_ASSIGNMENT_GUIDANCE.noInventory;
   if (assignment.naming === 'ASSIGNED') return SPRITE_ASSIGNMENT_GUIDANCE.assigned;
   if (assignment.naming === 'READING_ORDER') return SPRITE_ASSIGNMENT_GUIDANCE.readingOrder;
+  if (assignment.naming === 'CELL') return SPRITE_ASSIGNMENT_GUIDANCE.byCell;
   // Unnamed, and the three causes call for opposite things from the reader. The count is checked
   // first because a sheet that is both miscounted and double-named cannot be fixed by renaming: the
   // piece that would free the duplicate name has nowhere to go until the counts agree.

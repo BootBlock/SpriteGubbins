@@ -21,6 +21,8 @@ const SEGMENTED: SpriteSegmentation = {
   kind: 'SEGMENTED',
   boxes: [{ left: 0, top: 0, width: 6, height: 6, pixels: 24 }],
   specks: 0,
+  width: 1024,
+  height: 1024,
 };
 
 function frameAt(left: number, drift: number, snapped = false): AlignedFrame {

@@ -982,6 +982,13 @@ export type SpriteSegmentation =
       readonly boxes: readonly SpriteBox[];
       /** Pieces too small to be a sprite; see {@link SMALLEST_SPRITE_PIXELS}. */
       readonly specks: number;
+      /**
+       * The size of the sheet the boxes were found on, in the drawn pixels they are stated in — the
+       * frame a placement sheet's cells are measured against (`cellLattice`), carried with the boxes so
+       * no reader pairs them with the size of another image.
+       */
+      readonly width: number;
+      readonly height: number;
     }
   | { readonly kind: 'SOLID' }
   | {

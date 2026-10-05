@@ -35,7 +35,7 @@ function join(index: number, to: number): SpriteEdit {
 describe('resolveAssignment', () => {
   describe('with nothing said about the sheet', () => {
     it('names the pieces from the inventory in reading order', () => {
-      const assignment = resolveAssignment(BOXES, [], INVENTORY);
+      const assignment = resolveAssignment(BOXES, [], INVENTORY, null);
 
       expect(assignment.naming).toBe('READING_ORDER');
       expect(assignment.pieces.map((piece) => piece.name)).toStrictEqual(INVENTORY);
@@ -44,7 +44,7 @@ describe('resolveAssignment', () => {
 
     it('numbers them where the counts disagree, padded to the sheet’s own width', () => {
       const many = Array.from({ length: 120 }, (_, index) => box(index * 10, 0));
-      const assignment = resolveAssignment(many, [], INVENTORY);
+      const assignment = resolveAssignment(many, [], INVENTORY, null);
       const names = assignment.pieces.map((piece) => piece.name);
 
       expect(assignment.naming).toBeNull();
@@ -59,7 +59,7 @@ describe('resolveAssignment', () => {
     });
 
     it('numbers them where the studio names no sheet at all', () => {
-      const assignment = resolveAssignment(BOXES, [], []);
+      const assignment = resolveAssignment(BOXES, [], [], null);
 
       expect(assignment.naming).toBeNull();
       expect(assignment.pieces.map((piece) => piece.name)).toStrictEqual([
@@ -75,7 +75,12 @@ describe('resolveAssignment', () => {
       // **The failure the whole feature is for.** This sheet has the right number of pieces and the
       // wrong order, which no count can detect: reading order alone would call sprite 1 `arm-left`
       // and sprite 2 `arm-right`, and a rig importer placing by name would cross the two arms.
-      const assignment = resolveAssignment(BOXES, [name(0, 'arm-right'), name(1, 'arm-left')], INVENTORY);
+      const assignment = resolveAssignment(
+        BOXES,
+        [name(0, 'arm-right'), name(1, 'arm-left')],
+        INVENTORY,
+        null,
+      );
 
       expect(assignment.naming).toBe('ASSIGNED');
       expect(assignment.pieces.map((piece) => piece.name)).toStrictEqual(['arm-right', 'arm-left', 'torso']);
@@ -89,7 +94,7 @@ describe('resolveAssignment', () => {
     it('takes an assigned name out of the pool the unnamed pieces draw from', () => {
       // One name given by hand, and the two left on reading order take what is still free in the
       // inventory's own order — so naming one sprite does not shift every name after it.
-      const assignment = resolveAssignment(BOXES, [name(2, 'arm-left')], INVENTORY);
+      const assignment = resolveAssignment(BOXES, [name(2, 'arm-left')], INVENTORY, null);
 
       expect(assignment.pieces.map((piece) => piece.name)).toStrictEqual(['arm-right', 'torso', 'arm-left']);
     });
@@ -98,7 +103,7 @@ describe('resolveAssignment', () => {
       // Including the two that were named. The preview shows the name each piece will be written
       // as, so a chip reading `torso` over a file about to be written `sprite-02` would be the
       // defect this feature exists to remove, wearing the fix's clothes.
-      const assignment = resolveAssignment(BOXES, [name(0, 'torso'), name(1, 'torso')], INVENTORY);
+      const assignment = resolveAssignment(BOXES, [name(0, 'torso'), name(1, 'torso')], INVENTORY, null);
 
       expect(assignment.naming).toBeNull();
       expect(assignment.pieces.map((piece) => piece.name)).toStrictEqual([
@@ -110,7 +115,7 @@ describe('resolveAssignment', () => {
 
     it('drops a name the inventory no longer holds, and counts it', () => {
       // A category swap on the Studio tab rewrites the whole inventory under a loaded sheet.
-      const assignment = resolveAssignment(BOXES, [name(0, 'helmet')], INVENTORY);
+      const assignment = resolveAssignment(BOXES, [name(0, 'helmet')], INVENTORY, null);
 
       expect(assignment.lost).toBe(1);
       expect(assignment.naming).toBe('READING_ORDER');
@@ -122,7 +127,7 @@ describe('resolveAssignment', () => {
     it('drops it from the pieces and brings the count back to the inventory’s', () => {
       const four = [...BOXES, box(30, 0)];
       const stray = { pin: spritePin(box(30, 0)), decision: { kind: 'LEAVE_OUT' } } as const;
-      const assignment = resolveAssignment(four, [stray], INVENTORY);
+      const assignment = resolveAssignment(four, [stray], INVENTORY, null);
 
       expect(assignment.pieces).toHaveLength(3);
       expect(assignment.naming).toBe('READING_ORDER');
@@ -130,7 +135,7 @@ describe('resolveAssignment', () => {
     });
 
     it('keeps the sprite in the list so it can be put back', () => {
-      const assignment = resolveAssignment(BOXES, [leaveOut(1)], INVENTORY);
+      const assignment = resolveAssignment(BOXES, [leaveOut(1)], INVENTORY, null);
 
       expect(assignment.sprites).toHaveLength(3);
       expect(assignment.sprites[1]?.decision).toStrictEqual({ kind: 'LEAVE_OUT' });
@@ -139,7 +144,7 @@ describe('resolveAssignment', () => {
 
   describe('when the reader joins two sprites', () => {
     it('writes them as one piece cut to the box that holds both', () => {
-      const assignment = resolveAssignment(BOXES, [join(1, 0)], INVENTORY);
+      const assignment = resolveAssignment(BOXES, [join(1, 0)], INVENTORY, null);
 
       expect(assignment.pieces).toHaveLength(2);
       expect(assignment.pieces[0]?.box).toStrictEqual({
@@ -159,7 +164,7 @@ describe('resolveAssignment', () => {
     });
 
     it('folds a chain of three into one piece', () => {
-      const assignment = resolveAssignment(BOXES, [join(1, 0), join(2, 1)], INVENTORY);
+      const assignment = resolveAssignment(BOXES, [join(1, 0), join(2, 1)], INVENTORY, null);
 
       expect(assignment.pieces).toHaveLength(1);
       expect(assignment.sprites.map((sprite) => sprite.piece)).toStrictEqual([0, 0, 0]);
@@ -174,7 +179,7 @@ describe('resolveAssignment', () => {
         pin: spritePin(box(30, 0)),
         decision: { kind: 'JOIN' as const, to: spritePin(BOXES[2] as SpriteBox) },
       };
-      const assignment = resolveAssignment(fragmented, [joinLast, name(2, 'arm-left')], INVENTORY);
+      const assignment = resolveAssignment(fragmented, [joinLast, name(2, 'arm-left')], INVENTORY, null);
 
       expect(assignment.pieces).toHaveLength(3);
       expect(assignment.pieces[2]?.name).toBe('arm-left');
@@ -185,7 +190,7 @@ describe('resolveAssignment', () => {
     it('counts a second decision on a joined sprite as lost rather than silently replacing one', () => {
       // A sprite holds one decision, and the four answers are exclusive. Naming the half that is
       // joined to another says nothing the join has not already said about which piece it is in.
-      const assignment = resolveAssignment(BOXES, [join(1, 0), name(1, 'torso')], INVENTORY);
+      const assignment = resolveAssignment(BOXES, [join(1, 0), name(1, 'torso')], INVENTORY, null);
 
       expect(assignment.lost).toBe(1);
       expect(assignment.sprites[1]?.decision).toStrictEqual({
@@ -199,7 +204,7 @@ describe('resolveAssignment', () => {
         pin: spritePin(BOXES[1] as SpriteBox),
         decision: { kind: 'JOIN', to: { x: 99, y: 99 } },
       };
-      const assignment = resolveAssignment(BOXES, [gone as SpriteEdit], INVENTORY);
+      const assignment = resolveAssignment(BOXES, [gone as SpriteEdit], INVENTORY, null);
 
       expect(assignment.lost).toBe(1);
       expect(assignment.pieces).toHaveLength(3);
@@ -219,6 +224,7 @@ describe('resolveAssignment', () => {
       [ring, dot],
       [{ pin: spritePin(dot), decision: { kind: 'LEAVE_OUT' } }],
       [],
+      null,
     );
 
     expect(assignment.sprites.map((sprite) => sprite.piece)).toStrictEqual([0, null]);
@@ -232,7 +238,12 @@ describe('resolveAssignment', () => {
     // the surviving decision is actually filed under.
     const grown = box(10, 10, 23, 20);
     const stale = spritePin(box(10, 10, 20, 20));
-    const first = resolveAssignment([grown], [{ pin: stale, decision: { kind: 'NAME', name: 'a' } }], ['a']);
+    const first = resolveAssignment(
+      [grown],
+      [{ pin: stale, decision: { kind: 'NAME', name: 'a' } }],
+      ['a'],
+      null,
+    );
 
     expect(first.sprites[0]?.decidedAt).toStrictEqual(stale);
 
@@ -240,14 +251,15 @@ describe('resolveAssignment', () => {
       [grown],
       [{ pin: stale, decision: { kind: 'NAME', name: 'b' } }],
       ['b'],
+      null,
     );
     expect(replaced.pieces[0]?.name).toBe('b');
     expect(replaced.lost).toBe(0);
   });
 
   it('drops every decision whose sprite the dials have re-cut away, and counts them', () => {
-    const assignment = resolveAssignment(BOXES, [name(0, 'torso'), leaveOut(1)], INVENTORY);
-    const recut = resolveAssignment([box(40, 40)], [name(0, 'torso'), leaveOut(1)], INVENTORY);
+    const assignment = resolveAssignment(BOXES, [name(0, 'torso'), leaveOut(1)], INVENTORY, null);
+    const recut = resolveAssignment([box(40, 40)], [name(0, 'torso'), leaveOut(1)], INVENTORY, null);
 
     expect(assignment.lost).toBe(0);
     expect(recut.lost).toBe(2);

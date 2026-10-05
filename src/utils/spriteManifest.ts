@@ -8,6 +8,7 @@ import type {
   ManifestSprite,
   SpriteManifest,
 } from '../types/spriteManifest.ts';
+import { squareOf } from './inPlacePlacement.ts';
 import { cellPivot, cellPlacements } from './spriteCell.ts';
 import { scaleBoxes } from './sheetLayout.ts';
 
@@ -79,7 +80,7 @@ export interface ManifestInput {
 }
 
 /** This manifest shape's version — see {@link SpriteManifest.version}, which is not a compatibility surface. */
-export const MANIFEST_VERSION = 5;
+export const MANIFEST_VERSION = 6;
 
 /** A box as its own key, so a duplicate group's member can be looked for among the written pieces. */
 function boxKey(box: SpriteBox): string {
@@ -130,10 +131,6 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
   // Linked at 1:1, where both the segmentation and the duplicate reading were measured — the keys
   // would still match after scaling, and this keeps the one multiplication above.
   const links = duplicateLinks(input.boxes, input.duplicates);
-  // Bottom-centre where no cell was asked for, which is the default `ManifestSprite.pivot`
-  // describes — and the same arithmetic, so the two cuts cannot state one point two ways.
-  const anchor = cell?.anchor ?? { x: 'CENTRE' as const, y: 'BOTTOM' as const };
-
   const sprites: readonly ManifestSprite[] = boxes.map((box, index) => ({
     index: index + 1,
     // Taken as handed over — `namePieces` is where a name is chosen, including the padded
@@ -144,16 +141,9 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
     y: box.top,
     width: box.width,
     height: box.height,
-    // The anchor point of the box above — or of the square cut from it under `FILL_SQUARE` — and the
-    // foot of it, horizontally centred, where no cell was asked for; see `ManifestSprite.pivot` for
-    // why that default and not another. Floored rather
-    // than fractional, inside `cellPivot`: a pivot between two pixels is a half-pixel offset a
-    // renderer resolves differently from an importer.
-    pivot: cellPivot(scaleRegion(placements?.[index]?.source, input.scale) ?? box, anchor),
-    // Stated beside the number rather than left to the documentation, because the number is the
-    // whole of what a pipeline reads — and the two cuts genuinely differ here, which is the reason
-    // this field is not a constant. See `PivotSource`.
-    pivotSource: cell === null ? 'DEFAULT_BOTTOM_CENTRE' : 'CELL_ANCHOR',
+    // The point, and where it came from beside it, because the number is the whole of what a pipeline
+    // reads and the cuts genuinely differ here — see `pivotOf` and `PivotSource`.
+    ...pivotOf(input.boxes[index], placements?.[index], cell, input.scale, box),
     placement: manifestPlacement(placements?.[index], input.scale),
     duplicateOf: links.get(index) ?? null,
   }));
@@ -172,6 +162,33 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
     naming: input.naming,
     cell: cell === null ? null : manifestCell(cell, input.scale),
     sprites,
+  };
+}
+
+/**
+ * A sprite's pivot and where it came from — see `PivotSource`. The centre of the square a placement
+ * sheet's piece was drawn against under `IN_PLACE`; the reader's anchor on the box, or on the square
+ * cut from it under `FILL_SQUARE`, under another cell; and the foot of the box, horizontally centred,
+ * with no cell at all, which is the default `ManifestSprite.pivot` describes. Floored rather than
+ * fractional, inside `cellPivot`: a pivot between two pixels is a half-pixel offset a renderer resolves
+ * differently from an importer. At the download's magnification, as every figure here is.
+ */
+function pivotOf(
+  drawn: SpriteBox | undefined,
+  placement: SpritePlacement | undefined,
+  cell: SpriteCell | null,
+  scale: number,
+  box: SpriteBox,
+): Pick<ManifestSprite, 'pivot' | 'pivotSource'> {
+  const square = cell?.fit === 'IN_PLACE' && drawn !== undefined ? squareOf(drawn, cell)?.square : undefined;
+  if (square !== undefined) {
+    const centre = cellPivot(square, { x: 'CENTRE', y: 'MIDDLE' });
+    return { pivot: { x: centre.x * scale, y: centre.y * scale }, pivotSource: 'TILE_CENTRE' };
+  }
+  const anchor = cell?.anchor ?? { x: 'CENTRE' as const, y: 'BOTTOM' as const };
+  return {
+    pivot: cellPivot(scaleRegion(placement?.source, scale) ?? box, anchor),
+    pivotSource: cell === null ? 'DEFAULT_BOTTOM_CENTRE' : 'CELL_ANCHOR',
   };
 }
 
@@ -199,7 +216,10 @@ function manifestCell(cell: SpriteCell, scale: number): ManifestCell {
     fit: cell.fit,
     // Not published: the step only decides the factor, and each sprite's placement states the size it
     // was drawn at, which is what an importer reads.
-  } satisfies Record<Exclude<keyof SpriteCell, 'statedStep'> | keyof ManifestCell, unknown>;
+  } satisfies Record<
+    Exclude<keyof SpriteCell, 'statedStep' | 'lattice' | 'resamples'> | keyof ManifestCell,
+    unknown
+  >;
 }
 
 /**

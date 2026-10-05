@@ -45,6 +45,7 @@ export const SPRITE_FIT_LABELS: Readonly<Record<SpriteFit, string>> = {
   REFUSE: 'As drawn',
   SCALE_SET: 'Scale evenly',
   FILL_SQUARE: 'Fill square',
+  IN_PLACE: 'Keep place',
 };
 
 /**
@@ -53,6 +54,18 @@ export const SPRITE_FIT_LABELS: Readonly<Record<SpriteFit, string>> = {
  */
 export const SPRITE_FIT_UNAVAILABLE =
   'This sheet has a pixel scale, so its sprites are placed as drawn: resizing pixel art would blend the pixels it is made of. Scaling is for a painted sheet read at a pixel grid of 1.';
+
+/**
+ * Why every fit but *Keep place* is withheld on a placement sheet (`SheetPlan.placement`), whose pieces
+ * are drawn at their place on the icon and resolve to `IN_PLACE` whatever is stored. Plain text, under
+ * the pills.
+ */
+export const SPRITE_FIT_PLACED_ONLY =
+  'This sheet draws each piece where it sits on the icon, so Keep place keeps it there.';
+
+/** Why *Keep place* is withheld off a placement sheet, which has no cells to keep a piece in. Plain text. */
+export const SPRITE_FIT_IN_PLACE_UNAVAILABLE =
+  'Keep place is for a sheet that lays one piece in each cell, such as an icon set’s overlay sheet.';
 
 /**
  * How large a cell side may be, in drawn pixels.

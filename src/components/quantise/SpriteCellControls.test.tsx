@@ -35,6 +35,7 @@ function draw(
       target={target}
       grid={1}
       statedStep={null}
+      lattice={null}
       boxes={BOXES}
     />,
   );

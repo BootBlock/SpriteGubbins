@@ -4,6 +4,7 @@ import { SHEET_FORMAT_FILES } from '../../constants/sheetFormats.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
 import { useSheetIdentity } from '../../hooks/useSheetIdentity.ts';
+import { useCellLattice } from '../../hooks/useCellLattice.ts';
 import { useComponentTarget } from '../../hooks/useComponentTarget.ts';
 import { useStatedStep } from '../../hooks/useStatedStep.ts';
 import { useShownResult } from '../../hooks/useShownResult.ts';
@@ -104,6 +105,9 @@ export function DownloadControls({ sourceName, resultImage, sprites, duplicates 
   // is not in. The same hook the preview's labels and the panel's list read; see
   // `useSpriteAssignment`, which is why those three cannot disagree.
   const assignment = useSpriteAssignment(sprites);
+  // A placement sheet's cells, which `Keep place` places each piece in — the reading the assignment
+  // above grouped and named the pieces by, through the same hook.
+  const lattice = useCellLattice(sprites);
   const boxes = assignment.pieces.map((piece) => piece.box);
   // Only the two formats that describe sprites read a cell, so only they offer the controls for one.
   // The same conditional `ComparisonToolbar` puts on the heatmap's scale, for the same reason: a
@@ -172,6 +176,7 @@ export function DownloadControls({ sourceName, resultImage, sprites, duplicates 
           target={target}
           grid={grid}
           statedStep={statedStep}
+          lattice={lattice}
           boxes={boxes}
         />
       )}
@@ -202,7 +207,7 @@ export function DownloadControls({ sourceName, resultImage, sprites, duplicates 
               // Sent whatever the format is, as the boxes are, and `null` under a format that does
               // not cut — so a cell left set from an earlier press cannot reach a writer that has no
               // controls on screen for it.
-              cell: cuts ? resolveSpriteCell(cellChoice, target, grid, statedStep) : null,
+              cell: cuts ? resolveSpriteCell(cellChoice, target, grid, statedStep, lattice) : null,
               paletted: shown?.paletted ?? false,
               duplicates,
               // One name per piece, already decided, beside the route that decided them — the

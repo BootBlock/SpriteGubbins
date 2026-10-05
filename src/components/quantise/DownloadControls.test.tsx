@@ -150,6 +150,8 @@ describe('DownloadControls', () => {
       kind: 'SEGMENTED',
       boxes: [{ left: 0, top: 0, width: 2, height: 2, pixels: 4 }],
       specks: 0,
+      width: 1024,
+      height: 1024,
     };
     draw(createImage(4, 4), 'ASEPRITE', sprites);
     expect(downloadButton()).toHaveTextContent('Download Aseprite');
@@ -179,6 +181,8 @@ describe('DownloadControls', () => {
         { left: 16, top: 0, width: 2, height: 2, pixels: 4 },
       ],
       specks: 0,
+      width: 1024,
+      height: 1024,
     };
     // The second sprite joins the first, and the third is left out — so one piece reaches the
     // writer, cut to the box holding both halves of the join.
@@ -222,6 +226,8 @@ describe('DownloadControls, cutting into a cell', () => {
     kind: 'SEGMENTED',
     boxes: [{ left: 0, top: 0, width: 2, height: 2, pixels: 4 }],
     specks: 0,
+    width: 1024,
+    height: 1024,
   };
 
   // A control that changed nothing would be a lie on screen: a PNG and an Aseprite document read no
@@ -254,6 +260,8 @@ describe('DownloadControls, cutting into a cell', () => {
       anchor: { x: 'CENTRE', y: 'BOTTOM' },
       fit: 'REFUSE',
       statedStep: null,
+      lattice: null,
+      resamples: true,
     });
     await finish();
   });

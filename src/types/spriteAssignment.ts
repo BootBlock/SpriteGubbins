@@ -66,9 +66,11 @@ export interface SpriteEdit {
  * `READING_ORDER` is the rule the prompt states and the app has always applied: section 4 fixes the
  * order the components are drawn in, so the *n*th sprite is the *n*th name. `ASSIGNED` means a
  * reader overrode at least one of those, which is a stronger claim about the file and the manifest
- * says which of the two it is rather than leaving a consumer to guess.
+ * says which it is rather than leaving a consumer to guess. `CELL` is a placement sheet's rule: the
+ * prompt lays one piece to a cell, so the piece in cell *n* is the *n*th name, and an empty cell
+ * leaves its neighbours' names alone (`pieceNames`).
  */
-export type SpriteNaming = 'READING_ORDER' | 'ASSIGNED';
+export type SpriteNaming = 'READING_ORDER' | 'CELL' | 'ASSIGNED';
 
 /** One thing the download writes: a file in a pack, a frame in a document, a rect in a manifest. */
 export interface SpritePiece {

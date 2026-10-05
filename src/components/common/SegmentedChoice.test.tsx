@@ -61,7 +61,7 @@ describe('SegmentedChoice', () => {
         value={1}
         format={(scale) => `${String(scale)}×`}
         onChange={onChange}
-        unavailable={{ values: [4, 8], reason: 'Too large for this sheet.' }}
+        unavailable={[{ values: [4, 8], reason: 'Too large for this sheet.' }]}
       />,
     );
     const group = screen.getByRole('group', { name: 'Preview magnification' });
@@ -84,7 +84,7 @@ describe('SegmentedChoice', () => {
         value={1}
         format={(scale) => `${String(scale)}×`}
         onChange={vi.fn()}
-        unavailable={{ values: [2], reason: 'Too large for this sheet.' }}
+        unavailable={[{ values: [2], reason: 'Too large for this sheet.' }]}
       />,
     );
 
@@ -102,10 +102,35 @@ describe('SegmentedChoice', () => {
         value={1}
         format={(scale) => `${String(scale)}×`}
         onChange={vi.fn()}
-        unavailable={{ values: [8], reason: 'Too large for this sheet.' }}
+        unavailable={[{ values: [8], reason: 'Too large for this sheet.' }]}
       />,
     );
 
     expect(screen.queryByText('Too large for this sheet.')).toBeNull();
+  });
+
+  it('describes each withheld value by the reason its own group is withheld for', () => {
+    render(
+      <SegmentedChoice
+        label="Preview magnification"
+        values={[1, 2, 4, 8]}
+        value={1}
+        format={(scale) => `${String(scale)}×`}
+        onChange={vi.fn()}
+        unavailable={[
+          { values: [2], reason: 'Too small for this sheet.' },
+          { values: [8], reason: 'Too large for this sheet.' },
+        ]}
+      />,
+    );
+    const group = screen.getByRole('group', { name: 'Preview magnification' });
+
+    expect(within(group).getByRole('button', { name: '2×' })).toHaveAccessibleDescription(
+      'Too small for this sheet.',
+    );
+    expect(within(group).getByRole('button', { name: '8×' })).toHaveAccessibleDescription(
+      'Too large for this sheet.',
+    );
+    expect(within(group).getByRole('button', { name: '4×' })).not.toHaveAccessibleDescription();
   });
 });

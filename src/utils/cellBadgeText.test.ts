@@ -15,6 +15,8 @@ const CELL: SpriteCell = {
   anchor: { x: 'CENTRE', y: 'MIDDLE' },
   fit: 'REFUSE',
   statedStep: null,
+  lattice: null,
+  resamples: true,
 };
 
 describe('cellBadgeText', () => {

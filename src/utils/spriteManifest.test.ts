@@ -256,6 +256,8 @@ describe('buildManifest, cut into a cell', () => {
     anchor: { x: 'CENTRE', y: 'BOTTOM' },
     fit: 'REFUSE',
     statedStep: null,
+    lattice: null,
+    resamples: true,
   } as const;
 
   it('keeps the rect on the artwork’s own bounding box, whatever the cut is', () => {

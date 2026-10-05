@@ -35,6 +35,8 @@ const CELL: SpriteCell = {
   anchor: { x: 'CENTRE', y: 'BOTTOM' },
   fit: 'REFUSE',
   statedStep: null,
+  lattice: null,
+  resamples: true,
 };
 
 /** Two 2 × 2 sprites one clear pixel apart, which is the gutter a returned sheet actually has. */
@@ -51,6 +53,8 @@ const WIDE: SpriteCell = {
   anchor: { x: 'CENTRE', y: 'BOTTOM' },
   fit: 'REFUSE',
   statedStep: null,
+  lattice: null,
+  resamples: true,
 };
 
 /**

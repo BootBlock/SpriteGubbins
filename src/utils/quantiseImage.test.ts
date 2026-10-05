@@ -248,6 +248,8 @@ describe('quantiseImage', () => {
       kind: 'SEGMENTED',
       boxes: [{ left: 1, top: 1, width: 2, height: 2, pixels: 4 }],
       specks: 0,
+      width: 4,
+      height: 4,
     });
   });
 
@@ -812,7 +814,13 @@ describe('quantiseImage symmetry', () => {
     const before = quantiseImage(BRIDGED, symmetrySettings('CHECK'));
     const after = quantiseImage(BRIDGED, symmetrySettings('SNAP', 50));
 
-    expect(before.sprites).toEqual({ kind: 'SEGMENTED', boxes: [BRIDGED_BOX], specks: 0 });
+    expect(before.sprites).toEqual({
+      kind: 'SEGMENTED',
+      boxes: [BRIDGED_BOX],
+      specks: 0,
+      width: 12,
+      height: 8,
+    });
     expect(after.sprites.kind).toBe('SEGMENTED');
     expect(after.sprites).not.toEqual(before.sprites);
     expect(after.sprites).toEqual(spriteSegments(after.image, 1));

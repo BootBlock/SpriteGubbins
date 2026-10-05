@@ -101,4 +101,23 @@ The maintainer chose the most correct option for each.
 
 ## 5. Progress
 
-Nothing has landed yet.
+- **The prompt (steps 1 to 3)** landed in “Lay an icon set's overlay sheets out in cells, and state the
+  tile square exactly”. Three choices the design left open were settled there:
+  - The overlay sheets **list** the *Extra Overlay Pieces* in a group of their own
+    (`ComponentGroup.additional`) rather than append them, because a sheet the even cut leaves holding
+    extras alone would otherwise have no group to carry its cell sentence. Every ICON sheet declares
+    `anatomy: 'ELSEWHERE'`, `'APPENDED'` is gone, and section 1, the guard's exemption and the field's
+    note read the listed group (`anatomyLineFor`, `drawsAdditionalAnatomy`). A reader's piece takes a
+    label no drawing of the library answers to across all the overlay sheets.
+  - **The exact share is one figure per resolution profile**: 60% at high resolution and 45% at mid,
+    each inside its rung's range, and 60% after the figure of a target size or the 16-bit height.
+  - **The stored sheet index has no longest series to bound it**, so `ICON_SERIES_LONGEST` is gone and
+    `SHEET_INDEX_RANGE` holds a whole number from zero.
+- **The quantiser (steps 4 to 7)**: `cellLattice` reads the cells from the gaps, with a boundary in a
+  gap cut off by its search window taken at the pitch the even gaps measure rather than at the cut
+  gap's middle, which was ten pixels off on a row of bottom-corner marks. The full-tile cells come from
+  the plan (`ComponentEntry.fillsTile`) rather than from the boxes' sizes, so a sheet of small marks is
+  never measured as tiles. The segmentation carries the sheet's size. The fit `IN_PLACE`, the naming
+  `CELL`, the pivot `TILE_CENTRE` and manifest version 6 are new, and `SegmentedChoice` takes a reason
+  per group of withheld values. `TILE_TOLERANCE` (a fifth) is reasoned rather than measured.
+- **Step 10 is open**: no overlay sheet generated from the new prompt is in `test_sprites/` yet.

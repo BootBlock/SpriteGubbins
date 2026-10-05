@@ -68,14 +68,19 @@ import type { SubjectCategory } from './subject.ts';
  * is that point. See `SpriteCell`. It is still not a *measurement* — nobody looked at the artwork to
  * find the joint — which is why it joins the default here rather than replacing it.
  *
- * Measuring the joint cap the prompt asks for would add a third member, and the silhouette cannot
+ * **`TILE_CENTRE` is a placement sheet's** (`SpriteFit` `IN_PLACE`): an overlay piece is laid over an
+ * icon, so it turns and scales about the centre of the square it was drawn against, which is the
+ * centre of the icon beneath it, and never about a corner of its own box. The point is that square's
+ * centre in the sheet's coordinates, so it lands at the centre of the file.
+ *
+ * Measuring the joint cap the prompt asks for would add a fourth member, and the silhouette cannot
  * supply it on its own. A mid-chain segment meets a piece at each end — a lower arm joins the upper
  * arm above it and the hand below it — and section 5 asks for the caps at a shared joint to match,
  * so the two ends of such a piece are alike and geometry cannot say which of them it hangs from.
  * That takes the bone parent the component map states, which the prompt already asks a model for and
  * nothing in this app reads yet.
  */
-export type PivotSource = 'DEFAULT_BOTTOM_CENTRE' | 'CELL_ANCHOR';
+export type PivotSource = 'DEFAULT_BOTTOM_CENTRE' | 'CELL_ANCHOR' | 'TILE_CENTRE';
 
 /** One sprite, where it sits in the written file, and what the inventory calls it. */
 export interface ManifestSprite {

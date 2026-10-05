@@ -1,3 +1,5 @@
+import type { CellLattice } from './cellLattice.ts';
+
 /**
  * The fixed cell a sprite may be cut into, and where its artwork stands inside that cell.
  *
@@ -74,13 +76,18 @@ export interface SpriteAnchor {
  * - `FILL_SQUARE` crops each sprite to the square at the centre of its own box and resizes that square
  *   to fill the cell, for full-bleed tiles, whose every file must be the whole cell edge to edge
  *   whatever size the generator drew each tile at.
+ * - `IN_PLACE` keeps each piece where it was drawn in its cell of a placement sheet
+ *   (`SheetPlan.placement`): the square it was placed against becomes the cell, so a corner badge
+ *   lands in the corner of the file. One factor maps that square onto the cell, and it is 1 on a sheet
+ *   with a pixel scale. The only fit a placement sheet takes, and one no other sheet offers; see
+ *   `resolveSpriteCell`.
  *
  * **The reader states it rather than the app reading it off the artwork**, which is the call this
  * file makes about the size and the anchor. A full-bleed tile and a dense isolated mark can have the
  * same box and the same fill, and guessing wrong either crops a mark or shrinks every tile by a
  * different amount. Both resizing fits resample by area (`resampleArea`).
  */
-export const SPRITE_FITS = ['REFUSE', 'SCALE_SET', 'FILL_SQUARE'] as const;
+export const SPRITE_FITS = ['REFUSE', 'SCALE_SET', 'FILL_SQUARE', 'IN_PLACE'] as const;
 
 export type SpriteFit = (typeof SPRITE_FITS)[number];
 
@@ -121,6 +128,18 @@ export interface SpriteCell {
    * icon on a sheet of nine kept the margin its cell gave it.
    */
   readonly statedStep: SheetStep | null;
+  /**
+   * The cells of a placement sheet, read from the gaps between its pieces, or `null` off one — read by
+   * `IN_PLACE`, which places each piece against its cell's square (`cellLattice`). Plain data, so the
+   * cell crosses to `sheetWriteWorker` as it is.
+   */
+  readonly lattice: CellLattice | null;
+  /**
+   * Whether the artwork may be resampled into the cell: `false` on a sheet read at a pixel scale above 1
+   * (`resizingFitAllowed`), where `IN_PLACE` places each piece at its drawn size rather than scaling its
+   * square onto the cell. The other fits answer the same question by which fit is in force.
+   */
+  readonly resamples: boolean;
 }
 
 /** A grid step in a sheet's own pixels, across and down. */

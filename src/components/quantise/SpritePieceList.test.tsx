@@ -29,7 +29,7 @@ function show(inventory: readonly string[] = INVENTORY, boxes: readonly SpriteBo
   const { edits } = useSpriteAssignmentStore.getState();
   render(
     <SpritePieceList
-      assignment={resolveAssignment(boxes, edits, inventory)}
+      assignment={resolveAssignment(boxes, edits, inventory, null)}
       inventory={inventory}
       busy={false}
     />,

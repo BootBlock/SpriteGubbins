@@ -51,7 +51,7 @@ function resultOf(side: number): QuantiseResult {
     paletteEntries: [],
     keyedShare: 0,
     paletted: false,
-    sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
+    sprites: { kind: 'SEGMENTED', boxes: [], specks: 0, width: 1024, height: 1024 },
     symmetry: null,
     duplicates: [],
     snapped: false,

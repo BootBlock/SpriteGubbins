@@ -25,7 +25,7 @@ function show(magnification = 2, inventory: readonly string[] = INVENTORY) {
   const { edits } = useSpriteAssignmentStore.getState();
   render(
     <SpriteLabelOverlay
-      assignment={resolveAssignment(BOXES, edits, inventory)}
+      assignment={resolveAssignment(BOXES, edits, inventory, null)}
       magnification={magnification}
     />,
   );
@@ -118,7 +118,7 @@ describe('SpriteLabelOverlay', () => {
     const { edits } = useSpriteAssignmentStore.getState();
     render(
       <div onPointerDown={ancestor}>
-        <SpriteLabelOverlay assignment={resolveAssignment(BOXES, edits, INVENTORY)} magnification={2} />
+        <SpriteLabelOverlay assignment={resolveAssignment(BOXES, edits, INVENTORY, null)} magnification={2} />
       </div>,
     );
 

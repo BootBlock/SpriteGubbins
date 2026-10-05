@@ -89,6 +89,8 @@ describe('evenScale', () => {
     anchor: { x: 'CENTRE', y: 'MIDDLE' },
     fit: 'SCALE_SET',
     statedStep: null,
+    lattice: null,
+    resamples: true,
   } as const;
 
   it('makes one step of the grid one cell, so every mark keeps its size relative to the rest', () => {

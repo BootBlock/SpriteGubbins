@@ -57,7 +57,13 @@ export function spriteSegments(image: ImageData, gap: number): SpriteSegmentatio
   // information about the keying; saying "3,412 sprites" is not.
   if (pieces > SCATTERED_SPRITE_CEILING) return { kind: 'SCATTERED', pieces, specks };
 
-  return { kind: 'SEGMENTED', boxes: mergeNearby(sprites, gap), specks };
+  return {
+    kind: 'SEGMENTED',
+    boxes: mergeNearby(sprites, gap),
+    specks,
+    width: image.width,
+    height: image.height,
+  };
 }
 
 /**

@@ -29,6 +29,8 @@ function segmented(count: number, from = 0): SpriteSegmentation {
     kind: 'SEGMENTED',
     boxes: Array.from({ length: count }, (_, index) => boxAt(from + index * 8)),
     specks: 0,
+    width: 1024,
+    height: 1024,
   };
 }
 

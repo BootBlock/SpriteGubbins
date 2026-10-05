@@ -252,6 +252,13 @@ export interface ComponentEntry {
    */
   readonly attribute?: AttributeBinding;
   /**
+   * That each component of this line covers the whole tile square of a placement sheet
+   * (`SheetPlan.placement`): ICON's disabled veil, highlight halo, selected ring, cooldown sweeps and
+   * rarity glow. The Quantise tab measures the tile square from the pieces in those cells
+   * (`cellLattice`), and places every other piece against it.
+   */
+  readonly fillsTile?: true;
+  /**
    * What this entry is the opposite-side copy of, named as the inventory names it — `the left arm`.
    *
    * **The declaration section 5's Mirroring subsection is emitted from.** That subsection is a rule
