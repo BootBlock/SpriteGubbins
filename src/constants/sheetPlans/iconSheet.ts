@@ -137,6 +137,8 @@ export function iconSheet(
     // one of those pieces, for the engine lays them on at runtime. A padlock or a crack an icon's own
     // entry or *Condition & Finish* asks for is still the icon's, and section 1 says so.
     drawnElsewhere: 'clothing',
+    // The reader's *Extra Overlay Pieces* go on the overlay sheet, which closes the series.
+    anatomy: 'ELSEWHERE',
     ...(look === 'FULL_BLEED_TILE' ? { backdrop: 'OWN_SQUARE' } : {}),
     // A tint mask is drawn in greys for the engine to tint, and section 1 says so (audit finding M1).
     ...(colourMode === 'TINT_MASK' ? { tint: 'ENGINE_MASK' } : {}),

@@ -852,16 +852,19 @@ interface SheetPlanFields {
    */
   readonly frames?: 'DRAWN';
   /**
-   * That this `'run'` sheet is the one that draws the subject's additional anatomy, where it is not the
-   * first sheet of its series (`anatomyFacingsFor`).
+   * Whether this `'run'` sheet draws the subject's additional anatomy, where the series' first sheet is
+   * not the one that does (`anatomyFacingsFor`): `APPENDED` on the sheet that draws it, `ELSEWHERE` on
+   * the run sheets that leave it to that one.
    *
-   * **ICON's overlay sheet declares it** (audit finding T6): it closes the series, after the icons its
-   * pieces are matched to, and the reader's *Extra Overlay Pieces* belong to it. A series no plan of
-   * which declares it draws the anatomy on its first sheet, the trunk every other run series opens on.
+   * **ICON's overlay sheet declares `APPENDED` and its icon sheets `ELSEWHERE`** (audit finding T6): the
+   * overlay sheet closes the series, after the icons its pieces are matched to, and the reader's *Extra
+   * Overlay Pieces* belong to it. A run sheet that declares neither draws the anatomy where it is the
+   * first sheet of its series, the trunk every other run series opens on.
    *
-   * **`APPENDED` alone**, for the reason {@link SheetPlan.backdrop} gives.
+   * **Declared on each sheet rather than found by walking the series**, because `anatomyFacingsFor` is
+   * asked on every compile, count and slot list, and a series walk there slowed every ICON prompt.
    */
-  readonly anatomy?: 'APPENDED';
+  readonly anatomy?: 'APPENDED' | 'ELSEWHERE';
   /**
    * How many cells this sheet's grid is laid out in, where that is fixed whatever the sheet holds — so
    * the native-grid scale is fitted to those cells rather than to the drawings (audit finding T5).

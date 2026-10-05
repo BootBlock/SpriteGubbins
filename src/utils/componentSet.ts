@@ -102,11 +102,10 @@ export function anatomyFacingsFor(
 ): SheetFacings | null {
   const plan = sheetPlanFor(category, subject, mode, directions, sheetIndex);
   if (plan.facings !== 'run') return plan.facings;
-  const declared = sheetSeriesFor(category, subject, mode, directions).findIndex(
-    (candidate) => candidate.anatomy === 'APPENDED',
-  );
-  const carrier = declared === -1 ? 0 : declared;
-  return resolveSheetIndex(category, subject, mode, directions, sheetIndex) === carrier ? 'run' : null;
+  // Asked of the plan before the index, so a series that declares where its pieces go is never walked.
+  if (plan.anatomy === 'APPENDED') return 'run';
+  if (plan.anatomy === 'ELSEWHERE') return null;
+  return resolveSheetIndex(category, subject, mode, directions, sheetIndex) === 0 ? 'run' : null;
 }
 
 /** What the anatomy adds to a sheet drawing it at these facings: every piece, once per view. */
