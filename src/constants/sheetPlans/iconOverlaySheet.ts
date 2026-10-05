@@ -99,6 +99,7 @@ function overlaySheet(wording: OverlayWording): SheetPlan {
     assembly: wording.assembly,
     targetQuantity: 'COMPONENT',
     extent: 'WHOLE',
+    identity: 'ONE_SET',
     // The cooldown sweep is drawn at two stages.
     posing: 'PER_POSITION',
     // The agreement shape: these pieces are not parts of one another, so what has to hold is that no

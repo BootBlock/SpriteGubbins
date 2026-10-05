@@ -90,6 +90,7 @@ export function iconSheet(entries: readonly ComponentEntry[], first: number, loo
     assembly: wording.assembly,
     targetQuantity: 'COMPONENT',
     extent: 'WHOLE',
+    identity: 'ONE_SET',
     // A two-state entry is drawn once per state, which is the inventory settling a change of position.
     posing: entries.some((entry) => entry.count > 1) ? 'PER_POSITION' : 'UNSTATED',
     // The agreement shape, for EFFECT's reason: these icons are not pieces of each other, so what has to

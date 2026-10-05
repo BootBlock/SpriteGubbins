@@ -371,6 +371,32 @@ export type ComponentExtent =
   | 'WHOLE';
 
 /**
+ * Whether a sheet's components are the parts and views of one subject, or the different members of one
+ * set.
+ *
+ * **It decides which rule the identity-consistency section states.** That section told every sheet its
+ * components were "the same single subject" and held its silhouette, its colour blocking and its
+ * material constant across all of them — and, across a series, that a component on another sheet must
+ * "read as the same object". That is the rule for a figure's limbs, a vehicle's views, an effect's
+ * frames and a building's modules, and the opposite of what an icon sheet asks: each entry is a
+ * different icon whose own colour outranks the set's. A `ONE_SET` sheet is told instead what its
+ * members share — edge, rendering, light and palette use — and that what tells one member from the
+ * next is never held constant. Section 1's identity lock reads it too: a set's earlier sheet drew
+ * other members of the set, never "the same individual".
+ *
+ * **Declared rather than derived, and a different question from {@link ComponentExtent}.** A rigid
+ * object's views are `WHOLE` and `ONE_SUBJECT`; a nine-slice's corners are `PIECE` and `ONE_SUBJECT`,
+ * being one frame cut up; an icon set is `WHOLE` and `ONE_SET`; and a terrain blend set's tiles are
+ * `PIECE` and `ONE_SET`, being two materials by design. Nor is it the category's: INTERFACE's state
+ * library is a kit of different widgets, while its nine-slice is the pieces of one frame.
+ */
+export type SheetIdentity =
+  /** Every component is a part, a view, a state or a frame of one subject, which they all hold constant. */
+  | 'ONE_SUBJECT'
+  /** Every entry is a different member of one set, sharing a manner of drawing rather than a design. */
+  | 'ONE_SET';
+
+/**
  * In what position this sheet's inventory draws each part that moves.
  *
  * **The statement that relates a plan's entries to the rig section beside them.** `rigMode` decides
@@ -514,6 +540,13 @@ interface SheetPlanFields {
    * {@link ComponentExtent}.
    */
   readonly extent: ComponentExtent;
+  /**
+   * Whether this sheet's components are one subject's or one set's members — see {@link SheetIdentity}.
+   *
+   * It sits beside {@link SheetPlan.extent} because both are facts about the inventory as a whole that
+   * the compiler reads to choose a paragraph, and neither can be read off the other.
+   */
+  readonly identity: SheetIdentity;
   /**
    * In what position this sheet draws each part that moves — see {@link InventoryPosing}.
    *

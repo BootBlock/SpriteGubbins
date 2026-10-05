@@ -160,6 +160,7 @@ export const FONT_CAPITALS: SheetPlan = {
     'a run of set text at any size — every capital sharing one baseline and one cap height, so no letter sits high, low or heavy against the ones beside it, and each cuts out as a single character an engine can index by codepoint.',
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
+  identity: 'ONE_SET',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
   // The agreement shape, for EFFECT's reason and one more of its own: these components are not
@@ -196,6 +197,7 @@ export const FONT_LOWER_CASE: SheetPlan = {
     'a run of set text at any size — every lower-case letter sharing one baseline and one height against it, with any ascender or descender reaching the same distance throughout, and each cutting out as a single character an engine can index by codepoint.',
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
+  identity: 'ONE_SET',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
   scaleExample:
@@ -225,6 +227,7 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
     'a run of set text carrying numbers and punctuation — the digits aligning with each other in a column of figures, and each mark sitting at the height against the baseline that its own use asks for.',
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
+  identity: 'ONE_SET',
   // Digits and marks, each drawn once.
   posing: 'UNSTATED',
   scaleExample:
@@ -259,6 +262,7 @@ export const FONT_SYMBOLS: SheetPlan = {
     'the rest of a printable ASCII set — every symbol drawn to the same construction and weight as the letters it will be set among, so none of them reads as borrowed from another font.',
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
+  identity: 'ONE_SET',
   // Symbols and operators, each drawn once.
   posing: 'UNSTATED',
   scaleExample:

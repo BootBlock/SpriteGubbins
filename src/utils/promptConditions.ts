@@ -71,6 +71,12 @@ export function promptConditions(
     // subject itself — a rigid object's states, an effect's frames, a font's glyphs. Those are told
     // instead that each entry is one complete drawing. See `ComponentExtent`.
     COMPONENTS_ARE_WHOLE: plan.extent === 'WHOLE' ? 'yes' : '',
+    // Which identity rule the identity-consistency section states, and which sentence section 1's
+    // identity lock opens on. A sheet of one subject's parts and views holds its silhouette, colour
+    // blocking and material constant; a sheet of one set's members — an icon set, a font, a blend set —
+    // holds its manner of drawing constant and never what tells one member from the next. Asked of the
+    // resolved plan, so INTERFACE's state library and its nine-slice answer apart. See `SheetIdentity`.
+    COMPONENTS_ARE_ONE_SET: plan.identity === 'ONE_SET' ? 'yes' : '',
     // Whether section 4's generic paragraph is this sheet's one statement of where a piece ends. A
     // sheet of whole drawings has no joins to end at, and a group carrying `ends` names its joins in
     // the subject's own words — so printing the paragraph as well would state one rule twice, ten

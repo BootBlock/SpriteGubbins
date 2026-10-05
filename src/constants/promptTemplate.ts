@@ -545,7 +545,12 @@ material into the simplified shapes and controlled value bands of the selected r
 [IF:IDENTITY_LOCK]
 
 ### Identity lock — match a previous sheet
+[IF:COMPONENTS_ARE_ONE_SET!=yes]
 This sheet depicts the same individual as a previously generated one. Reproduce exactly:
+[/IF]
+[IF:COMPONENTS_ARE_ONE_SET]
+This sheet draws further members of the set a previously generated sheet drew. Reproduce exactly:
+[/IF]
 [DEFINE:IDENTITY_LOCK]
 Where this conflicts with anything above, the identity lock wins.
 [/IF]
@@ -1059,6 +1064,7 @@ Brought together, the sheets of this series deliver all of the following:
 ---
 
 ## [SECTION:IDENTITY]. IDENTITY CONSISTENCY
+[IF:COMPONENTS_ARE_ONE_SET!=yes]
 
 Every component belongs to the **same single subject**. Hold constant across all of them:
 silhouette language and proportion · joint and attachment geometry · fitted and structural
@@ -1083,6 +1089,33 @@ already settled and this sheet does not choose one.
 Where a component appears at more than one object yaw, it is one persistent three-dimensional form
 seen after a turn — every feature stays attached to the same physical region of it, as section [SEC:CAMERA]
 requires.
+[/IF]
+[IF:COMPONENTS_ARE_ONE_SET]
+
+Every component is a member of **one set**, not a part or a view of one subject: each entry in
+section [SEC:INVENTORY] is a different member, and an entry drawn more than once states there how its
+drawings differ. Hold constant across every member: outline weight and edge treatment · rendering
+technique and the treatment of interior detail · the way the palette is used.
+[IF:LIGHTING_STATED]
+Every member is lit under the one lighting model section [SEC:STYLE] states.
+[/IF]
+
+**What tells one member from the next is never held constant** — what it depicts, the shape of what
+it depicts, and any colour its entry names. A member that takes its shape or its colour from a
+neighbour rather than from its own entry has failed, and so has one that reads as drawn for another
+set.
+[IF:SERIES]
+
+**That holds across the whole series, not only across this sheet.** A component drawn here has to
+sit beside one drawn on another sheet and read as a member of the same set, and those sheets are
+separate generations with nothing carried between them but the text of the specification. A sheet
+that is consistent within itself and does not match the rest of the series has failed.
+[IF:IDENTITY_LOCK]
+The identity lock in section [SEC:SUBJECT] is the record of what the other sheets actually drew, which is why it
+wins wherever it and the subject definition above it disagree.
+[/IF]
+[/IF]
+[/IF]
 
 ---
 

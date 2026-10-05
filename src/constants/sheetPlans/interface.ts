@@ -43,6 +43,9 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
     'the complete interface in each state a player can put it in — a resting screen, a button under the pointer and again pressed, a bar part-filled, a toggle switched, a slot occupied — without redrawing any piece that does not change between them.',
   targetQuantity: 'COMPONENT',
   extent: 'PIECE',
+  // A kit of different widgets — a button, a frame, a cursor — that share a theme rather than a design;
+  // the outro below is what holds one widget the same across its own states.
+  identity: 'ONE_SET',
   // A button body in four states, a toggle in three, a slider handle at rest and held.
   posing: 'PER_POSITION',
   scaleExample: 'a cursor drawn beside the panel frame it moves over is in proportion to it',
@@ -154,6 +157,9 @@ export const INTERFACE_NINE_SLICE: SheetPlan = {
   // “a panel at any width and height”, so there is no assembled figure for a reader to price.
   targetQuantity: 'COMPONENT',
   extent: 'PIECE',
+  // Unlike the state library, one frame cut into the pieces it is resized from: its corners, edges and
+  // caps share one trim, one thickness and one material, or the assembled panel steps at every join.
+  identity: 'ONE_SUBJECT',
   // The end caps and the stretching middle are each drawn again in the pressed state.
   posing: 'PER_POSITION',
   // No cursor on this sheet — it stays on the state library — so the pair is the ornament against

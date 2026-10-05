@@ -35,6 +35,9 @@ export const BACKGROUND_PARALLAX_SET: SheetPlan = {
     'a scene of any width scrolling behind the playfield — each band looping against its own copy with no visible join, the bands stacked front to back with no gap showing between them, and the loose pieces placed over whichever band they belong to.',
   targetQuantity: 'COMPONENT',
   extent: 'PIECE',
+  // A sky, distant bands and loose pieces are different members of one backdrop, and each band further
+  // back is pulled towards the sky’s value, so neither colour blocking nor shape is held across them.
+  identity: 'ONE_SET',
   // Every ×2 and ×3 entry is a set of distinct pieces — two band profiles, a broad shaft and a
   // narrow one — rather than one piece drawn at the positions it takes.
   posing: 'UNSTATED',
@@ -182,6 +185,9 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // `'COMPONENT'` instead: a band loops against its own copy, so the scene it builds has no width.
   targetQuantity: 'ASSEMBLED',
   extent: 'PIECE',
+  // The parallax set’s answer, for its reason: a sky, a far mass and a piece of ground clutter share a
+  // manner of drawing, not a design.
+  identity: 'ONE_SET',
   // The ×2 and ×3 entries name pieces that differ from each other — the left half of the scene and
   // the right, three sizes of standing feature — rather than one piece at several positions.
   posing: 'UNSTATED',

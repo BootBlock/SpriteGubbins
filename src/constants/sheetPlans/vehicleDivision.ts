@@ -185,6 +185,7 @@ export function vehiclePartLibrary(division: VehicleDivision): SheetPlan {
     assembly: partLibraryAssembly(division),
     targetQuantity: 'ASSEMBLED',
     extent: 'PIECE',
+    identity: 'ONE_SUBJECT',
     // Every part with more than one position is drawn once per position, which is what the group's own
     // intro promises and what `partLibraryAssembly` above lists back.
     posing: 'PER_POSITION',
@@ -251,6 +252,7 @@ function directionalSheet(
     assembly: `the complete vehicle seen from each facing, reading as one machine turned rather than several drawings of it, with its ${drive.noun} and ${mount.noun} in matching positions across those views.`,
     targetQuantity: 'ASSEMBLED',
     extent: 'PIECE',
+    identity: 'ONE_SUBJECT',
     // The drive and the mount are drawn once per facing in matching positions, which is the camera turning.
     posing: 'UNSTATED',
     scaleExample: `a lamp housing drawn beside the ${hull.noun} it is mounted on is in proportion to it`,
@@ -313,6 +315,7 @@ export function vehicleCutoutRig(division: VehicleDivision): SheetPlan {
     assembly: `any state the rig produces by rotating the vehicle’s ${drive.noun} and its ${mount.noun} about their pivots. The artwork commits to none of them, which is why every piece is drawn in its rest position.`,
     targetQuantity: 'ASSEMBLED',
     extent: 'PIECE',
+    identity: 'ONE_SUBJECT',
     // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
     posing: 'AT_REST',
     scaleExample: `a lamp housing drawn beside the ${hull.noun} it is mounted on is in proportion to it`,

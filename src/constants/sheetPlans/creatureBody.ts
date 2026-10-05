@@ -219,6 +219,7 @@ function poseLibrary(body: CreatureBody): SheetSeries {
     facings: 'run',
     targetQuantity: 'ASSEMBLED',
     extent: 'PIECE',
+    identity: 'ONE_SUBJECT',
     // One limb segment per orientation it is drawn at, which is what the numbered variants are.
     posing: 'PER_POSITION',
     // Not the "figure" CHARACTER keeps and `CATEGORY_ASSEMBLY` and `FIGURE_ASSEMBLY_FAILURE` share with
@@ -272,6 +273,7 @@ function directionalCore(
     assembly: `${trunkList(body.trunk, 'one')} per facing, reading as one creature turned rather than several drawings of it — the pieces the articulation sheets fit their ${body.limbNoun} to.`,
     targetQuantity: 'ASSEMBLED',
     extent: 'PIECE',
+    identity: 'ONE_SUBJECT',
     // The trunk repeated across yaws — the camera turning, not the trunk.
     posing: 'UNSTATED',
     scaleExample: body.scale.trunk,
@@ -308,6 +310,7 @@ function articulationSheet(body: CreatureBody, share: LimbSheet<Limb>, split: bo
     assembly: `the ${split ? spokenList(share.sets) : body.limbNoun} of ${body.motions} — each fitted to the pieces drawn on the directional core sheets, one facing per sheet.`,
     targetQuantity: 'ASSEMBLED',
     extent: 'PIECE',
+    identity: 'ONE_SUBJECT',
     // The creature spelling of the character articulation run, and posed for the same reason.
     posing: 'PER_POSITION',
     scaleExample: body.scale.limbs,
@@ -340,6 +343,7 @@ function cutoutRig(body: CreatureBody): SheetPlan {
     assembly: `any ${body.motionNoun} the rig produces by rotating the pieces about their pivots. The artwork commits to none of them, which is why every piece is drawn unposed.`,
     targetQuantity: 'ASSEMBLED',
     extent: 'PIECE',
+    identity: 'ONE_SUBJECT',
     // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
     posing: 'AT_REST',
     scaleExample: body.scale.pieces,

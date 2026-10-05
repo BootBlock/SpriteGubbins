@@ -57,6 +57,7 @@ const VEHICLE_RIGID_STATES: SheetPlan = {
     'one vehicle shown at rest and under power, both drawn to the same footprint and registration, so either can replace the other in place without the vehicle shifting.',
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
+  identity: 'ONE_SUBJECT',
   // The one vehicle, drawn once for each state it takes.
   posing: 'PER_POSITION',
   scaleExample:
@@ -94,6 +95,7 @@ function rigidViewSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): Vie
       'one vehicle seen from each facing, every view registered to the same footprint, so the engine can swap one for the next as the vehicle turns without it shifting.',
     targetQuantity: 'COMPONENT',
     extent: 'WHOLE',
+    identity: 'ONE_SUBJECT',
     // The one vehicle at each yaw, which is the camera turning rather than anything on it moving.
     posing: 'UNSTATED',
     scaleExample:

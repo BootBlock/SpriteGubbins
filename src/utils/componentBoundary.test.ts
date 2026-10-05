@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
-import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { sectionOf } from '../test/promptSections.ts';
-import type { OutputConfig } from '../types/output.ts';
-import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import { outputsOf, reachableSheets } from '../test/reachableSheets.ts';
+import type { SubjectDefinition } from '../types/subject.ts';
 import type { SheetPlan } from '../types/components.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetFacts } from './promptFacts.ts';
@@ -23,52 +21,6 @@ import { sheetFacts } from './promptFacts.ts';
  */
 
 const BOUNDARY_HEADING = '### A component ends at its own boundary';
-
-/** One sheet a reader can reach, addressed by its case and output, with the plan the compiler resolves. */
-interface ReachableSheet {
-  readonly where: string;
-  readonly category: SubjectCategory;
-  readonly subject: SubjectDefinition;
-  readonly output: OutputConfig;
-  readonly plan: SheetPlan;
-}
-
-/**
- * Every sheet each case reaches — each mode, reachable direction set and series position — with the
- * plan it resolves to, which the two sweeps below divide between them by what it draws.
- *
- * **One test per sheet, not per case.** The sweep ran one test per subject (`assemblyBaseCases`) after
- * a category's worth of ICON's whole-catalogue rosters outgrew Vitest's five-second limit, and a single
- * roster's twenty-odd sheets then outgrew the one-second limit a slow runner stands in for. Resolving a
- * plan compiles no prompt, so the sheets are listed and divided here and each test compiles one prompt.
- */
-function reachableSheets(): readonly ReachableSheet[] {
-  return assemblyBaseCases().flatMap(([name, category, subject]) =>
-    outputsOf(category, subject).map((output) => ({
-      where: `${name}/${output.directionalMode}/${output.directions}/${String(output.sheetIndex)}`,
-      category,
-      subject,
-      output,
-      // The plan the compiler itself resolves, rather than one looked up beside it.
-      plan: sheetFacts(category, subject, output).plan,
-    })),
-  );
-}
-
-/** Every output configuration that addresses one of the subject's sheets. */
-function outputsOf(category: SubjectCategory, subject: SubjectDefinition): readonly OutputConfig[] {
-  return modesFor(category, subject).flatMap((directionalMode) =>
-    CATEGORY_DIRECTION_SETS[category].flatMap((directions) => {
-      const { length } = sheetSeriesFor(category, subject, directionalMode, directions);
-      return Array.from({ length }, (_, sheetIndex) => ({
-        ...DEFAULT_OUTPUT_CONFIG,
-        directionalMode,
-        directions,
-        sheetIndex,
-      }));
-    }),
-  );
-}
 
 const CASES = assemblyBaseCases();
 const SHEETS = reachableSheets();
