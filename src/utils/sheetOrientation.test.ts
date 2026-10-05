@@ -3,6 +3,7 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { ICON_SET_PRESETS } from '../constants/presets/iconSets.ts';
 import { PROJECTION_TEXT } from '../constants/promptText/index.ts';
+import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { reachableSheets } from '../test/reachableSheets.ts';
 import { generatePrompt } from './promptCompiler.ts';
@@ -35,9 +36,14 @@ const SQUARE_FLAT = 'Every square lies flat in the picture plane, square to the 
 const YAW_PRECEDENCE =
   'the object orientation each component\nis asked for · the fixed camera, one scale and pivot compatibility';
 
-function preset(id: string, sheetIndex: number): string {
+/** A preset's first icon sheet, or its overlay sheet, which closes the series. */
+function preset(id: string, sheet: 'ICONS' | 'OVERLAY'): string {
   const found = ICON_SET_PRESETS.find((candidate) => candidate.id === id);
   if (found === undefined) throw new Error(`No icon preset ${id}.`);
+  const sheetIndex =
+    sheet === 'ICONS'
+      ? 0
+      : sheetSeriesFor('ICON', found.subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
   return generatePrompt('ICON', found.subject, { ...DEFAULT_OUTPUT_CONFIG, ...found.output, sheetIndex });
 }
 
@@ -48,7 +54,7 @@ const ICON_SHEETS = [
 
 describe('an icon sheet shares its camera and poses each subject for its own read', () => {
   it.each(ICON_SHEETS)('%s states the camera and no yaw', (id, projection) => {
-    const prompt = preset(id, 1);
+    const prompt = preset(id, 'ICONS');
     const camera = sectionOf(prompt, 'PROJECTION, CAMERA AND OBJECT ORIENTATION');
 
     expect(camera).toContain(`- Projection: ${PROJECTION_TEXT[projection]}`);
@@ -60,7 +66,7 @@ describe('an icon sheet shares its camera and poses each subject for its own rea
   });
 
   it('audits one camera, and tells Sol to keep it rather than the object yaws', () => {
-    const prompt = preset('cyberpunk-action-bar-consumables', 1);
+    const prompt = preset('cyberpunk-action-bar-consumables', 'ICONS');
     expect(prompt).toContain('One camera, one scale and one light direction across every component');
     expect(prompt).toContain('- the camera every component shares, as section 3 states it\n');
     expect(prompt).not.toContain('the object yaws in section');
@@ -68,16 +74,16 @@ describe('an icon sheet shares its camera and poses each subject for its own rea
   });
 
   it('lays a full-bleed square flat whatever the camera, and audits it so', () => {
-    const prompt = preset('cyberpunk-action-bar-consumables', 1);
+    const prompt = preset('cyberpunk-action-bar-consumables', 'ICONS');
     expect(prompt).toContain(SQUARE_FLAT);
     expect(prompt).toContain('Every square is level with the screen, never a diamond');
-    expect(preset('isometric-map-marker-set', 1)).not.toContain(SQUARE_FLAT);
+    expect(preset('isometric-map-marker-set', 'ICONS')).not.toContain(SQUARE_FLAT);
   });
 });
 
 describe('the overlay sheet draws flat pieces under no camera', () => {
   it.each(ICON_SHEETS)('%s states no projection for its pieces', (id, projection) => {
-    const prompt = preset(id, 0);
+    const prompt = preset(id, 'OVERLAY');
     const camera = sectionOf(prompt, 'PROJECTION, CAMERA AND OBJECT ORIENTATION');
 
     expect(camera).toContain(FLAT);
@@ -89,7 +95,7 @@ describe('the overlay sheet draws flat pieces under no camera', () => {
   });
 
   it('audits the flat pieces, and tells Sol to keep the rule', () => {
-    const prompt = preset('cyberpunk-action-bar-consumables', 0);
+    const prompt = preset('cyberpunk-action-bar-consumables', 'OVERLAY');
     expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')).toContain(FLAT_AUDIT);
     expect(prompt).not.toContain('drawn through a camera that moved');
     expect(prompt).toContain('- section 3’s rule that every component lies flat in the picture plane\n');

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
+import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { ICON_LOOKS } from '../types/iconRoster.ts';
 import type { IconColourMode, IconLook } from '../types/iconRoster.ts';
@@ -22,6 +23,11 @@ import { generatePrompt } from './promptCompiler.ts';
 const OUTPUT: OutputConfig = { ...DEFAULT_OUTPUT_CONFIG, directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' };
 const ICON = defaultSubjectFor('ICON');
 
+/** The overlay sheet's index: the icon sheets open an ICON series, from sheet 0, and it closes it. */
+function overlaySheetOf(subject: SubjectDefinition): number {
+  return sheetSeriesFor('ICON', subject, OUTPUT.directionalMode, OUTPUT.directions).length - 1;
+}
+
 function iconSet(look: IconLook, colourMode: IconColourMode): SubjectDefinition {
   return { ...ICON, icons: { look, colourMode, picks: ICON.icons?.picks ?? [] } };
 }
@@ -37,7 +43,7 @@ describe('a tint-masked icon set in the compiled prompt', () => {
   it.each(ICON_LOOKS)(
     'turns every %s icon sheet to greys in section 1, the inventory and the audit',
     (look) => {
-      const raw = generatePrompt('ICON', iconSet(look, 'TINT_MASK'), { ...OUTPUT, sheetIndex: 1 });
+      const raw = generatePrompt('ICON', iconSet(look, 'TINT_MASK'), { ...OUTPUT, sheetIndex: 0 });
       const prompt = flat(raw);
       expect(prompt).toContain(SUBJECT_MASK);
       expect(prompt).toContain(INVENTORY_MASK);
@@ -49,13 +55,14 @@ describe('a tint-masked icon set in the compiled prompt', () => {
   );
 
   it.each(ICON_LOOKS)('leaves the %s overlay sheet’s pieces in their colours', (look) => {
-    const prompt = flat(generatePrompt('ICON', iconSet(look, 'TINT_MASK'), { ...OUTPUT, sheetIndex: 0 }));
+    const subject = iconSet(look, 'TINT_MASK');
+    const prompt = flat(generatePrompt('ICON', subject, { ...OUTPUT, sheetIndex: overlaySheetOf(subject) }));
     expect(prompt).not.toContain('tint mask');
     expect(prompt).not.toContain('lightness in grey');
   });
 
   it.each(ICON_LOOKS)('says nothing of greys on a %s set in full colour', (look) => {
-    const prompt = flat(generatePrompt('ICON', iconSet(look, 'FULL_COLOUR'), { ...OUTPUT, sheetIndex: 1 }));
+    const prompt = flat(generatePrompt('ICON', iconSet(look, 'FULL_COLOUR'), { ...OUTPUT, sheetIndex: 0 }));
     expect(prompt).not.toContain('tint mask');
     expect(prompt).not.toContain('lightness in grey');
     expect(prompt).toContain('A colour an entry names is that icon’s own, and outranks');
@@ -63,7 +70,7 @@ describe('a tint-masked icon set in the compiled prompt', () => {
 
   it('draws a mask on the first key it can take, wherever a white one is stored', () => {
     const subject = iconSet('ISOLATED_MARK', 'TINT_MASK');
-    const white = { ...OUTPUT, sheetIndex: 1, backgroundKey: 'PURE_WHITE' } as const;
+    const white = { ...OUTPUT, sheetIndex: 0, backgroundKey: 'PURE_WHITE' } as const;
     expect(generatePrompt('ICON', subject, white)).toBe(
       generatePrompt('ICON', subject, { ...white, backgroundKey: 'MAGENTA_FF00FF' }),
     );
@@ -74,7 +81,7 @@ describe('a tint-masked icon set in the compiled prompt', () => {
     // Section 0, section 2 and the self-audit would otherwise ask a grey mask for the Game Boy's four
     // greens, which hold no grey at all.
     const subject = iconSet('ISOLATED_MARK', 'TINT_MASK');
-    const pinned = { ...OUTPUT, sheetIndex: 1, palette: 'GAME_BOY_DMG' } as const;
+    const pinned = { ...OUTPUT, sheetIndex: 0, palette: 'GAME_BOY_DMG' } as const;
     expect(generatePrompt('ICON', subject, pinned)).toBe(
       generatePrompt('ICON', subject, { ...pinned, palette: 'FREE' }),
     );
@@ -87,7 +94,7 @@ describe('a tint-masked icon set in the compiled prompt', () => {
     const prompt = flat(
       generatePrompt('ICON', iconSet('ISOLATED_MARK', 'TINT_MASK'), {
         ...OUTPUT,
-        sheetIndex: 1,
+        sheetIndex: 0,
         targetModel,
       }),
     );

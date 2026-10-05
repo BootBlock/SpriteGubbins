@@ -72,8 +72,8 @@ export function promptValues(
   } = facts;
 
   // Empty on exactly the sheets that append no additional-anatomy block: the subject named nothing,
-  // or this is a later sheet of a series, where `anatomyFacingsFor` answers `null` and the pieces are
-  // left off deliberately. That is the one question the two sentences below have to ask, so it is
+  // or this is a sheet of a series other than the one that draws them, where `anatomyFacingsFor`
+  // answers `null` and the pieces are left off deliberately. That is the one question the two sentences below have to ask, so it is
   // asked once here rather than twice there.
   const listedAdditions = additionalAnatomyLine === '' ? null : fieldLabelFor(category, 'additional_anatomy');
 

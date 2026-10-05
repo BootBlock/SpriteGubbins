@@ -1,6 +1,6 @@
 # Icon / Symbol Set — audit and fix plan
 
-> **Status:** 🟢 ACTIVE — phases 1 (the compiled prompt) and 2 (the options) landed; phases 3–5 open.
+> **Status:** 🟢 ACTIVE — phases 1 (the compiled prompt), 2 (the options) and 3 (target models and the shape of a series) landed; phases 4–5 open.
 
 ## 1. Why
 
@@ -208,3 +208,35 @@ a test, and "plausible" otherwise.
   `Writhing Tendril Edges` and `Faceted Crystal Shards`. **O2**: the *Primary Colours* card no longer
   claims the studio checks its colours against the key. **M1**: four docblocks name the palette a tint
   mask withdraws.
+- **T1–T8** landed in phase 3, in “Check transparency against the target, and say more to Midjourney,
+  Sol, Seedream and the budget” (T1–T4) and “Cut an icon set into even sheets, close it with the
+  overlay sheet, and say what the extra pieces do” (T5, T6, T8).
+  - **T7** was closed without a change: **O7** removed `Cropped Close On The Detail`, and no option,
+    preset, test or prompt text names a crop on ICON any more, so Stable Diffusion's `cropped` and
+    Qwen's `cropped components` have nothing to fight.
+  - **T1**: every target declares `TargetCapabilities.alpha`, cited to its vendor. Only OpenAI document
+    an alpha channel: the Images API through the `background` request option, and the image tool Sol
+    calls through the same option. Seedream documents one for image-to-image work alone, so it counts
+    as none. `backgroundKeysFor` withdraws `TRANSPARENT` from every target that documents none, the key
+    resolves through the subject and the target, the Target AI Generator control moves a stored key in
+    the same act, Sol is told to set the tool’s option, and the Background Key control states what a
+    GPT Image request must set. Nine presets that paired `TRANSPARENT` with such a target take magenta.
+  - **T2**: `SheetPlan.frames` makes Midjourney’s frame decision per sheet. The overlay sheet declares it,
+    and so does an icon sheet whose entry names a frame or a border (`namesAFrame`); every other icon
+    sheet negates `frame, border`. `--no` opens with the category’s assembly terms.
+  - **T3**: Sol’s hand-off protects section 1’s colours and section 2’s target size and smallest display
+    size wherever the prompt states them, on every category.
+  - **T4**: Seedream’s keep list names the inventory, and names a direction only on a sheet of views.
+    The budget notice measures `promptFieldText`, the text a target reads in its prompt field, so Qwen’s
+    and Stable Diffusion’s negative blocks no longer count against the figure.
+  - **T5**: `balancedChunks` cuts the roster into as few icon sheets as before and as evenly as the
+    two-state pairs allow, and every icon sheet states one cell, 1/4 of the sheet’s width, so a short
+    sheet leaves canvas empty rather than drawing its icons larger.
+  - **T6**: the overlay sheet closes the series and declares `SheetPlan.anatomy`, so the *Extra Overlay
+    Pieces* are drawn on it wherever it falls. With an icon sheet now first, the contract-item check
+    compiled a full-bleed square at sheet index 0 for the first time, and found its backdrop item citing
+    sections 1 and 2 by number, which an image model reached through Sol’s hand-off cannot look up; both
+    citations are gone.
+  - **T8**: the overlay sheet keeps its size, and the *Extra Overlay Pieces* field says under itself when
+    a piece repeats one the sheet already draws, or when the pieces push it past
+    `PRACTICAL_COMPONENT_CEILING` (`additionalAnatomyNote`, on every category’s field).

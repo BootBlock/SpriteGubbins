@@ -11,12 +11,12 @@ import { ICON_ROSTER_CAPACITY, ICONS_PER_SHEET } from '../iconCatalogue/iconShee
  * to the project's library too, which keeps its own copy and which Undo does not reach.
  */
 export const ICON_CATALOGUE_ACTION_TOOLTIPS = {
-  openCatalogue: `Opens the icon catalogue, where you tick the icons this set draws. Each icon you tick becomes a named slot on an icon sheet, ${String(ICONS_PER_SHEET)} components to a sheet after the overlay sheet, and the compiled prompt follows at once.\n\nEvery tick is a step Undo can take back.`,
+  openCatalogue: `Opens the icon catalogue, where you tick the icons this set draws. Each icon you tick becomes a named slot on an icon sheet, at most ${String(ICONS_PER_SHEET)} components to a sheet before the overlay sheet, and the compiled prompt follows at once.\n\nEvery tick is a step Undo can take back.`,
 
   tickGroup: `Ticks every icon this group is showing under the current search and filters, as one step Undo can take back. An icon that would take the set past its ${String(ICON_ROSTER_CAPACITY)} components is left unticked, and a notice says how many.`,
 
   untickGroup:
-    'Unticks every icon this group is showing under the current search and filters, as one step Undo can take back. The icon sheets close up behind them, so the icons after them move to earlier sheets.',
+    'Unticks every icon this group is showing under the current search and filters, as one step Undo can take back. The icon sheets are cut again as evenly as the set allows, so icons can move to other sheets.',
 
   clearAll:
     'Unticks every icon on your set, including any the search is hiding and the icons you wrote yourself, as one step Undo can take back. Your own icons stay in your library to tick again. The series goes back to the overlay sheet alone, and the prompt follows.',

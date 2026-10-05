@@ -4021,17 +4021,20 @@ describe('generatePrompt — the one ban that is per-category', () => {
 describe('generatePrompt — an icon set', () => {
   const ICON = defaultSubjectFor('ICON');
   const ICON_OUTPUT = withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' });
+  // The icon sheets open the series from sheet 0, and the overlay sheet closes it.
+  const OVERLAY_SHEET =
+    sheetSeriesFor('ICON', ICON, ICON_OUTPUT.directionalMode, ICON_OUTPUT.directions).length - 1;
   const ELSEWHERE =
     '**Overlay Style** is excepted: it is the style of the pieces another sheet of this series draws';
   const STYLES = '**Overlay Style** is excepted: it is the style every component in section 4 is drawn in';
 
   it('excepts the overlay style as drawn elsewhere on the icon sheets, and as the style of the overlay sheet', () => {
     const overlay = sectionOf(
-      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 }),
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: OVERLAY_SHEET }),
       'SUBJECT DEFINITION',
     );
     const icons = sectionOf(
-      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 1 }),
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 }),
       'SUBJECT DEFINITION',
     );
 
@@ -4042,7 +4045,7 @@ describe('generatePrompt — an icon set', () => {
   });
 
   it('says nothing about an overlay line nobody wrote', () => {
-    const icons = generatePrompt('ICON', { ...ICON, clothing: '' }, { ...ICON_OUTPUT, sheetIndex: 1 });
+    const icons = generatePrompt('ICON', { ...ICON, clothing: '' }, { ...ICON_OUTPUT, sheetIndex: 0 });
     expect(icons).not.toContain('another sheet of this series draws');
   });
 
@@ -4065,7 +4068,7 @@ describe('generatePrompt — an icon set', () => {
   it('lists the roster as named lines in the world’s look, under the grid the sheet states', () => {
     const subject = { ...ICON, setting: 'Near-Future Cyberpunk' };
     const inventory = sectionOf(
-      generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 1 }),
+      generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 0 }),
       'COMPONENT INVENTORY',
     );
     expect(inventory).toContain('Sixteen drawings, four across and four down, in the reading order below.');
@@ -4081,7 +4084,7 @@ describe('generatePrompt — an icon set', () => {
     // The starter set draws the character panel's bust; a guard calling every entry describing anatomy
     // an error would have sent it to section 0's tripwire as a malformed specification.
     expect(ICON.icons?.picks.map(iconPickId)).toContain('system-character');
-    const prompt = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 1 });
+    const prompt = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 });
     const inventory = sectionOf(prompt, 'COMPONENT INVENTORY').replaceAll(/\s+/g, ' ');
     expect(inventory).toContain(
       'or anatomy other than the hand, face or figure that is the subject of an icon’s own entry, does not belong',
@@ -4091,8 +4094,8 @@ describe('generatePrompt — an icon set', () => {
 
   it('says the overlays it lists are components only on the sheet that lists them', () => {
     const OVERLAYS = 'The overlays and marks it does list are components';
-    const overlay = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 });
-    const icons = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 1 });
+    const overlay = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: OVERLAY_SHEET });
+    const icons = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 });
     expect(sectionOf(overlay, 'COMPONENT INVENTORY')).toContain(OVERLAYS);
     expect(sectionOf(icons, 'COMPONENT INVENTORY')).not.toContain(OVERLAYS);
   });
@@ -4110,10 +4113,10 @@ describe('generatePrompt — an icon set', () => {
         generatePrompt('ICON', isolated, { ...ICON_OUTPUT, sheetIndex }),
         'LAYOUT AND SELF-AUDIT',
       ).replaceAll(/\s+/g, ' ');
-    expect(audit(0)).toContain(PIECES_AGREE);
-    expect(audit(0)).not.toContain(ICONS_AGREE);
-    expect(audit(1)).toContain(ICONS_AGREE);
-    expect(audit(1)).not.toContain(PIECES_AGREE);
+    expect(audit(OVERLAY_SHEET)).toContain(PIECES_AGREE);
+    expect(audit(OVERLAY_SHEET)).not.toContain(ICONS_AGREE);
+    expect(audit(0)).toContain(ICONS_AGREE);
+    expect(audit(0)).not.toContain(PIECES_AGREE);
   });
 
   it('agrees the count’s noun with a sheet of one icon, in section 0 and in the series list', () => {
@@ -4121,15 +4124,15 @@ describe('generatePrompt — an icon set', () => {
       ...ICON,
       icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(['heal-minor']) },
     } as const;
-    const prompt = generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 1 });
+    const prompt = generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 0 });
     expect(prompt).toContain('Exactly 1 component, each visibly separate');
     expect(prompt).not.toMatch(/\b1 components\b/);
-    expect(prompt).toContain('**Sheet 2 — Icon 1** *(this sheet)*: 1 component.');
+    expect(prompt).toContain('**Sheet 1 — Icon 1** *(this sheet)*: 1 component.');
   });
 
   it('bans a hand or figure only where no entry names one', () => {
     const exclusions = sectionOf(
-      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 1 }),
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 }),
       'EXCLUSIONS',
     );
     expect(exclusions).toContain('any hand, character or creature an entry in section');

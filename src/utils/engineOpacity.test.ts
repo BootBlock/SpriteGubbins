@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { ICON_SET_PRESETS } from '../constants/presets/iconSets.ts';
+import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { ICON_OVERLAY_PLANS } from '../constants/sheetPlans/iconOverlaySheet.ts';
 import { renderContractOf, sectionOf } from '../test/promptSections.ts';
 import { reachableSheets } from '../test/reachableSheets.ts';
@@ -27,7 +28,9 @@ function overlaySheet(output: Partial<OutputConfig> = {}): string {
     ...DEFAULT_OUTPUT_CONFIG,
     ...found.output,
     ...output,
-    sheetIndex: 0,
+    // The overlay sheet closes the series.
+    sheetIndex:
+      sheetSeriesFor('ICON', found.subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1,
   });
 }
 

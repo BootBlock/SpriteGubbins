@@ -26,14 +26,17 @@ import { validationPassFor } from './validationPass.ts';
  *
  * **The outline sentence follows the outline the sheet draws.** A square has an edge as well as a
  * subject, and "outer contour" read over a square names the edge — which is the frame the interface
- * draws. So where section 2 states an outline, the sentence puts it round the subject's silhouette.
+ * draws. So where section 2 states an outline, the sentence puts it round the subject's silhouette —
+ * without citing section 2, because the sentence is a contract item that Sol forwards to an image model
+ * which receives no section to look up (issue #403's rule, which an icon sheet first compiled at sheet
+ * index 0 exposed once the overlay sheet moved to the end of the series).
  * `outline` is the resolved setting, `null` where the style withdraws the line.
  */
 export function backdropDescription(style: RenderStyle, outline: OutlineStyle | null): string {
   const contour =
     outline === null || outline === 'OUTLINE_LESS_ALBEDO'
       ? ''
-      : ' The edge treatment section [SEC:STYLE] states is the subject’s outline: it runs round the subject’s own silhouette, and is never drawn along the square’s edge.';
+      : ' The outline this sheet draws is the subject’s outline: it runs round the subject’s own silhouette, and is never drawn along the square’s edge.';
   return `The backdrop is ${BACKDROP_TEXT[backdropSurfaceOf(style)]}.${contour}`;
 }
 

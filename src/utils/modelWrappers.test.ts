@@ -91,6 +91,18 @@ function wrapperOnly(prompt: string): string {
 }
 
 /**
+ * The sheet a sweep over every category compiles for its shadow terms: the first, but ICON's overlay
+ * sheet, which closes its series. The starter set's icon sheets are full-bleed squares, which negate no
+ * shadow cast inside a square — what `what a wrapper says about a shadow on a full-bleed square` holds —
+ * so the sheet of ICON's that keeps every shadow term these sweeps check is the overlay sheet.
+ */
+function sweptSheetOf(category: SubjectCategory): number {
+  if (category !== 'ICON') return 0;
+  const { directionalMode, directions } = DEFAULT_OUTPUT_CONFIG;
+  return sheetSeriesFor(category, defaultSubjectFor(category), directionalMode, directions).length - 1;
+}
+
+/**
  * The `--no` flag's entries, split the way Midjourney documents them — on the comma, so a two-word
  * entry stays one entry. Asserting the flag line as a string instead is what lets `cast shadow`
  * satisfy a check written to forbid `shadow`.
@@ -98,11 +110,12 @@ function wrapperOnly(prompt: string): string {
 function negatedByMidjourney(
   renderStyle: RenderStyle,
   category: SubjectCategory = 'CHARACTER',
+  sheetIndex = sweptSheetOf(category),
 ): readonly string[] {
   const prompt = generatePrompt(
     category,
     defaultSubjectFor(category),
-    withOutput({ targetModel: 'MIDJOURNEY', renderStyle }),
+    withOutput({ targetModel: 'MIDJOURNEY', renderStyle, sheetIndex }),
   );
   const flag = /--no ([^\n]+)/.exec(prompt);
   return flag?.[1]?.split(', ') ?? [];
@@ -495,11 +508,16 @@ describe('wrapForModel', () => {
     // conditional one, so all five were right. Nothing held them there — a section inserted before
     // the inventory moves the prompt body's own citations and would have left these behind, in the
     // two wrappers whose whole job is saying which blocks may not be shortened.
-    const sol = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
+    // The overlay sheet, which closes the series and carries the flat-piece rule cited below.
+    const sol = generatePrompt(
+      'ICON',
+      defaultSubjectFor('ICON'),
+      withOutput({ ...NATIVE_GRID_SHEET, sheetIndex: sweptSheetOf('ICON') }),
+    );
     const iconSheet = generatePrompt(
       'ICON',
       defaultSubjectFor('ICON'),
-      withOutput({ ...NATIVE_GRID_SHEET, sheetIndex: 1 }),
+      withOutput({ ...NATIVE_GRID_SHEET, sheetIndex: 0 }),
     );
     const yawSheet = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
     const rigSheet = characterRigPrompt({});
@@ -545,7 +563,7 @@ describe('wrapForModel', () => {
       preset.subject,
       withOutput({
         ...preset.output,
-        sheetIndex: 1,
+        sheetIndex: 0,
         resolutionProfile: 'CUSTOM',
         spriteTargetSize: '128 × 128 px',
       }),
@@ -799,6 +817,15 @@ describe('what a wrapper says about the surface', () => {
         }
       }
     }
+    // ICON's first sheet, a full-bleed icon sheet, is held to the same rule: it negates no shadow cast
+    // inside a square, but never a bare `shadow`, a `gradient` or the background.
+    for (const renderStyle of RENDER_STYLES) {
+      const entries = negatedByMidjourney(renderStyle, 'ICON', 0);
+      const where = `ICON icon sheet / ${renderStyle}`;
+      expect(entries, where).not.toContain('shadow');
+      expect(entries, where).not.toContain('gradient');
+      for (const entry of entries) expect(entry, `${where} / ${entry}`).not.toMatch(/background/i);
+    }
   });
 
   it('spends the anatomy negatives on the sheets that have limbs, and no others', () => {
@@ -875,8 +902,12 @@ describe('what a wrapper says about the assembled whole', () => {
     // on the one category whose components are lettering, which is the same conditional the two
     // negative blocks apply to their own `text` entries — so the expected sentence is built from
     // `LETTERING_IS_A_COMPONENT` rather than fixed, and asserts the *absence* on that category
-    // rather than skipping it.
-    const flux = generatePrompt(category, subject, withOutput({ targetModel: 'FLUX' }));
+    // rather than skipping it. Compiled on `sweptSheetOf`'s sheet, whose shadow clause is a cast one.
+    const flux = generatePrompt(
+      category,
+      subject,
+      withOutput({ targetModel: 'FLUX', sheetIndex: sweptSheetOf(category) }),
+    );
     const lettering = LETTERING_IS_A_COMPONENT[category];
     expect(flux.startsWith('The sheet shows only disconnected individual parts on a'), category).toBe(true);
     expect(flux, category).toContain(
@@ -995,8 +1026,13 @@ describe('what a wrapper says about text', () => {
       expect(flagged.includes(term), `MIDJOURNEY / ${category} / ${term}`).toBe(!lettering);
     }
 
-    // And Flux, whose claim is prose in the leading sentence rather than a term in a list.
-    const flux = generatePrompt(category, subject, withOutput({ targetModel: 'FLUX' }));
+    // And Flux, whose claim is prose in the leading sentence rather than a term in a list, on the sheet
+    // whose shadow clause is a cast one.
+    const flux = generatePrompt(
+      category,
+      subject,
+      withOutput({ targetModel: 'FLUX', sheetIndex: sweptSheetOf(category) }),
+    );
     expect(flux.includes('no cast shadow, no text,'), `FLUX / ${category}`).toBe(!lettering);
   });
 });
@@ -1013,7 +1049,7 @@ describe('what a wrapper says about a shadow on a full-bleed square', () => {
     generatePrompt(
       'ICON',
       { ...ICON_SUBJECT, icons: { look, colourMode: 'FULL_COLOUR', picks: ICON_SUBJECT.icons?.picks ?? [] } },
-      withOutput({ targetModel, directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY', sheetIndex: 1 }),
+      withOutput({ targetModel, directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY', sheetIndex: 0 }),
     );
   const characterSheet = (targetModel: TargetModelId): string =>
     generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), withOutput({ targetModel }));
@@ -1092,7 +1128,7 @@ describe('Midjourney on an icon series', () => {
 
   it('keeps a frame and a border on an icon sheet whose own entry draws one', () => {
     const subject = { ...STARTER, icons: { ...STARTER.icons!, picks: cataloguePicks(['pin-quest-area']) } };
-    expect(generatePrompt('ICON', subject, withOutput({ targetModel: 'GENERIC', sheetIndex: 1 }))).toMatch(
+    expect(generatePrompt('ICON', subject, withOutput({ targetModel: 'GENERIC', sheetIndex: 0 }))).toMatch(
       /border/,
     );
     expect(negatedOn(subject, /^Icon /)).not.toContain('border');

@@ -367,8 +367,8 @@ Satisfy this section before any aesthetic consideration.
    and that backdrop belongs to the component, not to the background: the background is only the
    gutters between the squares, so [DEFINE:BACKGROUND_KEY_DESCRIPTION] fills those gutters and never
    shows inside a square. What this item forbids the background it forbids the gutters, never a
-   square’s own backdrop. [DEFINE:BACKDROP_DESCRIPTION] The interior detail and the materials
-   section [SEC:SUBJECT] names are the subject’s, never the backdrop’s.
+   square’s own backdrop. [DEFINE:BACKDROP_DESCRIPTION] The interior detail and the materials the
+   subject definition names are the subject’s, never the backdrop’s.
    Every square lies flat in the picture plane, square to the screen, with level edges and right-angled
    corners whatever the camera: the camera governs the subject inside a square, never the square.
 [IF:KEY_COLOUR]

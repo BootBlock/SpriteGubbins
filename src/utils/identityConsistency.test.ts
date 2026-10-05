@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
+import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { reachableSheets } from '../test/reachableSheets.ts';
 import type { SheetIdentity } from '../types/components.ts';
@@ -57,6 +58,11 @@ function iconSubject(look: IconLook): SubjectDefinition {
   return { ...subject, icons: { ...subject.icons, look } };
 }
 
+/** The overlay sheet's index: it closes an ICON series. */
+function overlaySheetOf(subject: SubjectDefinition): number {
+  return sheetSeriesFor('ICON', subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
+}
+
 /** A sheet of one set's members, with the plan name the compiler has to resolve for it. */
 const SET_SHEETS: readonly (readonly [
   RegExp,
@@ -65,10 +71,22 @@ const SET_SHEETS: readonly (readonly [
   DirectionalMode,
   number,
 ])[] = [
-  [/^Overlay pieces$/, 'ICON', iconSubject('FULL_BLEED_TILE'), 'SINGLE_DIRECTION_POSE_LIBRARY', 0],
-  [/^Icons 1–\d+$/, 'ICON', iconSubject('FULL_BLEED_TILE'), 'SINGLE_DIRECTION_POSE_LIBRARY', 1],
-  [/^Overlay pieces$/, 'ICON', iconSubject('ISOLATED_MARK'), 'SINGLE_DIRECTION_POSE_LIBRARY', 0],
-  [/^Icons 1–\d+$/, 'ICON', iconSubject('ISOLATED_MARK'), 'SINGLE_DIRECTION_POSE_LIBRARY', 1],
+  [/^Icons 1–\d+$/, 'ICON', iconSubject('FULL_BLEED_TILE'), 'SINGLE_DIRECTION_POSE_LIBRARY', 0],
+  [
+    /^Overlay pieces$/,
+    'ICON',
+    iconSubject('FULL_BLEED_TILE'),
+    'SINGLE_DIRECTION_POSE_LIBRARY',
+    overlaySheetOf(iconSubject('FULL_BLEED_TILE')),
+  ],
+  [/^Icons 1–\d+$/, 'ICON', iconSubject('ISOLATED_MARK'), 'SINGLE_DIRECTION_POSE_LIBRARY', 0],
+  [
+    /^Overlay pieces$/,
+    'ICON',
+    iconSubject('ISOLATED_MARK'),
+    'SINGLE_DIRECTION_POSE_LIBRARY',
+    overlaySheetOf(iconSubject('ISOLATED_MARK')),
+  ],
   [/^Capitals$/, 'FONT', defaultSubjectFor('FONT'), 'SINGLE_DIRECTION_POSE_LIBRARY', 0],
   [/^Blend set$/, 'TERRAIN', defaultSubjectFor('TERRAIN'), 'TILESET_MODULAR', 0],
   [/^Parallax set$/, 'BACKGROUND', defaultSubjectFor('BACKGROUND'), 'TILESET_MODULAR', 0],

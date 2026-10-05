@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG, OUTPUT_TOOLTIPS } from '../constants/output/index.ts';
 import { ICON_SET_PRESETS } from '../constants/presets/iconSets.ts';
+import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { ICON_OVERLAY_PLANS } from '../constants/sheetPlans/iconOverlaySheet.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { reachableSheets } from '../test/reachableSheets.ts';
@@ -29,9 +30,14 @@ const ALL_SHADOWS = '- All shadows: cast, contact, drop, and ambient occlusion o
 const OWN_SHADOW =
   'and a contact shadow it casts on the backdrop inside its\n  square, are part of its component';
 
-function preset(id: string, sheetIndex: number, output: Partial<OutputConfig> = {}): string {
+/** A preset's first icon sheet, or its overlay sheet, which closes the series. */
+function preset(id: string, sheet: 'ICONS' | 'OVERLAY', output: Partial<OutputConfig> = {}): string {
   const found = ICON_SET_PRESETS.find((candidate) => candidate.id === id);
   if (found === undefined) throw new Error(`No icon preset ${id}.`);
+  const sheetIndex =
+    sheet === 'ICONS'
+      ? 0
+      : sheetSeriesFor('ICON', found.subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
   return generatePrompt('ICON', found.subject, {
     ...DEFAULT_OUTPUT_CONFIG,
     ...found.output,
@@ -44,7 +50,7 @@ const subjectOf = (prompt: string): string => sectionOf(prompt, 'SUBJECT DEFINIT
 
 describe('section 1 on the overlay sheet describes the icons beneath, never the pieces', () => {
   it('takes no material from the list, and colours a piece from its entry or the accent', () => {
-    const section = subjectOf(preset('cyberpunk-action-bar-consumables', 0));
+    const section = subjectOf(preset('cyberpunk-action-bar-consumables', 'OVERLAY'));
 
     expect(section).toContain(LAID_OVER);
     expect(section).toContain('**describes none of these components**');
@@ -59,7 +65,7 @@ describe('section 1 on the overlay sheet describes the icons beneath, never the 
 
   it('states no light for a piece where the style states none', () => {
     const section = subjectOf(
-      preset('cyberpunk-action-bar-consumables', 0, { renderStyle: 'SILHOUETTE_ONLY' }),
+      preset('cyberpunk-action-bar-consumables', 'OVERLAY', { renderStyle: 'SILHOUETTE_ONLY' }),
     );
     expect(section).toContain(LAID_OVER);
     expect(section).not.toContain('It is lit under the lighting model');
@@ -78,7 +84,7 @@ describe('section 1 on the overlay sheet describes the icons beneath, never the 
 
 describe('section 1 on an icon sheet states what the set shares', () => {
   it('names each entry as its icon’s design, and infers nothing about props from a display size', () => {
-    const section = subjectOf(preset('cyberpunk-action-bar-consumables', 1));
+    const section = subjectOf(preset('cyberpunk-action-bar-consumables', 'ICONS'));
     expect(section).toContain(SHARED);
     expect(section).toContain('the entry wins for that member');
     expect(section).toContain(PAINTED);
@@ -87,7 +93,7 @@ describe('section 1 on an icon sheet states what the set shares', () => {
   });
 
   it('keeps the overlay’s pieces off the icons, but never an element an icon asks for itself', () => {
-    const section = subjectOf(preset('cyberpunk-action-bar-consumables', 1));
+    const section = subjectOf(preset('cyberpunk-action-bar-consumables', 'ICONS'));
     const flat = section.replaceAll(/\s+/gu, ' ');
     expect(flat).toContain('no component on this sheet is drawn in it or carries one of those pieces.');
     expect(flat).toContain('is part of that component and is drawn, however closely it resembles');
@@ -97,8 +103,8 @@ describe('section 1 on an icon sheet states what the set shares', () => {
 
 describe('section 7 on a full-bleed sheet', () => {
   it('lets a subject shade its own square, and nothing fall on the gutters', () => {
-    const squares = sectionOf(preset('cyberpunk-action-bar-consumables', 1), 'EXCLUSIONS');
-    const marks = sectionOf(preset('isometric-map-marker-set', 1), 'EXCLUSIONS');
+    const squares = sectionOf(preset('cyberpunk-action-bar-consumables', 'ICONS'), 'EXCLUSIONS');
+    const marks = sectionOf(preset('isometric-map-marker-set', 'ICONS'), 'EXCLUSIONS');
 
     expect(squares).toContain(OWN_SHADOW);
     expect(squares).toContain('nothing is cast, dropped or occluded onto the gutters');

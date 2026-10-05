@@ -23,11 +23,12 @@ export const ICONS_PER_SHEET = ICON_GRID_COLUMNS * ICON_GRID_COLUMNS;
 export const ICON_ROSTER_CAPACITY = 320;
 
 /**
- * The most sheets an ICON series can take: the overlay sheet, then the icon sheets a full roster fills.
+ * The most sheets an ICON series can take: the icon sheets a full roster fills, then the overlay sheet.
  *
  * **Not `capacity ÷ sixteen`**, because a two-state entry never splits across two sheets: where one
- * would straddle the boundary the sheet closes at fifteen and the pair opens the next. So every icon
- * sheet but the last holds at least fifteen components, and a roster of `n` components takes at most
- * `⌊(n − 1) ÷ 15⌋ + 1` of them.
+ * would straddle the boundary the sheet closes at fifteen and the pair opens the next. So a cut that
+ * fills each sheet holds at least fifteen components on every sheet but the last, and a roster of `n`
+ * components takes at most `⌊(n − 1) ÷ 15⌋ + 1` sheets. The series cuts with `balancedChunks`, which
+ * evens the sheets out over that same number, so the bound holds for it too.
  */
 export const ICON_SERIES_LONGEST = 1 + Math.floor((ICON_ROSTER_CAPACITY - 1) / (ICONS_PER_SHEET - 1)) + 1;

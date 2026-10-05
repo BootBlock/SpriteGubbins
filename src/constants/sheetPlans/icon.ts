@@ -1,5 +1,5 @@
 import { ICONS_PER_SHEET } from '../iconCatalogue/iconSheetLimits.ts';
-import { chunkEntries } from '../../utils/chunkEntries.ts';
+import { balancedChunks } from '../../utils/balancedChunks.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { iconRosterEntries } from '../../utils/iconRosterEntries.ts';
 import type { SheetPlan } from '../../types/components.ts';
@@ -10,7 +10,8 @@ import { iconSheet } from './iconSheet.ts';
 import type { SeriesFor } from './modePlans.ts';
 
 /**
- * What an ICON subject asks for: the overlay sheet, then the reader's roster sixteen icons to a sheet.
+ * What an ICON subject asks for: the reader's roster at most sixteen icons to a sheet, then the overlay
+ * sheet.
  *
  * **One mode, and the other three are declined.** An icon is a mark drawn into a fixed cell: it has no
  * yaw to be turned to, so `CORE_DIRECTIONAL_VARIANTS` would return five drawings of one flat symbol; it
@@ -28,6 +29,13 @@ import type { SeriesFor } from './modePlans.ts';
  * overlay sheet's pieces mark a state rather than a side, so they keep their colours. A subject with no roster takes `DEFAULT_ICON_LOOK` and `DEFAULT_ICON_COLOUR_MODE`, which is only ever
  * a hand-built subject: every ICON subject the app stores carries one.
  *
+ * **The icon sheets are cut as evenly as the roster allows** (`balancedChunks`, audit finding T5), so a
+ * set of eighteen is two sheets of nine rather than sixteen and a last sheet of two drawn twice as large.
+ *
+ * **The overlay sheet comes last** (audit finding T6). Its pieces are drawn to the weight and the square
+ * of the icons they are laid over, so it is generated once those icons exist: a reader can lock it to
+ * them through the identity lock, and the series list in section 5 names the sheets that drew them.
+ *
  * **The set used to be twelve icons the generator chose**, on one sheet with the overlay pieces. That
  * left a reader who needed a game's own action bar, bags and system panels no way to ask for them, and
  * no way to name the files the quantiser cuts out.
@@ -37,9 +45,11 @@ export const iconSeries: SeriesFor = (_facings, subject) => {
   const colourMode = subject.icons?.colourMode ?? DEFAULT_ICON_COLOUR_MODE;
   const icons: SheetPlan[] = [];
   let first = 1;
-  for (const run of chunkEntries(iconRosterEntries(subject), ICONS_PER_SHEET)) {
+  for (const run of balancedChunks(iconRosterEntries(subject), ICONS_PER_SHEET)) {
     icons.push(iconSheet(run, first, look, colourMode));
     first += componentTotal(run);
   }
-  return [ICON_OVERLAY_PLANS[look], ...icons];
+  const overlay = ICON_OVERLAY_PLANS[look];
+  const [head, ...rest] = icons;
+  return head === undefined ? [overlay] : [head, ...rest, overlay];
 };

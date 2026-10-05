@@ -11,6 +11,12 @@ interface ComboBoxProps {
   readonly value: string;
   readonly options: readonly string[];
   readonly onChange: (value: string) => void;
+  /**
+   * Plain text shown under the field and wired as its accessible description, or `''` for none — what
+   * the field's value does to the sheet that its card cannot say ahead of time, such as a piece the
+   * sheet already draws (`additionalAnatomyNote`).
+   */
+  readonly description?: string;
 }
 
 /**
@@ -32,7 +38,7 @@ interface ComboBoxProps {
  * the page. It stays a DOM child of the container regardless, which is what keeps the
  * outside-press check and `aria-activedescendant` working unchanged.
  */
-export function ComboBox({ label, tooltip, value, options, onChange }: ComboBoxProps) {
+export function ComboBox({ label, tooltip, value, options, onChange, description = '' }: ComboBoxProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
   const listboxRef = useRef<HTMLDivElement>(null);
@@ -45,6 +51,7 @@ export function ComboBox({ label, tooltip, value, options, onChange }: ComboBoxP
   const baseId = useId();
   const inputId = `${baseId}-input`;
   const listboxId = `${baseId}-listbox`;
+  const descriptionId = `${baseId}-description`;
   const optionId = (index: number) => `${baseId}-option-${index}`;
 
   return (
@@ -65,6 +72,7 @@ export function ComboBox({ label, tooltip, value, options, onChange }: ComboBoxP
           aria-expanded={combo.isOpen}
           aria-controls={listboxId}
           aria-autocomplete="list"
+          aria-describedby={description === '' ? undefined : descriptionId}
           aria-activedescendant={
             combo.isOpen && combo.activeIndex >= 0 ? optionId(combo.activeIndex) : undefined
           }
@@ -152,6 +160,12 @@ export function ComboBox({ label, tooltip, value, options, onChange }: ComboBoxP
             />
           ))}
         </div>
+      )}
+
+      {description !== '' && (
+        <p id={descriptionId} className="mt-2 text-xs leading-relaxed text-ink-muted">
+          {description}
+        </p>
       )}
     </div>
   );

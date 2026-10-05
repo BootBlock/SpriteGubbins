@@ -8,6 +8,8 @@ import { batchComponentCount } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetIdentity, sheetRuns } from './sheetRuns.ts';
 import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
+import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { iconPickId } from './iconPickId.ts';
 
 /**
@@ -264,18 +266,27 @@ describe('the identity of an icon set’s sheets', () => {
   }
 
   it('survives an icon added after the sheets already copied', () => {
-    // Sixteen icons fill the first icon sheet, so the seventeenth opens a sheet of its own: the overlay
-    // sheet and the full grid draw exactly what they drew before, and keep their ticks.
-    const picks = (ICON.icons?.picks ?? []).map(iconPickId);
-    const grown = withPicks([...picks, 'elixir']);
-    expect(sheetIdentity('ICON', grown, at(0))).toBe(sheetIdentity('ICON', ICON, at(0)));
-    expect(sheetIdentity('ICON', grown, at(1))).toBe(sheetIdentity('ICON', ICON, at(1)));
+    // Thirty-one icons are cut sixteen and fifteen, so the thirty-second fills the second sheet and moves
+    // no other icon: the full first grid and the overlay sheet, which closes the series at whatever index
+    // it falls, draw exactly what they drew before, and keep their ticks.
+    const defaults = (ICON.icons?.picks ?? []).map(iconPickId);
+    const singles = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
+      .filter((entry) => entry.states === undefined && !defaults.includes(entry.id))
+      .map((entry) => entry.id);
+    const before = withPicks([...defaults, ...singles.slice(0, 15)]);
+    const grown = withPicks([...defaults, ...singles.slice(0, 16)]);
+    const overlayOf = (subject: typeof before) =>
+      sheetSeriesFor('ICON', subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
+    expect(sheetIdentity('ICON', grown, at(overlayOf(grown)))).toBe(
+      sheetIdentity('ICON', before, at(overlayOf(before))),
+    );
+    expect(sheetIdentity('ICON', grown, at(0))).toBe(sheetIdentity('ICON', before, at(0)));
   });
 
   it('changes for the sheet the new icon joins', () => {
     const short = withPicks(['heal-minor', 'heal-major']);
     const grown = withPicks(['heal-minor', 'heal-major', 'elixir']);
-    expect(sheetIdentity('ICON', grown, at(1))).not.toBe(sheetIdentity('ICON', short, at(1)));
+    expect(sheetIdentity('ICON', grown, at(0))).not.toBe(sheetIdentity('ICON', short, at(0)));
   });
 
   it('still changes when a field every sheet states changes', () => {

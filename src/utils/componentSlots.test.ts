@@ -306,7 +306,7 @@ describe('an icon set’s named slots', () => {
   }
 
   it('names every icon after the catalogue entry it is, in the roster’s order', () => {
-    expect(slotsAt(ICON, 1)).toEqual(ICON.icons?.picks.map(iconPickId));
+    expect(slotsAt(ICON, 0)).toEqual(ICON.icons?.picks.map(iconPickId));
   });
 
   it('names a two-state entry’s drawings after the entry and the state', () => {
@@ -319,16 +319,18 @@ describe('an icon set’s named slots', () => {
       },
     } as const;
     const states = iconCatalogueEntry('system-sound')?.states ?? [];
-    expect(slotsAt(subject, 1)).toEqual([...states.map((state) => `system-sound-${state}`), 'elixir']);
+    expect(slotsAt(subject, 0)).toEqual([...states.map((state) => `system-sound-${state}`), 'elixir']);
   });
 
-  it('names the overlay pieces on the first sheet, with the reader’s extra pieces after them', () => {
+  it('names the overlay pieces on the overlay sheet, which closes the series, with the reader’s extra pieces after them', () => {
+    const overlaySheet =
+      sheetSeriesFor('ICON', ICON, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
     const slots = componentSlots(
       'ICON',
       ICON,
       'SINGLE_DIRECTION_POSE_LIBRARY',
       'SINGLE_FRONT',
-      0,
+      overlaySheet,
       parseAdditionalAnatomy('Equipped Corner Tick ×1'),
       null,
     );

@@ -37,11 +37,12 @@ function iconSet(picks: readonly IconPick[], setting = 'Near-Future Cyberpunk'):
   };
 }
 
-function inventory(subject: SubjectDefinition, sheetIndex = 1): string {
+// Sheet 0 is the first icon sheet: the icon sheets open the series and the overlay sheet closes it.
+function inventory(subject: SubjectDefinition, sheetIndex = 0): string {
   return flat(sectionOf(generatePrompt('ICON', subject, { ...OUTPUT, sheetIndex }), 'COMPONENT INVENTORY'));
 }
 
-function slots(subject: SubjectDefinition, sheetIndex = 1): readonly string[] {
+function slots(subject: SubjectDefinition, sheetIndex = 0): readonly string[] {
   return componentSlots('ICON', subject, OUTPUT.directionalMode, OUTPUT.directions, sheetIndex, [], null);
 }
 
@@ -103,7 +104,7 @@ describe('an icon of the reader’s own in the compiled prompt', () => {
         picks: [customPick(unmarkedSalute)],
       },
     };
-    const sheet = generatePrompt('ICON', marked, { ...OUTPUT, sheetIndex: 1 });
+    const sheet = generatePrompt('ICON', marked, { ...OUTPUT, sheetIndex: 0 });
 
     expect(flat(sectionOf(sheet, 'COMPONENT INVENTORY'))).toContain(`Gang salute ×1 — ${SALUTE.look}`);
     expect(flat(sectionOf(sheet, 'EXCLUSIONS'))).toContain(
@@ -112,25 +113,34 @@ describe('an icon of the reader’s own in the compiled prompt', () => {
     expect(flat(sheet)).toContain(
       'anatomy other than the hand, face or figure that is the subject of an icon’s own entry',
     );
-    expect(generatePrompt('ICON', unmarked, { ...OUTPUT, sheetIndex: 1 })).toBe(sheet);
+    expect(generatePrompt('ICON', unmarked, { ...OUTPUT, sheetIndex: 0 })).toBe(sheet);
     // And on a sheet with no figure anywhere, the same sentences stand.
-    const plain = generatePrompt('ICON', iconSet([customPick(RELIC)]), { ...OUTPUT, sheetIndex: 1 });
+    const plain = generatePrompt('ICON', iconSet([customPick(RELIC)]), { ...OUTPUT, sheetIndex: 0 });
     expect(flat(sectionOf(plain, 'EXCLUSIONS'))).toContain('A hand, face or figure an entry names');
   });
 
   it('keeps a pair together where it would straddle two sheets, and counts it twice', () => {
-    // Fifteen catalogue icons and then the pair: sixteen would split it, so it opens the next sheet.
-    const subject = iconSet([...singles(15), customPick(TOGGLE), customPick(RELIC)]);
+    // Eight catalogue icons, the pair, seven more and a relic: eighteen drawings, which an even cut of
+    // nine and nine would split the pair across, so the pair closes the first sheet at ten.
+    const catalogue = singles(15);
+    const subject = iconSet([
+      ...catalogue.slice(0, 8),
+      customPick(TOGGLE),
+      ...catalogue.slice(8),
+      customPick(RELIC),
+    ]);
     const series = sheetSeriesFor('ICON', subject, OUTPUT.directionalMode, OUTPUT.directions);
     expect(series).toHaveLength(3);
-    expect(slots(subject, 1)).toHaveLength(15);
-    expect(slots(subject, 2)).toEqual(['cloak-field-engaged', 'cloak-field-idle', 'nightcity-keycard-relic']);
+    expect(slots(subject, 0)).toHaveLength(10);
+    expect(slots(subject, 0).slice(8)).toEqual(['cloak-field-engaged', 'cloak-field-idle']);
+    expect(slots(subject, 1)).toHaveLength(8);
+    expect(slots(subject, 1).at(-1)).toBe('nightcity-keycard-relic');
   });
 
   it('throws on a citation a hand-built entry carries, which is why intake refuses one', () => {
     const hostile = { ...RELIC, look: 'a relic [SEC:X]' };
     expect(() =>
-      generatePrompt('ICON', iconSet([customPick(hostile)]), { ...OUTPUT, sheetIndex: 1 }),
+      generatePrompt('ICON', iconSet([customPick(hostile)]), { ...OUTPUT, sheetIndex: 0 }),
     ).toThrow(/\[SEC:X\]/);
   });
 

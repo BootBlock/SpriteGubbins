@@ -81,7 +81,8 @@ export function planComponentCount(plan: SheetPlan): number {
  *
  * A **`'run'` sheet** carries the anatomy only where it is the series' trunk — the first sheet,
  * whose inventory is the whole subject drawn to one facing per generation, so the anatomy is one
- * more piece of that facing's body. The character and creature articulation sheets are `'run'`
+ * more piece of that facing's body — or where its plan declares `anatomy`, which ICON's overlay sheet
+ * does from the end of its series (audit finding T6). The character and creature articulation sheets are `'run'`
  * sheets that are *not* first, and they stay bare: their inventory is limbs for a trunk the core
  * sheets drew, and a tail beside them would hang on nothing.
  *
@@ -101,7 +102,11 @@ export function anatomyFacingsFor(
 ): SheetFacings | null {
   const plan = sheetPlanFor(category, subject, mode, directions, sheetIndex);
   if (plan.facings !== 'run') return plan.facings;
-  return resolveSheetIndex(category, subject, mode, directions, sheetIndex) === 0 ? 'run' : null;
+  const declared = sheetSeriesFor(category, subject, mode, directions).findIndex(
+    (candidate) => candidate.anatomy === 'APPENDED',
+  );
+  const carrier = declared === -1 ? 0 : declared;
+  return resolveSheetIndex(category, subject, mode, directions, sheetIndex) === carrier ? 'run' : null;
 }
 
 /** What the anatomy adds to a sheet drawing it at these facings: every piece, once per view. */

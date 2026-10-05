@@ -50,12 +50,12 @@ function iconSet(picks: readonly string[], look: IconLook, setting: string): Sub
   };
 }
 
-/** Every icon sheet a subject compiles to, the overlay sheet left out. */
+/** Every icon sheet a subject compiles to, the overlay sheet that closes the series left out. */
 function iconSheets(subject: SubjectDefinition, overrides: Partial<OutputConfig> = {}): readonly string[] {
   const series = sheetSeriesFor('ICON', subject, OUTPUT.directionalMode, OUTPUT.directions);
   return series
-    .slice(1)
-    .map((_plan, at) => generatePrompt('ICON', subject, { ...OUTPUT, ...overrides, sheetIndex: at + 1 }));
+    .slice(0, -1)
+    .map((_plan, at) => generatePrompt('ICON', subject, { ...OUTPUT, ...overrides, sheetIndex: at }));
 }
 
 const THERMAL = groupIds('thermal-attacks');

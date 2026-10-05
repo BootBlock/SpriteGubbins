@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
+import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { generatePrompt } from './promptCompiler.ts';
@@ -34,9 +35,14 @@ function exclusionsOf(subject: SubjectDefinition, sheetIndex: number): string {
   return sectionOf(prompt, 'EXCLUSIONS').replaceAll(/\s+/gu, ' ');
 }
 
+/** The overlay sheet's index: it closes an ICON series. */
+function overlaySheetOf(subject: SubjectDefinition): number {
+  return sheetSeriesFor('ICON', subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
+}
+
 describe('the glow and particle exclusion', () => {
   it('excepts the glow and particles section 1 names on an icon sheet', () => {
-    const exclusions = exclusionsOf(GLOWING, 1);
+    const exclusions = exclusionsOf(GLOWING, 0);
     expect(exclusions).toContain(OVERLAY_LINE_EXCEPTED);
     expect(exclusions).toContain('belongs to its component and ends at a hard edge with it');
     expect(exclusions).not.toContain('any particle effect the inventory in section 4 does not name');
@@ -44,25 +50,27 @@ describe('the glow and particle exclusion', () => {
 
   it('gives no icon the glow of the overlay style Stepped Glow Bands, which another sheet draws in', () => {
     const subject = { ...defaultSubjectFor('ICON'), clothing: 'Stepped Glow Bands' };
-    const prompt = generatePrompt('ICON', subject, { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 });
+    const prompt = generatePrompt('ICON', subject, { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 0 });
     expect(sectionOf(prompt, 'SUBJECT DEFINITION')).toContain('- Overlay Style: Stepped Glow Bands');
     expect(sectionOf(prompt, 'EXCLUSIONS').replaceAll(/\s+/gu, ' ')).toContain(OVERLAY_LINE_EXCEPTED);
   });
 
   it('licenses the whole of section 1 where it states no overlay style', () => {
-    const exclusions = exclusionsOf({ ...GLOWING, clothing: '' }, 1);
+    const exclusions = exclusionsOf({ ...GLOWING, clothing: '' }, 0);
     expect(exclusions).toContain('that neither section 1 nor the inventory in section 4 names.');
     expect(exclusions).not.toContain('apart from');
   });
 
   it('licenses the inventory and the overlay style on the overlay sheet, and nothing else of section 1', () => {
-    const exclusions = exclusionsOf({ ...GLOWING, clothing: 'Stepped Glow Bands' }, 0);
+    const subject = { ...GLOWING, clothing: 'Stepped Glow Bands' };
+    const exclusions = exclusionsOf(subject, overlaySheetOf(subject));
     expect(exclusions).toContain(OVERLAY_LINE_LICENSED);
     expect(exclusions).not.toContain('neither section 1');
   });
 
   it('licenses only the inventory on the overlay sheet where no overlay style is stated', () => {
-    const exclusions = exclusionsOf({ ...GLOWING, clothing: '' }, 0);
+    const subject = { ...GLOWING, clothing: '' };
+    const exclusions = exclusionsOf(subject, overlaySheetOf(subject));
     expect(exclusions).toContain('that the inventory in section 4 does not name.');
     expect(exclusions).not.toContain('Overlay Style');
   });

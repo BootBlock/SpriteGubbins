@@ -919,10 +919,14 @@ describe('no category’s exclusion line names a component of its own plans', ()
     // The compiled pair the issue reported, on every configuration ICON can reach — its one mode
     // against all five direction sets. Section 4 orders the sweep, section 8 bans a timer, and the
     // sentence between them now covers whatever the inventory lists rather than three named pieces.
+    // On the overlay sheet, which lists the pieces and closes the series.
     for (const directions of CATEGORY_DIRECTION_SETS.ICON) {
-      const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), {
+      const subject = defaultSubjectFor('ICON');
+      const prompt = generatePrompt('ICON', subject, {
         ...DEFAULT_OUTPUT_CONFIG,
         directions,
+        sheetIndex:
+          sheetSeriesFor('ICON', subject, DEFAULT_OUTPUT_CONFIG.directionalMode, directions).length - 1,
       });
       const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
       const exclusions = sectionOf(prompt, 'EXCLUSIONS');
@@ -1198,7 +1202,15 @@ describe('no category calls the subject’s own additions an error in the specif
       const mode = DEFAULT_MODE_FOR[category];
       const label = labelFor(category);
       const pieces = parseAdditionalAnatomy(option);
-      const prompt = promptFor(category, mode, option);
+      // The sheet that draws the pieces: the first of most series, and ICON's overlay sheet, which closes its own.
+      const subject = defaultSubjectFor(category);
+      const { directions } = DEFAULT_OUTPUT_CONFIG;
+      const { length } = sheetSeriesFor(category, subject, mode, directions);
+      const sheetIndex =
+        Array.from({ length }, (_, index) => index).find(
+          (index) => anatomyFacingsFor(category, subject, mode, directions, index) !== null,
+        ) ?? 0;
+      const prompt = promptFor(category, mode, option, sheetIndex);
       const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
 
       // The contradiction needs both halves in the prompt to exist at all: §4 has to be asking for
@@ -1210,7 +1222,7 @@ describe('no category calls the subject’s own additions an error in the specif
         expect(inventory).toContain(`- ${formatAnatomyComponent(piece)}`);
       }
       expect(prompt).toContain(
-        `Exactly ${String(componentCountFor(category, defaultSubjectFor(category), mode, DEFAULT_OUTPUT_CONFIG.directions, 0, pieces, null))} components`,
+        `Exactly ${String(componentCountFor(category, subject, mode, directions, sheetIndex, pieces, null))} components`,
       );
 
       // Sliced by section rather than searched for in the whole prompt: the guard's exemption has to
@@ -1656,12 +1668,13 @@ describe('no count in a plan’s prose contradicts the entries it describes', ()
     // down — so it is held to the entries under it on every icon sheet the starter set and the whole
     // catalogue build, a short last sheet included.
     for (const subject of [standardSubjectOf('ICON'), ...iconCatalogueSubjects()]) {
-      const [, ...iconSheets] = sheetSeriesFor(
+      // Every sheet but the overlay sheet, which closes the series.
+      const iconSheets = sheetSeriesFor(
         'ICON',
         subject,
         'SINGLE_DIRECTION_POSE_LIBRARY',
         'SINGLE_FRONT',
-      );
+      ).slice(0, -1);
       expect(iconSheets.length).toBeGreaterThan(0);
       for (const plan of iconSheets) {
         const icons = groupNamed(plan, null);

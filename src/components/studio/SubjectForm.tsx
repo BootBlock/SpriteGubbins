@@ -1,7 +1,11 @@
 import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
 import { ICON_ROSTER_SECTION } from '../../constants/iconRosterSection.ts';
 import { SUBJECT_FIELD_GROUPS } from '../../constants/subjectGroups.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
+import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
+import { additionalAnatomyNote } from '../../utils/additionalAnatomyNote.ts';
 import { subjectGroupDigest } from '../../utils/studioDigests.ts';
 import { CollapsibleSection } from '../common/CollapsibleSection.tsx';
 import { ComboBox } from '../common/ComboBox.tsx';
@@ -35,6 +39,16 @@ export function SubjectForm() {
   const category = useSubjectStore((state) => state.category);
   const subject = useSubjectStore((state) => state.subject);
   const setField = useSubjectStore((state) => state.setField);
+  const sheetSubject = useSheetSubject();
+  const mode = useOutputStore((state) => state.output.directionalMode);
+  const directions = useOutputStore((state) => state.output.directions);
+  const rig = useOutputStore((state) => state.output.rigContract);
+  const anatomyNote = additionalAnatomyNote(
+    category,
+    sheetSubject,
+    parseAdditionalAnatomy(subject.additional_anatomy),
+    { mode, directions, rig },
+  );
 
   const { fields, iconRoster } = CATEGORY_OPTIONS[category];
   // The roster's section folds with the field groups, so the expand-all control counts it among them
@@ -106,6 +120,9 @@ export function SubjectForm() {
                     tooltip={field.tooltip}
                     value={subject[field.key]}
                     options={field.options}
+                    // What the pieces do to the sheets that draw them, which the card cannot say ahead of
+                    // the reader's own list (audit finding T8).
+                    description={field.key === 'additional_anatomy' ? anatomyNote : ''}
                     onChange={(value) => {
                       setField(field.key, value);
                     }}

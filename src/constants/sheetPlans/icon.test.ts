@@ -9,6 +9,7 @@ import type { SheetSubject } from '../../types/subject.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { iconSeries } from './icon.ts';
 import { ICON_OVERLAY_PLANS } from './iconOverlaySheet.ts';
+import { iconSheet } from './iconSheet.ts';
 import { sheetSeriesFor } from './index.ts';
 import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
 import { iconPickId } from '../../utils/iconPickId.ts';
@@ -55,7 +56,7 @@ function proseOf(sheet: ReturnType<typeof seriesOf>[number]): string {
 }
 
 describe('the ICON series', () => {
-  it('opens on the overlay sheet, which is all a set with no icons draws', () => {
+  it('is the overlay sheet alone for a set with no icons', () => {
     // A subject with no roster is only ever hand-built, and takes the default look.
     expect(seriesOf({ anatomy: '', setting: '', clothing: '', face_head: '' })).toEqual([
       ICON_OVERLAY_PLANS[DEFAULT_ICON_LOOK],
@@ -63,40 +64,49 @@ describe('the ICON series', () => {
     expect(seriesOf(subjectWith([]))).toEqual([ISOLATED_OVERLAY]);
   });
 
-  it('draws the starter set on one sheet of sixteen after the overlay sheet, as full-bleed squares', () => {
+  it('draws the starter set on one sheet of sixteen before the overlay sheet, as full-bleed squares', () => {
     const series = sheetSeriesFor(
       'ICON',
       defaultSubjectFor('ICON'),
       'SINGLE_DIRECTION_POSE_LIBRARY',
       'SINGLE_FRONT',
     );
-    expect(series.map((sheet) => sheet.name)).toEqual(['Overlay pieces', 'Icons 1–16']);
-    expect(entriesOf(series[1] ?? ISOLATED_OVERLAY).map((entry) => entry.label)).toEqual(
+    expect(series.map((sheet) => sheet.name)).toEqual(['Icons 1–16', 'Overlay pieces']);
+    expect(entriesOf(series[0] ?? ISOLATED_OVERLAY).map((entry) => entry.label)).toEqual(
       defaultSubjectFor('ICON').icons?.picks.map(iconPickId),
     );
-    expect(series[0]).toBe(ICON_OVERLAY_PLANS.FULL_BLEED_TILE);
-    expect(series[1]?.backdrop).toBe('OWN_SQUARE');
+    expect(series.at(-1)).toBe(ICON_OVERLAY_PLANS.FULL_BLEED_TILE);
+    expect(series[0]?.backdrop).toBe('OWN_SQUARE');
   });
 
-  it('runs a longer roster to a second sheet, named for the positions it holds', () => {
+  it('runs a longer roster to a second sheet, cut evenly and named for the positions each holds', () => {
     const picks = SINGLE_ONES.slice(0, 21);
-    const [overlay, first, second, ...rest] = seriesOf(subjectWith(picks));
+    const [first, second, overlay, ...rest] = seriesOf(subjectWith(picks));
     expect(overlay).toBe(ISOLATED_OVERLAY);
     expect(rest).toEqual([]);
-    expect(first?.name).toBe('Icons 1–16');
-    expect(second?.name).toBe('Icons 17–21');
-    expect(componentTotal(entriesOf(second ?? ISOLATED_OVERLAY))).toBe(5);
+    expect(first?.name).toBe('Icons 1–11');
+    expect(second?.name).toBe('Icons 12–21');
+    expect(componentTotal(entriesOf(first ?? ISOLATED_OVERLAY))).toBe(11);
+    expect(componentTotal(entriesOf(second ?? ISOLATED_OVERLAY))).toBe(10);
   });
 
   it('states the grid each sheet holds, and the short last row of a short sheet', () => {
-    const [, full, short] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 23)));
+    const [full] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 16)));
     expect(full?.groups[0]?.intro).toContain(
       'Sixteen drawings, four across and four down, in the reading order below.',
     );
+    const [even, short] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 23)));
+    expect(even?.groups[0]?.intro).toContain(
+      'Twelve drawings, four across and three down, in the reading order below.',
+    );
     expect(short?.groups[0]?.intro).toContain(
+      'Eleven drawings, four across and three down, the last row holding three, in the reading order below.',
+    );
+    const [seven] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 7)));
+    expect(seven?.groups[0]?.intro).toContain(
       'Seven drawings, four across and two down, the last row holding three, in the reading order below.',
     );
-    const [, one] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 1)));
+    const [one] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 1)));
     expect(one?.groups[0]?.intro).toContain('One drawing, alone in the middle of the sheet.');
     // And names itself with the one position it holds.
     expect(one?.name).toBe('Icon 1');
@@ -105,7 +115,7 @@ describe('the ICON series', () => {
   it.each(ICON_LOOKS)(
     'tells every %s icon that a colour its own entry names outranks the set’s colours',
     (look) => {
-      const [, sheet] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 4), 'High Fantasy', look));
+      const [sheet] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 4), 'High Fantasy', look));
       expect(sheet?.groups[0]?.intro?.replaceAll(/\s+/g, ' ')).toContain(
         'A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for it',
       );
@@ -115,7 +125,7 @@ describe('the ICON series', () => {
   it('counts a two-state entry as one icon drawn twice, in drawings rather than icons', () => {
     // A sound toggle and a potion are two icons and three drawings: the grid is stated in drawings,
     // and the intro says what the ×2 line is rather than calling it two different subjects.
-    const [, sheet] = seriesOf(subjectWith(['system-sound', 'heal-minor']));
+    const [sheet] = seriesOf(subjectWith(['system-sound', 'heal-minor']));
     const intro = sheet?.groups[0]?.intro?.replaceAll(/\s+/g, ' ') ?? '';
     expect(intro).toContain('Three drawings, three across and one down, in the reading order below.');
     expect(intro).toContain('an entry marked ×2 is one icon drawn once in each of its two states');
@@ -128,7 +138,7 @@ describe('the ICON series', () => {
   it.each(ICON_LOOKS)(
     'gives every %s icon sheet of a series one assembly sentence, so the series groups them as one run',
     (look) => {
-      const [, ...icons] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 40), 'High Fantasy', look));
+      const icons = seriesOf(subjectWith(SINGLE_ONES.slice(0, 40), 'High Fantasy', look)).slice(0, -1);
       expect(icons).toHaveLength(3);
       expect(new Set(icons.map((sheet) => sheet.assembly)).size).toBe(1);
       expect(icons.every((sheet) => sheet.drawnElsewhere === 'clothing')).toBe(true);
@@ -136,8 +146,8 @@ describe('the ICON series', () => {
   );
 
   it('draws each icon as its world’s look, and the same icons in another world in that world’s', () => {
-    const [, fantasy] = seriesOf(subjectWith(['heal-minor'], 'High Fantasy'));
-    const [, cyberpunk] = seriesOf(subjectWith(['heal-minor'], 'Near-Future Cyberpunk'));
+    const [fantasy] = seriesOf(subjectWith(['heal-minor'], 'High Fantasy'));
+    const [cyberpunk] = seriesOf(subjectWith(['heal-minor'], 'Near-Future Cyberpunk'));
     expect(entriesOf(fantasy ?? ISOLATED_OVERLAY)[0]?.text).toContain(
       'a small round glass vial of red potion',
     );
@@ -170,8 +180,12 @@ describe('the ICON look', () => {
   // exclusions and the wrappers can follow it, and nothing else does.
   it('declares a backdrop on full-bleed icon sheets alone, never on an overlay sheet', () => {
     const picks = SINGLE_ONES.slice(0, 20);
-    const [fullOverlay, ...fullIcons] = seriesOf(subjectWith(picks, 'High Fantasy', 'FULL_BLEED_TILE'));
-    const [markOverlay, ...markIcons] = seriesOf(subjectWith(picks, 'High Fantasy', 'ISOLATED_MARK'));
+    const fullSeries = seriesOf(subjectWith(picks, 'High Fantasy', 'FULL_BLEED_TILE'));
+    const markSeries = seriesOf(subjectWith(picks, 'High Fantasy', 'ISOLATED_MARK'));
+    const fullIcons = fullSeries.slice(0, -1);
+    const markIcons = markSeries.slice(0, -1);
+    const fullOverlay = fullSeries.at(-1);
+    const markOverlay = markSeries.at(-1);
 
     expect(fullIcons.map((sheet) => sheet.backdrop)).toEqual(['OWN_SQUARE', 'OWN_SQUARE']);
     expect(markIcons.map((sheet) => sheet.backdrop)).toEqual([undefined, undefined]);
@@ -180,7 +194,7 @@ describe('the ICON look', () => {
   });
 
   it('describes a full-bleed square edge to edge, with no frame, and a backdrop that is never a scene', () => {
-    const [, sheet] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 4), 'High Fantasy', 'FULL_BLEED_TILE'));
+    const [sheet] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 4), 'High Fantasy', 'FULL_BLEED_TILE'));
     const prose = proseOf(sheet ?? ISOLATED_OVERLAY);
     expect(prose).toContain('a square tile painted edge to edge');
     expect(prose).toContain(
@@ -194,8 +208,8 @@ describe('the ICON look', () => {
   });
 
   it('keeps every word of a backdrop and a square off the isolated sheets', () => {
-    const [overlay, sheet] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 4)));
-    for (const plan of [overlay, sheet]) {
+    const [sheet, overlay] = seriesOf(subjectWith(SINGLE_ONES.slice(0, 4)));
+    for (const plan of [sheet, overlay]) {
       expect(proseOf(plan ?? ISOLATED_OVERLAY)).not.toMatch(/backdrop|square|edge to edge/);
     }
   });
@@ -207,4 +221,26 @@ describe('the ICON look', () => {
       'Every piece is drawn to the square of one tile',
     );
   });
+});
+
+/** That every icon sheet states one cell, whatever it holds (audit finding T5). */
+describe('the cell an icon sheet is drawn on', () => {
+  it.each(ICON_LOOKS)(
+    'names one cell, 1/4 of the sheet’s width, on a full sheet and a short one under %s',
+    (look) => {
+      const cell = 'Each drawing sits in a cell 1/4 of the sheet’s width each way';
+      const intro = (count: number) => {
+        const entries = Array.from({ length: count }, (_, at) => ({
+          label: `icon-${String(at)}`,
+          text: `Icon ${String(at)} ×1`,
+          count: 1,
+          kind: 'structure' as const,
+        }));
+        return iconSheet(entries, 1, look, 'FULL_COLOUR').groups[0]?.intro ?? '';
+      };
+      expect(intro(16)).toContain(cell);
+      expect(intro(2)).toContain(cell);
+      expect(intro(2)).toContain('leaves\nthe rest of its canvas empty rather than drawing them larger');
+    },
+  );
 });

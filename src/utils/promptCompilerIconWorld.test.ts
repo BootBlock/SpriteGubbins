@@ -28,7 +28,7 @@ const flat = (text: string): string => text.replaceAll(/\s+/g, ' ');
 function firstIconSheet(setting: string): { readonly subject: string; readonly inventory: string } {
   const subject: SubjectDefinition = { ...defaultSubjectFor('ICON'), setting };
   expect(sheetSeriesFor('ICON', subject, OUTPUT.directionalMode, OUTPUT.directions).length).toBe(2);
-  const sheet = generatePrompt('ICON', subject, { ...OUTPUT, sheetIndex: 1 });
+  const sheet = generatePrompt('ICON', subject, { ...OUTPUT, sheetIndex: 0 });
   return {
     subject: flat(sectionOf(sheet, 'SUBJECT DEFINITION')),
     inventory: flat(sectionOf(sheet, 'COMPONENT INVENTORY')),

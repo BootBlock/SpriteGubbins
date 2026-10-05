@@ -203,7 +203,8 @@ describe('SqliteBackend — icons of the reader’s own', () => {
     const subject = (await listing)[0]?.subject;
     expect(subject).toEqual(customIconSubject());
     if (subject === undefined) throw new Error('the preset did not load');
-    const prompt = generatePrompt('ICON', subject, { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 });
+    // The first icon sheet, which opens the series and draws the reader's own entries.
+    const prompt = generatePrompt('ICON', subject, { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 0 });
     expect(prompt).not.toContain('[SEC:');
     expect(prompt).toContain('Nightcity Keycard Relic ×1');
   });

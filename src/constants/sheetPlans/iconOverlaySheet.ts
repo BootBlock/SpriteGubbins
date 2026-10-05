@@ -61,14 +61,15 @@ nothing about which icon they are looking at.`,
 };
 
 /**
- * The first sheet of every ICON series, once per look: the state and overlay pieces the engine lays over
+ * The last sheet of every ICON series, once per look: the state and overlay pieces the engine lays over
  * any icon of the set, drawn once for the whole set.
  *
- * **Its own sheet, once per set, and first.** The pieces used to share a sheet with twelve icons, which
+ * **Its own sheet, once per set, and last.** The pieces used to share a sheet with twelve icons, which
  * capped a set at twelve and spent a third of every grid on pieces that do not change between grids. The
- * maintainer asked for them once per set, so they are a sheet of their own, and it opens the series
- * because a run series draws the reader's *Extra Overlay Pieces* on its first sheet only
- * (`anatomyFacingsFor`) — the overlay library is where those belong.
+ * maintainer asked for them once per set, so they are a sheet of their own. It opened the series until
+ * audit finding T6, which drew pieces matched to icons no sheet had drawn yet; it closes it now, after
+ * the icons it is matched to, and declares `anatomy`, so the reader's *Extra Overlay Pieces* are drawn
+ * here rather than on the series' first sheet (`anatomyFacingsFor`).
  *
  * **The state pieces are pieces rather than redrawn icons**, and that is the distinction worth holding:
  * a disabled icon is the same drawing under a veil the engine applies, so the veil is what the set owes,
@@ -139,6 +140,8 @@ function overlaySheet(wording: OverlayWording): SheetPlan {
     // The selected ring and the highlight halo are edges round a square, so no wrapper negates a frame or
     // a border here (audit finding T2).
     frames: 'DRAWN',
+    // The reader's *Extra Overlay Pieces* belong to the overlay library, wherever it falls in the series.
+    anatomy: 'APPENDED',
     scaleUnit: 'one icon',
     componentClass: 'one overlay piece the engine lays over an icon of this one set',
     assemblyFailure: {

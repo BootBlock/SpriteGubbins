@@ -30,9 +30,21 @@ function iconSet(look: IconLook): SubjectDefinition {
   return { ...ICON, icons: { look, colourMode: 'FULL_COLOUR', picks: ICON.icons?.picks ?? [] } };
 }
 
-/** The ICON prompt for one sheet of a set in `look` — sheet 0 is the overlay sheet, sheet 1 the icons. */
-function iconPrompt(look: IconLook, sheetIndex: number, overrides: Partial<OutputConfig> = {}): string {
-  return generatePrompt('ICON', iconSet(look), { ...OUTPUT, ...overrides, sheetIndex });
+/**
+ * The ICON prompt for one sheet of a set in `look` — its first icon sheet, or the overlay sheet that
+ * closes the series.
+ */
+function iconPrompt(
+  look: IconLook,
+  sheet: 'ICONS' | 'OVERLAY',
+  overrides: Partial<OutputConfig> = {},
+): string {
+  const subject = iconSet(look);
+  const sheetIndex =
+    sheet === 'ICONS'
+      ? 0
+      : sheetSeriesFor('ICON', subject, OUTPUT.directionalMode, OUTPUT.directions).length - 1;
+  return generatePrompt('ICON', subject, { ...OUTPUT, ...overrides, sheetIndex });
 }
 
 const flat = (text: string): string => text.replaceAll(/\s+/g, ' ');
@@ -43,7 +55,7 @@ const AUDIT_BACKDROP = 'Every component is a square painted to its edge, backdro
 
 describe('the full-bleed icon square in the compiled prompt', () => {
   it('hands each square its own backdrop in section 0, and the gutters to the key', () => {
-    const contract = flat(renderContractOf(iconPrompt('FULL_BLEED_TILE', 1)));
+    const contract = flat(renderContractOf(iconPrompt('FULL_BLEED_TILE', 'ICONS')));
     expect(contract).toContain(CONTRACT_BACKDROP);
     expect(contract).toContain(
       'the background is only the gutters between the squares, so flat magenta #FF00FF fills those gutters and never shows inside a square',
@@ -52,25 +64,25 @@ describe('the full-bleed icon square in the compiled prompt', () => {
 
   it('names a transparent field by what it is, never as a colour', () => {
     const contract = flat(
-      renderContractOf(iconPrompt('FULL_BLEED_TILE', 1, { backgroundKey: 'TRANSPARENT' })),
+      renderContractOf(iconPrompt('FULL_BLEED_TILE', 'ICONS', { backgroundKey: 'TRANSPARENT' })),
     );
     expect(contract).toContain('so fully transparent alpha fills those gutters');
   });
 
   it.each(ICON_LOOKS)('states the contract and the audit together or not at all on a %s set', (look) => {
-    for (const sheetIndex of [0, 1]) {
-      const prompt = iconPrompt(look, sheetIndex);
+    for (const sheet of ['OVERLAY', 'ICONS'] as const) {
+      const prompt = iconPrompt(look, sheet);
       const contract = renderContractOf(prompt).includes(CONTRACT_BACKDROP);
       const audit = flat(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')).includes(AUDIT_BACKDROP);
       expect(audit).toBe(contract);
-      expect(contract).toBe(look === 'FULL_BLEED_TILE' && sheetIndex === 1);
+      expect(contract).toBe(look === 'FULL_BLEED_TILE' && sheet === 'ICONS');
     }
   });
 
   it('swaps the ban on backgrounds for a ban on scenery beyond the square, on the icon sheet alone', () => {
-    const squares = flat(sectionOf(iconPrompt('FULL_BLEED_TILE', 1), 'EXCLUSIONS'));
-    const marks = flat(sectionOf(iconPrompt('ISOLATED_MARK', 1), 'EXCLUSIONS'));
-    const overlay = flat(sectionOf(iconPrompt('FULL_BLEED_TILE', 0), 'EXCLUSIONS'));
+    const squares = flat(sectionOf(iconPrompt('FULL_BLEED_TILE', 'ICONS'), 'EXCLUSIONS'));
+    const marks = flat(sectionOf(iconPrompt('ISOLATED_MARK', 'ICONS'), 'EXCLUSIONS'));
+    const overlay = flat(sectionOf(iconPrompt('FULL_BLEED_TILE', 'OVERLAY'), 'EXCLUSIONS'));
 
     expect(squares).not.toContain('Backgrounds, environments');
     expect(squares).toContain('any scenery beyond a square’s own backdrop');
@@ -85,7 +97,7 @@ describe('the full-bleed icon square in the compiled prompt', () => {
   });
 
   it('audits the squares against each other on a full-bleed icon sheet', () => {
-    const audit = flat(sectionOf(iconPrompt('FULL_BLEED_TILE', 1), 'LAYOUT AND SELF-AUDIT'));
+    const audit = flat(sectionOf(iconPrompt('FULL_BLEED_TILE', 'ICONS'), 'LAYOUT AND SELF-AUDIT'));
     expect(audit).toContain('nothing crossing its square’s edge');
     expect(audit).toContain(
       'Every square is the same size, and every subject fills its square to the same margin',
@@ -94,8 +106,8 @@ describe('the full-bleed icon square in the compiled prompt', () => {
   });
 
   it('shapes the overlay pieces to the square of a tile under the full-bleed look only', () => {
-    const squares = flat(sectionOf(iconPrompt('FULL_BLEED_TILE', 0), 'COMPONENT INVENTORY'));
-    const marks = flat(sectionOf(iconPrompt('ISOLATED_MARK', 0), 'COMPONENT INVENTORY'));
+    const squares = flat(sectionOf(iconPrompt('FULL_BLEED_TILE', 'OVERLAY'), 'COMPONENT INVENTORY'));
+    const marks = flat(sectionOf(iconPrompt('ISOLATED_MARK', 'OVERLAY'), 'COMPONENT INVENTORY'));
     expect(squares).toContain('a dark wedge clipped to the tile’s square');
     expect(marks).toContain(
       'Cooldown sweep ×2: a dark wedge swept clockwise from the top — a quarter elapsed, and three quarters',
@@ -124,10 +136,10 @@ describe('the full-bleed icon square in the wrappers', () => {
   it.each(['QWEN_IMAGE', 'STABLE_DIFFUSION'] as const)(
     'drops `gradient background` from %s only where the sheet carries its own backdrop',
     (targetModel) => {
-      expect(iconPrompt('FULL_BLEED_TILE', 1, { targetModel })).not.toContain('gradient background');
-      expect(iconPrompt('FULL_BLEED_TILE', 1, { targetModel })).toContain('scene background');
-      expect(iconPrompt('FULL_BLEED_TILE', 0, { targetModel })).toContain('gradient background');
-      expect(iconPrompt('ISOLATED_MARK', 1, { targetModel })).toContain('gradient background');
+      expect(iconPrompt('FULL_BLEED_TILE', 'ICONS', { targetModel })).not.toContain('gradient background');
+      expect(iconPrompt('FULL_BLEED_TILE', 'ICONS', { targetModel })).toContain('scene background');
+      expect(iconPrompt('FULL_BLEED_TILE', 'OVERLAY', { targetModel })).toContain('gradient background');
+      expect(iconPrompt('ISOLATED_MARK', 'ICONS', { targetModel })).toContain('gradient background');
       expect(
         generatePrompt(DEFAULT_PRESET.category, DEFAULT_PRESET.subject, {
           ...DEFAULT_OUTPUT_CONFIG,
@@ -138,12 +150,12 @@ describe('the full-bleed icon square in the wrappers', () => {
   );
 
   it.each(ICON_LOOKS)('has Sol carry every %s inventory entry and the backdrop rule unshortened', (look) => {
-    const prompt = iconPrompt(look, 1, { targetModel: 'CHATGPT_5_6_SOL' });
+    const prompt = iconPrompt(look, 'ICONS', { targetModel: 'CHATGPT_5_6_SOL' });
     const directive = prompt.slice(0, prompt.indexOf('# MODULAR SPRITE-SHEET SPECIFICATION'));
     expect(directive).toMatch(/- the numbered items of section 0\n/);
     expect(directive).toMatch(/- the inventory in section \d+\n/);
 
-    const [, sheet] = sheetSeriesFor('ICON', iconSet(look), 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT');
+    const [sheet] = sheetSeriesFor('ICON', iconSet(look), 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT');
     const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
     const entries = sheet?.groups.flatMap((group) => group.entries) ?? [];
     expect(entries).toHaveLength(16);
@@ -156,17 +168,17 @@ describe('the full-bleed icon square in the wrappers', () => {
 describe('the full-bleed backdrop under every render style', () => {
   /** Section 0 of a full-bleed icon sheet under `renderStyle`, its line breaks folded. */
   const contractUnder = (overrides: Partial<OutputConfig>): string =>
-    flat(renderContractOf(iconPrompt('FULL_BLEED_TILE', 1, overrides)));
+    flat(renderContractOf(iconPrompt('FULL_BLEED_TILE', 'ICONS', overrides)));
   const SOFT = 'a soft field of colour, light and texture';
 
   it.each(RENDER_STYLES)(
     'states one backdrop rule under %s, and never hands it every component rule',
     (renderStyle) => {
-      const prompt = flat(iconPrompt('FULL_BLEED_TILE', 1, { renderStyle }));
+      const prompt = flat(iconPrompt('FULL_BLEED_TILE', 'ICONS', { renderStyle }));
       expect(prompt).not.toContain('a backdrop keeps every rule a component keeps');
       expect(contractUnder({ renderStyle }).match(/The backdrop is /g)).toHaveLength(1);
       expect(prompt).toContain(
-        'The interior detail and the materials section 1 names are the subject’s, never the backdrop’s.',
+        'The interior detail and the materials the subject definition names are the subject’s, never the backdrop’s.',
       );
     },
   );
@@ -174,7 +186,7 @@ describe('the full-bleed backdrop under every render style', () => {
   it.each(['SILHOUETTE_ONLY', 'CLAY_RENDER'] as const)(
     'gives the %s pass’s single fill to the subject and the backdrop one flat field',
     (renderStyle) => {
-      const prompt = flat(iconPrompt('FULL_BLEED_TILE', 1, { renderStyle }));
+      const prompt = flat(iconPrompt('FULL_BLEED_TILE', 'ICONS', { renderStyle }));
       expect(prompt).toContain(
         'one flat field of a single colour, a clear step in value from the subject, with no light, shade, texture or gradient across it',
       );
@@ -210,7 +222,7 @@ describe('the full-bleed backdrop under every render style', () => {
     // Stable Diffusion and Qwen negate `smooth gradients` wherever the style's surface entry does, so
     // the backdrop sentence must forbid one there and must not ask for a soft field.
     const forbids = RENDER_STYLE_SURFACE[renderStyle].negatives.includes('smooth gradients');
-    const raw = iconPrompt('FULL_BLEED_TILE', 1, { renderStyle, targetModel: 'STABLE_DIFFUSION' });
+    const raw = iconPrompt('FULL_BLEED_TILE', 'ICONS', { renderStyle, targetModel: 'STABLE_DIFFUSION' });
     const prompt = flat(raw);
     expect(prompt.includes('smooth gradients')).toBe(forbids);
     if (forbids) {
@@ -227,7 +239,7 @@ describe('the outline on a full-bleed square', () => {
     'it runs round the subject’s own silhouette, and is never drawn along the square’s edge';
 
   it('puts a pure black outer contour round the subject, never along the square’s edge', () => {
-    const prompt = iconPrompt('FULL_BLEED_TILE', 1, {
+    const prompt = iconPrompt('FULL_BLEED_TILE', 'ICONS', {
       renderStyle: 'PAINTED_2D',
       outlineStyle: 'PURE_BLACK_OUTLINE',
     });
@@ -236,13 +248,13 @@ describe('the outline on a full-bleed square', () => {
   });
 
   it('says nothing about an outline the sheet does not draw, or on an isolated mark', () => {
-    expect(flat(iconPrompt('FULL_BLEED_TILE', 1, { outlineStyle: 'OUTLINE_LESS_ALBEDO' }))).not.toContain(
+    expect(
+      flat(iconPrompt('FULL_BLEED_TILE', 'ICONS', { outlineStyle: 'OUTLINE_LESS_ALBEDO' })),
+    ).not.toContain(ROUND_THE_SUBJECT);
+    expect(flat(iconPrompt('FULL_BLEED_TILE', 'ICONS', { renderStyle: 'SILHOUETTE_ONLY' }))).not.toContain(
       ROUND_THE_SUBJECT,
     );
-    expect(flat(iconPrompt('FULL_BLEED_TILE', 1, { renderStyle: 'SILHOUETTE_ONLY' }))).not.toContain(
-      ROUND_THE_SUBJECT,
-    );
-    expect(flat(iconPrompt('ISOLATED_MARK', 1, { outlineStyle: 'PURE_BLACK_OUTLINE' }))).not.toContain(
+    expect(flat(iconPrompt('ISOLATED_MARK', 'ICONS', { outlineStyle: 'PURE_BLACK_OUTLINE' }))).not.toContain(
       ROUND_THE_SUBJECT,
     );
   });

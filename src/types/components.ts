@@ -851,6 +851,17 @@ interface SheetPlanFields {
    * **`DRAWN` alone**, for the reason {@link SheetPlan.backdrop} gives.
    */
   readonly frames?: 'DRAWN';
+  /**
+   * That this `'run'` sheet is the one that draws the subject's additional anatomy, where it is not the
+   * first sheet of its series (`anatomyFacingsFor`).
+   *
+   * **ICON's overlay sheet declares it** (audit finding T6): it closes the series, after the icons its
+   * pieces are matched to, and the reader's *Extra Overlay Pieces* belong to it. A series no plan of
+   * which declares it draws the anatomy on its first sheet, the trunk every other run series opens on.
+   *
+   * **`APPENDED` alone**, for the reason {@link SheetPlan.backdrop} gives.
+   */
+  readonly anatomy?: 'APPENDED';
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */

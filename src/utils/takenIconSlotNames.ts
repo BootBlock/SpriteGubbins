@@ -14,7 +14,7 @@ let built: ReadonlyMap<string, string> | undefined;
  * **The whole catalogue, not only the ticked part**, so an entry written today does not collide with the
  * catalogue entry ticked tomorrow, which would leave the reader holding two icons the set cannot hold at
  * once. Each entry's id and each of its pair's drawings are taken. **The overlay sheet's pieces too**,
- * in both looks, line labels and drawn names alike: the overlay sheet is sheet one of every set, and its
+ * in both looks, line labels and drawn names alike: the overlay sheet closes every set's series, and its
  * files sit beside the icons' in the game's folder, so a reader's `Locked mark` would overwrite the
  * overlay's.
  */

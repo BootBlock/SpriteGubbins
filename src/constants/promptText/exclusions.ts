@@ -210,8 +210,9 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, (plan: Sh
  *
  * **It is a function of the sheet, not a sentence the record states.** The block it exempts is
  * conditional — `componentBreakdownFor` appends nothing when the subject named no pieces, and
- * `anatomyFacingsFor` returns `null` on every sheet of a series but the first, which is what keeps a
- * tail off the articulation sheets that would have nothing to hang it on. An unconditional clause
+ * `anatomyFacingsFor` returns `null` on every sheet of a series but the one that draws the pieces —
+ * the first, or ICON's overlay sheet, which closes its series — and that is what keeps a tail off the
+ * articulation sheets that would have nothing to hang it on. An unconditional clause
  * therefore shipped an exception with no members on the commonest prompt the app composes — the
  * default subject names none — and on every later sheet of a series besides: the character and
  * creature articulation sheets under each of their five direction sets, and the font's three
