@@ -14,7 +14,7 @@
  * Coarse on purpose, as `ComponentKind` is: a kind is a shelf a reader browses, and the groups inside
  * it (restoratives, the thermal attacks, mounts) are what a reader actually ticks.
  *
- * - `ITEM`: things a character carries and uses up.
+ * - `ITEM`: things a character carries, uses up or equips, and the slots that hold what it equips.
  * - `SPELL`: the abilities a spellbook and an action bar hold, every one in a {@link DamageSchool}.
  * - `SOCIAL`: emotes, the chat channels and the faction emblems a player sides with.
  * - `COMPANION`: mounts, pets and the commands a pet bar gives.

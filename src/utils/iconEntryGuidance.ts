@@ -1,6 +1,6 @@
 import { fieldLabelFor } from '../constants/categories/index.ts';
 import type { IconCatalogueEntry } from '../types/iconCatalogue.ts';
-import type { CustomIconEntry, IconEntry } from '../types/iconRoster.ts';
+import type { CustomIconEntry, IconColourMode, IconEntry } from '../types/iconRoster.ts';
 import { damageSchoolName } from './damageSchoolName.ts';
 import { iconLookText } from './iconLookText.ts';
 import { iconSlotNames } from './iconSlotNames.ts';
@@ -21,10 +21,28 @@ import { spokenIconState } from './spokenIconState.ts';
  * holds one (`inLibrary`), and otherwise the untick takes the icon away — its school and its shape. Its look is not repeated, because the
  * row shows it under the label as the reader wrote it, and a look written to its limit would take the
  * card past the length a card is read at.
+ *
+ * **A spell's school colour is said as the set's colour mode draws it**: a tint mask draws every colour
+ * as its lightness in grey (audit finding M1), so a card promising that a player tells the schools apart
+ * by hue would describe a set the prompt no longer asks for.
  */
-export function iconEntryGuidance(entry: IconCatalogueEntry, world: string): string;
-export function iconEntryGuidance(entry: CustomIconEntry, world: string, inLibrary: boolean): string;
-export function iconEntryGuidance(entry: IconEntry, world: string, inLibrary = false): string {
+export function iconEntryGuidance(
+  entry: IconCatalogueEntry,
+  world: string,
+  colourMode: IconColourMode,
+): string;
+export function iconEntryGuidance(
+  entry: CustomIconEntry,
+  world: string,
+  colourMode: IconColourMode,
+  inLibrary: boolean,
+): string;
+export function iconEntryGuidance(
+  entry: IconEntry,
+  world: string,
+  colourMode: IconColourMode,
+  inLibrary = false,
+): string {
   const field = fieldLabelFor('ICON', 'setting');
   const typed = world.trim();
   const where = typed === '' ? `With no ${field} set` : `Under your ${field}, “${typed}”`;
@@ -32,34 +50,49 @@ export function iconEntryGuidance(entry: IconEntry, world: string, inLibrary = f
     return [
       ownSlotParagraph(entry),
       `${where}, the sheet draws your own look as you wrote it, as it would under any other. ${inLibrary ? 'Unticking takes it off your set, and your library keeps its own copy.' : 'Your library does not hold it, so unticking takes it away for good.'}`,
-      ...ownSchoolParagraph(entry, world),
+      ...ownSchoolParagraph(entry, world, colourMode),
       shapeParagraph(entry),
     ].join('\n\n');
   }
   return [
     slotParagraph(entry),
     `${where}, the sheet draws it as ${iconLookText(entry, world)}.`,
-    ...schoolParagraph(entry, world),
+    ...schoolParagraph(entry, world, colourMode),
     shapeParagraph(entry),
   ].join('\n\n');
 }
 
 /**
- * Why a spell's line names a colour: the school's colour is the icon's own, ahead of the set's. Nothing
- * for an entry outside a school. The school is named as `world` names it, as the line itself does.
+ * Why a spell's line names a colour: the school's colour is the icon's own, ahead of the set's, or on a
+ * tint mask its lightness in grey. Nothing for an entry outside a school. The school is named as `world`
+ * names it, as the line itself does.
  */
-function schoolParagraph(entry: IconCatalogueEntry, world: string): readonly string[] {
+function schoolParagraph(
+  entry: IconCatalogueEntry,
+  world: string,
+  colourMode: IconColourMode,
+): readonly string[] {
   if (entry.school === undefined) return [];
+  const school = damageSchoolName(entry.school, world);
   return [
-    `It belongs to the ${damageSchoolName(entry.school, world)} school. Every icon of that school shares its colour, which leads the icon ahead of your set’s primary and accent colours, so a player tells the schools apart at a glance.`,
+    colourMode === 'TINT_MASK'
+      ? `It belongs to the ${school} school. On your tint mask the sheet draws the school’s colour as its lightness in grey, so the schools share one tint and differ by shade and shape.`
+      : `It belongs to the ${school} school. Every icon of that school shares its colour, which leads the icon ahead of your set’s primary and accent colours, so a player tells the schools apart at a glance.`,
   ];
 }
 
 /** The same fact for an entry of the reader's own, said in one sentence to leave room for their words. */
-function ownSchoolParagraph(entry: CustomIconEntry, world: string): readonly string[] {
+function ownSchoolParagraph(
+  entry: CustomIconEntry,
+  world: string,
+  colourMode: IconColourMode,
+): readonly string[] {
   if (entry.school === undefined) return [];
+  const school = damageSchoolName(entry.school, world);
   return [
-    `It belongs to the ${damageSchoolName(entry.school, world)} school, whose one colour leads the icon ahead of your set’s own colours.`,
+    colourMode === 'TINT_MASK'
+      ? `It belongs to the ${school} school, whose colour your tint mask draws as its lightness in grey.`
+      : `It belongs to the ${school} school, whose one colour leads the icon ahead of your set’s own colours.`,
   ];
 }
 

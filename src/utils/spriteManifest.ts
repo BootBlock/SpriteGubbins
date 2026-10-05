@@ -197,7 +197,9 @@ function manifestCell(cell: SpriteCell, scale: number): ManifestCell {
     height: cell.height * scale,
     anchor: cell.anchor,
     fit: cell.fit,
-  } satisfies Record<keyof SpriteCell | keyof ManifestCell, unknown>;
+    // Not published: the step only decides the factor, and each sprite's placement states the size it
+    // was drawn at, which is what an importer reads.
+  } satisfies Record<Exclude<keyof SpriteCell, 'statedStep'> | keyof ManifestCell, unknown>;
 }
 
 /**

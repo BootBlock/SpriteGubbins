@@ -5,6 +5,7 @@ import type { IconColourMode } from '../types/iconRoster.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { outputForRoster } from './outputForRoster.ts';
 import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
 
 /** An ICON subject holding `picks`: an icon sheet per sixteen components or part of it, then the overlay sheet. */
 function iconSubject(
@@ -17,18 +18,49 @@ function iconSubject(
   };
 }
 
-describe('outputForRoster', () => {
-  it('pulls an index past the series back to its last sheet', () => {
-    const output = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 4 };
+/** `count` one-component catalogue ids, in catalogue order. */
+function singles(count: number): readonly string[] {
+  return ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
+    .filter((entry) => entry.states === undefined)
+    .slice(0, count)
+    .map((entry) => entry.id);
+}
 
-    expect(outputForRoster('ICON', iconSubject(['heal-minor']), output).sheetIndex).toBe(1);
-    expect(outputForRoster('ICON', iconSubject([]), output).sheetIndex).toBe(0);
+describe('outputForRoster', () => {
+  it('pulls an icon sheet past the new series back to its last icon sheet', () => {
+    // Forty icons are three icon sheets and the overlay sheet. A reader on the third icon sheet who
+    // unticks down to one sheet's worth lands on that sheet, not on the overlay sheet behind it.
+    const output = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 2 };
+    const before = iconSubject(singles(40));
+
+    expect(outputForRoster('ICON', before, iconSubject(singles(10)), output).sheetIndex).toBe(0);
+    expect(outputForRoster('ICON', before, iconSubject([]), output).sheetIndex).toBe(0);
+  });
+
+  it('keeps a reader on the overlay sheet there, however many sheets the roster now takes', () => {
+    // The overlay sheet closes the series (audit finding T6), so it moves as the roster grows or shrinks.
+    const before = iconSubject(singles(20));
+    const onOverlay = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 2 };
+
+    expect(outputForRoster('ICON', before, iconSubject(singles(40)), onOverlay).sheetIndex).toBe(3);
+    expect(outputForRoster('ICON', before, iconSubject(singles(10)), onOverlay).sheetIndex).toBe(1);
+    expect(
+      outputForRoster('ICON', iconSubject([]), iconSubject(singles(10)), DEFAULT_OUTPUT_CONFIG).sheetIndex,
+    ).toBe(1);
+  });
+
+  it('keeps a reader on an icon sheet among the icon sheets when a tick adds one', () => {
+    const before = iconSubject(singles(20));
+    const onIcons = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 };
+
+    expect(outputForRoster('ICON', before, iconSubject(singles(40)), onIcons)).toBe(onIcons);
   });
 
   it('hands back the same object where the series holds the index and the set can take the key', () => {
     const output = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1, backgroundKey: 'PURE_WHITE' } as const;
+    const subject = iconSubject(['heal-minor']);
 
-    expect(outputForRoster('ICON', iconSubject(['heal-minor']), output)).toBe(output);
+    expect(outputForRoster('ICON', subject, subject, output)).toBe(output);
   });
 
   it('moves a tint mask off the white key, and leaves every other key alone', () => {
@@ -38,18 +70,21 @@ describe('outputForRoster', () => {
     const black = { ...white, backgroundKey: 'PURE_BLACK' } as const;
     const mask = iconSubject(['heal-minor'], 'TINT_MASK');
 
-    expect(outputForRoster('ICON', mask, white)).toEqual({ ...white, backgroundKey: 'MAGENTA_FF00FF' });
-    expect(outputForRoster('ICON', mask, black)).toBe(black);
+    expect(outputForRoster('ICON', mask, mask, white)).toEqual({ ...white, backgroundKey: 'MAGENTA_FF00FF' });
+    expect(outputForRoster('ICON', mask, mask, black)).toBe(black);
   });
 
   it('moves a tint mask off a pinned palette, and leaves a full-colour set’s alone', () => {
     // A mask is drawn in neutral greys, which no pinned palette's hues can state (audit finding M1).
     const pinned = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1, palette: 'GAME_BOY_DMG' } as const;
 
-    expect(outputForRoster('ICON', iconSubject(['heal-minor'], 'TINT_MASK'), pinned)).toEqual({
+    const mask = iconSubject(['heal-minor'], 'TINT_MASK');
+    const full = iconSubject(['heal-minor']);
+
+    expect(outputForRoster('ICON', mask, mask, pinned)).toEqual({
       ...pinned,
       palette: 'FREE',
     });
-    expect(outputForRoster('ICON', iconSubject(['heal-minor']), pinned)).toBe(pinned);
+    expect(outputForRoster('ICON', full, full, pinned)).toBe(pinned);
   });
 });

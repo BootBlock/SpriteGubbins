@@ -21,6 +21,7 @@ const ICON: SpriteCell = {
   height: 128,
   anchor: { x: 'CENTRE', y: 'MIDDLE' },
   fit: 'FILL_SQUARE',
+  statedStep: null,
 };
 
 describe('resolveSpriteCell, with a fit', () => {
@@ -31,12 +32,12 @@ describe('resolveSpriteCell, with a fit', () => {
   } as const;
 
   it('keeps a resizing fit on a sheet read at a pixel grid of 1', () => {
-    expect(resolveSpriteCell({ ...choice, fit: 'SCALE_SET' }, null, 1)?.fit).toBe('SCALE_SET');
+    expect(resolveSpriteCell({ ...choice, fit: 'SCALE_SET' }, null, 1, null)?.fit).toBe('SCALE_SET');
   });
 
   it('places a sheet with a pixel scale as drawn, whatever fit is stored', () => {
     // Resizing pixel art by area blends the pixels the lattice reading exists to keep apart.
-    expect(resolveSpriteCell({ ...choice, fit: 'FILL_SQUARE' }, null, 4)?.fit).toBe('REFUSE');
+    expect(resolveSpriteCell({ ...choice, fit: 'FILL_SQUARE' }, null, 4, null)?.fit).toBe('REFUSE');
   });
 
   it('opens on the fit that resizes nothing, so the tab behaves as it always did', () => {

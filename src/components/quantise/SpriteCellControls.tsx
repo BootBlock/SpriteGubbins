@@ -8,7 +8,7 @@ import {
 import type { TargetSize } from '../../types/output.ts';
 import type { PixelGrid, SpriteBox } from '../../types/quantiser.ts';
 import { CELL_ANCHORS_X, CELL_ANCHORS_Y, SPRITE_CELL_SOURCES } from '../../types/spriteCell.ts';
-import type { SpriteCellChoice, SpriteCellSource } from '../../types/spriteCell.ts';
+import type { SheetStep, SpriteCellChoice, SpriteCellSource } from '../../types/spriteCell.ts';
 import { cellBadgeText } from '../../utils/cellBadgeText.ts';
 import {
   oversizedSprites,
@@ -39,6 +39,8 @@ interface SpriteCellControlsProps {
    * its pixels — see `resizingFitAllowed`, which the press resolves the cell through as well.
    */
   readonly grid: PixelGrid | null;
+  /** The grid step the studio's sheet states, which `Scale evenly` reads where the sprites give none. */
+  readonly statedStep: SheetStep | null;
   /**
    * The sprites the segmentation found, in the 1:1 result's coordinates.
    *
@@ -66,7 +68,14 @@ interface SpriteCellControlsProps {
  * size; `SpriteFitChoice` says how its own pills are held back on a pixel-art sheet. See `SpriteCell`
  * for what the whole arrangement is for, and `spriteCellSource` for what a reader is told about it.
  */
-export function SpriteCellControls({ choice, onChange, target, grid, boxes }: SpriteCellControlsProps) {
+export function SpriteCellControls({
+  choice,
+  onChange,
+  target,
+  grid,
+  statedStep,
+  boxes,
+}: SpriteCellControlsProps) {
   const sources = SPRITE_CELL_SOURCES.filter(
     (offered) => offered !== 'TARGET' || (target !== null && targetFitsCell(target)),
   );
@@ -79,7 +88,7 @@ export function SpriteCellControls({ choice, onChange, target, grid, boxes }: Sp
   const source = sources.includes(choice.source) ? choice.source : SPRITE_CELL_SOURCES[0];
   // The fit in force is derived for the same reason: on a pixel-art sheet a stored resizing fit
   // resolves to `REFUSE`, so that is the pill shown pressed, beside the reason the others are held.
-  const cell = resolveSpriteCell({ ...choice, source }, target, grid);
+  const cell = resolveSpriteCell({ ...choice, source }, target, grid, statedStep);
   const over = cell === null ? [] : oversizedSprites(boxes, cell);
 
   return (

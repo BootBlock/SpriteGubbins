@@ -29,7 +29,13 @@ const UNEVEN_BOXES: readonly SpriteBox[] = [
 ];
 
 /** A cell every box above fits inside, at the anchor the manifest's pivot already defaulted to. */
-const CELL: SpriteCell = { width: 4, height: 4, anchor: { x: 'CENTRE', y: 'BOTTOM' }, fit: 'REFUSE' };
+const CELL: SpriteCell = {
+  width: 4,
+  height: 4,
+  anchor: { x: 'CENTRE', y: 'BOTTOM' },
+  fit: 'REFUSE',
+  statedStep: null,
+};
 
 /** Two 2 × 2 sprites one clear pixel apart, which is the gutter a returned sheet actually has. */
 const TIGHT = imageFrom(6, 2, (x) => (x < 2 || x >= 3 ? OPAQUE : CLEAR));
@@ -39,7 +45,13 @@ const TIGHT_BOXES: readonly SpriteBox[] = [
 ];
 
 /** Wide enough that a cell-sized cut of `TIGHT` centred on either sprite reaches the other. */
-const WIDE: SpriteCell = { width: 6, height: 2, anchor: { x: 'CENTRE', y: 'BOTTOM' }, fit: 'REFUSE' };
+const WIDE: SpriteCell = {
+  width: 6,
+  height: 2,
+  anchor: { x: 'CENTRE', y: 'BOTTOM' },
+  fit: 'REFUSE',
+  statedStep: null,
+};
 
 /**
  * A sheet holding more than ninety-nine sprites, which is what the two-digit ordinal could not name

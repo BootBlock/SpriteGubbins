@@ -23,6 +23,8 @@ import { ICON_CAPACITY_NOTICES } from '../iconCatalogue/iconCapacityNotices.ts';
 import { ICON_CATALOGUE_GROUPS } from '../iconCatalogue/index.ts';
 import { everyLookWorld } from '../../test/iconCatalogueSubjects.ts';
 import { iconEntryGuidance } from '../../utils/iconEntryGuidance.ts';
+import { ICON_COLOUR_MODES } from '../../types/iconRoster.ts';
+import type { IconColourMode, IconEntry } from '../../types/iconRoster.ts';
 import { CUSTOM_ICON_NOTICES } from '../iconCatalogue/customIconNotices.ts';
 import { CUSTOM_ICON_REFUSALS } from '../iconCatalogue/customIconRefusals.ts';
 import { CUSTOM_ICON_WARNING_TEXT } from '../iconCatalogue/customIconWarningText.ts';
@@ -107,6 +109,11 @@ const TOOLTIP_SETS = discoverTooltipSets();
  * only be written per target is rendered under the control instead. It is the control's own
  * explanation shown a second way, not a label — so it is held to the same rules.
  */
+/** The colour modes whose card for `entry` differs: both for a spell, whose school colour a mask greys. */
+function modesThatReword(entry: IconEntry): readonly IconColourMode[] {
+  return entry.school === undefined ? ['FULL_COLOUR'] : ICON_COLOUR_MODES;
+}
+
 const GUIDANCE: readonly (readonly [string, string])[] = [
   ...records(TOOLTIP_SETS),
   ...Object.entries(CATEGORY_OPTIONS).flatMap(([category, definition]) =>
@@ -183,10 +190,17 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
     ([key, text]) => [`IDENTITY_CAPTURE_UNAVAILABLE.${key}`, text] as const,
   ),
   // The card behind every icon catalogue row, for every entry under every look a world can send and
-  // the hand-typed fallback — written by one function, so it is a templated origin below.
+  // the hand-typed fallback, and a spell's in both colour modes, the one card a mode changes — written
+  // by one function, so it is a templated origin below.
   ...ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries).flatMap((entry) =>
-    everyLookWorld().map(
-      (world) => [`iconEntryGuidance(${entry.id}, ${world})`, iconEntryGuidance(entry, world)] as const,
+    everyLookWorld().flatMap((world) =>
+      modesThatReword(entry).map(
+        (mode) =>
+          [
+            `iconEntryGuidance(${entry.id}, ${world}, ${mode})`,
+            iconEntryGuidance(entry, world, mode),
+          ] as const,
+      ),
     ),
   ),
   // Why a catalogue row cannot be ticked, rendered under it as `CheckboxField`'s reason — the
@@ -201,12 +215,14 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   // reader's words where the catalogue's go.
   ...[RELIC, SPELL, TOGGLE, SALUTE, LONGEST_CUSTOM_ICON].flatMap((entry) =>
     everyLookWorld().flatMap((world) =>
-      [true, false].map(
-        (inLibrary) =>
-          [
-            `iconEntryGuidance(own ${entry.id}, ${world}, ${inLibrary ? 'in library' : 'set only'})`,
-            iconEntryGuidance(entry, world, inLibrary),
-          ] as const,
+      modesThatReword(entry).flatMap((mode) =>
+        [true, false].map(
+          (inLibrary) =>
+            [
+              `iconEntryGuidance(own ${entry.id}, ${world}, ${mode}, ${inLibrary ? 'in library' : 'set only'})`,
+              iconEntryGuidance(entry, world, mode, inLibrary),
+            ] as const,
+        ),
       ),
     ),
   ),

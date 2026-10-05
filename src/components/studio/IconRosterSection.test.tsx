@@ -60,7 +60,7 @@ describe('IconRosterSection', () => {
 
     expect(
       screen.getByText(
-        'Items and consumables: 2. Spells and abilities: 1. Emotes and chat: 1. Mounts and pets: 1. Professions: 0. Interface and system: 1.',
+        'Items and consumables: 2. Spells and abilities: 1. Emotes, chat and factions: 1. Mounts and pets: 1. Professions: 0. Interface and system: 1.',
       ),
     ).toBeInTheDocument();
   });

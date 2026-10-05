@@ -83,7 +83,13 @@ describe('spritePitch', () => {
 });
 
 describe('evenScale', () => {
-  const cell = { width: 128, height: 128, anchor: { x: 'CENTRE', y: 'MIDDLE' }, fit: 'SCALE_SET' } as const;
+  const cell = {
+    width: 128,
+    height: 128,
+    anchor: { x: 'CENTRE', y: 'MIDDLE' },
+    fit: 'SCALE_SET',
+    statedStep: null,
+  } as const;
 
   it('makes one step of the grid one cell, so every mark keeps its size relative to the rest', () => {
     expect(evenScale(MARKS, cell)).toBeCloseTo(128 / 300, 2);
@@ -110,8 +116,18 @@ describe('evenScale', () => {
     expect(evenScale(CHAINED, cell)).toBeCloseTo(128 / 400, 5);
   });
 
-  it('fits a lone sprite to the cell, with no grid to read', () => {
+  it('fits a lone sprite to the cell, with no grid to read and none stated', () => {
     expect(evenScale([box(0, 0, 256, 200)], cell)).toBe(0.5);
+  });
+
+  it('reads the step the sheet states where a lone sprite gives none, as on a full sheet', () => {
+    // An icon sheet of 1024 px states a cell 256 px each way however few icons it holds (audit finding
+    // T5), so its one 150 px icon takes the factor every icon of a full sheet takes, not 128 / 150.
+    const stated = { ...cell, statedStep: { x: 256, y: 256 } };
+
+    expect(evenScale([box(53, 53, 150, 150)], stated)).toBe(0.5);
+    // A measured pitch still decides where there is one.
+    expect(evenScale(MARKS, stated)).toBeCloseTo(128 / 300, 2);
   });
 
   it('enlarges a set drawn smaller than the cell, by the same factor for all', () => {

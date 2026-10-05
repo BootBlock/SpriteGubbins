@@ -1,8 +1,10 @@
 import { memo, useRef } from 'react';
 import { CUSTOM_ICON_NOTICES } from '../../constants/iconCatalogue/customIconNotices.ts';
+import { DEFAULT_ICON_COLOUR_MODE } from '../../constants/iconCatalogue/defaultIconColourMode.ts';
 import { ICON_CATALOGUE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
 import { useCustomIconLibraryStore } from '../../stores/useCustomIconLibraryStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import type { CustomIconEntry } from '../../types/iconRoster.ts';
 import type { CustomIconShelfRow } from '../../utils/customIconShelves.ts';
 import { iconEntryGuidance } from '../../utils/iconEntryGuidance.ts';
@@ -46,6 +48,7 @@ export const CustomIconRow = memo(function CustomIconRow({
   onKeep,
 }: CustomIconRowProps) {
   const deleteCustomIcon = useCustomIconLibraryStore((state) => state.deleteCustomIcon);
+  const colourMode = useSubjectStore((state) => state.subject.icons?.colourMode ?? DEFAULT_ICON_COLOUR_MODE);
   const { entry, saved } = row;
   // Keyed to the library row, so a question asked of one project's icon drops when the dialog shows
   // another project's under the same slot, rather than deleting that one.
@@ -61,7 +64,7 @@ export const CustomIconRow = memo(function CustomIconRow({
     <li className="space-y-1.5">
       <CheckboxField
         label={entry.role}
-        tooltip={iconEntryGuidance(entry, world, saved !== undefined)}
+        tooltip={iconEntryGuidance(entry, world, colourMode, saved !== undefined)}
         checked={row.ticked}
         description={iconLookText(entry, world)}
         note={note}

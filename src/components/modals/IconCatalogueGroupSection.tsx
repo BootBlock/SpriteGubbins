@@ -1,4 +1,5 @@
 import { useCallback, useId } from 'react';
+import { DEFAULT_ICON_COLOUR_MODE } from '../../constants/iconCatalogue/defaultIconColourMode.ts';
 import { ICON_CAPACITY_NOTICES } from '../../constants/iconCatalogue/iconCapacityNotices.ts';
 import { iconComponentCount } from '../../constants/iconCatalogue/index.ts';
 import { ICON_ROSTER_CAPACITY } from '../../constants/iconCatalogue/iconSheetLimits.ts';
@@ -32,6 +33,7 @@ interface IconCatalogueGroupSectionProps {
 export function IconCatalogueGroupSection({ group }: IconCatalogueGroupSectionProps) {
   const picks = useSubjectStore((state) => state.subject.icons?.picks ?? NO_PICKS);
   const world = useSubjectStore((state) => state.subject.setting);
+  const colourMode = useSubjectStore((state) => state.subject.icons?.colourMode ?? DEFAULT_ICON_COLOUR_MODE);
   const toggleIcons = useSubjectStore((state) => state.toggleIcons);
   const showToast = useShowToast();
   const headingId = useId();
@@ -101,6 +103,7 @@ export function IconCatalogueGroupSection({ group }: IconCatalogueGroupSectionPr
               key={entry.id}
               entry={entry}
               world={world}
+              colourMode={colourMode}
               checked={isTicked}
               disabledReason={!isTicked && needed > left ? ICON_CAPACITY_NOTICES.row(needed, left) : ''}
               onToggle={toggleOne}

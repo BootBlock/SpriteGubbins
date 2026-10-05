@@ -1,7 +1,7 @@
 import { DAMAGE_SCHOOLS, ICON_KINDS } from '../../types/iconCatalogue.ts';
 import type { IconKind } from '../../types/iconCatalogue.ts';
 import { fieldLabelFor } from '../categories/index.ts';
-import { FILTER_HIDES_ROWS_ONLY } from '../guidanceSentences.ts';
+import { FILTER_HIDES_ROWS_ONLY, TINT_MASK_GREYS_THE_SCHOOL } from '../guidanceSentences.ts';
 import { DAMAGE_SCHOOL_DEFINITIONS } from './damageSchools.ts';
 import { ICON_KIND_LABELS } from './iconKindLabels.ts';
 
@@ -13,9 +13,9 @@ import { ICON_KIND_LABELS } from './iconKindLabels.ts';
  * renamed label cannot leave it describing an option the filter no longer offers.
  */
 const KIND_HOLDINGS: Readonly<Record<IconKind, string>> = {
-  ITEM: 'things a character carries and uses up',
+  ITEM: 'things a character carries, uses up or equips, and the slots that hold what it equips',
   SPELL: 'the abilities a spellbook and an action bar hold, each in one damage school',
-  SOCIAL: 'emotes and chat channels',
+  SOCIAL: 'emotes, chat channels and the faction emblems a player sides with',
   COMPANION: 'mounts, pets and the commands a pet bar gives',
   PROFESSION: 'the crafting and gathering trades',
   SYSTEM: 'the panels, markers and status icons a game’s interface draws',
@@ -37,7 +37,7 @@ const SCHOOL_COLOURS = DAMAGE_SCHOOLS.map(
  * later is in its card the moment it is in the filter.
  */
 export const ICON_PICKER_TOOLTIPS = {
-  search: `Narrows the catalogue and your own icons to those whose role, slot name, group or look under your ${fieldLabelFor('ICON', 'setting')} contains every word you type. ${FILTER_HIDES_ROWS_ONLY}`,
+  search: `Narrows the catalogue and your own icons to those whose role, slot name, group or look under your ${fieldLabelFor('ICON', 'setting')} has a word starting with each word you type, so “ping” finds the pings and not the sweeping attacks. ${FILTER_HIDES_ROWS_ONLY}`,
 
   kind: [
     'Shows the shelves of one kind, or every kind.',
@@ -48,6 +48,7 @@ export const ICON_PICKER_TOOLTIPS = {
   school: [
     `Shows the spells and abilities of one damage school, or of every school. It is offered while the kind is _${ICON_KIND_LABELS.SPELL}_, the one kind whose icons belong to a school.`,
     `Each school leads its icons with one colour: ${SCHOOL_COLOURS}. Each option is named as your ${fieldLabelFor('ICON', 'setting')} names the school.`,
+    TINT_MASK_GREYS_THE_SCHOOL,
     FILTER_HIDES_ROWS_ONLY,
   ].join('\n\n'),
 

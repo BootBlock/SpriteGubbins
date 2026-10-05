@@ -111,6 +111,22 @@ export interface SpriteCell {
   readonly anchor: SpriteAnchor;
   /** The fit in force, which is `REFUSE` wherever the sheet has a pixel scale — see `resolveSpriteCell`. */
   readonly fit: SpriteFit;
+  /**
+   * The step of the grid the studio's sheet states, in the sheet's pixels each way, or `null` where it
+   * states none — read by `SCALE_SET` only on an axis its sprites give no step to measure.
+   *
+   * An icon sheet states one cell, 1/4 of its width each way, however few icons it holds
+   * (`SheetPlan.cellGrid`, audit finding T5). A sheet of one icon has no step between sprites to
+   * measure, so without this its one icon was resized to fill the cell edge to edge, where the same
+   * icon on a sheet of nine kept the margin its cell gave it.
+   */
+  readonly statedStep: SheetStep | null;
+}
+
+/** A grid step in a sheet's own pixels, across and down. */
+export interface SheetStep {
+  readonly x: number;
+  readonly y: number;
 }
 
 /** A rectangle of the sheet, in its own pixels. */

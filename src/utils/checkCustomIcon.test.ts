@@ -209,6 +209,35 @@ describe('checkCustomIcon — what it refuses', () => {
     },
   );
 
+  it('refuses a state whose slug shows a count the text typed hides, so a reload reads it back', () => {
+    // The slug drops the accented letter, which leaves `x5`, and the slug is what is stored and checked
+    // again on every read.
+    for (const states of [
+      ['éx5', 'off'],
+      ['5xé', 'off'],
+    ] as const) {
+      const found = checkCustomIcon({ ...RELIC_DRAFT, states }, [], null, []);
+      expect(found.entry).toBeNull();
+      expect(found.refusals).toEqual([
+        { field: 'firstState', message: CUSTOM_ICON_REFUSALS.countMarker('state') },
+      ]);
+    }
+  });
+
+  it('reads back every entry it accepts as that same entry', () => {
+    const drafts = [
+      { ...RELIC_DRAFT, states: ['Engagé', 'idle'] as const },
+      { ...RELIC_DRAFT, states: ['  Field  ON ', 'off'] as const },
+      { ...RELIC_DRAFT, role: 'Hex 0x1F relic' },
+    ];
+    for (const draft of drafts) {
+      const { entry } = checkCustomIcon(draft, [], null, []);
+      expect(entry).not.toBeNull();
+      if (entry === null) continue;
+      expect(checkCustomIcon(customIconDraftOf(entry), [], null, []).entry).toEqual(entry);
+    }
+  });
+
   it('lets an x inside a word or between numbers through, as no count', () => {
     expect(refusedFields({ role: 'Hex 0x1F relic', look: 'a 4x4 crate on an axle, boxed' }, [])).toEqual([]);
   });

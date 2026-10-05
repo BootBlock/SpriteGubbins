@@ -866,14 +866,17 @@ interface SheetPlanFields {
    */
   readonly anatomy?: 'APPENDED' | 'ELSEWHERE';
   /**
-   * How many cells this sheet's grid is laid out in, where that is fixed whatever the sheet holds — so
-   * the native-grid scale is fitted to those cells rather than to the drawings (audit finding T5).
+   * How many cells each way this sheet's square grid is laid out in, where that is fixed whatever the
+   * sheet holds — so the native-grid scale is fitted to those cells rather than to the drawings (audit
+   * finding T5), and the Quantise tab reads the grid's step where the sprites give none to measure.
    *
-   * **An ICON icon sheet declares `ICONS_PER_SHEET`**, because it states one cell, 1/4 of the sheet's
+   * **An ICON icon sheet declares `ICON_GRID_COLUMNS`**, because it states one cell, 1/4 of the sheet's
    * width each way, on every sheet of a series. Fitted to its own drawings instead, a sheet of two asked
    * a pixel-art icon to be drawn wider than that cell, and two sheets of one set at different scales.
+   * The grid rather than its count, because a step is the sheet's side over the cells each way, which a
+   * count of cells does not say.
    */
-  readonly cells?: number;
+  readonly cellGrid?: number;
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */

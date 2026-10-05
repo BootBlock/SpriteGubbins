@@ -253,6 +253,7 @@ describe('DownloadControls, cutting into a cell', () => {
       height: 8,
       anchor: { x: 'CENTRE', y: 'BOTTOM' },
       fit: 'REFUSE',
+      statedStep: null,
     });
     await finish();
   });

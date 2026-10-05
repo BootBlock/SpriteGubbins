@@ -49,6 +49,7 @@ describe('placeInCell', () => {
       ...cell,
       anchor: { x: 'CENTRE', y: 'BOTTOM' },
       fit: 'REFUSE',
+      statedStep: null,
     })[0];
     if (offset === undefined) throw new Error('the placements came back empty');
     const placed = placeInCell(cropSprite(SHEET, BOX_A), cell, offset);

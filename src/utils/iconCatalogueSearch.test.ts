@@ -26,6 +26,17 @@ describe('iconCatalogueSearch', () => {
     expect(idsFor({})).toEqual(every);
   });
 
+  it('matches a word from its start, so “ping” finds the pings and not a dripping mask', () => {
+    const groupsFor = (query: string): string[] =>
+      iconCatalogueSearch(ICON_CATALOGUE_GROUPS, { ...EVERYTHING, query }, [], 'High Fantasy').map(
+        (group) => group.id,
+      );
+
+    expect(groupsFor('ping')).toContain('pings');
+    expect(groupsFor('ping')).not.toContain('control-abilities');
+    expect(groupsFor('dripping')).toContain('control-abilities');
+  });
+
   it('matches every word typed, in any case, across role, id and group label', () => {
     expect(idsFor({ query: 'MINOR healing' })).toEqual(['heal-minor']);
     expect(idsFor({ query: 'heal-major' })).toEqual(['heal-major']);

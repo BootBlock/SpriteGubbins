@@ -33,7 +33,7 @@ describe('customIconShelves', () => {
     expect(shelvesFor({})).toEqual([
       ['Items and consumables: your own', ['nightcity-keycard-relic']],
       ['Spells and abilities: your own', ['grid-collapse']],
-      ['Emotes and chat: your own', ['gang-salute']],
+      ['Emotes, chat and factions: your own', ['gang-salute']],
       ['Interface and system: your own', ['cloak-field']],
     ]);
   });
@@ -45,7 +45,9 @@ describe('customIconShelves', () => {
     expect(shelvesFor({ query: 'your own interface' })).toEqual([
       ['Interface and system: your own', ['cloak-field']],
     ]);
-    expect(shelvesFor({ kind: 'SOCIAL' })).toEqual([['Emotes and chat: your own', ['gang-salute']]]);
+    expect(shelvesFor({ kind: 'SOCIAL' })).toEqual([
+      ['Emotes, chat and factions: your own', ['gang-salute']],
+    ]);
     expect(shelvesFor({ kind: 'SPELL', school: 'CRYO' })).toEqual([]);
     expect(shelvesFor({ kind: 'SPELL', school: 'VOLTAIC' })).toEqual([
       ['Spells and abilities: your own', ['grid-collapse']],

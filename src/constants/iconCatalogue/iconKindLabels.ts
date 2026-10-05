@@ -10,7 +10,7 @@ import type { IconKind } from '../../types/iconCatalogue.ts';
 export const ICON_KIND_LABELS: Readonly<Record<IconKind, string>> = {
   ITEM: 'Items and consumables',
   SPELL: 'Spells and abilities',
-  SOCIAL: 'Emotes and chat',
+  SOCIAL: 'Emotes, chat and factions',
   COMPANION: 'Mounts and pets',
   PROFESSION: 'Professions',
   SYSTEM: 'Interface and system',

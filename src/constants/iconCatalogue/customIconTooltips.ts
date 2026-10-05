@@ -1,4 +1,5 @@
 import { fieldLabelFor } from '../categories/index.ts';
+import { TINT_MASK_GREYS_THE_SCHOOL } from '../guidanceSentences.ts';
 import { CUSTOM_ICON_LIMITS } from './customIconLimits.ts';
 import { ICON_KIND_LABELS } from './iconKindLabels.ts';
 
@@ -12,9 +13,9 @@ import { ICON_KIND_LABELS } from './iconKindLabels.ts';
 export const CUSTOM_ICON_TOOLTIPS = {
   role: `What the icon is for in your game, such as “Keycard to the vault level”, in up to ${String(CUSTOM_ICON_LIMITS.role)} characters. It opens the icon’s line on the sheet, so the generator reads the purpose before the look.\n\nIts plain letters and digits become the slot and file name: “Keycard to the vault level” is \`keycard-to-the-vault-level\`. That name has to be one no catalogue icon, overlay piece or other icon on your set already uses.`,
 
-  kind: `Which shelf the icon sits on. Your own icons sit at the end of their kind’s shelves, so a quest relic shares a sheet with the quest items rather than with the system panels, and the summary counts it under its kind.\n\nA _${ICON_KIND_LABELS.SPELL}_ entry belongs to a damage school as well.`,
+  kind: `Which shelf the icon sits on. Your own icons sit after the last of their kind’s shelves, so a quest relic is drawn among your items rather than among the system panels, and the summary counts it under its kind.\n\nA _${ICON_KIND_LABELS.SPELL}_ entry belongs to a damage school as well.`,
 
-  school: `The damage school this spell or ability belongs to. The sheet closes its line on the school’s name in your ${fieldLabelFor('ICON', 'setting')} and its one colour by hex, which leads the icon ahead of your set’s own colours, as it does for every catalogue spell.`,
+  school: `The damage school this spell or ability belongs to. The sheet closes its line on the school’s name in your ${fieldLabelFor('ICON', 'setting')} and its one colour by hex, which leads the icon ahead of your set’s own colours, as it does for every catalogue spell.\n\n${TINT_MASK_GREYS_THE_SCHOOL}`,
 
   figure:
     'Tick this when the drawing is meant to include a hand, a face or a figure, such as an emote. The sheet draws one your look names either way; ticking it tells the form the figure is meant, so it stops warning about one, and the row’s card says so. Nothing in the prompt changes.',

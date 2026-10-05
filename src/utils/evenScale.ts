@@ -16,8 +16,11 @@ import { spritePitch } from './spritePitch.ts';
  * **Then never larger than the largest sprite allows.** Boxes in one row are disjoint, but a sprite
  * may still be wider than the step where its neighbour is narrower, and a factor that took it past the
  * cell would need the refusal this fit exists to avoid. So the factor is also held to the largest that
- * fits every sprite — which is the whole rule on a sheet of one sprite, where there is no pitch to
- * read.
+ * fits every sprite.
+ *
+ * **An axis with no pitch to read takes the step the sheet states** (`SpriteCell.statedStep`), so a
+ * sheet of one icon is resized as the same icon on a full sheet is. Where it states none either, the
+ * largest factor that fits is the whole rule on that axis.
  *
  * Above 1 where the sheet was drawn smaller than the cell, which enlarges every sprite by the same
  * amount; see `resampleArea` for what enlarging by area does. `1` for a sheet with no sprites.
@@ -27,6 +30,8 @@ import { spritePitch } from './spritePitch.ts';
 export function evenScale(boxes: readonly SpriteBox[], cell: SpriteCell): number {
   if (boxes.length === 0) return 1;
   const pitch = spritePitch(boxes);
+  const across = pitch.x ?? cell.statedStep?.x ?? null;
+  const down = pitch.y ?? cell.statedStep?.y ?? null;
   const fits = boxes.map((box) => Math.min(cell.width / box.width, cell.height / box.height));
-  return Math.min(gridStepFactor(cell.width, pitch.x), gridStepFactor(cell.height, pitch.y), ...fits);
+  return Math.min(gridStepFactor(cell.width, across), gridStepFactor(cell.height, down), ...fits);
 }

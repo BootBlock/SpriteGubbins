@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { IconCatalogueEntry } from '../../types/iconCatalogue.ts';
+import type { IconColourMode } from '../../types/iconRoster.ts';
 import { iconEntryGuidance } from '../../utils/iconEntryGuidance.ts';
 import { iconLookText } from '../../utils/iconLookText.ts';
 import { CheckboxField } from '../common/CheckboxField.tsx';
@@ -8,6 +9,8 @@ interface IconCatalogueRowProps {
   readonly entry: IconCatalogueEntry;
   /** The subject's *World & Era*, which decides the look the row shows and its card states. */
   readonly world: string;
+  /** The set's colour mode, which decides how the card states a spell's school colour. */
+  readonly colourMode: IconColourMode;
   readonly checked: boolean;
   /** Why the row cannot be ticked, or empty where it can. */
   readonly disabledReason: string;
@@ -25,6 +28,7 @@ interface IconCatalogueRowProps {
 export const IconCatalogueRow = memo(function IconCatalogueRow({
   entry,
   world,
+  colourMode,
   checked,
   disabledReason,
   onToggle,
@@ -33,7 +37,7 @@ export const IconCatalogueRow = memo(function IconCatalogueRow({
     <li>
       <CheckboxField
         label={entry.role}
-        tooltip={iconEntryGuidance(entry, world)}
+        tooltip={iconEntryGuidance(entry, world, colourMode)}
         checked={checked}
         description={iconLookText(entry, world)}
         disabledReason={disabledReason}

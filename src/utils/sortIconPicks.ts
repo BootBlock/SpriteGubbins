@@ -19,7 +19,7 @@ type SortKey = readonly [kind: number, custom: number, place: number];
  *
  * **The reader's own entries sit at the end of their kind's shelves**, after the last catalogue entry of
  * that kind and before the next kind's first, in the order they were added: a relic the reader wrote
- * shares a sheet with the quest items and containers rather than with the system panels, and adding one
+ * is drawn after the last item shelf rather than among the system panels, and adding one
  * never moves the entries before it. Every custom entry of one kind sorts with the same key, so the
  * sort, which is stable, keeps them in the order the input holds them: the order they were added,
  * because every write and every roster read from storage goes through here. Moving a changed entry whose kind changed to the end of its

@@ -250,7 +250,13 @@ describe('buildManifest', () => {
 });
 
 describe('buildManifest, cut into a cell', () => {
-  const cell = { width: 8, height: 8, anchor: { x: 'CENTRE', y: 'BOTTOM' }, fit: 'REFUSE' } as const;
+  const cell = {
+    width: 8,
+    height: 8,
+    anchor: { x: 'CENTRE', y: 'BOTTOM' },
+    fit: 'REFUSE',
+    statedStep: null,
+  } as const;
 
   it('keeps the rect on the artwork’s own bounding box, whatever the cut is', () => {
     // A cell-sized rect would name a region holding whatever sits a gutter away — see `placeInCell`,

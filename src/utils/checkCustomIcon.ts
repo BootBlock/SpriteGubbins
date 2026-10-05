@@ -135,18 +135,24 @@ function textRefusals(
   return found;
 }
 
-/** The two states as slugs, with a refusal for each that cannot be one or that repeats the other. */
+/**
+ * The two states as slugs, with a refusal for each that cannot be one or that repeats the other.
+ *
+ * **The slug is held to the count rule as well as the text typed**, because the slug is what is stored
+ * and read back through this same check: dropping a letter the slug cannot hold can leave a count where
+ * the text had none (`éx5` is stored as `x5`), and an entry accepted as typed was refused on reload.
+ */
 function statesOf(
   typed: readonly [string, string],
   refusals: CustomIconRefusal[],
 ): readonly [string, string] {
   const first = collapsed(typed[0]);
   const second = collapsed(typed[1]);
-  refusals.push(
-    ...textRefusals('firstState', first, 'state'),
-    ...textRefusals('secondState', second, 'state'),
-  );
   const slugs: readonly [string, string] = [slugify(first), slugify(second)];
+  refusals.push(
+    ...stateRefusals('firstState', first, slugs[0]),
+    ...stateRefusals('secondState', second, slugs[1]),
+  );
   if (slugs[0] === '') {
     refusals.push({ field: 'firstState', message: CUSTOM_ICON_REFUSALS.stateEmpty('first') });
   }
@@ -156,6 +162,19 @@ function statesOf(
     refusals.push({ field: 'secondState', message: CUSTOM_ICON_REFUSALS.sameStates });
   }
   return slugs;
+}
+
+/** The refusals one state earns as typed, and a count its slug alone shows. */
+function stateRefusals(
+  field: 'firstState' | 'secondState',
+  text: string,
+  slug: string,
+): readonly CustomIconRefusal[] {
+  const found = textRefusals(field, text, 'state');
+  const counted = found.some((refusal) => refusal.message === CUSTOM_ICON_REFUSALS.countMarker('state'));
+  return counted || !COUNT_MARKER.test(slug)
+    ? found
+    : [...found, { field, message: CUSTOM_ICON_REFUSALS.countMarker('state') }];
 }
 
 /**

@@ -29,7 +29,14 @@ function draw(
   onChange: (next: SpriteCellChoice) => void = () => undefined,
 ) {
   return render(
-    <SpriteCellControls choice={choice} onChange={onChange} target={target} grid={1} boxes={BOXES} />,
+    <SpriteCellControls
+      choice={choice}
+      onChange={onChange}
+      target={target}
+      grid={1}
+      statedStep={null}
+      boxes={BOXES}
+    />,
   );
 }
 

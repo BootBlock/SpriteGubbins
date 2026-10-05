@@ -19,8 +19,8 @@ export interface IconRosterSummary {
  *
  * **`sheets` is the series' own length, overlay sheet included**, handed in rather than worked out
  * here, because the series is the compiler's answer (`sheetSeriesFor`) and a summary counting sheets
- * by a rule of its own would disagree with the sheet list the first time a two-state entry closed a
- * sheet at fifteen.
+ * by a rule of its own would disagree with the sheet list the first time the even cut
+ * (`balancedChunks`) kept a two-state pair together.
  */
 export function iconRosterSummary(tally: IconRosterTally, sheets: number): IconRosterSummary {
   const iconSheets = sheets - 1;

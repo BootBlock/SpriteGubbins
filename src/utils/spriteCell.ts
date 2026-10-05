@@ -5,6 +5,7 @@ import type {
   CellAnchorX,
   CellAnchorY,
   SheetRegion,
+  SheetStep,
   SpriteCell,
   SpriteCellChoice,
   SpritePlacement,
@@ -61,6 +62,7 @@ export function resolveSpriteCell(
   choice: SpriteCellChoice,
   target: TargetSize | null,
   grid: PixelGrid | null,
+  statedStep: SheetStep | null,
 ): SpriteCell | null {
   if (choice.source === 'BOX') return null;
   // The second degradation, and the same shape: a resizing fit on a sheet with a pixel scale is a
@@ -68,10 +70,10 @@ export function resolveSpriteCell(
   const { anchor } = choice;
   const fit = resizingFitAllowed(grid) ? choice.fit : 'REFUSE';
   if (choice.source === 'FIXED') {
-    return { width: choice.fixed.width, height: choice.fixed.height, anchor, fit };
+    return { width: choice.fixed.width, height: choice.fixed.height, anchor, fit, statedStep };
   }
   if (target === null || !targetFitsCell(target)) return null;
-  return { width: target.width, height: target.height, anchor, fit };
+  return { width: target.width, height: target.height, anchor, fit, statedStep };
 }
 
 /**

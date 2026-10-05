@@ -11,6 +11,7 @@ import { checkCustomIcon } from '../utils/checkCustomIcon.ts';
 import { iconPickId } from '../utils/iconPickId.ts';
 import { outputFollowingBase } from '../utils/outputFollowingBase.ts';
 import { resolveOutputForSubject } from '../utils/resolveOutputForSubject.ts';
+import { outputForReset } from '../utils/outputForReset.ts';
 import { outputForRoster } from '../utils/outputForRoster.ts';
 import { toggleIconPicks } from '../utils/toggleIconPicks.ts';
 import { withCustomIcon } from '../utils/withCustomIcon.ts';
@@ -122,7 +123,7 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
       const { category, subject: before } = get();
       const subject = defaultSubjectFor(category);
       set({ subject });
-      settleOutput((output) => outputFollowingBase(category, before, subject, output));
+      settleOutput((output) => outputForReset(category, before, subject, output));
     });
   },
 
@@ -141,9 +142,9 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
 
 /**
  * Write the output configuration `settle` answers with for the one in force, where it answers with a
- * different one: `resolveOutputForSubject` after a category switch, `outputFollowingBase` after a reroll
- * or a reset, and `outputForRoster` after a roster change. Each hands back the same object, or `null`,
- * for a change that decides nothing, and that writes nothing.
+ * different one: `resolveOutputForSubject` after a category switch, `outputFollowingBase` after a reroll,
+ * `outputForReset` after a reset, and `outputForRoster` after a roster change. Each hands back the same
+ * object, or `null`, for a change that decides nothing, and that writes nothing.
  */
 function settleOutput(settle: (output: OutputConfig) => OutputConfig | null): void {
   const { output, setOutputConfig } = useOutputStore.getState();
@@ -185,7 +186,7 @@ function writeRoster(change: (roster: IconRoster) => IconRoster): void {
   const next = { ...subject, icons: change(subject.icons) };
   act(() => {
     useSubjectStore.setState({ subject: next });
-    settleOutput((output) => outputForRoster(category, next, output));
+    settleOutput((output) => outputForRoster(category, subject, next, output));
   });
 }
 

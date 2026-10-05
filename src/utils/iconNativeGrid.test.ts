@@ -5,7 +5,7 @@ import { generatePrompt } from './promptCompiler.ts';
 
 /**
  * That a pixel-art icon set is enlarged by one scale on every icon sheet, fitted to the grid each sheet
- * states rather than to the drawings it holds (audit finding T5, `SheetPlan.cells`).
+ * states rather than to the drawings it holds (audit finding T5, `SheetPlan.cellGrid`).
  *
  * Fitted to its drawings, a sheet of two 24 px badges asked for 14× or more — 336 px, wider than the
  * 256 px cell the same prompt fixes — while a full sheet asked for 7×.

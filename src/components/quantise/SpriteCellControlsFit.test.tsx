@@ -37,6 +37,7 @@ function draw(
       onChange={onChange}
       target={{ width: 128, height: 128 }}
       grid={grid}
+      statedStep={null}
       boxes={BOXES}
     />,
   );

@@ -5,6 +5,7 @@ import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
 import { useSheetIdentity } from '../../hooks/useSheetIdentity.ts';
 import { useComponentTarget } from '../../hooks/useComponentTarget.ts';
+import { useStatedStep } from '../../hooks/useStatedStep.ts';
 import { useShownResult } from '../../hooks/useShownResult.ts';
 import { useSpriteAssignment } from '../../hooks/useSpriteAssignment.ts';
 import { useQuantiseDownloadStore } from '../../stores/useQuantiseDownloadStore.ts';
@@ -71,6 +72,8 @@ export function DownloadControls({ sourceName, resultImage, sprites, duplicates 
   // and handed to `SpriteCellControls`, because the press resolves the cell from it too, and the
   // pills on screen and the file they describe must be working from one reading.
   const target = useComponentTarget();
+  // The grid step the studio's sheet states, which a resizing fit reads where the sprites give none.
+  const statedStep = useStatedStep();
   const download = useImageDownload();
   // The studio's own answer about what this sheet is — the same reading `SheetIdentityControls` puts
   // on screen, through the one hook, so what the panel promises and what the file records cannot be
@@ -168,6 +171,7 @@ export function DownloadControls({ sourceName, resultImage, sprites, duplicates 
           onChange={setCellChoice}
           target={target}
           grid={grid}
+          statedStep={statedStep}
           boxes={boxes}
         />
       )}
@@ -198,7 +202,7 @@ export function DownloadControls({ sourceName, resultImage, sprites, duplicates 
               // Sent whatever the format is, as the boxes are, and `null` under a format that does
               // not cut — so a cell left set from an earlier press cannot reach a writer that has no
               // controls on screen for it.
-              cell: cuts ? resolveSpriteCell(cellChoice, target, grid) : null,
+              cell: cuts ? resolveSpriteCell(cellChoice, target, grid, statedStep) : null,
               paletted: shown?.paletted ?? false,
               duplicates,
               // One name per piece, already decided, beside the route that decided them — the

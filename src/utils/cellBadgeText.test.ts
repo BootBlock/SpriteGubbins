@@ -9,7 +9,13 @@ const BOXES: readonly SpriteBox[] = [
   { left: 320, top: 20, width: 260, height: 260, pixels: 67_600 },
 ];
 
-const CELL: SpriteCell = { width: 128, height: 128, anchor: { x: 'CENTRE', y: 'MIDDLE' }, fit: 'REFUSE' };
+const CELL: SpriteCell = {
+  width: 128,
+  height: 128,
+  anchor: { x: 'CENTRE', y: 'MIDDLE' },
+  fit: 'REFUSE',
+  statedStep: null,
+};
 
 describe('cellBadgeText', () => {
   it('counts the pieces that will not fit, naming the cell', () => {

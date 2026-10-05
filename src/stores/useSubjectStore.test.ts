@@ -711,7 +711,7 @@ describe('useSubjectStore', () => {
 
     it('pulls the sheet index back inside a series the untick shortens, in the same act', () => {
       // Twenty one-component icons are two icon sheets and the overlay sheet, and the reader is on the
-      // last of them when they untick four icons, which leaves one icon sheet and the overlay sheet.
+      // overlay sheet when they untick four icons, which leaves one icon sheet and the overlay sheet.
       const twenty = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
         .filter((entry) => entry.states === undefined)
         .slice(0, 20)
@@ -727,6 +727,40 @@ describe('useSubjectStore', () => {
       useSubjectStore.getState().undoStudio();
       expect(picks()).toEqual(twenty);
       expect(useOutputStore.getState().output.sheetIndex).toBe(2);
+    });
+
+    it('keeps a reader on the overlay sheet there when a tick adds an icon sheet before it', () => {
+      const forty = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
+        .filter((entry) => entry.states === undefined)
+        .slice(0, 40)
+        .map((entry) => entry.id);
+      iconStudio(forty.slice(0, 20));
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 2 } });
+
+      useSubjectStore.getState().toggleIcons(forty.slice(20), true);
+
+      expect(useOutputStore.getState().output.sheetIndex).toBe(3);
+    });
+
+    it('settles the sheet index against the starter roster a reset installs', () => {
+      // A reset swaps the roster without a tick, and the index it left past the starter's series used to
+      // carry the reader back to the far sheet on their next tick.
+      const seventy = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
+        .filter((entry) => entry.states === undefined)
+        .slice(0, 70)
+        .map((entry) => entry.id);
+      iconStudio(seventy);
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 3 } });
+
+      useSubjectStore.getState().resetSubject();
+      expect(useOutputStore.getState().output.sheetIndex).toBe(0);
+
+      useSubjectStore.getState().toggleIcons(seventy, true);
+      expect(useOutputStore.getState().output.sheetIndex).toBe(0);
+
+      useSubjectStore.getState().undoStudio();
+      useSubjectStore.getState().undoStudio();
+      expect(useOutputStore.getState().output.sheetIndex).toBe(3);
     });
 
     it('leaves the sheet index alone where the series still holds it', () => {

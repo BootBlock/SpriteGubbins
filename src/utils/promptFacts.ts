@@ -43,6 +43,7 @@ import { sheetDirections } from './sheetDirections.ts';
 import { drawnPlanFor } from './sheetPlanAbsence.ts';
 import { clothingException } from './clothingException.ts';
 import { sheetKey } from './sheetKey.ts';
+import { seatedCells } from './seatedCells.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**
@@ -320,8 +321,8 @@ export function sheetFacts(
   // How big this sheet's things are and the grid they are drawn on, resolved together so the phrase
   // section 2 prints and the arithmetic under it cannot name different figures. See `sheetSizing.ts`
   // for why a loaded contract supersedes the field, and for the three ways there is no native grid.
-  // Fitted to the cells a fixed grid declares, where the plan declares one (`SheetPlan.cells`).
-  const sizing = sheetSizing(category, subject, output, plan, rig, plan.cells ?? componentCount);
+  // Fitted to the cells a fixed grid declares, where the plan declares one (`seatedCells`).
+  const sizing = sheetSizing(category, subject, output, plan, rig, seatedCells(plan, componentCount));
 
   // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the
   // same anatomy: a field reading `Tail ×0` cannot say one thing at the top of the prompt and

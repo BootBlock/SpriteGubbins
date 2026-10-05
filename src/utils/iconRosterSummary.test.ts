@@ -28,7 +28,7 @@ describe('iconRosterSummary', () => {
       '20 icons, drawn as 21 of the 320 components a set can hold, on 3 sheets: 2 icon sheets and the overlay sheet.',
     );
     expect(summary.kinds).toBe(
-      'Items and consumables: 8. Spells and abilities: 5. Emotes and chat: 1. Mounts and pets: 0. Professions: 0. Interface and system: 6.',
+      'Items and consumables: 8. Spells and abilities: 5. Emotes, chat and factions: 1. Mounts and pets: 0. Professions: 0. Interface and system: 6.',
     );
     expect(summary.digest).toBe('20 icons · 3 sheets');
   });

@@ -2,7 +2,7 @@ import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
 import type { IconColourMode, IconLook } from '../../types/iconRoster.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts';
-import { ICON_GRID_COLUMNS, ICONS_PER_SHEET } from '../iconCatalogue/iconSheetLimits.ts';
+import { ICON_GRID_COLUMNS } from '../iconCatalogue/iconSheetLimits.ts';
 import { namesAFrame } from '../promptText/namesAFrame.ts';
 
 /** What one look writes into an icon sheet; everything else about the sheet is the same under both. */
@@ -130,7 +130,7 @@ export function iconSheet(
     // fills its square to the set's margin as a sword does (audit finding P10).
     fit: 'SAME_SQUARE',
     // The grid every icon sheet of the series is laid out in, which the native-grid scale is fitted to.
-    cells: ICONS_PER_SHEET,
+    cellGrid: ICON_GRID_COLUMNS,
     scaleUnit: 'one icon',
     componentClass: wording.componentClass,
     // The overlay sheet draws its pieces in the *Overlay Style*; no icon here is drawn in it or carries

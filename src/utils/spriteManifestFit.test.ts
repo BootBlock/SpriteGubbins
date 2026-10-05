@@ -32,6 +32,7 @@ const FILL: SpriteCell = {
   height: 128,
   anchor: { x: 'CENTRE', y: 'MIDDLE' },
   fit: 'FILL_SQUARE',
+  statedStep: null,
 };
 
 describe('buildManifest, under a fit that resizes', () => {

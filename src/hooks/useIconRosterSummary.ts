@@ -19,7 +19,7 @@ export interface IconRosterReading {
  *
  * **The sheet count is the series the compiler draws** — `sheetSeriesFor` over the subject and the
  * output's own mode and directions — so the summary under the studio section and in the catalogue's
- * footer is the same number the sheet list offers, two-state pairs closing a sheet early included.
+ * footer is the same number the sheet list offers, however the even cut lays out the two-state pairs.
  * One derivation for both surfaces, because two would be two answers to how many sheets a set is.
  */
 export function useIconRosterSummary(): IconRosterReading | null {

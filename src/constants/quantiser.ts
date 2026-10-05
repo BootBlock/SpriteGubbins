@@ -2443,9 +2443,9 @@ export const QUANTISE_TOOLTIPS = {
   spriteCellFit:
     'How each sprite meets its cell. Only the files you save change.\n\n' +
     '- As drawn places each sprite at its own size. A sprite larger than the cell refuses the download. Pixel art wants this.\n' +
-    '- Scale evenly resizes every sprite by one factor, chosen so one step of the sheet’s grid fills one cell, so icons keep their sizes relative to each other. Use it for isolated marks.\n' +
-    '- Fill square crops each sprite to the square at its centre and resizes it to fill the cell. Use it for full-bleed squares.\n\n' +
-    'Use a scaling fit to bring a painted icon set to 128 × 128 px, with Studio target, Centre and Middle. Each new pixel averages the pixels it covers, then takes the nearest colour the sheet already holds where a palette applies. A sheet with a pixel scale above 1 is always placed as drawn.',
+    '- Scale evenly resizes every sprite by one factor, chosen so one step of the sheet’s grid fills one cell, so icons keep their relative sizes. Use it for isolated marks.\n' +
+    '- Fill square crops each sprite to the square at its centre and resizes it to fill the cell. Use it for full-bleed squares, not for an icon set’s overlay sheet of marks.\n\n' +
+    'Use a scaling fit to bring a painted icon set to 128 × 128 px, with Studio target, Centre and Middle. Each new pixel averages the pixels it covers, held to the sheet’s palette where one applies. A sheet with a pixel scale above 1 is always placed as drawn.',
 
   downloadScale:
     'How many file pixels one drawn pixel is written as when you save. `1×` is the sheet’s own size, which is what an engine imports. Larger rungs write each pixel as a solid square, never resampled, for a copy you can see without magnifying. A Fit that scales resizes each sprite into the magnified cell.\n\n' +
