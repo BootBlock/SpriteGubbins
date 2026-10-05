@@ -1,6 +1,6 @@
 # Overlay sheet in cells — plan
 
-> **Status:** 🟢 ACTIVE — the follow-up to the Icon / Symbol Set audit’s open question (U1): each overlay piece leaves the Quantise tab as one icon tile with the piece at its place on the icon.
+> **Status:** ✅ COMPLETE — the follow-up to the Icon / Symbol Set audit’s open question (U1): each overlay piece leaves the Quantise tab as one icon tile with the piece at its place on the icon. Step 10, a real overlay sheet in `test_sprites/`, stays open until one is generated from the new prompt.
 
 ## 1. The defect
 
@@ -131,4 +131,7 @@ The maintainer chose the most correct option for each.
     placement sentence and section 2 state one square; the Quantise tab still maps the whole cell.
   - **Editing the *Extra Overlay Pieces* settles the sheet index** (`outputForField`) by the rule a
     roster change takes, and a look or colour mode chosen with no icons ticked moves no one.
+- **The second review** made placement exact at any factor: each edge of a placed piece is rounded
+  rather than its offset and size apart, and a veil or halo drawn a pixel off square is placed against
+  its box squared to the longer side, so neither is refused.
 - **Step 10 is open**: no overlay sheet generated from the new prompt is in `test_sprites/` yet.
