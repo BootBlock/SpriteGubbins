@@ -19,7 +19,7 @@ import type { SpriteCell, SpritePlacement } from '../types/spriteCell.ts';
  * `oversizedSprites` before the writer reaches here, and `placeInCell` clips whatever is handed to it.
  */
 export function inPlacePlacement(box: SpriteBox, cell: SpriteCell): SpritePlacement | null {
-  const square = squareOf(box, cell)?.square;
+  const square = latticeCellOf(box, cell)?.square;
   if (square === undefined || square.width <= 0) return null;
   const factor = cell.resamples ? cell.width / square.width : 1;
   return {
@@ -32,7 +32,7 @@ export function inPlacePlacement(box: SpriteBox, cell: SpriteCell): SpritePlacem
 }
 
 /** The lattice cell whose region holds this box's centre, or `undefined` for none. */
-export function squareOf(box: SpriteBox, cell: SpriteCell): LatticeCell | undefined {
+export function latticeCellOf(box: SpriteBox, cell: SpriteCell): LatticeCell | undefined {
   if (cell.lattice?.kind !== 'CELLS') return undefined;
   const x = box.left + box.width / 2;
   const y = box.top + box.height / 2;

@@ -29,7 +29,7 @@ describe('the overlay sheets', () => {
     expect(sheet.anatomy).toBe('ELSEWHERE');
     expect(sheet.opening).toContain('Fourteen drawings, four across and four down');
     expect(sheet.opening).toContain(ICON_CELL_SENTENCE);
-    expect(sheet.opening).toContain('stands where it sits over the icon');
+    expect(sheet.opening).toContain('stands where it sits over');
   });
 
   it('keeps two extra pieces on the one sheet, which then fills its sixteen cells', () => {
@@ -79,9 +79,62 @@ describe('the overlay sheets', () => {
     expect(slots).toContain('tier-mark-5');
   });
 
+  it('labels pieces named in a script with no Latin letters apart, across every overlay sheet', () => {
+    const sheets = iconOverlaySheets(
+      'ISOLATED_MARK',
+      parseAdditionalAnatomy('Favourite Star ×8, 星 ×1, 月 ×1'),
+    );
+    expect(sheets).toHaveLength(2);
+    const slots = sheets.flatMap((sheet) => planSlots(sheet));
+    expect(new Set(slots).size).toBe(slots.length);
+    expect(slots).toEqual(expect.arrayContaining(['extra-overlay-piece', 'extra-overlay-piece-2']));
+    expect(slots).not.toContain('');
+  });
+
+  it('lays a piece worth more than a sheet across the fewest sheets, naming its drawings in turn', () => {
+    const sheets = iconOverlaySheets('ISOLATED_MARK', parseAdditionalAnatomy('Mark ×99'));
+    // Fourteen library pieces and ninety-nine marks are 113 drawings, which eight sheets hold.
+    expect(sheets).toHaveLength(8);
+    for (const sheet of sheets) expect(componentTotal(entriesOf(sheet))).toBeLessThanOrEqual(16);
+    const marks = sheets.flatMap((sheet) => entriesOf(sheet).filter((entry) => entry.label === 'mark'));
+    expect(marks.flatMap((entry) => entry.parts ?? [])).toEqual(
+      Array.from({ length: 99 }, (_, at) => `mark-${String(at + 1)}`),
+    );
+    for (const entry of marks) expect(entry.text).toMatch(/^Mark ×\d+: drawings? \d+( to \d+)? of the 99$/);
+  });
+
+  it('splits a reader’s piece only where keeping it whole would cost a sheet', () => {
+    // Whole, a `Mark ×17` behind the library's fourteen is a third sheet of one drawing.
+    const split = iconOverlaySheets('ISOLATED_MARK', parseAdditionalAnatomy('Mark ×17'));
+    expect(split.map((sheet) => componentTotal(entriesOf(sheet)))).toEqual([16, 15]);
+    expect(
+      split
+        .flatMap(entriesOf)
+        .filter((entry) => entry.label === 'mark')
+        .map((entry) => entry.text),
+    ).toEqual(['Mark ×2: drawings 1 to 2 of the 17', 'Mark ×15: drawings 3 to 17 of the 17']);
+    // Thirty-three drawings need three sheets however they are cut, so every line stays whole.
+    const whole = iconOverlaySheets('ISOLATED_MARK', parseAdditionalAnatomy('Mark ×2, Glyph ×16, Rune ×1'));
+    expect(
+      whole.flatMap(entriesOf).every((entry) => entry.parts === undefined || entry.label !== 'glyph'),
+    ).toBe(true);
+    expect(whole.map((sheet) => componentTotal(entriesOf(sheet)))).toEqual([16, 16, 1]);
+  });
+
+  it('states the first cell on a sheet of one piece, where the Quantise tab reads it', () => {
+    const sheets = iconOverlaySheets(
+      'FULL_BLEED_TILE',
+      parseAdditionalAnatomy('Mark ×2, Glyph ×16, Rune ×1'),
+    );
+    expect(sheets.at(-1)?.opening?.split('\n')[0]).toBe(
+      'One drawing, in the first cell, at the top left of the sheet.',
+    );
+    expect(sheets.at(-1)?.opening).toContain(ICON_CELL_SENTENCE);
+  });
+
   it('lets a wrapper negate a frame only on a sheet that draws no edge round a square', () => {
     const sheets = iconOverlaySheets('ISOLATED_MARK', parseAdditionalAnatomy('Favourite Star ×20'));
-    expect(sheets.map((sheet) => sheet.frames)).toEqual(['DRAWN', undefined]);
+    expect(sheets.map((sheet) => sheet.frames)).toEqual(['DRAWN', undefined, undefined]);
   });
 
   it('is held to the rule that a place in a cell needs a stated cell', () => {

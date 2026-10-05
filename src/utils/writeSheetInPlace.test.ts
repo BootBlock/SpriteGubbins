@@ -9,7 +9,7 @@ import type { SpriteBox } from '../types/quantiser.ts';
 import type { SpriteCellChoice } from '../types/spriteCell.ts';
 import { cellLattice } from './cellLattice.ts';
 import { buildManifest } from './spriteManifest.ts';
-import { oversizedSprites, oversizeReason, resolveSpriteCell } from './spriteCell.ts';
+import { cellPlacements, oversizedSprites, oversizeReason, resolveSpriteCell } from './spriteCell.ts';
 import { spriteSegments } from './spriteSegments.ts';
 import { writeSheet } from './writeSheet.ts';
 
@@ -44,7 +44,6 @@ function segmented(): readonly SpriteBox[] {
 function latticeOf(boxes: readonly SpriteBox[]): CellLattice {
   return cellLattice(boxes, {
     width: SIDE,
-    height: 512,
     columns: 4,
     placement: 'WITHIN_TILE',
     share: 0.6,
@@ -135,8 +134,9 @@ describe('an overlay sheet, packed into 128 × 128 cells under Keep place', () =
     const cell = resolveSpriteCell(CHOICE, { width: 160, height: 160 }, 2, null, latticeOf(boxes));
     expect(cell?.resamples).toBe(false);
     if (cell === null) throw new Error('unreachable');
-    // At a factor of 1 the badge keeps its 30 pixels, 124 in from the tile square's left edge.
     expect(oversizedSprites(boxes, cell)).toEqual([]);
+    // At a factor of 1 the badge keeps its 30 pixels, 124 in from the tile square's left edge.
+    expect(cellPlacements(boxes, cell)[1]).toMatchObject({ x: 124, y: 0, width: 30, height: 30 });
   });
 
   it('refuses the pack, naming the piece, where a piece reaches past its file', () => {

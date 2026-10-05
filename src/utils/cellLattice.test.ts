@@ -44,7 +44,6 @@ function piece(cell: number, place: Place, drift = 0): SpriteBox {
 
 const REQUEST: LatticeRequest = {
   width: SIDE,
-  height: SIDE,
   columns: 4,
   placement: 'WITHIN_TILE',
   share: TILE,
@@ -143,6 +142,30 @@ describe('cellLattice', () => {
       expect(lattice.boxes).toEqual([0, 1]);
       expect(lattice.reason).toContain('the full-tile pieces measure 154 drawn pixels across');
     }
+  });
+
+  it('refuses a single full-tile piece astray of the stated share, however many agree with it', () => {
+    // Three veils at the stated share would outvote a fourth drawn at two thirds of it in a median.
+    const { left, top } = squareAt(3);
+    const astray: SpriteBox = { left, top, width: 100, height: 100, pixels: 10_000 };
+    const boxes = [piece(0, 'TILE'), piece(1, 'TILE'), piece(2, 'TILE'), astray];
+    const lattice = cellLattice(boxes, { ...REQUEST, tileCells: [0, 1, 2, 3] });
+    expect(lattice.kind).toBe('FAILED');
+    if (lattice.kind === 'FAILED') {
+      expect(lattice.boxes).toEqual([3]);
+      expect(lattice.reason).toContain('the full-tile pieces measure 100 drawn pixels across');
+    }
+  });
+
+  it('places a quarter sweep against the tile square, never against its own box', () => {
+    // Only the veil and the halo are the square; a sweep fills one quadrant of it.
+    const { left, top, side } = squareAt(2);
+    const half = Math.round(side / 2);
+    const sweep: SpriteBox = { left, top, width: half, height: half, pixels: half * half };
+    const lattice = cells(
+      cellLattice([piece(0, 'TILE'), piece(1, 'TILE'), sweep], { ...REQUEST, tileCells: [0, 1] }),
+    );
+    expect(lattice.cells[2]?.square).toEqual({ left, top, width: side, height: side });
   });
 
   it('places against the cell itself under WITHIN_CELL', () => {

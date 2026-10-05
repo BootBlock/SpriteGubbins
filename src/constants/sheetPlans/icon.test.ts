@@ -243,6 +243,14 @@ describe('the ICON look', () => {
     }
   });
 
+  it('draws an isolated overlay piece within the share section 2 states for the icons', () => {
+    // The pieces once stood as though the icon filled the cell, which section 2's share of the cell
+    // contradicts for every other sheet of the set.
+    expect(proseOf(ISOLATED_OVERLAY)).toContain(
+      'every piece is drawn within the share of the cell section [SEC:STYLE] states, centred in the cell',
+    );
+  });
+
   it('shapes the full-bleed overlay pieces that cover an icon to the square of one tile', () => {
     const text = entriesOf(LIBRARY_OVERLAY_SHEETS.FULL_BLEED_TILE).map((entry) => entry.text);
     expect(text.slice(0, 4).every((line) => /square/.test(line))).toBe(true);

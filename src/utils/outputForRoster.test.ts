@@ -74,6 +74,17 @@ describe('outputForRoster', () => {
     );
   });
 
+  it('leaves a reader of a set with no icons where they are when they change its colour mode', () => {
+    // Ten extra pieces fill a second overlay sheet, which is the second sheet of an empty set. A colour
+    // mode chosen there ticks no icon, so it is no reason to move them to the first.
+    const extras = 'Equipped Corner Tick ×10';
+    const onSecondOverlay = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 };
+    const before = iconSubject([], 'FULL_COLOUR', extras);
+    const after = iconSubject([], 'TINT_MASK', extras);
+
+    expect(outputForRoster('ICON', before, after, onSecondOverlay).sheetIndex).toBe(1);
+  });
+
   it('keeps a reader on an icon sheet among the icon sheets when a tick adds one', () => {
     const before = iconSubject(singles(20));
     const onIcons = { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 };

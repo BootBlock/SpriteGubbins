@@ -1,24 +1,18 @@
 import type { AnatomyComponent } from '../../types/anatomy.ts';
 import type { ComponentEntry, ComponentGroup, SheetPlan } from '../../types/components.ts';
 import type { IconLook } from '../../types/iconRoster.ts';
+import type { OverlayLine } from '../../types/overlayLine.ts';
 import { formatAnatomyComponent } from '../../utils/additionalAnatomy.ts';
-import { balancedChunks } from '../../utils/balancedChunks.ts';
 import { componentTotal } from '../../utils/componentTotal.ts';
 import { entrySlots } from '../../utils/entrySlots.ts';
 import { slugify } from '../../utils/slugify.ts';
 import { fieldLabelFor } from '../categories/index.ts';
 import { ICON_GRID_COLUMNS, ICONS_PER_SHEET } from '../iconCatalogue/iconSheetLimits.ts';
+import { overlayRuns } from '../../utils/overlayRuns.ts';
 import { namesAFrame } from '../promptText/namesAFrame.ts';
 import { ICON_CELL_SENTENCE } from './iconCellSentence.ts';
 import { iconGridSentence } from './iconGridSentence.ts';
 import { ICON_OVERLAY_LIBRARY } from './iconOverlayLibrary.ts';
-
-/** One line of the overlay run, with the group it is listed under: a library group, or the reader's. */
-interface OverlayLine {
-  readonly group: ComponentGroup;
-  readonly entry: ComponentEntry;
-  readonly count: number;
-}
 
 /**
  * The overlay sheets that close every ICON series: the look's overlay library and the reader's *Extra
@@ -28,8 +22,9 @@ interface OverlayLine {
  * **As many sheets as the pieces fill, and no cap.** The library is fourteen components, and a reader's
  * own pieces past the sixteen cells of one sheet used to be appended to it regardless, so a sheet asked
  * for more drawings than it has cells. The library and the extras are now one run of lines, in that
- * order, cut by `balancedChunks` as the icon sheets are, so eighteen pieces are two sheets of nine. A
- * piece marked past sixteen is split into lines of sixteen first, so no sheet holds more than its cells.
+ * order, cut by `overlayRuns` into the fewest sheets they fill and as evenly as the lines allow, so
+ * eighteen pieces are two sheets of nine. A reader's piece is laid across sheets only where keeping it
+ * whole would cost a sheet, or where it is worth more than one, so no sheet holds more than its cells.
  *
  * **One piece to a cell, at its place on the icon** (`SheetPlan.placement`). Every sheet opens with the
  * grid sentence and the cell sentence the icon sheets state, then the look's placement sentence, so the
@@ -64,17 +59,19 @@ export function iconOverlaySheets(
 ): readonly [SheetPlan, ...SheetPlan[]] {
   const { groups } = ICON_OVERLAY_LIBRARY[look];
   const taken = new Set(groups.flatMap((group) => group.entries.flatMap(namesOf)));
+  const written = extras.map((piece) => ({ piece, entry: extraEntry(piece, taken) }));
   const yours: ComponentGroup = {
     heading: fieldLabelFor('ICON', 'additional_anatomy'),
     intro:
       'Further pieces of the same library, each drawn as its own component in the style every piece shares:',
-    entries: extras.flatMap((piece) => extraEntries(piece, taken)),
+    entries: written.map(({ entry }) => entry),
     additional: true,
   };
-  const lines: OverlayLine[] = [...groups, yours].flatMap((group) =>
-    group.entries.map((entry) => ({ group, entry, count: entry.count })),
-  );
-  const runs = balancedChunks(lines, ICONS_PER_SHEET);
+  const lines: OverlayLine[] = [
+    ...groups.flatMap((group) => group.entries.map((entry) => ({ group, entry, count: entry.count }))),
+    ...written.map(({ piece, entry }) => ({ group: yours, entry, count: entry.count, piece })),
+  ];
+  const runs = overlayRuns(lines, ICONS_PER_SHEET);
   let first = 1;
   const sheets = runs.map((run) => {
     const sheet = overlaySheet(look, run, first, runs.length === 1);
@@ -88,8 +85,8 @@ export function iconOverlaySheets(
 }
 
 /**
- * One of the reader's own pieces, as the lines of the library it is drawn on in the *Overlay Style*,
- * under a label no line before it answers to.
+ * One of the reader's own pieces, as a line of the library drawn in the *Overlay Style*, under a label no
+ * line before it answers to.
  *
  * **Unique across the whole library, not only its own sheet.** `componentSlots` numbers a repeat within
  * one sheet, and the cut can put a reader's `Selected Ring` on the second overlay sheet and the
@@ -99,12 +96,8 @@ export function iconOverlaySheets(
  * A name that slugs to nothing — one typed in a script with no Latin letters — is labelled
  * `extra-overlay-piece`, numbered the same way, since a name left empty would be named by its place on
  * its own sheet and repeat across sheets.
- *
- * **A piece marked past the sixteen cells of one sheet is split into lines of sixteen**, each naming its
- * drawings in turn (`parts`), so the cut can lay them across as many sheets as they fill. Left whole, it
- * took a sheet of its own that stated a grid of sixteen cells and drew ninety-nine.
  */
-function extraEntries(piece: AnatomyComponent, taken: Set<string>): readonly ComponentEntry[] {
+function extraEntry(piece: AnatomyComponent, taken: Set<string>): ComponentEntry {
   const base = slugify(piece.name) || 'extra-overlay-piece';
   const whole = (label: string): ComponentEntry => ({
     label,
@@ -118,19 +111,7 @@ function extraEntries(piece: AnatomyComponent, taken: Set<string>): readonly Com
     entry = whole(`${base}-${String(suffix)}`);
   }
   for (const name of namesOf(entry)) taken.add(name);
-  if (piece.count <= ICONS_PER_SHEET) return [entry];
-  const drawings = entrySlots(entry, 'run');
-  const lines: ComponentEntry[] = [];
-  for (let start = 0; start < piece.count; start += ICONS_PER_SHEET) {
-    const parts = drawings.slice(start, start + ICONS_PER_SHEET);
-    lines.push({
-      ...entry,
-      text: `${formatAnatomyComponent({ name: piece.name, count: parts.length })}: drawings ${String(start + 1)} to ${String(start + parts.length)} of the ${String(piece.count)}`,
-      count: parts.length,
-      parts,
-    });
-  }
-  return lines;
+  return entry;
 }
 
 /** What a line of an overlay sheet answers to: its label, and the name of each of its drawings. */

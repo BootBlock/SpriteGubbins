@@ -253,6 +253,28 @@ describe('component counts', () => {
     }
   });
 
+  it('counts an icon set’s extra overlay pieces on its overlay sheets, once each', () => {
+    // ICON's carrier is no sheet, so the pieces the subject names reach the count only through the
+    // overlay sheets' own entries. Handing the parsed list in beside the subject, as every caller does,
+    // must not count them a second time.
+    const icon = SHEETS.find((sheet) => sheet.category === 'ICON');
+    if (icon === undefined) throw new Error('unreachable: CASES holds an icon set');
+    const { category, subject, mode, directions } = icon;
+    const extras = { ...subject, additional_anatomy: 'Frost Rim ×2, Ember Glow ×1' };
+    const overlayTotal = (of: typeof subject, additional: readonly AnatomyComponent[]) =>
+      sheetSeriesFor(category, of, mode, directions).reduce(
+        (sum, plan, sheetIndex) =>
+          plan.placement === undefined
+            ? sum
+            : sum + componentCountFor(category, of, mode, directions, sheetIndex, additional, null),
+        0,
+      );
+
+    expect(overlayTotal(extras, parseAdditionalAnatomy(extras.additional_anatomy))).toBe(
+      overlayTotal(subject, []) + 3,
+    );
+  });
+
   it('carries the anatomy on both chunks of a split eight-compass core, each at its own facings', () => {
     // The split core is where the old first-sheet rule failed twice over: the cardinal sheet got a
     // single unturned drawing and the diagonal sheet got nothing. Both chunks now carry the whole

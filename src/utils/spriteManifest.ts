@@ -1,6 +1,6 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
 import type { SpriteNaming } from '../types/spriteAssignment.ts';
-import type { SpriteCell, SpritePlacement } from '../types/spriteCell.ts';
+import type { SheetRegion, SpriteCell, SpritePlacement } from '../types/spriteCell.ts';
 import type {
   ManifestCell,
   ManifestPlacement,
@@ -8,7 +8,7 @@ import type {
   ManifestSprite,
   SpriteManifest,
 } from '../types/spriteManifest.ts';
-import { squareOf } from './inPlacePlacement.ts';
+import { latticeCellOf } from './inPlacePlacement.ts';
 import { cellPivot, cellPlacements } from './spriteCell.ts';
 import { scaleBoxes } from './sheetLayout.ts';
 
@@ -180,14 +180,17 @@ function pivotOf(
   scale: number,
   box: SpriteBox,
 ): Pick<ManifestSprite, 'pivot' | 'pivotSource'> {
-  const square = cell?.fit === 'IN_PLACE' && drawn !== undefined ? squareOf(drawn, cell)?.square : undefined;
+  const square =
+    cell?.fit === 'IN_PLACE' && drawn !== undefined ? latticeCellOf(drawn, cell)?.square : undefined;
   if (square !== undefined) {
-    const centre = cellPivot(square, { x: 'CENTRE', y: 'MIDDLE' });
-    return { pivot: { x: centre.x * scale, y: centre.y * scale }, pivotSource: 'TILE_CENTRE' };
+    return {
+      pivot: cellPivot(scaleRegion(square, scale), { x: 'CENTRE', y: 'MIDDLE' }),
+      pivotSource: 'TILE_CENTRE',
+    };
   }
   const anchor = cell?.anchor ?? { x: 'CENTRE' as const, y: 'BOTTOM' as const };
   return {
-    pivot: cellPivot(scaleRegion(placement?.source, scale) ?? box, anchor),
+    pivot: cellPivot(placement === undefined ? box : scaleRegion(placement.source, scale), anchor),
     pivotSource: cell === null ? 'DEFAULT_BOTTOM_CENTRE' : 'CELL_ANCHOR',
   };
 }
@@ -247,12 +250,8 @@ function manifestPlacement(placement: SpritePlacement | undefined, scale: number
   };
 }
 
-/** A placement's region of the sheet at the written file's magnification, or `undefined` for none. */
-function scaleRegion(
-  region: SpritePlacement['source'] | undefined,
-  scale: number,
-): SpritePlacement['source'] | undefined {
-  if (region === undefined) return undefined;
+/** A region of the sheet at the written file's magnification. */
+function scaleRegion(region: SheetRegion, scale: number): SheetRegion {
   return {
     left: region.left * scale,
     top: region.top * scale,

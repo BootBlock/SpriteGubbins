@@ -11,7 +11,6 @@ import type { SheetRegion } from './spriteCell.ts';
  */
 export interface LatticeRequest {
   readonly width: number;
-  readonly height: number;
   readonly columns: number;
   readonly placement: NonNullable<SheetPlan['placement']>;
   /** The tile square's side as a fraction of the cell's (`TILE_SHARE`), which `WITHIN_CELL` ignores. */

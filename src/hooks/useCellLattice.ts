@@ -26,7 +26,6 @@ export function useCellLattice(sprites: SpriteSegmentation | null): CellLattice 
     }
     return cellLattice(sprites.boxes, {
       width: sprites.width,
-      height: sprites.height,
       columns: plan.cellGrid,
       placement: plan.placement,
       share: TILE_SHARE[profile] / 100,

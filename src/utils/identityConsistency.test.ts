@@ -58,9 +58,12 @@ function iconSubject(look: IconLook): SubjectDefinition {
   return { ...subject, icons: { ...subject.icons, look } };
 }
 
-/** The overlay sheet's index: it closes an ICON series. */
+/** The first overlay sheet's index: the first sheet of the series that places its pieces in cells. */
 function overlaySheetOf(subject: SubjectDefinition): number {
-  return sheetSeriesFor('ICON', subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
+  const series = sheetSeriesFor('ICON', subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT');
+  const index = series.findIndex((plan) => plan.placement !== undefined);
+  if (index < 0) throw new Error('An ICON series should close with an overlay sheet.');
+  return index;
 }
 
 /** A sheet of one set's members, with the plan name the compiler has to resolve for it. */

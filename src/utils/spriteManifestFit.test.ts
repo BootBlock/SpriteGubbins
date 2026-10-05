@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import type { CellLattice } from '../types/cellLattice.ts';
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { SpriteCell } from '../types/spriteCell.ts';
 import { buildManifest, MANIFEST_VERSION } from './spriteManifest.ts';
 
 /**
- * What a manifest says about a cell whose fit resizes, which is what a consumer compositing from the
- * sheet needs to do exactly what the pack did. The placements themselves are `cellPlacements`'s.
+ * What a manifest says about a cell whose fit resizes or keeps a piece in place, which is what a
+ * consumer compositing from the sheet needs to do exactly what the pack did. The placements themselves
+ * are `cellPlacements`'s.
  */
 
 /** Two painted tiles 300 pixels apart, one a pixel taller than it is wide. */
@@ -37,7 +39,7 @@ const FILL: SpriteCell = {
   resamples: true,
 };
 
-describe('buildManifest, under a fit that resizes', () => {
+describe('buildManifest, under a fit that resizes or keeps place', () => {
   it('states the fit beside the cell, and the shape’s new version', () => {
     const manifest = buildManifest({ ...input, cell: FILL });
 
@@ -78,5 +80,33 @@ describe('buildManifest, under a fit that resizes', () => {
     const manifest = buildManifest({ ...input, cell: FILL });
 
     expect(manifest.sprites[1]?.pivot).toStrictEqual({ x: 320 + 130, y: 20 + 130 });
+  });
+
+  it('magnifies an odd tile square before it finds its centre, under Keep place', () => {
+    const lattice: CellLattice = {
+      kind: 'CELLS',
+      cells: [
+        {
+          index: 0,
+          region: { left: 0, top: 0, width: 50, height: 50 },
+          square: { left: 10, top: 10, width: 25, height: 25 },
+        },
+      ],
+      cellOf: [0],
+      tileSide: 25,
+    };
+    const manifest = buildManifest({
+      ...input,
+      width: 50,
+      height: 50,
+      scale: 2,
+      boxes: [{ left: 12, top: 12, width: 20, height: 20, pixels: 400 }],
+      names: ['locked-mark'],
+      naming: 'CELL',
+      cell: { ...FILL, width: 25, height: 25, fit: 'IN_PLACE', lattice },
+    });
+
+    // The square is 20 + 50 across at 2×, so its centre is 45, where flooring 12.5 first would say 44.
+    expect(manifest.sprites[0]).toMatchObject({ pivot: { x: 45, y: 45 }, pivotSource: 'TILE_CENTRE' });
   });
 });

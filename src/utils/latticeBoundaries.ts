@@ -1,5 +1,5 @@
 /** An occupied run along one axis, start inclusive and end exclusive, in the sheet's drawn pixels. */
-export type Span = readonly [number, number];
+type Span = readonly [number, number];
 
 /**
  * The inner boundaries of one axis of a near-regular grid, read from the empty runs between the pieces
