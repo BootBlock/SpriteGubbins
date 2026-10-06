@@ -932,8 +932,9 @@ interface SheetPlanFields {
    * - `WITHIN_TILE`: the Quantise tab places a piece against the tile square every icon of the set is
    *   drawn to, centred in the cell at the share section 2 states (`TILE_SHARE`), and maps that square
    *   onto the file, as the icons' *Fill square* cut does. ICON's overlay sheets under the full-bleed look.
-   * - `WITHIN_CELL`: it places a piece against the whole cell and maps the cell onto the file, as the
-   *   icons' *Scale evenly* cut does. ICON's overlay sheets under the isolated look.
+   * - `WITHIN_CELL`: it places a piece against the whole cell, a square of the cell's side, and maps the
+   *   cell onto the file, as the icons' *Scale evenly* cut does. ICON's overlay sheets under the isolated
+   *   look.
    *
    * Either way the prompt draws each piece within that centred share of its cell, where it sits over
    * the icon, so section 2's one square holds on every overlay sheet.

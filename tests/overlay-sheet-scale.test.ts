@@ -1,16 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { loadCorpusSheet } from './sheetCorpus.ts';
-import { DEFAULT_KEY_TOLERANCE } from '../src/constants/quantiser.ts';
-import { QUANTISE_DEFAULT_DIALS } from '../src/constants/quantiseDials.ts';
-import { iconOverlaySheets } from '../src/constants/sheetPlans/iconOverlaySheets.ts';
-import type { PixelGrid, SpriteBox } from '../src/types/quantiser.ts';
-import { planSlots } from '../src/utils/componentSlots.ts';
+import { readOverlaySheet, type OverlayReading } from './overlaySheetReading.ts';
+import type { PixelGrid } from '../src/types/quantiser.ts';
 import { cropSprite } from '../src/utils/cropSprite.ts';
 import { estimateMeshPeriod } from '../src/utils/meshPeriod.ts';
 import { detectPixelGrid, measureSheetScale } from '../src/utils/pixelGrid.ts';
 import { estimatePixelGrid } from '../src/utils/pixelPeriod.ts';
 import { estimateProfilePeriod } from '../src/utils/profilePeriod.ts';
-import { quantiseImage } from '../src/utils/quantiseImage.ts';
 import { stepProfile } from '../src/utils/stepProfile.ts';
 
 /**
@@ -49,9 +44,6 @@ import { stepProfile } from '../src/utils/stepProfile.ts';
  * the reading offers the whole scale at or below the pitch it measures and never one above, the rule
  * `sheet-scale-corpus.test.ts` holds its own sheets to.
  */
-const MAGENTA = { r: 255, g: 0, b: 255, a: 255 } as const;
-const [OVERLAY] = iconOverlaySheets('FULL_BLEED_TILE', []);
-
 /**
  * What the correlation reads off each piece cropped alone, by slot name.
  *
@@ -77,25 +69,15 @@ const PER_PIECE: Readonly<Record<string, PixelGrid | null>> = {
   'empty-mark': 8,
 };
 
-let sheet: ImageData;
-let boxes: readonly SpriteBox[] = [];
+let reading: OverlayReading;
 
 beforeAll(async () => {
-  sheet = await loadCorpusSheet('game_overlay_test.png');
-  const result = quantiseImage(sheet, {
-    ...QUANTISE_DEFAULT_DIALS,
-    grid: 1,
-    key: { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE },
-    reduction: null,
-  });
-  if (result.sprites.kind !== 'SEGMENTED') {
-    throw new Error(`the sheet did not segment: ${result.sprites.kind}`);
-  }
-  boxes = result.sprites.boxes;
+  reading = await readOverlaySheet('game_overlay_test.png', 'FULL_BLEED_TILE');
 }, 300_000);
 
 describe('the generated overlay sheet’s pixel scale', () => {
   it('reads no scale off the whole sheet, on any reading', () => {
+    const { sheet } = reading;
     const profile = stepProfile(sheet);
     expect({
       detected: detectPixelGrid(sheet),
@@ -107,7 +89,7 @@ describe('the generated overlay sheet’s pixel scale', () => {
   });
 
   it('reads four different pitches off the pieces, one piece at a time', () => {
-    const names = planSlots(OVERLAY);
+    const { sheet, boxes, names } = reading;
     expect(boxes).toHaveLength(names.length);
     const read = Object.fromEntries(
       names.map((name, at) => {

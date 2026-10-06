@@ -3,9 +3,9 @@ import type { CellLattice, LatticeCell, LatticeRequest } from '../types/cellLatt
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { SheetRegion } from '../types/spriteCell.ts';
 import { boundingRegion } from './boundingRegion.ts';
-import { lineCentres } from './lineCentres.ts';
 import { median } from './median.ts';
 import { roundedRegion } from './roundedRegion.ts';
+import { squareCentres } from './squareCentres.ts';
 
 /**
  * A placement sheet's occupied cells with the square each one's pieces are placed against
@@ -21,10 +21,16 @@ import { roundedRegion } from './roundedRegion.ts';
  *
  * **Every other piece is placed against a square of the measured side, centred where the spanning
  * pieces put the squares**: across, where they centre the squares of its column, and down, where they
- * centre those of its row (`lineCentres`), or at the middle of its cell where the sheet holds no
- * spanning piece. A generator lays its squares a few pixels off the middle of the cells the gaps
- * describe — up to seventeen across and twelve down on the first real overlay sheet — and a corner mark
- * placed against the cell's middle landed that far off its corner.
+ * centre those of its row, and in a line that holds none, where its own pieces allow (`squareCentres`).
+ * A generator lays its squares a few pixels off the middle of the cells the gaps describe — up to
+ * seventeen across and twelve down on the first real overlay sheet — and a corner mark placed against
+ * the cell's middle landed that far off its corner.
+ *
+ * **Under `WITHIN_CELL` every square is the cell's side**, the median measured cell width, centred the
+ * same way, and a spanning piece's square on its own centre. The gaps between small pieces fall wherever
+ * the pieces leave them, so the cells they bound are not one size: on `test_sprites/icons_isolated.png`
+ * two cells of one row came back 361 and 276 pixels wide, and placed against those, the pieces in them
+ * were scaled into their files 30% apart.
  */
 export function latticeSquares(
   boxes: readonly SpriteBox[],
@@ -53,54 +59,50 @@ export function latticeSquares(
     };
   }
   const side = sides.size === 0 ? stated : median([...sides.values()]);
-  if (request.placement === 'WITHIN_CELL') {
-    const cells = [...regions.entries()].map(([index, region]) => ({ index, region, square: region }));
-    return { kind: 'CELLS', cells: cells.sort((a, b) => a.index - b.index), cellOf, tileSide: null };
-  }
+  const within = request.placement === 'WITHIN_CELL';
+  // The side every square takes that is not a spanning piece's own under WITHIN_TILE.
+  const square = within ? cellSide : side;
 
   const spanning = new Map<number, SheetRegion>();
   for (const cell of request.tileCells.spanning) {
     const own = joined.get(cell);
-    if (own !== undefined) spanning.set(cell, squared(own));
+    if (own !== undefined) spanning.set(cell, own);
   }
   const { columns } = request;
-  const across = lineCentres(
-    centres(spanning, (cell) => cell % columns, 'left', 'width'),
+  const column = (cell: number): number => cell % columns;
+  const row = (cell: number): number => Math.floor(cell / columns);
+  const across = squareCentres(
+    spanning,
+    joined,
+    { lineOf: column, start: 'left', size: 'width' },
     cellSide,
+    square,
   );
   // Each axis steps by its own pitch: a generated sheet's rows need not be as tall as its cells are wide.
-  const down = lineCentres(
-    centres(spanning, (cell) => Math.floor(cell / columns), 'top', 'height'),
-    median([...regions.values()].map((region) => region.height)),
+  const rowStep = median([...regions.values()].map((region) => region.height));
+  const down = squareCentres(
+    spanning,
+    joined,
+    { lineOf: row, start: 'top', size: 'height' },
+    rowStep,
+    square,
   );
   const cells: LatticeCell[] = [...regions.entries()]
     .sort(([a], [b]) => a - b)
     .map(([index, region]) => {
-      const x = across(index % columns) ?? region.left + region.width / 2;
-      const y = down(Math.floor(index / columns)) ?? region.top + region.height / 2;
-      const square = spanning.get(index) ?? roundedRegion(x - side / 2, y - side / 2, side, side);
-      return { index, region, square };
+      const own = spanning.get(index);
+      if (own !== undefined && !within) return { index, region, square: squared(own) };
+      const x =
+        own === undefined ? across(column(index), region.left + region.width / 2) : own.left + own.width / 2;
+      const y =
+        own === undefined ? down(row(index), region.top + region.height / 2) : own.top + own.height / 2;
+      return { index, region, square: roundedRegion(x - square / 2, y - square / 2, square, square) };
     });
-  return { kind: 'CELLS', cells, cellOf, tileSide: side };
+  return { kind: 'CELLS', cells, cellOf, tileSide: within ? null : side };
 }
 
 /** A box squared to its longer side about its centre, so the whole box lies inside it. */
 function squared(own: SheetRegion): SheetRegion {
   const long = Math.max(own.width, own.height);
   return roundedRegion(own.left + (own.width - long) / 2, own.top + (own.height - long) / 2, long, long);
-}
-
-/** The centres of the spanning squares along one axis, by the column or row each lies in. */
-function centres(
-  spanning: ReadonlyMap<number, SheetRegion>,
-  lineOf: (cell: number) => number,
-  start: 'left' | 'top',
-  size: 'width' | 'height',
-): ReadonlyMap<number, readonly number[]> {
-  const byLine = new Map<number, number[]>();
-  for (const [cell, square] of spanning) {
-    const line = lineOf(cell);
-    byLine.set(line, [...(byLine.get(line) ?? []), square[start] + square[size] / 2]);
-  }
-  return byLine;
 }

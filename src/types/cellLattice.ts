@@ -29,10 +29,11 @@ export interface LatticeCell {
   /** The cell itself, in the sheet's drawn pixels. */
   readonly region: SheetRegion;
   /**
-   * The square a piece in this cell is placed against: the cell under `WITHIN_CELL`, and under
-   * `WITHIN_TILE` the own box, squared to its longer side, of a piece that spans the tile, and otherwise a
-   * square of the tile side centred where the spanning pieces in its row and column put the squares
-   * (`latticeSquares`).
+   * The square a piece in this cell is placed against: under `WITHIN_TILE` the own box, squared to its
+   * longer side, of a piece that spans the tile, and otherwise a square of the tile side; under
+   * `WITHIN_CELL` a square of the cell's side. Each is centred where the spanning pieces in its row and
+   * column put the squares, or where its line's own pieces allow in a line that holds none
+   * (`latticeSquares`). Never `region`, whose edges are wherever the gaps fell.
    */
   readonly square: SheetRegion;
 }

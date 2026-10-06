@@ -264,15 +264,34 @@ describe('cellLattice', () => {
     expect(lattice.cells[2]?.square).toEqual({ left, top, width: side, height: side });
   });
 
-  it('places against the cell itself under WITHIN_CELL', () => {
+  it('places against a square of the cell’s side under WITHIN_CELL, wherever the gaps put the cells', () => {
+    // A wide mark along the top of the icon's place in cell 4 and a badge in the top-left corner of the
+    // place in cell 5 leave the gap between them thirteen pixels right of the boundary, so the cells the
+    // gaps bound sit off the grid; the squares do not.
+    const wide = { ...piece(4, 'TOP_LEFT'), width: 180 };
+    const boxes = [
+      piece(0, 'TILE'),
+      piece(1, 'TILE'),
+      { ...wide, pixels: wide.width * wide.height },
+      piece(5, 'TOP_LEFT'),
+    ];
     const lattice = cells(
-      cellLattice([piece(0, 'TOP_LEFT'), piece(5, 'TOP_RIGHT')], {
+      cellLattice(boxes, {
         ...REQUEST,
         placement: 'WITHIN_CELL',
+        tileCells: { measuring: [0, 1], spanning: [0, 1] },
       }),
     );
     expect(lattice.tileSide).toBeNull();
-    for (const cell of lattice.cells) expect(cell.square).toEqual(cell.region);
+    expect(lattice.cells[2]?.region.left).toBe(13);
+    for (const cell of lattice.cells) {
+      expect(cell.square, `cell ${String(cell.index)}`).toEqual({
+        left: (cell.index % 4) * STEP,
+        top: Math.floor(cell.index / 4) * STEP,
+        width: STEP,
+        height: STEP,
+      });
+    }
   });
 
   it('refuses a piece past the grid’s last column', () => {

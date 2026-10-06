@@ -26,11 +26,12 @@ interface AxisEdges {
  * 3. The column boundaries are read the same way, row by row, from the pieces whose centres fall in it.
  * 4. A row's or column's outer edge is its inner boundary less or plus the median measured step, or the
  *    nominal step where the axis has too few boundaries to measure one between them.
- * 5. The square a piece is placed against is the cell under `WITHIN_CELL`. Under `WITHIN_TILE` it is
- *    the own box, squared to its longer side, of a piece drawn to the whole tile, and otherwise a
- *    square of the tile side centred where those pieces put the squares in its row and column. The side
- *    is measured from the veil alone, held to the share the prompt states within `TILE_TOLERANCE`, or
- *    is that share where the sheet holds no veil (`latticeSquares`).
+ * 5. The square a piece is placed against is a square of the median cell's side under `WITHIN_CELL`.
+ *    Under `WITHIN_TILE` it is the own box, squared to its longer side, of a piece drawn to the whole
+ *    tile, and otherwise a square of the tile side. Each is centred where those pieces put the squares
+ *    in its row and column, or where its own line's pieces allow in a line that holds none. The tile
+ *    side is measured from the veil alone, held to the share the prompt states within
+ *    `TILE_TOLERANCE`, or is that share where the sheet holds no veil (`latticeSquares`).
  *
  * A boundary with no gap near it, a piece past the grid's last column, or a tile that disagrees with
  * the stated share is a failure naming the boxes, never a fall back to centring. Pure.

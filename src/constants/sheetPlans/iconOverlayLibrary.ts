@@ -123,7 +123,9 @@ tells the player nothing about which icon they are looking at.`,
  * diamonds in the middle of their cells, the fourth 263 pixels across a 217-pixel tile, which Keep
  * place refuses rather than cut a pip from. So each look puts the mark in one corner, the bottom left,
  * makes it of its pips alone, their arrangement its shape, and holds it within a quarter of the side
- * each way, which keeps it out of the middle half of the square, where the subject sits.
+ * each way, which keeps it out of the middle half of the square, where the subject sits. The sheet
+ * drawn from this wording (`test_sprites/icons_fullbleed.png`) put all four marks inside the tile, in
+ * its bottom-left corner, though the fourth reached seven tenths of the side rather than a quarter.
  *
  * **Section 2's floors overrule the quarter, and the line says so.** Shown at a display size, a pip is
  * an accent at least two displayed pixels wide, the gap beside it the same, and an outline one, so two

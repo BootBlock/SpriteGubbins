@@ -4,7 +4,7 @@ import { createImage } from '../src/utils/imageData.ts';
 import { decodePng } from '../src/test/decodePng.ts';
 
 /**
- * The eight reference sheets in `test_sprites/`, and the overlay sheet a placement reading is pinned
+ * The eight reference sheets in `test_sprites/`, and the overlay sheets a placement reading is pinned
  * against ({@link PlacementSheetName}), as `ImageData`.
  *
  * The only real generator output this project has, and the corpus every measurement about *what
@@ -39,14 +39,16 @@ export type CorpusSheetName =
 
 /**
  * A sheet in `test_sprites/` that a placement reading is pinned against rather than a quantiser
- * calibration: `game_overlay_test.png` is an icon set's overlay sheet a generator drew from the cell
- * prompt, fourteen pieces one to a cell of a four-column grid (`cellLattice`). Kept out of
+ * calibration: each is an icon set's overlay sheet a generator drew from the cell prompt, fourteen
+ * pieces one to a cell of a four-column grid (`cellLattice`). `game_overlay_test.png` and
+ * `icons_fullbleed.png` are drawn under the full-bleed look, the second from the prompt that puts each
+ * tier mark in its corner, and `icons_isolated.png` under the isolated look. Kept out of
  * {@link CorpusSheetName}, so the surveys that state a figure for every calibration sheet do not have
- * to state one for it. It is no calibration sheet for scale either: each piece was drawn at a pixel
- * pitch of its own, from about 7½ to about 10½, so the sheet has no one scale to read, and
- * `overlay-sheet-scale.test.ts` pins the refusal and its reason.
+ * to state one for each. Nor is the first a calibration sheet for scale: each of its pieces was drawn at
+ * a pixel pitch of its own, from about 7½ to about 10½, so it has no one scale to read, and
+ * `overlay-sheet-scale.test.ts` pins the refusal and its reason. The other two each read one scale.
  */
-export type PlacementSheetName = 'game_overlay_test.png';
+export type PlacementSheetName = 'game_overlay_test.png' | 'icons_fullbleed.png' | 'icons_isolated.png';
 
 /**
  * Every sheet: the reference first, then the seven it is checked against.

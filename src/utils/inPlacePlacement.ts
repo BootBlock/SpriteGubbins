@@ -10,7 +10,7 @@ import { latticeCellOf } from './latticeCellOf.ts';
  * region holds the piece's box centre (`latticeCellOf`) — a piece the reader joined across two cells is
  * placed against the cell its centre falls in, reaches past that square, and is refused by `outOfPlace`
  * — and its square is that piece's own box squared where it spans the tile, the tile square where it
- * keeps a place of its own, or the cell itself on an isolated look (`LatticeCell.square`). One factor
+ * keeps a place of its own, or a square of the cell's side on an isolated look (`LatticeCell.square`). One factor
  * maps the square's width onto the file's, `f`, and the piece's own box is drawn at `f` times its size,
  * `f` times its offset from the square's corner in. So a corner badge drawn in the top-right of the tile
  * square is the top-right of the file, every piece that keeps its place is scaled alike, and a halo
