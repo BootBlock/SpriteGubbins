@@ -77,9 +77,9 @@ export interface SpriteAnchor {
  *   to fill the cell, for full-bleed tiles, whose every file must be the whole cell edge to edge
  *   whatever size the generator drew each tile at.
  * - `IN_PLACE` keeps each piece where it was drawn in its cell of a placement sheet
- *   (`SheetPlan.placement`): the square it was placed against becomes the cell, so a corner badge
- *   lands in the corner of the file. One factor maps that square onto the cell's shorter side, centred,
- *   and it is 1 on a sheet with a pixel scale (`squareInFile`). The only fit a placement sheet takes, and one no other sheet offers; see
+ *   (`SheetPlan.placement`): the square it was placed against is laid on the cell, centred, so a corner
+ *   badge lands in that square's corner, which is the file's corner on a square cell. One factor maps
+ *   the square onto the cell's shorter side, and it is 1 on a sheet with a pixel scale (`squareInFile`). The only fit a placement sheet takes, and one no other sheet offers; see
  *   `resolveSpriteCell`.
  *
  * **The reader states it rather than the app reading it off the artwork**, which is the call this

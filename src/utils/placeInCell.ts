@@ -23,8 +23,9 @@ import { CHANNELS_PER_PIXEL, createImage, pixelOffset } from './imageData.ts';
  *
  * Rows outside the cell are not copied, so an offset that would hang the artwork over an edge is
  * clipped rather than allowed to write past the end of the array. Under `IN_PLACE` that is the fit's
- * own behaviour: a piece up to `PLACE_OVERSHOOT` of its tile square past the file, or past the square, is
- * handed here to be clipped (`oversizedSprites`). No other fit produces an overhang — the caller refuses a sprite
+ * own behaviour: a piece up to `PLACE_OVERSHOOT` of its tile square past the file is handed here to
+ * be clipped (`oversizedSprites`). A piece within that margin past its square but inside the file is
+ * written whole, since only the file's edge clips. No other fit produces an overhang — the caller refuses a sprite
  * larger than the cell under `REFUSE`, and the two resizing fits never draw one past it — so there
  * the clip is what keeps a refusal from becoming a corrupted file.
  *

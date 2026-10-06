@@ -103,7 +103,7 @@ describe('inPlacePlacement', () => {
       expect(oversizedSprites(past, cell)).toEqual([0, 1, 2, 3]);
     });
 
-    it('clips a piece a pixel past its square on any side', () => {
+    it('keeps a piece a pixel past its square on any side', () => {
       const slight: readonly SpriteBox[] = [
         { left: 9, top: 15, width: 10, height: 10, pixels: 100 },
         { left: 30, top: 30, width: 10, height: 10, pixels: 100 },

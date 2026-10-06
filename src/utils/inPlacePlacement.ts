@@ -23,7 +23,7 @@ import { squareInFile } from './squareInFile.ts';
  * the lattice reading has brought pixel art down to one file pixel per drawn pixel, and resampling it
  * would blend the pixels apart, so the square keeps its drawn size, centred in the file. A piece that
  * leaves its square or its file by more than `PLACE_OVERSHOOT` is refused by `oversizedSprites` before the
- * writer reaches here, and `placeInCell` clips the slight overshoot of the rest.
+ * writer reaches here, and `placeInCell` clips whatever of the rest passes the file's edge.
  */
 export function inPlacePlacement(box: SpriteBox, cell: SpriteCell): SpritePlacement | null {
   const square = latticeCellOf(box, cell)?.square;
