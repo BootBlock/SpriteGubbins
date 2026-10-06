@@ -18,14 +18,16 @@ import { upscaleNearest } from '../src/utils/upscaleNearest.ts';
  * `constants/autoTune.ts` states the same rule for its own ladders — the count of positions is what
  * a change here has to be judged by — so this counts calls.
  *
- * **The three prologue passes are once per crop and the difference map is never**, and both halves
- * follow from the same fact: the key, the edge hardening and the mesh depend on `key`,
+ * **For the candidates, the three prologue passes are once per crop and the difference map is
+ * never**, and both halves follow from the same fact: the key, the edge hardening and the mesh depend on `key`,
  * `silhouetteThreshold` and `grid`, none of which the sweep may move, while the map is the one
  * reading `readCandidate` does not look at. See `quantisePrologue` and `quantiseRegions`.
  *
  * **Beside those, the sweep runs the whole sheet once at each end** to count the colours it reports,
  * and a sweep that moved nothing runs it once — see `TuneOutcome.sheetColors`. Each of those is the
- * full pipeline, prologue and map included, and it is a fixed cost rather than one per candidate.
+ * full pipeline, prologue and map included, and it is a fixed cost rather than one per candidate, so
+ * both cases are counted here: the first sweep below moves the dials, and the second starts where
+ * the first settled and moves nothing.
  *
  * The counters are `vi.hoisted` because a `vi.mock` factory is hoisted above every import in this
  * file, so anything it closes over has to be hoisted with it.
@@ -110,9 +112,12 @@ const KEYED: QuantiseSettings = {
 };
 
 describe('the auto-tune sweep against the pipeline prologue', () => {
-  it('measures the key, the hardening and the mesh once a crop, and no difference map at all', () => {
+  it('measures the prologue once a crop and no difference map for a candidate, then the sheet at each end', () => {
+    counts.mesh = counts.key = counts.harden = counts.difference = 0;
     const outcome = autoTune(SHEET, KEYED);
-    const sheetRuns = sameTunedDials(tunedDialsOf(KEYED), outcome.dials) ? 1 : 2;
+    // A sweep that moved the dials, so the sheet is run at both ends.
+    expect(sameTunedDials(tunedDialsOf(KEYED), outcome.dials)).toBe(false);
+    const sheetRuns = 2;
 
     // The sweep this is a claim about: many candidates, each run on every crop. Without this the
     // three assertions below would hold trivially over a sweep that had done nothing.
@@ -128,10 +133,23 @@ describe('the auto-tune sweep against the pipeline prologue', () => {
     expect(counts.key).toBe(outcome.crops + sheetRuns);
     expect(counts.harden).toBe(outcome.crops + sheetRuns);
 
-    // And never for a candidate, where the same restoration reports 620. `readCandidate` reads the image and the
-    // colour count and nothing else, and this is the one reading that costs a second walk over the
+    // And never for a candidate, where the same restoration reports 620 — only the two runs over the
+    // sheet take one. `readCandidate` reads the image and the colour count and nothing else, and this is the one reading that costs a second walk over the
     // source rather than falling out of the transform — which is why `quantiseRegions` hands back
     // only the images.
     expect(counts.difference).toBe(sheetRuns);
+  });
+
+  it('runs the sheet once where the sweep moved nothing', () => {
+    const settled = { ...KEYED, ...autoTune(SHEET, KEYED).dials };
+    counts.mesh = counts.key = counts.harden = counts.difference = 0;
+
+    const outcome = autoTune(SHEET, settled);
+
+    expect(sameTunedDials(tunedDialsOf(settled), outcome.dials)).toBe(true);
+    expect(counts.mesh).toBe(outcome.crops + 1);
+    expect(counts.key).toBe(outcome.crops + 1);
+    expect(counts.harden).toBe(outcome.crops + 1);
+    expect(counts.difference).toBe(1);
   });
 });

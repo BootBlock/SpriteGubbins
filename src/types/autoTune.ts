@@ -190,7 +190,8 @@ export interface TuneOutcome {
    * Positions, not runs of the pipeline: each one is read on every crop, so the chip the panel draws
    * states both figures side by side. **A position ranked twice is counted twice and run once** — every
    * stage ranks the dials in force, whose reading the stage before it already took — so the pipeline
-   * ran at most this many times {@link crops}. See `candidateReader`.
+   * ran over the crops at most this many times {@link crops}, and over the whole sheet once or twice
+   * more for {@link sheetColors}. See `candidateReader`.
    */
   readonly candidates: number;
   /** The price every stage ranked its candidates at. */

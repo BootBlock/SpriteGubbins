@@ -71,7 +71,7 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
   }
 
   // **Once per crop, for the whole sweep**, and that is the point of the shape rather than a
-  // convenience. The prologue is the key, the edge hardening and the mesh — three passes whose only
+  // convenience; the whole-sheet count at the end runs its own. The prologue is the key, the edge hardening and the mesh — three passes whose only
   // inputs are `key`, `silhouetteThreshold` and `grid`, none of which is in {@link TunedDials}, so
   // every candidate below would measure the same three answers again. A sweep of
   // `test_sprites/armour.png` at a grid of 6 ranked 142 positions over 5 crops and ran every one
@@ -154,7 +154,7 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
 
   // **The colours are counted on the whole sheet, once at each end**, because that is the figure the
   // panel reports and the crops cannot answer it: they count only the colours they sampled, which
-  // on the corpus is between 19% and 81% of the sheet's — see `TuneOutcome.sheetColors`. One run of
+  // on the corpus is between 19% and 88% of the sheet's — see `TuneOutcome.sheetColors`. One run of
   // the pipeline over a corpus sheet took 0.66–0.81 s where its sweep took 7–27 s, on one machine,
   // and a sweep that moved nothing runs it once.
   const baselineColors = quantiseImage(image, settings).colors;
