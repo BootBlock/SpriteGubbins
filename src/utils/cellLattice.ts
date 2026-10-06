@@ -25,7 +25,7 @@ interface AxisEdges {
  * 2. The row boundaries are the empty runs nearest each nominal boundary (`latticeBoundaries`).
  * 3. The column boundaries are read the same way, row by row, from the pieces whose centres fall in it.
  * 4. A row's or column's outer edge is its inner boundary less or plus the median measured step, or the
- *    pitch the even gaps measure, which is the nominal step where they measure none.
+ *    nominal step where the axis has too few boundaries to measure one between them.
  * 5. The square a piece is placed against is the cell under `WITHIN_CELL`. Under `WITHIN_TILE` it is
  *    the own box, squared to its longer side, of a piece drawn to the whole tile, and otherwise a
  *    square of the tile side centred where those pieces put the squares in its row and column. The side
@@ -45,7 +45,7 @@ export function cellLattice(boxes: readonly SpriteBox[], request: LatticeRequest
   );
   if (rows.missing !== null) return straddling(boxes, rows.missing, 'top', 'height', 'row');
   const rowOf = centreY.map((centre) => rows.inner.filter((boundary) => boundary < centre).length);
-  const rowEdges = edges(rows.inner, rows.pitch);
+  const rowEdges = edges(rows.inner, step);
 
   const cellOf: number[] = boxes.map(() => -1);
   const columnEdges = new Map<number, AxisEdges>();
@@ -62,7 +62,7 @@ export function cellLattice(boxes: readonly SpriteBox[], request: LatticeRequest
       const failed = straddling(among, columns.missing, 'left', 'width', 'column');
       return { ...failed, boxes: failed.boxes.map((at) => members[at] ?? at) };
     }
-    columnEdges.set(row, edges(columns.inner, columns.pitch));
+    columnEdges.set(row, edges(columns.inner, step));
     for (const [at, index] of members.entries()) {
       const column = columns.inner.filter((boundary) => boundary < (centreX[at] ?? 0)).length;
       cellOf[index] = column >= request.columns ? -1 : row * request.columns + column;
@@ -89,7 +89,7 @@ export function cellLattice(boxes: readonly SpriteBox[], request: LatticeRequest
 
 /**
  * One axis's cells from its inner boundaries: the median step between them at the outer edges, or the
- * pitch the even gaps measure where there are too few boundaries to step between.
+ * nominal step where there are too few boundaries to step between.
  */
 function edges(inner: readonly number[], step: number): AxisEdges {
   const pitch =

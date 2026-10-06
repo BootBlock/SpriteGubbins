@@ -1,3 +1,5 @@
+import { lineCentres } from './lineCentres.ts';
+
 /** An occupied run along one axis, start inclusive and end exclusive, in the sheet's drawn pixels. */
 type Span = readonly [number, number];
 
@@ -14,31 +16,34 @@ type Span = readonly [number, number];
  * reach to within a quarter step of it, which on a sheet of centred tile squares is their square's edge,
  * so the gap is even about the boundary. **Where the gap runs past the window** — a row of top-corner
  * badges above a row of bottom-corner marks, or an empty cell — its middle could sit half a cell away,
- * so the boundary is the point of the gap nearest where the grid puts it: `k` times the pitch measured
- * from the even gaps found so far, or the nominal step before any.
+ * so the boundary is the point of the gap nearest where the line through the even gaps found so far
+ * puts it (`lineCentres`): a step on from the one even gap, or `k × step` before any.
+ *
+ * **The line has an origin as well as a pitch.** A generator draws its whole sheet a few pixels off
+ * the grid the prompt states (twelve down on the first real overlay sheet), so an even gap is the
+ * cell's edge but not `k` cells from the sheet's edge; a pitch read as the gap's place over `k` took
+ * an offset for a narrower cell and placed every boundary after it that much further off.
  *
  * **Absolute rather than chained from the boundary before it**, so one boundary does not carry its error
- * to every boundary after it. `pitch` is the step the even gaps measure, which the outer edges take
- * where the axis has too few boundaries to measure one between them. It reads on while a piece's centre lies past the window of the next
+ * to every boundary after it. It reads on while a piece's centre lies past the window of the next
  * boundary, so the count of boundaries is the count of cells the pieces reach, less one. Pure.
  */
 export function latticeBoundaries(
   spans: readonly Span[],
   centres: readonly number[],
   step: number,
-): { readonly inner: readonly number[]; readonly missing: number | null; readonly pitch: number } {
+): { readonly inner: readonly number[]; readonly missing: number | null } {
   const reach = step / 4;
   const inner: number[] = [];
-  const pitches: number[] = [];
-  const pitch = (): number =>
-    pitches.length === 0 ? step : pitches.reduce((sum, at) => sum + at, 0) / pitches.length;
+  const even = new Map<number, readonly number[]>();
   for (let k = 1; centres.some((centre) => centre > k * step - reach); k += 1) {
-    const found = boundaryNear(spans, k * step, reach, k * pitch());
-    if (found === null) return { inner, missing: k * step, pitch: pitch() };
-    if (found.even) pitches.push(found.at / k);
+    const expected = lineCentres(even, step)(k) ?? k * step;
+    const found = boundaryNear(spans, k * step, reach, expected);
+    if (found === null) return { inner, missing: k * step };
+    if (found.even) even.set(k, [found.at]);
     inner.push(found.at);
   }
-  return { inner, missing: null, pitch: pitch() };
+  return { inner, missing: null };
 }
 
 /**

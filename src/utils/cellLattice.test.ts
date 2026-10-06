@@ -166,6 +166,34 @@ describe('cellLattice', () => {
     });
   });
 
+  it('places rows of badges under one row of veils on a sheet drawn twelve pixels off its grid', () => {
+    // Only the first row holds a spanning piece, so the squares of the two below are read off the row
+    // pitch; the even gap under the veils, at 244, once measured a pitch of 244 and put them 12 and 24
+    // pixels too high.
+    const offset = (box: SpriteBox): SpriteBox => ({ ...box, left: box.left - 12, top: box.top - 12 });
+    const places: [number, Place][] = [
+      [0, 'TILE'],
+      [1, 'TILE'],
+      [4, 'TOP_RIGHT'],
+      [5, 'TOP_RIGHT'],
+    ];
+    places.push([8, 'TOP_RIGHT'], [9, 'TOP_RIGHT']);
+    const boxes = places.map(([cell, place]) => offset(piece(cell, place)));
+    const lattice = cells(
+      cellLattice(boxes, { ...REQUEST, tileCells: { measuring: [0, 1], spanning: [0, 1] } }),
+    );
+    expect(lattice.cellOf).toEqual(places.map(([cell]) => cell));
+    for (const [at, [cell]] of places.entries()) {
+      const square = lattice.cells.find((each) => each.index === cell)?.square;
+      const expected = squareAt(cell);
+      expect(square, `cell ${String(cell)}`).toMatchObject({
+        left: expected.left - 12,
+        top: expected.top - 12,
+      });
+      expect(boxes[at]?.top, `cell ${String(cell)}`).toBe(square?.top);
+    }
+  });
+
   it('takes a veil drawn 22% over the stated share, and refuses one drawn 30% over', () => {
     // The first real overlay sheet's veil came back 16% over, so a fifth left too little room. A row
     // of pieces the veil's size keeps every boundary at 256, so the cell is the 256 the share is of.
