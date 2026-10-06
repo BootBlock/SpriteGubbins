@@ -42,7 +42,9 @@ export type CorpusSheetName =
  * calibration: `game_overlay_test.png` is an icon set's overlay sheet a generator drew from the cell
  * prompt, fourteen pieces one to a cell of a four-column grid (`cellLattice`). Kept out of
  * {@link CorpusSheetName}, so the surveys that state a figure for every calibration sheet do not have
- * to state one for it.
+ * to state one for it. It is no calibration sheet for scale either: each piece was drawn at a pixel
+ * pitch of its own, from about 7½ to about 10½, so the sheet has no one scale to read, and
+ * `overlay-sheet-scale.test.ts` pins the refusal and its reason.
  */
 export type PlacementSheetName = 'game_overlay_test.png';
 
