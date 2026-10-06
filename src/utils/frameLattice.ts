@@ -1,5 +1,6 @@
 import type { PixelShift } from '../types/quantiser.ts';
 import { median } from './median.ts';
+import { repeatedMedianSlope } from './repeatedMedianSlope.ts';
 
 /** The regular layout a strip's frames were fitted to: where it starts, and how far apart it steps. */
 export interface FrameLattice {
@@ -57,8 +58,8 @@ export interface FrameLattice {
  */
 export function fitLattice(shifts: readonly PixelShift[]): FrameLattice {
   const pitch = {
-    x: repeatedMedianSlope(shifts.map((shift) => shift.x)),
-    y: repeatedMedianSlope(shifts.map((shift) => shift.y)),
+    x: repeatedMedianSlope(shifts.map((shift, index) => [index, shift.x] as const)),
+    y: repeatedMedianSlope(shifts.map((shift, index) => [index, shift.y] as const)),
   };
   return {
     pitch,
@@ -103,20 +104,4 @@ export function driftAt(lattice: FrameLattice, index: number, measured: PixelShi
 function whole(distance: number): number {
   const truncated = Math.trunc(distance);
   return truncated === 0 ? 0 : truncated;
-}
-
-/**
- * Siegel's repeated median slope: per frame, the middle of the slopes from it to every other frame,
- * and then the middle of those.
- *
- * Half the frames of a row have to be wrong before the answer moves, which is a stronger guarantee
- * than the row is ever going to need — and, unlike a walk of the neighbouring gaps, every long
- * baseline is in the vote, which is what recovers a spacing that is not a whole number of pixels.
- */
-function repeatedMedianSlope(values: readonly number[]): number {
-  const slopes = values.flatMap((value, index) => {
-    const fromHere = values.flatMap((other, at) => (at === index ? [] : [(other - value) / (at - index)]));
-    return fromHere.length === 0 ? [] : [median(fromHere)];
-  });
-  return slopes.length === 0 ? 0 : median(slopes);
 }

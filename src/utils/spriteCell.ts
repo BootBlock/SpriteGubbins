@@ -1,4 +1,5 @@
 import { SPRITE_CELL_SIDE_RANGE } from '../constants/spriteCell.ts';
+import { PLACE_OVERSHOOT } from '../constants/cellLattice.ts';
 import type { CellLattice } from '../types/cellLattice.ts';
 import type { TargetSize } from '../types/output.ts';
 import type { PixelGrid, SpriteBox } from '../types/quantiser.ts';
@@ -14,6 +15,7 @@ import type {
 } from '../types/spriteCell.ts';
 import { evenScale } from './evenScale.ts';
 import { inPlacePlacement } from './inPlacePlacement.ts';
+import { latticeCellOf } from './latticeCellOf.ts';
 
 /**
  * Cutting each sprite into a fixed cell instead of into its own bounding box.
@@ -280,19 +282,26 @@ export function oversizeReason(
 /**
  * The pieces of a placement sheet that do not land inside the cell under `IN_PLACE`: every piece where
  * the cells could not be read, and otherwise each piece no cell holds or whose place reaches past the
- * file's edge. A piece drawn across its tile square's edge is refused rather than clipped, because the
- * part the clip would take is part of the mark.
+ * file's edge by more than `PLACE_OVERSHOOT` of its tile square. A piece within that margin is clipped
+ * by `placeInCell` — up to eight pixels of a 128-pixel file, one pixel of the icon at its smallest
+ * display size; one past it was drawn at the wrong place, and the part a clip would take is part of
+ * the mark.
  */
 function outOfPlace(boxes: readonly SpriteBox[], cell: SpriteCell): readonly number[] {
   if (cell.lattice?.kind !== 'CELLS') return boxes.map((_box, index) => index);
   return boxes.flatMap((box, index) => {
     const placed = inPlacePlacement(box, cell);
-    const inside =
-      placed !== null &&
-      placed.x >= 0 &&
-      placed.y >= 0 &&
-      placed.x + placed.width <= cell.width &&
-      placed.y + placed.height <= cell.height;
-    return inside ? [] : [index];
+    const square = latticeCellOf(box, cell)?.square;
+    if (placed === null || square === undefined) return [index];
+    // The square's side in the file: the whole file where the fit resamples, its own size where it does
+    // not (`inPlacePlacement`).
+    const side = cell.resamples ? cell.width : square.width;
+    const past = Math.max(
+      -placed.x,
+      -placed.y,
+      placed.x + placed.width - cell.width,
+      placed.y + placed.height - cell.height,
+    );
+    return past <= side * PLACE_OVERSHOOT ? [] : [index];
   });
 }

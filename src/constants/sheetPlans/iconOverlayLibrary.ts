@@ -47,7 +47,7 @@ const WORDING: Readonly<Record<IconLook, OverlayWording>> = {
       'one overlay piece and the overlay piece beside it are drawn to the same weight, each drawn to the square of one icon',
     veil: 'Disabled veil ×1 — a flat dark square the size of a whole tile, laid over an icon to read as unavailable',
     halo: 'Highlight halo ×1 — a glow running round the inside of the tile’s square edge, marking the icon under the pointer',
-    ring: 'Selected ring ×1 — a square ring just inside the tile’s edge, marking the icon currently chosen',
+    ring: 'Selected ring ×1 — a square ring whose outer edge is the tile’s edge, marking the icon currently chosen',
     sweep:
       'Cooldown sweep ×2: a dark wedge clipped to the tile’s square and swept clockwise from the top edge — a quarter elapsed, and three quarters',
     rarityGlow: 'Rarity glow ×1 — the aura the highest tier carries, hugging the tile’s square edge',
@@ -55,7 +55,7 @@ const WORDING: Readonly<Record<IconLook, OverlayWording>> = {
 so it can be placed on any of them:`,
     placement: `Inside its cell, every piece is drawn within the tile square section [SEC:STYLE] states, centred in
 the cell, and stands where it sits over the icon: a corner mark in its corner of that square, a ring
-just inside its edge, a veil across the whole of it. Only the piece is drawn, never the square, so a
+along its edge, a veil across the whole of it. Only the piece is drawn, never the square, so a
 piece that covers less of the square leaves the rest of its cell empty, and it lands on the tile it
 marks without being moved or scaled. A mark stands clear of the middle of the square, where the
 subject sits, wherever it can — a mark that covers the thing it is describing tells the player
@@ -127,12 +127,14 @@ function library(wording: OverlayWording): OverlayLibrary {
         intro: `Drawn once and applied by the engine over any icon of the set, rather than as greyed or brightened
 copies of each of them:`,
         entries: [
-          { ...overlay('disabled-veil', wording.veil), fillsTile: true },
-          { ...overlay('highlight-halo', wording.halo), fillsTile: true },
-          overlay('selected-ring', wording.ring),
+          { ...overlay('disabled-veil', wording.veil), tile: 'MEASURES' },
+          { ...overlay('highlight-halo', wording.halo), tile: 'SPANS' },
+          { ...overlay('selected-ring', wording.ring), tile: 'SPANS' },
           {
             ...overlay('cooldown-sweep', wording.sweep, 2),
             parts: ['cooldown-sweep-quarter', 'cooldown-sweep-three-quarters'],
+            // A quarter fills one quadrant, so it keeps its place; three quarters reach every edge.
+            tile: [null, 'SPANS'],
           },
         ],
       },
@@ -145,7 +147,7 @@ copies of each of them:`,
             'Tier marks ×4: one per rarity step above the common one, each a shape of its own carrying one to four pips in order, so a tier reads by its shape and its pip count and never by its colour alone',
             4,
           ),
-          overlay('rarity-glow', wording.rarityGlow),
+          { ...overlay('rarity-glow', wording.rarityGlow), tile: 'SPANS' },
           overlay('locked-mark', 'Locked mark ×1'),
           overlay('new-item-flare', 'New item flare ×1'),
           overlay('broken-overlay', 'Broken or damaged overlay ×1'),

@@ -158,7 +158,8 @@ export interface SheetRegion {
 
 /**
  * How one sprite becomes its cell: the region of the sheet cut for it, and where that region lands
- * inside the cell and at what size.
+ * in the cell and at what size. Under `IN_PLACE` it may reach past the cell's edge by up to
+ * `PLACE_OVERSHOOT` of the tile square, and the part past the edge is clipped (`placeInCell`).
  *
  * Under `REFUSE` the region is the sprite's own bounding box and its size in the cell is the box's,
  * so the placement is a displacement and nothing more. Under `SCALE_SET` the region is still the box

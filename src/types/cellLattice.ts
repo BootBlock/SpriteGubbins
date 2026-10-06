@@ -2,12 +2,16 @@ import type { SheetPlan } from './components.ts';
 import type { SheetRegion } from './spriteCell.ts';
 
 /**
- * What a placement sheet's cells are read against: the sheet's size, the grid it states, where a piece
- * stands in its cell, and the tile square's stated share of the cell.
- *
- * `tileCells` are the cells the plan puts a piece that is the whole tile square in — the veil and the
- * halo (`ComponentEntry.fillsTile`) — counted from zero in reading order, which is the
- * order the prompt lays one piece to a cell. The tile square is measured from the pieces found there.
+ * The cells a placement sheet's plan puts a piece of each `TileRole` in, counted from zero in
+ * reading order, which is the order the prompt lays one piece to a cell (`tileCellsOf`). `spanning`
+ * includes `measuring`, since a piece that is the square also spans it.
+ */
+export type TileCells = Readonly<Record<'measuring' | 'spanning', readonly number[]>>;
+
+/**
+ * What a placement sheet's cells are read against: the sheet's width, the grid it states, where a piece
+ * stands in its cell, the tile square's stated share of the cell, and the cells the plan puts a piece
+ * that measures or spans the square in.
  */
 export interface LatticeRequest {
   readonly width: number;
@@ -15,7 +19,7 @@ export interface LatticeRequest {
   readonly placement: NonNullable<SheetPlan['placement']>;
   /** The tile square's side as a fraction of the cell's (`TILE_SHARE`), which `WITHIN_CELL` ignores. */
   readonly share: number;
-  readonly tileCells: readonly number[];
+  readonly tileCells: TileCells;
 }
 
 /** One occupied cell of a placement sheet. */
@@ -26,8 +30,9 @@ export interface LatticeCell {
   readonly region: SheetRegion;
   /**
    * The square a piece in this cell is placed against: the cell under `WITHIN_CELL`, and under
-   * `WITHIN_TILE` the full-tile piece's own box squared to its longer side where the cell holds one, or a
-   * square of the tile side centred in the cell.
+   * `WITHIN_TILE` the own box, squared to its longer side, of a piece that spans the tile, and otherwise a
+   * square of the tile side centred where the spanning pieces in its row and column put the squares
+   * (`latticeSquares`).
    */
   readonly square: SheetRegion;
 }

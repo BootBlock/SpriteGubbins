@@ -14,7 +14,8 @@ import { useSheetPlan } from './useSheetPlan.ts';
  *
  * Read against the studio's sheet in force, as the names and the stated step are (`useSheetPlan`):
  * the grid the plan declares, where it places its pieces, the tile share section 2 states for the
- * resolution profile in force (`TILE_SHARE`), and the cells the plan puts a full-tile piece in.
+ * resolution profile in force (`TILE_SHARE`), and the cells the plan puts a piece that measures or spans
+ * the tile in (`tileCellsOf`).
  */
 export function useCellLattice(sprites: SpriteSegmentation | null): CellLattice | null {
   const plan = useSheetPlan();

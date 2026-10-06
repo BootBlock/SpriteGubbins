@@ -47,7 +47,7 @@ const REQUEST: LatticeRequest = {
   columns: 4,
   placement: 'WITHIN_TILE',
   share: TILE,
-  tileCells: [0, 1, 2, 3, 4, 5],
+  tileCells: { measuring: [0, 1, 2, 3, 4, 5], spanning: [0, 1, 2, 3, 4, 5] },
 };
 
 function cells(lattice: CellLattice) {
@@ -89,7 +89,9 @@ describe('cellLattice', () => {
   it('puts two pieces of one row in it however little they overlap', () => {
     // A badge at the top of one cell and a mark at the bottom of the next share no height at all.
     const boxes = [piece(0, 'TILE'), piece(4, 'TOP_RIGHT'), piece(5, 'BOTTOM_LEFT')];
-    expect(cells(cellLattice(boxes, { ...REQUEST, tileCells: [0] })).cellOf).toEqual([0, 4, 5]);
+    expect(
+      cells(cellLattice(boxes, { ...REQUEST, tileCells: { measuring: [0], spanning: [0] } })).cellOf,
+    ).toEqual([0, 4, 5]);
   });
 
   it('joins nothing across cells, and names a box straddling a boundary rather than centring it', () => {
@@ -104,7 +106,7 @@ describe('cellLattice', () => {
 
   it('reads a sheet of one row, whose rows have no step to measure', () => {
     const boxes = [piece(0, 'TILE'), piece(1, 'TOP_RIGHT'), piece(2, 'CENTRE')];
-    const lattice = cells(cellLattice(boxes, { ...REQUEST, tileCells: [0] }));
+    const lattice = cells(cellLattice(boxes, { ...REQUEST, tileCells: { measuring: [0], spanning: [0] } }));
     expect(lattice.cellOf).toEqual([0, 1, 2]);
     expect(lattice.cells.map((cell) => cell.region.top)).toEqual([0, 0, 0]);
     expect(lattice.cells.map((cell) => cell.region.height)).toEqual([STEP, STEP, STEP]);
@@ -112,10 +114,12 @@ describe('cellLattice', () => {
 
   it('leaves an empty cell’s neighbours their own indices', () => {
     const boxes = [piece(0, 'TILE'), piece(2, 'TOP_LEFT'), piece(3, 'TOP_RIGHT')];
-    expect(cells(cellLattice(boxes, { ...REQUEST, tileCells: [0] })).cellOf).toEqual([0, 2, 3]);
+    expect(
+      cells(cellLattice(boxes, { ...REQUEST, tileCells: { measuring: [0], spanning: [0] } })).cellOf,
+    ).toEqual([0, 2, 3]);
   });
 
-  it('measures the tile from the full-tile pieces, and places against each one’s own box', () => {
+  it('measures the tile from the veils, and places each against its own box', () => {
     const boxes = [piece(0, 'TILE'), piece(1, 'TILE'), piece(6, 'TOP_RIGHT')];
     const lattice = cells(cellLattice(boxes, REQUEST));
     expect(lattice.tileSide).toBe(squareAt(0).side);
@@ -127,43 +131,107 @@ describe('cellLattice', () => {
     );
   });
 
-  it('uses the stated share on a sheet with no full-tile piece', () => {
+  it('places a halo drawn larger than the veil against its own box, and a mark against the veil’s side', () => {
+    // A generator draws the pieces round the square's edge a few percent larger than the veil.
+    const { left, top, side } = squareAt(1);
+    const halo: SpriteBox = { left: left - 8, top: top - 8, width: side + 16, height: side + 16, pixels: 1 };
+    const lattice = cells(
+      cellLattice([piece(0, 'TILE'), halo, piece(2, 'TOP_LEFT')], {
+        ...REQUEST,
+        tileCells: { measuring: [0], spanning: [0, 1] },
+      }),
+    );
+    expect(lattice.tileSide).toBe(squareAt(0).side);
+    expect(lattice.cells[1]?.square).toEqual({
+      left: halo.left,
+      top: halo.top,
+      width: halo.width,
+      height: halo.height,
+    });
+    expect(lattice.cells[2]?.square.width).toBe(squareAt(0).side);
+  });
+
+  it('centres a mark’s square where the spanning pieces put its row and column, not its cell', () => {
+    // The squares are drawn twelve pixels right of and below the middle of their cells; the mark in
+    // cell 5 has a veil above it in its column and one beside it in its row.
+    const shifted = (box: SpriteBox): SpriteBox => ({ ...box, left: box.left + 12, top: box.top + 12 });
+    const boxes = [piece(1, 'TILE'), piece(4, 'TILE'), piece(5, 'TOP_LEFT')].map(shifted);
+    const lattice = cells(
+      cellLattice(boxes, { ...REQUEST, tileCells: { measuring: [1, 4], spanning: [1, 4] } }),
+    );
+    const mark = boxes[2];
+    expect(lattice.cells.find((cell) => cell.index === 5)?.square).toMatchObject({
+      left: mark?.left,
+      top: mark?.top,
+    });
+  });
+
+  it('takes a veil drawn 22% over the stated share, and refuses one drawn 30% over', () => {
+    // The first real overlay sheet's veil came back 16% over, so a fifth left too little room. A row
+    // of pieces the veil's size keeps every boundary at 256, so the cell is the 256 the share is of.
+    const row = (ratio: number): SpriteBox[] => {
+      const side = Math.round(STEP * TILE * ratio);
+      const at = Math.round((STEP - side) / 2);
+      return [0, 1, 2, 3].map((cell) => ({
+        left: cell * STEP + at,
+        top: at,
+        width: side,
+        height: side,
+        pixels: side * side,
+      }));
+    };
+    const request = { ...REQUEST, tileCells: { measuring: [0], spanning: [0] } };
+    expect(cellLattice(row(1.22), request).kind).toBe('CELLS');
+    expect(cellLattice(row(1.3), request).kind).toBe('FAILED');
+  });
+
+  it('uses the stated share on a sheet with no veil', () => {
     const boxes = [piece(0, 'TOP_LEFT'), piece(1, 'BOTTOM_RIGHT'), piece(5, 'CENTRE')];
-    const lattice = cells(cellLattice(boxes, { ...REQUEST, tileCells: [] }));
+    const lattice = cells(cellLattice(boxes, { ...REQUEST, tileCells: { measuring: [], spanning: [] } }));
     expect(lattice.tileSide).toBeCloseTo(STEP * TILE);
     expect(lattice.cells[0]?.square.width).toBe(Math.round(STEP * TILE));
   });
 
-  it('refuses a sheet whose full-tile pieces disagree with the stated share, naming them', () => {
+  it('refuses a sheet whose veils disagree with the stated share, naming them', () => {
     const boxes = [piece(0, 'TILE'), piece(1, 'TILE'), piece(2, 'TOP_LEFT')];
-    const lattice = cellLattice(boxes, { ...REQUEST, share: 0.4, tileCells: [0, 1] });
+    const lattice = cellLattice(boxes, {
+      ...REQUEST,
+      share: 0.4,
+      tileCells: { measuring: [0, 1], spanning: [0, 1] },
+    });
     expect(lattice.kind).toBe('FAILED');
     if (lattice.kind === 'FAILED') {
       expect(lattice.boxes).toEqual([0, 1]);
-      expect(lattice.reason).toContain('the full-tile pieces measure 154 drawn pixels across');
+      expect(lattice.reason).toContain('the tile square measures 154 drawn pixels across');
     }
   });
 
-  it('refuses a single full-tile piece astray of the stated share, however many agree with it', () => {
+  it('refuses a single veil astray of the stated share, however many agree with it', () => {
     // Three veils at the stated share would outvote a fourth drawn at two thirds of it in a median.
     const { left, top } = squareAt(3);
     const astray: SpriteBox = { left, top, width: 100, height: 100, pixels: 10_000 };
     const boxes = [piece(0, 'TILE'), piece(1, 'TILE'), piece(2, 'TILE'), astray];
-    const lattice = cellLattice(boxes, { ...REQUEST, tileCells: [0, 1, 2, 3] });
+    const lattice = cellLattice(boxes, {
+      ...REQUEST,
+      tileCells: { measuring: [0, 1, 2, 3], spanning: [0, 1, 2, 3] },
+    });
     expect(lattice.kind).toBe('FAILED');
     if (lattice.kind === 'FAILED') {
       expect(lattice.boxes).toEqual([3]);
-      expect(lattice.reason).toContain('the full-tile pieces measure 100 drawn pixels across');
+      expect(lattice.reason).toContain('the tile square measures 100 drawn pixels across');
     }
   });
 
   it('places a quarter sweep against the tile square, never against its own box', () => {
-    // Only the veil and the halo are the square; a sweep fills one quadrant of it.
+    // A quarter sweep fills one quadrant of the square, so it keeps a place of its own.
     const { left, top, side } = squareAt(2);
     const half = Math.round(side / 2);
     const sweep: SpriteBox = { left, top, width: half, height: half, pixels: half * half };
     const lattice = cells(
-      cellLattice([piece(0, 'TILE'), piece(1, 'TILE'), sweep], { ...REQUEST, tileCells: [0, 1] }),
+      cellLattice([piece(0, 'TILE'), piece(1, 'TILE'), sweep], {
+        ...REQUEST,
+        tileCells: { measuring: [0, 1], spanning: [0, 1] },
+      }),
     );
     expect(lattice.cells[2]?.square).toEqual({ left, top, width: side, height: side });
   });
@@ -183,7 +251,10 @@ describe('cellLattice', () => {
     // A box past the width the sheet reports: the guard that keeps every cell index inside the grid.
     const past: SpriteBox = { left: 1100, top: 60, width: 30, height: 30, pixels: 900 };
     const tiles = [0, 1, 2, 3].map((cell) => piece(cell, 'TILE'));
-    const lattice = cellLattice([...tiles, past], { ...REQUEST, tileCells: [0, 1, 2, 3] });
+    const lattice = cellLattice([...tiles, past], {
+      ...REQUEST,
+      tileCells: { measuring: [0, 1, 2, 3], spanning: [0, 1, 2, 3] },
+    });
     expect(lattice.kind).toBe('FAILED');
     if (lattice.kind === 'FAILED') {
       expect(lattice.boxes).toEqual([4]);

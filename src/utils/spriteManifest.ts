@@ -32,8 +32,9 @@ import { scaleBoxes } from './sheetLayout.ts';
  *
  * **A rect is always the artwork's own bounding box**, whatever the cut is. Where a cell was asked
  * for, the cell is stated once at the top and each sprite carries its placement — the region cut from
- * the sheet, and the rectangle it is drawn into inside the cell — so a consumer compositing from the
- * sheet does exactly what the pack does, and the rect still describes a region of the sheet that
+ * the sheet, and the rectangle it is drawn into in the cell, clipped to the cell where `IN_PLACE` lets
+ * it reach past (`ManifestPlacement`) — so a consumer compositing from the sheet does exactly what the
+ * pack does, and the rect still describes a region of the sheet that
  * holds this sprite and nothing a gutter away.
  * See `placeInCell`, which measured what widening the rect instead costs, and `SpriteCell` for why
  * a fixed cell is offered at all.
@@ -72,8 +73,9 @@ export interface ManifestInput {
    * At 1:1 beside the boxes, and scaled with them, so the offset a sprite sits at inside its cell is
    * one placement magnified rather than a rounding that moves with the factor.
    *
-   * **Every sprite must fit it**; `writeSheet` refuses the download otherwise, which is why nothing
-   * here checks again. See `oversizedSprites`, which is the one reading that question is taken from.
+   * **Every sprite must fit it**, or under `IN_PLACE` reach past it by no more than `PLACE_OVERSHOOT`
+   * of its tile square; `writeSheet` refuses the download otherwise, which is why nothing here checks
+   * again. See `oversizedSprites`, which is the one reading that question is taken from.
    */
   readonly cell: SpriteCell | null;
   readonly sheet: ManifestSheet | null;

@@ -47,7 +47,7 @@ function latticeOf(boxes: readonly SpriteBox[]): CellLattice {
     columns: 4,
     placement: 'WITHIN_TILE',
     share: 0.6,
-    tileCells: [0],
+    tileCells: { measuring: [0], spanning: [0] },
   });
 }
 

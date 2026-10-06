@@ -9,7 +9,7 @@ import type { ResolutionProfile } from '../../types/output.ts';
  * let a generator draw the icons of one sheet at 55% and the overlay pieces of the next at 64%, and an
  * overlay piece placed against a square of the wrong size lands off the corner it marks. So section 2
  * states the figure on every sheet of an icon set, icon and overlay sheets alike (`shareText`), and
- * `cellLattice` measures the square from the full-tile pieces and checks it against the same figure.
+ * `cellLattice` measures the square from the veil and checks it against the same figure.
  *
  * **Inside each share rung's range**, so a profile still means what its guidance says it does: high
  * resolution draws the square larger than mid. The two profiles that state no share of their own — a

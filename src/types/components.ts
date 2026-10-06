@@ -144,6 +144,21 @@ export interface AttributeBinding {
 }
 
 /**
+ * How a component of a placement sheet stands to the tile square (`ComponentEntry.tile`).
+ *
+ * **`SPANS`: drawn to the whole square**, so its own box is the square it was drawn against: ICON's
+ * highlight halo, selected ring, rarity glow and three-quarter cooldown sweep. A generator draws each of
+ * these a few percent larger or smaller than the next — on the first real overlay sheet the halo and
+ * the glow came back 10% and 17% wider than the veil — so the Quantise tab places each against its own
+ * box rather than against one measured square, which would cut the larger ones off at the file's edge.
+ *
+ * **`MEASURES`: spans the square and is the square**, a solid shape whose box is the tile: the disabled
+ * veil alone. The tile square every other piece is placed against is measured from it
+ * (`latticeSquares`), since a halo or a glow drawn round the edge reaches past the square by its glow.
+ */
+export type TileRole = 'MEASURES' | 'SPANS';
+
+/**
  * One line of the inventory, and how many components that line is worth.
  *
  * `count` is carried rather than parsed back out of `text`: an entry reading "Wall top corners ×4"
@@ -252,13 +267,11 @@ export interface ComponentEntry {
    */
   readonly attribute?: AttributeBinding;
   /**
-   * That each component of this line is the whole tile square of a placement sheet
-   * (`SheetPlan.placement`), its box the square itself: ICON's disabled veil and highlight halo. The
-   * Quantise tab measures the tile square from the pieces in those cells (`latticeSquares`), and places
-   * every other piece against it. The selected ring stands just inside the square, a quarter sweep fills
-   * one quadrant of it and the rarity glow may reach past it, so none of them is the square.
+   * How each component of this line stands to the tile square of a placement sheet
+   * (`SheetPlan.placement`) — one role for every component, or one per component in order, `null` for
+   * a component drawn within the square at a place of its own. See {@link TileRole}.
    */
-  readonly fillsTile?: true;
+  readonly tile?: TileRole | readonly (TileRole | null)[];
   /**
    * What this entry is the opposite-side copy of, named as the inventory names it — `the left arm`.
    *

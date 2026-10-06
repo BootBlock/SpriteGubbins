@@ -36,6 +36,16 @@ describe('inPlacePlacement', () => {
     expect(oversizedSprites([box], cell)).toEqual([]);
   });
 
+  it('clips a piece a sixteenth past its square, and refuses one further', () => {
+    // A 64-pixel file over a 64-pixel square: a sixteenth of it is four file pixels.
+    const cell = cellOver(64, { left: 0, top: 0, width: 64, height: 64 });
+    const slight: SpriteBox = { left: 4, top: -4, width: 20, height: 20, pixels: 400 };
+    const further: SpriteBox = { left: 4, top: -5, width: 20, height: 20, pixels: 400 };
+
+    expect(inPlacePlacement(slight, cell)).toMatchObject({ y: -4 });
+    expect(oversizedSprites([slight, further], cell)).toEqual([1]);
+  });
+
   it('keeps a veil drawn a pixel taller than it is wide inside its file', () => {
     // The veil's own box is its square, and a square measured from its width alone left the extra row
     // past the bottom of the file.
@@ -45,7 +55,7 @@ describe('inPlacePlacement', () => {
       columns: 1,
       placement: 'WITHIN_TILE',
       share: 0.2,
-      tileCells: [0],
+      tileCells: { measuring: [0], spanning: [0] },
     });
     if (lattice.kind !== 'CELLS') throw new Error(`expected cells, got: ${lattice.reason}`);
     const cell = { ...cellOver(64, { left: 0, top: 0, width: 1, height: 1 }), lattice };

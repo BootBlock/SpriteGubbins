@@ -4,7 +4,8 @@ import { createImage } from '../src/utils/imageData.ts';
 import { decodePng } from '../src/test/decodePng.ts';
 
 /**
- * The eight reference sheets in `test_sprites/`, as `ImageData`.
+ * The eight reference sheets in `test_sprites/`, and the overlay sheet a placement reading is pinned
+ * against ({@link PlacementSheetName}), as `ImageData`.
  *
  * The only real generator output this project has, and the corpus every measurement about *what
  * models actually return* has to be checked against. There are eight rather than one because
@@ -35,6 +36,15 @@ export type CorpusSheetName =
   | 'three-quarter-view_tiles1.png'
   | 'ui_elements1.png'
   | 'vehicles_and_props.png';
+
+/**
+ * A sheet in `test_sprites/` that a placement reading is pinned against rather than a quantiser
+ * calibration: `game_overlay_test.png` is an icon set's overlay sheet a generator drew from the cell
+ * prompt, fourteen pieces one to a cell of a four-column grid (`cellLattice`). Kept out of
+ * {@link CorpusSheetName}, so the surveys that state a figure for every calibration sheet do not have
+ * to state one for it.
+ */
+export type PlacementSheetName = 'game_overlay_test.png';
 
 /**
  * Every sheet: the reference first, then the seven it is checked against.
@@ -69,7 +79,7 @@ export const CORPUS_HALVES: readonly [readonly CorpusSheetName[], readonly Corpu
  * `import.meta.url` — Vitest rewrites module URLs, so they are not `file:` URLs the filesystem can
  * be asked about. `tests/design-tokens.test.ts` records the same trap.
  */
-export async function loadCorpusSheet(name: CorpusSheetName): Promise<ImageData> {
+export async function loadCorpusSheet(name: CorpusSheetName | PlacementSheetName): Promise<ImageData> {
   const path = resolve(process.cwd(), 'test_sprites', name);
   const decoded = await decodePng(new Uint8Array(await readFile(path)));
   const image = createImage(decoded.width, decoded.height);

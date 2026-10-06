@@ -3,6 +3,7 @@ import type { CellLattice, LatticeCell, LatticeRequest } from '../types/cellLatt
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { SheetRegion } from '../types/spriteCell.ts';
 import { boundingRegion } from './boundingRegion.ts';
+import { lineCentres } from './lineCentres.ts';
 import { median } from './median.ts';
 import { roundedRegion } from './roundedRegion.ts';
 
@@ -10,14 +11,20 @@ import { roundedRegion } from './roundedRegion.ts';
  * A placement sheet's occupied cells with the square each one's pieces are placed against
  * (`LatticeCell.square`), once the tile side is settled — the last step of `cellLattice`.
  *
- * **Measured only from the pieces that are the tile square** — the cells the plan puts a veil or a halo
- * in (`ComponentEntry.fillsTile`). A ring stands just inside the square's edge and a quarter sweep fills
- * one quadrant of it, so their boxes are not the square, and a cell measured from one placed its piece
- * blown up to fill the file. **Each of those pieces is held to the share the prompt states**, within
- * `TILE_TOLERANCE`, and one that disagrees is a failure naming it; the side is their median, or the
- * stated share where the sheet holds none of them. A veil or a halo is placed against its own box,
- * squared to its longer side about its centre, so a tile drawn a pixel off square still lies wholly in
- * its square; every other piece against a square of that side centred in its cell.
+ * **The side is measured only from the piece that is the tile square**, the veil (`TileRole`
+ * `MEASURES`), held to the share the prompt states within `TILE_TOLERANCE`; one that disagrees is a
+ * failure naming it, and the side is the stated share where the sheet holds none.
+ *
+ * **A piece drawn to the whole square is placed against its own box** (`SPANS`), squared to its longer
+ * side about its centre, so a halo or a glow a generator drew larger than the veil fills its file rather
+ * than reaching past it.
+ *
+ * **Every other piece is placed against a square of the measured side, centred where the spanning
+ * pieces put the squares**: across, where they centre the squares of its column, and down, where they
+ * centre those of its row (`lineCentres`), or at the middle of its cell where the sheet holds no
+ * spanning piece. A generator lays its squares a few pixels off the middle of the cells the gaps
+ * describe — up to seventeen across and twelve down on the first real overlay sheet — and a corner mark
+ * placed against the cell's middle landed that far off its corner.
  */
 export function latticeSquares(
   boxes: readonly SpriteBox[],
@@ -31,52 +38,69 @@ export function latticeSquares(
   }
   const cellSide = median([...regions.values()].map((region) => region.width));
   const stated = request.share * cellSide;
-  const tiles = request.tileCells.filter((cell) => joined.has(cell));
-  const sides = new Map(tiles.map((cell) => [cell, shortSide(joined.get(cell))]));
-  const astray = tiles.filter((cell) => Math.abs((sides.get(cell) ?? 0) / stated - 1) > TILE_TOLERANCE);
+  const sides = new Map<number, number>();
+  for (const cell of request.tileCells.measuring) {
+    const own = joined.get(cell);
+    if (own !== undefined) sides.set(cell, Math.min(own.width, own.height));
+  }
+  const astray = [...sides].filter(([, side]) => Math.abs(side / stated - 1) > TILE_TOLERANCE);
   if (request.placement === 'WITHIN_TILE' && astray.length > 0) {
-    const named = cellOf.flatMap((cell, index) => (astray.includes(cell) ? [index] : []));
-    const measured = median(astray.map((cell) => sides.get(cell) ?? 0));
+    const cells = astray.map(([cell]) => cell);
     return {
       kind: 'FAILED',
-      reason: `the full-tile pieces measure ${String(Math.round(measured))} drawn pixels across, where the sheet states a tile square of ${String(Math.round(request.share * 100))}% of its ${String(Math.round(cellSide))}-pixel cell, ${String(Math.round(stated))} pixels`,
-      boxes: named,
+      reason: `the tile square measures ${String(Math.round(median(astray.map(([, side]) => side))))} drawn pixels across, where the sheet states a tile square of ${String(Math.round(request.share * 100))}% of its ${String(Math.round(cellSide))}-pixel cell, ${String(Math.round(stated))} pixels`,
+      boxes: cellOf.flatMap((cell, index) => (cells.includes(cell) ? [index] : [])),
     };
   }
-  const side = tiles.length === 0 ? stated : median([...sides.values()]);
+  const side = sides.size === 0 ? stated : median([...sides.values()]);
+  if (request.placement === 'WITHIN_CELL') {
+    const cells = [...regions.entries()].map(([index, region]) => ({ index, region, square: region }));
+    return { kind: 'CELLS', cells: cells.sort((a, b) => a.index - b.index), cellOf, tileSide: null };
+  }
+
+  const spanning = new Map<number, SheetRegion>();
+  for (const cell of request.tileCells.spanning) {
+    const own = joined.get(cell);
+    if (own !== undefined) spanning.set(cell, squared(own));
+  }
+  const { columns } = request;
+  const across = lineCentres(
+    centres(spanning, (cell) => cell % columns, 'left', 'width'),
+    cellSide,
+  );
+  // Each axis steps by its own pitch: a generated sheet's rows need not be as tall as its cells are wide.
+  const down = lineCentres(
+    centres(spanning, (cell) => Math.floor(cell / columns), 'top', 'height'),
+    median([...regions.values()].map((region) => region.height)),
+  );
   const cells: LatticeCell[] = [...regions.entries()]
     .sort(([a], [b]) => a - b)
-    .map(([index, region]) => ({
-      index,
-      region,
-      square: squareOf(index, region, joined, tiles, side, request),
-    }));
-  return { kind: 'CELLS', cells, cellOf, tileSide: request.placement === 'WITHIN_TILE' ? side : null };
+    .map(([index, region]) => {
+      const x = across(index % columns) ?? region.left + region.width / 2;
+      const y = down(Math.floor(index / columns)) ?? region.top + region.height / 2;
+      const square = spanning.get(index) ?? roundedRegion(x - side / 2, y - side / 2, side, side);
+      return { index, region, square };
+    });
+  return { kind: 'CELLS', cells, cellOf, tileSide: side };
 }
 
-/** The square one cell's pieces are placed against — see `LatticeCell.square`. */
-function squareOf(
-  index: number,
-  region: SheetRegion,
-  joined: ReadonlyMap<number, SheetRegion>,
-  tiles: readonly number[],
-  side: number,
-  request: LatticeRequest,
-): SheetRegion {
-  if (request.placement === 'WITHIN_CELL') return region;
-  const own = joined.get(index);
-  if (own !== undefined && tiles.includes(index)) {
-    const long = Math.max(own.width, own.height);
-    return roundedRegion(own.left + (own.width - long) / 2, own.top + (own.height - long) / 2, long, long);
+/** A box squared to its longer side about its centre, so the whole box lies inside it. */
+function squared(own: SheetRegion): SheetRegion {
+  const long = Math.max(own.width, own.height);
+  return roundedRegion(own.left + (own.width - long) / 2, own.top + (own.height - long) / 2, long, long);
+}
+
+/** The centres of the spanning squares along one axis, by the column or row each lies in. */
+function centres(
+  spanning: ReadonlyMap<number, SheetRegion>,
+  lineOf: (cell: number) => number,
+  start: 'left' | 'top',
+  size: 'width' | 'height',
+): ReadonlyMap<number, readonly number[]> {
+  const byLine = new Map<number, number[]>();
+  for (const [cell, square] of spanning) {
+    const line = lineOf(cell);
+    byLine.set(line, [...(byLine.get(line) ?? []), square[start] + square[size] / 2]);
   }
-  return roundedRegion(
-    region.left + (region.width - side) / 2,
-    region.top + (region.height - side) / 2,
-    side,
-    side,
-  );
-}
-
-function shortSide(region: SheetRegion | undefined): number {
-  return region === undefined ? 0 : Math.min(region.width, region.height);
+  return byLine;
 }

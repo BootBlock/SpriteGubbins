@@ -1,6 +1,6 @@
 # Overlay sheet in cells — plan
 
-> **Status:** ✅ COMPLETE — the follow-up to the Icon / Symbol Set audit’s open question (U1): each overlay piece leaves the Quantise tab as one icon tile with the piece at its place on the icon. Step 10, a real overlay sheet in `test_sprites/`, stays open until one is generated from the new prompt.
+> **Status:** ✅ COMPLETE — the follow-up to the Icon / Symbol Set audit’s open question (U1): each overlay piece leaves the Quantise tab as one icon tile with the piece at its place on the icon. Step 10 closed with the first real overlay sheet, `test_sprites/game_overlay_test.png`.
 
 ## 1. The defect
 
@@ -135,3 +135,14 @@ The maintainer chose the most correct option for each.
   rather than its offset and size apart, and a veil or halo drawn a pixel off square is placed against
   its box squared to the longer side, so neither is refused.
 - **Step 10 is open**: no overlay sheet generated from the new prompt is in `test_sprites/` yet.
+- **Step 10 closed on 2026-10-06** with `test_sprites/game_overlay_test.png`, pinned by
+  `tests/overlay-sheet-corpus.test.ts`. The reader found every cell, but the generator drew the tile
+  at 70% of the cell where 60% was asked, the halo, ring, glow and three-quarter sweep up to 17%
+  larger than the veil, and its squares up to seventeen pixels off the cells' middles, so the strict
+  rules refused the pack. The maintainer chose the remedy: only the veil measures the tile
+  (`TileRole` `MEASURES`); a piece drawn to the whole tile is placed against its own box (`SPANS`);
+  every other square is centred where the spanning pieces put its row and column (`lineCentres`, a
+  repeated-median line); a piece up to `PLACE_OVERSHOOT` (a sixteenth) past its file is clipped and
+  one further refused by name; and `TILE_TOLERANCE` is a quarter. The ring's prompt wording now puts
+  its outer edge on the tile's edge, to match its role. On this sheet the fourth tier mark, drawn a
+  ninth wider than the tile each side, is still refused.

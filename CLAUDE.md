@@ -36,7 +36,7 @@ for reading and merging only.
 
 ```bash
 git worktree add .claude/worktrees/<topic> -b worktree-<topic>
-# inside the tree: npm install, change it, run the gate, then
+# inside the tree: npm ci, change it, run the gate, then
 git status --short                  # every ?? line is work too
 git add -A && git diff --cached     # the secrets self-audit
 git commit -F <message-file>

@@ -140,7 +140,19 @@ describe('SpriteCellControls, the fit', () => {
       expect(screen.getByRole('button', { name })).toHaveAccessibleDescription(SPRITE_FIT_PLACED_ONLY);
     }
     expect(screen.queryByRole('group', { name: 'Anchor across the cell' })).toBeNull();
-    expect(screen.getByText('128 × 128 cell, each piece in place at 49%')).toBeInTheDocument();
+    // The tile square's scale, which every piece that keeps a place of its own is drawn at.
+    expect(screen.getByText('128 × 128 cell, tile square at 49%')).toBeInTheDocument();
+  });
+
+  it('states the one scale every piece shares on an isolated look, whose square is the cell', () => {
+    const cells = BOXES.map((_box, index) => {
+      const region = { left: index * 300, top: 0, width: 300, height: 300 };
+      return { index, region, square: region };
+    });
+    const lattice: CellLattice = { kind: 'CELLS', cells, cellOf: [0, 1, 2, 3], tileSide: null };
+    draw({ ...ICON_CELL, fit: 'SCALE_SET' }, 1, () => undefined, lattice);
+
+    expect(screen.getByText('128 × 128 cell, each piece in place at 43%')).toBeInTheDocument();
   });
 
   it('says where a placement sheet’s cells could not be read', () => {

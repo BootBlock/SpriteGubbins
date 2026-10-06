@@ -5,15 +5,25 @@ import { planSlots } from './componentSlots.ts';
 import { tileCellsOf } from './tileCellsOf.ts';
 
 describe('tileCellsOf', () => {
-  it.each(ICON_LOOKS)(
-    'finds the veil and the halo alone under %s, and never the ring or the sweep',
-    (look) => {
-      // A ring stands inside the square's edge and a sweep fills a quadrant of it, so a square measured
-      // from either is not the tile square.
-      const [sheet] = iconOverlaySheets(look, []);
-      const slots = planSlots(sheet);
-      const cells = tileCellsOf(sheet);
-      expect(cells.map((cell) => slots[cell])).toEqual(['disabled-veil', 'highlight-halo']);
-    },
-  );
+  it.each(ICON_LOOKS)('measures the tile from the veil alone under %s', (look) => {
+    // A halo or a glow drawn round the square's edge reaches past it by its glow, so only the veil's
+    // box is the square.
+    const [sheet] = iconOverlaySheets(look, []);
+    const slots = planSlots(sheet);
+    expect(tileCellsOf(sheet).measuring.map((cell) => slots[cell])).toEqual(['disabled-veil']);
+  });
+
+  it.each(ICON_LOOKS)('places every piece drawn to the whole tile against its own box under %s', (look) => {
+    // The quarter sweep fills one quadrant, so it keeps its place; the three-quarter sweep reaches
+    // every edge of the square.
+    const [sheet] = iconOverlaySheets(look, []);
+    const slots = planSlots(sheet);
+    expect(tileCellsOf(sheet).spanning.map((cell) => slots[cell])).toEqual([
+      'disabled-veil',
+      'highlight-halo',
+      'selected-ring',
+      'cooldown-sweep-three-quarters',
+      'rarity-glow',
+    ]);
+  });
 });
