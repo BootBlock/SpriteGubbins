@@ -201,6 +201,67 @@ describe('sheetStrips', () => {
     expect(driftsOf(twoRows)[1]?.map((drift) => drift.x)).toEqual([0, -1, 0]);
   });
 
+  describe('on frames 12 × 16 under SNAP at the strictest tolerance', () => {
+    /** A row of 12 × 16 frames at the given left edges and tops, with room above and below to move. */
+    function framesAt(lefts: readonly number[], tops: readonly number[] = []): ImageData {
+      return imageFrom(220, 40, (x, y) =>
+        lefts.some((left, index) => {
+          const top = tops[index] ?? 8;
+          return x >= left && x < left + 12 && y >= top && y < top + 16;
+        })
+          ? INK
+          : CLEAR,
+      );
+    }
+
+    /** Each frame's drift and whether it was marked for the move, frame by frame. */
+    function snapOf(image: ImageData): readonly { readonly drift: PixelShift; readonly snapped: boolean }[] {
+      const [strip] = sheetStrips(image, boxesOf(image), 0, GAP);
+      return strip?.frames.map(({ drift, snapped }) => ({ drift, snapped })) ?? [];
+    }
+
+    const STILL = { drift: { x: 0, y: 0 }, snapped: false };
+
+    it('moves nothing in a regular row', () => {
+      expect(snapOf(framesAt([10, 42, 74, 106, 138]))).toEqual([STILL, STILL, STILL, STILL, STILL]);
+    });
+
+    it('moves nothing in a row whose fourth slot is empty', () => {
+      // Numbered by list position, the row fitted a pitch of 40, read three frames as drifting
+      // −8, −16 and +8 pixels, and moved them +8, +16 and −8 to re-space it.
+      expect(snapOf(framesAt([10, 42, 74, 138, 170]))).toEqual([STILL, STILL, STILL, STILL, STILL]);
+    });
+
+    it('moves nothing in a row whose second slot is empty', () => {
+      // Numbered by list position, the first frame was carried a whole pitch into the empty slot.
+      expect(snapOf(framesAt([10, 74, 106, 138, 170]))).toEqual([STILL, STILL, STILL, STILL, STILL]);
+    });
+
+    it('settles a sagging row on its baseline rather than moving its level frame into the sag', () => {
+      // Tops 5, 5, 6, 7, 8, 9. A fitted slope read the sag as the layout and moved only frame zero.
+      const sagging = snapOf(framesAt([10, 42, 74, 106, 138, 170], [5, 5, 6, 7, 8, 9]));
+
+      expect(sagging.map((frame) => frame.drift)).toEqual([
+        { x: 0, y: -1 },
+        { x: 0, y: -1 },
+        { x: 0, y: 0 },
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: 2 },
+      ]);
+      expect(sagging.map((frame) => frame.snapped)).toEqual([true, true, false, false, true, true]);
+    });
+
+    it('reports a frame further from its slot than the search reaches, and leaves it there', () => {
+      // The third frame sits ten pixels right of its slot with clear room to move back. Ten is past
+      // `FRAME_DRIFT_SEARCH`, so it is a different drawing rather than a frame that slipped; the
+      // same frame two pixels out is moved.
+      expect(FRAME_DRIFT_SEARCH).toBeLessThan(10);
+      expect(snapOf(framesAt([10, 42, 84, 106, 138]))[2]).toEqual({ drift: { x: 10, y: 0 }, snapped: false });
+      expect(snapOf(framesAt([10, 42, 76, 106, 138]))[2]).toEqual({ drift: { x: 2, y: 0 }, snapped: true });
+    });
+  });
+
   it('packs each strip’s reference once, and searches every frame at the reach the budget affords', () => {
     const small = rowOf([10, 30, 50, 70]);
     sheetStrips(small, boxesOf(small), null, GAP);

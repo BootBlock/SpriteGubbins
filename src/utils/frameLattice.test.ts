@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PixelShift } from '../types/quantiser.ts';
-import { driftAt, fitLattice } from './frameLattice.ts';
+import { driftAt, fitLattice, slotOf } from './frameLattice.ts';
 
 /** A row of horizontal shifts, which is the axis every case here varies. */
 function along(...values: readonly number[]): readonly PixelShift[] {
@@ -10,18 +10,18 @@ function along(...values: readonly number[]): readonly PixelShift[] {
 /** How far each frame sits from its own slot — the figure the whole pass reports. */
 function drifts(shifts: readonly PixelShift[]): readonly number[] {
   const lattice = fitLattice(shifts);
-  return shifts.map((shift, index) => driftAt(lattice, index, shift).x);
+  return shifts.map((shift) => driftAt(lattice, shift).x);
 }
 
 /** Where each frame lands once its own drift is taken out — the slot, as a whole pixel. */
 function slots(shifts: readonly PixelShift[]): readonly number[] {
   const lattice = fitLattice(shifts);
-  return shifts.map((shift, index) => shift.x - driftAt(lattice, index, shift).x);
+  return shifts.map((shift) => shift.x - driftAt(lattice, shift).x);
 }
 
 describe('fitLattice', () => {
   it('finds the spacing of an evenly laid-out row and reports no drift in it', () => {
-    expect(fitLattice(along(0, 20, 40, 60)).pitch.x).toBe(20);
+    expect(fitLattice(along(0, 20, 40, 60)).pitch).toBe(20);
     expect(drifts(along(0, 20, 40, 60))).toEqual([0, 0, 0, 0]);
   });
 
@@ -37,8 +37,8 @@ describe('fitLattice', () => {
     const row = along(0, 21, 43, 64, 85);
 
     // Strictly between 21 and 22, so it is not the whole-pixel spacing the gaps would have given.
-    expect(fitLattice(row).pitch.x).toBeGreaterThan(21);
-    expect(fitLattice(row).pitch.x).toBeLessThan(22);
+    expect(fitLattice(row).pitch).toBeGreaterThan(21);
+    expect(fitLattice(row).pitch).toBeLessThan(22);
     expect(slots(row)).toEqual([0, 21, 43, 64, 85]);
     expect(drifts(row)).toEqual([0, 0, 0, 0, 0]);
   });
@@ -49,7 +49,7 @@ describe('fitLattice', () => {
     // the row out. The fitted pitch tracks the fraction and nothing drifts at all.
     const row = along(0, 21, 43, 64, 85, 107, 128, 149, 171);
 
-    expect(fitLattice(row).pitch.x).toBeCloseTo(64 / 3, 3);
+    expect(fitLattice(row).pitch).toBeCloseTo(64 / 3, 3);
     expect(drifts(row)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
   });
 
@@ -66,20 +66,62 @@ describe('fitLattice', () => {
     expect(drifts(along(-3, 20, 40, 60))).toEqual([-3, 0, 0, 0]);
   });
 
-  it('measures the two axes separately', () => {
-    const lattice = fitLattice([
-      { x: 0, y: 0 },
-      { x: 20, y: 1 },
-      { x: 40, y: 2 },
-    ]);
+  it('numbers each frame by the slot nearest to it, so an empty slot re-spaces nothing', () => {
+    // Slot 3 of six is empty. Numbered by list position, the row fits a pitch of 40 and three
+    // correct frames are reported 8 and 16 pixels out.
+    const gapped = along(0, 32, 64, 128, 160);
+    const lattice = fitLattice(gapped);
 
-    expect(lattice.pitch).toEqual({ x: 20, y: 1 });
+    expect(lattice.pitch).toBe(32);
+    expect(gapped.map((shift) => slotOf(lattice, shift.x))).toEqual([0, 1, 2, 4, 5]);
+    expect(drifts(gapped)).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it('leaves the first frame alone when the slot after it is the empty one', () => {
+    // Numbered by list position, frame zero is blamed for the whole empty slot and carried 32 pixels.
+    expect(fitLattice(along(0, 64, 96, 128, 160)).pitch).toBe(32);
+    expect(drifts(along(0, 64, 96, 128, 160))).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it('reads a row of three with an empty slot as two steps of the shorter gap', () => {
+    // The gaps are 32 and 64. Their plain median, 48, would fit a pitch the row does not keep; an
+    // empty slot can only lengthen a gap, so the shorter one is the step.
+    expect(fitLattice(along(0, 32, 96)).pitch).toBe(32);
+    expect(drifts(along(0, 32, 96))).toEqual([0, 0, 0]);
+  });
+
+  it('lets a stray piece share a slot rather than push every later frame along by one', () => {
+    // A speck ten pixels right of the second frame. It is numbered into that frame's slot and
+    // reported ten pixels out; the frames after it keep their own slots and report nothing.
+    const crowded = along(0, 32, 42, 64, 96, 128);
+
+    expect(fitLattice(crowded).pitch).toBe(32);
+    expect(drifts(crowded)).toEqual([0, 0, 10, 0, 0, 0]);
+  });
+
+  it('keeps a long fractional row on its count to the far end', () => {
+    // Forty frames of 21⅓. Dividing each position by the whole gap of 21 would lose count from
+    // frame 33 on; walking the gaps cannot.
+    const row = along(...Array.from({ length: 40 }, (_, index) => Math.floor((index * 64) / 3)));
+
+    expect(fitLattice(row).pitch).toBeCloseTo(64 / 3, 3);
+    expect(drifts(row).every((drift) => drift === 0)).toBe(true);
+  });
+
+  it('fits the row a shared baseline rather than a slope, so a sag is blamed on the frames that sag', () => {
+    // Six frames at heights 0, 0, 1, 2, 3, 4 relative to the first. A fitted slope of one pixel a
+    // frame reads the creep as the layout and reports only the level first frame as out.
+    const sagging = [0, 0, 1, 2, 3, 4].map((y, index) => ({ x: index * 32, y }));
+    const lattice = fitLattice(sagging);
+
+    expect(lattice.origin.y).toBe(1.5);
+    expect(sagging.map((shift) => driftAt(lattice, shift).y)).toEqual([-1, -1, 0, 0, 1, 2]);
   });
 
   it('reads a row that alternates between two gaps as sitting on the average of them', () => {
     // Frames laid out alternately 21 and 22 apart: the row keeps to 21.5, and either whole number
     // would be a claim the row does not support — one of them would leave every other frame drifting.
-    expect(fitLattice(along(0, 21, 43, 64, 86)).pitch.x).toBe(21.5);
+    expect(fitLattice(along(0, 21, 43, 64, 86)).pitch).toBe(21.5);
   });
 
   it('holds its answer when a third of a long row has wandered', () => {

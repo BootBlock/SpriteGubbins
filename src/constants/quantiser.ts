@@ -1423,6 +1423,10 @@ export const SMALLEST_STRIP_FRAMES = 3;
  * quadratic in the widest sprite on the sheet while a bounded one is linear in the sheet — but at
  * 289 readings per frame, which is a constant large enough to matter on a sheet of large frames.
  * {@link FRAME_SWEEP_BUDGET} is what narrows it there.
+ *
+ * **It is also the furthest a snap carries a frame**, for the same reason: a frame further than this
+ * from its nearest slot is a different drawing, or a stray piece sharing the row, rather than a frame
+ * that slipped. Its drift is still reported, and `sheetStrips` declines the move.
  */
 export const FRAME_DRIFT_SEARCH = 8;
 
@@ -1461,12 +1465,13 @@ export const DEFAULT_FRAME_ALIGNMENT = 'OFF';
  * feature is for — a strip that holds still is a strip whose frames all sit at whole multiples of
  * one pitch.
  *
- * The ceiling is 8 for the reason {@link FRAME_DRIFT_SEARCH}'s is: it is half the shortest edge
- * anyone draws a sprite at, so a tolerance past it admits a frame displaced by a fraction of its own
- * width — which is not drift, it is a different drawing. The step is 1 because the quantity is a
+ * The ceiling is one below {@link FRAME_DRIFT_SEARCH}, which is the furthest a snap carries a frame
+ * at any tolerance, because a frame further out than that is a different drawing rather than drift.
+ * So the top position still moves a frame that sits exactly that far out, where a ceiling equal to
+ * the cap would be a position that admits no move at all. The step is 1 because the quantity is a
  * count of drawn pixels and there is nothing between two of them.
  */
-export const FRAME_DRIFT_RANGE = { min: 0, max: 8, step: 1 } as const;
+export const FRAME_DRIFT_RANGE = { min: 0, max: FRAME_DRIFT_SEARCH - 1, step: 1 } as const;
 
 /**
  * Where the drift tolerance opens — zero, the strictest position.
@@ -2383,7 +2388,8 @@ export const QUANTISE_TOOLTIPS = {
     'A row needs at least three frames. Not every row is an animation: four facings share a spacing too, and one drawn wider belongs where it is. The Onion skin preview lays each row’s frames over one another.',
   frameDriftTolerance:
     'How far a frame may sit from its slot before `SNAP` moves it, in drawn pixels. `0` is the strictest setting, moving every frame not exactly on the spacing; the Frame alignment control is what switches the pass off.\n\n' +
-    'Raise it for a row meant to breathe, such as an idle that bobs a pixel or two, while still straightening a frame that landed four pixels out. It appears only under `SNAP`, and the panel names the frames that pass.',
+    'Raise it for a row meant to breathe, such as an idle that bobs a pixel or two, while still straightening a frame that landed four pixels out. It appears only under `SNAP`, and the panel names the frames that pass.\n\n' +
+    `A frame more than ${String(FRAME_DRIFT_SEARCH)} pixels from its slot holds a different drawing, so \`SNAP\` leaves it where it is.`,
   antiAlias:
     'Whether the staircase edges this tab produces are softened with anti-aliasing, and where. It works out where the intended edge ran and writes each pixel’s coverage as a blended shade, as a pixel artist does by hand. A clean 45° line is left alone.\n\n' +
     '- `OFF` is the default, because anti-aliasing adds pixels you drew nothing of.\n' +

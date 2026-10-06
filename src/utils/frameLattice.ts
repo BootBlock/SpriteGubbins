@@ -4,10 +4,13 @@ import { repeatedMedianSlope } from './repeatedMedianSlope.ts';
 
 /** The regular layout a strip's frames were fitted to: where it starts, and how far apart it steps. */
 export interface FrameLattice {
-  /** Where frame zero's slot sits, relative to frame zero's own measured position. */
+  /** Where slot zero sits, relative to frame zero's own measured position — fractional on both axes. */
   readonly origin: PixelShift;
-  /** How far each slot steps from the one before it, in drawn pixels — fractional, deliberately. */
-  readonly pitch: PixelShift;
+  /**
+   * How far each slot steps along the row from the one before it, in drawn pixels — fractional,
+   * deliberately. There is no step down the row: a row shares one baseline, see {@link fitLattice}.
+   */
+  readonly pitch: number;
 }
 
 /**
@@ -18,6 +21,18 @@ export interface FrameLattice {
  * positions are a noisy reading of. Everything the alignment pass reports is the difference between
  * the two, so this is where the word "drift" is given its meaning: a frame has drifted when it sits
  * somewhere the row's own regularity does not put it.
+ *
+ * **A frame's slot is decided by where it is, never by where it comes in the list.** A row with one
+ * empty slot, or one stray piece in it, is a row whose list positions no longer count its slots:
+ * frames at 0, 32, 64, 128 and 160 fill six slots of 32 with the fourth left empty, and numbering
+ * them 0 to 4 fits a pitch of 40 and then moves three correct frames to re-space the row at it. So each frame
+ * is numbered by {@link slotOf}, the slot nearest to it, and two pieces may share one. The numbering
+ * and the fit need each other, so the first numbering walks the row — each gap counts as however
+ * many steps of the row's typical gap it spans — and that numbering is fitted, renumbered against
+ * the fit, and fitted again until no frame changes slot. Walking the gaps rather than dividing each
+ * position by the typical gap is what keeps a long row whose spacing is fractional from losing count
+ * at its far end. The typical gap is the *lower* median, because an empty slot can only lengthen a
+ * gap: a row of three at 0, 32 and 96 is two steps of 32, not two of 48.
  *
  * **Fitted by medians, not by least squares, and the difference is the whole point.** A least-squares
  * line is pulled toward every outlier in proportion to how far out it is — so the one frame that
@@ -45,33 +60,46 @@ export interface FrameLattice {
  *
  * **Two medians rather than one**, because a row can be regular and still sit somewhere unexpected.
  * The first fixes the *spacing*; the second fixes where the row *starts*, from what each frame's
- * position has left over once its share of that spacing is taken off. Without the second, the
+ * position has left over once its slot's share of that spacing is taken off. Without the second, the
  * lattice would be pinned to frame zero — and a strip whose first frame is the drifting one would
  * report every other frame as wrong.
  *
- * **The pitch stays fractional**, per the worked figure above. {@link slotOf} is where the rounding
+ * **Down the row there is no spacing to fit, only a baseline**: the median of the frames' heights.
+ * A row is a band, so its frames are laid out level, and a slope fitted to their heights would read
+ * a row whose frames creep steadily lower as the layout — and blame the one level frame for not
+ * sagging with them.
+ *
+ * **The pitch stays fractional**, per the worked figure above. {@link driftAt} is where the rounding
  * belongs, once, at the point a slot has to name a pixel.
  *
- * Pure, and quadratic in a frame count `SCATTERED_SPRITE_CEILING` already bounds. `shifts` must hold
- * at least two entries, which `SMALLEST_STRIP_FRAMES` guarantees at the one call site; an empty list
- * is not a strip and has no layout to fit.
+ * Pure, and quadratic in a frame count `SCATTERED_SPRITE_CEILING` already bounds, once per fit. The
+ * refits stop at the first numbering the fit leaves unchanged, and at one per frame whatever happens,
+ * so a numbering that alternates between two readings cannot hold the pass. `shifts` must hold at
+ * least two entries, which `SMALLEST_STRIP_FRAMES` guarantees at the one call site; an empty list is
+ * not a strip and has no layout to fit.
  */
 export function fitLattice(shifts: readonly PixelShift[]): FrameLattice {
-  const pitch = {
-    x: repeatedMedianSlope(shifts.map((shift, index) => [index, shift.x] as const)),
-    y: repeatedMedianSlope(shifts.map((shift, index) => [index, shift.y] as const)),
-  };
-  return {
-    pitch,
-    origin: {
-      x: median(shifts.map((shift, index) => shift.x - index * pitch.x)),
-      y: median(shifts.map((shift, index) => shift.y - index * pitch.y)),
-    },
-  };
+  let slots = walkedSlots(shifts.map((shift) => shift.x));
+  let lattice = fitTo(shifts, slots);
+  for (let refit = 0; refit < shifts.length; refit += 1) {
+    const nearest = shifts.map((shift) => slotOf(lattice, shift.x));
+    if (nearest.every((slot, index) => slot === slots[index])) break;
+    slots = nearest;
+    lattice = fitTo(shifts, slots);
+  }
+  return lattice;
 }
 
 /**
- * How far the frame at this position sits from the slot the lattice gives it, as whole pixels.
+ * The slot nearest to a frame at this horizontal position, which is the one it is fitted and judged
+ * against. A lattice with no spacing — every frame stacked at one place — has only the one slot.
+ */
+export function slotOf(lattice: FrameLattice, x: number): number {
+  return lattice.pitch > 0 ? Math.round((x - lattice.origin.x) / lattice.pitch) : 0;
+}
+
+/**
+ * How far the frame at this position sits from the nearest slot the lattice has, as whole pixels.
  *
  * The one place a fractional lattice is brought back to the pixel grid, so the drift a frame is
  * reported at, the move the snap applies and the translation the onion skin stacks by are all this
@@ -87,11 +115,40 @@ export function fitLattice(shifts: readonly PixelShift[]): FrameLattice {
  * says what is true: a frame less than a whole pixel from its slot has no move available to it, so
  * its drift is nothing.
  */
-export function driftAt(lattice: FrameLattice, index: number, measured: PixelShift): PixelShift {
+export function driftAt(lattice: FrameLattice, measured: PixelShift): PixelShift {
   return {
-    x: whole(measured.x - (lattice.origin.x + index * lattice.pitch.x)),
-    y: whole(measured.y - (lattice.origin.y + index * lattice.pitch.y)),
+    x: whole(measured.x - (lattice.origin.x + slotOf(lattice, measured.x) * lattice.pitch)),
+    y: whole(measured.y - lattice.origin.y),
   };
+}
+
+/** The two medians, over frames already numbered by their slots. */
+function fitTo(shifts: readonly PixelShift[], slots: readonly number[]): FrameLattice {
+  const pitch = repeatedMedianSlope(shifts.map((shift, index) => [slots[index] ?? 0, shift.x] as const));
+  return {
+    pitch,
+    origin: {
+      x: median(shifts.map((shift, index) => shift.x - (slots[index] ?? 0) * pitch)),
+      y: median(shifts.map((shift) => shift.y)),
+    },
+  };
+}
+
+/**
+ * A first numbering of the slots, read off the gaps: each gap advances the count by however many
+ * steps of the row's typical gap it spans, which is none for a stray piece crowded against a frame.
+ * A row with no gap that steps forward at all is one slot.
+ */
+function walkedSlots(positions: readonly number[]): readonly number[] {
+  const gaps = positions.slice(1).map((position, index) => position - (positions[index] ?? 0));
+  const forward = gaps.filter((gap) => gap > 0).sort((left, right) => left - right);
+  const step = forward[Math.floor((forward.length - 1) / 2)];
+  const slots = [0];
+  for (const gap of gaps) {
+    const previous = slots[slots.length - 1] ?? 0;
+    slots.push(step === undefined ? previous : previous + Math.max(0, Math.round(gap / step)));
+  }
+  return slots;
 }
 
 /**
