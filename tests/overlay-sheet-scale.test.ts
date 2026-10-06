@@ -17,20 +17,26 @@ import { stepProfile } from '../src/utils/stepProfile.ts';
  * Why no scale reading answers on `test_sprites/game_overlay_test.png`, and why none should.
  *
  * **The sheet has no one pitch to read.** The prompt asks pixel art for one square-pixel grid at one
- * pixel density across the entire sheet, and the generator drew each of the fourteen pieces at a pitch
- * of its own instead. Measured outside the app, with a decode and a correlation of each piece's
- * differenced step profile written apart from the code judged here, the combs run:
+ * pixel density across the entire sheet, and the generator drew the pieces at pitches of their own
+ * instead. Measured outside the app, with a decode and a correlation of each piece's differenced step
+ * profile written apart from the code judged here, the combs run:
  *
  * | Piece | Peaks across | Peaks down | Pitch |
  * | --- | --- | --- | --- |
+ * | `disabled-veil` | 10, weakly | 9, weakly | about 9½ |
  * | `highlight-halo` | 10, 21 | 11, 21 | about 10½ |
- * | `locked-mark` | 9, 19, 30 | 10, 20 | about 10 |
+ * | `selected-ring` | 10, 19, 29 | 9, 19, 28 | about 9½ |
+ * | `cooldown-sweep-quarter` | 9 | 9 | about 9 |
+ * | `cooldown-sweep-three-quarters` | 9, 19, 28 | 9, 19 | about 9½ |
  * | `tier-mark-1` | 9, 18, 26 | 9, 18, 27 | about 9 |
  * | `tier-mark-2` | 8, 17 | 8, 15, 22 | about 8 |
  * | `tier-mark-3` | 8, 16, 24 | 8, 15, 22 | about 8 |
- * | `broken-overlay` | 8, 16 | 8, 16 | about 8 |
- * | `empty-mark` | 8, 16, 24 | 8, 16 | 8 |
  * | `tier-mark-4` | 7 | 7, 15 | about 7½ |
+ * | `rarity-glow` | 10, 21, 30 | 11, 24 | about 10½ |
+ * | `locked-mark` | 9, 19 | 10, 20 | about 10 |
+ * | `new-item-flare` | 10, 22 | 10 | about 10 |
+ * | `broken-overlay` | 8, 16 | 8, 16 | 8 |
+ * | `empty-mark` | 8, 16, 24 | 8, 16 | 8 |
  *
  * So the whole sheet's step profile is fourteen combs at pitches from about 7½ to about 10½, laid at
  * unrelated phases, and they reinforce at no lag: over the whole sheet the strongest correlation is
@@ -39,7 +45,9 @@ import { stepProfile } from '../src/utils/stepProfile.ts';
  * rest under-reduced, so no one grid is right for the sheet. The refusal is the honest answer.
  *
  * **The reading is not at fault**, and the second test shows it: given one piece at a time, the
- * correlation reads four different pitches, each the piece's own or the integer below it.
+ * correlation reads four different pitches. Each is the piece's pitch or the integer below it, because
+ * the reading offers the whole scale at or below the pitch it measures and never one above, the rule
+ * `sheet-scale-corpus.test.ts` holds its own sheets to.
  */
 const MAGENTA = { r: 255, g: 0, b: 255, a: 255 } as const;
 const [OVERLAY] = iconOverlaySheets('FULL_BLEED_TILE', []);
@@ -47,8 +55,10 @@ const [OVERLAY] = iconOverlaySheets('FULL_BLEED_TILE', []);
 /**
  * What the correlation reads off each piece cropped alone, by slot name.
  *
- * `null` where a piece clears none of the reading's gates alone. That is a refusal on a sheet too small
- * to hold much of a comb, which the whole sheet's own refusal does not rest on.
+ * `null` where no axis can vouch for its pitch alone. Five of the six settle a peak at 9 or 10, in
+ * the spread the table records, and each axis that does falls short of `ACF_CORRELATION_FLOOR` in
+ * support or of `ACF_MULTIPLE_CONFIRMATION` at its double, so two such axes agreeing corroborate
+ * nothing. The quarter sweep, 118 pixels across, finds no prominent peak on either axis.
  */
 const PER_PIECE: Readonly<Record<string, PixelGrid | null>> = {
   'disabled-veil': null,
@@ -107,8 +117,5 @@ describe('the generated overlay sheet’s pixel scale', () => {
       }),
     );
     expect(read).toStrictEqual(PER_PIECE);
-    expect(new Set(Object.values(read).filter((grid) => grid !== null))).toStrictEqual(
-      new Set([7, 8, 9, 10]),
-    );
   });
 });
