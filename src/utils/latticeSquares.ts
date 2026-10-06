@@ -23,7 +23,7 @@ import { squareCentres } from './squareCentres.ts';
  * pieces put the squares**: across, where they centre the squares of its column, and down, where they
  * centre those of its row, and in a line that holds none, where its own pieces allow (`squareCentres`).
  * A generator lays its squares a few pixels off the middle of the cells the gaps describe — up to
- * seventeen across and twelve down on the first real overlay sheet — and a corner mark placed against
+ * seventeen across and five down on the first real overlay sheet — and a corner mark placed against
  * the cell's middle landed that far off its corner.
  *
  * **Under `WITHIN_CELL` every square is the cell's side**, the median measured cell width, centred the

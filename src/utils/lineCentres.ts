@@ -12,8 +12,9 @@ import { repeatedMedianSlope } from './repeatedMedianSlope.ts';
  * the repeated median slope and the origin the median of what each line leaves over
  * (`repeatedMedianSlope`, as `fitLattice` fits a strip), so one halo drawn off its square cannot move
  * every unmeasured line. With one line measured the pitch is `step`; with none, every line answers
- * `undefined` and the cell's own middle stands. `latticeBoundaries` reads where a boundary no even gap
- * places should fall the same way. Pure.
+ * `undefined`, for the caller to supply its own guess. Only a guess: `squareCentres` then holds an
+ * unmeasured line to its own pieces, and `latticeBoundaries` reads where a boundary no even gap places
+ * should fall the same way. Pure.
  */
 export function lineCentres(
   measured: ReadonlyMap<number, readonly number[]>,
