@@ -67,6 +67,16 @@ describe('inPlacePlacement', () => {
     expect(oversizedSprites([veil], cell)).toEqual([]);
   });
 
+  it('fills an oblong file’s shorter side with the square, centred, and refuses nothing inside it', () => {
+    // A 64-pixel square into a 128 × 64 file: drawn at 1, 32 pixels in. Scaled by the width instead, the
+    // square was 128 tall in a 64-pixel file and a piece in its lower half was refused.
+    const cell = { ...cellOver(64, { left: 0, top: 0, width: 64, height: 64 }), width: 128 };
+    const lower: SpriteBox = { left: 40, top: 40, width: 20, height: 20, pixels: 400 };
+
+    expect(inPlacePlacement(lower, cell)).toMatchObject({ x: 72, y: 40, width: 20, height: 20 });
+    expect(oversizedSprites([lower], cell)).toEqual([]);
+  });
+
   describe('on a sheet with a pixel scale', () => {
     // `icons_fullbleed.png` at its grid of 7: a 29-pixel tile square, cut into 128 × 128 files. A
     // sixteenth of the square is 1.8 file pixels.
@@ -103,7 +113,7 @@ describe('inPlacePlacement', () => {
     });
 
     it('refuses a piece inside its square that a smaller file would clip, and says to raise the cell', () => {
-      // A 29-pixel square overhangs a 24-pixel file by two pixels on the left and three on the right.
+      // A 29-pixel square overhangs a 24-pixel file by three pixels on the left and two on the right.
       const small = cellOver(24, square, false);
       const corner: SpriteBox = { left: 29, top: 20, width: 10, height: 5, pixels: 50 };
       const middle: SpriteBox = { left: 20, top: 20, width: 5, height: 5, pixels: 25 };

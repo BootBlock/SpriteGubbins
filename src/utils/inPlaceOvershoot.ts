@@ -25,8 +25,8 @@ export interface InPlaceOvershoot {
  * holds it.
  *
  * **Both, on all four sides**, because neither answers for the other. Where the fit resamples, the
- * square is the file's width and the two agree on a square file. On a sheet with a pixel scale the
- * square is centred in a file of another size (`squareInFile`): measured against the file alone, a piece
+ * square fills the file's shorter side and the two agree on a square file. On a sheet with a pixel scale
+ * the square is centred in a file of another size (`squareInFile`): measured against the file alone, a piece
  * reaching past its square inside a larger file passed, and against the square alone a piece of a square
  * larger than its file would be clipped unrefused. `outOfPlace` refuses a piece past either by more than
  * the margin, and `oversizeReason` tells the two apart, since one is fixed by re-generating the sheet and

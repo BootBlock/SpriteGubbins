@@ -59,6 +59,7 @@ describe('cellBadgeText', () => {
 
     it('states the tile square’s factor, or that it is centred as drawn at a pixel scale', () => {
       expect(cellBadgeText(inPlace, BOXES, 0)).toBe('128 × 128 cell, tile square at 49%');
+      expect(cellBadgeText({ ...inPlace, width: 256 }, BOXES, 0)).toBe('256 × 128 cell, tile square at 49%');
       expect(cellBadgeText({ ...inPlace, resamples: false }, BOXES, 0)).toBe(
         '128 × 128 cell, each tile square centred as drawn',
       );

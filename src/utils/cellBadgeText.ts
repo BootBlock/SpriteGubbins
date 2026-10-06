@@ -21,7 +21,7 @@ import { median } from './median.ts';
  * exists twice already — the guidance behind the ⓘ, and the refusal the press itself reports, which
  * names the offending piece rather than only counting the pieces.
  *
- * **`Keep place` states its factor too**: on a full-bleed look the tile square's, the cell's side over
+ * **`Keep place` states its factor too**: on a full-bleed look the tile square's, the cell's shorter side over
  * `CellLattice.tileSide`, which every piece that keeps a place of its own is drawn at — a piece drawn
  * to the whole tile is fitted to its own box, so the chip names the square rather than every piece;
  * on an isolated look the cell's, which every piece shares; or that each piece keeps its drawn size on
@@ -46,9 +46,11 @@ function inPlaceText(cell: SpriteCell, size: string, over: number): string {
   if (lattice?.kind !== 'CELLS') return 'Cells not found on this sheet';
   if (over > 0) return `${over === 1 ? '1 sprite' : `${String(over)} sprites`} out of place in ${size}`;
   if (!cell.resamples) return `${size} cell, each tile square centred as drawn`;
+  // The side the square is drawn at in the file (`squareInFile`).
+  const fill = Math.min(cell.width, cell.height);
   if (lattice.tileSide !== null) {
-    return `${size} cell, tile square at ${String(Math.round((cell.width / lattice.tileSide) * 100))}%`;
+    return `${size} cell, tile square at ${String(Math.round((fill / lattice.tileSide) * 100))}%`;
   }
   const side = median(lattice.cells.map((latticeCell) => latticeCell.square.width));
-  return `${size} cell, each piece in place at ${String(Math.round((cell.width / side) * 100))}%`;
+  return `${size} cell, each piece in place at ${String(Math.round((fill / side) * 100))}%`;
 }
