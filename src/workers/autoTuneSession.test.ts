@@ -54,6 +54,7 @@ const OUTCOME: TuneOutcome = {
   price: { perColor: 0.00049, positions: 15 },
   reading: { fidelity: 0.94, colors: 24 },
   baseline: { fidelity: 0.81, colors: 31 },
+  sheetColors: { baseline: 9975, settled: 77 },
   stages: [],
 };
 

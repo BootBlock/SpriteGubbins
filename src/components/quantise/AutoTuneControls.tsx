@@ -96,9 +96,7 @@ export function AutoTuneControls({ image, settings }: AutoTuneControlsProps) {
             <Badge tone={outcome.reading.fidelity > outcome.baseline.fidelity ? 'valid' : 'neutral'}>
               {`likeness ${outcome.baseline.fidelity.toFixed(3)} → ${outcome.reading.fidelity.toFixed(3)}`}
             </Badge>
-            <Badge tone="neutral">
-              {`${String(Math.round(outcome.baseline.colors))} → ${String(Math.round(outcome.reading.colors))} colours`}
-            </Badge>
+            <Badge tone="neutral">{colourLabel(outcome)}</Badge>
           </>
         )}
         {!tuning && error !== null && <Badge tone="attention">Nothing to report</Badge>}
@@ -198,6 +196,17 @@ function costLabel(outcome: TuneOutcome): string {
   return `${String(outcome.candidates)} positions · ${crops} of ${String(outcome.cropEdge)} px · ${rounds}`;
 }
 
+/**
+ * What the whole sheet comes to, before and after, as one chip: `9975 → 77 colours`.
+ *
+ * The sheet's count rather than the crops', which is the figure the result pane's caption states —
+ * see `TuneOutcome.sheetColors` for how far the crops' own count falls short of it.
+ */
+function colourLabel(outcome: TuneOutcome): string {
+  const { baseline, settled } = outcome.sheetColors;
+  return `${String(baseline)} → ${String(settled)} ${settled === 1 ? 'colour' : 'colours'}`;
+}
+
 /** The panel's state as one sentence, for the live region above. */
 function spokenState(tuning: boolean, outcome: TuneOutcome | null, error: string | null): string {
   if (tuning) return 'Sweeping the quantiser’s dials.';
@@ -206,7 +215,8 @@ function spokenState(tuning: boolean, outcome: TuneOutcome | null, error: string
   // `QuantiseTab`'s own live region is built the same way.
   if (error !== null) return 'The sweep produced nothing.';
   if (outcome === null) return '';
-  return `Swept ${String(outcome.candidates)} positions and moved the dials. Likeness ${outcome.reading.fidelity.toFixed(3)} at ${String(Math.round(outcome.reading.colors))} colours, from ${outcome.baseline.fidelity.toFixed(3)} at ${String(Math.round(outcome.baseline.colors))}.`;
+  const { baseline, settled } = outcome.sheetColors;
+  return `Swept ${String(outcome.candidates)} positions and moved the dials. Likeness ${outcome.reading.fidelity.toFixed(3)}, from ${outcome.baseline.fidelity.toFixed(3)}. The sheet comes to ${String(settled)} ${settled === 1 ? 'colour' : 'colours'}, from ${String(baseline)}.`;
 }
 
 /**

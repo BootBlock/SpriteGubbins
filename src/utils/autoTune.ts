@@ -2,6 +2,7 @@ import { PROXY_CROP_CELLS, PROXY_CROP_COUNT, TUNE_ROUNDS } from '../constants/au
 import type { TuneOutcome, TuneStageName, TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings } from '../types/quantiser.ts';
 import { proxyCrops } from './proxyCrops.ts';
+import { quantiseImage } from './quantiseImage.ts';
 import { candidateReader } from './candidateReader.ts';
 import { chooseByPrice } from './chooseByPrice.ts';
 import { colorPrice } from './colorPrice.ts';
@@ -151,6 +152,19 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
     if (sameTunedDials(began, settled)) break;
   }
 
+  // **The colours are counted on the whole sheet, once at each end**, because that is the figure the
+  // panel reports and the crops cannot answer it: they count only the colours they sampled, which
+  // on the corpus is between 19% and 81% of the sheet's — see `TuneOutcome.sheetColors`. One run of
+  // the pipeline over a corpus sheet took 0.66–0.81 s where its sweep took 7–27 s, on one machine,
+  // and a sweep that moved nothing runs it once.
+  const baselineColors = quantiseImage(image, settings).colors;
+  const sheetColors = {
+    baseline: baselineColors,
+    settled: sameTunedDials(opening, settled)
+      ? baselineColors
+      : quantiseImage(image, { ...settings, ...settled }).colors,
+  };
+
   return {
     dials: settled,
     crops: crops.length,
@@ -159,6 +173,7 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
     candidates,
     reading,
     baseline,
+    sheetColors,
     price,
     // Built here rather than as each stage ran, and in the order the stages run: a phrase describes
     // where a dial *ends up*, and a stage that ran early in the last round is describing a position

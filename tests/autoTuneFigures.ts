@@ -35,6 +35,8 @@ export interface TuneFigure {
   readonly cleanupPasses: number;
   /** What the settled position spends across the crops — see `readCandidate`. */
   readonly colors: number;
+  /** What the whole sheet comes to at the opening and the settled dials — see `TuneOutcome.sheetColors`. */
+  readonly sheetColors: TuneOutcome['sheetColors'];
 }
 
 /** Where the sweep settles on each sheet with the anti-aliasing at its own `OFF`, unkeyed and keyed. */
@@ -59,6 +61,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 36,
+      sheetColors: { baseline: 12169, settled: 54 },
     },
     keyed: {
       rounds: 2,
@@ -68,6 +71,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 44,
+      sheetColors: { baseline: 10411, settled: 67 },
     },
   },
   'armour.png': {
@@ -81,6 +85,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 58,
+      sheetColors: { baseline: 9975, settled: 77 },
     },
     keyed: {
       rounds: 3,
@@ -90,6 +95,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 50,
+      sheetColors: { baseline: 9049, settled: 57 },
     },
   },
   'cyborg_black_red.png': {
@@ -103,6 +109,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 37,
+      sheetColors: { baseline: 7875, settled: 46 },
     },
     keyed: {
       rounds: 3,
@@ -112,6 +119,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 71,
+      sheetColors: { baseline: 7218, settled: 88 },
     },
   },
   'cyborg_healer.png': {
@@ -125,6 +133,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 74,
+      sheetColors: { baseline: 26141, settled: 108 },
     },
     keyed: {
       rounds: 3,
@@ -134,6 +143,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 59,
+      sheetColors: { baseline: 20916, settled: 87 },
     },
   },
   'vehicles_and_props.png': {
@@ -147,6 +157,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 50,
+      sheetColors: { baseline: 16436, settled: 73 },
     },
     keyed: {
       rounds: 2,
@@ -156,6 +167,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 43,
+      sheetColors: { baseline: 14106, settled: 56 },
     },
   },
   'character_space_marine_blue.png': {
@@ -169,6 +181,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 135,
+      sheetColors: { baseline: 17253, settled: 304 },
     },
     keyed: {
       rounds: 3,
@@ -178,6 +191,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 123,
+      sheetColors: { baseline: 15893, settled: 240 },
     },
   },
   'cyborg_monk.png': {
@@ -191,6 +205,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 46,
+      sheetColors: { baseline: 23174, settled: 77 },
     },
     keyed: {
       rounds: 2,
@@ -200,6 +215,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 52,
+      sheetColors: { baseline: 19082, settled: 94 },
     },
   },
   'ui_elements1.png': {
@@ -213,6 +229,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 26,
+      sheetColors: { baseline: 15826, settled: 49 },
     },
     keyed: {
       rounds: 2,
@@ -222,6 +239,7 @@ export const CORPUS_TUNE_FIGURES: Readonly<Record<CorpusSheetName, CorpusTuneFig
       fillCleanup: 0,
       cleanupPasses: 1,
       colors: 16,
+      sheetColors: { baseline: 13851, settled: 28 },
     },
   },
 };
@@ -266,6 +284,7 @@ export function expectTuneFigure(outcome: TuneOutcome, figure: TuneFigure): void
     fillCleanup: outcome.dials.fillCleanup,
     cleanupPasses: outcome.dials.cleanupPasses,
     colors: outcome.reading.colors,
+    sheetColors: outcome.sheetColors,
   }).toEqual({
     rounds: figure.rounds,
     positions: figure.positions,
@@ -274,5 +293,6 @@ export function expectTuneFigure(outcome: TuneOutcome, figure: TuneFigure): void
     fillCleanup: figure.fillCleanup,
     cleanupPasses: figure.cleanupPasses,
     colors: figure.colors,
+    sheetColors: figure.sheetColors,
   });
 }

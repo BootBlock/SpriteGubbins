@@ -103,7 +103,8 @@ export interface TuneReading {
   readonly fidelity: number;
   /**
    * Distinct colours across all the results, each counted once, as the sheet spends them. Lower is
-   * cheaper, and `TunePrice` is what trades it against fidelity.
+   * cheaper, and `TunePrice` is what trades it against fidelity. A ranking figure rather than the
+   * sheet's count, which `TuneOutcome.sheetColors` reports.
    */
   readonly colors: number;
 }
@@ -204,5 +205,20 @@ export interface TuneOutcome {
    * this sheet — and without the baseline it is indistinguishable from one that did nothing.
    */
   readonly baseline: TuneReading;
+  /**
+   * How many colours the whole sheet comes to at the dials the reader had and at the dials the sweep
+   * chose — the figure the result pane's caption states, and the one the panel reports.
+   *
+   * **The sheet's, not the crops'.** {@link TuneReading.colors} is what the stages rank by, and it is
+   * the right figure for that: it counts every colour the crops spend between them, so it moves
+   * wherever the sheet's own count moves. As a report it falls short of the sheet by whatever the
+   * crops never sampled. Over the corpus with no budget, `test_sprites/armour.png` reads 4292 → 58
+   * across its crops and comes to 9975 → 77 on the whole sheet, and `test_sprites/cyborg_healer.png`
+   * reads 6232 → 74 against 26141 → 108. See `autoTune`, which runs the sheet for these.
+   */
+  readonly sheetColors: {
+    readonly baseline: number;
+    readonly settled: number;
+  };
   readonly stages: readonly TuneStageReport[];
 }

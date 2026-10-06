@@ -46,6 +46,8 @@ const OUTCOME: TuneOutcome = {
   price: { perColor: 0.00049, positions: 15 },
   reading: { fidelity: 0.9412, colors: 24 },
   baseline: { fidelity: 0.8137, colors: 31 },
+  // Apart from the crops' counts on purpose, so a chip that read those instead could not pass.
+  sheetColors: { baseline: 9975, settled: 77 },
   stages: [
     { stage: 'READING', candidates: 15, skipped: null, settled: 'INK_WEIGHTED, expansion 2' },
     { stage: 'INK_BLEND', candidates: 20, skipped: null, settled: 'line 2.5, trim 1.0' },
@@ -205,8 +207,28 @@ describe('AutoTuneControls', () => {
       expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
     });
     expect(screen.getByText('likeness 0.814 → 0.941')).toBeInTheDocument();
-    expect(screen.getByText('31 → 24 colours')).toBeInTheDocument();
+    // The whole sheet's count, which is what the result pane states, rather than the crops' — see
+    // `TuneOutcome.sheetColors`.
+    expect(screen.getByText('9975 → 77 colours')).toBeInTheDocument();
+    expect(screen.queryByText(/31 → 24/)).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Swept 323 positions and moved the dials. Likeness 0.941, from 0.814. The sheet comes to 77 colours, from 9975.',
+    );
     expect(screen.getByText(AUTO_TUNE_GUIDANCE.settled)).toBeInTheDocument();
+  });
+
+  it('agrees the noun with a sheet that comes to one colour', async () => {
+    const user = userEvent.setup({ delay: null });
+    const single: TuneOutcome = { ...OUTCOME, sheetColors: { baseline: 3, settled: 1 } };
+    FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: single });
+    show();
+
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
+
+    await waitFor(() => {
+      expect(screen.getByText('3 → 1 colour')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('The sheet comes to 1 colour, from 3.');
   });
 
   it('names each stage, and says which of them had nothing to try', async () => {

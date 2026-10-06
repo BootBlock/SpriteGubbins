@@ -9,7 +9,8 @@ import { autoTune } from './autoTune.ts';
 import { upscaleOverMesh } from './gridAlignment.ts';
 import { oklabPlanes } from './oklabPlanes.ts';
 import { proxyCrops } from './proxyCrops.ts';
-import { quantiseRegions } from './quantiseImage.ts';
+import { countColors } from './imageData.ts';
+import { quantiseImage, quantiseRegions } from './quantiseImage.ts';
 import { quantisePrologue } from './quantisePrologue.ts';
 import { meanSsim } from './ssim.ts';
 import { readCandidate } from './tuneCandidate.ts';
@@ -261,6 +262,27 @@ describe('autoTune', () => {
     expect(second.price).toEqual(first.price);
     expect(second.dials).toEqual(first.dials);
     expect(second.rounds).toBe(1);
+  });
+
+  it('reports the colours of the whole sheet it describes, at each end of the sweep', () => {
+    // The panel's chip states these, and the result pane states the count of the very same result —
+    // so each is counted here off the whole sheet run at its dials, rather than off the crops, which
+    // only count the colours they happened to sample. See `TuneOutcome.sheetColors`.
+    const sheetCount = (settings: QuantiseSettings) => countColors(quantiseImage(SHEET, settings).image);
+    const moved = autoTune(SHEET, ASTRAY);
+
+    expect(moved.dials).not.toEqual(tunedDialsOf(ASTRAY));
+    expect(moved.sheetColors).toEqual({
+      baseline: sheetCount(ASTRAY),
+      settled: sheetCount({ ...ASTRAY, ...moved.dials }),
+    });
+
+    // And a sweep that moved nothing reports one count at both ends, run once.
+    const still = autoTune(SHEET, { ...ASTRAY, ...moved.dials });
+    expect(still.sheetColors).toEqual({
+      baseline: moved.sheetColors.settled,
+      settled: moved.sheetColors.settled,
+    });
   });
 
   it('charges one price, whatever dials the reader started from', () => {

@@ -4,6 +4,7 @@ import { QUANTISE_DEFAULT_DIALS } from '../src/constants/quantiseDials.ts';
 import { imageFrom, soften } from '../src/test/images.ts';
 import type { QuantiseSettings, Rgba } from '../src/types/quantiser.ts';
 import { autoTune } from '../src/utils/autoTune.ts';
+import { sameTunedDials, tunedDialsOf } from '../src/utils/tuneStage.ts';
 import { upscaleNearest } from '../src/utils/upscaleNearest.ts';
 
 /**
@@ -21,6 +22,10 @@ import { upscaleNearest } from '../src/utils/upscaleNearest.ts';
  * follow from the same fact: the key, the edge hardening and the mesh depend on `key`,
  * `silhouetteThreshold` and `grid`, none of which the sweep may move, while the map is the one
  * reading `readCandidate` does not look at. See `quantisePrologue` and `quantiseRegions`.
+ *
+ * **Beside those, the sweep runs the whole sheet once at each end** to count the colours it reports,
+ * and a sweep that moved nothing runs it once — see `TuneOutcome.sheetColors`. Each of those is the
+ * full pipeline, prologue and map included, and it is a fixed cost rather than one per candidate.
  *
  * The counters are `vi.hoisted` because a `vi.mock` factory is hoisted above every import in this
  * file, so anything it closes over has to be hoisted with it.
@@ -107,6 +112,7 @@ const KEYED: QuantiseSettings = {
 describe('the auto-tune sweep against the pipeline prologue', () => {
   it('measures the key, the hardening and the mesh once a crop, and no difference map at all', () => {
     const outcome = autoTune(SHEET, KEYED);
+    const sheetRuns = sameTunedDials(tunedDialsOf(KEYED), outcome.dials) ? 1 : 2;
 
     // The sweep this is a claim about: many candidates, each run on every crop. Without this the
     // three assertions below would hold trivially over a sweep that had done nothing.
@@ -118,14 +124,14 @@ describe('the auto-tune sweep against the pipeline prologue', () => {
     // `quantiseImage`, as `readCandidate` used to hand it — this fixture reports 620 mesh
     // measurements and 622 keyings and hardenings, the extra two being the reference `autoTune`
     // built for itself and then had rebuilt underneath it.
-    expect(counts.mesh).toBe(outcome.crops);
-    expect(counts.key).toBe(outcome.crops);
-    expect(counts.harden).toBe(outcome.crops);
+    expect(counts.mesh).toBe(outcome.crops + sheetRuns);
+    expect(counts.key).toBe(outcome.crops + sheetRuns);
+    expect(counts.harden).toBe(outcome.crops + sheetRuns);
 
-    // And never, where the same restoration reports 620. `readCandidate` reads the image and the
+    // And never for a candidate, where the same restoration reports 620. `readCandidate` reads the image and the
     // colour count and nothing else, and this is the one reading that costs a second walk over the
     // source rather than falling out of the transform — which is why `quantiseRegions` hands back
     // only the images.
-    expect(counts.difference).toBe(0);
+    expect(counts.difference).toBe(sheetRuns);
   });
 });
