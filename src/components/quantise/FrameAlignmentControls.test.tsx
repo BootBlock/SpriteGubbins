@@ -34,7 +34,7 @@ function frameAt(left: number, drift: number, snapped = false): AlignedFrame {
 }
 
 function stripOf(...frames: readonly AlignedFrame[]): SpriteStrip {
-  return { frames, pitch: { x: 20, y: 0 } };
+  return { frames, pitch: 20 };
 }
 
 function show(overrides: Partial<Parameters<typeof FrameAlignmentControls>[0]> = {}) {
@@ -69,7 +69,7 @@ describe('FrameAlignmentControls', () => {
     useQuantiseStore.getState().setFrameAlignment('CHECK');
     show({ strips: [stripOf(frameAt(0, 0), frameAt(20, 2), frameAt(40, 0))] });
 
-    expect(screen.getByText(/pitch 20\.0 × 0\.0 · \+0,\+0 \+2,\+0 \+0,\+0/)).toBeInTheDocument();
+    expect(screen.getByText(/pitch 20\.0 · \+0,\+0 \+2,\+0 \+0,\+0/)).toBeInTheDocument();
     expect(screen.getByText('1 strip · 3 frames')).toBeInTheDocument();
     expect(screen.getByText(FRAME_ALIGNMENT_GUIDANCE.read)).toBeInTheDocument();
   });

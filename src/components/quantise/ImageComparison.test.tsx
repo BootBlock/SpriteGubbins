@@ -663,7 +663,7 @@ describe('ImageComparison’s preview modes', () => {
         quantised={{
           result: {
             ...result,
-            strips: [{ frames: [frame(0), frame(5), frame(10)], pitch: { x: 5, y: 0 } }],
+            strips: [{ frames: [frame(0), frame(5), frame(10)], pitch: 5 }],
           },
           grid: 8,
         }}

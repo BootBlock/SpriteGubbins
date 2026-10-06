@@ -1,3 +1,4 @@
+import { FRAME_DRIFT_SEARCH } from '../constants/quantiser.ts';
 import type { AlignedFrame, PixelShift, SpriteBox, SpriteStrip } from '../types/quantiser.ts';
 import { affordableDriftReach } from './affordableDriftReach.ts';
 import { bordersArtwork } from './bordersArtwork.ts';
@@ -28,6 +29,11 @@ import { spriteStrips } from './spriteStrips.ts';
  * sits further from its slot than the tolerance admits, on either axis — either axis rather than by
  * distance, because a frame two pixels low is two pixels low whatever it is doing horizontally, and
  * a reader setting a tolerance of one is saying "one pixel, in any direction".
+ *
+ * **A move is capped at {@link FRAME_DRIFT_SEARCH}, whatever the tolerance.** A frame further than
+ * that from the nearest slot is holding a different drawing, or is a stray piece sharing the row,
+ * rather than a frame that slipped — so its drift is reported and the frame is left where it is.
+ * The slot is the nearest one, so no move is ever more than half the pitch either.
  *
  * **A move is refused where there is no room for it, and the refusal is decided here rather than
  * where the pixels are written.** Every frame's flag is then the truth about what happened, which is
@@ -76,7 +82,7 @@ export function sheetStrips(
         : [ORIGIN, ...later.map((frame) => registerFrame(reference, frame, reach))];
     const lattice = fitLattice(shifts);
 
-    const drifts = row.map((_, index) => driftAt(lattice, index, shifts[index] ?? ORIGIN));
+    const drifts = row.map((_, index) => driftAt(lattice, shifts[index] ?? ORIGIN));
     // Where each frame's slot sits relative to the *first frame's slot*, in whole pixels: its
     // measured position with its own drift taken out, less the same figure for frame zero. That is
     // what the onion skin stacks by, and taking it from the drifts rather than from the pitch a
@@ -107,9 +113,10 @@ function leadOffset(measured: PixelShift, drift: PixelShift): PixelShift {
   return { x: measured.x - drift.x, y: measured.y - drift.y };
 }
 
-/** Whether the mode and the tolerance between them ask for this frame to be moved. */
+/** Whether the mode, the tolerance and the cap between them ask for this frame to be moved. */
 function admits(snapAbove: number | null, drift: PixelShift): boolean {
-  return snapAbove !== null && Math.max(Math.abs(drift.x), Math.abs(drift.y)) > snapAbove;
+  const distance = Math.max(Math.abs(drift.x), Math.abs(drift.y));
+  return snapAbove !== null && distance > snapAbove && distance <= FRAME_DRIFT_SEARCH;
 }
 
 /**

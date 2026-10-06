@@ -141,7 +141,7 @@ export interface MeshPatch {
  * and the two are measured in different units on different images.
  *
  * Whole numbers wherever it describes a shift that was applied to pixels, and fractional where it
- * describes a pitch that was *fitted* — see {@link SpriteStrip.pitch}, which is the only such use.
+ * describes where a *fitted* layout starts — see `FrameLattice.origin`, which is the only such use.
  */
 export interface PixelShift {
   readonly x: number;
@@ -1140,7 +1140,8 @@ export interface SpriteStrip {
   /** Left to right, and never fewer than {@link SMALLEST_STRIP_FRAMES}. */
   readonly frames: readonly AlignedFrame[];
   /**
-   * The spacing the frames were fitted to, in drawn pixels per frame — fractional, deliberately.
+   * The spacing along the row the frames were fitted to, in drawn pixels per slot — fractional,
+   * deliberately. A row has no spacing down it: its frames share one baseline, see `fitLattice`.
    *
    * A generated sheet laid out at 21⅓ source pixels a frame comes back at 21, 21, 22 drawn pixels,
    * and rounding the fit to a whole number would make two frames in three report a drift of one that
@@ -1148,7 +1149,7 @@ export interface SpriteStrip {
    * that answers it is stated. It is here to be *reported*: what anything acts on is
    * {@link AlignedFrame.drift} and {@link AlignedFrame.slot}, both of which are already whole.
    */
-  readonly pitch: PixelShift;
+  readonly pitch: number;
 }
 
 /** What came back: the transformed sheet, the numbers that say what it did, and what it cost. */

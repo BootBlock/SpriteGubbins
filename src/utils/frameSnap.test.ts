@@ -22,7 +22,7 @@ function box(left: number, top: number): SpriteBox {
 
 /** One strip of one frame, marked or not, which is all these cases need. */
 function stripOf(frame: AlignedFrame): SpriteStrip {
-  return { frames: [frame], pitch: { x: 0, y: 0 } };
+  return { frames: [frame], pitch: 0 };
 }
 
 /** Which pixels of the sheet carry any coverage at all, as `x,y` strings. */
@@ -109,7 +109,7 @@ describe('snapFrames', () => {
           { box: box(2, 2), drift: { x: -8, y: 0 }, slot: { x: 0, y: 0 }, snapped: true },
           { box: box(10, 2), drift: { x: 8, y: 0 }, slot: { x: 8, y: 0 }, snapped: true },
         ],
-        pitch: { x: 8, y: 0 },
+        pitch: 8,
       },
     ]);
 
