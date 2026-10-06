@@ -227,8 +227,8 @@ describe('sheetStrips', () => {
     });
 
     it('moves nothing in a row whose fourth slot is empty', () => {
-      // Numbered by list position, the row fitted a pitch of 40 and moved three frames by −8, −16
-      // and +8 pixels to re-space it.
+      // Numbered by list position, the row fitted a pitch of 40, read three frames as drifting
+      // −8, −16 and +8 pixels, and moved them +8, +16 and −8 to re-space it.
       expect(snapOf(framesAt([10, 42, 74, 138, 170]))).toEqual([STILL, STILL, STILL, STILL, STILL]);
     });
 

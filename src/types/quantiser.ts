@@ -1110,7 +1110,7 @@ export interface AlignedFrame {
    * What the onion skin translates by to stack the row on one place — and it is carried rather than
    * recomputed from {@link SpriteStrip.pitch} because the pitch is fractional and rounding it a
    * second time is how the stack and the drift come to disagree by a pixel. Under a regular row it
-   * is the pitch times the frame's position; under a row that is *not* regular it is still exactly
+   * is the pitch times the frame's slot number, which skips any slot the row leaves empty; under a row that is *not* regular it is still exactly
    * the offset that leaves {@link drift} showing and nothing else.
    */
   readonly slot: PixelShift;
