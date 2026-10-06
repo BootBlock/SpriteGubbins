@@ -34,7 +34,9 @@ describe('the generated overlay sheet', () => {
     // The fourth tier mark is 263 pixels across a 217-pixel square, a ninth past each side.
     const over = oversizedSprites(pieces, cell);
     expect(over).toEqual([8]);
-    expect(oversizeReason(pieces, names, cell, over)).toMatch(/^tier-mark-4 reaches past its 128 × 128 cell/);
+    expect(oversizeReason(pieces, names, cell, over)).toMatch(
+      /^tier-mark-4 reaches past its tile square where it was drawn/,
+    );
 
     const placed = cellPlacements(pieces, cell);
     // The veil, the halo, the ring, the three-quarter sweep and the glow each fill the file along their

@@ -13,8 +13,9 @@
 export const TILE_TOLERANCE = 0.25;
 
 /**
- * How far a piece kept in place may reach past its file before the Quantise tab refuses it rather than
- * clip it, as a fraction of the tile square's side in the file (`oversizedSprites`).
+ * How far a piece kept in place may reach past its file, or past its tile square, before the Quantise
+ * tab refuses it rather than clip it, as a fraction of the tile square's side in the file
+ * (`inPlaceOvershoot`).
  *
  * **A sixteenth**, one displayed pixel of an icon shown at 16 × 16, the smallest *Smallest Display Size*
  * lists, so a clip there never takes more than the player could see; a smaller size typed into the field

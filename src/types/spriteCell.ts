@@ -136,8 +136,8 @@ export interface SpriteCell {
   readonly lattice: CellLattice | null;
   /**
    * Whether the artwork may be resampled into the cell: `false` on a sheet read at a pixel scale above 1
-   * (`resizingFitAllowed`), where `IN_PLACE` places each piece at its drawn size rather than scaling its
-   * square onto the cell. The other fits answer the same question by which fit is in force.
+   * (`resizingFitAllowed`), where `IN_PLACE` places each piece at its drawn size, its square centred in
+   * the cell rather than scaled onto it (`squareInFile`). The other fits answer the same question by which fit is in force.
    */
   readonly resamples: boolean;
 }
@@ -158,8 +158,8 @@ export interface SheetRegion {
 
 /**
  * How one sprite becomes its cell: the region of the sheet cut for it, and where that region lands
- * in the cell and at what size. Under `IN_PLACE` it may reach past the cell's edge by up to
- * `PLACE_OVERSHOOT` of the tile square, and the part past the edge is clipped (`placeInCell`).
+ * in the cell and at what size. Under `IN_PLACE` it may reach past the cell's edge, and past its tile
+ * square, by up to `PLACE_OVERSHOOT` of that square, and the part past the edge is clipped (`placeInCell`).
  *
  * Under `REFUSE` the region is the sprite's own bounding box and its size in the cell is the box's,
  * so the placement is a displacement and nothing more. Under `SCALE_SET` the region is still the box

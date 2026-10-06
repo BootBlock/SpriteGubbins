@@ -4,10 +4,13 @@ import type { SpriteBox } from '../types/quantiser.ts';
 import type { SheetRegion, SpriteCell } from '../types/spriteCell.ts';
 import { cellLattice } from './cellLattice.ts';
 import { inPlacePlacement } from './inPlacePlacement.ts';
-import { oversizedSprites } from './spriteCell.ts';
+import { oversizedSprites, oversizeReason } from './spriteCell.ts';
 
-/** A Keep place cell of this size over a lattice of one cell whose square is `square`. */
-function cellOver(size: number, square: SheetRegion): SpriteCell {
+/**
+ * A Keep place cell of this size over a lattice of one cell whose square is `square`, resampling unless
+ * the sheet was read at a pixel scale.
+ */
+function cellOver(size: number, square: SheetRegion, resamples = true): SpriteCell {
   const lattice: CellLattice = {
     kind: 'CELLS',
     cells: [{ index: 0, region: { left: 0, top: 0, width: 64, height: 64 }, square }],
@@ -21,7 +24,7 @@ function cellOver(size: number, square: SheetRegion): SpriteCell {
     fit: 'IN_PLACE',
     statedStep: null,
     lattice,
-    resamples: true,
+    resamples,
   };
 }
 
@@ -62,5 +65,62 @@ describe('inPlacePlacement', () => {
 
     expect(lattice.cells[0]?.square).toEqual({ left: 103, top: 103, width: 51, height: 51 });
     expect(oversizedSprites([veil], cell)).toEqual([]);
+  });
+
+  describe('on a sheet with a pixel scale', () => {
+    // `icons_fullbleed.png` at its grid of 7: a 29-pixel tile square, cut into 128 × 128 files. A
+    // sixteenth of the square is 1.8 file pixels.
+    const square = { left: 10, top: 10, width: 29, height: 29 };
+    const cell = cellOver(128, square, false);
+
+    it('centres the square in the file at its drawn size', () => {
+      const veil: SpriteBox = { left: 10, top: 10, width: 29, height: 29, pixels: 841 };
+
+      expect(inPlacePlacement(veil, cell)).toMatchObject({ x: 49, y: 49, width: 29, height: 29 });
+      expect(oversizedSprites([veil], cell)).toEqual([]);
+    });
+
+    it('refuses a piece past its square alike on all four sides, however large the file', () => {
+      // Each reaches two pixels past one side of its square and stays well inside the file. Measured
+      // against the file alone, the right and bottom ones passed and the left and top ones were refused.
+      const past: readonly SpriteBox[] = [
+        { left: 8, top: 15, width: 10, height: 10, pixels: 100 },
+        { left: 15, top: 8, width: 10, height: 10, pixels: 100 },
+        { left: 31, top: 15, width: 10, height: 10, pixels: 100 },
+        { left: 15, top: 31, width: 10, height: 10, pixels: 100 },
+      ];
+
+      expect(oversizedSprites(past, cell)).toEqual([0, 1, 2, 3]);
+    });
+
+    it('clips a piece a pixel past its square on any side', () => {
+      const slight: readonly SpriteBox[] = [
+        { left: 9, top: 15, width: 10, height: 10, pixels: 100 },
+        { left: 30, top: 30, width: 10, height: 10, pixels: 100 },
+      ];
+
+      expect(oversizedSprites(slight, cell)).toEqual([]);
+    });
+
+    it('refuses a piece inside its square that a smaller file would clip, and says to raise the cell', () => {
+      // A 29-pixel square overhangs a 24-pixel file by two pixels on the left and three on the right.
+      const small = cellOver(24, square, false);
+      const corner: SpriteBox = { left: 29, top: 20, width: 10, height: 5, pixels: 50 };
+      const middle: SpriteBox = { left: 20, top: 20, width: 5, height: 5, pixels: 25 };
+
+      expect(inPlacePlacement(corner, small)).toMatchObject({ x: 16, width: 10 });
+      expect(oversizedSprites([corner, middle], small)).toEqual([0]);
+      expect(oversizeReason([corner, middle], ['badge', 'pip'], small, [0])).toBe(
+        'badge is drawn in a 29 × 29 tile square, larger than the 24 × 24 cell — raise the cell to at least 29 × 29',
+      );
+    });
+
+    it('asks for a new sheet where a piece reaches past its square', () => {
+      const past: SpriteBox = { left: 15, top: 31, width: 10, height: 10, pixels: 100 };
+
+      expect(oversizeReason([past], ['badge'], cell, [0])).toBe(
+        'badge reaches past its tile square where it was drawn — re-generate the sheet with each piece inside its tile square',
+      );
+    });
   });
 });

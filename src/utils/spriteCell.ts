@@ -1,5 +1,4 @@
 import { SPRITE_CELL_SIDE_RANGE } from '../constants/spriteCell.ts';
-import { PLACE_OVERSHOOT } from '../constants/cellLattice.ts';
 import type { CellLattice } from '../types/cellLattice.ts';
 import type { TargetSize } from '../types/output.ts';
 import type { PixelGrid, SpriteBox } from '../types/quantiser.ts';
@@ -14,8 +13,8 @@ import type {
   SpritePlacement,
 } from '../types/spriteCell.ts';
 import { evenScale } from './evenScale.ts';
+import { inPlaceOvershoot } from './inPlaceOvershoot.ts';
 import { inPlacePlacement } from './inPlacePlacement.ts';
-import { latticeCellOf } from './latticeCellOf.ts';
 
 /**
  * Cutting each sprite into a fixed cell instead of into its own bounding box.
@@ -273,35 +272,38 @@ export function oversizeReason(
   // The positional name a sheet that could not be named falls back to is itself `sprite-04`, so the
   // clause reads the same way whether the sheet is named or numbered.
   const named = names[first] ?? `piece ${String(first + 1)}`;
-  if (cell.fit === 'IN_PLACE') {
-    return `${named} reaches past its ${String(cell.width)} × ${String(cell.height)} cell where it was drawn${others} — re-generate the sheet with each piece inside its tile square`;
-  }
+  if (cell.fit === 'IN_PLACE') return inPlaceReason(box, cell, named, others);
   return `${named} is ${String(box.width)} × ${String(box.height)} drawn pixels, larger than the ${String(cell.width)} × ${String(cell.height)} cell${others} — raise the cell, or re-generate the sheet at the scale the prompt asked for`;
 }
 
 /**
  * The pieces of a placement sheet that do not land inside the cell under `IN_PLACE`: every piece where
- * the cells could not be read, and otherwise each piece no cell holds or whose place reaches past the
- * file's edge by more than `PLACE_OVERSHOOT` of its tile square. A piece within that margin is clipped
- * by `placeInCell` — up to eight pixels of a 128-pixel file, one pixel of the icon at its smallest
- * display size; one past it was drawn at the wrong place, and the part a clip would take is part of
- * the mark.
+ * the cells could not be read, and otherwise each piece no cell holds or whose place reaches past its
+ * tile square or past the file's edge by more than `PLACE_OVERSHOOT` of that square's side in the file
+ * (`inPlaceOvershoot`). A piece within that margin is clipped by `placeInCell` — up to eight pixels of a
+ * 128-pixel file, one pixel of the icon at its smallest display size; one past it was drawn at the wrong
+ * place, or into a file smaller than its square, and the part a clip would take is part of the mark.
  */
 function outOfPlace(boxes: readonly SpriteBox[], cell: SpriteCell): readonly number[] {
   if (cell.lattice?.kind !== 'CELLS') return boxes.map((_box, index) => index);
   return boxes.flatMap((box, index) => {
-    const placed = inPlacePlacement(box, cell);
-    const square = latticeCellOf(box, cell)?.square;
-    if (placed === null || square === undefined) return [index];
-    // The square's side in the file: the whole file where the fit resamples, its own size where it does
-    // not (`inPlacePlacement`).
-    const side = cell.resamples ? cell.width : square.width;
-    const past = Math.max(
-      -placed.x,
-      -placed.y,
-      placed.x + placed.width - cell.width,
-      placed.y + placed.height - cell.height,
-    );
-    return past <= side * PLACE_OVERSHOOT ? [] : [index];
+    const past = inPlaceOvershoot(box, cell);
+    return past !== null && Math.max(past.square, past.file) <= past.margin ? [] : [index];
   });
+}
+
+/**
+ * The refusal under `IN_PLACE`, which has two causes and two remedies. A piece that stays inside its tile
+ * square but not inside the file is in a file smaller than the square, which only happens at a pixel
+ * scale (`squareInFile`), and raising the cell is the fix; any other was drawn past its square, and only
+ * a new sheet moves it.
+ */
+function inPlaceReason(box: SpriteBox, cell: SpriteCell, named: string, others: string): string {
+  const past = inPlaceOvershoot(box, cell);
+  const size = `${String(cell.width)} × ${String(cell.height)}`;
+  if (past !== null && past.square <= past.margin) {
+    const side = String(past.side);
+    return `${named} is drawn in a ${side} × ${side} tile square, larger than the ${size} cell${others} — raise the cell to at least ${side} × ${side}`;
+  }
+  return `${named} reaches past its tile square where it was drawn${others} — re-generate the sheet with each piece inside its tile square`;
 }

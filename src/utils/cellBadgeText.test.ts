@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { CellLattice } from '../types/cellLattice.ts';
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { SpriteCell } from '../types/spriteCell.ts';
 import { cellBadgeText } from './cellBadgeText.ts';
@@ -34,5 +35,33 @@ describe('cellBadgeText', () => {
     expect(cellBadgeText({ ...CELL, fit: 'FILL_SQUARE' }, BOXES, 0)).toBe(
       '128 × 128 cell, each square filled',
     );
+  });
+
+  describe('under Keep place', () => {
+    const lattice: CellLattice = {
+      kind: 'CELLS',
+      cells: [
+        {
+          index: 0,
+          region: { left: 0, top: 0, width: 300, height: 300 },
+          square: { left: 20, top: 20, width: 260, height: 260 },
+        },
+      ],
+      cellOf: [0],
+      tileSide: 260,
+    };
+    const inPlace: SpriteCell = { ...CELL, fit: 'IN_PLACE', lattice };
+
+    it('counts the pieces out of place, whether past their square or past the cell', () => {
+      expect(cellBadgeText(inPlace, BOXES, 1)).toBe('1 sprite out of place in 128 × 128');
+      expect(cellBadgeText(inPlace, BOXES, 2)).toBe('2 sprites out of place in 128 × 128');
+    });
+
+    it('states the tile square’s factor, or that it is centred as drawn at a pixel scale', () => {
+      expect(cellBadgeText(inPlace, BOXES, 0)).toBe('128 × 128 cell, tile square at 49%');
+      expect(cellBadgeText({ ...inPlace, resamples: false }, BOXES, 0)).toBe(
+        '128 × 128 cell, each tile square centred as drawn',
+      );
+    });
   });
 });

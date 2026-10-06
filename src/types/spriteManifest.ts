@@ -175,13 +175,13 @@ export interface ManifestSprite {
  * `height`, lays it at `x`, `y` on a clear cell and clips it to the cell, which is exactly what the
  * pack's file holds. Only under `IN_PLACE` can the rectangle reach past the cell: `x` or `y` below
  * zero, or past the far edge, by at most a sixteenth of the tile square, where a generator drew a
- * piece a little past the square it was placed against.
+ * piece a little past the square it was placed against or the square overhangs a smaller cell.
  *
  * Under the `REFUSE` fit the two sizes are equal, `from` is the sprite's own rect, and only the
  * offset says anything; under `SCALE_SET` the sizes differ by the sheet's one factor, and under
  * `FILL_SQUARE` `from` is the square at the centre of the sprite's box, drawn at the cell's shorter
  * side; under `IN_PLACE` `from` is the box, drawn at its place on the tile square scaled onto the
- * cell. See `cellPlacements`, which computes it, and `resampleArea`, which the pack resizes with.
+ * cell, or on a sheet with a pixel scale at its drawn size with the square centred in the cell. See `cellPlacements`, which computes it, and `resampleArea`, which the pack resizes with.
  */
 export interface ManifestPlacement {
   readonly from: { readonly x: number; readonly y: number; readonly width: number; readonly height: number };

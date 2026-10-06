@@ -135,20 +135,24 @@ describe('an overlay sheet, packed into 128 × 128 cells under Keep place', () =
     expect(cell?.resamples).toBe(false);
     if (cell === null) throw new Error('unreachable');
     expect(oversizedSprites(boxes, cell)).toEqual([]);
-    // At a factor of 1 the badge keeps its 30 pixels, 124 in from the tile square's left edge.
-    expect(cellPlacements(boxes, cell)[1]).toMatchObject({ x: 124, y: 0, width: 30, height: 30 });
+    // At a factor of 1 the 154-pixel square is centred in the 160-pixel file, three pixels in, and the
+    // badge keeps its 30 pixels, 124 in from the square's left edge.
+    const placed = cellPlacements(boxes, cell);
+    expect(placed[0]).toMatchObject({ x: 3, y: 3, width: 154, height: 154 });
+    expect(placed[1]).toMatchObject({ x: 127, y: 3, width: 30, height: 30 });
   });
 
-  it('refuses the pack, naming the piece, where a piece reaches past its file', () => {
+  it('refuses the pack, naming the piece, where its tile square is larger than the file', () => {
     const boxes = segmented();
     const lattice = latticeOf(boxes);
     const cell = resolveSpriteCell(CHOICE, { width: 128, height: 128 }, 2, null, lattice);
     if (cell === null) throw new Error('unreachable');
-    // At a pixel scale the 154-pixel veil is drawn at its own size, which no 128 cell holds.
+    // At a pixel scale the 154-pixel square keeps its drawn size, which no 128 cell holds: centred, it
+    // overhangs the file by thirteen pixels a side, more than its sixteenth.
     const over = oversizedSprites(boxes, cell);
     expect(over).toEqual([0, 1, 2]);
-    expect(oversizeReason(boxes, ['disabled-veil'], cell, over)).toMatch(
-      /^disabled-veil reaches past its 128 × 128 cell where it was drawn and 2 more do not fit either/,
+    expect(oversizeReason(boxes, ['disabled-veil'], cell, over)).toBe(
+      'disabled-veil is drawn in a 154 × 154 tile square, larger than the 128 × 128 cell and 2 more do not fit either — raise the cell to at least 154 × 154',
     );
   });
 

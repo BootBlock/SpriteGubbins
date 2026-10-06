@@ -25,7 +25,8 @@ import { median } from './median.ts';
  * `CellLattice.tileSide`, which every piece that keeps a place of its own is drawn at — a piece drawn
  * to the whole tile is fitted to its own box, so the chip names the square rather than every piece;
  * on an isolated look the cell's, which every piece shares; or that each piece keeps its drawn size on
- * a sheet with a pixel scale. Where the sheet's cells could not be read it says so, since every piece
+ * a sheet with a pixel scale, whose square is centred in the cell. A piece out of place is one past its
+ * square or past the cell (`inPlaceOvershoot`). Where the sheet's cells could not be read it says so, since every piece
  * is then refused.
  *
  * Pure, as everything in this directory is.
@@ -39,12 +40,12 @@ export function cellBadgeText(cell: SpriteCell, boxes: readonly SpriteBox[], ove
   return `${size} cell`;
 }
 
-/** The chip under `Keep place`: the lattice failure, the pieces past the cell, or the one factor. */
+/** The chip under `Keep place`: the lattice failure, the pieces out of place, or the one factor. */
 function inPlaceText(cell: SpriteCell, size: string, over: number): string {
   const lattice = cell.lattice;
   if (lattice?.kind !== 'CELLS') return 'Cells not found on this sheet';
-  if (over > 0) return `${over === 1 ? '1 sprite reaches' : `${String(over)} sprites reach`} past ${size}`;
-  if (!cell.resamples) return `${size} cell, each piece in place as drawn`;
+  if (over > 0) return `${over === 1 ? '1 sprite' : `${String(over)} sprites`} out of place in ${size}`;
+  if (!cell.resamples) return `${size} cell, each tile square centred as drawn`;
   if (lattice.tileSide !== null) {
     return `${size} cell, tile square at ${String(Math.round((cell.width / lattice.tileSide) * 100))}%`;
   }

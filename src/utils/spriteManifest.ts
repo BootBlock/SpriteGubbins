@@ -73,8 +73,8 @@ export interface ManifestInput {
    * At 1:1 beside the boxes, and scaled with them, so the offset a sprite sits at inside its cell is
    * one placement magnified rather than a rounding that moves with the factor.
    *
-   * **Every sprite must fit it**, or under `IN_PLACE` reach past it by no more than `PLACE_OVERSHOOT`
-   * of its tile square; `writeSheet` refuses the download otherwise, which is why nothing here checks
+   * **Every sprite must fit it**, or under `IN_PLACE` reach past it and past its tile square by no
+   * more than `PLACE_OVERSHOOT` of that square; `writeSheet` refuses the download otherwise, which is why nothing here checks
    * again. See `oversizedSprites`, which is the one reading that question is taken from.
    */
   readonly cell: SpriteCell | null;
