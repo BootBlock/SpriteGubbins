@@ -69,7 +69,7 @@ describe('ICON’s option pools', () => {
       const tiers = plan.groups
         .flatMap((group) => group.entries)
         .find((entry) => entry.label === 'tier-mark');
-      expect(tiers?.text).toMatch(/a shape of its own carrying one to four pips/u);
+      expect(tiers?.text).toMatch(/one to four in order and set in a shape of their own/u);
       expect(tiers?.text).toMatch(/never by its colour alone/u);
     }
   });

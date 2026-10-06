@@ -128,7 +128,7 @@ export const ICON: CategoryDefinition = {
       label: 'Rarity Tier',
       tooltip:
         'How loud the whole set reads, from a plain common set to a rich, bright legendary one. One value holds for every icon on the set.\n\n' +
-        'A set that mixes tiers takes `Neutral, Tier Shown By Overlay Marks`: every icon is drawn at one even emphasis, and the tier marks the overlay sheet draws tell the tiers apart in your game.',
+        'A set that mixes tiers takes `Neutral, Tier Shown By Overlay Marks`: every icon is drawn at one even emphasis, and the tier marks the overlay sheets draw tell the tiers apart in your game.',
       options: ['Neutral, Tier Shown By Overlay Marks', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'],
     },
     {

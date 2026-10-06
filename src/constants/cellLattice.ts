@@ -15,8 +15,9 @@ export const TILE_TOLERANCE = 0.25;
  * How far a piece kept in place may reach past its file before the Quantise tab refuses it rather than
  * clip it, as a fraction of the tile square's side in the file (`oversizedSprites`).
  *
- * **A sixteenth**, one pixel of the icon at the 16-pixel size the prompt's smallest display allows, so a
- * clip never takes more than the player could see at that size. Measured on
+ * **A sixteenth**, one displayed pixel of an icon shown at 16 × 16, the smallest *Smallest Display Size*
+ * lists, so a clip there never takes more than the player could see; a smaller size typed into the field
+ * makes a displayed pixel a larger share of the side, and the clip a smaller one. Measured on
  * `test_sprites/game_overlay_test.png`, whose 217-pixel squares the pieces that keep a place of their own
  * reach past by up to ten pixels (the broken overlay, a twenty-second) and the fourth tier mark by
  * twenty-five (a ninth): the first is a generator's slack, which the clip absorbs, and the second a mark

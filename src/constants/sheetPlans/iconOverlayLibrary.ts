@@ -10,6 +10,7 @@ interface OverlayWording {
   readonly ring: string;
   readonly sweep: string;
   readonly rarityGlow: string;
+  readonly tierMarks: string;
   readonly marksIntro: string;
   /** Said after the grid and cell sentences every overlay sheet opens with: where a piece stands in its cell. */
   readonly placement: string;
@@ -21,6 +22,17 @@ interface OverlayLibrary {
   readonly groups: readonly ComponentGroup[];
   readonly framing: ReadonlySet<string>;
 }
+
+/** What a tier mark is, under both looks; each look then says where it sits and how large it is. */
+const TIER_MARKS =
+  'Tier marks ×4: one per rarity step above the common one, each made of its pips alone, one to four in order and set in a shape of their own — one pip, two side by side, three in a triangle, four in two rows of two — so a tier reads by its shape and its pip count and never by its colour alone';
+
+/**
+ * How far a tier mark reaches from its corner, and what overrules it: section 2's floors, where the
+ * smallest display size needs the pips more room than the corner gives them.
+ */
+const TIER_MARK_REACH = 'a quarter';
+const TIER_MARK_FLOOR = `where section [SEC:STYLE]’s narrowest strokes and gaps need more room than that, it takes the least room they need`;
 
 /**
  * Each look's wording for the overlay sheets.
@@ -51,6 +63,7 @@ const WORDING: Readonly<Record<IconLook, OverlayWording>> = {
     sweep:
       'Cooldown sweep ×2: a dark wedge clipped to the tile’s square and swept clockwise from the top edge — a quarter elapsed, and three quarters',
     rarityGlow: 'Rarity glow ×1 — the aura the highest tier carries, hugging the tile’s square edge',
+    tierMarks: `${TIER_MARKS}. Each sits in the bottom-left corner of the tile’s square, within ${TIER_MARK_REACH} of the square’s side each way; ${TIER_MARK_FLOOR}`,
     marksIntro: `Small pieces laid over a finished tile to say something about it. Each is drawn clear of any icon,
 so it can be placed on any of them:`,
     placement: `Inside its cell, every piece is drawn within the tile square section [SEC:STYLE] states, centred in
@@ -72,6 +85,7 @@ nothing about which icon they are looking at.`,
     sweep:
       'Cooldown sweep ×2: a dark wedge swept clockwise from the top — a quarter elapsed, and three quarters',
     rarityGlow: 'Rarity glow ×1 — the aura the highest tier carries',
+    tierMarks: `${TIER_MARKS}. Each sits at the bottom-left corner of the place the icon takes, within ${TIER_MARK_REACH} of that place’s width across and ${TIER_MARK_REACH} of its height up; ${TIER_MARK_FLOOR}`,
     marksIntro: `Small pieces laid over a finished icon to say something about it. Each is drawn clear of any icon, so
 it can be placed on any of them:`,
     placement: `Inside its cell, every piece is drawn within the share of the cell section [SEC:STYLE] states, centred
@@ -103,6 +117,21 @@ tells the player nothing about which icon they are looking at.`,
  * **The tier marks are told apart by shape and by a count of pips, never by colour alone** (audit
  * finding M2), so a colour-blind player, and a set the engine tints, still reads each tier. A pip is a
  * dot rather than a numeral, which the lettering ban would remove.
+ *
+ * **A tier mark has a stated corner and a stated size.** Asked only for a shape carrying its pips, the
+ * first real overlay sheet (`test_sprites/game_overlay_test.png`) drew the four marks as chains of
+ * diamonds in the middle of their cells, the fourth 263 pixels across a 217-pixel tile, which Keep
+ * place refuses rather than cut a pip from. So each look puts the mark in one corner, the bottom left,
+ * makes it of its pips alone, their arrangement its shape, and holds it within a quarter of the side
+ * each way, which keeps it out of the middle half of the square, where the subject sits.
+ *
+ * **Section 2's floors overrule the quarter, and the line says so.** Shown at a display size, a pip is
+ * an accent at least two displayed pixels wide, the gap beside it the same, and an outline one, so two
+ * outlined pips and their gap span ten displayed pixels: 5/8 of the side at 16 × 16, a half at 20, and
+ * within a quarter only from 40 up. A fixed fraction would contradict that floor at one display size or
+ * another, so the line defers to it by name and takes the least room it needs, and only there does a
+ * mark reach into the middle, as the placement sentence's "wherever it can" allows. Below ten displayed
+ * pixels four pips cannot keep the floor anywhere in the square.
  *
  * **One library per look, and the same slots under both.** The entries, labels, parts and counts do not
  * change with the look, so a manifest names the same files whichever look the set takes; only the shape
@@ -142,11 +171,7 @@ copies of each of them:`,
         heading: 'Tier and overlay marks',
         intro: wording.marksIntro,
         entries: [
-          overlay(
-            'tier-mark',
-            'Tier marks ×4: one per rarity step above the common one, each a shape of its own carrying one to four pips in order, so a tier reads by its shape and its pip count and never by its colour alone',
-            4,
-          ),
+          overlay('tier-mark', wording.tierMarks, 4),
           { ...overlay('rarity-glow', wording.rarityGlow), tile: 'SPANS' },
           overlay('locked-mark', 'Locked mark ×1'),
           overlay('new-item-flare', 'New item flare ×1'),

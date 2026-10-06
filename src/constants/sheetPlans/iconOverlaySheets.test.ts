@@ -32,6 +32,45 @@ describe('the overlay sheets', () => {
     expect(sheet.opening).toContain('stands where it sits over');
   });
 
+  it.each(ICON_LOOKS)(
+    'puts each tier mark in its corner, a quarter of the side each way, under %s',
+    (look) => {
+      // The first real overlay sheet drew the fourth tier mark as a chain of diamonds wider than the tile.
+      const [sheet] = iconOverlaySheets(look, []);
+      const tier = entriesOf(sheet).find((entry) => entry.label === 'tier-mark');
+      expect(tier?.count).toBe(4);
+      expect(tier?.text).toContain('one pip, two side by side, three in a triangle, four in two rows of two');
+      expect(tier?.text).toContain(
+        look === 'FULL_BLEED_TILE'
+          ? 'in the bottom-left corner of the tile’s square, within a quarter of the square’s side each way;'
+          : 'at the bottom-left corner of the place the icon takes, within a quarter of that place’s width across and a quarter of its height up;',
+      );
+      // There is no square under an isolated mark to name.
+      if (look === 'ISOLATED_MARK') expect(tier?.text).not.toMatch(/square/u);
+    },
+  );
+
+  it.each(ICON_LOOKS)('lets section 2’s floors overrule the tier mark’s quarter under %s', (look) => {
+    // At 16 × 16 a pip and a gap are each at least 1/8 of the side and an outline 1/16, so two outlined
+    // pips and their gap span 5/8: a fixed bound of a quarter, or of a half, contradicts the floor.
+    const preset = ICON_SET_PRESETS.find((candidate) => candidate.subject.icons !== undefined);
+    const roster = preset?.subject.icons;
+    if (preset === undefined || roster === undefined) {
+      throw new Error('An icon set preset carrying a roster is the fixture.');
+    }
+    const subject = { ...preset.subject, role: '16 × 16 Pixels', icons: { ...roster, look } };
+    const output = { ...DEFAULT_OUTPUT_CONFIG, ...preset.output };
+    const { length } = sheetSeriesFor('ICON', subject, output.directionalMode, output.directions);
+    const prompt = generatePrompt('ICON', subject, { ...output, sheetIndex: length - 1 });
+    const cited =
+      /Tier marks ×4:[^\n]*?where section (\d+)’s narrowest strokes and gaps need more room than that, it takes the least room they need/u.exec(
+        prompt,
+      )?.[1];
+    expect(cited).toBeDefined();
+    const section = prompt.split(/^## /mu).find((part) => part.startsWith(`${String(cited)}. `));
+    expect(section).toContain('No stroke, gap or accent is narrower than 1/8 of that width');
+  });
+
   it('keeps two extra pieces on the one sheet, which then fills its sixteen cells', () => {
     const sheets = iconOverlaySheets('ISOLATED_MARK', parseAdditionalAnatomy('Favourite Star ×2'));
     expect(sheets).toHaveLength(1);
