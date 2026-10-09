@@ -130,6 +130,6 @@ npm run format
 ```
 
 All five run clean before a change lands. Drive a change with a runtime surface in a browser with
-the `verify` skill, then run `/auto-review high` over the diff and fix every confirmed finding. A
+the `verify` skill, then run `/auto-review medium` over the diff and fix every confirmed finding. A
 phase ships with the spec's status banner updated, and a plan's record under `docs/todo/` is never
 rewritten.

@@ -2,7 +2,7 @@
 
 The global `auto-review` skill reads this file at its step 2. It holds only what is Sprite Gubbins'
 own; the lanes, the steps, checks A to H and the shared false positives are in the skill. The
-project's standing gate is `/auto-review high` (`CLAUDE.md`, *Verifying a change*).
+project's standing gate is `/auto-review medium` (`CLAUDE.md`, *Verifying a change*).
 
 ## Rules to collect
 
