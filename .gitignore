@@ -38,6 +38,12 @@ coverage
 .verify-out.txt
 .verify-shots/
 
+# Session scratch: an agent's working files for a multi-phase audit (logs, draft diffs, generated
+# prompts, screenshots), and the desktop host's per-session change records. Both are notes a
+# session keeps for itself, not part of the project, and neither is regenerated from the source.
+.claude/*-scratch/
+.versioning/
+
 # Editor / OS
 .vscode/*
 !.vscode/extensions.json
