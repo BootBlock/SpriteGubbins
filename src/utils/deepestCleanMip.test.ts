@@ -3,8 +3,7 @@ import { deepestCleanMip } from './deepestCleanMip.ts';
 
 describe('deepestCleanMip', () => {
   it('halves the gutter at each level, so 4 px lasts to mip 2 and not mip 3', () => {
-    // The claim the calculator once made was that 4 px survives a full chain; it is half a texel by
-    // mip 3.
+    // 4 px is 2 px at mip 1, 1 px at mip 2 and half a texel at mip 3.
     expect(deepestCleanMip(4)).toBe(2);
   });
 
