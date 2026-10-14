@@ -3,13 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { UNSUNG_SAVIOUR_HUMANOID_RIG } from '../constants/presets/unsungSaviourRig.ts';
+import { tintMaskedIconSubject } from '../test/tintMaskedIconSubject.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { resolveOutputForSubject } from './resolveOutputForSubject.ts';
 
 /**
  * What a loaded rig contract survives, which is the one claim here that is a document.
  *
- * The other six are each judged against a table that says which subjects can honour them, and their
+ * The other nine are each judged against a table that says which subjects can honour them, and their
  * tables are tested where they live. This one has no table: a contract names a skeleton, and both a
  * humanoid's and a quadruped's are valid documents this app cannot tell apart. So what it is judged
  * by is provenance — the body it was loaded for, which is the plan table it replaces — and provenance
@@ -80,5 +81,40 @@ describe('a rig contract across a change of subject', () => {
 
     expect(resolved.rigMode).not.toBe('CUTOUT_RIG');
     expect(resolved.rigContract).toBeNull();
+  });
+});
+
+describe('the sheet canvas across a change of category', () => {
+  it('squares the canvas for an icon set, whose grid is four square cells by four', () => {
+    const wide: OutputConfig = { ...DEFAULT_OUTPUT_CONFIG, aspectRatio: 'WIDE_16_9' };
+    const resolved = resolveOutputForSubject('ICON', defaultSubjectFor('ICON'), wide, {
+      category: 'CHARACTER',
+      subject: defaultSubjectFor('CHARACTER'),
+    });
+    expect(resolved.aspectRatio).toBe('SQUARE_1_1');
+  });
+
+  it('keeps the canvas wherever the new category can use it', () => {
+    const tall: OutputConfig = { ...DEFAULT_OUTPUT_CONFIG, aspectRatio: 'TALL_9_16' };
+    const resolved = resolveOutputForSubject('CREATURE', defaultSubjectFor('CREATURE'), tall, {
+      category: 'CHARACTER',
+      subject: defaultSubjectFor('CHARACTER'),
+    });
+    expect(resolved.aspectRatio).toBe('TALL_9_16');
+  });
+});
+
+describe('the palette across a change of subject', () => {
+  const pinned: OutputConfig = { ...DEFAULT_OUTPUT_CONFIG, palette: 'GAME_BOY_DMG' };
+  const from = { category: 'CHARACTER', subject: defaultSubjectFor('CHARACTER') } as const;
+
+  it('draws a tint-masked icon set under FREE, which no pinned palette can colour', () => {
+    expect(resolveOutputForSubject('ICON', tintMaskedIconSubject(), pinned, from).palette).toBe('FREE');
+  });
+
+  it('keeps the palette wherever the new subject can take it', () => {
+    expect(resolveOutputForSubject('ICON', defaultSubjectFor('ICON'), pinned, from).palette).toBe(
+      'GAME_BOY_DMG',
+    );
   });
 });

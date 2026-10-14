@@ -1,11 +1,41 @@
+import { litByEngine } from '../categoryEngineLighting.ts';
 import type { LightingModel } from '../../types/output.ts';
 import type { RenderStyle } from '../../types/rendering.ts';
 import type { ShadingKind } from '../../types/renderStyleTraits.ts';
+import type { SubjectCategory } from '../../types/subject.ts';
 import { RENDER_STYLE_TRAITS } from './renderStyleTraits.ts';
 
-const FLAT_NEUTRAL_ALBEDO =
-  'Flat neutral albedo — even illumination with no directional key, so a game engine can light the sprite itself';
+const FLAT_NEUTRAL_ALBEDO = 'Flat neutral albedo — even illumination with no directional key';
+
+/**
+ * Why flat neutral lighting is asked for, by whether the engine lights the category's sprites
+ * (`litByEngine`), closing the `FLAT_NEUTRAL_ALBEDO` line.
+ *
+ * It once gave every category the engine's reason, so an icon set — drawn over the game, where no
+ * engine light reaches it — was told it was left unlit for a light it will never receive (audit finding
+ * C4). Drawn over the game, the even light is the look itself, the same wherever the interface puts it.
+ */
+const FLAT_NEUTRAL_REASON = {
+  LIT_BY_ENGINE: ', so a game engine can light the sprite itself',
+  DRAWN_OVER_THE_GAME: ', so the artwork looks the same wherever the interface places it',
+} as const;
 const UNLIT_EMISSIVE_BAKED = 'Unlit flat diffuse, with no directional cast shadow';
+
+/**
+ * Whether each lighting model has a key light, and so a direction for every component to share.
+ *
+ * **Declared beside the words that state it**, because sections 3 and 9 ask every component for "one
+ * light direction" and a "key-light direction", and two of the three models have none:
+ * `FLAT_NEUTRAL_ALBEDO` is "even illumination with no directional key", and `UNLIT_EMISSIVE_BAKED` is
+ * unlit. Under those the prompt asked for agreement about a light it had just ruled out (audit finding
+ * P9), so the template states the direction only where this answers yes, and asks every component to be
+ * lit alike everywhere else.
+ */
+export const LIGHTING_HAS_KEY: Readonly<Record<LightingModel, boolean>> = {
+  FLAT_NEUTRAL_ALBEDO: false,
+  ISOMETRIC_TOP_LEFT: true,
+  UNLIT_EMISSIVE_BAKED: false,
+};
 
 /**
  * The lighting as section 2 states it, in the terms of the way the style shades.
@@ -41,12 +71,17 @@ export const LIGHTING_TEXT: Readonly<Record<ShadingKind, Readonly<Partial<Record
 /**
  * The lighting line for this render style, given the lighting model it has already been asked about
  * through `styleSettingsFor` — or `''` for a style with no surface to light, whose line the template
- * has dropped by then.
+ * has dropped by then. Flat neutral lighting closes on its reason, which the category decides.
  */
-export function lightingDescription(renderStyle: RenderStyle, model: LightingModel | null): string {
+export function lightingDescription(
+  renderStyle: RenderStyle,
+  model: LightingModel | null,
+  category: SubjectCategory,
+): string {
   const { shading } = RENDER_STYLE_TRAITS[renderStyle];
   if (shading === null || model === null) return '';
   const text = LIGHTING_TEXT[shading][model];
   if (text === undefined) throw new Error(`${renderStyle} offers no ${model} lighting.`);
-  return text;
+  if (model !== 'FLAT_NEUTRAL_ALBEDO') return text;
+  return text + FLAT_NEUTRAL_REASON[litByEngine(category) ? 'LIT_BY_ENGINE' : 'DRAWN_OVER_THE_GAME'];
 }

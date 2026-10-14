@@ -119,7 +119,7 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
     id: 'sideon-impact-spark',
     name: 'Side-On Impact Spark',
     description:
-      'A cel-shaded hit spark in flat side elevation on transparency. Cel shapes have a hard contour by definition, so the alpha is exact and needs no key colour.',
+      'A cel-shaded hit spark in flat side elevation on a magenta key. Cel shapes have a hard contour by definition, so the key comes away cleanly.',
     category: 'EFFECT',
     subject: {
       species: 'Impact Hit Spark',
@@ -152,8 +152,9 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
       paletteLimit: 'EXPANDED_ALBEDO',
       surfaceDetail: 'MINIMAL',
       outlineStyle: 'PURE_BLACK_OUTLINE',
-      // Cel shapes have a hard contour by definition, so alpha is exact and needs no key colour.
-      backgroundKey: 'TRANSPARENT',
+      // Cel shapes have a hard contour by definition, so the key comes away cleanly. Magenta rather than
+      // `TRANSPARENT`, because Seedream documents no alpha output for a prompt (audit finding T1).
+      backgroundKey: 'MAGENTA_FF00FF',
       aspectRatio: 'ULTRAWIDE_21_9',
       targetModel: 'SEEDREAM',
     },

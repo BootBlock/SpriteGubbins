@@ -49,6 +49,7 @@ const HOLDS_FOCUSABLE_CHILDREN: Readonly<Record<string, string>> = {
   // focus out of the text field that drives it.
   'src/components/common/ComboBox.tsx': 'the suggestion list, which Tab closes rather than enters',
   'src/components/layout/AppOverlays.tsx': 'an overlay panel, which is a dialog full of controls',
+  'src/components/modals/IconCatalogueContents.tsx': 'the catalogue, a checkbox and an ⓘ per row',
   'src/components/modals/PromptHistoryContents.tsx': 'the entry list, three buttons per row',
   'src/components/modals/SheetSplitContents.tsx': 'the run list, a copy button and a disclosure per row',
   'src/components/quantise/QuantiseWorkspace.tsx': 'the sticky control column, ten panels of controls',

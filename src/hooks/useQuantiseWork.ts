@@ -14,6 +14,7 @@ import type {
 import { gridInForce } from '../utils/gridInForce.ts';
 import { sameQuantiseSettings } from '../utils/quantiseSettings.ts';
 import { sheetReadingFacts } from '../utils/sheetReadingFacts.ts';
+import { succeededOnScreen } from '../utils/succeededOnScreen.ts';
 import { quantiseSheet } from '../workers/quantiseSession.ts';
 
 /**
@@ -159,20 +160,14 @@ export function useQuantiseWork(
     // one while the settings behind it have not moved since the last.
   }, [source, settings, answered]);
 
+  const shown = succeededOnScreen(source !== null, grid, succeeded);
+
   return {
     reading,
     grid,
     settings,
-    // Held against the *sheet* rather than the settings, which is what lets it outlive a settings
-    // change and keep the preview up while the next one is computed — but only while there is a
-    // newer one coming. With no scale in force there is nothing being computed and nothing to lag
-    // behind, so a result from the scale the user has just deleted would be presented as settled:
-    // shown without the working chip, offered to the Download button, and contradicting the panel
-    // above it, which is at that moment asking for a grid.
-    quantised:
-      source !== null && settings !== null && succeeded !== null
-        ? { result: succeeded.result, grid: succeeded.settings.grid }
-        : null,
+    // Lagging the settings, but only while a newer one is coming — see `succeededOnScreen`.
+    quantised: shown === null ? null : { result: shown.result, grid: shown.settings.grid },
     // Working, unless there is nothing to work on, nothing to work towards, or nothing left working.
     //
     // **The two waits are separate, and a failed survey only ends the first of them.** A load that

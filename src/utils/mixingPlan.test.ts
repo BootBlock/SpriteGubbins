@@ -83,4 +83,18 @@ describe('mixingPlan', () => {
     expect(plan.second).toEqual(solid);
     expect(plan.steps).toBe(1);
   });
+
+  it('plans an opaque colour from the opaque entries alone, flat or mixed', () => {
+    // The soft entry is the target's own colour, and nearer on every axis but coverage. Written into
+    // a sprite's interior, flat or as half of a pattern, it would be a hole.
+    const soft: Rgba = { r: 140, g: 0, b: 0, a: 230 };
+    const candidates = ditherCandidates([
+      { r: 200, g: 0, b: 0, a: 255 },
+      soft,
+      { r: 60, g: 0, b: 0, a: 255 },
+    ]);
+    const plan = mixingPlan({ r: 140, g: 0, b: 0, a: 255 }, candidates, 16);
+    expect(plan.first.a).toBe(255);
+    expect(plan.second.a).toBe(255);
+  });
 });

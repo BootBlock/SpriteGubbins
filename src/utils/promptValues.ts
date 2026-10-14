@@ -1,3 +1,4 @@
+import { componentTally } from './componentTally.ts';
 import { CATEGORY_OPTIONS, fieldLabelFor } from '../constants/categories/index.ts';
 import {
   ASPECT_TEXT,
@@ -12,17 +13,8 @@ import {
   describeStyleReference,
   isPlanView,
   JOINT_CAP_TEXT,
-  lightingDescription,
-  minFeatureSize,
-  outlineDescription,
   OVERLAP_MARGIN_TEXT,
-  PALETTE_TEXT,
   PROJECTION_TEXT,
-  RENDER_STYLE_TEXT,
-  resolutionProfileDescription,
-  smallScaleDiscipline,
-  surfaceDetailDescription,
-  VALIDATION_PASS_TEXT,
 } from '../constants/promptText/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
@@ -37,6 +29,7 @@ import { describeMirrorPairs } from './mirrorPairs.ts';
 import { rigContractGeometry } from './rigContractGeometry.ts';
 import type { SheetFacts } from './promptFacts.ts';
 import { turntableSequence } from './turntableSequence.ts';
+import { styleSectionValues } from './styleSectionValues.ts';
 
 /**
  * Every token the template substitutes, with the app/user boundary drawn through it.
@@ -67,23 +60,23 @@ export function promptValues(
     cameraElevation,
     batch,
     anatomy,
-    hardware,
     palette,
     keyColor,
-    styleSettings,
-    reference,
     componentCount,
     rig,
-    sizing: { profile, stated, text: statedText, component, nativeScale },
+    sizing: { text: statedText },
     anatomyFacings,
     additionalAnatomyLine,
     oneSidedFeatures,
+    interiorDetail,
   } = facts;
 
   // Empty on exactly the sheets that append no additional-anatomy block: the subject named nothing,
-  // or this is a later sheet of a series, where `anatomyFacingsFor` answers `null` and the pieces are
-  // left off deliberately. That is the one question the two sentences below have to ask, so it is
-  // asked once here rather than twice there.
+  // or this is a sheet of a series other than the one that draws them, where `anatomyFacingsFor`
+  // answers `null` and the pieces are left off deliberately. That is the one question the two sentences below have to ask, so it is
+  // asked once here rather than twice there. A sheet that lists the reader's pieces in a group of their
+  // own — ICON's overlay sheets (`ComponentGroup.additional`) — names its share in that line too, and
+  // heads the group with the same label, so it takes the exemption.
   const listedAdditions = additionalAnatomyLine === '' ? null : fieldLabelFor(category, 'additional_anatomy');
 
   // Every value below is the app's own prose, so each is resolved through `cite` once the record is
@@ -100,6 +93,8 @@ export function promptValues(
     // by sound. See `CategoryDefinition.article`.
     CATEGORY_ARTICLE: CATEGORY_OPTIONS[category].article,
     COMPONENT_COUNT: String(componentCount),
+    // The figure with its noun, for section 0's contract, where a sheet of one component is reachable.
+    COMPONENT_TALLY: componentTally(componentCount),
     // Every one of these is now a function of the category as well as the mode. That is the whole
     // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
     // are what let a CHARACTER sheet ask for floors and walls and then forbid them.
@@ -128,75 +123,16 @@ export function promptValues(
     // See `SheetPlan.scaleExample`.
     SCALE_EXAMPLE_DESCRIPTION: plan.scaleExample,
 
-    RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
-    // Worded for the style, and for whether the sheet has a colour limit to stay inside: `TEXTURED`
-    // said "still inside the palette limit" beside "no colour budget to hold to", and asked a pixel
-    // sheet for the surface texturing its own pixel discipline forbids. See `surfaceDetailDescription`.
-    SURFACE_DETAIL_DESCRIPTION: surfaceDetailDescription(output, styleSettings, palette !== null),
-    // Takes the same answer the target-size line does, because the two are printed one after the
-    // other and `CUSTOM` is the profile that defers to that line. Left as the flat lookup, it told
-    // the generator to work to a component size where one is stated, directly above a line stating a
-    // size and saying no component is it.
-    //
-    // **Keyed on the field, not on the sheet**, unlike the gate below. The assembled wording points
-    // at a size "stated below", and on a rig sheet with the box empty there is no line below — so
-    // the sheet's answer would leave the prompt pointing at nothing. The base wording covers that
-    // case as it always did, by saying *where one is stated*.
-    //
-    // The sheet's scale unit is the third argument for the reason section 0's scale example is the
-    // sheet's: the profile that states a height states it of something, that something was a figure
-    // on the nine categories whose sheets hold none, and a category key named a parallax band on the
-    // BACKGROUND sheet that draws no band. See `SheetPlan.scaleUnit`.
-    //
-    // It is the only thing of the sheet's passed. Both share rungs are a share of the largest
-    // component's own cell on every sheet, because a share of the sheet height was decided by the
-    // component count or by the layout on every plan that carried one — see `SHARE_RANGE`.
-    RESOLUTION_PROFILE_DESCRIPTION: resolutionProfileDescription(
-      profile,
-      stated?.quantity === 'ASSEMBLED',
-      plan.scaleUnit,
-    ),
-    // A function of the target size as well as the profile, because `CUSTOM` is the one profile
-    // that carries no scale of its own — see `minFeatureSize`. It carries its own unit, from the
-    // same `nativeScale` answer `NATIVE_GRID` is: the figure counts native pixels only where the
-    // block defining a native pixel is emitted, and delivered pixels everywhere else. The bullet
-    // stated *native* unconditionally for as long as the two were separate, so every pixel-art
-    // prompt on a stock profile — the default among them — measured against a unit it never
-    // defined.
-    MIN_FEATURE_SIZE: minFeatureSize(profile, stated, nativeScale !== null, rig),
-    // Sprite-scale bullets join the pixel discipline only when the stated component is small
-    // enough that silhouette carries the identity; `''` is what drops the optional line.
-    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(component),
-    // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
-    // the value is still supplied because `substitute` throws on a token it has no value for, and
-    // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.
-    //
-    // The budget, the outline and the lighting are the ones the render style lets the sheet be drawn
-    // with — `styleSettings` — and each line is worded in the style's own terms, so a painted sheet's
-    // key light casts graded shadow and a cel sheet's outline colours the ink contour its style line
-    // names (issue #406). `''` where the style withdraws the line, which the template has already
-    // dropped by then.
-    PALETTE_DESCRIPTION: PALETTE_TEXT[styleSettings.paletteLimit],
-    // A function of the key as well as the style, because section 0 reserves the key colour and a
-    // pure black contour on a pure black field would be the one line in section 2 asking for it.
-    OUTLINE_DESCRIPTION: outlineDescription(output.renderStyle, styleSettings.outline, keyColor),
-    LIGHTING_DESCRIPTION: lightingDescription(output.renderStyle, styleSettings.lighting),
-    // Supplied for every style, as `PALETTE_DESCRIPTION` is, and `''` for the eight that describe a
-    // finished surface — the template's own `[IF:VALIDATION_PASS]` is what decides whether the token
-    // is still there to be filled.
-    VALIDATION_PASS_DESCRIPTION: VALIDATION_PASS_TEXT[output.renderStyle],
-    // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: `substitute` throws
-    // on a token it has no value for, and the template's own `[IF:NATIVE_GRID]` is what decides
-    // whether the token is still there to be filled.
-    NATIVE_GRID_SCALE: nativeScale === null ? '' : String(nativeScale),
+    // Section 2's lines, which read one another's answers — see `styleSectionValues`.
+    ...styleSectionValues(category, output, facts),
 
-    HARDWARE_NAME: hardware?.name ?? '',
-    HARDWARE_CONSTRAINTS: hardware === null ? '' : describeHardware(hardware),
+    HARDWARE_NAME: facts.hardware?.name ?? '',
+    HARDWARE_CONSTRAINTS: facts.hardware === null ? '' : describeHardware(facts.hardware),
     PALETTE_NAME: palette?.name ?? '',
     PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette, keyColor),
 
-    STYLE_REFERENCE_NAME: reference?.name ?? '',
-    STYLE_REFERENCE_CHARACTERISTICS: reference === null ? '' : describeStyleReference(reference),
+    STYLE_REFERENCE_NAME: facts.reference?.name ?? '',
+    STYLE_REFERENCE_CHARACTERISTICS: facts.reference ? describeStyleReference(facts.reference) : '',
 
     PROJECTION_DESCRIPTION: PROJECTION_TEXT[projection],
     CAMERA_ELEVATION: String(cameraElevation),
@@ -253,8 +189,8 @@ export function promptValues(
     // for a sheet section 3 turns to five yaws, contradicting itself at four of them.
     DEPTH_ORDER_DESCRIPTION: depthOrderDescription(coveredDirections, cameraElevation),
 
-    BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[output.backgroundKey],
-    ASPECT_DESCRIPTION: ASPECT_TEXT[output.aspectRatio],
+    BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[facts.backgroundKey],
+    ASPECT_DESCRIPTION: ASPECT_TEXT[facts.aspectRatio],
     JOINT_CAP_DESCRIPTION: JOINT_CAP_TEXT[output.jointCapStyle],
     OVERLAP_MARGIN_DESCRIPTION: OVERLAP_MARGIN_TEXT[output.overlapMargin],
     // Every piece's size, joint end and pivot, from the engine's own rig. Empty on every sheet
@@ -308,6 +244,9 @@ export function promptValues(
   values.SOCKETS = output.sockets;
   values.IDENTITY_LOCK = output.identityLock;
   values.ADDITIONAL_ANATOMY = additionalAnatomyLine;
+  // The subject's own value, where its pool declares it a line technique the microtexture ban names —
+  // `''` drops the exemption (audit finding P11).
+  values.INTERIOR_LINE_TECHNIQUE = interiorDetail?.lineTechnique ?? '';
 
   // The one value that is both: an inventory of the app's own prose with the anatomy the reader named
   // appended to it. It resolves its own citations over the app-authored half, before the reader's

@@ -1,8 +1,12 @@
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { KEY_OFFER_NOTICE } from '../../constants/keyOffer.ts';
-import { KEY_TOLERANCES, QUANTISE_TOOLTIPS, SILHOUETTE_THRESHOLDS } from '../../constants/quantiser.ts';
+import {
+  DESPILL_DEPTH,
+  KEY_TOLERANCES,
+  QUANTISE_TOOLTIPS,
+  SILHOUETTE_THRESHOLDS,
+} from '../../constants/quantiser.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
-import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { BackgroundKeying } from '../../types/quantiser.ts';
 import { toHex } from '../../utils/imageData.ts';
@@ -13,6 +17,7 @@ import { ColorSwatch } from '../common/ColorSwatch.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 import { Button } from '../common/Button.tsx';
+import { useResolvedBackgroundKey } from '../../hooks/useResolvedBackgroundKey.ts';
 
 interface KeyingControlsProps {
   /**
@@ -71,7 +76,7 @@ interface KeyingControlsProps {
  * why it sits outside the block the toggle hides. See `hardenSilhouette`.
  */
 export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingControlsProps) {
-  const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
+  const backgroundKey = useResolvedBackgroundKey();
   const keyTolerance = useQuantiseStore((state) => state.keyTolerance);
   const silhouetteThreshold = useQuantiseStore((state) => state.silhouetteThreshold);
   const setKeyingEnabled = useQuantiseStore((state) => state.setKeyingEnabled);
@@ -202,7 +207,9 @@ export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingCont
           of the settings that would reach your artwork — which is why magenta is the recommended key and
           white and black are not. Above <span className="font-mono">exact</span> it also erodes a pixel
           touching the field where that pixel sits near the key or carries the key&rsquo;s hue, which is what
-          removes the halo an anti-aliased edge leaves behind.
+          removes the halo an anti-aliased edge leaves behind. The {DESPILL_DEPTH} pixels inside that edge
+          stay and lose only the key&rsquo;s hue, unless the hue runs deeper into the sprite than that, as
+          artwork painted in it does.
         </p>
       )}
     </section>

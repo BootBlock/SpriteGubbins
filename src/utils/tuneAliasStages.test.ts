@@ -21,7 +21,7 @@ const stageNamed = (name: string) => TUNE_ALIAS_STAGES.find((stage) => stage.nam
 describe('TUNE_ALIAS_STAGES', () => {
   it('leaves all three nothing to do while the reader has the pass off', () => {
     // The mode is the reader's, not the sweep's — see `TunedDials`. With it off these four dials
-    // reach nothing, so sweeping them would have the elbow choosing between measurements of one
+    // reach nothing, so sweeping them would have the sweep choosing between measurements of one
     // image.
     for (const stage of TUNE_ALIAS_STAGES) {
       const plan = stage.plan(DIALS, OFF);

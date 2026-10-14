@@ -67,9 +67,10 @@ describe('PaletteLockControls', () => {
   });
 
   it('locks the colours of the sheet beside it, stamped with the studio setting in force', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
+    await user.click(screen.getByRole('button', { name: 'Lock this palette' }));
 
     const lock = useQuantiseStore.getState().lockedPalette;
     expect(lock?.entries).toEqual(RESULT);
@@ -78,11 +79,12 @@ describe('PaletteLockControls', () => {
   });
 
   it('offers the snap distance only once a palette is held', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
 
     expect(screen.queryByLabelText('Snap distance')).toBeNull();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
+    await user.click(screen.getByRole('button', { name: 'Lock this palette' }));
 
     expect(screen.getByLabelText('Snap distance')).toHaveValue(String(DEFAULT_PALETTE_SNAP));
   });
@@ -91,19 +93,21 @@ describe('PaletteLockControls', () => {
     // The failure this is here for: the panel is looking at a plan whose `setting` is already the
     // lock's, so a re-lock reading that would stamp the new palette "Locked palette" — and the
     // notice below could then never fire again, whatever the studio did.
+    const user = userEvent.setup({ delay: null });
     show();
-    await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
+    await user.click(screen.getByRole('button', { name: 'Lock this palette' }));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Re-lock from this sheet' }));
+    await user.click(screen.getByRole('button', { name: 'Re-lock from this sheet' }));
 
     expect(useQuantiseStore.getState().lockedPalette?.studioIdentity).toBe('RESTRAINED_64_COLOR');
   });
 
   it('lets the palette go, and offers to take one again', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
-    await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
+    await user.click(screen.getByRole('button', { name: 'Lock this palette' }));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Unlock' }));
+    await user.click(screen.getByRole('button', { name: 'Unlock' }));
 
     expect(useQuantiseStore.getState().lockedPalette).toBeNull();
     expect(screen.getByRole('button', { name: 'Lock this palette' })).toBeInTheDocument();
@@ -150,6 +154,7 @@ describe('PaletteLockControls', () => {
   });
 
   it('locks a result at exactly the ceiling, and says nothing about it', async () => {
+    const user = userEvent.setup({ delay: null });
     const full = Array.from({ length: MAX_PALETTE_ENTRIES }, (_unused, at) => ({
       r: at,
       g: 0,
@@ -158,7 +163,7 @@ describe('PaletteLockControls', () => {
     }));
     show({ resultPalette: full });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
+    await user.click(screen.getByRole('button', { name: 'Lock this palette' }));
 
     expect(useQuantiseStore.getState().lockedPalette?.entries).toEqual(full);
     expect(screen.queryByText(/a palette lock holds at most/)).toBeNull();
@@ -175,8 +180,9 @@ describe('PaletteLockControls', () => {
   it('leaves a held palette alone when the sheet beside it empties', async () => {
     // Worse than a silent press: a lock dropped because a *later* sheet came back blank would throw
     // away the colours the rest of the series is being held to.
+    const user = userEvent.setup({ delay: null });
     const { rerender } = show();
-    await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
+    await user.click(screen.getByRole('button', { name: 'Lock this palette' }));
 
     rerender(panel({ resultPalette: [] }));
 

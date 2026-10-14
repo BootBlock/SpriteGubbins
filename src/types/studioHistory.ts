@@ -30,8 +30,9 @@ export interface StudioPosition {
  * **What is on the stack is deliberately not every edit.** A field edit is reversible by typing the
  * old value back; the four acts that replace all sixteen answers at once are not, and nor is a new
  * assembly base whose plans move the sheet mode, the rig or the sheet index, because typing the old
- * base back returns the field and leaves those where the new one put them. Those five are the only
- * things recorded here. That leaves the entry under the cursor able to go stale — a reader
+ * base back returns the field and leaves those where the new one put them. Nor is an icon set's
+ * roster, which is ticked rather than typed: a tick, a group tick and a clear in the icon catalogue
+ * are each one act. Those are the only things recorded here. That leaves the entry under the cursor able to go stale — a reader
  * switches category, then edits four fields — so every move re-reads the live studio into that slot
  * before it steps. See {@link recordStudio}.
  */

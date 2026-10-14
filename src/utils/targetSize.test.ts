@@ -4,7 +4,7 @@ import { parseTargetSize } from './targetSize.ts';
 
 describe('parseTargetSize', () => {
   it('reads the size out of the prose the shipped presets actually hold', () => {
-    // Not a hypothetical format: this is `US_CHARACTER_RIG`'s own `spriteTargetSize`. A parser that
+    // Not a hypothetical format: this is the `us-character-rig` preset's own `spriteTargetSize`. A parser that
     // only handled a bare `48 × 96` would find nothing in the app's own default content.
     expect(parseTargetSize('48 × 96 px assembled (2 metres tall at 48 px per metre)')).toEqual({
       width: 48,

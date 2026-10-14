@@ -1,4 +1,5 @@
 import type { DifferenceMap, GridMesh } from '../types/quantiser.ts';
+import { forEachMeshCell } from './forEachMeshCell.ts';
 import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 import { pixelDistance } from './pixelDistance.ts';
 import { DIFFERENCE_PRECISION } from '../constants/quantiser.ts';
@@ -10,16 +11,17 @@ import type { MutableOklab } from './oklab.ts';
  *
  * The quantiser's dials are conservative by design, and that is exactly what makes them hard to
  * judge. On the reference sheet, at the settings `DIFFERENCE_SCALES` is calibrated on and with the
- * fill cleanup at the top of its range, a second cleanup pass moves **360** of 43,681 pixels by at
- * most 26.8 — and **930** of them by at most 14.4 under the ink-weighted vote at the same rung.
- * That is under one per cent of the sheet in the first case and a little over two in the second —
- * scattered cells, none of them further out than a tenth of black-to-white, which is invisible in a
+ * fill cleanup at the top of its range, a second cleanup pass moves **802** of 43,681 pixels by at
+ * most 26.8 — and **1,171** of them by at most 12.9 under the ink-weighted vote at the same rung.
+ * That is under two per cent of the sheet in the first case and under three in the second —
+ * scattered cells, none of them much past a tenth of black-to-white, which is invisible in a
  * preview at any magnification a whole sheet fits in. The result pane can
  * say *what* the sheet became and cannot say *what it cost*, so a dial that is working and a dial
  * that is doing nothing look identical, which is the reading two separate user reports arrived at.
  * This is the measurement behind that judgement: one number per output pixel, painted where the
  * pixel is, so a change of half a shade in one corner of the sheet is somewhere to look rather than
- * something to find. Both counts are re-derived by `tests/quantiser-docblock-figures.test.ts`.
+ * something to find. Both counts are re-derived by
+ * `tests/quantiser-figures-difference-scales.test.ts`.
  *
  * **One cell, one number: the mean distance from the cell's own source pixels to the colour that
  * replaced them.** Mean rather than worst, because the question a cell answers is how well it
@@ -54,53 +56,48 @@ export function differenceMap(source: ImageData, result: ImageData, mesh: GridMe
   let total = 0;
   let peak = 0;
 
-  for (const [row, top] of mesh.y.entries()) {
-    const bottom = Math.min(mesh.y[row + 1] ?? source.height, source.height);
-    for (const [column, left] of mesh.x.entries()) {
-      const right = Math.min(mesh.x[column + 1] ?? source.width, source.width);
+  forEachMeshCell(mesh, source.width, source.height, (column, row, left, top, right, bottom) => {
+    const cell = row * width + column;
+    const at = cell * CHANNELS_PER_PIXEL;
+    const resultAlpha = result.data[at + 3] ?? 0;
+    srgbToOklabInto(cellColor, result.data[at] ?? 0, result.data[at + 1] ?? 0, result.data[at + 2] ?? 0);
 
-      const cell = row * width + column;
-      const at = cell * CHANNELS_PER_PIXEL;
-      const resultAlpha = result.data[at + 3] ?? 0;
-      srgbToOklabInto(cellColor, result.data[at] ?? 0, result.data[at + 1] ?? 0, result.data[at + 2] ?? 0);
+    let sum = 0;
+    let counted = 0;
+    let visible = resultAlpha !== FULLY_TRANSPARENT;
 
-      let sum = 0;
-      let counted = 0;
-      let visible = resultAlpha !== FULLY_TRANSPARENT;
+    for (let y = top; y < bottom; y += 1) {
+      for (let x = left; x < right; x += 1) {
+        const from = pixelOffset(source.width, x, y);
+        const r = source.data[from] ?? 0;
+        const g = source.data[from + 1] ?? 0;
+        const b = source.data[from + 2] ?? 0;
+        const alpha = source.data[from + 3] ?? 0;
+        if (alpha !== FULLY_TRANSPARENT) visible = true;
 
-      for (let y = top; y < bottom; y += 1) {
-        for (let x = left; x < right; x += 1) {
-          const from = pixelOffset(source.width, x, y);
-          const r = source.data[from] ?? 0;
-          const g = source.data[from + 1] ?? 0;
-          const b = source.data[from + 2] ?? 0;
-          const alpha = source.data[from + 3] ?? 0;
-          if (alpha !== FULLY_TRANSPARENT) visible = true;
-
-          const packed = ((r * 256 + g) * 256 + b) * 256 + alpha;
-          if (packed !== cachedColor) {
-            srgbToOklabInto(sourceColor, r, g, b);
-            cachedColor = packed;
-          }
-          sum += pixelDistance(sourceColor, alpha, cellColor, resultAlpha);
-          counted += 1;
+        const packed = ((r * 256 + g) * 256 + b) * 256 + alpha;
+        if (packed !== cachedColor) {
+          srgbToOklabInto(sourceColor, r, g, b);
+          cachedColor = packed;
         }
-      }
-
-      // A mesh cut can land on the image's own edge, which closes a cell over no pixels at all.
-      // Nothing was replaced there, so nothing was lost there.
-      const mean = counted === 0 ? 0 : sum / counted;
-      cells[cell] = Math.round(mean * DIFFERENCE_PRECISION);
-      if (mean > peak) peak = mean;
-      // Empty on both sides is not a faithful cell, it is an absent one — averaged in, the empty
-      // margin around a sprite would drag the sheet's figure towards zero in proportion to how much
-      // empty space the artist left, which is the one thing the figure must not measure.
-      if (visible) {
-        total += mean;
-        carried += 1;
+        sum += pixelDistance(sourceColor, alpha, cellColor, resultAlpha);
+        counted += 1;
       }
     }
-  }
+
+    // A mesh cut can land on the image's own edge, which closes a cell over no pixels at all.
+    // Nothing was replaced there, so nothing was lost there.
+    const mean = counted === 0 ? 0 : sum / counted;
+    cells[cell] = Math.round(mean * DIFFERENCE_PRECISION);
+    if (mean > peak) peak = mean;
+    // Empty on both sides is not a faithful cell, it is an absent one — averaged in, the empty
+    // margin around a sprite would drag the sheet's figure towards zero in proportion to how much
+    // empty space the artist left, which is the one thing the figure must not measure.
+    if (visible) {
+      total += mean;
+      carried += 1;
+    }
+  });
 
   return { width, height, cells, mean: carried === 0 ? 0 : total / carried, peak };
 }

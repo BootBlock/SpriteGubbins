@@ -1,8 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defaultSubjectFor } from '../constants/categories/index.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import { FakeDatabaseWorker } from '../test/fakeDatabaseWorker.ts';
 import { openSqliteBackend } from './openSqliteBackend.ts';
+import { ICON_COLOUR_MODES, ICON_LOOKS } from '../types/iconRoster.ts';
 import type { SqliteBackend } from './sqliteBackend.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /** The thread the backend started, which every test here has to have got one of. */
 function thread(): FakeDatabaseWorker {
@@ -30,24 +34,19 @@ afterEach(() => {
 });
 
 describe('openSqliteBackend', () => {
-  it('reports an absent database as the refusal the fallback answers', async () => {
-    const opening = openSqliteBackend();
-    thread().handshake(false, 'ABSENT');
+  // A database held by another tab is carried through as its own refusal rather than flattened to a
+  // boolean: it is the one refusal the localStorage fallback is the wrong answer to, and
+  // `database.ts` cannot tell it apart from an absent database unless it arrives distinguished.
+  it.each(['ABSENT', 'HELD_ELSEWHERE'] as const)(
+    'carries the worker’s %s refusal through as its own, and ends the thread',
+    async (refusal) => {
+      const opening = openSqliteBackend();
+      thread().handshake(false, refusal);
 
-    expect(await opening).toEqual({ kind: 'REFUSED', refusal: 'ABSENT' });
-    expect(thread().terminated).toBe(true);
-  });
-
-  it('carries a database held by another tab through as its own refusal', async () => {
-    // The whole point of the reason being here rather than being flattened to a boolean: this is
-    // the one refusal the localStorage fallback is the wrong answer to, and `database.ts` cannot
-    // tell it apart from the others unless it arrives distinguished.
-    const opening = openSqliteBackend();
-    thread().handshake(false, 'HELD_ELSEWHERE');
-
-    expect(await opening).toEqual({ kind: 'REFUSED', refusal: 'HELD_ELSEWHERE' });
-    expect(thread().terminated).toBe(true);
-  });
+      expect(await opening).toEqual({ kind: 'REFUSED', refusal });
+      expect(thread().terminated).toBe(true);
+    },
+  );
 
   it('reports a thread that died during the handshake as absent, not as held', async () => {
     // A worker that never reached its handshake carries no evidence about *why*, and only the
@@ -131,5 +130,88 @@ describe('SqliteBackend', () => {
 
     expect(thread().terminated).toBe(false);
     await expect(again).resolves.toEqual([]);
+  });
+});
+
+describe('SqliteBackend — the icon roster', () => {
+  /** The row the worker reads back for a session it was asked to store, as `sqliteRequests.ts` writes it. */
+  function storedRow(category: string, subject: unknown): Record<string, unknown> {
+    return {
+      category,
+      subject_json: JSON.stringify(subject),
+      output_json: JSON.stringify(DEFAULT_OUTPUT_CONFIG),
+    };
+  }
+
+  it.each(ICON_LOOKS.flatMap((look) => ICON_COLOUR_MODES.map((colourMode) => [look, colourMode] as const)))(
+    'round-trips a %s %s icon set’s roster through the session row',
+    async (look, colourMode) => {
+      const backend = await open();
+      const subject = {
+        ...defaultSubjectFor('ICON'),
+        icons: {
+          look,
+          colourMode,
+          picks: cataloguePicks(['heal-major', 'system-sound', 'pin-waypoint']),
+        },
+      } as const;
+      const saving = backend.saveSession({ category: 'ICON', subject, output: DEFAULT_OUTPUT_CONFIG });
+      const sent = thread().calls.at(-1)?.request;
+      thread().answer({ id: thread().lastId('saveSession'), ok: true, value: undefined });
+      await saving;
+      if (sent?.kind !== 'saveSession') throw new Error('the session was not sent to the worker');
+
+      const loading = backend.loadSession();
+      thread().answer({
+        id: thread().lastId('loadSession'),
+        ok: true,
+        value: storedRow(sent.session.category, sent.session.subject),
+      });
+      expect((await loading)?.subject).toEqual(subject);
+    },
+  );
+
+  it('reads an ICON session row stored before the roster existed as the default icon set', async () => {
+    const backend = await open();
+    const { icons: _dropped, ...preCatalogue } = defaultSubjectFor('ICON');
+    const loading = backend.loadSession();
+    thread().answer({ id: thread().lastId('loadSession'), ok: true, value: storedRow('ICON', preCatalogue) });
+
+    expect((await loading)?.subject).toEqual(defaultSubjectFor('ICON'));
+  });
+
+  it('drops a pick the catalogue no longer holds from a stored preset’s icon set', async () => {
+    const backend = await open();
+    const listing = backend.listPresets();
+    thread().answer({
+      id: thread().lastId('listPresets'),
+      ok: true,
+      value: [
+        {
+          id: 'preset-1',
+          project_id: 'default',
+          name: 'Stored icons',
+          description: '',
+          category: 'ICON',
+          subject_json: JSON.stringify({
+            ...defaultSubjectFor('ICON'),
+            icons: {
+              look: 'ISOLATED_MARK',
+              colourMode: 'FULL_COLOUR',
+              picks: cataloguePicks(['retired-entry', 'elixir']),
+            },
+          }),
+          output_json: JSON.stringify(DEFAULT_OUTPUT_CONFIG),
+          updated_at: 1,
+        },
+      ],
+    });
+
+    const [preset] = await listing;
+    expect(preset?.subject.icons).toEqual({
+      look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
+      picks: cataloguePicks(['elixir']),
+    });
   });
 });

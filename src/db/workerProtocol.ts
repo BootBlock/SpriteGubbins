@@ -3,6 +3,7 @@ import type { LibraryPack } from '../types/libraryPack.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 
@@ -30,6 +31,9 @@ export type WorkerRequest =
   | { readonly kind: 'saveQuantisePreset'; readonly preset: QuantisePreset }
   | { readonly kind: 'listQuantisePresets' }
   | { readonly kind: 'deleteQuantisePreset'; readonly presetId: string }
+  | { readonly kind: 'saveCustomIcon'; readonly icon: SavedCustomIcon }
+  | { readonly kind: 'listCustomIcons' }
+  | { readonly kind: 'deleteCustomIcon'; readonly iconId: string }
   | { readonly kind: 'replaceLibrary'; readonly pack: LibraryPack }
   | { readonly kind: 'loadSettings' }
   | { readonly kind: 'saveSettings'; readonly settings: AppSettings }

@@ -15,6 +15,7 @@ import {
 import { FakeWorker } from '../test/fakeWorker.ts';
 import { canUndoDials, currentDials } from '../utils/dialHistory.ts';
 import { createImage } from '../utils/imageData.ts';
+import { quantiseSheetRequests } from './quantiseSheetRequests.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
 
@@ -190,6 +191,14 @@ describe('useQuantiseStore', () => {
 
     expect(started.terminated).toBe(true);
   });
+
+  it('retires a sheet still decoding when the tab is cleared', () => {
+    const decoding = quantiseSheetRequests.begin();
+
+    useQuantiseStore.getState().clear();
+
+    expect(decoding()).toBe(false);
+  });
 });
 
 describe('the dial history the store keeps', () => {
@@ -235,7 +244,7 @@ describe('the dial history the store keeps', () => {
   });
 
   it('makes a preset load one step, and steps back to what it replaced', () => {
-    // The reason this is worth having at all: a saved set moves twenty dials at once, and the
+    // The reason this is worth having at all: a saved set moves every dial at once, and the
     // positions a reader spent ten minutes finding are the ones it replaced.
     const store = useQuantiseStore.getState();
     store.setColorMerge(24);
@@ -268,7 +277,7 @@ describe('the dial history the store keeps', () => {
   });
 
   it('holds a position rather than a sheet, whatever is loaded when it is taken', () => {
-    // Every entry is twenty primitives. An entry that reached the store object instead would pin
+    // Every entry is a flat record of primitives. An entry that reached the store object instead would pin
     // the sheet it was taken with — up to sixty-seven megabytes a step, fifty steps deep.
     const store = useQuantiseStore.getState();
     store.setSource(SHEET);

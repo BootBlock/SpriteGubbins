@@ -105,34 +105,13 @@ describe('what each target model says about its own prompt length', () => {
     expect(note, `${model.id}'s budget note carries a straight double quote`).not.toMatch(/"/);
   });
 
-  it('measures a prompt against a figure only where one was published', () => {
-    // The claim the states are for. `GENERIC` names no vendor and Midjourney's publishes no figure,
-    // so nothing may be measured against either and the studio shows nothing for them; every other
-    // target carries a number, and Seedream's is advice rather than a ceiling.
-    const kinds = new Map(TARGET_MODELS.map((model) => [model.id, model.capabilities.promptBudget.kind]));
-
-    expect(kinds.get('GENERIC')).toBe('NO_VENDOR');
-    expect(kinds.get('MIDJOURNEY')).toBe('UNPUBLISHED');
-    expect(kinds.get('SEEDREAM')).toBe('GUIDANCE');
-    // Sorted on both sides, because `TARGET_MODELS` is in *selector* order — a decision about the
-    // dropdown, which this claim has nothing to do with.
-    expect(
-      [...kinds]
-        .filter(([, kind]) => kind === 'CEILING')
-        .map(([id]) => id)
-        .sort(),
-    ).toEqual(
-      [
-        'CHATGPT_5_6_SOL',
-        'GEMINI_FLASH_IMAGE',
-        'GEMINI_PRO_IMAGE',
-        'QWEN_IMAGE',
-        'STABLE_DIFFUSION',
-        'FLUX',
-        'FLUX_API',
-        'GPT_IMAGE',
-      ].sort(),
+  it('says there is no vendor to state a figure for GENERIC, and for no other target', () => {
+    // `NO_VENDOR` is the one state that is about the target rather than its vendor's documents, so
+    // a second target carrying it would claim that target has no vendor at all.
+    const withoutVendor = TARGET_MODELS.filter(
+      (model) => model.capabilities.promptBudget.kind === 'NO_VENDOR',
     );
+    expect(withoutVendor.map((model) => model.id)).toEqual(['GENERIC']);
   });
 });
 

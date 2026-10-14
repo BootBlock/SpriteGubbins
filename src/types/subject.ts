@@ -2,6 +2,7 @@
  * The subject half of a prompt: what is being drawn, as opposed to how it should be rendered
  * (that is `OutputConfig` in ./output.ts).
  */
+import type { IconRoster } from './iconRoster.ts';
 
 /**
  * The kinds of thing the studio can describe.
@@ -61,7 +62,7 @@ export interface CategoryAssembly {
   readonly statement: string;
   /**
    * The same failure as bare concepts a negative prompt can carry, weighted by Stable Diffusion and
-   * stated flat by Qwen.
+   * stated flat by Qwen and Midjourney's `--no`.
    *
    * **A term belongs here only where no word of it names something any of this category's prompts
    * requires.** That is the `--no` rule in `wrapForMidjourney` — a term belongs only while no
@@ -209,7 +210,41 @@ export interface FieldOption {
    * see `promptTemplate.ts`, which states both branches and why each exists.
    */
   readonly oneSidedOptions?: Readonly<Record<string, string>>;
+  /**
+   * What section 2 reads this field's value as, beyond the line section 1 prints for it — see
+   * {@link FieldRendering}.
+   *
+   * **Declared on the field, never recognised by category or key**, for the reason
+   * {@link FieldOption.absentOption} is: `role` is a display size on ICON and a role on a character,
+   * and `worn_details` is an interior-detail treatment on ICON and FONT and a set of marks everywhere
+   * else. Only the pool knows which, so `renderingFieldFor` in `constants/categories/index.ts` finds
+   * the field by this declaration, and `categories.test.ts` holds each value to one field per category.
+   */
+  readonly rendering?: FieldRendering;
+  /**
+   * The values of an `INTERIOR_DETAIL` pool that are line techniques the pixel discipline's microtexture
+   * ban names — etched strokes, hatching — so that section 2 excepts the one the subject states from
+   * that ban by name rather than cancelling it (audit finding P11).
+   *
+   * **Exact, like {@link FieldOption.oneSidedOptions}**: a typed value matches nothing here, and the
+   * ban then stands as written. `categories.test.ts` holds every entry to an option the pool offers,
+   * on a field declaring `INTERIOR_DETAIL`.
+   */
+  readonly lineTechniques?: readonly string[];
 }
+
+/**
+ * What section 2 reads a field as, beside the line section 1 prints for it.
+ *
+ * - `DISPLAY_SIZE`: the smallest size the game shows a component at. Section 2 states how far the drawing
+ *   is reduced to reach it and the narrowest stroke, gap and outline that survive the reduction, and the
+ *   sprite-scale discipline fires on it (audit finding P6). ICON's *Smallest Display Size*.
+ * - `INTERIOR_DETAIL`: the treatment of the inside of each form. Section 2's surface-detail level defers
+ *   to it, and a line technique it names is excepted from the microtexture ban (audit finding P11).
+ *   ICON's and FONT's *Interior Detail*; every other category's `worn_details` is a set of marks the
+ *   surface carries, which the surface-detail level already describes truly.
+ */
+export type FieldRendering = 'DISPLAY_SIZE' | 'INTERIOR_DETAIL';
 
 /**
  * A category's full definition: its display name, the article its identifier takes in the compiled
@@ -239,13 +274,29 @@ export interface CategoryDefinition {
    */
   readonly article: 'a' | 'an';
   readonly fields: readonly FieldOption[];
+  /**
+   * The icon set a fresh subject of this category opens with, for the one category whose inventory is a
+   * list the reader picks — ICON.
+   *
+   * **Declaring it is what gives the category a roster at all**: `defaultSubjectFor` copies it into
+   * {@link SubjectDefinition.icons}, so a subject carries `icons` exactly when its category declares
+   * one, and `parseSubject` treats a stored subject of such a category without a roster as written by an
+   * older build.
+   */
+  readonly iconRoster?: IconRoster;
 }
 
 /**
  * The user's current answers. Every key is always present — switching category resets the whole
  * record to that category's defaults — so consumers never have to handle a missing field.
+ *
+ * **`icons` is the one member that is not a field**, and it is present exactly when the category
+ * declares {@link CategoryDefinition.iconRoster}. The sixteen fields are free text the prompt states in
+ * section 1; the roster is the inventory itself, a list of catalogue entries and entries of the reader's
+ * own that section 4 draws, so it is a structure rather than a seventeenth string. It rides inside the same record because it travels
+ * everywhere the subject does — the session, the history, a preset and the library pack.
  */
-export type SubjectDefinition = Record<SubjectFieldKey, string>;
+export type SubjectDefinition = Record<SubjectFieldKey, string> & { readonly icons?: IconRoster };
 
 /**
  * The fields a pool may declare an `absentOption` in, and therefore the fields a sheet's inventory can
@@ -267,12 +318,17 @@ export type DeclinableFieldKey = (typeof DECLINABLE_FIELD_KEYS)[number];
 
 /**
  * The subject fields a sheet's inventory is a function of: the assembly base, which chooses the plans
- * a category draws from (`sheetPlans/assemblyBases.ts`), and the {@link DECLINABLE_FIELD_KEYS} values,
- * each of which can decline a piece of one (`utils/sheetPlanAbsence.ts`).
+ * a category draws from (`sheetPlans/assemblyBases.ts`), the {@link DECLINABLE_FIELD_KEYS} values,
+ * each of which can decline a piece of one (`utils/sheetPlanAbsence.ts`), and — for ICON — the roster
+ * that lists the icons, the *World & Era* that decides how each is drawn, and the *Extra Overlay Pieces*
+ * that decide how many overlay sheets the library fills (`sheetPlans/icon.ts`).
  *
  * **One record rather than a string per field**, because every function that resolves or counts a sheet
  * takes all of them, and adjacent string parameters are a set no type checker can tell apart when a call
  * site reorders them. A whole `SubjectDefinition` satisfies it, which is what the compiler hands down; a
  * studio control reading a few fields out of the store builds one.
  */
-export type SheetSubject = Pick<SubjectDefinition, 'anatomy' | DeclinableFieldKey>;
+export type SheetSubject = Pick<
+  SubjectDefinition,
+  'anatomy' | 'setting' | DeclinableFieldKey | 'icons' | 'additional_anatomy'
+>;

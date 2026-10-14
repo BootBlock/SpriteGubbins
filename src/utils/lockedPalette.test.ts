@@ -3,13 +3,8 @@ import { channels, imageFrom } from '../test/images.ts';
 import { sequence } from '../test/sequence.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { colorHistogram, packColor, readPixel } from './imageData.ts';
-import {
-  applyLockedPalette,
-  locateEntries,
-  lockReach,
-  lockedEntryFor,
-  nearestOklab,
-} from './lockedPalette.ts';
+import { locateEntries, nearestOklab } from '../test/nearestOklab.ts';
+import { applyLockedPalette, lockReach, lockedEntryFor } from './lockedPalette.ts';
 import { srgbToOklab } from './oklab.ts';
 import { MAX_PALETTE_ENTRIES } from './pngPalette.ts';
 

@@ -63,12 +63,12 @@ export interface IdentitySubjectSegment {
  * - `gender`, `age`, `role` and `setting` are section 1's opening context — who the subject is,
  *   when and where it belongs. Each is a premise the *other* fields were chosen against rather than
  *   a feature drawn on the sheet, and section 1 already carries all four at full weight above the
- *   lock. `role` is the one that would actively cost something: section 1 ends "Do not infer props,
- *   weapons or equipment from the role", so restating it under *Reproduce exactly* invites the
- *   inference that sentence forbids.
+ *   lock. `role` is the one that would actively cost something: on a sheet of one design section 1
+ *   ends "Do not infer props, weapons or equipment from the role", so restating it under *Reproduce
+ *   exactly* invites the inference that sentence forbids.
  * - `additional_anatomy` is the one subject field with consequences past the prompt text. Section 4
  *   lists each named piece separately and counts it, and section 0's precedence order puts the count
- *   and inventory **above** subject identity — so the sheet already pins it harder than the lock
+ *   and inventory **above** subject or set identity — so the sheet already pins it harder than the lock
  *   could, and a count restated in two places is a count that can disagree with itself.
  * - `exclusions` is the one negative field. That section owns it, and an absence has no place in a
  *   block headed "reproduce exactly". The same reason drops a stated field's value when it is its

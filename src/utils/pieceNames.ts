@@ -40,6 +40,9 @@ export function namePieces(shaped: readonly ShapedPiece[], inventory: readonly s
   const lost = claims.filter((claim, index) => claim === null && shaped[index]?.claimed !== null).length;
 
   const taken = claims.filter((claim): claim is string => claim !== null);
+  if (shaped.length > 0 && shaped.every((piece) => piece.cell !== null)) {
+    return byCell(shaped, claims, inventory, lost);
+  }
   const duplicated = new Set(taken).size !== taken.length;
   const named = inventory.length > 0 && shaped.length === inventory.length && !duplicated;
 
@@ -59,6 +62,30 @@ export function namePieces(shaped: readonly ShapedPiece[], inventory: readonly s
   });
 
   return { pieces, naming: taken.length > 0 ? 'ASSIGNED' : 'READING_ORDER', lost };
+}
+
+/**
+ * The names of a placement sheet's pieces, by the cell each was drawn in (`ShapedPiece.cell`).
+ *
+ * **The inventory's name at that cell's index**, because the prompt lays one piece to a cell in the
+ * inventory's order. Counting pieces instead, as reading order does, switched every name to a number
+ * where one piece was missing; by cell, an empty cell leaves its neighbours their own names. A claim
+ * still wins, and the sheet is named only where every piece takes a different inventory name — a
+ * piece past the inventory, or a claim that gives a name twice, numbers every piece, as elsewhere.
+ */
+function byCell(
+  shaped: readonly ShapedPiece[],
+  claims: readonly (string | null)[],
+  inventory: readonly string[],
+  lost: number,
+): NamedPieces {
+  const names = shaped.map((piece, index) => claims[index] ?? inventory[piece.cell ?? -1] ?? null);
+  const unique = new Set(names).size === names.length;
+  if (!unique || names.some((name) => name === null)) {
+    return { pieces: shaped.map(positional(shaped.length)), naming: null, lost };
+  }
+  const pieces = shaped.map((piece, index) => ({ box: piece.box, name: names[index] ?? '' }));
+  return { pieces, naming: claims.some((claim) => claim !== null) ? 'ASSIGNED' : 'CELL', lost };
 }
 
 /**

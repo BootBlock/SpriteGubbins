@@ -1,0 +1,55 @@
+import { describe, expect, it } from 'vitest';
+import { iconCatalogueEntry } from '../constants/iconCatalogue/index.ts';
+import type { IconCatalogueEntry } from '../types/iconCatalogue.ts';
+import { iconLookText } from './iconLookText.ts';
+
+function entry(id: string): IconCatalogueEntry {
+  const found = iconCatalogueEntry(id);
+  if (found === undefined) throw new Error(`No catalogue entry ${id}`);
+  return found;
+}
+
+describe('iconLookText', () => {
+  it('draws an entry as the look its world’s family writes for it', () => {
+    const heal = entry('heal-minor');
+    expect(iconLookText(heal, 'Near-Future Cyberpunk')).toBe(heal.looks.CYBERPUNK);
+    expect(iconLookText(heal, 'Cosy Storybook')).toBe(heal.looks.FANTASY);
+    expect(iconLookText(heal, 'Deep Ocean Voyage')).toBe(heal.looks.AGE_OF_STEAM);
+    expect(iconLookText(heal, 'Post-Apocalyptic Salvage')).toBe(heal.looks.MODERN);
+    expect(iconLookText(heal, 'Far-Future Space Opera')).toBe(heal.looks.SPACE_OPERA);
+  });
+
+  it('reads a typed world however it is cased and spaced', () => {
+    const heal = entry('heal-minor');
+    expect(iconLookText(heal, '  near-future CYBERPUNK ')).toBe(heal.looks.CYBERPUNK);
+  });
+
+  it('closes a spell on its school as the world names it, and the school’s one colour', () => {
+    const strike = entry('thermal-strike');
+    expect(iconLookText(strike, 'High Fantasy')).toBe(
+      `${strike.looks.FANTASY} — fire school, its dominant colour orange #F97316`,
+    );
+    expect(iconLookText(strike, 'Near-Future Cyberpunk')).toBe(
+      `${strike.looks.CYBERPUNK} — thermal school, its dominant colour orange #F97316`,
+    );
+    // A world no family names hears the catalogue's own name for the school.
+    expect(iconLookText(strike, 'Dieselpunk Sky Pirates')).toBe(
+      'thermal direct-hit attack, drawn as the stated World & Era would make it — thermal school, its dominant colour orange #F97316',
+    );
+  });
+
+  it('names no school on an entry outside one', () => {
+    expect(iconLookText(entry('heal-minor'), 'High Fantasy')).not.toContain('school');
+  });
+
+  it('hands a world no family names to the role, drawn as that world would make it', () => {
+    const fallback = 'minor healing consumable, drawn as the stated World & Era would make it';
+    expect(iconLookText(entry('heal-minor'), 'Dieselpunk Sky Pirates')).toBe(fallback);
+  });
+
+  it.each(['', '   '])('names no world where none is set (%j), since section 1 states none', (world) => {
+    expect(iconLookText(entry('heal-minor'), world)).toBe(
+      'minor healing consumable, drawn in its most familiar form, from no particular world or era',
+    );
+  });
+});

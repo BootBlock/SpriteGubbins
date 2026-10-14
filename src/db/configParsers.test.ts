@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { COMPONENT_BUDGET_RANGE, NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { resolveSheetIndex, SHEET_INDEX_RANGE } from '../constants/sheetPlans/index.ts';
 import { standardSubject } from '../test/sheetSubject.ts';
-import { parseImageConfig, parseOutputConfig } from './configParsers.ts';
+import { parseImageConfig, parseOutputConfig, parseSubject } from './configParsers.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import { RELIC, customPick } from '../test/customIcons.ts';
 
 /**
  * The component budget crossing the storage boundary.
@@ -103,23 +106,18 @@ describe('parseOutputConfig — primaryDirection', () => {
 describe('parseOutputConfig — sheetIndex', () => {
   const sheetFrom = (stored: unknown): number => parseOutputConfig({ sheetIndex: stored }).sheetIndex;
 
-  it('keeps an index the longest series in the table actually holds', () => {
+  it('keeps any whole index, since an icon set has no longest series', () => {
+    // The overlay sheets an ICON series closes on are as many as the reader's extra pieces fill, so an
+    // index far past every fixed series can be a real sheet; one past its own series resolves to sheet
+    // one where the series is known.
     expect(sheetFrom(0)).toBe(0);
+    expect(sheetFrom(40)).toBe(40);
     expect(sheetFrom(SHEET_INDEX_RANGE.max)).toBe(SHEET_INDEX_RANGE.max);
-  });
-
-  it('is bounded by the plan table rather than by a number written down here', () => {
-    // Derived, so a pairing that grows a sheet admits one in the same edit. Four sheets is the most
-    // any pairing takes today — FONT's glyph set, which is four because printable ASCII does not fit
-    // one generation — and an index past that is corrupt storage rather than a choice. It moved from
-    // three when that category landed, which is the derivation doing its job: the eight-compass
-    // character series is still the longest *directional* one.
-    expect(SHEET_INDEX_RANGE.min).toBe(0);
-    expect(SHEET_INDEX_RANGE.max).toBe(3);
+    expect(SHEET_INDEX_RANGE).toEqual({ min: 0, max: Number.MAX_SAFE_INTEGER });
   });
 
   it('falls back for anything outside that, fractional, or not a number', () => {
-    for (const stored of [undefined, null, -1, 1.5, SHEET_INDEX_RANGE.max + 1, 9999, '1', NaN]) {
+    for (const stored of [undefined, null, -1, 1.5, SHEET_INDEX_RANGE.max + 1, Infinity, '1', NaN]) {
       expect(sheetFrom(stored), `${String(stored)} should not have been accepted`).toBe(
         DEFAULT_OUTPUT_CONFIG.sheetIndex,
       );
@@ -299,5 +297,61 @@ describe('parseOutputConfig — the reader’s own palette', () => {
 
     expect(parsed.palette).toBe('CUSTOM');
     expect(parsed.customPalette).toBeNull();
+  });
+});
+
+describe('parseSubject — the icon roster', () => {
+  it('reads an ICON subject back with its roster', () => {
+    const subject = {
+      ...defaultSubjectFor('ICON'),
+      setting: 'Near-Future Cyberpunk',
+      icons: {
+        look: 'ISOLATED_MARK',
+        colourMode: 'TINT_MASK',
+        picks: [...cataloguePicks(['heal-major']), customPick(RELIC)],
+      },
+    } as const;
+    expect(parseSubject(JSON.parse(JSON.stringify(subject)), 'ICON')).toEqual(subject);
+  });
+
+  it('reads a roster stored before the colour mode existed as a set in full colour', () => {
+    // No migration: the starter's mode stands in for a missing one, as for any field a stored roster
+    // lacks (audit finding M1).
+    const stored = { ...defaultSubjectFor('ICON'), icons: { look: 'ISOLATED_MARK', picks: [] } };
+    expect(parseSubject(stored, 'ICON').icons?.colourMode).toBe('FULL_COLOUR');
+    const unknown = { ...stored, icons: { ...stored.icons, colourMode: 'TEAM_COLOUR' } };
+    expect(parseSubject(unknown, 'ICON').icons?.colourMode).toBe('FULL_COLOUR');
+  });
+
+  it('discards a whole ICON subject written before the roster existed', () => {
+    // Its fields meant something else then — `species` named an icon family, where it now names where
+    // the set is shown — so keeping half of it would compile a set nobody asked for.
+    const written = { ...defaultSubjectFor('ICON'), species: 'Inventory & Item Icon' };
+    const { icons: _dropped, ...preCatalogue } = written;
+    expect(parseSubject(preCatalogue, 'ICON')).toEqual(defaultSubjectFor('ICON'));
+  });
+
+  it('drops a stale pick and keeps the rest of the subject', () => {
+    const stored = {
+      ...defaultSubjectFor('ICON'),
+      role: '48 × 48 Pixels',
+      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['retired-entry', 'elixir']) },
+    };
+    const parsed = parseSubject(stored, 'ICON');
+    expect(parsed.role).toBe('48 × 48 Pixels');
+    expect(parsed.icons).toEqual({
+      look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
+      picks: cataloguePicks(['elixir']),
+    });
+  });
+
+  it('carries no roster on a category that declares none', () => {
+    const stored = {
+      ...defaultSubjectFor('CHARACTER'),
+      icons: { look: 'ISOLATED_MARK', picks: cataloguePicks(['elixir']) },
+    };
+    expect(parseSubject(stored, 'CHARACTER')).toEqual(defaultSubjectFor('CHARACTER'));
+    expect(parseSubject(stored, 'CHARACTER')).not.toHaveProperty('icons');
   });
 });

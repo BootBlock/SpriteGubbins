@@ -2,6 +2,13 @@ import type { RenderStyleSurface } from '../../types/rendering.ts';
 import type { CategoryAssembly } from '../../types/subject.ts';
 
 /**
+ * What opens the block bound for the `negative_prompt` request field, which the budget notice leaves out
+ * of what it measures: Alibaba's 4.5K-token figure is for `text`, and this block is not sent there
+ * (audit finding T4, `promptFieldText`).
+ */
+export const QWEN_NEGATIVE_BLOCK = 'negative_prompt: ';
+
+/**
  * Qwen-Image, which earns a negative block where Flux cannot take one: Alibaba document
  * `negative_prompt` as a parameter of the image API, as "The negative prompt that describes content
  * you do not want to appear in the image."
@@ -47,6 +54,13 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * `CATEGORY_ASSEMBLY` does.** Its third term was `complete figure`, which is `assembled character`
  * restated; one record cannot hold two spellings of one entry without the categories diverging by
  * target, so the synonym went with the fixed strings.
+ *
+ * **`gradient background` comes out on a sheet of full-bleed squares** (`ownBackdrop`), because there
+ * every subject sits on a field of its own and this block cannot say which background it means —
+ * see `wrapForModel`'s option, which records the reasoning for both negative blocks. **So do `cast
+ * shadow` and `contact shadow`**: that sheet asks for the contact shadow a subject casts on the
+ * backdrop inside its square, and `drop shadow`, the one cast outside it, is the only shadow left to
+ * negate.
  */
 export function wrapForQwen(
   prompt: string,
@@ -54,16 +68,15 @@ export function wrapForQwen(
   limbsAreComponents: boolean,
   letteringIsAComponent: boolean,
   assembly: CategoryAssembly,
+  ownBackdrop: boolean,
 ): string {
   const negatives = [
     ...assembly.negatives,
     ...(letteringIsAComponent ? [] : ['text', 'labels', 'captions']),
     'watermark',
     'signature',
-    'cast shadow',
-    'drop shadow',
-    'contact shadow',
-    'gradient background',
+    ...(ownBackdrop ? ['drop shadow'] : ['cast shadow', 'drop shadow', 'contact shadow']),
+    ...(ownBackdrop ? [] : ['gradient background']),
     'scene background',
     'ground plane',
     ...surface.negatives,
@@ -74,5 +87,5 @@ export function wrapForQwen(
   ];
   return `${prompt}
 
-negative_prompt: ${negatives.join(', ')}.`;
+${QWEN_NEGATIVE_BLOCK}${negatives.join(', ')}.`;
 }

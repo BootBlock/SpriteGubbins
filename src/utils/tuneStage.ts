@@ -71,9 +71,10 @@ export function ladder(candidates: readonly TunedDials[]): readonly [TunedDials,
 /**
  * A stage's candidates with the dials already in force at the head of them, and no duplicate of it.
  *
- * **This is what makes a stage unable to move a dial it cannot justify moving.** `chooseByElbow`
- * settles a tie on the earliest candidate, so putting the incumbent first means a stage whose
- * candidates it genuinely cannot separate leaves every dial exactly where the reader had it. Without
+ * **This is what makes a stage unable to move a dial it cannot justify moving.** `chooseByPrice`
+ * keeps the first candidate unless another beats it by `TUNE_SCORE_MARGIN`, so putting the incumbent
+ * first means a stage whose candidates it cannot separate by that much leaves every dial exactly
+ * where the reader had it. Without
  * it that guarantee rested on each ladder happening to open at the dial's own resting position — and
  * two did not: the line strength opens at the range floor of 1 against a dial that opens at 1.5, and
  * the ink threshold's ladder of the day — 16, 36, 56, 76 and 96 — did not contain the dial's opening
@@ -88,8 +89,9 @@ export function ladder(candidates: readonly TunedDials[]): readonly [TunedDials,
  * The filter is what keeps it from costing anything on the stages whose ladder already holds the
  * incumbent — which is the reading stage and the cleanup passes, whose ladders are their dials'
  * whole ranges. **It does not become free after the first round**, and the ceiling in
- * `constants/autoTune.ts` charges the extra in every round for the two reasons it stays: a stage the
- * elbow could not separate keeps an off-ladder position rather than moving onto the ladder, and
+ * `constants/autoTune.ts` charges the extra in every round for the two reasons it stays: a stage
+ * whose ladder beats nothing by the margin keeps an off-ladder position rather than moving onto the
+ * ladder, and
  * {@link restoreSkipped} puts an off-ladder *opening* value back whenever a stage skips.
  */
 export function withIncumbent(

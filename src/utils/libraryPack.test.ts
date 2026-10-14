@@ -44,6 +44,7 @@ describe('serialiseLibraryPack', () => {
       projects: [HARBOUR],
       presets: [preset(HARBOUR.id)],
       quantisePresets: [dials(HARBOUR.id)],
+      customIcons: [],
     });
 
     const parsed: unknown = JSON.parse(text);
@@ -60,6 +61,7 @@ describe('serialiseLibraryPack', () => {
       projects: [HARBOUR],
       presets: [preset(HARBOUR.id)],
       quantisePresets: [dials(HARBOUR.id)],
+      customIcons: [],
     };
 
     const after = parseLibraryPack(serialiseLibraryPack(before), NOW);
@@ -83,7 +85,9 @@ describe('parseLibraryPack', () => {
     // nothing exports this, and refusing it would say something untrue about the file.
     const pack = parse({ projects: [] });
     expect(pack).not.toBeNull();
-    expect(libraryPackSize(pack ?? { projects: [], presets: [], quantisePresets: [] })).toBe(0);
+    expect(libraryPackSize(pack ?? { projects: [], presets: [], quantisePresets: [], customIcons: [] })).toBe(
+      0,
+    );
   });
 
   it('drops entries it cannot vouch for and keeps the rest', () => {

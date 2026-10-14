@@ -56,13 +56,17 @@ describe('SheetIdentityControls', () => {
     const sheet = recorded();
     expect(sheet.total).toBe(1 + CLASSIC.length);
     expect(sheet.ordinal).toBe(1);
+    expect(sheet.components).toBeGreaterThan(0);
 
     render(<SheetIdentityControls />);
 
     expect(screen.getByText(`Sheet 1 of ${String(sheet.total)}`)).toBeInTheDocument();
     // Both halves of the label, as the studio's own strip carries them: what is on the sheet, and
     // how much of the subject's turn it covers. The core sheet draws all five classic views, so
-    // naming its assembly direction alone would read identically to the runs behind it.
+    // naming its assembly direction alone would read identically to the runs behind it. The
+    // component count is the one the prompt contracted for, from the identity itself: not a reading
+    // of any image — the tab may hold a sheet from last week — so the figure has to be the one the
+    // manifest carries rather than anything the segmentation found.
     expect(
       screen.getByText(
         `Directional core · ${String(CLASSIC.length)} facings · ${String(sheet.components)} components`,
@@ -70,22 +74,11 @@ describe('SheetIdentityControls', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows the component count the prompt contracted for, from the identity itself', () => {
-    // Not a reading of any image — the tab may hold a sheet from last week — so the figure has to be
-    // the one the manifest carries rather than anything the segmentation found.
-    const sheet = recorded();
-    expect(sheet.components).toBeGreaterThan(0);
-
-    render(<SheetIdentityControls />);
-
-    expect(screen.getByText(new RegExp(`· ${String(sheet.components)} components$`))).toBeInTheDocument();
-  });
-
   it('follows the studio when the position is stepped from this tab', async () => {
     // The second half of the fix: a reader spends a batch on this tab, and walking back to the
     // Studio between every generation was the only way to move the position. What is this panel's is
     // that the line and the file that would be written move together.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SheetIdentityControls />);
 
     await user.click(stepButton('Next sheet'));

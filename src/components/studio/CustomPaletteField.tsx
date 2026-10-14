@@ -40,7 +40,7 @@ const PASTE_ROWS = 4;
  */
 export function CustomPaletteField() {
   const customPalette = useOutputStore((state) => state.output.customPalette);
-  const { problems, oversized, acceptFile, acceptPaste, reduceOversized, rename, clear } =
+  const { problems, oversized, reducing, acceptFile, acceptPaste, reduceOversized, rename, clear } =
     useCustomPaletteIntake();
   const { isDraggedOver, dropHandlers } = useFileDropTarget(acceptFile);
 
@@ -127,13 +127,15 @@ export function CustomPaletteField() {
         {oversized !== null && (
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-xs leading-relaxed text-ink-muted">
-              {oversized.name} holds {oversized.colors} colours, which is more than the {MAX_PALETTE_ENTRIES}{' '}
-              a palette can carry, so nothing has been pinned. It is a sheet rather than a swatch — reduce it
-              if those are the colours you meant.
+              {oversized.name} holds more than the {MAX_PALETTE_ENTRIES} colours a palette can carry, so
+              nothing has been pinned. It is a sheet rather than a swatch — reduce it if those are the colours
+              you meant.
             </p>
             <ControlTooltip hint="Reduce" text={STUDIO_ACTION_TOOLTIPS.reduceCustomPalette}>
-              <Button variant="secondary" size="sm" onClick={reduceOversized}>
-                Reduce to {MAX_PALETTE_ENTRIES}
+              {/* Disabled while it runs: a large sheet takes seconds, and a second press would start
+                  the same reduction again. The label says why nothing has changed yet. */}
+              <Button variant="secondary" size="sm" disabled={reducing} onClick={reduceOversized}>
+                {reducing ? 'Reducing…' : `Reduce to ${String(MAX_PALETTE_ENTRIES)}`}
               </Button>
             </ControlTooltip>
           </div>

@@ -1,6 +1,7 @@
 import { MIDJOURNEY_VERSION } from '../../constants/models.ts';
 import type { AspectRatio } from '../../types/output.ts';
 import type { RenderStyleSurface } from '../../types/rendering.ts';
+import type { CategoryAssembly } from '../../types/subject.ts';
 
 /** Midjourney's aspect flag for each sheet format. */
 const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
@@ -60,6 +61,17 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  * comment above already records for `background` — a term stays out of `--no` where excluding it
  * would take the sheet's own subject with it.
  *
+ * **The category's assembly terms lead the list** (audit finding T2), as they open Stable Diffusion's
+ * and Qwen's blocks: `CATEGORY_ASSEMBLY` names the assembled whole a sheet fails as — a menu screen on
+ * an icon sheet, a posed figure on a character's — and `--no` was the one negative channel that never
+ * said it. The word-by-word reading below costs nothing here, because the rule on
+ * `CategoryAssembly.negatives` already holds every word of every term clear of what the category's
+ * sheets ask for, and `categoryAssembly.test.ts` checks it.
+ *
+ * **`frame, border` is decided per sheet**, from `FRAME_IS_A_COMPONENT` and the sheet's own
+ * `SheetPlan.frames`: ICON's overlay sheet draws rings round a square, and its icon sheets draw none
+ * unless an entry names one, so the term comes out of the one and stays in the other.
+ *
  * **`text` and `labels` come out on the same test, and they are the sharpest case of it.** A glyph
  * set's components are characters, so those two entries name the subject of the sheet — the same
  * relation `frame, border` has to an interface kit, arrived at from the other direction. The caller
@@ -112,6 +124,13 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  * negates the placement section 0 forbids without touching the form shadow beside it. Section 0
  * states that ban in the prompt body as well, which Midjourney reads in full.
  *
+ * **Save on a sheet of full-bleed squares (`ownBackdrop`), where it comes out.** That sheet asks for
+ * the contact shadow each subject casts on the backdrop inside its square, so the entry opposes the
+ * prompt under both readings: whole, it negates that placement; decomposed, it is a bare `shadow`
+ * against the shading the sheet asks for. Nothing replaces it — `drop shadow`, the shadow outside a
+ * square, would decompose to the same bare `shadow` — and the ban on shadows in the gutters is stated
+ * in the prompt body, which Midjourney reads in full.
+ *
  * `blurred edges` and `anti-aliased edges` decompose to a bare `edges` at -0.5, on exactly the
  * styles whose section 2 line asserts a hard one, and `smooth gradients` to a bare `smooth`. Those
  * are real and they are all the **same kind** of wrong: a sheet that argues with its own style
@@ -137,8 +156,9 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  * claim is the sheet's own, spliced in from `RENDER_STYLE_SURFACE`: `smooth gradients`
  * where the style states flat fills, and nothing at all where it asks for soft blended forms. That
  * is the whole of what this channel says about a gradient, and Stable Diffusion's and Qwen's blocks
- * carry the same surface terms **plus** a `gradient background` of their own on every style — so
- * this list says less than theirs in every configuration, and on the three soft styles it says
+ * carry the same surface terms **plus** a `gradient background` of their own on every style — save on
+ * a sheet of full-bleed icon squares, where it would negate the backdrop each square carries — so
+ * this list says no more than theirs in any configuration, and on the three soft styles it says
  * nothing. Section 0's uniform key field is stated in the prompt body, which Midjourney reads in
  * full; the `--no` list was never what carried it.
  *
@@ -152,10 +172,13 @@ export function wrapForMidjourney(
   frameIsAComponent: boolean,
   letteringIsAComponent: boolean,
   surface: RenderStyleSurface,
+  ownBackdrop: boolean,
+  assembly: CategoryAssembly,
 ): string {
   const negatives = [
+    ...assembly.negatives,
     ...(letteringIsAComponent ? [] : ['text', 'labels']),
-    'cast shadow',
+    ...(ownBackdrop ? [] : ['cast shadow']),
     ...surface.negatives,
     ...(frameIsAComponent ? [] : ['frame', 'border']),
   ];

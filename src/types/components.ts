@@ -103,7 +103,19 @@ export type AttributeRole =
    * beside the fourteen transitions — the sixteen the transition group's own intro says an autotiler
    * indexes — so the deliverable is whole and the reader has simply asked for less variation.
    */
-  | 'VARIES_IN_IT';
+  | 'VARIES_IN_IT'
+  /**
+   * The entry draws none of the attribute and is **drawn in the style it names** — ICON's overlay
+   * pieces, every one drawn in the *Overlay Style* (audit finding O1).
+   *
+   * The field used to name one overlay the set was built around, and seven of its twelve values named
+   * a piece the fixed library never drew while section 1 told the overlay sheet its inventory drew it.
+   * A style is the honest reading of a field whose sheet draws the same pieces whatever is chosen: it
+   * changes how each piece looks and never which pieces exist. So section 1 states the attribute as the
+   * style of every component in section 4 (`CLOTHING_STYLES_COMPONENTS`) rather than as a component,
+   * and the entry is never dropped, because a set with no style still has a disabled veil.
+   */
+  | 'DRAWN_IN_IT';
 
 /**
  * Which subject field an entry is conditional on, and how — the pair {@link AttributeRole} is half of.
@@ -132,6 +144,21 @@ export interface AttributeBinding {
 }
 
 /**
+ * How a component of a placement sheet stands to the tile square (`ComponentEntry.tile`).
+ *
+ * **`SPANS`: drawn to the whole square**, so its own box is the square it was drawn against: ICON's
+ * highlight halo, selected ring, rarity glow and three-quarter cooldown sweep. A generator draws each of
+ * these a few percent larger or smaller than the next — on the first real overlay sheet the halo and
+ * the glow came back 10% and 17% wider than the veil — so the Quantise tab places each against its own
+ * box rather than against one measured square, which would cut the larger ones off at the file's edge.
+ *
+ * **`MEASURES`: spans the square and is the square**, a solid shape whose box is the tile: the disabled
+ * veil alone. The tile square every other piece is placed against is measured from it
+ * (`latticeSquares`), since a halo or a glow drawn round the edge reaches past the square by its glow.
+ */
+export type TileRole = 'MEASURES' | 'SPANS';
+
+/**
  * One line of the inventory, and how many components that line is worth.
  *
  * `count` is carried rather than parsed back out of `text`: an entry reading "Wall top corners ×4"
@@ -149,6 +176,9 @@ export interface ComponentEntry {
    * the right side" comes to, and rewording the sentence would silently rename the file.
    *
    * Lower-case, hyphen-separated and unique within its plan — `sheetPlans.test.ts` holds all three.
+   * The one exception is a plan a rig contract rebuilds (`rigContractPlan`), whose labels are the
+   * engine's piece names verbatim: `parseRigContract` holds those unique and safe as a file name,
+   * but not to this spelling.
    * Where an entry is worth more than one component, `componentSlots` takes the names from {@link
    * ComponentEntry.parts}, or suffixes this with the facing or the ordinal where the line has none —
    * so this names the line rather than any one component of it.
@@ -190,7 +220,7 @@ export interface ComponentEntry {
   readonly kind: ComponentKind;
   /**
    * Which subject attribute this entry is on the sheet for, and how it stands to it — see
-   * {@link AttributeBinding} for the field half and {@link AttributeRole} for the three answers to the
+   * {@link AttributeBinding} for the field half and {@link AttributeRole} for the four answers to the
    * second. Absent is the answer for every entry an attribute is merely painted onto, which is most
    * of them.
    *
@@ -198,12 +228,13 @@ export interface ComponentEntry {
    * Section 1 states that every fitted, applied and worn attribute it lists is painted onto the
    * component it sits on and never drawn as a separate piece. That rule was written for a
    * character's armour and fixed in the template, and the `clothing` key is a different thing in
-   * each category: *Armour & Cladding* on a vehicle, *Applied Overlay* on an icon, *Applied
-   * Atmosphere* on a background, *Ornament & Trim* on an interface, *Awning & Addons* on a building,
-   * *Mounting / Framework* on an object. Every one of those is a piece the inventory draws in its own
-   * right — so the prompt told the generator the cladding was paint and then listed a cladding panel
-   * as a component, which is exactly the §1-forbids / §4-requires contradiction the per-category
-   * plans exist to remove.
+   * each category: *Armour & Cladding* on a vehicle, *Applied Atmosphere* on a background, *Ornament &
+   * Trim* on an interface, *Awning & Addons* on a building, *Mounting / Framework* on an object. Every
+   * one of those is a piece the inventory draws in its own right — so the prompt told the generator the
+   * cladding was paint and then listed a cladding panel as a component, which is exactly the
+   * §1-forbids / §4-requires contradiction the per-category plans exist to remove. ICON's *Overlay
+   * Style* is neither paint nor a piece: it is the style its overlay pieces are drawn in
+   * (`'DRAWN_IN_IT'`).
    *
    * `face_head` is the second, on TERRAIN alone, and no paint rule is involved (issue #293). Its
    * *Focal Feature* is the one distinctive piece a field is composed around, which the feature library
@@ -236,6 +267,12 @@ export interface ComponentEntry {
    */
   readonly attribute?: AttributeBinding;
   /**
+   * How each component of this line stands to the tile square of a placement sheet
+   * (`SheetPlan.placement`) — one role for every component, or one per component in order, `null` for
+   * a component drawn within the square at a place of its own. See {@link TileRole}.
+   */
+  readonly tile?: TileRole | readonly (TileRole | null)[];
+  /**
    * What this entry is the opposite-side copy of, named as the inventory names it — `the left arm`.
    *
    * **The declaration section 5's Mirroring subsection is emitted from.** That subsection is a rule
@@ -248,7 +285,7 @@ export interface ComponentEntry {
    *
    * **It is declared rather than read out of the labels**, for the reason {@link
    * ComponentEntry.parts} is. `left-arm` and `right-arm` differ by a prefix nobody wrote down, and a
-   * rule keyed on it would answer `MIRRORED_PAIRS` for a tile set's `outer-left` and `outer-right`
+   * rule keyed on it would answer `MIRRORED_SIDES` for a tile set's `outer-left` and `outer-right`
    * wall corners — which are a mirror pair of *tiles* rather than the subject's two sides — and
    * would answer nothing at all for an entry named some other way round.
    *
@@ -291,6 +328,20 @@ export interface ComponentGroup {
   readonly ends?: string;
   /** Prose after the bullets — a constraint that applies to the group as a whole. */
   readonly outro?: string;
+  /**
+   * That this group is the subject's own additional anatomy, which the plan lists among its entries
+   * rather than leaving `componentBreakdownFor` to append it after them.
+   *
+   * **ICON's overlay sheets list the reader's *Extra Overlay Pieces* this way.** Those pieces belong to
+   * the overlay library, and the library is cut across as many overlay sheets as it fills with them, so
+   * which sheet draws which piece is the series' decision (`iconOverlaySheets`). Listed as a group, each
+   * piece is drawn in the *Overlay Style* and laid out by the cell sentence the sheet opens with, as
+   * every library piece is.
+   *
+   * The flag is what lets the readers of the anatomy find these pieces where no block is appended: the
+   * category guard's exemption (`promptValues`) and the field's note (`additionalAnatomyNote`).
+   */
+  readonly additional?: true;
 }
 
 /**
@@ -366,6 +417,85 @@ export type ComponentExtent =
   | 'PIECE'
   /** A complete drawing in its own right — the subject in one state or view, a frame, a glyph, an icon. */
   | 'WHOLE';
+
+/**
+ * Whether a sheet's components are the parts and views of one subject, or the different members of one
+ * set.
+ *
+ * **It decides which rule the identity-consistency section states.** That section told every sheet its
+ * components were "the same single subject" and held its silhouette, its colour blocking and its
+ * material constant across all of them — and, across a series, that a component on another sheet must
+ * "read as the same object". That is the rule for a figure's limbs, a vehicle's views, an effect's
+ * frames and a building's modules, and the opposite of what an icon sheet asks: each entry is a
+ * different icon whose own colour outranks the set's. A `ONE_SET` sheet is told instead what its
+ * members share — edge, rendering, light and palette use — and that what tells one member from the
+ * next is never held constant. Section 1's identity lock reads it too: a set's earlier sheet drew
+ * other members of the set, never "the same individual".
+ *
+ * **Declared rather than derived, and a different question from {@link ComponentExtent}.** A rigid
+ * object's views are `WHOLE` and `ONE_SUBJECT`; a nine-slice's corners are `PIECE` and `ONE_SUBJECT`,
+ * being one frame cut up; an icon set is `WHOLE` and `ONE_SET`; and a terrain blend set's tiles are
+ * `PIECE` and `ONE_SET`, being two materials by design. Nor is it the category's: INTERFACE's state
+ * library is a kit of different widgets, while its nine-slice is the pieces of one frame.
+ */
+export type SheetIdentity =
+  /** Every component is a part, a view, a state or a frame of one subject, which they all hold constant. */
+  | 'ONE_SUBJECT'
+  /** Every entry is a different member of one set, sharing a manner of drawing rather than a design. */
+  | 'ONE_SET';
+
+/**
+ * How each component of a sheet is oriented relative to the one camera the sheet states.
+ *
+ * **It decides what the CAMERA section says, and whether it states a yaw at all.** That section held
+ * every component at the sheet's object yaw — "Front — object yaw 0° … both sides are edge-on" — and
+ * called a component "turned off it because the piece reads better that way" a defect. That is the
+ * rule for a figure's trunk, a vehicle's views and an object's states, which are one subject turned
+ * beneath one camera. It is the wrong rule for an icon set, whose entries are different subjects: a
+ * potion reads best upright, a sword laid corner to corner, a map pin turned to the isometric grid,
+ * and ICON offers three-quarter and isometric styles and a diagonal *Subject Framing*. And it is the
+ * wrong rule for the overlay pieces the engine lays over a finished icon in screen space, which have no
+ * yaw and must take no projection: a square ring drawn under an isometric camera comes back a diamond.
+ *
+ * A sheet that is not `SHEET_YAW` drops the subject's own left and right, the one-sided-feature
+ * default, the yaw block and the primary assembly direction, and section 0's precedence order drops
+ * the object orientation and pivot compatibility, which mean nothing there.
+ *
+ * **Declared rather than derived, and a different question from {@link SheetIdentity}.** A font is one
+ * set drawn square to a front camera, and a terrain blend set is one set laid flat under whatever camera
+ * the map uses; both are `SHEET_YAW`. Only a run plan may declare anything else: a sheet of views turns
+ * one subject to each of its yaws by definition, which is why {@link ViewSheetPlan} narrows the field.
+ */
+export type ComponentOrientation =
+  /** Every component is turned to the object yaw, or each of the yaws, the sheet states. */
+  | 'SHEET_YAW'
+  /** Each entry's subject is posed for its own clearest read beneath the one camera the sheet shares. */
+  | 'OWN_POSE'
+  /** Every component is a flat shape lying in the picture plane, square to the screen, with no camera angle. */
+  | 'PICTURE_PLANE';
+
+/**
+ * What the SUBJECT section describes, relative to the components a sheet draws.
+ *
+ * **It decides how the SUBJECT section introduces its list, and what it says the list governs.** That
+ * section called itself "the sole authority for the subject's design" and closed "Do not infer props,
+ * weapons or equipment from the role: if it is not listed above, it does not exist" — the rule for one
+ * designed subject, and untrue above an icon sheet whose sixteen entries each state a design the list
+ * never mentions, and whose "role" field is a display size. On the overlay sheet the list is not even
+ * about the components: it describes the icons the pieces are laid over, and a cooldown wedge told that
+ * every listed material is "painted onto" it came back in forged steel and oiled leather.
+ *
+ * **Declared rather than derived.** {@link SheetIdentity} comes close and is a different question: a
+ * font is one set whose list is the typeface every glyph is drawn in, so it is `ONE_DESIGN`; an icon
+ * sheet is one set whose entries carry their own designs, so it is `SHARED_BY_SET`.
+ */
+export type SubjectScope =
+  /** The list is the whole design every component draws, and nothing it does not state exists. */
+  | 'ONE_DESIGN'
+  /** The list states what every member of the set shares; each member's own design is its entry. */
+  | 'SHARED_BY_SET'
+  /** The list describes the set the components are laid over, and never the components themselves. */
+  | 'LAID_OVER';
 
 /**
  * In what position this sheet's inventory draws each part that moves.
@@ -494,6 +624,15 @@ interface SheetPlanFields {
    * change between runs.
    */
   readonly name: string;
+  /**
+   * Prose under the inventory heading, before the first group: how the whole sheet's drawings are laid
+   * out, where the groups below share one grid.
+   *
+   * **ICON's overlay sheets state their grid, cell and placement here**, above the library's headed
+   * groups, because a sentence about the whole sheet printed under one group's heading read as that
+   * group's. An icon sheet has one unheaded group, so its grid sentence opens that group's intro instead.
+   */
+  readonly opening?: string;
   readonly groups: readonly ComponentGroup[];
   /** Completes "The component set must assemble cleanly into: …". */
   readonly assembly: string;
@@ -511,6 +650,24 @@ interface SheetPlanFields {
    * {@link ComponentExtent}.
    */
   readonly extent: ComponentExtent;
+  /**
+   * Whether this sheet's components are one subject's or one set's members — see {@link SheetIdentity}.
+   *
+   * It sits beside {@link SheetPlan.extent} because both are facts about the inventory as a whole that
+   * the compiler reads to choose a paragraph, and neither can be read off the other.
+   */
+  readonly identity: SheetIdentity;
+  /**
+   * How this sheet's components are oriented beneath its camera — see {@link ComponentOrientation}.
+   *
+   * Beside {@link SheetPlan.identity} for the same reason that sits beside the extent: a fact about the
+   * inventory as a whole that the compiler reads to choose which paragraphs the CAMERA section states.
+   */
+  readonly orientation: ComponentOrientation;
+  /**
+   * What the SUBJECT section describes, relative to this sheet's components — see {@link SubjectScope}.
+   */
+  readonly subjectScope: SubjectScope;
   /**
    * In what position this sheet draws each part that moves — see {@link InventoryPosing}.
    *
@@ -540,7 +697,8 @@ interface SheetPlanFields {
    * the body it is mounted on. The sheets whose components are *not* parts of one another — an
    * effect's frames, a portrait's expressions, an icon family, a font's glyphs, a blend set's tiles
    * — have no such pair, so what has to hold instead is that the repeats agree, and each of those
-   * states that.
+   * states that. Of those, only the icon sheets draw every member to one square rather than to one
+   * scale, which {@link SheetPlan.fit} declares.
    *
    * It reads on from "One consistent scale across every component: ", so it is a lower-case clause
    * with no trailing stop.
@@ -623,6 +781,171 @@ interface SheetPlanFields {
    * must not carry.
    */
   readonly assemblyFailure: AssemblyFailure;
+  /**
+   * A declinable attribute this sheet's components carry none of, because another sheet of its series
+   * draws its pieces in it — ICON's `clothing`, the *Overlay Style*, which the overlay sheet draws every
+   * piece in and every icon sheet leaves off its icons for the engine to lay those pieces on at runtime.
+   *
+   * **Declared rather than derived**, because what the entries say cannot answer it. Section 1's paint
+   * rule says every applied attribute is painted onto the component it sits on, and a sheet whose
+   * entries bind none of the attribute is usually a sheet that paints it — a vehicle's directional
+   * views paint the cladding its part library draws as panels. Only the plan knows that its icons are
+   * drawn bare, so it says so here, and section 1 then excepts the attribute in those words
+   * (`CLOTHING_DRAWN_ELSEWHERE`), which hold only where a sibling's entries are `'DRAWN_IN_IT'`.
+   * `sheetPlans.test.ts` holds a plan declaring it to a series in which another sheet does draw in the
+   * attribute and this one does not.
+   *
+   * **`clothing` alone**, because it is the one attribute section 1's paint rule is about and so the
+   * one the compiler has a sentence for; a second key would be a declaration nothing reads.
+   */
+  readonly drawnElsewhere?: 'clothing';
+  /**
+   * That every component of this sheet is a square tile painted to its edge, carrying its own backdrop
+   * — so the background the CONTRACT section fixes is only the gutters between tiles (R5 of
+   * `docs/todo/done/icon-catalogue.md`).
+   *
+   * **Declared by the full-bleed icon sheets alone.** Section 0 calls the background "uniform", with "no
+   * gradient, texture, vignette", and ICON's exclusion line bans backgrounds outright; read over a
+   * painted square, both forbid the backdrop the look exists to draw. This field opens the
+   * `OWN_BACKDROP` block that says the backdrop belongs to the component and the key fills only the
+   * gutters, switches ICON's exclusion and audit text to their square wording, and takes
+   * `gradient background` out of the Qwen and Stable Diffusion negatives (R13). ICON's guard follows
+   * the look through the sheet's `componentClass` instead, since it bans no background.
+   *
+   * **Never the overlay sheet, under either look.** Its pieces are laid over a finished tile by the
+   * engine, so each has to stay open around its own shape: a veil or a ring arriving with a backdrop
+   * would hide the icon it is laid on.
+   *
+   * **Not TERRAIN either, though a ground tile is painted edge to edge.** A ground tile has no subject in
+   * front of a backdrop: the whole square is the ground, and its edges are the seams its neighbours meet,
+   * which TERRAIN's own plans state. A block calling part of it a soft backdrop "never a scene" would
+   * contradict the material the tile is, and the background item already fills only the space between
+   * tiles there.
+   *
+   * **`OWN_SQUARE` alone**, because the square is the one shape a declarer draws; a second value would be
+   * a declaration nothing reads.
+   */
+  readonly backdrop?: 'OWN_SQUARE';
+  /**
+   * That every component of this sheet is drawn to one square of the same size, whatever it depicts —
+   * rather than to one scale, at which a small thing stays small beside a large one.
+   *
+   * **It decides how section 2's two share rungs state their share** (audit finding P10). They said the
+   * largest component occupies a share of its cell and every other is drawn to that same scale, which is
+   * the rule for a figure's pieces, a font's glyphs and an effect's frames — a hand stays smaller than its
+   * torso, a full stop smaller than a capital. An icon set is the opposite: a coin and a sword each fill
+   * their square to the one margin the set keeps and *Subject Framing* states, and a coin drawn at a
+   * sword's scale is a speck. A declaring sheet is told instead that every component is drawn to one
+   * square of one size, which occupies the share.
+   *
+   * **Declared rather than derived, and narrower than {@link SheetIdentity}.** `ONE_SET` covers a font, a
+   * blend set, a backdrop's layers and an interface kit, all drawn to one scale; and the agreement shape
+   * of {@link SheetPlan.scaleExample} covers an effect's frames, which grow and shrink at one scale. Only
+   * ICON's sheets draw each member to a square of its own, the overlay pieces included, since each is
+   * drawn to the square of the icon it is laid over.
+   *
+   * **`SAME_SQUARE` alone**, for the reason {@link SheetPlan.backdrop} gives: the other answer is the
+   * absence, and a second value would be a declaration nothing reads.
+   */
+  readonly fit?: 'SAME_SQUARE';
+  /**
+   * That the engine applies the opacity and blending of this sheet's components, so every one of them is
+   * drawn opaque at full strength (audit finding P8).
+   *
+   * **Every overlay sheet's, under both looks.** Its disabled veil, cooldown wedge, highlight halo and rarity
+   * glow are translucent in use, and were asked for as a veil and a glow on an opaque key colour, beside
+   * section 0's rule that no part of a component comes near that colour — a soft glow fading into a white
+   * key cannot keep clear of it, and a half-transparent veil keyed off a field is half lost. A declaring
+   * sheet is told in section 0 that each piece is drawn opaque, a veil or a wedge as one solid shape and a
+   * glow as stepped bands with hard edges, and that the engine applies the opacity; the self-audit checks
+   * it, and section 7's glow exclusion asks a named glow for the same hard edge.
+   *
+   * **On a transparent background too.** Real alpha could be delivered there, but the engine applies its
+   * own opacity to the piece, and a piece arriving already faded would be faded twice, and come back from
+   * the quantiser as a fringe of half-keyed pixels. So the rule is one rule, and section 0 says the alpha
+   * channel is fully opaque on every component.
+   *
+   * **`ENGINE_APPLIED` alone**, for the reason {@link SheetPlan.backdrop} gives.
+   */
+  readonly opacity?: 'ENGINE_APPLIED';
+  /**
+   * That every component of this sheet is a tint mask: drawn in neutral greys alone, each colour the
+   * prompt names drawn as its lightness, for the engine to multiply a team or faction colour over at
+   * runtime (audit finding M1).
+   *
+   * **An ICON icon sheet's, where the roster asks for one** (`IconRoster.colourMode`). Section 1 states
+   * it beneath the colours it lists, so the set's colours and an entry's own become values rather than
+   * hues and the prompt never asks for a colour and a grey at once; the inventory's colour sentence and
+   * the self-audit say the same. The overlay sheet never declares it, because its pieces mark an icon's
+   * state rather than its side, and are drawn in the colours section 1 gives them.
+   *
+   * **`ENGINE_MASK` alone**, for the reason {@link SheetPlan.backdrop} gives.
+   */
+  readonly tint?: 'ENGINE_MASK';
+  /**
+   * That this sheet draws a frame or a border as part of a component, so Midjourney's `--no` may not
+   * name either (audit finding T2) — the per-sheet half of `FRAME_IS_A_COMPONENT`, which answers for a
+   * category whose every sheet draws one.
+   *
+   * **An ICON overlay sheet holding the selected ring, the highlight halo or the rarity glow declares
+   * it**, because those are edges round a square by construction; an overlay sheet the cut leaves
+   * without them declares it only where one of its own entries names a frame. **An icon sheet declares it where an entry names a frame or a border**
+   * (`namesAFrame`) — a map pin's dashed border, a portrait in a gilded oval frame — and on every other
+   * icon sheet the plate and frame a generator adds are negated like any decorative surround.
+   *
+   * **`DRAWN` alone**, for the reason {@link SheetPlan.backdrop} gives.
+   */
+  readonly frames?: 'DRAWN';
+  /**
+   * That this `'run'` sheet appends none of the subject's additional anatomy, even where it opens its
+   * series (`anatomyFacingsFor`). A run sheet that does not declare it appends the anatomy where it is
+   * the first sheet of its series, the trunk every other run series opens on.
+   *
+   * **Every ICON sheet declares it.** An icon sheet draws none of the reader's *Extra Overlay Pieces*,
+   * and an overlay sheet lists the share of them it draws among its own entries, in a group marked
+   * {@link ComponentGroup.additional} (audit finding T6, and the overlay sheet's cells): the library and
+   * the extras are cut across the overlay sheets as one run, so no sheet appends the whole field.
+   *
+   * **Declared on each sheet rather than found by walking the series**, because `anatomyFacingsFor` is
+   * asked on every compile, count and slot list, and a series walk there slowed every ICON prompt.
+   */
+  readonly anatomy?: 'ELSEWHERE';
+  /**
+   * How many cells each way this sheet's square grid is laid out in, where that is fixed whatever the
+   * sheet holds — so the native-grid scale is fitted to those cells rather than to the drawings (audit
+   * finding T5), and the Quantise tab reads the grid's step where the sprites give none to measure.
+   *
+   * **An ICON icon sheet declares `ICON_GRID_COLUMNS`**, because it states one cell, 1/4 of the sheet's
+   * width each way, on every sheet of a series. Fitted to its own drawings instead, a sheet of two asked
+   * a pixel-art icon to be drawn wider than that cell, and two sheets of one set at different scales.
+   * The grid rather than its count, because a step is the sheet's side over the cells each way, which a
+   * count of cells does not say.
+   *
+   * **ICON's overlay sheets declare it too**, so they take the icon sheets' grid and scale, and the
+   * Quantise tab reads their pieces cell by cell ({@link SheetPlan.placement}).
+   */
+  readonly cellGrid?: number;
+  /**
+   * That each component is drawn at its place on the thing it is laid over, one to a cell of
+   * {@link SheetPlan.cellGrid}, and what that place is measured against.
+   *
+   * - `WITHIN_TILE`: the Quantise tab places a piece against the tile square every icon of the set is
+   *   drawn to, centred in the cell at the share section 2 states (`TILE_SHARE`), and maps that square
+   *   onto the file, as the icons' *Fill square* cut does. ICON's overlay sheets under the full-bleed look.
+   * - `WITHIN_CELL`: it places a piece against the whole cell, a square of the cell's side, and maps the
+   *   cell onto the file, as the icons' *Scale evenly* cut does. ICON's overlay sheets under the isolated
+   *   look.
+   *
+   * Either way the prompt draws each piece within that centred share of its cell, where it sits over
+   * the icon, so section 2's one square holds on every overlay sheet.
+   *
+   * **Why the overlay sheet needs it.** A corner badge drawn in its corner of a square with no backdrop
+   * was cut to its own bounding box, and every cell anchor then centred it, so the mark lost its corner.
+   * Placed in a stated cell, the Quantise tab finds the cells from the gaps between the pieces
+   * (`cellLattice`) and keeps each piece where it was drawn (`SpriteFit` `IN_PLACE`). Rejected without
+   * a `cellGrid` by `sheetPlanValidation`, because a place in a cell needs a cell.
+   */
+  readonly placement?: 'WITHIN_CELL' | 'WITHIN_TILE';
 }
 
 /** A sheet drawn to one facing per generation — see {@link SheetFacings}. */
@@ -633,6 +956,8 @@ interface RunSheetPlan extends SheetPlanFields {
 /** A sheet of views, drawing its pieces at each facing of the tuple — see {@link SheetFacings}. */
 export interface ViewSheetPlan extends SheetPlanFields {
   readonly facings: readonly [Direction, ...Direction[]];
+  /** A sheet of views turns its pieces to each of its yaws, so it is never posed any other way. */
+  readonly orientation: 'SHEET_YAW';
   /**
    * Which end of each piece this sheet draws at several yaws is its front, and which its rear — what
    * section 3 states as the evidence that a view turned rather than was redrawn.

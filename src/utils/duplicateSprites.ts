@@ -1,5 +1,8 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
-import { sameSprite, spriteHash, withinTolerance } from './spriteEquality.ts';
+import { groupMedoid } from './groupMedoid.ts';
+import { profileSprites } from './profileSprites.ts';
+import { registerSprites } from './registerSprites.ts';
+import { sameSprite, spriteHash } from './spriteEquality.ts';
 import { disjointSet } from './unionFind.ts';
 
 /**
@@ -29,10 +32,14 @@ import { disjointSet } from './unionFind.ts';
  * size — the extent buckets and the early exit below are what make it so — and it answers in the
  * units every other colour tolerance on this tab is stated in.
  *
- * **Two sprites are compared over the box that covers both of them, anchored at their top-left
- * corners.** A bounding box is tight, so anchoring by it costs nothing to compute and takes the
- * sprites' own positions out of the comparison — which is the whole point, since two frames of one
- * pose sit in different places on the sheet. Where one sprite reaches further than the other, the
+ * **Two sprites are compared over the box that covers both of them, registered where they match
+ * best.** A bounding box is tight, so laying the two corner to corner takes the sprites' own
+ * positions out of the comparison — which is the whole point, since two frames of one pose sit in
+ * different places on the sheet. But the corner is only the seed: keying adds or removes an edge
+ * pixel, and on the left or top edge the corner moves with it, so a pair compared from there is a
+ * column or a row off and every cell scores against its neighbour. `registerSprites` searches a
+ * pixel or two around the corners and compares at the offset that matches best, and the snap writes
+ * its fold at that same offset. Where one sprite reaches further than the other, the
  * cells only it covers are read as transparent on the short side and score the full 255 that any
  * vanished cell scores. That is the honest reading: a drawing with an extra row of artwork genuinely
  * holds artwork the other does not.
@@ -41,29 +48,34 @@ import { disjointSet } from './unionFind.ts';
  * rejected.** It makes the comparison a straight per-cell reading with nothing invented, and it
  * makes the snap a plain block copy. But on the reference sheet — `test_sprites/armour.png`,
  * quantised at a grid of 6, keyed on `#FF00FF` at tolerance 24, with no palette step — adding four
- * to every colour channel of every pixel left only **3 of its 15** sprites with the drawn extent
- * they had before, and subtracting four left **6**. A sprite thirty drawn pixels across loses or
+ * to every colour channel of every pixel left only **6 of its 15** sprites with the drawn extent
+ * they had before, and subtracting four left **5**. A sprite thirty drawn pixels across loses or
  * gains one the moment a single contour pixel crosses the keying threshold — so a rule turning on
  * exact extents would fire on repeats that came back byte-identical and on almost nothing else,
  * which is a dial that appears not to work. The union box costs an extra row about one unit of the
- * mean on a sprite that size, which is inside the dial's range rather than past it.
+ * mean on a sprite that size, which is inside the dial's range rather than past it — on whichever
+ * edge the row falls, because the registration keeps one on the top or left from moving the rest.
  *
  * **Both directions are stated because the sign of the perturbation moves the answer, and the
  * figure recorded here before named neither.** "Four parts in 255 per channel" says how far and
  * neither which way nor with what distribution, and the readings a maintainer might take from it
- * disagree: nine of them — the two flat shifts, per-pixel random of that magnitude at three seeds,
- * alternating by channel, and uniform over that interval at three seeds — run from **1 to 6** of the
- * 15 sprites keeping their extent, and none of them is 4. The conclusion above survives every one,
- * which is why the design was never in question; but a figure offered as evidence has to be
- * reproducible from what it states, and the number this paragraph carried was reproducible from
- * none of them. `tests/quantiser-docblock-figures.test.ts` pins both directions against the
- * construction named above.
+ * disagree: nine of them — the two flat shifts, ±4 at random per channel, +4 and −4 alternating by
+ * channel, and a value uniform over −4 to 4 per channel rounded to the nearest whole number, each
+ * random reading at seeds 1, 2 and 3 of a mulberry32 generator, drawn once per channel in pixel
+ * order, red then green then blue, with ±4 taking −4 below a draw of one half — run from **2 to 6** of the 15
+ * sprites keeping their extent. (They ran from 0 to 4 before the cell reading decided a cell's
+ * coverage ahead of its colour, from 1 to 6 before `despillKey` began correcting the key's tint
+ * behind the fringe, and from 0 to 3 before the mesh cut each sprite on its own phase; each of the
+ * three moves the silhouette the extents are read from.) The conclusion above survives every one, which is why the design was never in
+ * question; but a figure offered as evidence has to be reproducible from what it states, which is
+ * why the construction is named. `tests/quantiser-figures-duplicate-sprites.test.ts` pins both
+ * directions against the construction named above.
  *
  * **A sprite is identified across the perturbation by its centre, not by its position in the list.**
- * A shifted sheet meshes differently, the bottom row's tops move by different amounts, and that row
- * re-sorts — so the nth box either side is not the same piece of artwork. Measured by list position
- * the two flat readings still come to 3 and 6, but by cancelling errors rather than by measuring
- * what they claim to.
+ * A shifted sheet meshes differently, and a row whose tops move by different amounts re-sorts — so
+ * the nth box either side need not be the same piece of artwork. Under the two flat readings every
+ * box still pairs with its own index, so list position gives the same 6 and 5; the centre is what
+ * keeps the figure right under a perturbation that does re-sort a row.
  *
  * **Two readings of "the same", and the panel shows both.** Byte equality is what the hash buckets
  * find, and it is free — an identical frame is the commonest case and it needs no distance measured
@@ -74,6 +86,10 @@ import { disjointSet } from './unionFind.ts';
  * its earliest member and the groups come back in the order those members appear, which is reading
  * order in the only way this is called — the sprite panel, the group list and the preview then agree
  * about which sprite is which without any of them sorting anything a second time.
+ *
+ * **The name is not the source.** What the snap folds every member onto is the group's medoid, the
+ * member the others agree with most (see `groupMedoid`), because the earliest member is only the
+ * first to be drawn and a flaw in it would otherwise be copied into every repeat.
  *
  * Pure. `tolerance` is the mean per-cell distance under which two sprites are one, in the scaled
  * OKLab units every colour dial on this tab uses; `0` admits only sprites whose visible pixels
@@ -127,25 +143,45 @@ export function duplicateSprites(
     union(twin, index);
   }
 
+  // Each sprite's profile, read once here rather than once for every pair it is in — see
+  // `registerSprites`, which bounds each offset with them before it walks one.
+  const sprites = profileSprites(image, boxes);
+
   // Every remaining pair, which is what `SCATTERED_SPRITE_CEILING` bounds: it caps a segmentation at
   // 512 boxes, so this walk is at most a hundred and thirty thousand comparisons, and each of them
   // abandons as soon as the running sum can no longer come under the tolerance.
   //
-  // **At that ceiling the pass costs seconds, and the top of the dial is not where it is worst.**
-  // Built to the ceiling — 512 sprites of 20 × 20 drawn pixels filled with per-channel noise, so no
-  // pair is byte-identical and the hash pass collapses none of them — the cost climbs steadily with
-  // the dial and then falls off its last rung. Against the dial's floor, where a pair is rejected at
-  // its first differing cell, it is roughly **60× at tolerance 6, 130× at 12, and 230× at its peak
-  // around 21** — then about **100× at the top rung**, which is well under half the peak.
+  // **At that ceiling the pass costs seconds.** Built to the ceiling — 512 sprites of 20 × 20 drawn
+  // pixels filled with per-channel noise, so no pair is byte-identical and the hash pass collapses
+  // none of them — this walk's cost climbs steadily with the dial and then falls off its last rung.
+  // Against its peak around 21 it is roughly **a quarter at tolerance 6 and a half at 12**, and
+  // about **half the peak at the top rung**. The floor, where a pair is rejected at its first
+  // differing cell, is a sixtieth of the peak, and most of what it costs there is reading the
+  // profiles and the bounds.
   //
-  // **The top rung is cheaper than the peak, and the reason is this walk's own machinery.** The
-  // expensive case is a pair close enough to be walked a long way before its running sum passes the
-  // budget and not close enough to group. Nothing at all groups from the floor to tolerance 22; at
-  // 23 the noise's spread starts bringing pairs under the threshold, in seven small groups holding
-  // 15 sprites between them; and at 24 those chain into a single group of 488, after which
-  // `find(left) === find(right)` disposes of most of the remaining pairs without measuring them. So
-  // grouping is what makes the top rung affordable rather than the absence of it, and a sheet whose
-  // sprites sat astride the threshold *at* the top rung would cost there what this one costs at 22.
+  // **The walk is cheaper at the top rung than at the peak, and the reason is its own machinery.**
+  // The expensive case is a pair close enough to be walked a long way before its running sum passes
+  // the budget and not close enough to group. Nothing at all groups from the floor to tolerance 22;
+  // at 23 the noise's spread starts bringing pairs under the threshold, in seven small groups
+  // holding 15 sprites between them; and at 24 those chain into a single group of 488, after which
+  // `find(left) === find(right)` disposes of most of the remaining pairs without measuring them. A
+  // sheet whose sprites sat astride the threshold *at* the top rung would cost there what this one
+  // costs at 22.
+  //
+  // **The whole pass is dearest at the top rung all the same, because of the medoid.** That group of
+  // 488 holds no two byte-identical members, so `groupMedoid` measures every pair of them with no
+  // tolerance to abandon at: each pair's first offset in full, and each later one until it can no
+  // longer beat the best so far. That is nearly twice as much work as the walk at its peak, which puts the
+  // top rung at a little over twice the peak. The consensus is what keeps a flawed first copy out of
+  // every repeat, and a real group is a handful of frames, most of them byte-identical.
+  //
+  // **The registration is most of why the medoid costs that.** Each pair is compared at up to
+  // twenty-five offsets rather than one (see `registerSprites`), and the profile bound rejects the
+  // offsets that cannot win before they are walked. Measured against laying every pair corner to
+  // corner, on this fixture, the walk costs about the same from tolerance 6 to the peak, the floor
+  // about two and a half times as much though still a fraction of a second, the medoid
+  // about 1.8 times, and the whole pass at the top rung about 1.6 times; on the corpus below the
+  // difference is under the 16 ms the processor clock resolves.
   //
   // **The figures are ratios because absolute wall-clock does not reproduce, and this fixture is
   // where that was measured rather than assumed.** The same rung on the same fixture on this machine
@@ -168,10 +204,11 @@ export function duplicateSprites(
   // debounce drops the intermediate values of a drag; neither makes the work itself shorter. What
   // the ceiling buys is that the pathological case is *bounded*, not that it is fast.
   //
-  // `tests/quantiser-docblock-figures.test.ts` holds the deterministic half of all of this: the
-  // corpus's own sprite counts, and this fixture's grouping at four rungs — nothing at the floor,
-  // nothing at the peak, the seven small groups at 23, the 488 at 24 — which is what says the
-  // expensive rungs really are walking every pair rather than skipping them.
+  // Two suites hold the deterministic half of all of this. The corpus's own sprite counts are in
+  // `tests/quantiser-figures-duplicate-sprites.test.ts`, and this fixture's grouping at four rungs
+  // is in `tests/quantiser-figures-duplicate-sprites-ceiling.test.ts`: nothing at the floor,
+  // nothing at the peak, the seven small groups at 23, the 488 at 24. That grouping is what says
+  // the expensive rungs really are walking every pair rather than skipping them.
   for (const [position, left] of representatives.entries()) {
     for (let step = position + 1; step < representatives.length; step += 1) {
       const right = representatives[step];
@@ -182,7 +219,9 @@ export function duplicateSprites(
       // `spriteSegments`: a chain is one group. The tolerance is small enough that a chain long
       // enough to matter is a sheet whose sprites are all one sprite anyway.
       if (find(left) === find(right)) continue;
-      if (withinTolerance(image, boxes[left], boxes[right], tolerance)) union(left, right);
+      if (registerSprites(image, sprites[left], sprites[right], tolerance).distance <= tolerance) {
+        union(left, right);
+      }
     }
   }
 
@@ -204,9 +243,12 @@ export function duplicateSprites(
     if (members.length < 2) continue;
     const canonical = boxes[root];
     if (canonical === undefined) continue;
+    const source = boxes[groupMedoid(image, sprites, members, identical)];
+    if (source === undefined) continue;
     const canonicalClass = identical[root] ?? root;
     found.push({
       canonical,
+      source,
       duplicates: members
         .filter((index) => index !== root)
         .flatMap((index) => {

@@ -27,8 +27,8 @@ import { CHANNELS_PER_PIXEL, FULLY_OPAQUE, FULLY_TRANSPARENT, createImage } from
  * already does. There is nothing here for a second control to do.
  *
  * A pixel this pass **clears** is written `{0, 0, 0, 0}` rather than its own RGB at zero alpha, for
- * the reason `keyBackground` gives at length: `alignToGrid` votes on the packed RGBA, so transparent
- * pixels that kept different RGB values are still different colours to that vote. It is not extended
+ * the reason `keyBackground` gives: a cleared pixel leaves as the one value the keyed field is. It is
+ * not extended
  * to a pixel that arrived clear, and that boundary is what keeps the two paths below equivalent — a
  * pass that canonicalised those as well would edit pixels the early-out hands back unedited, so what
  * the sheet came out as would depend on whether it happened to hold any partial alpha at all.

@@ -1,20 +1,10 @@
 import { IDENTITY_PALETTE_SIZE } from '../constants/identityLock.ts';
 import { DEFAULT_KEY_TOLERANCE } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
-import { nearestColor } from './applyPalette.ts';
-import {
-  CHANNELS_PER_PIXEL,
-  colorHistogram,
-  createImage,
-  FULLY_OPAQUE,
-  FULLY_TRANSPARENT,
-  packColor,
-  readPixel,
-  toHex,
-  unpackColor,
-  writePixel,
-} from './imageData.ts';
+import { flattenOpacity } from './flattenOpacity.ts';
+import { colorHistogram, packColor, toHex, unpackColor } from './imageData.ts';
 import { keyBackground } from './keyBackground.ts';
+import { nearestColorSearch } from './nearestColorSearch.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
 /**
@@ -36,7 +26,7 @@ import { buildPalette } from './wuQuantiser.ts';
  * Order is the point. `buildPalette` returns its entries in the order the boxes were split, which
  * says nothing about which colour the sheet is mostly made of — so each entry is totalled over every
  * colour that maps to it, and the list leads with the base colour the way §5's worked example does.
- * Coverage is measured through `nearestColor`, the same assignment `applyPalette` draws with, so the
+ * Coverage is measured through `nearestColorSearch`, the same assignment `applyPalette` draws with, so the
  * totals describe the palette as it would actually be used.
  *
  * `backgroundKey` is the key field's colour, excluded so the digest describes the subject rather
@@ -50,9 +40,10 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
   const subject = subjectPixels(image, backgroundKey);
   const palette = buildPalette(subject, IDENTITY_PALETTE_SIZE);
 
+  const nearest = nearestColorSearch(palette);
   const coverage = new Map<number, number>();
   for (const [key, count] of colorHistogram(subject)) {
-    const entry = nearestColor(unpackColor(key), palette);
+    const entry = nearest(unpackColor(key));
     // Only when the palette is empty, which means a sheet with nothing on it but its key field.
     if (entry === null) continue;
     const entryKey = packColor(entry);
@@ -70,8 +61,8 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
 }
 
 /**
- * The subject's pixels alone, at one opacity: the key field and fully transparent pixels dropped,
- * and everything that survives made opaque.
+ * The subject's pixels alone, at one opacity: the key field and every pixel under the coverage floor
+ * dropped, and everything that survives made opaque.
  *
  * Transparency is how a pixel leaves the histogram, and therefore the palette, so removing the key
  * field is the same operation as one that arrived transparent already.
@@ -114,7 +105,7 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  * holds both ends of the white case rather than leaving it to be discovered.
  *
  * **{@link DEFAULT_KEY_TOLERANCE} rather than a figure of this function's own**, and the corpus is
- * what chooses it. A rung of 8 leaves a magenta in `cyborg_healer.png`'s digest (`#F803E1`, 8.4 from
+ * what chooses it. A rung of 8 leaves a magenta in `cyborg_healer.png`'s digest (`#E629C2`, 15.8 from
  * the key); 16 clears all eight, and 24 clears them with a rung to spare. Eight sheets are a sample
  * rather than a population, so the figure sits two rungs above a demonstrated failure instead of
  * one — and being the tab's own opening position is what keeps the picker route and the button
@@ -122,11 +113,13 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  *
  * **The one-pixel fringe goes with it, and that is the half a radius could not do.** An anti-aliased
  * edge blends the key with the colour beside it, and those blends are opaque colours the sheet
- * genuinely contains — so a field pass alone leaves them, and on four of the eight sheets one still
- * reaches the digest: `#7A0283` on `armour.png`, `#A60097` on `cyborg_healer.png`, `#62026E` on
- * `ui_elements1.png` and `#660574` on `vehicles_and_props.png`. `keyBackground`'s second pass erodes
+ * genuinely contains — so a field pass alone leaves them, and on five of the eight sheets at least
+ * one still reaches the digest: `#7A0980` on `armour.png`, `#841489` on `cyborg_monk.png`, `#301F30`
+ * and `#931085` on `cyborg_healer.png`, `#780787` on `ui_elements1.png` and `#831088` on
+ * `vehicles_and_props.png`, each a blend by `carriesKeyTint`. `keyBackground`'s second pass erodes
  * them, because it has the geometry to do it safely — one pixel deep, and only where the pixel
- * touches the field. No digest carries a key blend after it.
+ * touches the field. No digest carries a key blend after it. `tests/identityPaletteCorpusSuite.ts`
+ * pins the rungs and the blends.
  *
  * **What that pass costs is a pixel of silhouette, and on one shape of sheet a pixel is a whole
  * entry.** A sheet that arrived already keyed — which is what the button route hands in, and what
@@ -135,7 +128,10 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  * within that one pixel: every one of its pixels touches the field, so where its hue sits within
  * `KEY_TINT_OFF_HUE` of the key, `carriesKeyTint` takes the lot and the outline's colour leaves the
  * digest with it. A violet ring against the recommended magenta is the case; a teal one is
- * untouched, which is what identifies the hue test rather than the radius as the mechanism.
+ * untouched, which is what identifies the hue test rather than the radius as the mechanism. An
+ * outline up to `DESPILL_DEPTH` pixels wider than that loses its colour the other way: `despillKey`
+ * takes the key's hue out of the pixels behind the first, so the digest reads them as a near-grey
+ * of the same lightness.
  *
  * It is still the right trade, and narrowly. The colour at risk is one an artist chose *close to the
  * key they were keying against*, and the reader who wants it has the ordinary route — read the
@@ -149,22 +145,17 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  * quantiser, and it will spend the digest's six slots separating them. Each is then ranked by its
  * own share rather than their combined one, so a 14%-coverage colour can lead a 72% one, and the
  * ordering is the whole point of this function. Flattened first, every slot buys a distinct colour
- * and coverage totals per colour by construction.
+ * and coverage totals per colour by construction. `flattenOpacity` does it, and says why a pixel
+ * under the coverage floor is dropped rather than promoted.
  */
 function subjectPixels(image: ImageData, exclude: Rgba | null): ImageData {
-  // `TRANSPARENT` is the key with no colour to match, and the loop below already drops what arrived
-  // transparent — so the pass has nothing to exclude, and running it would erode a silhouette for
-  // nothing.
+  // `TRANSPARENT` is the key with no colour to match, and `flattenOpacity` already drops what
+  // arrived transparent — so the pass has nothing to exclude, and running it would erode a
+  // silhouette for nothing.
   const keyed =
     exclude === null
       ? image
       : keyBackground(image, { color: exclude, tolerance: DEFAULT_KEY_TOLERANCE }).image;
 
-  const output = createImage(image.width, image.height);
-  for (let offset = 0; offset < keyed.data.length; offset += CHANNELS_PER_PIXEL) {
-    const color = readPixel(keyed.data, offset);
-    if (color.a === FULLY_TRANSPARENT) continue;
-    writePixel(output.data, offset, { ...color, a: FULLY_OPAQUE });
-  }
-  return output;
+  return flattenOpacity(keyed);
 }

@@ -5,8 +5,8 @@ import { REDO_KEYBOARD_SHORTCUTS, WRITE_UNAVAILABLE_UNTIL_SETTLED } from '../gui
  * Guidance for the Quantise tab's actions.
  *
  * Beside `constants/quantiser.ts`'s own `QUANTISE_TOOLTIPS` rather than inside it, and the split is
- * the same one the studio makes: that object explains the tab's three *settings* — the pixel grid,
- * the zoom and the keying — and sits with the numbers those settings are drawn from. These are the
+ * the same one the studio makes: that object explains the tab's *settings* and sits with the numbers
+ * those settings are drawn from. These are the
  * buttons, and what a reader needs from one of those is what pressing it does to the sheet in front
  * of them.
  */
@@ -47,13 +47,13 @@ export const QUANTISE_ACTION_TOOLTIPS = {
     '- The quantised sheet, as the PNG button saves it.\n' +
     '- One PNG per piece, cut as the Cut control states at the Save At magnification. Joined sprites share a file, and one you left out has none.\n' +
     '- A manifest naming them.\n\n' +
-    'Pieces take the inventory’s names or the ones you assigned, and are numbered where the two cannot be matched, which the confirmation says. File names lead with the reading order, so a listing sorts correctly. A piece that does not fit a fixed cell refuses the download and is named.\n\n' +
+    'Pieces take the inventory’s names or the ones you assigned, and are numbered where the two cannot be matched, which the confirmation says. File names lead with the reading order, so a listing sorts correctly. A piece too big for an As drawn cell refuses the download and is named.\n\n' +
     WRITE_UNAVAILABLE_UNTIL_SETTLED +
     ' In a batch, each part is named for its sheet, such as `south/01-head.png`, so the archives unzip into one folder without overwriting each other.',
 
   downloadManifest:
     'Saves the manifest on its own as JSON, for an importer, a packer or a script of your own. It carries no artwork; take the sprite pack if you want the pieces as files. For each piece it records:\n\n' +
-    '- Where it sits, as a rect on the PNG this panel would save at the Save At magnification, plus its cell where the Cut control states one.\n' +
+    '- Where it sits, as a rect on the PNG this panel would save at the Save At magnification, plus where and how large it lands in its cell, if the Cut control states one.\n' +
     '- What the inventory calls it, and how that name was reached.\n' +
     '- Its pivot: the bottom centre of its box, unless you named an anchor.\n' +
     '- Which pieces are the same drawing twice.\n\n' +

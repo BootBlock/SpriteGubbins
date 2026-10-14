@@ -1,13 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
-import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
-import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { sectionOf } from '../test/promptSections.ts';
-import type { OutputConfig } from '../types/output.ts';
-import { SUBJECT_CATEGORIES } from '../types/subject.ts';
-import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import { outputsOf, reachableSheets } from '../test/reachableSheets.ts';
+import type { SubjectDefinition } from '../types/subject.ts';
 import type { SheetPlan } from '../types/components.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetFacts } from './promptFacts.ts';
@@ -25,88 +22,67 @@ import { sheetFacts } from './promptFacts.ts';
 
 const BOUNDARY_HEADING = '### A component ends at its own boundary';
 
-interface CompiledSheet {
-  readonly where: string;
-  readonly plan: SheetPlan;
-  readonly prompt: string;
-}
-
-const compiled = new Map<SubjectCategory, readonly CompiledSheet[]>();
-
-/** Every sheet of every base, mode, reachable direction set and series position, as compiled. */
-function everySheet(category: SubjectCategory): readonly CompiledSheet[] {
-  const cached = compiled.get(category);
-  if (cached !== undefined) return cached;
-  const sheets: CompiledSheet[] = [];
-  for (const subject of assemblyBaseSubjectsOf(category)) {
-    for (const directionalMode of modesFor(category, subject)) {
-      for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-        const { length } = sheetSeriesFor(category, subject, directionalMode, directions);
-        for (let sheetIndex = 0; sheetIndex < length; sheetIndex += 1) {
-          const output: OutputConfig = { ...DEFAULT_OUTPUT_CONFIG, directionalMode, directions, sheetIndex };
-          sheets.push({
-            where: `${category}/${subject.anatomy}/${directionalMode}/${directions}/${String(sheetIndex)}`,
-            // The plan the compiler itself resolved, rather than one looked up beside it.
-            plan: sheetFacts(category, subject, output).plan,
-            prompt: generatePrompt(category, subject, output),
-          });
-        }
-      }
-    }
-  }
-  compiled.set(category, sheets);
-  return sheets;
-}
+const CASES = assemblyBaseCases();
+const SHEETS = reachableSheets();
+const WHOLE_SHEETS = SHEETS.filter((sheet) => sheet.plan.extent === 'WHOLE').map(
+  (sheet) => [sheet.where, sheet] as const,
+);
+const PIECE_SHEETS = SHEETS.filter((sheet) => sheet.plan.extent === 'PIECE').map(
+  (sheet) => [sheet.where, sheet] as const,
+);
 
 function statesItsEnds(plan: SheetPlan): boolean {
   return plan.groups.some((group) => group.ends !== undefined);
 }
 
 describe('where each component ends', () => {
-  it.each(SUBJECT_CATEGORIES)(
-    'tells no %s sheet of whole drawings that an entry is a severed part',
-    (category) => {
-      for (const { where, plan, prompt } of everySheet(category)) {
-        if (plan.extent !== 'WHOLE') continue;
+  it('reaches sheets of both kinds, so neither sweep below is empty', () => {
+    expect(WHOLE_SHEETS.length).toBeGreaterThan(0);
+    expect(PIECE_SHEETS.length).toBeGreaterThan(0);
+  });
 
-        expect(prompt, where).not.toContain(BOUNDARY_HEADING);
-        expect(prompt, where).not.toContain('severed');
-        expect(prompt, where).not.toContain('stops at its own joins');
-        expect(prompt, where).not.toContain('none carrying another');
-        expect(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT'), where).toContain(
-          'each one complete drawing of its own',
-        );
-        expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT'), where).toContain(
-          'Every component is one complete drawing, apart from every other',
-        );
+  it.each(WHOLE_SHEETS)('tells a sheet of whole drawings no entry is a severed part: %s', (where, sheet) => {
+    const prompt = generatePrompt(sheet.category, sheet.subject, sheet.output);
+
+    expect(prompt, where).not.toContain(BOUNDARY_HEADING);
+    expect(prompt, where).not.toContain('severed');
+    expect(prompt, where).not.toContain('stops at its own joins');
+    expect(prompt, where).not.toContain('none carrying another');
+    expect(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT'), where).toContain(
+      'each one complete drawing of its own',
+    );
+    expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT'), where).toContain(
+      'Every component is one complete drawing, apart from every other',
+    );
+  });
+
+  it.each(PIECE_SHEETS)('states once where a piece ends on a sheet of pieces: %s', (where, sheet) => {
+    const prompt = generatePrompt(sheet.category, sheet.subject, sheet.output);
+    const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
+    const own = sheet.plan.groups.flatMap((group) => (group.ends === undefined ? [] : [group.ends]));
+
+    // The plan's own statement where it has one, printed — read by its first line, which carries no
+    // citation for the compiler to resolve — and the generic paragraph exactly where it has none.
+    for (const ends of own) expect(inventory, where).toContain(ends.split('\n')[0]);
+    expect(inventory.includes(BOUNDARY_HEADING), where).toBe(own.length === 0);
+    expect(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT'), where).toContain('none carrying another');
+    expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT'), where).toContain('stops at its own joins');
+  });
+
+  it.each(CASES)(
+    'never gives a sheet of whole drawings a statement of where its pieces end: %s',
+    (name, category, subject) => {
+      // `ends` would print a trunk's joins above an inventory of whole drawings, which is the
+      // contradiction this fixes arriving by the other route. Read from the resolved plans alone, so
+      // this compiles no prompt.
+      for (const output of outputsOf(category, subject)) {
+        const { plan } = sheetFacts(category, subject, output);
+        if (plan.extent === 'WHOLE') {
+          expect(statesItsEnds(plan), `${name}/${String(output.sheetIndex)}`).toBe(false);
+        }
       }
     },
   );
-
-  it.each(SUBJECT_CATEGORIES)('states once where a piece ends on every %s sheet of pieces', (category) => {
-    for (const { where, plan, prompt } of everySheet(category)) {
-      if (plan.extent !== 'PIECE') continue;
-      const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
-      const own = plan.groups.flatMap((group) => (group.ends === undefined ? [] : [group.ends]));
-
-      // The plan's own statement where it has one, printed — read by its first line, which carries no
-      // citation for the compiler to resolve — and the generic paragraph exactly where it has none.
-      for (const ends of own) expect(inventory, where).toContain(ends.split('\n')[0]);
-      expect(inventory.includes(BOUNDARY_HEADING), where).toBe(own.length === 0);
-      expect(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT'), where).toContain('none carrying another');
-      expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT'), where).toContain('stops at its own joins');
-    }
-  });
-
-  it('never gives a sheet of whole drawings a statement of where its pieces end', () => {
-    // `ends` would print a trunk's joins above an inventory of whole drawings, which is the
-    // contradiction this fixes arriving by the other route.
-    for (const category of SUBJECT_CATEGORIES) {
-      for (const { where, plan } of everySheet(category)) {
-        if (plan.extent === 'WHOLE') expect(statesItsEnds(plan), where).toBe(false);
-      }
-    }
-  });
 
   it.each([
     ['OBJECT', 'Single Rigid Object'],

@@ -76,7 +76,7 @@ describe('PresetLibrary', () => {
   });
 
   it('switches collections when one is chosen', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     await user.click(collectionButton('BUILDING'));
@@ -87,7 +87,7 @@ describe('PresetLibrary', () => {
   });
 
   it('searches the whole library, not the collection on screen', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     // Typed from Characters, matching a building. The view follows the results rather than leaving the
@@ -99,7 +99,7 @@ describe('PresetLibrary', () => {
   });
 
   it('keeps the same DOM node for a card that survives the filter', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     const search = screen.getByRole('searchbox', { name: 'Search presets' });
@@ -115,7 +115,7 @@ describe('PresetLibrary', () => {
   });
 
   it('keeps the same DOM node for a card that survives a widening filter too', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     const search = screen.getByRole('searchbox', { name: 'Search presets' });
@@ -134,7 +134,7 @@ describe('PresetLibrary', () => {
   });
 
   it('removes the cards that stop matching', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     expect(screen.getByRole('heading', { name: 'Cyberpunk Katana Specialist' })).toBeInTheDocument();
@@ -145,18 +145,22 @@ describe('PresetLibrary', () => {
   });
 
   it('counts the matches per collection and makes the empty ones unreachable', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     await user.type(screen.getByRole('searchbox', { name: 'Search presets' }), 'ramen');
 
+    // The one kiosk is the only preset that names ramen, so each row states the filtered count rather
+    // than the collection's size.
+    expect(collectionButton('BUILDING')).toHaveAccessibleName(`${CATEGORY_OPTIONS.BUILDING.label} 1`);
+    expect(collectionButton('CHARACTER')).toHaveAccessibleName(`${CATEGORY_OPTIONS.CHARACTER.label} 0`);
     // Nothing in Characters matches, so it cannot be selected — selecting it would blank the panel.
     expect(collectionButton('CHARACTER')).toBeDisabled();
     expect(collectionButton('BUILDING')).not.toBeDisabled();
   });
 
   it('never disables the collection it is showing, even at no matches at all', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     await user.type(screen.getByRole('searchbox', { name: 'Search presets' }), 'sentient filing cabinet');
@@ -169,7 +173,7 @@ describe('PresetLibrary', () => {
   });
 
   it('does not treat a query that narrows nothing as a filter', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     await user.click(collectionButton('ITEM'));
@@ -185,7 +189,7 @@ describe('PresetLibrary', () => {
   });
 
   it('keeps focus in the search box when the clear button removes itself', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     const search = screen.getByRole('searchbox', { name: 'Search presets' });
@@ -199,7 +203,7 @@ describe('PresetLibrary', () => {
   });
 
   it('says so when nothing in the library matches at all', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     await user.type(screen.getByRole('searchbox', { name: 'Search presets' }), 'sentient filing cabinet');
@@ -209,7 +213,7 @@ describe('PresetLibrary', () => {
   });
 
   it('returns to the chosen collection when the search is cleared', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PresetLibrary />);
 
     await user.click(collectionButton('ITEM'));

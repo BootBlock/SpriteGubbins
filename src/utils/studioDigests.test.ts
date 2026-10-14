@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
+import { DEFAULT_MODE_FOR } from '../constants/sheetPlans/index.ts';
 import { standardSubject } from '../test/sheetSubject.ts';
 import type { OutputConfig } from '../types/output.ts';
 import {
@@ -13,6 +14,7 @@ import {
   sheetDigest,
   subjectGroupDigest,
 } from './studioDigests.ts';
+import { tintMaskedIconSubject } from '../test/tintMaskedIconSubject.ts';
 
 /**
  * What a folded group says it is set to.
@@ -92,6 +94,9 @@ describe('sheetDigest', () => {
       standardSubject(),
       withOutput({ directionalMode: 'TILESET_MODULAR' }),
     );
+    // Named positively as well, because the absence alone would pass on a digest that had stopped
+    // naming a mode at all.
+    expect(digest.split(' · ')[0]).toBe(DEFAULT_MODE_FOR.CHARACTER);
     expect(digest).not.toContain('TILESET_MODULAR');
   });
 
@@ -121,6 +126,14 @@ describe('sheetDigest', () => {
 });
 
 describe('renderStyleDigest', () => {
+  it('names the budget, not a stored palette, for a tint mask, which is drawn under FREE', () => {
+    // The prompt drops a pinned palette for a mask (audit finding M1), so the header does too.
+    const output = withOutput({ palette: 'GAME_BOY_DMG' });
+    const digest = renderStyleDigest('ICON', tintMaskedIconSubject(), output);
+    expect(digest).not.toContain('GAME_BOY_DMG');
+    expect(digest).toContain(output.paletteLimit);
+  });
+
   it('covers all seven controls when they are all set', () => {
     // With no palette pinned, which is what leaves the colour budget as the group's colour setting.
     const output = withOutput({

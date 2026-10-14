@@ -17,8 +17,8 @@ import { ImageComparison } from './ImageComparison.tsx';
  *
  * The result is one pixel per grid cell, so drawing it at `zoom` — as this did — showed it `grid`
  * times smaller than the sheet beside it, and no amount of linking the two scroll positions could
- * have made that a comparison. The canvases' CSS sizes, the windows clipping them, and the inset a
- * measured grid offset pulls the result back by are where that is decided, and they are what these
+ * have made that a comparison. The canvases' CSS sizes, the windows clipping them, and the inset the
+ * measured leading-cell shift moves the result by are where that is decided, and they are what these
  * tests read.
  */
 class NoopResizeObserver {
@@ -39,25 +39,26 @@ afterEach(() => {
 const SOURCE_SIDE = 128;
 
 /**
- * A result as `quantiseImage` returns one: one pixel per mesh cell — `⌈w / grid⌉` a side for a
- * corner-anchored regular mesh, one more where a non-zero offset opens a leading partial cell.
+ * A result as `quantiseImage` returns one: one pixel per mesh cell — a leading cell of
+ * `grid + leadingShift` source pixels, then full cells to the edge, which is `⌈w / grid⌉` a side for
+ * a corner-anchored regular mesh.
  */
-function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }, distance = 0): QuantiseResult {
-  const lead = (along: number) => (along > 0 ? 1 : 0);
-  const side = (along: number) => lead(along) + Math.ceil((SOURCE_SIDE - along) / grid);
-  const image = createImage(side(offset.x), side(offset.y));
+function resultFor(grid: number, colors = 32, leadingShift = { x: 0, y: 0 }, distance = 0): QuantiseResult {
+  const side = (shift: number) => 1 + Math.ceil((SOURCE_SIDE - grid - shift) / grid);
+  const image = createImage(side(leadingShift.x), side(leadingShift.y));
   return {
     image,
     difference: flatDifference(image.width, image.height, distance),
     colors,
     paletteEntries: [],
     keyedShare: 0,
-    sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
+    paletted: false,
+    sprites: { kind: 'SEGMENTED', boxes: [], specks: 0, width: 1024 },
     symmetry: null,
     duplicates: [],
     snapped: false,
     strips: null,
-    offset,
+    leadingShift,
   };
 }
 
@@ -117,8 +118,8 @@ describe('ImageComparison', () => {
     });
   }
 
-  it('pulls an offset result back by its leading cell’s deficit, inside the source’s window', () => {
-    // A measured offset of {3, 3} at a grid of 8 opens a leading partial cell: the result is 17 a
+  it('pulls a result back by its narrow leading cell’s deficit, inside the source’s window', () => {
+    // A leading cell of 3 at a grid of 8, a shift of −5 on each axis: the result is 17 a
     // side, its canvas 136px at 1× — and drawn as-is, every cell after the first would sit 5px off
     // the source pixels it covers, which on linked panes reads as the transform having moved the
     // art. The canvas is pulled back by exactly that deficit and the window clips it to the source's
@@ -131,7 +132,7 @@ describe('ImageComparison', () => {
         sourceColors={200}
         scale={null}
         grid={8}
-        quantised={{ result: resultFor(8, 32, { x: 3, y: 3 }), grid: 8 }}
+        quantised={{ result: resultFor(8, 32, { x: -5, y: -5 }), grid: 8 }}
         busy={false}
       />,
     );
@@ -143,6 +144,36 @@ describe('ImageComparison', () => {
     expect(quantised.style.width).toBe('136px');
     expect(quantised.style.marginLeft).toBe('-5px');
     expect(quantised.style.marginTop).toBe('-5px');
+    expect(quantised.parentElement?.style.width).toBe(`${String(SOURCE_SIDE)}px`);
+    expect(quantised.parentElement?.style.height).toBe(`${String(SOURCE_SIDE)}px`);
+  });
+
+  it('pushes a result on by its wide leading cell’s surplus, inside the source’s window', () => {
+    // A leading cell of 10 at a grid of 8, a shift of +2 on each axis — the end band `boundEndCells`
+    // folds into the first cell, and most of the keyed corpus at a grid of 6. The result is 16 a side
+    // and its canvas 128px at 1×, and drawn as-is its second cell would start at 8 where the source's
+    // starts at 10. The canvas is moved down and right by that surplus, the opposite way to the
+    // narrow case above, and the window still clips it to the source's own extent.
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    render(
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={null}
+        grid={8}
+        quantised={{ result: resultFor(8, 32, { x: 2, y: 2 }), grid: 8 }}
+        busy={false}
+      />,
+    );
+    const quantised = screen.getByRole('img', {
+      name: 'The sheet after grid alignment and palette reduction',
+    });
+
+    expect(quantised).toHaveAttribute('width', '16');
+    expect(quantised.style.width).toBe('128px');
+    expect(quantised.style.marginLeft).toBe('2px');
+    expect(quantised.style.marginTop).toBe('2px');
     expect(quantised.parentElement?.style.width).toBe(`${String(SOURCE_SIDE)}px`);
     expect(quantised.parentElement?.style.height).toBe(`${String(SOURCE_SIDE)}px`);
   });
@@ -361,7 +392,9 @@ describe('ImageComparison', () => {
     let before = allPaints();
     rerender(panel(4));
     expect(allPaints()).toBeGreaterThan(before);
-    // A new difference scale, which repaints the heatmap and nothing else.
+    // A new difference scale, which repaints the heatmap and nothing else. The scale is applied where
+    // the map is painted rather than where it is measured, and nothing else about the result moves —
+    // so a missing repaint here would be invisible rather than obviously wrong.
     choose('Difference');
     before = allPaints();
     fireEvent.click(
@@ -490,22 +523,6 @@ describe('ImageComparison’s preview modes', () => {
     expect(screen.queryByRole('group', { name: 'Difference scale' })).toBeNull();
   });
 
-  it('repaints the heatmap when the scale changes, because that is all the control does', () => {
-    // The scale is applied where the map is painted rather than where it is measured, so a rung is
-    // one pass over an image the size of the result. Nothing else about the result moves — which is
-    // also why a stale repaint here would be invisible rather than obviously wrong.
-    const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
-    show(8, 32, false, null, 8, 20);
-    choose('Difference');
-    const painted = context.mock.calls.length;
-
-    const scale = screen.getByRole('group', { name: 'Difference scale' });
-    fireEvent.click(within(scale).getByRole('button', { name: '4' }));
-
-    expect(context.mock.calls.length).toBeGreaterThan(painted);
-    context.mockRestore();
-  });
-
   it('lays both frames over one another under a divider, in the wipe', () => {
     show(8);
     choose('Wipe');
@@ -613,6 +630,7 @@ describe('ImageComparison’s preview modes', () => {
               kind: 'SEGMENTED',
               boxes: [{ left: 0, top: 0, width: 4, height: 4, pixels: 16 }],
               specks: 0,
+              width: 1024,
             },
           },
           grid: 8,
@@ -645,7 +663,7 @@ describe('ImageComparison’s preview modes', () => {
         quantised={{
           result: {
             ...result,
-            strips: [{ frames: [frame(0), frame(5), frame(10)], pitch: { x: 5, y: 0 } }],
+            strips: [{ frames: [frame(0), frame(5), frame(10)], pitch: 5 }],
           },
           grid: 8,
         }}
@@ -927,7 +945,7 @@ describe('ImageComparison, detached — where its notifications land', () => {
 
   /** The panel with the page's toast beside it, which is the arrangement `AppOverlays` renders. */
   function showWithToast() {
-    render(
+    return render(
       <>
         <ImageComparison
           sourceName="sheet.png"
@@ -945,12 +963,39 @@ describe('ImageComparison, detached — where its notifications land', () => {
 
   /** Press Download and wait for the writer's answer, which is what raises the notification. */
   async function download(inside: HTMLElement): Promise<void> {
+    await pressDownload(inside);
+    await waitFor(() => {
+      expect(useUIStore.getState().toastMessage).not.toBeNull();
+    });
+  }
+
+  /**
+   * Hold the writer's answer until the test lets it go, so the panel can move while the sheet is
+   * being written — which, at a large magnification, is seconds in which the reader can do anything.
+   */
+  function holdWrite(): () => Promise<void> {
+    let release = (): void => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    FakeSheetWriteWorker.respond = ({ image }) =>
+      gate.then(() => encodePng(image)).then((file) => ({ kind: 'written', file }) as const);
+    return async () => {
+      await act(async () => {
+        release();
+        await Promise.resolve();
+      });
+      await waitFor(() => {
+        expect(useUIStore.getState().toastMessage).not.toBeNull();
+      });
+    };
+  }
+
+  /** Press Download without waiting for its answer. */
+  async function pressDownload(inside: HTMLElement): Promise<void> {
     await act(async () => {
       press('Download PNG', inside);
       await Promise.resolve();
-    });
-    await waitFor(() => {
-      expect(useUIStore.getState().toastMessage).not.toBeNull();
     });
   }
 
@@ -987,6 +1032,51 @@ describe('ImageComparison, detached — where its notifications land', () => {
     // taken off the screen by a reader pressing Return for an unrelated reason.
     expect(screen.getByText(DOWNLOADED)).toBeInTheDocument();
     expect(useUIStore.getState().toastTarget).toBe('page');
+  });
+
+  it('answers a download that finishes after the preview returned in the page', async () => {
+    const finish = holdWrite();
+    const opened = watchOpen();
+    showWithToast();
+    press('Detach preview');
+    await pressDownload(bodyOf(opened));
+
+    press('Return to the page', bodyOf(opened));
+    await finish();
+
+    // Pressed in the window, answered once it had gone: the window's toast went with it, so the page
+    // is the only place left to say what was written.
+    expect(screen.getByText(DOWNLOADED)).toBeInTheDocument();
+    expect(useUIStore.getState().toastTarget).toBe('page');
+  });
+
+  it('answers a download that finishes after the reader left the quantiser in the page', async () => {
+    const finish = holdWrite();
+    const opened = watchOpen();
+    const { rerender } = showWithToast();
+    press('Detach preview');
+    await pressDownload(bodyOf(opened));
+
+    // What `App` does on navigation: the tab, the panel and its window all go, and the page stays.
+    rerender(<Toast />);
+    await finish();
+
+    expect(screen.getByText(DOWNLOADED)).toBeInTheDocument();
+  });
+
+  it('answers a download pressed in the page in the window the preview has since moved to', async () => {
+    const finish = holdWrite();
+    const opened = watchOpen();
+    showWithToast();
+    await pressDownload(document.body);
+
+    press('Detach preview');
+    await finish();
+
+    // The reader followed the panel to the other window, and its answer follows it there too rather
+    // than being painted on the page behind.
+    expect(within(bodyOf(opened)).getByText(DOWNLOADED)).toBeInTheDocument();
+    expect(screen.queryByText(DOWNLOADED)).toBeNull();
   });
 
   it('leaves the page its own notifications while the preview is detached', () => {

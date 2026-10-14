@@ -198,7 +198,7 @@ export const PORTRAIT_BUST_PRESETS: readonly PresetArchetype[] = [
       surfaceDetail: 'DETAILED_PRODUCTION',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
-      backgroundKey: 'TRANSPARENT',
+      backgroundKey: 'MAGENTA_FF00FF',
       aspectRatio: 'TALL_9_16',
       targetModel: 'GEMINI_PRO_IMAGE',
     },

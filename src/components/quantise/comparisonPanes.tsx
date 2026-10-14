@@ -11,7 +11,7 @@ import { emptyReason, secondCaption, sourceCaption } from './paneCaptions.tsx';
  * that puts the two frames at one scale — and none of them touches the DOM or holds anything.
  *
  * The geometry is the reason they are together rather than beside their panes. One full-cell result
- * pixel covers `grid` source pixels and a leading partial cell covers only `offset` of them, so the
+ * pixel covers `grid` source pixels and a leading cell covers `grid + leadingShift` of them, so the
  * two frames only agree while the same file writes both.
  */
 
@@ -96,9 +96,10 @@ export function secondPane(
     viewportRef,
     canvasRef,
     // One full-cell result pixel covers `grid` source pixels, so `zoom * grid` is what puts the two
-    // panes at the same scale — and a leading partial cell covers only `offset` of them, which is
-    // what the inset corrects for. Everything comes from the same value, so no half of the placement
-    // can go missing on its own, and the heatmap inherits all of it by being the same size.
+    // panes at the same scale — and a leading cell covers `grid + leadingShift` of them, which is what
+    // the inset corrects for, pulling the canvas back for a narrower one and pushing it on for a wider
+    // one. Everything comes from the same value, so no half of the placement can go missing on its
+    // own, and the heatmap inherits all of it by being the same size.
     content:
       quantised === null || secondImage === undefined
         ? null
@@ -107,8 +108,8 @@ export function secondPane(
             magnification: zoom * quantised.grid,
             window: { width: source.width * zoom, height: source.height * zoom },
             inset: {
-              x: quantised.result.offset.x > 0 ? (quantised.grid - quantised.result.offset.x) * zoom : 0,
-              y: quantised.result.offset.y > 0 ? (quantised.grid - quantised.result.offset.y) * zoom : 0,
+              x: -quantised.result.leadingShift.x * zoom,
+              y: -quantised.result.leadingShift.y * zoom,
             },
             overlay,
           },

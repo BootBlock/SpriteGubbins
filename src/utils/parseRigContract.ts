@@ -1,5 +1,6 @@
 import type { JointEdge, RigContract, RigPoint, RigSize, RigSlot } from '../types/rigContract.ts';
 import { rigHierarchyProblems } from './rigHierarchyProblems.ts';
+import { rigPieceNameProblem } from './rigPieceNameProblem.ts';
 import { rigSlotGeometryProblems } from './rigSlotGeometryProblems.ts';
 
 /**
@@ -17,7 +18,9 @@ import { rigSlotGeometryProblems } from './rigSlotGeometryProblems.ts';
  * the rig. The prompt would then contract for twelve pieces of a fifteen-piece actor and say nothing
  * about it. A piece whose numbers describe no figure — a joint below the base, a pivot outside its
  * piece, a slot carried by itself — cannot be stated either, only misstated, so its geometry and the
- * parent chain are refused as well (`rigSlotGeometryProblems`, `rigHierarchyProblems`).
+ * parent chain are refused as well (`rigSlotGeometryProblems`, `rigHierarchyProblems`), and so is a
+ * piece name that cannot be a file name, since the sprite pack writes one under it verbatim
+ * (`rigPieceNameProblem`).
  *
  * **A version it does not know is refused rather than read hopefully.** The writer states the
  * version because the file leaves its repository, and the whole value of that is a reader that stops
@@ -79,6 +82,8 @@ function slot(value: unknown, at: number, frame: RigSize | null, problems: strin
   // under and the name the engine's importer looks the returned art up by, so a slot without one is
   // a piece that cannot be asked for or placed.
   if (name === '') problems.push(`${where} declares no pack_piece_name, so nothing could name it.`);
+  const unsafeName = name === '' ? null : rigPieceNameProblem(name, where);
+  if (unsafeName !== null) problems.push(unsafeName);
   if (pieceSize === null) problems.push(`${where} declares a piece_size that encloses nothing.`);
   if (pivot === null) problems.push(`${where} declares no piece_pivot.`);
   if (rest === null) problems.push(`${where} declares no rest_position_in_frame.`);

@@ -28,18 +28,14 @@ describe('outlinePolarity', () => {
   });
 
   it('reads a light line on a dark ground as the bright side growing', () => {
-    const field = outlinePolarity(ruled(12, DARK, LIGHT), 4);
-    expect(polarityAt(field, 6, 6)).toBeLessThan(0);
-    expect(polarityAt(field, 5, 6)).toBeLessThan(0);
-  });
-
-  it('grows whichever tone is locally in the minority, which is what a contour is', () => {
-    // The same two tones, swapped. There is no prior about which colour a ground is: the score is
+    // The same two tones as above, swapped — so whichever tone is locally in the minority grows,
+    // which is what a contour is. There is no prior about which colour a ground is: the score is
     // decided entirely by which of the two reaches further from the local median, and the median is
     // the majority. This is the property the reference's ground term overrides, and the reason it
     // is not carried over.
-    expect(polarityAt(outlinePolarity(ruled(12, LIGHT, DARK), 4), 6, 6)).toBeGreaterThan(0);
-    expect(polarityAt(outlinePolarity(ruled(12, DARK, LIGHT), 4), 6, 6)).toBeLessThan(0);
+    const field = outlinePolarity(ruled(12, DARK, LIGHT), 4);
+    expect(polarityAt(field, 6, 6)).toBeLessThan(0);
+    expect(polarityAt(field, 5, 6)).toBeLessThan(0);
   });
 
   it('scores a flat neighbourhood at zero, where neither side has anywhere to reach', () => {
@@ -81,6 +77,22 @@ describe('outlinePolarity', () => {
     const from = outlinePolarity(solid, 4);
     const to = outlinePolarity(keyed, 4);
     expect(polarityAt(to, 6, 6)).toBeCloseTo(polarityAt(from, 6, 6), 5);
+  });
+
+  it('ignores pixels under the coverage floor when reading the ground, as it ignores cleared ones', () => {
+    // The same margin as above, but faint black at alpha 10 rather than cleared: channels that are
+    // rounding noise, which read as black would flip the ground just as cleared zero bytes would.
+    const solid = ruled(12, LIGHT, DARK);
+    const faint = ruled(12, LIGHT, DARK);
+    for (let y = 0; y < 12; y += 1) {
+      for (let x = 0; x < 12; x += 1) {
+        if (x < 3 || x > 8) writePixel(faint.data, pixelOffset(12, x, y), { r: 0, g: 0, b: 0, a: 10 });
+      }
+    }
+    expect(polarityAt(outlinePolarity(faint, 4), 6, 6)).toBeCloseTo(
+      polarityAt(outlinePolarity(solid, 4), 6, 6),
+      5,
+    );
   });
 
   it('interpolates between lattice points rather than stepping at every block edge', () => {

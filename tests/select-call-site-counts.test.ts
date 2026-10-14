@@ -27,13 +27,15 @@ import { callSitesPassing } from './jsxCallSites.ts';
  */
 
 /** Every `<SelectField>` the app renders. */
-const CALL_SITE_COUNT = 32;
+const CALL_SITE_COUNT = 36;
 
 /**
- * Where a `description` is passed: the docblock’s nine, by the file that renders each.
+ * Where a `description` is passed: the docblock’s ten, by the file that renders each.
  *
  * `RenderStyleFields` renders three: the render style's own account of what it withdrew, and the
  * colour budget and the outline system saying which of their options the style does not offer.
+ * `SheetFields` renders two: the sheet contents' account, and the background key saying which key a
+ * tint-masked icon set does not offer.
  */
 const DESCRIPTION_CALL_SITES = [
   'src/components/studio/PaletteField.tsx',
@@ -41,6 +43,7 @@ const DESCRIPTION_CALL_SITES = [
   'src/components/studio/RenderStyleFields.tsx',
   'src/components/studio/RenderStyleFields.tsx',
   'src/components/studio/RiggingFields.tsx',
+  'src/components/studio/SheetFields.tsx',
   'src/components/studio/SheetFields.tsx',
   'src/components/studio/StyleReferenceField.tsx',
   'src/components/studio/SystemProfileField.tsx',
@@ -65,7 +68,7 @@ const DISABLED_REASON_CALL_SITES = [
  *
  * One file, and two rows behind it. The qualifier reaches `SelectField` only through
  * `ProjectSelectField`, so a row that renders a select of its own and names it the same way would
- * add an entry here — which is the point at which the docblock’s “one of the thirty-two” is false.
+ * add an entry here — which is the point at which the docblock’s “one of the thirty-six” is false.
  */
 const NAME_QUALIFIER_CALL_SITES = ['src/components/projects/ProjectSelectField.tsx'];
 

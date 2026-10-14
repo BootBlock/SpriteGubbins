@@ -28,7 +28,10 @@ const THREAD_LOST = 'The quantiser could not start in this browser';
 /** Said for a reply the thread sent and this side could not read back. */
 const REPLY_LOST = 'The quantiser’s answer could not be read back from its thread';
 
-/** The thread, or `null` before the first sheet, after the tab is cleared, and after {@link lose}. */
+/**
+ * The thread, or `null` before the first sheet, after the tab is cleared, after {@link lose}, and after
+ * a sheet that could not be posted to it — see {@link loadSheet}.
+ */
 let thread: Worker | null = null;
 
 /** Whether this session has given up on having a thread at all. Cleared only by ending the session. */
@@ -195,10 +198,18 @@ function fail(job: Job, reason: string): void {
  */
 function lose(): void {
   forget();
-  thread?.terminate();
-  thread = null;
+  disconnect();
   abandoned = true;
   useQuantiseAnswerStore.getState().died(THREAD_LOST);
+}
+
+/**
+ * End the thread, and with it whatever sheet it was holding. The next {@link connect} starts one that
+ * holds nothing, which the worker answers as a `quantise` with no sheet loaded.
+ */
+function disconnect(): void {
+  thread?.terminate();
+  thread = null;
 }
 
 /** The thread, started on first use. `null` where this browser will not give us one. */
@@ -265,10 +276,17 @@ function send(request: QuantiseRequest, job: Job): boolean {
  *
  * A `load` is never itself superseded by a `quantise` and never waits behind one on this side. It is
  * posted the moment it is asked for, and the worker adopts the sheet as soon as its loop reaches it.
+ *
+ * **A sheet that could not be posted takes the thread with it.** The thread still holds the sheet
+ * before this one, and nothing on this side marks it as stale: a grid the reader types needs no survey,
+ * so the next `quantise` would be answered from the old sheet and filed as the answer for the new one.
+ * Ending the thread leaves the session with no sheet at all, which the worker says in words when it is
+ * asked to quantise. Unlike {@link lose} this does not give up: the next sheet may clone, and starts
+ * a thread of its own.
  */
 export function loadSheet(image: ImageData): void {
   forget();
-  send({ kind: 'load', image }, { kind: 'load' });
+  if (!send({ kind: 'load', image }, { kind: 'load' })) disconnect();
 }
 
 /**
@@ -313,7 +331,6 @@ export function quantiseSheet(settings: QuantiseSettings): void {
  */
 export function releaseSheet(): void {
   forget();
-  thread?.terminate();
-  thread = null;
+  disconnect();
   abandoned = false;
 }

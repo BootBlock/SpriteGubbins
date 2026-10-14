@@ -58,23 +58,31 @@
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { retryRefusedStart } from './retryRefusedStart.ts';
 import { addedAgainstEveryParent, binaryPaths, scanAddedLines, scanBytes } from './secretScan.ts';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, '..');
 
-/** Run git in the repo root and return stdout as text. */
-function git(args: string[]): string {
-  return execFileSync('git', args, {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
-  });
+/**
+ * Run git in the repo root and return stdout as text. Every git this runner starts goes through
+ * `retryRefusedStart`, so a start the machine refuses under load is tried again, not reported as a
+ * crash.
+ */
+function git(args: string[], input?: string): string {
+  return retryRefusedStart(() =>
+    execFileSync('git', args, {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+      ...(input === undefined ? {} : { input }),
+    }),
+  );
 }
 
 /** Run git in the repo root and return stdout as raw bytes, for a blob that is not text. */
 function gitBytes(args: string[]): Uint8Array {
-  return execFileSync('git', args, { cwd: repoRoot, maxBuffer: 256 * 1024 * 1024 });
+  return retryRefusedStart(() => execFileSync('git', args, { cwd: repoRoot, maxBuffer: 256 * 1024 * 1024 }));
 }
 
 /**
@@ -113,11 +121,7 @@ function scanDiff(diffArgs: string[], blobRev: string): string[] {
  * computed rather than hard-coded because 4b825dc… is correct only for a SHA-1 repository.
  */
 function scanCommits(range: string): string[] {
-  const emptyTree = execFileSync('git', ['hash-object', '-t', 'tree', '--stdin'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    input: '',
-  }).trim();
+  const emptyTree = git(['hash-object', '-t', 'tree', '--stdin'], '').trim();
   const hits: string[] = [];
   for (const line of git(['rev-list', '--parents', '--end-of-options', range]).split('\n')) {
     const [commit, ...parents] = line.trim().split(' ');

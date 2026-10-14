@@ -1,10 +1,14 @@
+import { DRAWN_OVER_THE_GAME } from '../categoryEngineLighting.ts';
 import { NO_COMPONENT_BUDGET } from '../componentBudget.ts';
 import { NONE_LEAVES_SETTINGS_ALONE } from '../guidanceSentences.ts';
 import { PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
 import { shareRange } from '../promptText/renderStyle.ts';
+import { TILE_SHARE } from '../promptText/tileShare.ts';
 import { PALETTE_COLOR_COUNTS } from '../quantiser.ts';
-import type { RenderStyle } from '../../types/rendering.ts';
+import { capitalised } from '../../utils/capitalised.ts';
 import { spokenList } from '../../utils/spokenList.ts';
+import { coded } from '../../utils/coded.ts';
+import { styleCountVerb } from '../../utils/styleCountVerb.ts';
 import {
   NARROW_BUDGET_LIMITS,
   NARROW_BUDGET_STYLES,
@@ -12,16 +16,6 @@ import {
   ONE_LIGHT_STYLES,
   OWN_CONTOUR_STYLES,
 } from './narrowingStyles.ts';
-
-/** Identifiers in backticks, as a sentence lists them. */
-function coded(names: readonly string[]): string {
-  return spokenList(names.map((name) => `\`${name}\``));
-}
-
-/** `offers` or `offer`, for a list of styles. */
-function verb(styles: readonly RenderStyle[], singular: string, plural: string): string {
-  return styles.length === 1 ? singular : plural;
-}
 
 /**
  * Guidance shown against each control, keyed to the control it explains.
@@ -40,7 +34,7 @@ export const OUTPUT_TOOLTIPS = {
   sheetIndex:
     'Which part of this deliverable’s inventory the prompt below draws. Some sheet contents ask for more components than one generation returns, so the inventory splits: a standard character’s trunk views are one part (two on `EIGHT_COMPASS`) and its limbs another, and a winged, four-armed or taur body’s limbs take two.\n\n' +
     'This list counts parts, not generations, so it is often shorter than the “Sheet N of M” beside the prompt: a part drawn one facing at a time is generated once per direction you asked for.\n\n' +
-    'Work through them in the order the preview steps, and set the identity lock from the first sheet you accept so the rest depict the same individual. “Split into sheets” lays the whole batch out in one place.',
+    'Work through them in the order the preview steps, and set the identity lock from the first sheet you accept so the rest match it: the same subject, or more members of the same set. “Split into sheets” lays the whole batch out in one place.',
   // The option accounts are in `directionalModeTooltips.ts`, read out under the control for the mode
   // actually chosen: what a *setting* is reads the same whatever is selected, and what an *option*
   // is does not, so the two belong on different surfaces.
@@ -51,10 +45,10 @@ export const OUTPUT_TOOLTIPS = {
     'How much internal seam, panel and fold detail the prompt asks for on each component, within the palette limit.\n\n' +
     '- `MINIMAL` keeps base colours and essential joints, which a small sprite needs before detail turns to noise.\n' +
     '- `CLEAN_PRODUCTION` is the usual choice.\n' +
-    '- `TEXTURED` is for large pieces that will be seen close up.',
+    '- `TEXTURED` is for large pieces that will be seen close up.\n\nWhere an icon or font set states its **Interior Detail**, that decides what the inside of each form carries, and this level never adds detail it rules out.',
   resolutionProfile:
-    'The scale the sheet is drawn at, as a share of the sheet’s own component grid rather than in pixels, so it holds whatever canvas the generator returns.\n\n' +
-    `The largest component fills ${shareRange('HIGH_RESOLUTION')} of its cell height at high resolution and ${shareRange('MID_RESOLUTION')} at mid, and every other component is drawn to that scale, so a hand stays smaller than its torso. Each sheet fills its own grid, so a sheet of twelve components draws them larger than a sheet of thirty-four.\n\n` +
+    'The scale the sheet is drawn at, as a share of its own component grid rather than in pixels, so it holds on any canvas.\n\n' +
+    `The largest component fills ${shareRange('HIGH_RESOLUTION')} of its cell height at high resolution and ${shareRange('MID_RESOLUTION')} at mid, and the rest are drawn to its scale, so a hand stays smaller than its torso. An icon set’s one square is exactly ${String(TILE_SHARE.HIGH_RESOLUTION)}% or ${String(TILE_SHARE.MID_RESOLUTION)}% of its cell. Each sheet fills its own grid, so twelve components come out larger than thirty-four.\n\n` +
     '- `RETRO_16_BIT` states a height in pixels instead.\n' +
     '- `CUSTOM` states an exact size instead, in Target Component Size, which no other profile offers. Use it for a pixel grid, or for pieces on different sheets that must come out at one size.\n\n' +
     'A loaded rig contract sets `CUSTOM` on the sheet it describes, because the rig states every piece’s size.',
@@ -64,22 +58,24 @@ export const OUTPUT_TOOLTIPS = {
   paletteLimit:
     'The total colour budget across the whole sheet, which keeps every component looking like one set. The prompt states it, but **do not expect the returned sheet to be inside it**: a generated image usually arrives carrying tens or hundreds of thousands of colours.\n\n' +
     `The Quantise tab is where the budget comes true. It reduces a returned sheet to ${String(PALETTE_COLOR_COUNTS.STRICT_32_COLOR)} colours chosen from that sheet under \`STRICT_32_COLOR\`, ${String(PALETTE_COLOR_COUNTS.RESTRAINED_64_COLOR)} under \`RESTRAINED_64_COLOR\` and ${String(PALETTE_COLOR_COUNTS.EXPANDED_ALBEDO)} under \`EXPANDED_ALBEDO\`, and leaves an \`UNRESTRICTED\` sheet’s colours as they arrived.\n\n` +
-    `\`STRICT_32_COLOR\` and \`RESTRAINED_64_COLOR\` suit pixel work. ${coded(NARROW_BUDGET_STYLES)} ${verb(NARROW_BUDGET_STYLES, 'offers', 'offer')} only ${coded(NARROW_BUDGET_LIMITS)}. Painted, cel-shaded and 3D styles usually want \`UNRESTRICTED\`, because a hard colour count fights the blending they depend on.`,
+    `\`STRICT_32_COLOR\` and \`RESTRAINED_64_COLOR\` suit pixel work. ${coded(NARROW_BUDGET_STYLES)} ${styleCountVerb(NARROW_BUDGET_STYLES, 'offers', 'offer')} only ${coded(NARROW_BUDGET_LIMITS)}. Painted, cel-shaded and 3D styles usually want \`UNRESTRICTED\`, because a hard colour count fights the blending they depend on.`,
   outlineStyle:
     'How a component’s boundary is drawn where it meets the background. A pixel style draws it one pixel wide, and most others as a thin line.\n\n' +
     '- `DARK_LOCAL_CONTOUR`, a darker shade of each local colour, keeps parts separable without flattening them.\n' +
     '- `PURE_BLACK_OUTLINE` gives the harder retro read.\n' +
     '- `OUTLINE_LESS_ALBEDO` relies on value and hue contrast alone, which needs a busy scene to sit against.\n\n' +
-    `${coded(OWN_CONTOUR_STYLES)} ${verb(OWN_CONTOUR_STYLES, 'draws its', 'draw their')} own contour line, so this sets its colour and \`OUTLINE_LESS_ALBEDO\` is not offered. Below about 32 px a pixel contour takes a serious share of the pixels, so a darker shade or none reads better. On a \`PURE_BLACK\` background a black outline is asked for as a very dark grey.`,
+    `${coded(OWN_CONTOUR_STYLES)} ${styleCountVerb(OWN_CONTOUR_STYLES, 'draws its', 'draw their')} own contour line, so this sets its colour and \`OUTLINE_LESS_ALBEDO\` is not offered. Below about 32 px a pixel contour takes a serious share of the pixels, so a darker shade or none reads better. On a \`PURE_BLACK\` background a black outline is asked for as a very dark grey.`,
   lightingModel:
-    'The key light and shadow treatment baked into the sprite. `FLAT_NEUTRAL_ALBEDO` is what a game engine wants, because the engine lights the sprite itself and a baked highlight would fight its own.\n\n' +
-    'Choose a fixed key only when the scene lighting is fixed too, as it is in a locked isometric view. Its shadow follows the style: hard bands on a pixel sheet, soft graded shadow on a painted one.\n\n' +
-    `${coded(ONE_LIGHT_STYLES)} ${verb(ONE_LIGHT_STYLES, 'shades', 'shade')} from a directional light, so ${verb(ONE_LIGHT_STYLES, 'it takes', 'they take')} \`${ONE_LIGHT}\` and this control is withdrawn.`,
+    'The key light and shadow treatment baked into the sprite. `FLAT_NEUTRAL_ALBEDO` suits a sprite the game engine lights, because a baked highlight would fight the engine’s own.\n\n' +
+    'In the world, choose a fixed key only when the scene lighting is fixed too, as in a locked isometric view. Its shadow follows the style: hard bands on pixel art, soft on paint.\n\n' +
+    `${capitalised(spokenList(Object.values(DRAWN_OVER_THE_GAME)))} are drawn over the game, where no engine light reaches, so for them a fixed key is purely a look: the one light they will ever show.\n\n` +
+    `${coded(ONE_LIGHT_STYLES)} ${styleCountVerb(ONE_LIGHT_STYLES, 'shades', 'shade')} from a directional light, so ${styleCountVerb(ONE_LIGHT_STYLES, 'it takes', 'they take')} \`${ONE_LIGHT}\` and this control is withdrawn.`,
   aspectRatio:
     'The shape of the sheet canvas, passed to the generator so it lays the component grid out inside the frame instead of cropping it.\n\n' +
     '- `WIDE_16_9` fits the usual wide grid.\n' +
     '- `TALL_9_16` suits one tall figure with its variants stacked.\n' +
-    '- `SQUARE_1_1` is the safest choice on targets that quietly re-frame anything else.',
+    '- `SQUARE_1_1` is the safest choice on targets that quietly re-frame anything else.\n\n' +
+    'An icon set offers `SQUARE_1_1` alone, because each of its sheets is a grid of square cells four across and four down, which only a square canvas holds without stretching a cell or leaving a band empty.',
   componentBudget:
     `The most components you want one generation asked for. It starts at ${String(PRACTICAL_COMPONENT_CEILING)}, about as many as current models deliver before they start merging or dropping pieces. Set \`${String(NO_COMPONENT_BUDGET)}\` for no cap.\n\n` +
     'Going over it is reported against this sheet, and on each row of the split drawer where a batch’s sheets differ in weight. It never changes the prompt: the sheet is not trimmed behind your back.',
@@ -140,8 +136,8 @@ export const OUTPUT_TOOLTIPS = {
     'It sets the assembly direction and the depth order, since which side renders in front of the body changes with the way the subject turns. Split the sheet to work through every facing in one pass.',
   backgroundKey:
     'What the components sit on, so they can be cut out afterwards. Magenta is the default because white bleeds into light-coloured edges: white armour on a white field has no recoverable boundary.\n\n' +
-    'Pick `TRANSPARENT` only if the target really returns alpha; most return a flat matte whatever you ask for. On that choice the prompt asks for the file’s own alpha channel and rules out a drawn checkerboard, a grid of grey squares and that flat matte.\n\n' +
-    'Any other choice is reserved for the background: the prompt keeps that colour, and any shade near enough to be keyed out with it, off every component and out of a pinned palette’s colours.',
+    '`TRANSPARENT` is offered only to a target that documents an alpha channel. The prompt then asks for the file’s own alpha channel and rules out a drawn checkerboard or matte.\n\n' +
+    'Any other choice is reserved for the background: the prompt keeps that colour, and any shade near enough to be keyed out with it, off every component and out of a pinned palette’s colours.\n\nOn an icon set of full-bleed squares the key fills only the gutters, and each backdrop is kept clear of it. No colour the icon fields offer comes near `PURE_WHITE` or `MAGENTA_FF00FF`, even shaded.',
   spriteTargetSize:
     'Sets an exact pixel size for one component, such as “48 × 96 px”. Leave it empty and the prompt omits the line. Only the `CUSTOM` resolution profile offers it.\n\n' +
     'On a sheet of parts that assemble into one subject — a cut-out rig, a pose library, an articulation sheet, an item’s part library — the label reads Target Assembled Size, the size describes the whole assembled subject, and the per-component readings below do not apply.\n\n' +
@@ -165,7 +161,7 @@ export const OUTPUT_TOOLTIPS = {
     'Regions to keep clear of fine detail so equipment can be overlaid later, such as `head, chest, back, hand_left, hand_right`. The prompt asks for those areas to stay flat and unbusy; it does not ask for anything to be drawn there. Leave it empty for none.',
 
   identityLock:
-    'A short digest of an already-accepted sheet, carried into the next one so it depicts the same individual. Concrete countable attributes reproduce: “three amber lights in a vertical row” survives a regeneration, “high-tech detailing” does not.\n\n' +
+    'A short digest of an already-accepted sheet, carried into the next one so it matches: the same subject, or further members of the same set drawn the same way. Concrete countable attributes reproduce: “three amber lights in a vertical row” survives a regeneration, “high-tech detailing” does not.\n\n' +
     'This is what holds a per-direction run series together.',
   emitComponentMap:
     'Adds a section asking the target to return a JSON component map beside the picture: the sheet’s grid, and for each component its place in reading order, its inventory name, what it attaches to and where it pivots in its cell.\n\n' +

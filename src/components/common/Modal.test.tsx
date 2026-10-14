@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { Modal } from './Modal.tsx';
 
 /**
- * The frame all four overlays open in, built on a native `<dialog>`.
+ * The frame all five overlays open in, built on a native `<dialog>`.
  *
  * The platform supplies the top layer, the inert background, Escape and the focus restore, so what is
  * this component's to get right is how it asks for them. It opens modally the moment it mounts; it

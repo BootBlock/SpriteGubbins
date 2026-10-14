@@ -6,7 +6,8 @@ import { useSheetWriteStore } from '../../stores/useSheetWriteStore.ts';
 import { useSpriteAssignmentStore } from '../../stores/useSpriteAssignmentStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { FakeSheetWriteWorker } from '../../test/fakeSheetWriteWorker.ts';
-import type { SpriteSegmentation } from '../../types/quantiser.ts';
+import { showNoResult, showResult } from '../../test/shownResult.ts';
+import type { PixelGrid, SpriteSegmentation } from '../../types/quantiser.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
 import type { SpriteCellChoice } from '../../types/spriteCell.ts';
 import { createImage } from '../../utils/imageData.ts';
@@ -48,6 +49,7 @@ beforeEach(() => {
 
 afterEach(() => {
   release = null;
+  showNoResult();
   vi.unstubAllGlobals();
 });
 
@@ -56,8 +58,13 @@ function draw(
   downloadFormat: SheetFormat = 'PNG',
   sprites: SpriteSegmentation | null = null,
   cellChoice: SpriteCellChoice = DEFAULT_SPRITE_CELL_CHOICE,
+  grid: PixelGrid = 1,
+  paletted = false,
 ) {
   useQuantiseDownloadStore.setState({ downloadScale: 1, downloadFormat, cellChoice });
+  // The scale and the palette standing are the result on screen's, which the stores hold.
+  if (resultImage === null) showNoResult();
+  else showResult(grid, paletted);
   render(
     <DownloadControls sourceName="armour.png" resultImage={resultImage} duplicates={[]} sprites={sprites} />,
   );
@@ -77,8 +84,9 @@ async function finish(): Promise<void> {
 
 describe('DownloadControls', () => {
   it('says it is writing and refuses another press until the file is done', async () => {
+    const user = userEvent.setup({ delay: null });
     draw();
-    await userEvent.click(downloadButton());
+    await user.click(downloadButton());
 
     expect(downloadButton()).toHaveTextContent('Writing…');
     expect(downloadButton()).toBeDisabled();
@@ -89,9 +97,10 @@ describe('DownloadControls', () => {
   });
 
   it('gives the keyboard its place back when the button returns', async () => {
+    const user = userEvent.setup({ delay: null });
     draw();
     downloadButton().focus();
-    await userEvent.keyboard('{Enter}');
+    await user.keyboard('{Enter}');
 
     // The browser moves focus to the body when a control disables under it — confirmed in Edge,
     // where the button is what the reader loses. happy-dom does not model that, so it is spelled out
@@ -122,9 +131,10 @@ describe('DownloadControls', () => {
   });
 
   it('leaves focus where a reader moved it during the write', async () => {
+    const user = userEvent.setup({ delay: null });
     draw();
     downloadButton().focus();
-    await userEvent.keyboard('{Enter}');
+    await user.keyboard('{Enter}');
     const elsewhere = screen.getByRole('button', { name: '2×' });
     act(() => {
       elsewhere?.focus();
@@ -135,15 +145,17 @@ describe('DownloadControls', () => {
   });
 
   it('names the format it would write, and sends the sprites it would cut it into', async () => {
+    const user = userEvent.setup({ delay: null });
     const sprites: SpriteSegmentation = {
       kind: 'SEGMENTED',
       boxes: [{ left: 0, top: 0, width: 2, height: 2, pixels: 4 }],
       specks: 0,
+      width: 1024,
     };
     draw(createImage(4, 4), 'ASEPRITE', sprites);
     expect(downloadButton()).toHaveTextContent('Download Aseprite');
 
-    await userEvent.click(downloadButton());
+    await user.click(downloadButton());
     // The boxes reach the writer, at 1:1 — without them the document would be one frame of the
     // whole sheet, which is a working file that has quietly lost what the tab found on it.
     expect(FakeSheetWriteWorker.started[0]?.posted[0]).toMatchObject({
@@ -159,6 +171,7 @@ describe('DownloadControls', () => {
     // writer as one box — which is what stops a pack and an Aseprite document cutting one sheet two
     // ways. The assertion above passes either way, because an empty assignment resolves to one piece
     // per box; this one does not.
+    const user = userEvent.setup({ delay: null });
     const sprites: SpriteSegmentation = {
       kind: 'SEGMENTED',
       boxes: [
@@ -167,6 +180,7 @@ describe('DownloadControls', () => {
         { left: 16, top: 0, width: 2, height: 2, pixels: 4 },
       ],
       specks: 0,
+      width: 1024,
     };
     // The second sprite joins the first, and the third is left out — so one piece reaches the
     // writer, cut to the box holding both halves of the join.
@@ -178,7 +192,7 @@ describe('DownloadControls', () => {
     // and the one that could most easily have been left reading the raw boxes.
     draw(createImage(24, 4), 'ASEPRITE', sprites);
 
-    await userEvent.click(downloadButton());
+    await user.click(downloadButton());
     expect(FakeSheetWriteWorker.started[0]?.posted[0]).toMatchObject({
       format: 'ASEPRITE',
       boxes: [{ left: 0, top: 0, width: 10, height: 2, pixels: 8 }],
@@ -189,8 +203,9 @@ describe('DownloadControls', () => {
   });
 
   it('sends no boxes for a sheet nothing was separated on', async () => {
+    const user = userEvent.setup({ delay: null });
     draw(createImage(4, 4), 'ASEPRITE', { kind: 'SOLID' });
-    await userEvent.click(downloadButton());
+    await user.click(downloadButton());
 
     expect(FakeSheetWriteWorker.started[0]?.posted[0]?.boxes).toEqual([]);
     await finish();
@@ -209,54 +224,93 @@ describe('DownloadControls, cutting into a cell', () => {
     kind: 'SEGMENTED',
     boxes: [{ left: 0, top: 0, width: 2, height: 2, pixels: 4 }],
     specks: 0,
+    width: 1024,
   };
 
-  it('offers the cut only under the formats that describe sprites', () => {
-    // A control that changed nothing would be a lie on screen: a PNG and an Aseprite document read
-    // no cell, so neither offers one.
-    draw(createImage(4, 4), 'PNG', SEGMENTED);
-    expect(screen.queryByRole('group', { name: 'Sprite cut' })).toBeNull();
-  });
+  // A control that changed nothing would be a lie on screen: a PNG and an Aseprite document read no
+  // cell, so neither offers one, while the manifest states the same rects as the pack without the
+  // artwork.
+  it.each([
+    ['withholds', 'PNG', false],
+    ['withholds', 'ASEPRITE', false],
+    ['offers', 'SPRITE_PACK', true],
+    ['offers', 'MANIFEST', true],
+  ] as const)('%s the cut under %s', (_, format, offered) => {
+    draw(createImage(4, 4), format, SEGMENTED);
 
-  it('offers it under the sprite pack', () => {
-    draw(createImage(4, 4), 'SPRITE_PACK', SEGMENTED);
-
-    expect(screen.getByRole('group', { name: 'Sprite cut' })).toBeInTheDocument();
-  });
-
-  it('offers it under the manifest, which states the same rects without the artwork', () => {
-    draw(createImage(4, 4), 'MANIFEST', SEGMENTED);
-
-    expect(screen.getByRole('group', { name: 'Sprite cut' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Sprite cut' }) !== null).toBe(offered);
   });
 
   it('sends the resolved cell to the writer', async () => {
+    const user = userEvent.setup({ delay: null });
     draw(createImage(4, 4), 'SPRITE_PACK', SEGMENTED, {
       ...DEFAULT_SPRITE_CELL_CHOICE,
       source: 'FIXED',
       fixed: { width: 8, height: 8 },
     });
 
-    await userEvent.click(screen.getByRole('button', { name: /download sprite pack/i }));
+    await user.click(screen.getByRole('button', { name: /download sprite pack/i }));
 
     expect(FakeSheetWriteWorker.started[0]?.posted[0]?.cell).toStrictEqual({
       width: 8,
       height: 8,
       anchor: { x: 'CENTRE', y: 'BOTTOM' },
+      fit: 'REFUSE',
+      statedStep: null,
+      lattice: null,
+      resamples: true,
     });
+    await finish();
+  });
+
+  it('sends a fit that resizes, and whether the sheet’s colours are a palette, for a painted sheet', async () => {
+    const user = userEvent.setup({ delay: null });
+    draw(
+      createImage(4, 4),
+      'SPRITE_PACK',
+      SEGMENTED,
+      { ...DEFAULT_SPRITE_CELL_CHOICE, source: 'FIXED', fixed: { width: 8, height: 8 }, fit: 'FILL_SQUARE' },
+      1,
+      true,
+    );
+
+    await user.click(screen.getByRole('button', { name: /download sprite pack/i }));
+
+    const posted = FakeSheetWriteWorker.started[0]?.posted[0];
+    expect(posted?.cell?.fit).toBe('FILL_SQUARE');
+    expect(posted?.paletted).toBe(true);
+    await finish();
+  });
+
+  it('sends a sheet with a pixel scale as drawn, whatever fit was stored', async () => {
+    // Pixel art keeps its pixels: the stored fit stands for the next painted sheet, and this one's
+    // pack is the one it always was.
+    const user = userEvent.setup({ delay: null });
+    draw(
+      createImage(4, 4),
+      'SPRITE_PACK',
+      SEGMENTED,
+      { ...DEFAULT_SPRITE_CELL_CHOICE, source: 'FIXED', fixed: { width: 8, height: 8 }, fit: 'SCALE_SET' },
+      4,
+    );
+
+    await user.click(screen.getByRole('button', { name: /download sprite pack/i }));
+
+    expect(FakeSheetWriteWorker.started[0]?.posted[0]?.cell?.fit).toBe('REFUSE');
     await finish();
   });
 
   it('sends no cell under a format that does not cut, whatever was last set', async () => {
     // Otherwise a cell left set from an earlier press reaches a writer with no controls on screen
     // for it.
+    const user = userEvent.setup({ delay: null });
     draw(createImage(4, 4), 'PNG', SEGMENTED, {
       ...DEFAULT_SPRITE_CELL_CHOICE,
       source: 'FIXED',
       fixed: { width: 8, height: 8 },
     });
 
-    await userEvent.click(screen.getByRole('button', { name: /download png/i }));
+    await user.click(screen.getByRole('button', { name: /download png/i }));
 
     expect(FakeSheetWriteWorker.started[0]?.posted[0]?.cell).toBeNull();
     await finish();

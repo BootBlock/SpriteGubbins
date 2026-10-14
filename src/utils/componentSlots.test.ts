@@ -5,8 +5,14 @@ import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import { componentCountFor } from './componentSet.ts';
 import { componentSlots } from './componentSlots.ts';
+import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
+import { defaultSubjectFor } from '../constants/categories/index.ts';
+import { iconCatalogueEntry } from '../constants/iconCatalogue/index.ts';
+import type { SheetSubject } from '../types/subject.ts';
 import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
 import { decliningSubject, standardSubject } from '../test/sheetSubject.ts';
+import { iconPickId } from './iconPickId.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /** A tail and a pair of horns, so every walk below carries anatomy as well as the plan's own. */
 const ANATOMY = [
@@ -24,8 +30,9 @@ const ANATOMY = [
  * take those entries out of every name list here before a check read them.
  */
 const SHEETS = SUBJECT_CATEGORIES.flatMap((category) =>
-  assemblyBaseSubjectsOf(category).flatMap(({ anatomy }) => {
-    const subject = { ...standardSubject(), anatomy };
+  assemblyBaseSubjectsOf(category).flatMap(({ anatomy, icons }) => {
+    // ICON's roster too, so every catalogue entry's slot is named and checked.
+    const subject = { ...standardSubject(), anatomy, ...(icons === undefined ? {} : { icons }) };
     return modesFor(category, subject).flatMap((mode) =>
       (CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[]).flatMap((directions) =>
         sheetSeriesFor(category, subject, mode, directions).map((plan, sheetIndex) => ({
@@ -281,21 +288,54 @@ describe('what a name says', () => {
 
     expect(slots.slice(-3)).toStrictEqual(['tail', 'tail-2', 'tail-2-2']);
   });
+});
 
-  it('separates two components a subject named the same thing', () => {
-    const slots = componentSlots(
-      'CHARACTER',
-      standardSubject(),
+describe('an icon set’s named slots', () => {
+  const ICON = defaultSubjectFor('ICON');
+
+  function slotsAt(subject: SheetSubject, sheetIndex: number): readonly string[] {
+    return componentSlots(
+      'ICON',
+      subject,
       'SINGLE_DIRECTION_POSE_LIBRARY',
-      'FOUR_CARDINAL',
-      0,
-      [
-        { name: 'Tail', count: 1 },
-        { name: 'tail', count: 1 },
-      ],
+      'SINGLE_FRONT',
+      sheetIndex,
+      [],
       null,
     );
+  }
 
-    expect(slots.slice(-2)).toStrictEqual(['tail', 'tail-2']);
+  it('names every icon after the catalogue entry it is, in the roster’s order', () => {
+    expect(slotsAt(ICON, 0)).toEqual(ICON.icons?.picks.map(iconPickId));
+  });
+
+  it('names a two-state entry’s drawings after the entry and the state', () => {
+    const subject = {
+      ...ICON,
+      icons: {
+        look: 'ISOLATED_MARK',
+        colourMode: 'FULL_COLOUR',
+        picks: cataloguePicks(['system-sound', 'elixir']),
+      },
+    } as const;
+    const states = iconCatalogueEntry('system-sound')?.states ?? [];
+    expect(slotsAt(subject, 0)).toEqual([...states.map((state) => `system-sound-${state}`), 'elixir']);
+  });
+
+  it('names the overlay pieces on the overlay sheet, which closes the series, with the reader’s extra pieces after them', () => {
+    const subject = { ...ICON, additional_anatomy: 'Equipped Corner Tick ×1' };
+    const overlaySheet =
+      sheetSeriesFor('ICON', subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
+    const slots = componentSlots(
+      'ICON',
+      subject,
+      'SINGLE_DIRECTION_POSE_LIBRARY',
+      'SINGLE_FRONT',
+      overlaySheet,
+      parseAdditionalAnatomy(subject.additional_anatomy),
+      null,
+    );
+    expect(slots[0]).toBe('disabled-veil');
+    expect(slots.at(-1)).toBe('equipped-corner-tick');
   });
 });

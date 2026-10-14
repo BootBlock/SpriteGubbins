@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { KEY_OFFER_NOTICE } from '../../constants/keyOffer.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { KeyingControls } from './KeyingControls.tsx';
+import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { tintMaskedIconSubject } from '../../test/tintMaskedIconSubject.ts';
 
 /**
  * The offer, which is the one thing on this panel that is about the sheet rather than the setting.
@@ -21,6 +24,18 @@ function show(overrides: Partial<Parameters<typeof KeyingControls>[0]> = {}) {
 describe('KeyingControls', () => {
   beforeEach(() => {
     useQuantiseStore.getState().clear();
+    useOutputStore.setState(useOutputStore.getInitialState());
+    useSubjectStore.setState(useSubjectStore.getInitialState());
+  });
+
+  it('names the key a tint mask is drawn on, not the white one stored', () => {
+    // The prompt moves a mask off `PURE_WHITE` (audit finding M1), so the tab keys what it states.
+    useOutputStore.getState().setOutputField('backgroundKey', 'PURE_WHITE');
+    useSubjectStore.setState({ category: 'ICON', subject: tintMaskedIconSubject() });
+    show();
+
+    expect(screen.getByText(/#FF00FF/i)).toBeInTheDocument();
+    expect(screen.queryByText(/#FFFFFF/i)).not.toBeInTheDocument();
   });
 
   it('offers to key a sheet that arrived with its field still on it', () => {
@@ -39,11 +54,12 @@ describe('KeyingControls', () => {
   it('switches the pass on when the offer is taken, and changes nothing else', async () => {
     // The press is the reader's, which is the whole argument for an offer rather than a default:
     // nothing on this tab alters artwork unasked, and this asks.
+    const user = userEvent.setup({ delay: null });
     show({ offered: true });
     const tolerance = useQuantiseStore.getState().keyTolerance;
     expect(useQuantiseStore.getState().keyingEnabled).toBe(false);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Key the background' }));
+    await user.click(screen.getByRole('button', { name: 'Key the background' }));
 
     expect(useQuantiseStore.getState().keyingEnabled).toBe(true);
     // At the tolerance the control already held: the press runs the pass the reader was shown a
@@ -65,11 +81,12 @@ describe('KeyingControls', () => {
     // coverage, so the reader wants it precisely when keying is off — a sheet that arrived carrying
     // its own alpha — and hiding it behind the toggle would put it out of reach in the one state it
     // exists for.
+    const user = userEvent.setup({ delay: null });
     show();
 
     expect(screen.getByLabelText('Silhouette coverage threshold')).toBeInTheDocument();
     expect(useQuantiseStore.getState().silhouetteThreshold).toBe(0);
-    await userEvent.click(screen.getByRole('button', { name: '50%' }));
+    await user.click(screen.getByRole('button', { name: '50%' }));
 
     expect(useQuantiseStore.getState().silhouetteThreshold).toBe(50);
   });

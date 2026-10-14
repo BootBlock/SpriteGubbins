@@ -1,5 +1,5 @@
-import type { PixelShift, SpriteBox } from '../types/quantiser.ts';
-import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import type { CoverageMask, PixelShift } from '../types/quantiser.ts';
+import { bitCount } from './bitCount.ts';
 
 /**
  * How far one frame's artwork sits from another's, measured by laying their coverage over one
@@ -23,39 +23,58 @@ import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
  * **A candidate only ever reads pixels inside the frame's own box**, which is what keeps a
  * neighbouring sprite out of the answer. A shift toward the sprite next door would otherwise start
  * collecting *its* coverage as evidence, and on a tight sheet the best-scoring shift would be
- * whichever one buried the frame in its neighbour.
+ * whichever one buried the frame in its neighbour. The frame's mask covers its box and nothing else,
+ * so the bound is the mask's own extent.
  *
  * The search opens on the two boxes' corner difference and reaches `reach` either side of it. That
  * is a seed rather than a claim: it is within a pixel or two of the answer wherever the two frames
  * hold similar silhouettes, and the reach is what covers the case where they do not. See
- * {@link FRAME_DRIFT_SEARCH} for why eight drawn pixels is the figure.
+ * {@link FRAME_DRIFT_SEARCH} for why eight drawn pixels is the figure, and `affordableDriftReach`
+ * for how a sheet of very large frames narrows it.
  *
  * Ties fall to the candidate nearest that seed, and the seed itself beats everything at its own
  * distance — so a frame whose coverage genuinely says nothing (a solid block, which every shift
  * overlaps equally) comes back at its corner difference rather than at whichever corner of the
  * sweep was visited first. Two runs at the same settings give the same answer.
  *
- * Pure. The reference's opaque pixels are listed once and the sweep then costs
- * `(2 × reach + 1)²` reads of that list — bounded, per {@link FRAME_DRIFT_SEARCH}, by a constant
- * rather than by the sheet.
+ * Pure, and exact: every candidate's score is the same overlap count a pixel-by-pixel comparison
+ * gives. **The cost is stated in mask words, not in time.** Each of the `(2 × reach + 1)²`
+ * candidates reads at most `frame.height × frame.stride` words, so one word compares thirty-two
+ * pixels. The reference is shifted once per column of candidates, which adds one pass over at most
+ * `frame.height + reach` of its rows for every `2 × reach + 1` candidates. `registrationWords`
+ * states the two together, and it is what the frame budget is spent in.
  */
-export function registerFrame(
-  image: ImageData,
-  reference: SpriteBox,
-  frame: SpriteBox,
-  reach: number,
-): PixelShift {
-  const covered = coveredPixels(image, reference);
-  const seedX = frame.left - reference.left;
-  const seedY = frame.top - reference.top;
+export function registerFrame(reference: CoverageMask, frame: CoverageMask, reach: number): PixelShift {
+  const side = 2 * reach + 1;
+  const scores = new Int32Array(side * side);
+  // Only the reference rows some candidate can lay over the frame: row `j` meets frame row
+  // `j + stepY`, and `stepY` is never more than the reach.
+  const rows = Math.min(reference.height, frame.height + reach);
+  const shifted = new Uint32Array(rows * frame.stride);
 
+  for (let stepX = -reach; stepX <= reach; stepX += 1) {
+    shiftColumns(reference, stepX, rows, frame.stride, shifted);
+    for (let stepY = -reach; stepY <= reach; stepY += 1) {
+      scores[(stepY + reach) * side + stepX + reach] = overlapAt(shifted, rows, frame, stepY);
+    }
+  }
+
+  return bestShift(scores, reach, frame.left - reference.left, frame.top - reference.top);
+}
+
+/**
+ * The winning candidate: the highest overlap, then the nearest the seed, then the first in reading
+ * order. Chosen from the finished table, so the order the scores were computed in cannot move it.
+ */
+function bestShift(scores: Int32Array, reach: number, seedX: number, seedY: number): PixelShift {
+  const side = 2 * reach + 1;
   let best: PixelShift = { x: seedX, y: seedY };
   let bestScore = -1;
   let bestReach = 0;
 
   for (let stepY = -reach; stepY <= reach; stepY += 1) {
     for (let stepX = -reach; stepX <= reach; stepX += 1) {
-      const score = overlapAt(image, covered, frame, seedX + stepX, seedY + stepY);
+      const score = scores[(stepY + reach) * side + stepX + reach] ?? 0;
       const distance = stepX * stepX + stepY * stepY;
       if (score < bestScore || (score === bestScore && distance >= bestReach)) continue;
       best = { x: seedX + stepX, y: seedY + stepY };
@@ -68,52 +87,50 @@ export function registerFrame(
 }
 
 /**
- * Every opaque pixel of the box, as `x, y` pairs in one flat array.
+ * The reference's first `rows` rows moved `stepX` columns right, re-packed at the frame's stride.
  *
- * Flat and typed rather than an array of points, because the sweep reads it `(2 × reach + 1)²`
- * times and an object per pixel would be that many pointer chases through the heap — the same
- * reasoning `imageData.ts` states for the passes that walk whole sheets, arriving at a box.
- *
- * The pairs are sheet coordinates rather than box-relative ones, so the sweep adds the shift and
- * reads, with no origin to add back on every candidate.
+ * Target column `t` reads source column `t − stepX`, which is bit `bit` onward of source word
+ * `word`, running into the word after it. A source column off either end of the reference reads as
+ * empty. Columns past the frame's width may come out set, and that is harmless: the frame's own
+ * bits there are clear, so the AND in {@link overlapAt} discards them.
  */
-function coveredPixels(image: ImageData, box: SpriteBox): Int32Array {
-  const found: number[] = [];
-  for (let row = 0; row < box.height; row += 1) {
-    const y = box.top + row;
-    for (let column = 0; column < box.width; column += 1) {
-      const x = box.left + column;
-      if (image.data[pixelOffset(image.width, x, y) + 3] === FULLY_TRANSPARENT) continue;
-      found.push(x, y);
+function shiftColumns(
+  reference: CoverageMask,
+  stepX: number,
+  rows: number,
+  stride: number,
+  into: Uint32Array,
+): void {
+  const offset = -stepX;
+  const words = offset >> 5;
+  const bit = offset & 31;
+
+  for (let row = 0; row < rows; row += 1) {
+    const base = row * reference.stride;
+    const wordAt = (index: number): number =>
+      index < 0 || index >= reference.stride ? 0 : (reference.bits[base + index] ?? 0);
+    for (let word = 0; word < stride; word += 1) {
+      const low = wordAt(word + words) >>> bit;
+      // A shift by 32 is a shift by 0 in JavaScript, so a whole-word move takes no high part.
+      const high = bit === 0 ? 0 : wordAt(word + words + 1) << (32 - bit);
+      into[row * stride + word] = low | high;
     }
   }
-  return Int32Array.from(found);
 }
 
-/**
- * How many of the reference's opaque pixels land on an opaque pixel of the frame under this shift.
- *
- * Bounded by the frame's own box rather than by the image, for the reason the docblock above gives:
- * a pixel outside that box belongs to some other sprite, and counting it would let a shift score
- * itself on the neighbour it is sliding into.
- */
-function overlapAt(
-  image: ImageData,
-  covered: Int32Array,
-  frame: SpriteBox,
-  shiftX: number,
-  shiftY: number,
-): number {
-  const right = frame.left + frame.width;
-  const bottom = frame.top + frame.height;
+/** How many of the shifted reference's covered pixels land on the frame's under a vertical step. */
+function overlapAt(shifted: Uint32Array, rows: number, frame: CoverageMask, stepY: number): number {
+  const stride = frame.stride;
+  const first = Math.max(0, -stepY);
+  const last = Math.min(rows, frame.height - stepY);
   let score = 0;
 
-  for (let at = 0; at < covered.length; at += 2) {
-    const x = (covered[at] ?? 0) + shiftX;
-    if (x < frame.left || x >= right) continue;
-    const y = (covered[at + 1] ?? 0) + shiftY;
-    if (y < frame.top || y >= bottom) continue;
-    if (image.data[pixelOffset(image.width, x, y) + 3] !== FULLY_TRANSPARENT) score += 1;
+  for (let row = first; row < last; row += 1) {
+    const from = row * stride;
+    const onto = (row + stepY) * stride;
+    for (let word = 0; word < stride; word += 1) {
+      score += bitCount((shifted[from + word] ?? 0) & (frame.bits[onto + word] ?? 0));
+    }
   }
 
   return score;

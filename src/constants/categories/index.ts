@@ -1,6 +1,7 @@
 import type {
   CategoryDefinition,
   FieldOption,
+  FieldRendering,
   SubjectCategory,
   SubjectDefinition,
   SubjectFieldKey,
@@ -106,6 +107,17 @@ export function oneSidedFeatureFor(
   return field?.oneSidedOptions?.[value] ?? null;
 }
 
+/**
+ * The field this category declares section 2 reads as `rendering`, or `null` where it declares none.
+ *
+ * Read rather than recognised, for the reason {@link absentOptionFor} is: a key means a different
+ * thing on each category, so `role` is a display size only where ICON's pool says so. At most one field
+ * per category declares each value, which `categories.test.ts` holds.
+ */
+export function renderingFieldFor(category: SubjectCategory, rendering: FieldRendering): FieldOption | null {
+  return CATEGORY_OPTIONS[category].fields.find((field) => field.rendering === rendering) ?? null;
+}
+
 /** A field's first option — the value that field defaults to. */
 function firstOption(fields: readonly FieldOption[], key: SubjectFieldKey): string {
   // Every pool in this folder is non-empty, but `noUncheckedIndexedAccess` is right to insist:
@@ -124,9 +136,12 @@ function firstOption(fields: readonly FieldOption[], key: SubjectFieldKey): stri
  * cast to claim the result is complete. Here the compiler *checks* it is: adding a key to
  * `SUBJECT_FIELD_KEYS` without adding it below is an error, which is exactly the half-applied
  * edit worth catching.
+ *
+ * A category declaring a starter icon roster — ICON — carries it as `icons`, which is what makes a
+ * roster present exactly where the category declares one.
  */
 export function defaultSubjectFor(category: SubjectCategory): SubjectDefinition {
-  const { fields } = CATEGORY_OPTIONS[category];
+  const { fields, iconRoster } = CATEGORY_OPTIONS[category];
   return {
     species: firstOption(fields, 'species'),
     gender: firstOption(fields, 'gender'),
@@ -144,5 +159,6 @@ export function defaultSubjectFor(category: SubjectCategory): SubjectDefinition 
     materials: firstOption(fields, 'materials'),
     exclusions: firstOption(fields, 'exclusions'),
     additional_anatomy: firstOption(fields, 'additional_anatomy'),
+    ...(iconRoster === undefined ? {} : { icons: iconRoster }),
   };
 }

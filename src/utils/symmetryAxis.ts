@@ -1,5 +1,6 @@
 import { SYMMETRY_AXIS_SEARCH, SYMMETRY_SWEEP_BUDGET } from '../constants/quantiser.ts';
 import type { SpriteBox, SpriteSymmetry } from '../types/quantiser.ts';
+import { bordersArtwork } from './bordersArtwork.ts';
 import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 import type { MutableOklab } from './oklab.ts';
 import { srgbToOklabInto } from './oklab.ts';
@@ -51,7 +52,7 @@ import { pixelDistance } from './pixelDistance.ts';
  * pixels either way is a real correction on a sprite 32 across and is four tenths of one per cent on
  * a sprite 2048 across, where the appendage that moved the centre would have to be a thousand pixels
  * long for the sweep to reach it. So the sheets the budget narrows are the sheets the extra
- * candidates were never going to help, and the reference sheet — fifteen sprites at 23 to 34 pixels
+ * candidates were never going to help, and the reference sheet — fifteen sprites at 24 to 35 pixels
  * across, keyed on `#FF00FF` at `DEFAULT_KEY_TOLERANCE` — is not narrowed at all.
  *
  * An axis genuinely further out than the reach comes back as a **low confidence about the centre**,
@@ -67,7 +68,7 @@ import { pixelDistance } from './pixelDistance.ts';
  *
  * **The bounds are what make it affordable, and there are two of them.** The sheet's own budget
  * gives {@link affordableReach} below, and the reference sheet does not come near it: its fifteen
- * boxes total 17,201 pixels against a budget that affords 975 sweeps where the full reach costs 33,
+ * boxes total 17,851 pixels against a budget that affords 939 sweeps where the full reach costs 33,
  * so the budget narrows this sheet's reach by nothing at all. What does narrow it is the
  * quarter-width cap in `bestAxis`, which binds on all but the five widest of those fifteen — see
  * {@link SYMMETRY_AXIS_SEARCH}, which states that and the widths it is measured against.
@@ -90,7 +91,10 @@ export function sheetSymmetry(
   image: ImageData,
   boxes: readonly SpriteBox[],
   tolerance: number,
-  /** The share a sprite must already reach before the snap may settle it, or `null` to snap none. */
+  /**
+   * The share a sprite must already reach before the snap may settle it, or `null` to snap none. A
+   * sprite past it is still refused where anything is drawn directly against its box.
+   */
   floor: number | null,
 ): SpriteSymmetry[] {
   // One reach for the whole sheet rather than one per sprite, because the budget is a statement about
@@ -105,7 +109,14 @@ export function sheetSymmetry(
     // nothing whatever to settle, so the snap must not claim it. Marked, it would cost a copy of the
     // sheet and a second segmentation to rewrite no pixel, and the panel would print "settled" on a
     // row where nothing was. A pole, a spear and a rope are all one column wide.
-    return { box, axis, confidence, snapped: paired && floor !== null && confidence >= floor };
+    //
+    // A sprite with anything drawn directly against its box is refused as well, by the rule the
+    // duplicate fold and the frame alignment are refused by: a settle can draw a clear pixel on the
+    // box's edge, which joins a speck beyond it to the sprite, and the joined box can then come
+    // within the gap of a neighbour — see `bordersArtwork`. Refused here rather than in the snap, so
+    // the flag the panel prints as "settled" is the truth about what happened.
+    const qualifies = paired && floor !== null && confidence >= floor;
+    return { box, axis, confidence, snapped: qualifies && !bordersArtwork(image, box) };
   });
 }
 
@@ -119,9 +130,9 @@ export function sheetSymmetry(
  * sprite that large has its axis anyway.
  *
  * **Exported for one reason**, which is the reason `SYMMETRY_SWEEP_BUDGET`'s docblock states a
- * figure at all: that figure — the reference sheet's fifteen boxes totalling 17,201 pixels, and the
- * reach of eight it buys — is asserted in `tests/quantiser-docblock-figures.test.ts`, and a suite
- * that restated this arithmetic instead of calling it would pass with the divisor changed to the
+ * figure at all: that figure — the reference sheet's fifteen boxes totalling 17,851 pixels, and the
+ * reach of eight it buys — is asserted in `tests/quantiser-figures-symmetry-pass.test.ts`, and a
+ * suite that restated this arithmetic instead of calling it would pass with the divisor changed to the
  * sheet's drawn pixels, which is the mistake that docblock exists to name.
  */
 export function affordableReach(boxes: readonly SpriteBox[]): number {

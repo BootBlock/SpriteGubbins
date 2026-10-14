@@ -1,6 +1,7 @@
-import { DITHER_LATTICE_CORNERS, DITHER_SHORTLIST } from '../constants/quantiser.ts';
+import { DITHER_SHORTLIST } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { conesToOklabInto, srgbToConesInto, srgbToOklabInto } from './oklab.ts';
+import { FULLY_OPAQUE } from './imageData.ts';
 import type { MutableCones, MutableOklab } from './oklab.ts';
 
 /**
@@ -26,11 +27,11 @@ import type { MutableCones, MutableOklab } from './oklab.ts';
  * **One restriction on the published search, and it is an improvement rather than a compromise.**
  * The published version pairs every colour of the palette with every other, which the article
  * applies to a sixteen-colour palette; this one runs against a palette of up to 128, on a sheet that
- * may carry two hundred thousand distinct colours at a grid of 1. So pairs are drawn from the
- * {@link DITHER_SHORTLIST} colours nearest the target instead — which is both what makes it
+ * may carry two hundred thousand distinct colours at a grid of 1. So pairs are drawn only from among
+ * the {@link DITHER_SHORTLIST} entries nearest the target instead — which is both what makes it
  * affordable and what makes it *look* right, because a pair drawn from opposite ends of the palette
  * is optimal only for the whole tile and puts a stray pixel of something wildly different into every
- * small flat region. The measurements are under that constant.
+ * small flat region. The measurements, and what a list that short gives up, are under that constant.
  *
  * **The ratio ladder is walked whole, though, and that is deliberate.** Seeding it from where the
  * target projects onto the straight OKLab line between the two colours looks like the obvious saving
@@ -65,6 +66,8 @@ export interface DitherCandidates {
   readonly lab: Float64Array;
   /** Three per entry: the linear cone responses `srgbToConesInto` leaves. */
   readonly cones: Float64Array;
+  /** Whether any entry is opaque, which is what holds an opaque target to the opaque entries. */
+  readonly holdsOpaque: boolean;
 }
 
 /** The palette, converted once — the form {@link mixingPlan} searches. */
@@ -86,15 +89,14 @@ export function ditherCandidates(entries: readonly Rgba[]): DitherCandidates {
     cones[index * 3 + 2] = light.short;
   }
 
-  return { entries, lab, cones };
+  return { entries, lab, cones, holdsOpaque: entries.some((entry) => entry.a === FULLY_OPAQUE) };
 }
 
 /** The scratches the search reuses — one set for the life of the module, as `keyDistance.ts` keeps. */
 const MIXED: MutableOklab = { L: 0, a: 0, b: 0 };
 const TARGET: MutableOklab = { L: 0, a: 0, b: 0 };
-const LONGEST_SHORTLIST = Math.max(DITHER_SHORTLIST, DITHER_LATTICE_CORNERS);
-const SHORTLIST = new Int32Array(LONGEST_SHORTLIST);
-const SHORTLIST_DISTANCE = new Float64Array(LONGEST_SHORTLIST);
+const SHORTLIST = new Int32Array(DITHER_SHORTLIST);
+const SHORTLIST_DISTANCE = new Float64Array(DITHER_SHORTLIST);
 
 /**
  * The best plan for one target colour, over `levels` rungs of ratio.
@@ -102,26 +104,10 @@ const SHORTLIST_DISTANCE = new Float64Array(LONGEST_SHORTLIST);
  * The baseline is the nearest entry taken flat, which is what the palette step would have done with
  * no dither at all — so a plan can only improve on it, and a colour the palette already holds comes
  * back as itself with `steps` of zero rather than as a pattern of two colours that average to it.
- *
- * `pairFrom` is how many of the nearest candidates the pairs may be drawn from, and the default is
- * the one a *list* palette wants. **It is clamped to the larger of the two figures the app actually
- * asks for**, because the shortlist is written into module-scoped scratch arrays sized once at load
- * — so a caller asking for more silently gets that ceiling rather than overrunning them. Neither
- * caller is clamped; a third that wanted a wider search would have to widen the arrays with it. A channel-depth lattice overrides it with the whole corner set for
- * a reason worth knowing: nearness is the wrong ordering there. The eight corners around a grey sit
- * at wildly different distances from it — the corner that raises one channel is much the nearest,
- * and the diagonal corner that raises all three is the furthest of the eight — while the diagonal is
- * the only one whose mixture stays neutral. Drawn from the three nearest, a mid grey came back
- * dithered between grey and *red*. See {@link DITHER_LATTICE_CORNERS}.
  */
-export function mixingPlan(
-  target: Rgba,
-  candidates: DitherCandidates,
-  levels: number,
-  pairFrom = DITHER_SHORTLIST,
-): MixingPlan {
+export function mixingPlan(target: Rgba, candidates: DitherCandidates, levels: number): MixingPlan {
   srgbToOklabInto(TARGET, target.r, target.g, target.b);
-  const shortlisted = shortlist(candidates, TARGET, target.a, Math.min(pairFrom, LONGEST_SHORTLIST));
+  const shortlisted = shortlist(candidates, TARGET, target.a, DITHER_SHORTLIST);
   const nearest = SHORTLIST[0] ?? 0;
 
   let bestFirst = nearest;
@@ -163,6 +149,10 @@ export function mixingPlan(
  * up to 128 entries and this runs once per distinct colour of the sheet, so the scan is the cost
  * and the ordering is not. Ties keep the earlier entry, which under `buildPalette`'s ordering is
  * the more-used of two equidistant colours.
+ *
+ * **An opaque target shortlists only opaque entries**, wherever the palette holds one, for the
+ * reason `nearestColorSearch` gives: a budget's entries are written whole, and a translucent one
+ * written into a sprite's interior, flat or as half of a pattern, is a hole in it.
  */
 function shortlist(
   candidates: DitherCandidates,
@@ -171,7 +161,9 @@ function shortlist(
   wanted: number,
 ): number {
   let held = 0;
+  const opaqueOnly = alpha === FULLY_OPAQUE && candidates.holdsOpaque;
   for (let index = 0; index < candidates.entries.length; index += 1) {
+    if (opaqueOnly && candidates.lab[index * 4 + 3] !== FULLY_OPAQUE) continue;
     const distance = entryPenalty(candidates, index, target, alpha);
     if (held === wanted && distance >= (SHORTLIST_DISTANCE[held - 1] ?? Infinity)) continue;
 

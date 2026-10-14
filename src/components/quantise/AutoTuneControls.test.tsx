@@ -43,8 +43,11 @@ const OUTCOME: TuneOutcome = {
   cropEdge: 160,
   candidates: 323,
   rounds: 2,
+  price: { perColor: 0.00049, positions: 15 },
   reading: { fidelity: 0.9412, colors: 24 },
   baseline: { fidelity: 0.8137, colors: 31 },
+  // Apart from the crops' counts on purpose, so a chip that read those instead could not pass.
+  sheetColors: { baseline: 9975, settled: 77 },
   stages: [
     { stage: 'READING', candidates: 15, skipped: null, settled: 'INK_WEIGHTED, expansion 2' },
     { stage: 'INK_BLEND', candidates: 20, skipped: null, settled: 'line 2.5, trim 1.0' },
@@ -89,10 +92,11 @@ const WHITE = { r: 255, g: 255, b: 255, a: 255 };
  * studio's colour budget on another tab.
  */
 async function swept(settings: QuantiseSettings = SETTINGS) {
+  const user = userEvent.setup({ delay: null });
   FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
   const { rerender } = render(<AutoTuneControls image={createImage(8, 8)} settings={settings} />);
 
-  await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+  await user.click(screen.getByRole('button', { name: /Auto/ }));
   await waitFor(() => {
     expect(screen.getByText(COST)).toBeInTheDocument();
   });
@@ -132,10 +136,11 @@ describe('AutoTuneControls', () => {
   });
 
   it('moves the dials the sweep swept, and leaves every other dial alone', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
@@ -161,10 +166,11 @@ describe('AutoTuneControls', () => {
   });
 
   it('lands the whole answer as one step a single undo reverses', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
     await waitFor(() => {
       expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
     });
@@ -179,9 +185,10 @@ describe('AutoTuneControls', () => {
   });
 
   it('says what it is doing while it runs, and disables the button', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     expect(screen.getByRole('button', { name: /Tuning/ })).toBeDisabled();
     expect(screen.getByText('Sweeping the dials…')).toBeInTheDocument();
@@ -190,24 +197,46 @@ describe('AutoTuneControls', () => {
   });
 
   it('reports what the sweep cost and what it was worth', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
     });
     expect(screen.getByText('likeness 0.814 → 0.941')).toBeInTheDocument();
-    expect(screen.getByText('31 → 24 colours')).toBeInTheDocument();
+    // The whole sheet's count, which is what the result pane states, rather than the crops' — see
+    // `TuneOutcome.sheetColors`.
+    expect(screen.getByText('9975 → 77 colours')).toBeInTheDocument();
+    expect(screen.queryByText(/31 → 24/)).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Swept 323 positions and moved the dials. Likeness 0.941, from 0.814. The sheet comes to 77 colours, from 9975.',
+    );
     expect(screen.getByText(AUTO_TUNE_GUIDANCE.settled)).toBeInTheDocument();
   });
 
+  it('agrees the noun with a sheet that comes to one colour', async () => {
+    const user = userEvent.setup({ delay: null });
+    const single: TuneOutcome = { ...OUTCOME, sheetColors: { baseline: 3, settled: 1 } };
+    FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: single });
+    show();
+
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
+
+    await waitFor(() => {
+      expect(screen.getByText('3 → 1 colour')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('The sheet comes to 1 colour, from 3.');
+  });
+
   it('names each stage, and says which of them had nothing to try', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(
@@ -218,7 +247,9 @@ describe('AutoTuneControls', () => {
     // that was swept and left alone are different facts about the sheet.
     // Every stage the sweep can report has a line, the three anti-aliasing ones included — a label
     // added to `TUNE_STAGE_LABELS` and rendered nowhere would otherwise be invisible to this suite.
-    expect(screen.getAllByRole('listitem')).toHaveLength(OUTCOME.stages.length);
+    // The price is the one line above them, and its positions are in the chip's total too.
+    expect(screen.getAllByRole('listitem')).toHaveLength(OUTCOME.stages.length + 1);
+    expect(screen.getByText('Price of a colour · 0.00049 likeness · 15 positions tried')).toBeInTheDocument();
     expect(
       screen.getByText(`${TUNE_STAGE_LABELS.ALIAS_RUN} · runs of 4 and longer · 8 positions tried`),
     ).toBeInTheDocument();
@@ -237,12 +268,32 @@ describe('AutoTuneControls', () => {
     ).toBeInTheDocument();
   });
 
+  it('says so where the readings put no price on a colour', async () => {
+    // "0.0 likeness" would read as a figure the sweep measured, where the fact is that it found no
+    // trade to measure and ranked on likeness alone.
+    const user = userEvent.setup({ delay: null });
+    const free: TuneOutcome = { ...OUTCOME, price: { perColor: 0, positions: 15 } };
+    FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: free });
+    show();
+
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Price of a colour · none, the readings traded no likeness for colours · 15 positions tried',
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
   it('shows what went wrong, and offers the sweep again', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () =>
       Promise.resolve({ kind: 'failed', reason: 'Array buffer allocation failed' });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent('Array buffer allocation failed');
@@ -252,9 +303,10 @@ describe('AutoTuneControls', () => {
   });
 
   it('leaves the dials where they were when the sweep is disowned by a new sheet', async () => {
+    const user = userEvent.setup({ delay: null });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
     // What `setSource` does while a sweep is in flight: the thread ends and the answer is dropped.
     abandonSweep();
     thread().answer({ kind: 'tuned', outcome: OUTCOME });
@@ -270,10 +322,11 @@ describe('AutoTuneControls', () => {
     // Every line of the report is a statement about where the dials stand, and the paragraph beside
     // it says they have just moved and that one undo puts them back. An undo — or a hand on a
     // slider — makes all of that false while it is still on screen.
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
     await waitFor(() => {
       expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
     });
@@ -287,10 +340,11 @@ describe('AutoTuneControls', () => {
   });
 
   it('keeps its own report when the sweep applies it, which is the one write that must not retire it', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
@@ -361,10 +415,11 @@ describe('AutoTuneControls', () => {
   });
 
   it('withdraws a refusal the same way, rather than blaming the settings now in force', async () => {
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () =>
       Promise.resolve({ kind: 'failed', reason: 'Array buffer allocation failed' });
     const { rerender } = render(<AutoTuneControls image={createImage(8, 8)} settings={SETTINGS} />);
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent('Array buffer allocation failed');
     });
@@ -393,10 +448,11 @@ describe('AutoTuneControls', () => {
   it('says why the button is unavailable beside the report rather than instead of it', async () => {
     // Reachable by clearing the grid box after a sweep: the report is still true about the dials,
     // and the button is still unavailable, and both sentences are needed.
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
     const { rerender } = render(<AutoTuneControls image={createImage(8, 8)} settings={SETTINGS} />);
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
     await waitFor(() => {
       expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
     });
@@ -410,11 +466,12 @@ describe('AutoTuneControls', () => {
 
   it('does not repeat the failure text its alert already carries', async () => {
     // Both regions change in one render, so a reason in each is announced twice.
+    const user = userEvent.setup({ delay: null });
     FakeAutoTuneWorker.respond = () =>
       Promise.resolve({ kind: 'failed', reason: 'Array buffer allocation failed' });
     show();
 
-    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await user.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent('Array buffer allocation failed');

@@ -287,7 +287,7 @@ export const INTERFACE: CategoryDefinition = {
         'Polished Gold #D4AF37',
         'Muted Disabled Grey #64748B',
         'Focus Ring Blue #3B82F6',
-        'Reward Magenta #E879F9',
+        'Reward Rose #FB7185',
         'Experience Lime #84CC16',
       ],
     },

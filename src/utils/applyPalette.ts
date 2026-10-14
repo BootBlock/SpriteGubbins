@@ -1,6 +1,6 @@
-import { RGBA_CHANNELS } from '../types/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { remapColors } from './imageData.ts';
+import { nearestColorSearch } from './nearestColorSearch.ts';
 
 /**
  * Redrawing an image in a fixed palette.
@@ -13,22 +13,25 @@ import { remapColors } from './imageData.ts';
  * `buildPalette` returns entries that are real pixels of the image, each carrying the alpha it was
  * found at, so redrawing in one means taking that alpha too. A machine's palette is a list of
  * *colours* — the Game Boy had four shades and no
- * alpha channel at all — so redrawing in one may not touch a pixel's opacity. Both share
- * `nearestColor`, which is the half that would quietly diverge if they were written twice.
+ * alpha channel at all — so redrawing in one may not touch a pixel's opacity. Both search with
+ * `nearestColorSearch`, which is the half that would quietly diverge if they were written twice.
  */
 
 /**
  * The image with every pixel taking its nearest palette entry, by squared distance across all four
- * channels.
+ * channels — an opaque pixel choosing among the opaque entries alone.
  *
  * For a palette **derived from this image**, which is what `buildPalette` returns: every entry is a
  * pixel the sheet actually holds, so an entry's opacity is as much a part of it as its hue, and the
  * entry is written whole. That is what keeps the promise the colour count makes — reduce to N and
- * at most N distinct RGBA colours survive.
+ * at most N distinct RGBA colours survive. Written whole is also why an opaque pixel may not take a
+ * translucent entry, however near its colour: it would leave a hole in the sprite, and
+ * `nearestColorSearch` states the rule.
  */
 export function applyPalette(image: ImageData, palette: readonly Rgba[]): ImageData {
   // An empty palette means an image with no opaque pixels, none of which reach `resolve` at all.
-  return remapColors(image, (color) => nearestColor(color, palette) ?? color);
+  const nearest = nearestColorSearch(palette);
+  return remapColors(image, (color) => nearest(color) ?? color);
 }
 
 /**
@@ -47,32 +50,6 @@ export function applyPalette(image: ImageData, palette: readonly Rgba[]): ImageD
  * which one wins.
  */
 export function applyRgbPalette(image: ImageData, palette: readonly Rgba[]): ImageData {
-  return remapColors(image, (color) => ({ ...(nearestColor(color, palette) ?? color), a: color.a }));
-}
-
-/**
- * The palette entry closest to a colour, the earliest entry taking a tie.
- *
- * Exported because "which palette entry does this colour belong to" is asked three times: by the two
- * functions above, to redraw a pixel, and by `identityPalette`, to total how much of the image each
- * entry speaks for. Three distance loops would be three answers to one question, and the tie-break
- * is the half that would quietly diverge.
- */
-export function nearestColor(color: Rgba, palette: readonly Rgba[]): Rgba | null {
-  let chosen: Rgba | null = null;
-  let shortest = Infinity;
-
-  for (const candidate of palette) {
-    let distance = 0;
-    for (const channel of RGBA_CHANNELS) {
-      const delta = color[channel] - candidate[channel];
-      distance += delta * delta;
-    }
-    if (distance < shortest) {
-      shortest = distance;
-      chosen = candidate;
-    }
-  }
-
-  return chosen;
+  const nearest = nearestColorSearch(palette);
+  return remapColors(image, (color) => ({ ...(nearest(color) ?? color), a: color.a }));
 }

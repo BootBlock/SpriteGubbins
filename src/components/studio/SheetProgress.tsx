@@ -98,8 +98,8 @@ export function SheetProgress() {
       <p className="mt-2 text-xs leading-relaxed text-ink-muted">
         This configuration takes {sheets.length} generations, and the prompt below is one of them. Copy this
         sheet, generate it, and step on once you have a result you are keeping — in the order given, because
-        the identity lock you write from the first sheet you accept is what makes the rest depict the same
-        subject.
+        the identity lock you write from the first sheet you accept is what makes the rest match it: the same
+        subject, or more members of the same set.
       </p>
 
       {/* The same figure the split drawer's footer carries, from the same history. A strip that

@@ -3,6 +3,7 @@ import { useSpriteAssignmentStore } from '../stores/useSpriteAssignmentStore.ts'
 import type { SpriteSegmentation } from '../types/quantiser.ts';
 import type { SpriteAssignment } from '../types/spriteAssignment.ts';
 import { resolveAssignment } from '../utils/spriteAssignment.ts';
+import { useCellLattice } from './useCellLattice.ts';
 import { useSheetIdentity } from './useSheetIdentity.ts';
 
 /**
@@ -16,7 +17,8 @@ import { useSheetIdentity } from './useSheetIdentity.ts';
  * argument over a second derivation that now sits on top of it.
  *
  * The derivation itself stays pure in `src/utils/spriteAssignment.ts`; what needs React is the store
- * reads and the memo.
+ * reads and the memo. A placement sheet's cells are read here too (`useCellLattice`), so all three
+ * group, order and name its pieces by cell alike.
  */
 export function useSpriteAssignment(sprites: SpriteSegmentation | null): SpriteAssignment {
   const edits = useSpriteAssignmentStore((state) => state.edits);
@@ -26,8 +28,12 @@ export function useSpriteAssignment(sprites: SpriteSegmentation | null): SpriteA
   // A solid or scattered sheet has no boxes at all, and both reach here as the empty list rather
   // than as a state this has to know about — see `SpriteSegmentation`, which is boxless in both.
   const boxes = sprites?.kind === 'SEGMENTED' ? sprites.boxes : EMPTY;
+  const lattice = useCellLattice(sprites);
 
-  return useMemo(() => resolveAssignment(boxes, edits, inventory), [boxes, edits, inventory]);
+  return useMemo(
+    () => resolveAssignment(boxes, edits, inventory, lattice),
+    [boxes, edits, inventory, lattice],
+  );
 }
 
 /** One empty list rather than a fresh one per render, so the memo above is not defeated by it. */

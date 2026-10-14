@@ -33,7 +33,7 @@ interface SymmetryControlsProps {
  * The second panel on this tab whose subject is a *reading* rather than the sheet, and the first
  * whose control can turn into a rewrite — which is why the reading and the rewrite are two positions
  * of one select rather than a checkbox beside a dial. `CHECK` changes no pixel; `SNAP` changes the
- * pixels of whichever sprites already passed the floor.
+ * pixels of whichever sprites already passed the floor with nothing drawn against their edge.
  *
  * **It opens off, and the paragraph says why before anyone turns it on.** Held items, drawn weapons
  * and one-sided gear are asymmetric because that is what the subject *is*, and nothing in the

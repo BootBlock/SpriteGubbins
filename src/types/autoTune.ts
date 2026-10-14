@@ -95,13 +95,17 @@ export const TUNED_DIAL_KEYS = Object.values(TUNED_DIAL_NAMES);
 /**
  * How one candidate did: how faithfully its result reproduced the crops, and what it spent.
  *
- * Both figures are means over the crops rather than one crop's answer, because a crop is a sample of
- * the sheet and the sweep is choosing dials for the whole of it.
+ * Both figures are taken over all the crops rather than from one crop's answer, because a crop is a
+ * sample of the sheet and the sweep is choosing dials for the whole of it — see `readCandidate`.
  */
 export interface TuneReading {
   /** Mean structural similarity against the crops — see `meanSsim`. Higher is closer. */
   readonly fidelity: number;
-  /** Mean colour count of the results. Lower is cheaper, and the two are what the elbow trades. */
+  /**
+   * Distinct colours across all the results, each counted once, as the sheet spends them. Lower is
+   * cheaper, and `TunePrice` is what trades it against fidelity. A ranking figure rather than the
+   * sheet's count, which `TuneOutcome.sheetColors` reports.
+   */
   readonly colors: number;
 }
 
@@ -152,6 +156,19 @@ export interface TuneStageReport {
   readonly settled: string;
 }
 
+/**
+ * What one colour is worth to the sweep, in likeness, and what it cost to find out.
+ *
+ * One figure for the whole sweep, so every stage ranks its candidates on the same score — see
+ * `colorPrice`, which reads it, and `chooseByPrice`, which spends it.
+ */
+export interface TunePrice {
+  /** The likeness one colour has to buy to be worth spending; `0` where the readings offered no trade. */
+  readonly perColor: number;
+  /** How many positions were read to set it. */
+  readonly positions: number;
+}
+
 /** What the sweep settled on, and enough of how it got there for a reader to judge it. */
 export interface TuneOutcome {
   readonly dials: TunedDials;
@@ -167,13 +184,18 @@ export interface TuneOutcome {
    */
   readonly rounds: number;
   /**
-   * How many candidate positions were run, across every stage plus the one the reader arrived with.
+   * How many candidate positions were ranked: the ones that set {@link price}, every stage's, and the
+   * one the reader arrived with.
    *
-   * Positions, not runs of the pipeline: each one is read on every crop, so the pipeline ran this
-   * many times {@link crops}. The chip the panel draws states both figures side by side for that
-   * reason.
+   * Positions, not runs of the pipeline: each one is read on every crop, so the chip the panel draws
+   * states both figures side by side. **A position ranked twice is counted twice and run once** — every
+   * stage ranks the dials in force, whose reading the stage before it already took — so the pipeline
+   * ran over the crops at most this many times {@link crops}, and over the whole sheet once or twice
+   * more for {@link sheetColors}. See `candidateReader`.
    */
   readonly candidates: number;
+  /** The price every stage ranked its candidates at. */
+  readonly price: TunePrice;
   /** The winner's own reading, which is what the stages were ranked by. */
   readonly reading: TuneReading;
   /**
@@ -184,5 +206,20 @@ export interface TuneOutcome {
    * this sheet — and without the baseline it is indistinguishable from one that did nothing.
    */
   readonly baseline: TuneReading;
+  /**
+   * How many colours the whole sheet comes to at the dials the reader had and at the dials the sweep
+   * chose — the figure the result pane's caption states, and the one the panel reports.
+   *
+   * **The sheet's, not the crops'.** {@link TuneReading.colors} is what the stages rank by, and it is
+   * the right figure for that: it counts every colour the crops spend between them, so it moves
+   * wherever the sheet's own count moves. As a report it falls short of the sheet by whatever the
+   * crops never sampled. Over the corpus with no budget, `test_sprites/armour.png` reads 4292 → 58
+   * across its crops and comes to 9975 → 77 on the whole sheet, and `test_sprites/cyborg_healer.png`
+   * reads 6232 → 74 against 26141 → 108. See `autoTune`, which runs the sheet for these.
+   */
+  readonly sheetColors: {
+    readonly baseline: number;
+    readonly settled: number;
+  };
   readonly stages: readonly TuneStageReport[];
 }

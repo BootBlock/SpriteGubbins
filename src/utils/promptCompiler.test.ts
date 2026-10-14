@@ -3,6 +3,7 @@ import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
 import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
+import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import { CATEGORY_PROJECTIONS } from '../constants/categoryProjections.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
@@ -10,7 +11,6 @@ import {
   modesFor,
   resolveMode,
   resolveRigMode,
-  SHEET_INDEX_RANGE,
   sheetPlanFor,
   sheetSeriesFor,
 } from '../constants/sheetPlans/index.ts';
@@ -35,11 +35,15 @@ import {
   SURFACE_DETAILS,
   TARGET_MODEL_IDS,
 } from '../types/output.ts';
-import type { AspectRatio, OutputConfig } from '../types/output.ts';
+import type { AspectRatio, DirectionalMode, OutputConfig } from '../types/output.ts';
+import type { DirectionSet } from '../types/rendering.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { renderContractOf, sectionOf } from '../test/promptSections.ts';
+import { resolvedSheetAddress } from '../test/resolvedSheetAddress.ts';
+import { sheetIndicesOf } from '../test/sheetIndicesOf.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
-import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetFacts } from './promptFacts.ts';
 import { countWords, estimateTokens } from './promptMetrics.ts';
@@ -50,6 +54,8 @@ import { styleReferencePatch } from './styleReferencePatch.ts';
 import { BACKGROUND_KEY_COLORS } from '../constants/backgroundKeyColors.ts';
 import { fromHex } from './imageData.ts';
 import { keyReaches } from './keyReach.ts';
+import { iconPickId } from './iconPickId.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /** Two blank lines: what a block joined from a part that turned out to be empty leaves behind. */
 const BLANK_PARAGRAPH = '\n\n\n';
@@ -101,7 +107,7 @@ const PER_DIRECTION_DEPTH_HEADING = '### Depth order for each direction this she
 /** Every field cleared — the case v1 filled with `DEFINED` tokens. */
 const EMPTY_SUBJECT: SubjectDefinition = Object.fromEntries(
   SUBJECT_FIELD_KEYS.map((key) => [key, '']),
-) as SubjectDefinition;
+) as Record<SubjectFieldKey, string>;
 
 /** Every marker the five template passes consume, none of which may survive into a compiled prompt. */
 const MARKER = /\[(?:DEFINE|OPTIONAL|IF|SECTION|SEC):|\[\/IF\]|\[N\]/;
@@ -236,7 +242,7 @@ describe('generatePrompt — the subject', () => {
           withOutput({ resolutionProfile }),
         );
         expect(prompt).toContain(
-          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, plan.scaleUnit)}`,
+          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, plan.scaleUnit, plan.fit, plan.cellGrid)}`,
         );
       }
     }
@@ -536,11 +542,14 @@ describe('generatePrompt — conditional blocks', () => {
     ).not.toThrow();
   });
 
-  it('never lets a template marker reach the output, across every branch', () => {
-    // Every combination of the switches the template branches on, so no block escapes being both
-    // taken and skipped. The target is one of them: it decides the self-audit and section 0's
-    // category tripwire, so pinning it to one model would leave half of each of those unrendered.
-    for (const targetModel of TARGET_MODEL_IDS) {
+  // One case per target: every target in one test came within a few per cent of the one-second limit a
+  // slow runner stands in for.
+  it.each(TARGET_MODEL_IDS)(
+    'never lets a template marker reach the output, across every branch, for %s',
+    (targetModel) => {
+      // Every combination of the switches the template branches on, so no block escapes being both
+      // taken and skipped. The target is one of them: it decides the self-audit and section 0's
+      // category tripwire, so pinning it to one model would leave half of each of those unrendered.
       for (const renderStyle of RENDER_STYLES) {
         for (const rigMode of RIG_MODES) {
           for (const emitComponentMap of [true, false]) {
@@ -556,8 +565,8 @@ describe('generatePrompt — conditional blocks', () => {
           }
         }
       }
-    }
-  });
+    },
+  );
 
   it('never lets one reach it from a value either, under any category or sheet', () => {
     // The branch sweep above pins one category, and the markers that arrive through a *value* are
@@ -576,9 +585,20 @@ describe('generatePrompt — conditional blocks', () => {
         // could hide in. A default subject names none, so every sweep in this file used to stop short
         // of that half of the one value the compiler treats specially.
         const subject = { ...base, additional_anatomy: 'Sensor Vane ×2' };
+        // ICON compiles each resolved address once, as `resolvedSheetAddress` says why.
+        const compiled = new Set<string>();
         for (const directionalMode of DIRECTIONAL_MODES) {
           for (const directions of DIRECTION_SETS) {
-            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
+              const address = resolvedSheetAddress(
+                category,
+                subject,
+                directionalMode,
+                directions,
+                sheetIndex,
+              );
+              if (category === 'ICON' && compiled.has(address)) continue;
+              compiled.add(address);
               const prompt = generatePrompt(
                 category,
                 subject,
@@ -643,16 +663,18 @@ describe('generatePrompt — numbered lists', () => {
     return runs;
   }
 
-  it('numbers every list consecutively from one, whichever items the sheet drops', () => {
-    // The defect: section 9's rig check and pixel-art check are conditional and independent, so a
-    // pixel-art sheet in POSE_LIBRARY mode used to emit "…6. 8." — a checklist whose seventh check
-    // appears to have gone missing, in the section meant to be worked through item by item.
-    // The background key joined the sweep when section 9 gained a check that is conditional on it:
-    // the audit's key-colour reservation and its alpha-channel check are each other's `[IF]` and
-    // `[IF:…!=yes]`, so exactly one of the two is emitted and the count does not move today. Nothing
-    // holds them that way — a future rule conditional on the key alone would land in the same list —
-    // and this sweep is the guard that would see it.
-    for (const targetModel of TARGET_MODEL_IDS) {
+  // One case per target: every target in one test passed the one-second limit a slow runner stands in for.
+  it.each(TARGET_MODEL_IDS)(
+    'numbers every list consecutively from one, whichever items the sheet drops, for %s',
+    (targetModel) => {
+      // The defect: section 9's rig check and pixel-art check are conditional and independent, so a
+      // pixel-art sheet in POSE_LIBRARY mode used to emit "…6. 8." — a checklist whose seventh check
+      // appears to have gone missing, in the section meant to be worked through item by item.
+      // The background key joined the sweep when section 9 gained a check that is conditional on it:
+      // the audit's key-colour reservation and its alpha-channel check are each other's `[IF]` and
+      // `[IF:…!=yes]`, so exactly one of the two is emitted and the count does not move today. Nothing
+      // holds them that way — a future rule conditional on the key alone would land in the same list —
+      // and this sweep is the guard that would see it.
       for (const renderStyle of RENDER_STYLES) {
         for (const rigMode of RIG_MODES) {
           for (const backgroundKey of BACKGROUND_KEYS) {
@@ -669,8 +691,8 @@ describe('generatePrompt — numbered lists', () => {
           }
         }
       }
-    }
-  });
+    },
+  );
 
   it('is checking lists that are actually there', () => {
     // Guards the sweep above, which passes vacuously if the prompt stops carrying numbered lists at
@@ -1110,7 +1132,7 @@ describe('generatePrompt — a render style that withholds the surface', () => {
    */
   const OUTRANKS_THE_COLOURS =
     'This sheet’s render style is a validation pass, and what it states about the surface ' +
-    'outranks the subject’s colour and material attributes.';
+    'outranks the colour and material attributes of the subject and of every inventory entry.';
 
   /** The lines section 2 prints for a style that describes a surface rather than withholding one. */
   const SURFACE_DETAIL = '- Surface-detail intensity: ';
@@ -1149,7 +1171,11 @@ describe('generatePrompt — a render style that withholds the surface', () => {
       const pass = promptText.validationPassFor(style);
       if (pass === null) throw new Error(`${style} should be a validation pass.`);
 
-      expect(withStyle(style), style).toContain(pass.text);
+      // The pass cites the inventory, whose number the compiler resolves on the sheet it is on.
+      const prompt = withStyle(style);
+      const inventory = /^## (\d+)\. COMPONENT INVENTORY$/m.exec(prompt)?.[1];
+      if (inventory === undefined) throw new Error('the prompt should carry an inventory section.');
+      expect(prompt, style).toContain(pass.text.replaceAll('[SEC:INVENTORY]', inventory));
     }
   });
 
@@ -1230,7 +1256,7 @@ describe('generatePrompt — a render style that withholds the surface', () => {
       const prompt = withStyle(style);
 
       expect(prompt, style).not.toMatch(/\n{3}/);
-      expect(prompt, style).not.toMatch(/\[(?:IF|SEC|SECTION|OPTIONAL|DEFINE):/);
+      expect(prompt, style).not.toMatch(MARKER);
     }
   });
 });
@@ -1601,7 +1627,7 @@ describe('generatePrompt — a sheet that is one of a series', () => {
     for (const output of [RIG, SERIES, { ...SERIES, sheetIndex: 1 }, ALONE]) {
       const prompt = generatePrompt('CHARACTER', SUBJECT, output);
       expect(prompt).not.toMatch(/\n\n\n/);
-      expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+      expect(prompt).not.toMatch(MARKER);
     }
   });
 });
@@ -1873,7 +1899,10 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
         const named = CATEGORY_PROJECTIONS[category].filter((offered) =>
           prompt.includes(`- Projection: ${promptText.PROJECTION_TEXT[offered]}`),
         );
-        expect(named, `${category} / ${projection} names no camera it is offered`).toHaveLength(1);
+        // A sheet of flat pieces — ICON's overlay sheet — names no camera at all, which is the other
+        // answer that never names one the category refuses.
+        const flat = prompt.includes('no projection or camera angle applies to it.');
+        expect(named, `${category} / ${projection} names no camera it is offered`).toHaveLength(flat ? 0 : 1);
       }
     }
   });
@@ -2216,6 +2245,21 @@ describe('generatePrompt — the subject’s one-sided features, named rather th
   });
 });
 
+/** One stored sheet address, as the facing sweep compiles it. */
+interface FacingAddress {
+  readonly directionalMode: DirectionalMode;
+  readonly directions: DirectionSet;
+  readonly sheetIndex: number;
+}
+
+/** One case of the facing sweep: its name, the subject and the addresses it compiles. */
+type FacingCase = readonly [
+  name: string,
+  category: SubjectCategory,
+  subject: SubjectDefinition,
+  addresses: readonly FacingAddress[],
+];
+
 describe('generatePrompt — section 3 on a sheet that covers one facing', () => {
   /**
    * The defect: section 3 told a single-facing sheet that “one camera” *never* means every component
@@ -2252,32 +2296,71 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
     'names a direction for a component, that direction wins outright',
   ];
 
-  it('carries no clause written for several facings, under any category or sheet', () => {
-    for (const category of SUBJECT_CATEGORIES) {
-      // Every plan table the category can be drawn from, each compiled with the subject that selects
-      // it: an assembly base draws sheets of its own (issue #283), so the default subject alone never
-      // compiles OBJECT's standard sheets.
-      for (const subject of assemblyBaseSubjectsOf(category)) {
-        for (const directionalMode of DIRECTIONAL_MODES) {
-          for (const directions of DIRECTION_SETS) {
-            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
-              const output = withOutput({ directionalMode, directions, sheetIndex });
-              // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
-              // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
-              // and `sheetDirections` each resolve for themselves, so the stored values go in raw.
-              const plan = sheetPlanFor(category, subject, directionalMode, directions, sheetIndex);
-              if (sheetDirections(category, output, plan).covered.length > 1) continue;
+  // Every plan table each category can be drawn from, each compiled with the subject that selects it:
+  // an assembly base draws sheets of its own (issue #283), so the default subject alone never compiles
+  // OBJECT's standard sheets. One case per subject and stored mode, and one per sheet of an ICON
+  // subject, keeps each within the one-second limit a slow runner stands in for: an ICON roster's
+  // sheets in one test passed it. ICON alone compiles each resolved address once
+  // (`resolvedSheetAddress`), and `promptCompilerIconSkip*.test.ts` hold its skipped pairings to the
+  // prompt their resolution names.
+  const FACING_BASES = assemblyBaseCases();
+  const FACING_CASES = FACING_BASES.flatMap(([name, category, subject]): FacingCase[] => {
+    const addresses = DIRECTIONAL_MODES.flatMap((directionalMode) =>
+      DIRECTION_SETS.flatMap((directions) =>
+        sheetIndicesOf(category, subject, directionalMode, directions).map((sheetIndex) => ({
+          directionalMode,
+          directions,
+          sheetIndex,
+        })),
+      ),
+    );
+    if (category !== 'ICON') {
+      return DIRECTIONAL_MODES.map((mode) => [
+        `${name}, ${mode}`,
+        category,
+        subject,
+        addresses.filter(({ directionalMode }) => directionalMode === mode),
+      ]);
+    }
+    const seen = new Set<string>();
+    return addresses.flatMap((at): FacingCase[] => {
+      const address = resolvedSheetAddress(
+        category,
+        subject,
+        at.directionalMode,
+        at.directions,
+        at.sheetIndex,
+      );
+      if (seen.has(address)) return [];
+      seen.add(address);
+      return [[`${name}, sheet ${String(at.sheetIndex + 1)}`, category, subject, [at]]];
+    });
+  });
 
-              const section = sectionOf(generatePrompt(category, subject, output), SECTION);
-              const where = `${category}/${subject.anatomy}/${directionalMode}/${directions}/${String(sheetIndex)}`;
-              for (const clause of MULTI_FACING_CLAUSES) {
-                expect(section, `${where} carries "${clause}"`).not.toContain(clause);
-              }
-            }
-          }
+  it.each(FACING_CASES)(
+    'carries no clause written for several facings, on %s',
+    (_name, category, subject, addresses) => {
+      for (const { directionalMode, directions, sheetIndex } of addresses) {
+        const output = withOutput({ directionalMode, directions, sheetIndex });
+        // Asked of the *resolved* sheet, because a category narrows both the mode and the set — an
+        // interface widget compiles one facing whatever the two controls say. `sheetPlanFor` and
+        // `sheetDirections` each resolve for themselves, so the stored values go in raw.
+        const plan = sheetPlanFor(category, subject, directionalMode, directions, sheetIndex);
+        if (sheetDirections(category, output, plan).covered.length > 1) continue;
+
+        const section = sectionOf(generatePrompt(category, subject, output), SECTION);
+        const where = `${category}/${subject.anatomy}/${directionalMode}/${directions}/${String(sheetIndex)}`;
+        for (const clause of MULTI_FACING_CLAUSES) {
+          expect(section, `${where} carries "${clause}"`).not.toContain(clause);
         }
       }
-    }
+    },
+  );
+
+  it('splits the facing sweep over every assembly-base case, ICON’s rosters sheet by sheet', () => {
+    const covered = new Set(FACING_CASES.map(([, , subject]) => subject));
+    expect(FACING_BASES.every(([, , subject]) => covered.has(subject))).toBe(true);
+    expect(FACING_CASES.some(([, , , addresses]) => addresses.length > 0)).toBe(true);
   });
 
   it('still emits every one of those clauses where the sheet does hold several facings', () => {
@@ -2505,13 +2588,23 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(icon).toContain('every component is designed silhouette-first');
 
     // A larger target keeps the generic discipline alone — no bullet, and no blank line where the
-    // optional was, which is what the OPTIONAL marker exists to guarantee.
+    // optional was, which is what the OPTIONAL marker exists to guarantee. The subject states no
+    // display size here, since a smaller one is what the next case is about.
     const large = generatePrompt(
+      'ICON',
+      { ...defaultSubjectFor('ICON'), role: '' },
+      withOutput({ ...spriteScale, spriteTargetSize: '128 × 128 px' }),
+    );
+    expect(large).not.toContain('silhouette-first');
+
+    // The same large drawing shown at the default 24 px is sprite-sized where it is seen, so the
+    // bullets fire on the display size and say so (audit finding P6).
+    const shownSmall = generatePrompt(
       'ICON',
       defaultSubjectFor('ICON'),
       withOutput({ ...spriteScale, spriteTargetSize: '128 × 128 px' }),
     );
-    expect(large).not.toContain('silhouette-first');
+    expect(shownSmall).toContain('- The smallest display size above is sprite scale');
 
     // A painted sheet drops the whole pixel-discipline block, sprite-sized target or not — these
     // are pixel rules, and a painted 16 px icon is a different discipline this section does not
@@ -2530,11 +2623,12 @@ describe('generatePrompt — technical settings in prose', () => {
     // size a sheet over a thousand pixels wide can only satisfy by enlarging one — so the size was
     // read as a mood, and a sheet came back carrying far more interior detail than the grid it named
     // could hold. Nothing here re-derives the figure; `nativeGridScale.test.ts` pins the arithmetic.
-    // An ICON symbol set, because a native grid is derived from a *component* size and no CHARACTER
-    // sheet states one — every plan that category has draws parts of a figure.
+    // A FONT's capitals, because a native grid is derived from a *component* size and no CHARACTER
+    // sheet states one — every plan that category has draws parts of a figure — and because the sheet
+    // can be drawn wide, where ICON's grid is held square.
     const prompt = generatePrompt(
-      'ICON',
-      defaultSubjectFor('ICON'),
+      'FONT',
+      defaultSubjectFor('FONT'),
       withOutput({
         renderStyle: 'PIXEL_ART',
         resolutionProfile: 'CUSTOM',
@@ -2551,11 +2645,11 @@ describe('generatePrompt — technical settings in prose', () => {
     // Section 2 says which of the two things the size is, and states the multiple as a figure.
     expect(prompt).toContain('### The native grid, and the scale it is delivered at');
     expect(prompt).toContain('**The target component size above is a native pixel grid');
-    // Twenty-eight components at a 16 × 32 grid, each given half its own size of clearance, seat
-    // 10 × 3 on the nominal 1024 × 576 sheet at 4× and 8 × 2 at 5× — twelve short. The count is
+    // Twenty-six components at a 16 × 32 grid, each given half its own size of clearance, seat
+    // 10 × 3 on the nominal 1024 × 576 sheet at 4× and 8 × 2 at 5× — ten short. The count is
     // asserted beside it so a change to the sheet plan fails here naming its own cause rather than
     // the figure.
-    expect(prompt).toContain('Exactly 28 components');
+    expect(prompt).toContain('Exactly 26 components');
     expect(prompt).toContain('**4× or more**');
     // And the enlargement is the one that adds nothing, which is what the report's sheet failed.
     expect(prompt).toContain('The enlargement adds nothing');
@@ -2574,14 +2668,14 @@ describe('generatePrompt — technical settings in prose', () => {
       spriteTargetSize: '16 × 32 px',
     } as const;
 
-    // A square sheet is 1024 × 1024 rather than 1024 × 576, so the same twenty-eight components fit
-    // at 5× — 8 × 4 seats them, and 6× seats 7 × 3.
+    // A square sheet is 1024 × 1024 rather than 1024 × 576, so the same twenty-six capitals fit at
+    // 5× — 8 × 4 seats them, and 6× seats 7 × 3.
     const square = generatePrompt(
-      'ICON',
-      defaultSubjectFor('ICON'),
+      'FONT',
+      defaultSubjectFor('FONT'),
       withOutput({ ...grid, aspectRatio: 'SQUARE_1_1' }),
     );
-    expect(square).toContain('Exactly 28 components');
+    expect(square).toContain('Exactly 26 components');
     expect(square).toContain('**5× or more**');
 
     // And a sheet asking for fewer of them on the same canvas is enlarged more: a PORTRAIT
@@ -3136,7 +3230,7 @@ describe('generatePrompt — the machine and its palette', () => {
     );
     const prompt = generatePrompt('CHARACTER', SUBJECT, output);
 
-    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+    expect(prompt).not.toMatch(MARKER);
     expect(prompt).toContain('Generate the sheet now.');
   });
 
@@ -3189,7 +3283,7 @@ describe('generatePrompt — the machine and its palette', () => {
     );
     const prompt = generatePrompt('CHARACTER', SUBJECT, output);
 
-    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+    expect(prompt).not.toMatch(MARKER);
     expect(prompt).toContain('Generate the sheet now.');
   });
 });
@@ -3200,15 +3294,14 @@ describe('every category', () => {
     // set of values through the same optional lines.
     const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
     expect(prompt).toContain(`# MODULAR SPRITE-SHEET SPECIFICATION — ${category}`);
-    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+    expect(prompt).not.toMatch(MARKER);
   });
 });
 
 describe('countWords and estimateTokens', () => {
-  it('counts the words in a compiled prompt', () => {
+  it('counts the words between runs of whitespace, and none in blank text', () => {
     expect(countWords('one two  three\nfour')).toBe(4);
     expect(countWords('   ')).toBe(0);
-    expect(countWords(generatePrompt('CHARACTER', SUBJECT, OUTPUT))).toBeGreaterThan(100);
   });
 
   it('estimates tokens at roughly four characters each', () => {
@@ -3225,7 +3318,9 @@ describe('countWords and estimateTokens', () => {
  * deliberates.
  */
 describe('generatePrompt — the self-audit, per target', () => {
-  const AUDIT_MARKERS = ['Component count is exactly', 'One camera, one scale and one light direction'];
+  // The default lighting is a flat albedo, which has no key light, so the camera check asks every
+  // component to be lit alike rather than from one direction (audit finding P9).
+  const AUDIT_MARKERS = ['Component count is exactly', 'One camera and one scale across every component'];
 
   it('keeps the audit for the targets that work through the prompt', () => {
     // SEEDREAM is here because it is the case that breaks the shorthand: an *image* endpoint that
@@ -3421,6 +3516,8 @@ describe('generatePrompt — the shape of the delivered canvas', () => {
     // arrangement sentence, which is inside no block `modelWrapperText/sol.ts` protects and inside
     // no check section 9 runs. Every category, because the contract is the one section all thirteen
     // carry unconditionally and a gate added around this item would be invisible on CHARACTER alone.
+    // The canvas stated is the one the category can be drawn on: ICON's grid is held square, so a
+    // stored wide ratio compiles as `SQUARE_1_1` there and as itself everywhere else.
     for (const category of SUBJECT_CATEGORIES) {
       const subject = defaultSubjectFor(category);
       for (const aspectRatio of ASPECT_RATIOS) {
@@ -3428,7 +3525,9 @@ describe('generatePrompt — the shape of the delivered canvas', () => {
           generatePrompt(category, subject, withOutput({ aspectRatio })),
           'NON-NEGOTIABLE OUTPUT CONTRACT',
         );
-        expect(contract, `${category}/${aspectRatio}`).toContain(canvasSentence(aspectRatio));
+        expect(contract, `${category}/${aspectRatio}`).toContain(
+          canvasSentence(resolveAspectRatio(category, aspectRatio)),
+        );
       }
     }
   });
@@ -3760,12 +3859,22 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
 
     for (const category of SUBJECT_CATEGORIES) {
       for (const subject of assemblyBaseSubjectsOf(category)) {
+        // ICON compiles each resolved address once, as `resolvedSheetAddress` says why.
+        const compiled = new Set<string>();
         for (const directionalMode of DIRECTIONAL_MODES) {
           for (const directions of DIRECTION_SETS) {
-            // The bound is derived, not written down: `SHEET_INDEX_RANGE.max` is the longest series
-            // any pairing produces over any set its category offers, so a pairing that grows a sheet
-            // is swept without this loop being touched.
-            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            // The bound is derived, not written down: each pairing's own series, so a pairing that
+            // grows a sheet is swept without this loop being touched.
+            for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
+              const address = resolvedSheetAddress(
+                category,
+                subject,
+                directionalMode,
+                directions,
+                sheetIndex,
+              );
+              if (category === 'ICON' && compiled.has(address)) continue;
+              compiled.add(address);
               collect(
                 generatePrompt(
                   category,
@@ -3906,5 +4015,137 @@ describe('generatePrompt — the one ban that is per-category', () => {
     for (const banned of ['watermark', 'signature', 'caption']) {
       expect(prompt.toLowerCase(), `${category} stops banning a ${banned}`).toContain(banned);
     }
+  });
+});
+
+describe('generatePrompt — an icon set', () => {
+  const ICON = defaultSubjectFor('ICON');
+  const ICON_OUTPUT = withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' });
+  // The icon sheets open the series from sheet 0, and the overlay sheet closes it.
+  const OVERLAY_SHEET =
+    sheetSeriesFor('ICON', ICON, ICON_OUTPUT.directionalMode, ICON_OUTPUT.directions).length - 1;
+  const ELSEWHERE =
+    '**Overlay Style** is excepted: it is the style of the pieces another sheet of this series draws';
+  const STYLES = '**Overlay Style** is excepted: it is the style every component in section 4 is drawn in';
+
+  it('excepts the overlay style as drawn elsewhere on the icon sheets, and as the style of the overlay sheet', () => {
+    const overlay = sectionOf(
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: OVERLAY_SHEET }),
+      'SUBJECT DEFINITION',
+    );
+    const icons = sectionOf(
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 }),
+      'SUBJECT DEFINITION',
+    );
+
+    expect(overlay.replaceAll(/\s+/gu, ' ')).toContain(STYLES);
+    expect(overlay).not.toContain('is excepted: section');
+    expect(icons.replaceAll(/\s+/gu, ' ')).toContain(ELSEWHERE);
+    expect(icons).not.toContain('is the style every component');
+  });
+
+  it('says nothing about an overlay line nobody wrote', () => {
+    const icons = generatePrompt('ICON', { ...ICON, clothing: '' }, { ...ICON_OUTPUT, sheetIndex: 0 });
+    expect(icons).not.toContain('another sheet of this series draws');
+  });
+
+  it('states the drawn-elsewhere exception on no other category’s sheets', () => {
+    for (const category of SUBJECT_CATEGORIES.filter((candidate) => candidate !== 'ICON')) {
+      for (const subject of assemblyBaseSubjectsOf(category)) {
+        for (const directionalMode of modesFor(category, subject)) {
+          const output = withOutput({ directionalMode });
+          for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, output.directions)) {
+            expect(
+              generatePrompt(category, subject, { ...output, sheetIndex }),
+              `${category}/${subject.anatomy}/${directionalMode}/${String(sheetIndex)}`,
+            ).not.toContain('another sheet of this series draws,');
+          }
+        }
+      }
+    }
+  });
+
+  it('lists the roster as named lines in the world’s look, under the grid the sheet states', () => {
+    const subject = { ...ICON, setting: 'Near-Future Cyberpunk' };
+    const inventory = sectionOf(
+      generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 0 }),
+      'COMPONENT INVENTORY',
+    );
+    expect(inventory).toContain('Sixteen drawings, four across and four down, in the reading order below.');
+    expect(inventory).toContain(
+      'Minor healing consumable ×1 — a slim red stim-pack auto-injector, needle capped, with a glowing amber dose window',
+    );
+    expect(inventory.replaceAll(/\s+/g, ' ')).toContain(
+      'A colour an entry names is that icon’s own, and outranks the set’s primary and accent colours for it',
+    );
+  });
+
+  it('keeps the bust of a figure entry rather than calling it an error, on the sheet that lists it', () => {
+    // The starter set draws the character panel's bust; a guard calling every entry describing anatomy
+    // an error would have sent it to section 0's tripwire as a malformed specification.
+    expect(ICON.icons?.picks.map(iconPickId)).toContain('system-character');
+    const prompt = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 });
+    const inventory = sectionOf(prompt, 'COMPONENT INVENTORY').replaceAll(/\s+/g, ' ');
+    expect(inventory).toContain(
+      'or anatomy other than the hand, face or figure that is the subject of an icon’s own entry, does not belong',
+    );
+    expect(inventory).not.toContain('An entry describing anatomy');
+  });
+
+  it('says the overlays it lists are components only on the sheet that lists them', () => {
+    const OVERLAYS = 'The overlays and marks it does list are components';
+    const overlay = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: OVERLAY_SHEET });
+    const icons = generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 });
+    expect(sectionOf(overlay, 'COMPONENT INVENTORY')).toContain(OVERLAYS);
+    expect(sectionOf(icons, 'COMPONENT INVENTORY')).not.toContain(OVERLAYS);
+  });
+
+  it('audits icons against each other on an icon sheet, and pieces at an icon’s cell on the overlay sheet', () => {
+    const ICONS_AGREE = 'Every icon fills the same cell to the same margin';
+    const PIECES_AGREE = 'Every piece sits in a cell the size of one icon';
+    // The isolated look's wording; `promptCompilerIconLook.test.ts` holds the full-bleed square's.
+    const isolated = {
+      ...ICON,
+      icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: ICON.icons?.picks ?? [] },
+    } as const;
+    const audit = (sheetIndex: number): string =>
+      sectionOf(
+        generatePrompt('ICON', isolated, { ...ICON_OUTPUT, sheetIndex }),
+        'LAYOUT AND SELF-AUDIT',
+      ).replaceAll(/\s+/g, ' ');
+    expect(audit(OVERLAY_SHEET)).toContain(PIECES_AGREE);
+    expect(audit(OVERLAY_SHEET)).not.toContain(ICONS_AGREE);
+    expect(audit(0)).toContain(ICONS_AGREE);
+    expect(audit(0)).not.toContain(PIECES_AGREE);
+  });
+
+  it('agrees the count’s noun with a sheet of one icon, in section 0 and in the series list', () => {
+    const subject = {
+      ...ICON,
+      icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(['heal-minor']) },
+    } as const;
+    const prompt = generatePrompt('ICON', subject, { ...ICON_OUTPUT, sheetIndex: 0 });
+    expect(prompt).toContain('Exactly 1 component, each visibly separate');
+    expect(prompt).not.toMatch(/\b1 components\b/);
+    expect(prompt).toContain('**Sheet 1 — Icon 1** *(this sheet)*: 1 component.');
+  });
+
+  it('bans a hand or figure only where no entry names one', () => {
+    const exclusions = sectionOf(
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, sheetIndex: 0 }),
+      'EXCLUSIONS',
+    );
+    expect(exclusions).toContain('any hand, character or creature an entry in section');
+    expect(exclusions).toContain(
+      'A hand, face or figure an entry names is part of that icon’s subject and is drawn',
+    );
+  });
+
+  it('draws the set on a square canvas, whatever canvas the configuration arrived with', () => {
+    const contract = sectionOf(
+      generatePrompt('ICON', ICON, { ...ICON_OUTPUT, aspectRatio: 'ULTRAWIDE_21_9' }),
+      'NON-NEGOTIABLE OUTPUT CONTRACT',
+    );
+    expect(contract).toContain('The delivered image is a square 1:1 canvas.');
   });
 });

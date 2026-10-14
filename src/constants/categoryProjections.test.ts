@@ -37,6 +37,13 @@ describe('the table itself', () => {
     // three-quarter potion bottle and an isometric map pin are both shipped icon styles. FONT sits
     // on the bound side of that near miss, which is the one place it is tighter than ICON: an icon
     // depicts an object that has an angle, and a glyph is a mark with no object behind it at all.
+    //
+    // TERRAIN and EFFECT are the two this table must *not* bind, and the list is what holds both.
+    // TERRAIN is the one that looks bound: `CATEGORY_DIRECTION_SETS` pins it to `SINGLE_FRONT`
+    // because a tile has no front to turn away from, and the facings and the camera are separate
+    // questions — a landform piece's front is the exposed face the camera sees, and
+    // `side-on-volcanic-cliff` is that sheet, shipped at `ORTHOGRAPHIC_SIDE`. EFFECT keeps every
+    // camera because an effect matches the world it plays over.
     const bound = SUBJECT_CATEGORIES.filter(
       (category) => CATEGORY_PROJECTIONS[category].length < PROJECTIONS.length,
     );
@@ -46,22 +53,9 @@ describe('the table itself', () => {
     }
   });
 
-  it('leaves TERRAIN every camera, because a cliff face is a landform seen from the side', () => {
-    // The category this table must *not* bind, and the one that looks bound:
-    // `CATEGORY_DIRECTION_SETS` pins TERRAIN to `SINGLE_FRONT` because a tile has no front to turn
-    // away from, and the facings and the camera are separate questions. A tile is read from above,
-    // but a landform piece's front is the exposed face the camera sees — the rock wall, the cut bank —
-    // and `side-on-volcanic-cliff` is that sheet, shipped at `ORTHOGRAPHIC_SIDE`.
-    expect(CATEGORY_PROJECTIONS.TERRAIN).toEqual(PROJECTIONS);
-    expect(supportsProjection('TERRAIN', 'ORTHOGRAPHIC_SIDE')).toBe(true);
-  });
-
-  it('leaves EFFECT every camera, because an effect matches the world it plays over', () => {
-    // The same argument `CATEGORY_DIRECTION_SETS` makes about this category, one axis over — and the
-    // library is where it stops being an assertion: the eight shipped effect presets stand at six of
-    // the seven cameras on purpose, which is the count the table's docblock states.
-    expect(CATEGORY_PROJECTIONS.EFFECT).toEqual(PROJECTIONS);
-
+  it('stands the shipped effect presets at six of the seven cameras, as the table says', () => {
+    // Where EFFECT keeping every camera stops being an assertion: the eight shipped effect presets
+    // stand at six of the seven cameras on purpose, which is the count the table's docblock states.
     const effects = PRESETS.filter((preset) => preset.category === 'EFFECT');
     expect(effects).toHaveLength(8);
     expect(new Set(effects.map((preset) => preset.output.projection)).size).toBe(6);

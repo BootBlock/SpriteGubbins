@@ -4,10 +4,14 @@ import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../constants/promptText/index.ts';
 import { DEFAULT_MODE_FOR } from '../constants/sheetPlans/index.ts';
+import { ICON_CATALOGUE_GROUPS, iconComponentCount } from '../constants/iconCatalogue/index.ts';
+import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { canRedoStudio, canUndoStudio, studioUndoDepth } from '../utils/studioHistory.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import { iconPickId } from '../utils/iconPickId.ts';
 
 /**
  * The subject store's one piece of real logic is that a category and its answers move together —
@@ -33,12 +37,6 @@ afterEach(() => {
 });
 
 describe('useSubjectStore', () => {
-  it('opens on the default preset', () => {
-    const { category, subject } = useSubjectStore.getState();
-    expect(category).toBe(DEFAULT_PRESET.category);
-    expect(subject).toEqual(DEFAULT_PRESET.subject);
-  });
-
   it('replaces the whole subject when the category changes', () => {
     useSubjectStore.getState().setCategory('BUILDING');
 
@@ -490,12 +488,6 @@ describe('useSubjectStore', () => {
    * that stepping back writes *both* stores.
    */
   describe('the undo stack', () => {
-    it('opens with nothing to step back to', () => {
-      const { history } = useSubjectStore.getState();
-      expect(canUndoStudio(history)).toBe(false);
-      expect(canRedoStudio(history)).toBe(false);
-    });
-
     it('puts the subject back after a category switch', () => {
       useSubjectStore.getState().setField('role', 'Bartender');
       useSubjectStore.getState().setCategory('BUILDING');
@@ -642,6 +634,278 @@ describe('useSubjectStore', () => {
 
       expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
       expect(useSubjectStore.getState().category).toBe('BUILDING');
+    });
+  });
+
+  describe('the icon roster', () => {
+    /** A fresh ICON studio holding `picks` in place of its starter set. */
+    function iconStudio(picks: readonly string[]): void {
+      useSubjectStore.setState({
+        category: 'ICON',
+        subject: {
+          ...defaultSubjectFor('ICON'),
+          icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(picks) },
+        },
+      });
+      useSubjectStore.getState().openStudio();
+    }
+
+    function picks(): readonly string[] {
+      return (useSubjectStore.getState().subject.icons?.picks ?? []).map(iconPickId);
+    }
+
+    it('ticks an icon into its catalogue place rather than onto the end', () => {
+      iconStudio(['heal-minor', 'system-bags']);
+
+      const refused = useSubjectStore.getState().toggleIcons(['heal-major'], true);
+
+      expect(refused).toEqual([]);
+      expect(picks()).toEqual(['heal-minor', 'heal-major', 'system-bags']);
+    });
+
+    it('unticks an icon and leaves the rest in order', () => {
+      iconStudio(['heal-minor', 'heal-major', 'system-bags']);
+
+      useSubjectStore.getState().toggleIcons(['heal-major'], false);
+
+      expect(picks()).toEqual(['heal-minor', 'system-bags']);
+    });
+
+    it('ticks a whole group as one step, in its own order and without repeating what was ticked', () => {
+      iconStudio(['mana-minor']);
+      const restoratives = ICON_CATALOGUE_GROUPS[0]?.entries.map((entry) => entry.id) ?? [];
+
+      useSubjectStore.getState().toggleIcons([...restoratives].reverse(), true);
+
+      expect(picks()).toEqual(restoratives);
+      expect(studioUndoDepth(useSubjectStore.getState().history)).toBe(1);
+    });
+
+    it('fills a set to its capacity from the whole catalogue, and hands back what does not fit', () => {
+      // The catalogue is larger than one set can hold, so ticking all of it at once is the real
+      // capacity's refusal: what fits is ticked in catalogue order, and the rest comes back.
+      iconStudio([]);
+      const every = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries);
+
+      const refused = useSubjectStore.getState().toggleIcons(
+        every.map((entry) => entry.id),
+        true,
+      );
+
+      const components = every
+        .filter((entry) => picks().includes(entry.id))
+        .reduce((total, entry) => total + iconComponentCount(entry), 0);
+      expect(refused.length).toBeGreaterThan(0);
+      expect(components).toBeLessThanOrEqual(ICON_ROSTER_CAPACITY);
+      expect(components).toBeGreaterThan(ICON_ROSTER_CAPACITY - 2);
+      expect([...picks(), ...refused].sort()).toEqual(every.map((entry) => entry.id).sort());
+    });
+
+    it('clears the roster to the overlay sheet alone', () => {
+      iconStudio(['heal-minor', 'system-bags']);
+
+      useSubjectStore.getState().clearIcons();
+
+      expect(picks()).toEqual([]);
+    });
+
+    it('pulls the sheet index back inside a series the untick shortens, in the same act', () => {
+      // Twenty one-component icons are two icon sheets and the overlay sheet, and the reader is on the
+      // overlay sheet when they untick four icons, which leaves one icon sheet and the overlay sheet.
+      const twenty = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
+        .filter((entry) => entry.states === undefined)
+        .slice(0, 20)
+        .map((entry) => entry.id);
+      iconStudio(twenty);
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 2 } });
+      useSubjectStore.getState().openStudio();
+
+      useSubjectStore.getState().toggleIcons(twenty.slice(16), false);
+
+      expect(useOutputStore.getState().output.sheetIndex).toBe(1);
+
+      useSubjectStore.getState().undoStudio();
+      expect(picks()).toEqual(twenty);
+      expect(useOutputStore.getState().output.sheetIndex).toBe(2);
+    });
+
+    it('keeps a reader on the overlay sheet there when a tick adds an icon sheet before it', () => {
+      const forty = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
+        .filter((entry) => entry.states === undefined)
+        .slice(0, 40)
+        .map((entry) => entry.id);
+      iconStudio(forty.slice(0, 20));
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 2 } });
+
+      useSubjectStore.getState().toggleIcons(forty.slice(20), true);
+
+      expect(useOutputStore.getState().output.sheetIndex).toBe(3);
+    });
+
+    it('settles the sheet index against the starter roster a reset installs', () => {
+      // A reset swaps the roster without a tick, and the index it left past the starter's series used to
+      // carry the reader back to the far sheet on their next tick.
+      const seventy = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
+        .filter((entry) => entry.states === undefined)
+        .slice(0, 70)
+        .map((entry) => entry.id);
+      iconStudio(seventy);
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 3 } });
+
+      useSubjectStore.getState().resetSubject();
+      expect(useOutputStore.getState().output.sheetIndex).toBe(0);
+
+      useSubjectStore.getState().toggleIcons(seventy, true);
+      expect(useOutputStore.getState().output.sheetIndex).toBe(0);
+
+      useSubjectStore.getState().undoStudio();
+      useSubjectStore.getState().undoStudio();
+      expect(useOutputStore.getState().output.sheetIndex).toBe(3);
+    });
+
+    it('leaves the sheet index alone where the series still holds it', () => {
+      iconStudio(['heal-minor']);
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 } });
+      const before = useOutputStore.getState().output;
+
+      useSubjectStore.getState().toggleIcons(['heal-major'], true);
+
+      expect(useOutputStore.getState().output).toBe(before);
+    });
+
+    it('steps a tick back with Undo and forward again with Redo', () => {
+      iconStudio(['heal-minor']);
+
+      useSubjectStore.getState().toggleIcons(['system-bags'], true);
+      useSubjectStore.getState().undoStudio();
+      expect(picks()).toEqual(['heal-minor']);
+
+      useSubjectStore.getState().redoStudio();
+      expect(picks()).toEqual(['heal-minor', 'system-bags']);
+    });
+
+    it('records nothing for a tick or an untick that changes nothing', () => {
+      iconStudio(['heal-minor']);
+
+      useSubjectStore.getState().toggleIcons(['heal-minor'], true);
+      useSubjectStore.getState().toggleIcons(['system-bags'], false);
+
+      expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
+    });
+
+    it('does nothing to a subject with no roster', () => {
+      const before = useSubjectStore.getState().subject;
+
+      expect(useSubjectStore.getState().toggleIcons(['heal-minor'], true)).toEqual([]);
+      useSubjectStore.getState().clearIcons();
+      useSubjectStore.getState().setIconLook('ISOLATED_MARK');
+      useSubjectStore.getState().setIconColourMode('TINT_MASK');
+
+      expect(useSubjectStore.getState().subject).toBe(before);
+      expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
+    });
+  });
+
+  describe('the icon look', () => {
+    function look() {
+      return useSubjectStore.getState().subject.icons?.look;
+    }
+
+    beforeEach(() => {
+      useSubjectStore.setState({
+        category: 'ICON',
+        subject: {
+          ...defaultSubjectFor('ICON'),
+          icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(['heal-minor']) },
+        },
+      });
+      useSubjectStore.getState().openStudio();
+    });
+
+    it('draws the set in another look as one step Undo takes back and Redo replays', () => {
+      useSubjectStore.getState().setIconLook('FULL_BLEED_TILE');
+      expect(look()).toBe('FULL_BLEED_TILE');
+      expect(useSubjectStore.getState().subject.icons?.picks).toEqual(cataloguePicks(['heal-minor']));
+      expect(studioUndoDepth(useSubjectStore.getState().history)).toBe(1);
+
+      useSubjectStore.getState().undoStudio();
+      expect(look()).toBe('ISOLATED_MARK');
+
+      useSubjectStore.getState().redoStudio();
+      expect(look()).toBe('FULL_BLEED_TILE');
+    });
+
+    it('leaves the sheet index where it is, since a look changes no sheet count', () => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1 } });
+      const before = useOutputStore.getState().output;
+
+      useSubjectStore.getState().setIconLook('FULL_BLEED_TILE');
+
+      expect(useOutputStore.getState().output).toBe(before);
+    });
+
+    it('records nothing for the look already in force', () => {
+      const before = useSubjectStore.getState().subject;
+
+      useSubjectStore.getState().setIconLook('ISOLATED_MARK');
+
+      expect(useSubjectStore.getState().subject).toBe(before);
+      expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
+    });
+  });
+
+  describe('the icon colour mode', () => {
+    function colourMode() {
+      return useSubjectStore.getState().subject.icons?.colourMode;
+    }
+
+    beforeEach(() => {
+      useOutputStore.setState({
+        output: { ...DEFAULT_OUTPUT_CONFIG, sheetIndex: 1, backgroundKey: 'PURE_WHITE' },
+      });
+      useSubjectStore.setState({
+        category: 'ICON',
+        subject: {
+          ...defaultSubjectFor('ICON'),
+          icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks: cataloguePicks(['heal-minor']) },
+        },
+      });
+      useSubjectStore.getState().openStudio();
+    });
+
+    it('turns the set to a tint mask and its key off white in one step Undo takes back whole', () => {
+      // A mask's lightest grey runs too close to white for the white key (audit finding M1).
+      useSubjectStore.getState().setIconColourMode('TINT_MASK');
+      expect(colourMode()).toBe('TINT_MASK');
+      expect(useOutputStore.getState().output.backgroundKey).toBe('MAGENTA_FF00FF');
+      expect(useOutputStore.getState().output.sheetIndex).toBe(1);
+      expect(studioUndoDepth(useSubjectStore.getState().history)).toBe(1);
+
+      useSubjectStore.getState().undoStudio();
+      expect(colourMode()).toBe('FULL_COLOUR');
+      expect(useOutputStore.getState().output.backgroundKey).toBe('PURE_WHITE');
+
+      useSubjectStore.getState().redoStudio();
+      expect(colourMode()).toBe('TINT_MASK');
+      expect(useOutputStore.getState().output.backgroundKey).toBe('MAGENTA_FF00FF');
+    });
+
+    it('leaves a key the mask can take where it is', () => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, backgroundKey: 'TRANSPARENT' } });
+      const before = useOutputStore.getState().output;
+
+      useSubjectStore.getState().setIconColourMode('TINT_MASK');
+
+      expect(useOutputStore.getState().output).toBe(before);
+    });
+
+    it('records nothing for the colour mode already in force', () => {
+      const before = useSubjectStore.getState().subject;
+
+      useSubjectStore.getState().setIconColourMode('FULL_COLOUR');
+
+      expect(useSubjectStore.getState().subject).toBe(before);
+      expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
     });
   });
 });

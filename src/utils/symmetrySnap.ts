@@ -47,7 +47,11 @@ import {
  * **Nothing is snapped that {@link SpriteSymmetry.snapped} does not name**, and that flag is where
  * the confidence floor was already applied. This function has no opinion about which sprites deserve
  * settling — the whole reason the pass ships off by default is that a held sword, a single pauldron
- * and a shoulder bag are asymmetric on purpose, and the floor is what keeps them intact.
+ * and a shoulder bag are asymmetric on purpose, and the floor is what keeps them intact. The flag
+ * also refuses a sprite with anything drawn directly against its box, since a pixel this draws on the
+ * box's edge would join that artwork to the sprite (see `bordersArtwork`); so no write here can join
+ * the sprite to anything outside its box. A write can still clear a pixel out of a one-pixel bridge
+ * and part the sprite, which is why `settleSprites` reads the sheet again after it.
  *
  * Returns the image it was given, by reference, whenever no pixel actually moved — no reading
  * marked, or every marked sprite already agreeing with itself. So `CHECK`, a `SNAP` nothing
@@ -73,7 +77,7 @@ export function snapSymmetric(image: ImageData, readings: readonly SpriteSymmetr
 
   // A sprite can qualify and still have nothing to settle — every pair already agreeing is the
   // ordinary case at a high floor — and the copy above is then a copy of the sheet with no edit in
-  // it. Handing back the original instead is what lets `quantiseImage` tell that the sheet did not
+  // it. Handing back the original instead is what lets `settleSprites` tell that the sheet did not
   // move and reuse the segmentation it already took, rather than labelling the result a second time
   // to arrive at the same boxes.
   return settled === 0 ? image : snapped;

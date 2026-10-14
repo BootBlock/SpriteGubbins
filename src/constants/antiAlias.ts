@@ -39,5 +39,5 @@ export const ANTI_ALIAS_GUIDANCE = {
    * control a reader had seen there before, with nothing saying why.
    */
   unconstrained:
-    'No colour setting is constraining this sheet, so each blended pixel is written as the mixture it works out to and the sheet gains the shades that produces. Pin a palette or set a colour budget in the studio and a further control appears here, offering to keep every blend to the colours the sheet already holds.',
+    'No colour setting is constraining this sheet, so each blended pixel is written as the mixture it works out to and the sheet gains the shades that produces. Pin a palette or set a colour budget in the studio and a further control appears here, offering to keep every blend to the colours that setting allows.',
 } as const;

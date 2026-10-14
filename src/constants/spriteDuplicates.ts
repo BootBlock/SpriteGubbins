@@ -17,7 +17,7 @@ export const DUPLICATE_GUIDANCE = {
    * nothing — a reader who has just raised the tolerance and seen this wants to know the sheet is
    * clean, not that the control is broken.
    */
-  none: 'Every sprite on this sheet is its own drawing at the tolerance in force, so there is nothing to fold. Each pair is laid over the other by its top-left corner and compared cell by cell, so where two drawings differ in size the cells only one of them covers count against the pair — which is what keeps a large sprite and a small one apart, and what lets a silhouette that gained a pixel at one edge still match the frame it came from. Raise the tolerance if two sprites you can see are the same pose are not being grouped.',
+  none: 'Every sprite on this sheet is its own drawing at the tolerance in force, so there is nothing to fold. Each pair is compared cell by cell, laid over the other where the two match best near their top-left corners. Where two drawings differ in size, the cells only one of them covers count against the pair — which is what keeps a large sprite and a small one apart, and what lets a silhouette that gained a pixel on any edge still match the frame it came from. Raise the tolerance if two sprites you can see are the same pose are not being grouped.',
 
   /**
    * Groups were found and nothing has been done about them, which is the ordinary reading state.
@@ -37,7 +37,7 @@ export const DUPLICATE_GUIDANCE = {
    * otherwise conclude that nothing happened.
    */
   snapped:
-    'Each of these sprites has been rewritten with the first sprite of its group, so the sheet on screen and the file you download hold one drawing of each repeated pose. The reading itself still describes the sheet as it arrived at this step, which is why the counts have not changed — it is the record of what was folded. Whatever made each copy different is gone, so switch the snap off if a sprite you wanted has been taken with them, and use the preview at 1:1 to check what the fold left behind.',
+    'Each of these sprites has been rewritten with the most typical sprite of its group, the one closest to all the others, so the sheet on screen and the file you download hold one drawing of each repeated pose. Where that is not the group’s first sprite, the list names where it sits. The reading itself still describes the sheet as it arrived at this step, which is why the counts have not changed — it is the record of what was folded. Whatever made each copy different is gone, so switch the snap off if a sprite you wanted has been taken with them, and use the preview at 1:1 to check what the fold left behind.',
 
   /**
    * The segmentation found nothing this reading can be taken over.

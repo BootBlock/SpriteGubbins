@@ -24,7 +24,7 @@ beforeEach(() => {
 
 describe('SectionToggleAll', () => {
   it('offers to expand while anything is still folded, and collapses once all are open', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SectionToggleAll sections={SECTIONS} panelLabel="Test panel" />);
 
     const button = screen.getByRole('button', { name: /expand all/i });

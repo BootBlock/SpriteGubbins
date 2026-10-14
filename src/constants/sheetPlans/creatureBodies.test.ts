@@ -119,7 +119,7 @@ function drawnTextOf(base: string): string {
   return DIRECTIONAL_MODES.flatMap((mode) => {
     const seriesFor = plans[mode];
     if (seriesFor === undefined) return [];
-    return Object.values(DIRECTION_LISTS).flatMap((facings) => seriesFor(facings));
+    return Object.values(DIRECTION_LISTS).flatMap((facings) => seriesFor(facings, subject));
   })
     .map(planProseFor)
     .join('\n')

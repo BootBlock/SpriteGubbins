@@ -72,7 +72,7 @@ Three forms:
 | --- | --- |
 | `[IF:KEY=A,B]` | `KEY` is `A` or `B` |
 | `[IF:KEY!=A,B]` | `KEY` is neither |
-| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness — every gate but `RENDER_STYLE` and `RIG_MODE` takes this form, since those two are only ever compared against named values)* |
+| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness — every gate but `ORIENTATION`, `RENDER_STYLE`, `RIG_MODE` and `SUBJECT_SCOPE` takes this form, since those four are only ever compared against named values)* |
 
 **Blocks nest.** A block inside a dropped block is dropped with it, whatever its own condition says.
 That is what lets a section state its precondition once and its parts state theirs beneath it — §9's
@@ -177,6 +177,24 @@ Was hardcoded, and hardcoded *contradictorily* — see §8.2.
 `CAMERA_ELEVATION` is a number in degrees, and only the first row leaves it open — every other
 projection above **is** a camera geometry, so its elevation is that geometry's rather than a second
 setting beside it. Both were independent when this shipped, which is R6 in §8.
+
+**The sheet plan decides what the camera governs** (`ORIENTATION`, from `SheetPlan.orientation`). A
+`SHEET_YAW` sheet turns every component to the yaws §3 states. An icon sheet is `OWN_POSE`: §3 states
+the camera the set shares and poses each subject for its own read, with no yaw, no left-and-right rule
+and no primary direction. The overlay sheet is `PICTURE_PLANE`: its pieces lie flat and square to the
+screen, and §3 states neither line above. `SUBJECT_SCOPE` (`SheetPlan.subjectScope`) is the same kind
+of declaration for §1: one design, what a set shares above entries that carry their own, or the set
+a sheet of overlay pieces is laid over.
+
+**A sheet laid out in a fixed grid states its one square at one exact share of its cell**
+(`SheetPlan.cellGrid`, `TILE_SHARE`). An icon set’s icon sheets and overlay sheets all declare the
+four-across grid, so the `RESOLUTION_PROFILE_DESCRIPTION` line states their square at exactly 60% of
+its cell under high resolution and 45% under mid, and adds 60% after the figure of a target size or
+the 16-bit height. The overlay sheets also declare a `placement`: one piece to a cell, drawn within
+that square (`WITHIN_TILE`, the full-bleed look) or within the cell itself (`WITHIN_CELL`, the
+isolated look), standing where it sits over the icon. The Quantise tab finds each cell from the gaps
+between the pieces and keeps each piece where it was drawn. The overlay library and the reader’s
+*Extra Overlay Pieces* are cut across as many overlay sheets as they fill, sixteen cells to a sheet.
 
 ### `DIRECTIONS` — **NEW**
 
@@ -333,13 +351,13 @@ or a character portrait. Every rule below serves extraction.
 Satisfy this section before any aesthetic consideration.
 [IF:COMPONENTS_ARE_WHOLE!=yes]
 
-[N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
+[N]. Exactly [DEFINE:COMPONENT_TALLY], each visibly separate, none touching or
    overlapping — and none carrying another: a component that arrives with a neighbouring piece
    still attached to it is two components merged into one.
 [/IF]
 [IF:COMPONENTS_ARE_WHOLE]
 
-[N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
+[N]. Exactly [DEFINE:COMPONENT_TALLY], each visibly separate, none touching or
    overlapping — and each one complete drawing of its own: two entries drawn as one picture are two
    entries merged, not one component.
 [/IF]
@@ -353,6 +371,32 @@ Satisfy this section before any aesthetic consideration.
 [IF:KEY_COLOUR!=yes]
    Deliver that transparency as the file’s alpha channel. A drawn checkerboard, a grid of grey
    squares or a flat matte in place of it is a painted background and fails this rule.
+[/IF]
+[IF:OWN_BACKDROP]
+   Each component is a square painted edge to edge, its subject and the backdrop behind it together,
+   and that backdrop belongs to the component, not to the background: the background is only the
+   gutters between the squares, so [DEFINE:BACKGROUND_KEY_DESCRIPTION] fills those gutters and never
+   shows inside a square. What this item forbids the background it forbids the gutters, never a
+   square’s own backdrop. [DEFINE:BACKDROP_DESCRIPTION] The interior detail and the materials the
+   subject definition names are the subject’s, never the backdrop’s.
+   Every square lies flat in the picture plane, square to the screen, with level edges and right-angled
+   corners whatever the camera: the camera governs the subject inside a square, never the square.
+[IF:KEY_COLOUR]
+   The backdrop keeps clear of the key colour as every part of a component does.
+[/IF]
+[/IF]
+[IF:ENGINE_OPACITY]
+   Every component is drawn opaque at full strength, including one that is translucent in use: a veil
+   or a wedge is one solid shape, and a glow or a halo is two or three stepped bands of solid colour,
+   each with a hard edge. The engine applies each component’s opacity and blending when it lays it over
+   the artwork beneath, so nothing is drawn see-through, feathered or fading into the background.
+[IF:KEY_COLOUR]
+   Every band keeps clear of the key colour as every part of a component does.
+[/IF]
+[IF:KEY_COLOUR!=yes]
+   The alpha channel is fully opaque across every component and fully transparent between them, with
+   no partial alpha anywhere.
+[/IF]
 [/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
@@ -415,19 +459,51 @@ it: drawing what the inventory asks for is how a sheet ends up being the wrong s
 **That settles before the precedence order below is reached** — a category disagreement is a fault
 to report, never a conflict to rank.
 [/IF]
+[IF:ORIENTATION=SHEET_YAW]
+[IF:COMPONENTS_ARE_ONE_SET!=yes]
 
 **Where two instructions pull against each other**, satisfy them in this order: the component count
 and inventory · each component’s identity and grid position · the object orientation each component
 is asked for · the fixed camera, one scale and pivot compatibility · subject identity · the render
 style · surface aesthetics. Nothing later overrides anything earlier, so a general aesthetic
 preference never overrules a component’s stated direction.
+[/IF]
+[IF:COMPONENTS_ARE_ONE_SET]
+
+**Where two instructions pull against each other**, satisfy them in this order: the component count
+and inventory · each component’s identity and grid position · the object orientation each component
+is asked for · the fixed camera, one scale and pivot compatibility · set identity · the render
+style · surface aesthetics. Nothing later overrides anything earlier, so a general aesthetic
+preference never overrules a component’s stated direction.
+[/IF]
+[/IF]
+[IF:ORIENTATION!=SHEET_YAW]
+
+**Where two instructions pull against each other**, satisfy them in this order: the component count
+and inventory · each component’s identity and grid position ·
+[IF:ORIENTATION=OWN_POSE]
+the one camera and the one scale every component shares ·
+[/IF]
+[IF:ORIENTATION=PICTURE_PLANE]
+every component lying flat in the picture plane, at one scale ·
+[/IF]
+[IF:COMPONENTS_ARE_ONE_SET!=yes]
+subject identity ·
+[/IF]
+[IF:COMPONENTS_ARE_ONE_SET]
+set identity ·
+[/IF]
+the render style · surface aesthetics. Nothing later overrides anything earlier, so a general
+aesthetic preference never overrules what a component’s own entry states.
+[/IF]
 [IF:VALIDATION_PASS]
 
 **This sheet’s render style is a validation pass, and what it states about the surface outranks the
-subject’s colour and material attributes.** Section [SEC:STYLE] says what the pass withholds and what
-is drawn in its place; a pass that lost to the colours named above would deliver the finished sheet
-it was run instead of. Everything else in the subject definition keeps the rank the order above
-gives it.
+colour and material attributes of the subject and of every inventory entry.** Section [SEC:STYLE] says
+what the pass withholds and what is drawn in its place; a pass that lost to the colours named above,
+or to a colour an entry in section [SEC:INVENTORY] names, would deliver the finished sheet it was run
+instead of. Everything else in the subject definition and the inventory keeps the rank the order
+above gives it.
 [/IF]
 
 **An exclusion in section [SEC:EXCLUSIONS] outranks every attribute that asks for the same visible element.**
@@ -440,13 +516,29 @@ inventory rank first and an omitted one mis-maps every component after it.
 ---
 
 ## [SECTION:SUBJECT]. SUBJECT DEFINITION
+[IF:SUBJECT_SCOPE=ONE_DESIGN]
 
 This section is the **sole authority** for the subject’s design. Do not invent, infer or embellish
 any attribute not stated here.
+[/IF]
+[IF:SUBJECT_SCOPE=SHARED_BY_SET]
+
+This section states what every member of the set shares, and is the **sole authority** for that. Each
+member’s own design is its entry in section [SEC:INVENTORY]: where an entry states something this list also states,
+the entry wins for that member. Do not invent, infer or embellish any attribute that neither of them
+states.
+[/IF]
+[IF:SUBJECT_SCOPE=LAID_OVER]
+
+This section describes the set that the components on this sheet are laid over, and **never the
+components themselves**: each component’s design is its own entry in section [SEC:INVENTORY].
+[/IF]
+[IF:SUBJECT_SCOPE!=LAID_OVER]
 
 **An attribute that is absent from this list is yours to decide** — choose the plainest option
 consistent with what *is* stated, rather than inventing a distinctive one. Absence is a delegation,
 not an omission to be filled dramatically.
+[/IF]
 
 - Category: [DEFINE:CATEGORY]
 [OPTIONAL:SPECIES             | - [DEFINE:SPECIES_LABEL]: [DEFINE:SPECIES]]
@@ -465,10 +557,26 @@ not an omission to be filled dramatically.
 [OPTIONAL:MATERIALS           | - [DEFINE:MATERIALS_LABEL]: [DEFINE:MATERIALS]]
 [OPTIONAL:ADDITIONAL_ANATOMY  | - [DEFINE:ADDITIONAL_ANATOMY_LABEL]: [DEFINE:ADDITIONAL_ANATOMY]]
 
+[IF:SUBJECT_SCOPE!=LAID_OVER]
 Every fitted, applied and worn attribute listed above is **painted onto** the component it sits on,
 never drawn as a separate piece.
+[/IF]
+[IF:SUBJECT_SCOPE=LAID_OVER]
+Every attribute listed above belongs to that set and **describes none of these components**: no
+material, condition, finish or detail named there is drawn into one.
+[/IF]
 [IF:CLOTHING_IS_A_COMPONENT]
 **[DEFINE:CLOTHING_LABEL]** is excepted: section [SEC:INVENTORY] draws it as components of its own.
+[/IF]
+[IF:CLOTHING_STYLES_COMPONENTS]
+**[DEFINE:CLOTHING_LABEL]** is excepted: it is the style every component in section [SEC:INVENTORY] is drawn in —
+its line, its finish and its edges — and what each component is stays its own entry’s.
+[/IF]
+[IF:CLOTHING_DRAWN_ELSEWHERE]
+**[DEFINE:CLOTHING_LABEL]** is excepted: it is the style of the pieces another sheet of this series draws,
+and no component on this sheet is drawn in it or carries one of those pieces. An element that a
+component’s own entry in section [SEC:INVENTORY] names, or that another line above asks for, is part of that
+component and is drawn, however closely it resembles one of those pieces.
 [/IF]
 [IF:ADDITIONAL_ANATOMY]
 [IF:ANATOMY_PER_VIEW]
@@ -481,14 +589,39 @@ beside it.
 separately and counts it as a component of its own.
 [/IF]
 [/IF]
+[IF:SUBJECT_SCOPE=ONE_DESIGN]
 Do not infer props, weapons or equipment from the role: if it is not listed above, it does not exist.
+[/IF]
+[IF:TINT_MASK]
+
+**Every component is a tint mask**, drawn in neutral greys alone with no hue anywhere in it, because the
+engine multiplies a team or faction colour over it at runtime. Every colour this list or an entry in
+section [SEC:INVENTORY] names is drawn as its own lightness in grey, and a part told apart from its neighbour by
+colour, here or in section [SEC:STYLE], is told apart by a clear step in grey. The lightest greys are where the
+tint shows strongest.
+[/IF]
+[IF:SUBJECT_SCOPE=LAID_OVER]
+A component takes its shape, and any colour or value it has, from its own entry, and is drawn at the
+outline weight of the set it is laid over.
+[IF:LIGHTING_STATED]
+It is lit under the lighting model section [SEC:STYLE] states, as that set is.
+[/IF]
+[OPTIONAL:ACCENT_COLOURS      | Where its entry names neither a colour nor a value, it is drawn in the **[DEFINE:ACCENT_COLOURS_LABEL]** above, and in no other colour this list names.]
+[/IF]
+[IF:SUBJECT_SCOPE!=LAID_OVER]
 
 Material descriptions define **visual identity, not rendering complexity**. Translate every
 material into the simplified shapes and controlled value bands of the selected render style.
+[/IF]
 [IF:IDENTITY_LOCK]
 
 ### Identity lock — match a previous sheet
+[IF:COMPONENTS_ARE_ONE_SET!=yes]
 This sheet depicts the same individual as a previously generated one. Reproduce exactly:
+[/IF]
+[IF:COMPONENTS_ARE_ONE_SET]
+This sheet draws further members of the set a previously generated sheet drew. Reproduce exactly:
+[/IF]
 [DEFINE:IDENTITY_LOCK]
 Where this conflicts with anything above, the identity lock wins.
 [/IF]
@@ -500,6 +633,10 @@ Where this conflicts with anything above, the identity lock wins.
 - Style: [DEFINE:RENDER_STYLE_DESCRIPTION]
 [IF:VALIDATION_PASS!=yes]
 - Surface-detail intensity: [DEFINE:SURFACE_DETAIL_DESCRIPTION]
+[IF:INTERIOR_DETAIL_STATED]
+  Inside each form, the **[DEFINE:INTERIOR_DETAIL_FIELD]** section [SEC:SUBJECT] states decides what is drawn: this
+  level never adds detail it rules out, and never removes a line it asks for.
+[/IF]
 [/IF]
 - Resolution profile: [DEFINE:RESOLUTION_PROFILE_DESCRIPTION]
 [IF:ASSEMBLED_TARGET]
@@ -513,6 +650,7 @@ Where this conflicts with anything above, the identity lock wins.
 [IF:ASSEMBLED_TARGET!=yes]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target component size: [DEFINE:SPRITE_TARGET_SIZE]]
 [/IF]
+[OPTIONAL:DISPLAY_REDUCTION   | - Smallest display size: [DEFINE:DISPLAY_REDUCTION]]
 [IF:VALIDATION_PASS!=yes]
 [IF:PALETTE!=yes]
 - Palette strategy: [DEFINE:PALETTE_DESCRIPTION]
@@ -599,6 +737,7 @@ the grid above can hold means the component was not drawn on it.
 - Do not render materials as microtexture: no scratches, etched strokes, fabric weave, pores,
   grain, crosshatching, repeated reflective streaks, sparkle noise, scattered single-pixel
   highlights or painterly brush marks. Materials read through **colour and value blocking**.
+[OPTIONAL:INTERIOR_LINE_TECHNIQUE | - *[DEFINE:INTERIOR_LINE_TECHNIQUE]*, the **[DEFINE:INTERIOR_DETAIL_FIELD]** section [SEC:SUBJECT] states, is excepted from that ban: draw its lines as deliberate, contiguous runs of pixels no finer than the smallest feature above, never as scratches, grain or noise.]
 - **Do not produce smooth artwork that has been downscaled.** Every pixel is placed deliberately;
   the image must survive inspection at 1:1 with no anti-aliased edges.
 [OPTIONAL:SMALL_SCALE_DISCIPLINE | [DEFINE:SMALL_SCALE_DISCIPLINE]]
@@ -617,9 +756,12 @@ the grid above can hold means the component was not drawn on it.
 ---
 
 ## [SECTION:CAMERA]. PROJECTION, CAMERA AND OBJECT ORIENTATION
+[IF:ORIENTATION!=PICTURE_PLANE]
 
 - Projection: [DEFINE:PROJECTION_DESCRIPTION]
 - Camera elevation: [DEFINE:CAMERA_ELEVATION]° above the horizon
+[/IF]
+[IF:ORIENTATION=SHEET_YAW]
 - Directions required: [DEFINE:DIRECTIONS_DESCRIPTION]
 - Primary assembly direction: [DEFINE:PRIMARY_DIRECTION]
 
@@ -631,9 +773,16 @@ the grid above can hold means the component was not drawn on it.
 [/IF]
 
 **The camera never moves.** Camera position, camera elevation, **camera azimuth**, projection type,
+[IF:KEY_LIGHT]
 focal characteristics, sprite scale, pixel density and lighting direction are identical for every
 component on the sheet. A component drawn through a *different camera* — another elevation,
 projection, scale or key-light direction — is a defect.
+[/IF]
+[IF:KEY_LIGHT!=yes]
+focal characteristics, sprite scale, pixel density and lighting are identical for every component on
+the sheet. A component drawn through a *different camera* — another elevation, projection or scale —
+or lit differently from the rest is a defect.
+[/IF]
 
 **A direction is never produced by moving the camera.** It is produced by rotating the *component*
 about its own local vertical axis beneath that fixed camera. **Camera azimuth is fixed; object yaw
@@ -845,6 +994,41 @@ not give one of its own. On this sheet it is the single object yaw stated above,
 section says “the primary direction” it means that yaw and nothing else. It is not a house style,
 and a component turned off it because the piece reads better that way is a defect.
 [/IF]
+[/IF]
+[IF:ORIENTATION=OWN_POSE]
+
+### One fixed camera, and a pose that comes from each entry
+
+**The camera never moves.** Camera position, camera elevation, **camera azimuth**, projection type,
+[IF:KEY_LIGHT]
+focal characteristics, sprite scale, pixel density and lighting direction are identical for every
+component on the sheet. A component drawn through a *different camera* — another elevation,
+projection, scale or key-light direction — is a defect.
+[/IF]
+[IF:KEY_LIGHT!=yes]
+focal characteristics, sprite scale, pixel density and lighting are identical for every component on
+the sheet. A component drawn through a *different camera* — another elevation, projection or scale —
+or lit differently from the rest is a defect.
+[/IF]
+
+**The camera is shared; the object’s yaw is not.** No component is a view of another, so each
+subject is posed as its own entry in section [SEC:INVENTORY] and the subject definition in section [SEC:SUBJECT] state —
+upright, turned to whatever yaw shows it best, or laid diagonally across its cell — for the clearest
+read of its silhouette beneath that one camera. Two subjects at different yaws are correct, and none
+is turned to match its neighbour; a subject drawn through a different camera is the defect.
+[/IF]
+[IF:ORIENTATION=PICTURE_PLANE]
+
+### Flat pieces, with no camera angle
+
+**Every component on this sheet is a flat shape lying in the picture plane, square to the screen, and
+no projection or camera angle applies to it.** Each is laid over finished artwork in screen space, so
+it keeps its true proportions on screen: a square keeps level top and bottom edges, upright sides
+and right-angled corners, and a circle stays a circle — never the diamond, parallelogram or ellipse
+a projection would turn either into. Nothing on it has a top surface, a side, a depth or a yaw, and
+every component is drawn at the same scale and pixel density. A component drawn at an angle to the
+screen is a defect.
+[/IF]
 
 ---
 
@@ -1002,6 +1186,7 @@ Brought together, the sheets of this series deliver all of the following:
 ---
 
 ## [SECTION:IDENTITY]. IDENTITY CONSISTENCY
+[IF:COMPONENTS_ARE_ONE_SET!=yes]
 
 Every component belongs to the **same single subject**. Hold constant across all of them:
 silhouette language and proportion · joint and attachment geometry · fitted and structural
@@ -1026,6 +1211,33 @@ already settled and this sheet does not choose one.
 Where a component appears at more than one object yaw, it is one persistent three-dimensional form
 seen after a turn — every feature stays attached to the same physical region of it, as section [SEC:CAMERA]
 requires.
+[/IF]
+[IF:COMPONENTS_ARE_ONE_SET]
+
+Every component is a member of **one set**, not a part or a view of one subject: each entry in
+section [SEC:INVENTORY] is a different member, and an entry drawn more than once states there how its
+drawings differ. Hold constant across every member: outline weight and edge treatment · rendering
+technique and the treatment of interior detail · the way the palette is used.
+[IF:LIGHTING_STATED]
+Every member is lit under the one lighting model section [SEC:STYLE] states.
+[/IF]
+
+**What tells one member from the next is never held constant** — what it depicts, the shape of what
+it depicts, and any colour its entry names. A member that takes its shape or its colour from a
+neighbour rather than from its own entry has failed, and so has one that reads as drawn for another
+set.
+[IF:SERIES]
+
+**That holds across the whole series, not only across this sheet.** A component drawn here has to
+sit beside one drawn on another sheet and read as a member of the same set, and those sheets are
+separate generations with nothing carried between them but the text of the specification. A sheet
+that is consistent within itself and does not match the rest of the series has failed.
+[IF:IDENTITY_LOCK]
+The identity lock in section [SEC:SUBJECT] is the record of what the other sheets actually drew, which is why it
+wins wherever it and the subject definition above it disagree.
+[/IF]
+[/IF]
+[/IF]
 
 ---
 
@@ -1034,7 +1246,14 @@ requires.
 Absent from the image entirely:
 
 - [DEFINE:CATEGORY_EXCLUSIONS]
+[IF:OWN_BACKDROP!=yes]
 - All shadows: cast, contact, drop, and ambient occlusion onto the background.
+[/IF]
+[IF:OWN_BACKDROP]
+- Every shadow on the background: nothing is cast, dropped or occluded onto the gutters between the
+  squares. A subject’s own form shading, and a contact shadow it casts on the backdrop inside its
+  square, are part of its component and are drawn.
+[/IF]
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 - Text, labels, numbers, captions, watermarks, signatures and legends.
 [/IF]
@@ -1045,8 +1264,33 @@ Absent from the image entirely:
 - Anything annotating the sheet: arrows, callouts, colour swatches, grid lines, and frames or
   borders around the image or around a component.
 - [DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]
-- Motion blur, speed lines, glow bleeding beyond a component’s silhouette, and any particle
-  effect the inventory in section [SEC:INVENTORY] does not name.
+[IF:SUBJECT_SCOPE!=LAID_OVER]
+[IF:CLOTHING_DRAWN_ELSEWHERE!=yes]
+- Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle
+  effect, that neither section [SEC:SUBJECT] nor the inventory in section [SEC:INVENTORY] names. A glow or a particle
+  effect either of them names belongs to its component and ends at a hard edge with it, never fading
+  into the background.
+[/IF]
+[IF:CLOTHING_DRAWN_ELSEWHERE]
+- Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle
+  effect, that neither section [SEC:SUBJECT], apart from its **[DEFINE:CLOTHING_LABEL]** line, nor the inventory in
+  section [SEC:INVENTORY] names. A glow or a particle effect either of them names belongs to its component and
+  ends at a hard edge with it, never fading into the background.
+[/IF]
+[/IF]
+[IF:SUBJECT_SCOPE=LAID_OVER]
+[IF:CLOTHING_STYLES_COMPONENTS!=yes]
+- Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle
+  effect, that the inventory in section [SEC:INVENTORY] does not name. A glow or a particle effect it names
+  belongs to its component and ends at a hard edge with it, never fading into the background.
+[/IF]
+[IF:CLOTHING_STYLES_COMPONENTS]
+- Motion blur and speed lines; and any glow bleeding beyond a component’s silhouette, or particle
+  effect, that neither the inventory in section [SEC:INVENTORY] nor the **[DEFINE:CLOTHING_LABEL]** line of
+  section [SEC:SUBJECT] names. A glow or a particle effect either of them names belongs to its component and
+  ends at a hard edge with it, never fading into the background.
+[/IF]
+[/IF]
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
 
 **An attribute anywhere above that asks for one of these elements is already overruled** — the
@@ -1082,6 +1326,11 @@ still be fixed.
 [N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
 [N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
+[IF:OWN_BACKDROP]
+[N]. Every component is a square painted to its edge, backdrop included, and the background shows only
+   in the gutters between the squares — never inside one, and never as a frame, border or bevel
+   round one. Every square is level with the screen, never a diamond or a tile seen at an angle.
+[/IF]
 [IF:KEY_COLOUR]
 [N]. No part of any component is in the key colour, or in a shade near enough to be taken for it.
 [/IF]
@@ -1105,8 +1354,28 @@ still be fixed.
 [N]. Every component is one complete drawing, apart from every other, and
    [DEFINE:CATEGORY_ASSEMBLY_AUDIT].
 [/IF]
+[IF:ORIENTATION!=PICTURE_PLANE]
+[IF:KEY_LIGHT]
 [N]. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
+[/IF]
+[IF:KEY_LIGHT!=yes]
+[N]. One camera and one scale across every component, and none lit differently from the rest — nothing
+   on the sheet was drawn through a camera that moved.
+[/IF]
+[/IF]
+[IF:TINT_MASK]
+[N]. Every component is drawn in neutral greys alone, with no hue anywhere, and each colour the
+   specification names is drawn as its lightness in grey.
+[/IF]
+[IF:ENGINE_OPACITY]
+[N]. Every component is opaque at full strength — a veil or a wedge one solid shape, a glow or a halo
+   stepped bands with hard edges — and nothing on it is see-through or fades into the background.
+[/IF]
+[IF:ORIENTATION=PICTURE_PLANE]
+[N]. Every component lies flat in the picture plane, square to the screen, at one scale — no square
+   drawn as a diamond or a parallelogram, no circle as an ellipse, and nothing seen at an angle.
+[/IF]
 [N]. [DEFINE:CATEGORY_AUDIT]
 [IF:RIG_MODE=CUTOUT_RIG]
 [N]. Every articulated segment is straight and unposed, with matching joint caps at shared pivots.
@@ -1563,6 +1832,16 @@ Emit unmodified. Correct for a conversational model, and the only target that ca
 > describe is made of it.** A negative prompt is the one place in this app that cannot say *where*
 > something is forbidden, so every entry in it is a claim about the whole configuration space, and
 > that space widens each time a category is added.
+
+> **Corrected again — the frame decision is per sheet, and `--no` opens with the category's
+> assembly terms** (audit finding T2 of `docs/todo/done/icon-set-audit.md`). ICON answered the frame
+> question for its whole series, so the overlay sheet's rings kept `frame, border` out of every icon
+> sheet too, where the plate and frame a generator adds are exactly what the category bans. The sheet
+> now answers: `FRAME_IS_A_COMPONENT` speaks for a category whose every sheet draws a frame, and
+> `SheetPlan.frames` for one sheet — the overlay sheet, and an icon sheet whose own entry names a
+> frame or a border. And `--no` was the one negative channel that never named the assembled whole a
+> sheet fails as; it now leads with `CATEGORY_ASSEMBLY`'s terms, as the Stable Diffusion and Qwen
+> blocks do, every word of which is already held clear of what the category's sheets ask for.
 
 ### `STABLE_DIFFUSION` (SD 1.5 / SDXL)
 ```

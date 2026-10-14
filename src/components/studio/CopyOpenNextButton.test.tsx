@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
@@ -49,10 +49,11 @@ beforeEach(() => {
 
 /**
  * A user, with the clipboard and `window.open` spied on. The spies go on after `userEvent.setup()`,
- * which puts a clipboard stub of its own on `navigator` and would otherwise replace the spy.
+ * which puts a clipboard stub of its own on `navigator` and would otherwise replace the spy. No delay
+ * between its actions: nothing here depends on the time between two presses, only on their order.
  */
 function setup(): ReturnType<typeof userEvent.setup> {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   vi.spyOn(navigator.clipboard, 'writeText').mockImplementation(writeText);
   vi.spyOn(window, 'open').mockImplementation(openWindow);
   return user;
@@ -344,18 +345,19 @@ describe('CopyOpenNextButton', () => {
       'false',
     );
   });
-  it('sets the note about a target with no page as a paragraph of its own', async () => {
+  it('sets the note about a target with no page as a paragraph of its own', () => {
     useOutputStore.setState({ output: { ...useOutputStore.getState().output, targetModel: 'GENERIC' } });
     render(<Harness />);
 
-    const button = screen.getByRole('button', { name: 'Copy & next' });
-    const wrapper = button.parentElement;
-    if (wrapper === null) throw new Error('The button has no guidance wrapper');
-    fireEvent.pointerEnter(wrapper, { pointerType: 'mouse', isPrimary: true });
+    // Reached by focus, which reveals the card at once where a hover waits out its delay: what is
+    // under test is what the card says, not the gesture that opens it.
+    act(() => {
+      screen.getByRole('button', { name: 'Copy & next' }).focus();
+    });
 
     // One paragraph for what the button does, and one for why it opens nothing here, rather than
     // the note run on into the end of the guidance.
-    const card = await screen.findByRole('tooltip');
+    const card = screen.getByRole('tooltip');
     const paragraphs = [...card.querySelectorAll('span.block > span > span.block')].map((paragraph) =>
       paragraph.textContent.trim(),
     );

@@ -282,6 +282,9 @@ function limbsOf(chains: ChainSheet, split: boolean): string {
 const FIGURE_SHEET = {
   targetQuantity: 'ASSEMBLED',
   extent: 'PIECE',
+  identity: 'ONE_SUBJECT',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   scaleUnit: 'a full figure',
   componentClass: 'character anatomy',
   assemblyFailure: FIGURE_ASSEMBLY_FAILURE,

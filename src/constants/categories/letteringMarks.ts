@@ -46,10 +46,10 @@ import { LETTERING_IS_A_COMPONENT } from '../promptText/exclusions.ts';
  * - **A barcode is a bar pattern**, drawable without the numerals normally set under it, so it
  *   stands where the signage does. PORTRAIT's `Barcode Brand On The Neck` and ITEM's
  *   `Factory Barcode & Batch Marks` both rest on that.
- * - **A rune, a sigil and a glyph are ornament.** ICON's `Focal Motif` field offers
- *   `Rune & Sigil Carving` under a tooltip naming “a drawn motif, never a letter or a numeral”, and
- *   INTERFACE's `Focal Glyph` field offers `No Glyph — Blank Face` and the same carving under the
- *   same sentence written about a glyph. EFFECT's `Runic Glyphs & Sigils` is a motif carried inside
+ * - **A rune, a sigil and a glyph are ornament.** ICON's `Motif Treatment` field offers
+ *   `Carved Knotwork Inlay` under a tooltip naming “a drawn motif, never a letter or a numeral”, and
+ *   INTERFACE's `Focal Glyph` field offers `No Glyph — Blank Face` and `Rune & Sigil Carving` under
+ *   the same sentence written about a glyph. EFFECT's `Runic Glyphs & Sigils` is a motif carried inside
  *   the effect's own shape. Reading any of them as writing would fail the sheet on the mark it
  *   exists to draw.
  * - **A tally, a stamp and a brand are marks**, so `Kill Tally Marks`, `Tally Notches & Wear Marks`,
@@ -168,8 +168,9 @@ export function letteringTermIn(text: string): string | undefined {
  * after the things they were sampled from.
  *
  * **`role` is read here, where `NON_DEPICTIVE_FIELDS` does not read it**, and the difference is what
- * that carve-out is for. Section 1's closing sentence disclaims one thing — “Do not infer props,
- * weapons or equipment from the role: if it is not listed above, it does not exist” — and nothing in
+ * that carve-out is for. Section 1's closing sentence on a sheet of one design disclaims one thing —
+ * “Do not infer props, weapons or equipment from the role: if it is not listed above, it does not
+ * exist” (`SubjectScope`) — and nothing in
  * the template tells a generator not to infer *lettering* from a role. BACKGROUND offers
  * `Credits & End Card` and `Title & Menu Backdrop`, and INTERFACE offers `Quest & Objective Log`;
  * none of the three names lettering today, but a role that did would reach section 1 unopposed.

@@ -16,24 +16,27 @@ interface SegmentedChoiceProps<T extends string | number> {
   readonly format: (value: T) => string;
   readonly onChange: (value: T) => void;
   /**
-   * Values that cannot be chosen right now, and the sentence that says why.
+   * Values that cannot be chosen right now, in groups, each with the sentence that says why.
    *
-   * One reason for the whole set rather than one per value, because the one caller that needs this
-   * withholds four values for the same reason, and four copies of one sentence under a row of pills
-   * would read as four problems.
+   * One reason per group rather than one per value, because values withheld together are withheld for
+   * one reason — the preview layout four of them — and a copy of one sentence per pill under a row of
+   * pills would read as that many problems. Several groups where the reasons differ: the sprite fit
+   * withholds its two resizing fits on a pixel-art sheet and *Keep place* off a placement sheet, and a
+   * reader on a pill is told the reason that pill is withheld for.
    */
-  readonly unavailable?: { readonly values: readonly T[]; readonly reason: string } | undefined;
+  readonly unavailable?: readonly { readonly values: readonly T[]; readonly reason: string }[] | undefined;
 }
 
 /**
  * One value chosen from a small fixed set, as a row of pills.
  *
- * Ten controls in the Quantise tab are this — the preview layout, the preview magnification, the
+ * Eleven controls in the Quantise tab are this — the preview layout, the preview magnification, the
  * heatmap scale, the keying tolerance, the edge hardening, the download's magnification and format,
- * and the sprite cell's source and its two sizes. Most are a handful of stepped numbers where a slider would be the obvious choice and the wrong one —
- * every one of them re-runs work proportional to the whole image, and a drag would spend a recompute
- * per pointer move on a sheet that may be sixteen megapixels. Stepped values reach the same range at
- * one recompute per click.
+ * and the sprite cell's source, its two anchors and its fit — and two in the studio, an icon set's
+ * look and its colour mode. Most of the Quantise tab's are a handful of stepped numbers where a slider would be the
+ * obvious choice and the wrong one — every one of them re-runs work proportional to the whole image,
+ * and a drag would spend a recompute per pointer move on a sheet that may be sixteen megapixels.
+ * Stepped values reach the same range at one recompute per click.
  *
  * Extracted rather than written twice: the second copy is where the `aria-pressed` goes missing, and
  * that attribute is doing more than it looks — `index.css`'s forced-colours block keys the selected
@@ -43,7 +46,8 @@ interface SegmentedChoiceProps<T extends string | number> {
  * The selected pill is the view's colour, painted the way `TabSwitcher` paints its own: a *selection*
  * is solid `bg-tab`, where an *action* is the translucent, outlined `action-tab`. Keeping those two
  * apart is what stops "the zoom is at 4×" and "press this to download" reading as the same offer.
- * Every call site is in the Quantise tab, so this used to be the one indigo control in a jade panel.
+ * Its call sites were all in the Quantise tab, where this used to be the one indigo control in a jade
+ * panel; the icon set's two are the studio's, and take the studio's colour the same way.
  *
  * **The pills carry no guidance card of their own**, and that is the same call `ComboBox` makes about
  * its options: a pill is one *value* of a setting, not a control in its own right, and the setting is
@@ -69,8 +73,11 @@ export function SegmentedChoice<T extends string | number>({
   unavailable,
 }: SegmentedChoiceProps<T>) {
   const reasonId = useId();
-  const blocked = (option: T) => unavailable?.values.includes(option) === true;
-  const anyBlocked = values.some(blocked);
+  const groups = (unavailable ?? []).filter((group) =>
+    values.some((option) => group.values.includes(option)),
+  );
+  const groupOf = (option: T) => groups.findIndex((group) => group.values.includes(option));
+  const blocked = (option: T) => groupOf(option) >= 0;
   return (
     <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1.5">
       {values.map((option) => (
@@ -79,7 +86,7 @@ export function SegmentedChoice<T extends string | number>({
           type="button"
           aria-pressed={option === value}
           aria-disabled={blocked(option)}
-          aria-describedby={blocked(option) ? reasonId : undefined}
+          aria-describedby={blocked(option) ? `${reasonId}-${String(groupOf(option))}` : undefined}
           onClick={() => {
             if (!blocked(option)) onChange(option);
           }}
@@ -93,11 +100,11 @@ export function SegmentedChoice<T extends string | number>({
       ))}
       {/* Inside the group, on a line of its own under the pills, so the reason is read as part of
           the control it explains wherever the caller places the row. */}
-      {anyBlocked && (
-        <p id={reasonId} className="basis-full text-xs text-ink-faint">
-          {unavailable?.reason}
+      {groups.map((group, at) => (
+        <p key={group.reason} id={`${reasonId}-${String(at)}`} className="basis-full text-xs text-ink-faint">
+          {group.reason}
         </p>
-      )}
+      ))}
     </div>
   );
 }

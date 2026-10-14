@@ -45,8 +45,23 @@ export interface SectionDefinition {
  * was, would then be painted on the page the reader has just moved away from.
  *
  * So a notification carries a destination and each mounted `Toast` renders only what is addressed to
- * it. `'page'` is the default rather than an option a caller has to remember, because every surface
- * in the app but one is in the page — including the modals, whose toast is mounted inside the
- * `<dialog>` for a different reason and is still the page's.
+ * it. Nothing asks for one directly: the store works it out from the {@link ToastSource} at the
+ * moment the notification is raised, which is the only moment the answer is known to be true.
  */
 export type ToastTarget = 'page' | 'detached';
+
+/**
+ * Which part of the app raised a notification — the page, or the quantiser's preview panel.
+ *
+ * This, and not the document, is what a caller knows for certain, because the panel is the one thing
+ * that moves between documents and it can move while its answer is still being worked out. A sheet
+ * written on a worker takes seconds at a large magnification, and the reader can detach the panel,
+ * return it, or leave the quantiser in that time; a destination fixed at the press was the document
+ * the panel had *been* in. So `'preview'` names the panel, and `showToast` sends it to whichever
+ * document the panel is in when the answer arrives.
+ *
+ * `'page'` is the default rather than an option a caller has to remember, because everything in the
+ * app but that panel is in the page — including the modals, whose toast is mounted inside the
+ * `<dialog>` for a different reason and is still the page's.
+ */
+export type ToastSource = 'page' | 'preview';

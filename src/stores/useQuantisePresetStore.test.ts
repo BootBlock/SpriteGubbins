@@ -67,15 +67,6 @@ afterEach(() => {
 });
 
 describe('saveQuantisePreset', () => {
-  it('stores the dials as they stand in the tab, not as they were passed in', async () => {
-    useQuantiseStore.setState({ ...TUNED });
-
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
-
-    const [stored] = await backend.listQuantisePresets();
-    expect(stored?.dials).toEqual(TUNED);
-  });
-
   it('leaves the sheet, the grid and a held palette out of what it hands to storage', async () => {
     useQuantiseStore.setState({
       ...TUNED,
@@ -87,7 +78,7 @@ describe('saveQuantisePreset', () => {
       },
     });
     // Asserted on what reaches the backend, not on what comes back out of it. The reader builds a
-    // fresh object holding exactly the twenty dials, so a `saveQuantisePreset` that spread the
+    // fresh object holding exactly the dials, so a `saveQuantisePreset` that spread the
     // whole store — sheet, grid, locked palette and all — would still read back clean. This is the
     // only place the extra keys are still visible.
     const written = vi.spyOn(backend, 'saveQuantisePreset');

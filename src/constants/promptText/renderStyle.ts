@@ -1,6 +1,9 @@
 import type { RenderStyle } from '../../types/rendering.ts';
 import type { ResolutionProfile, StatedTargetSize } from '../../types/output.ts';
 import type { RigContract } from '../../types/rigContract.ts';
+import type { SheetPlan } from '../../types/components.ts';
+import { statesTileShare } from './statesTileShare.ts';
+import { TILE_SHARE } from './tileShare.ts';
 
 /**
  * How the sheet is drawn, in the prose the prompt carries.
@@ -115,14 +118,49 @@ export function shareRange(profile: ShareProfile): string {
  * one it would be a second copy of that largest piece, free to drift from it. A *component* is the prompt's own defined term, and "the largest" picks out one
  * on every sheet without being told which piece that is.
  *
+ * **A sheet drawing every component to one square is the exception** (`SheetPlan.fit`, audit finding
+ * P10). An icon set has no largest component to set a scale: a coin and a sword each fill their square
+ * to the margin the set keeps, and "every other component is drawn to that same scale" ordered the coin
+ * drawn as a speck beside the sword, against the icon sheet's own "each subject filling its square to
+ * the same margin". So there the square occupies the share, and what fills the square is the sheet's
+ * and the subject's framing to say. The share is the same figure either way, which is what
+ * `tests/resolution-profile-fit.test.ts` prices. **A square in a fixed grid takes one exact figure**
+ * instead of the range (`fixedSquareText`), because the Quantise tab has to find it again.
+ *
  * It names the grid rather than citing the layout section by number: `[SEC:LAYOUT]` cannot be used
  * here, because both of that heading's declarations sit inside an `[IF:…]` and
  * `tests/prompt-citations.test.ts` admits only a heading no configuration can drop. "The exploded
  * grid" is that section's own phrase for it, so the reference survives whatever number the heading
  * takes.
  */
-function shareText(profile: ShareProfile): string {
-  return `the largest component occupies ${shareRange(profile)} of its cell height in the exploded grid, and every other component is drawn to that same scale`;
+function shareText(profile: ShareProfile, fit: SheetPlan['fit'], cellGrid: SheetPlan['cellGrid']): string {
+  if (statesTileShare(fit, cellGrid)) return fixedSquareText(profile);
+  return fit === 'SAME_SQUARE'
+    ? `every component is drawn to one square of the same size, however large or small the thing it depicts, and that square occupies ${shareRange(profile)} of its cell height in the exploded grid`
+    : `the largest component occupies ${shareRange(profile)} of its cell height in the exploded grid, and every other component is drawn to that same scale`;
+}
+
+/**
+ * The one square of a sheet laid out in a fixed grid, at the exact share of its cell that every sheet of
+ * the set states (`TILE_SHARE`): an ICON set's icon and overlay sheets.
+ *
+ * **Exact, and stated under every profile**, because the Quantise tab finds the square again to place
+ * each overlay piece where it was drawn over its icon (`SheetPlan.placement`). The two share rungs state
+ * it in place of their range; the target size and the 16-bit height state it after their own figure,
+ * which says how detailed the square is rather than how much of its cell it fills.
+ */
+function fixedSquareText(profile: ResolutionProfile): string {
+  return `every component is drawn to one square of the same size, however large or small the thing it depicts, and that square occupies exactly ${String(TILE_SHARE[profile])}% of its cell’s width and height, centred in the cell in the exploded grid`;
+}
+
+/** A profile's own figure, followed by the fixed grid's square where the sheet draws to one. */
+function withFixedSquare(
+  profile: ResolutionProfile,
+  text: string,
+  fit: SheetPlan['fit'],
+  cellGrid: SheetPlan['cellGrid'],
+): string {
+  return statesTileShare(fit, cellGrid) ? `${text}; ${fixedSquareText(profile)}` : text;
 }
 
 /**
@@ -138,16 +176,31 @@ function shareText(profile: ShareProfile): string {
  * "roughly 64–96 pixels tall" is an absolute height, which no count and no layout can argue with.
  *
  * **The two share rungs take no unit**, for the reason `shareText` records: a share of a cell is
- * stated of the largest component, which is a piece every sheet has without being told which one.
+ * stated of the largest component, which is a piece every sheet has without being told which one —
+ * or, on a sheet drawing every component to one square, of that square. They take the sheet's `fit`.
  * `CUSTOM` carries no range and takes none either — it defers to the target-size line, which names
  * its quantity itself.
  */
-export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, (unit: string) => string>> = {
-  HIGH_RESOLUTION: () => `High resolution — ${shareText('HIGH_RESOLUTION')}`,
-  MID_RESOLUTION: () => `Mid resolution — ${shareText('MID_RESOLUTION')}`,
-  RETRO_16_BIT: (unit) => `16-bit retro scale — ${unit} is roughly 64–96 pixels tall`,
-  CUSTOM: () =>
-    'Custom — work to the target component size where one is stated, and to the sheet aspect otherwise',
+export const RESOLUTION_PROFILE_TEXT: Readonly<
+  Record<ResolutionProfile, (unit: string, fit: SheetPlan['fit'], cellGrid: SheetPlan['cellGrid']) => string>
+> = {
+  HIGH_RESOLUTION: (_unit, fit, cellGrid) =>
+    `High resolution — ${shareText('HIGH_RESOLUTION', fit, cellGrid)}`,
+  MID_RESOLUTION: (_unit, fit, cellGrid) => `Mid resolution — ${shareText('MID_RESOLUTION', fit, cellGrid)}`,
+  RETRO_16_BIT: (unit, fit, cellGrid) =>
+    withFixedSquare(
+      'RETRO_16_BIT',
+      `16-bit retro scale — ${unit} is roughly 64–96 pixels tall`,
+      fit,
+      cellGrid,
+    ),
+  CUSTOM: (_unit, fit, cellGrid) =>
+    withFixedSquare(
+      'CUSTOM',
+      'Custom — work to the target component size where one is stated, and to the sheet aspect otherwise',
+      fit,
+      cellGrid,
+    ),
 };
 
 /**
@@ -189,16 +242,19 @@ const CUSTOM_ASSEMBLED_TEXT =
  * `CUSTOM` is the one that defers to the target-size field, so it is the one that has to agree with
  * what that field turns out to be naming.
  *
- * **The two share rungs take nothing of the sheet's**, and that is the correction issue #245 made.
+ * **The two share rungs take no frame of the sheet's**, and that is the correction issue #245 made.
  * They were once stated against the sheet height on some plans and against a cell on others, with
  * each plan choosing — and every plan left on the sheet height was one whose share the layout decided
  * before the line was read. A share of a cell is true on every sheet, so there is no longer a
- * per-sheet frame to hand in.
+ * per-sheet frame to hand in. They take the sheet's `fit` alone, which decides what occupies the share
+ * — the largest component, or the one square every component is drawn to (audit finding P10).
  */
 export function resolutionProfileDescription(
   profile: ResolutionProfile,
   statesAssembled: boolean,
   scaleUnit: string,
+  fit?: SheetPlan['fit'],
+  cellGrid?: SheetPlan['cellGrid'],
 ): string {
   // `RESOLUTION_PROFILE_TEXT` stays exported even though nothing else imports it: it is still the map
   // `[DEFINE:RESOLUTION_PROFILE_DESCRIPTION]` is filled from for three of the four profiles, and
@@ -206,8 +262,8 @@ export function resolutionProfileDescription(
   // Listing the token as *computed* there instead would say the map does not exist, and drop the
   // check that it still does.
   return profile === 'CUSTOM' && statesAssembled
-    ? CUSTOM_ASSEMBLED_TEXT
-    : RESOLUTION_PROFILE_TEXT[profile](scaleUnit);
+    ? withFixedSquare('CUSTOM', CUSTOM_ASSEMBLED_TEXT, fit, cellGrid)
+    : RESOLUTION_PROFILE_TEXT[profile](scaleUnit, fit, cellGrid);
 }
 
 /**
@@ -239,8 +295,8 @@ const PROFILE_MIN_FEATURE: Readonly<Record<Exclude<ResolutionProfile, 'CUSTOM'>,
  * so the second boundary is that number exactly.
  *
  * **Those two landmarks have since moved, because both share rungs are a share of a cell now, which is
- * lower.** A default ICON sheet is twenty-eight components on a 16:9 page, so its grid is about seven
- * cells by four and a cell on the same 1024-pixel sheet is 256 px tall: `MID_RESOLUTION` is then
+ * lower.** A full ICON icon sheet is sixteen components on a square page, a grid of four cells by four,
+ * so a cell on the same 1024-pixel sheet is 256 px tall: `MID_RESOLUTION` is then
  * 90–128 px and `HIGH_RESOLUTION` 128–166. The gap the first boundary sat in closes, since 128 now
  * lands exactly where `MID_RESOLUTION` gives way to `HIGH_RESOLUTION`, and `RETRO_16_BIT`'s 64–96
  * overlaps the bottom of `MID_RESOLUTION` rather than sitting clear below it. **The rungs are

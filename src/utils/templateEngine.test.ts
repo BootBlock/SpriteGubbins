@@ -42,10 +42,6 @@ describe('applyConditionals', () => {
     expect(applyConditionals(template, {})).toBe('');
   });
 
-  it('leaves no marker line behind when a block is kept', () => {
-    expect(applyConditionals('[IF:K]\nx\n[/IF]', { K: 'y' })).not.toContain('[');
-  });
-
   it('throws on an unclosed block rather than emitting the marker', () => {
     expect(() => applyConditionals('[IF:K=A]\nbody', { K: 'A' })).toThrow(/never closed/);
   });

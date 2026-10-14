@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
-import { MIDJOURNEY_VERSION, TARGET_MODELS } from '../constants/models.ts';
+import { MIDJOURNEY_VERSION } from '../constants/models.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import {
@@ -15,14 +15,21 @@ import {
   SCOPE_AND_PRECEDENCE_HEADING,
 } from '../constants/promptTemplate.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
-import type { OutputConfig } from '../types/output.ts';
+import type { IconLook } from '../types/iconRoster.ts';
+import type { OutputConfig, TargetModelId } from '../types/output.ts';
 import { RENDER_STYLES } from '../types/rendering.ts';
 import type { RenderStyle } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 import { wrapForSeedream, wrapForSol } from './modelWrapperText/index.ts';
 import { generatePrompt } from './promptCompiler.ts';
+import { promptFieldText } from './promptFieldText.ts';
+import { readPromptBudget } from './promptBudget.ts';
+import { estimateTokens } from './promptMetrics.ts';
 import { sectionOf } from '../test/promptSections.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import type { SubjectDefinition } from '../types/subject.ts';
 
 /**
  * The wrappers differ in *kind*, not in wording — a reasoning contract, command flags, a negative
@@ -52,8 +59,8 @@ const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
  * uses**, because a native grid is derived from a *component* size and no CHARACTER plan states one:
  * that category's components are the parts of a figure, and the size a reader states for such a
  * sheet is the figure they assemble into. See `utils/componentTargetSize.ts`. An ICON narrows every
- * direction set to `SINGLE_FRONT`, so its twenty-eight components come out at 5× on this square
- * canvas whatever `DEFAULT_OUTPUT_CONFIG` names.
+ * direction set to `SINGLE_FRONT`, so its first sheet, an icon sheet, comes out at a whole
+ * multiple above 1× on this square canvas whatever `DEFAULT_OUTPUT_CONFIG` names.
  */
 const NATIVE_GRID_SHEET = {
   targetModel: 'CHATGPT_5_6_SOL',
@@ -84,6 +91,18 @@ function wrapperOnly(prompt: string): string {
 }
 
 /**
+ * The sheet a sweep over every category compiles for its shadow terms: the first, but ICON's overlay
+ * sheet, which closes its series. The starter set's icon sheets are full-bleed squares, which negate no
+ * shadow cast inside a square — what `what a wrapper says about a shadow on a full-bleed square` holds —
+ * so the sheet of ICON's that keeps every shadow term these sweeps check is the overlay sheet.
+ */
+function sweptSheetOf(category: SubjectCategory): number {
+  if (category !== 'ICON') return 0;
+  const { directionalMode, directions } = DEFAULT_OUTPUT_CONFIG;
+  return sheetSeriesFor(category, defaultSubjectFor(category), directionalMode, directions).length - 1;
+}
+
+/**
  * The `--no` flag's entries, split the way Midjourney documents them — on the comma, so a two-word
  * entry stays one entry. Asserting the flag line as a string instead is what lets `cast shadow`
  * satisfy a check written to forbid `shadow`.
@@ -91,11 +110,12 @@ function wrapperOnly(prompt: string): string {
 function negatedByMidjourney(
   renderStyle: RenderStyle,
   category: SubjectCategory = 'CHARACTER',
+  sheetIndex = sweptSheetOf(category),
 ): readonly string[] {
   const prompt = generatePrompt(
     category,
     defaultSubjectFor(category),
-    withOutput({ targetModel: 'MIDJOURNEY', renderStyle }),
+    withOutput({ targetModel: 'MIDJOURNEY', renderStyle, sheetIndex }),
   );
   const flag = /--no ([^\n]+)/.exec(prompt);
   return flag?.[1]?.split(', ') ?? [];
@@ -107,23 +127,17 @@ describe('wrapForModel', () => {
     expect(prompt).toContain('## 0. NON-NEGOTIABLE OUTPUT CONTRACT');
   });
 
-  it('leaves the generic prompt unwrapped', () => {
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GENERIC' }));
-    expect(prompt.startsWith('# MODULAR SPRITE-SHEET SPECIFICATION')).toBe(true);
-    expect(prompt.endsWith('Generate the sheet now.')).toBe(true);
-  });
+  // GPT Image carried the retired DALL·E 3 entry's directive prefix, justified by "the mainline
+  // model … will automatically revise your prompt for improved performance" — which OpenAI state for
+  // the image generation tool *in the Responses API* and for nothing else. This target is the Images
+  // API, whose own guide documents no revision, and the reason the two were ever confused is that
+  // the entry linked to ChatGPT: that surface is the Sol entry, and `constants/models.ts` now says
+  // so. With no documented rewrite there was nothing for terse absolute phrasing to survive, so the
+  // prefix went with the claim rather than outliving it.
+  it.each(['GENERIC', 'GPT_IMAGE'] as const)('leaves the %s prompt unwrapped', (targetModel) => {
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel }));
 
-  it('leaves GPT Image unwrapped, since OpenAI document no rewrite on the path it is sent along', () => {
-    // It carried the retired DALL·E 3 entry's directive prefix, justified by "the mainline model …
-    // will automatically revise your prompt for improved performance" — which OpenAI state for the
-    // image generation tool *in the Responses API* and for nothing else. This target is the Images
-    // API, whose own guide documents no revision, and the reason the two were ever confused is that
-    // the entry linked to ChatGPT: that surface is the Sol entry, and `constants/models.ts` now says
-    // so. With no documented rewrite there was nothing for terse absolute phrasing to survive, so
-    // the prefix went with the claim rather than outliving it.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GPT_IMAGE' }));
-
-    expect(prompt.startsWith('# MODULAR SPRITE-SHEET SPECIFICATION')).toBe(true);
+    expect(prompt.startsWith(SPECIFICATION)).toBe(true);
     expect(prompt.endsWith('Generate the sheet now.')).toBe(true);
   });
 
@@ -331,7 +345,7 @@ describe('wrapForModel', () => {
     const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
 
     expect(wrapperOnly(prompt)).toContain(
-      `Shorten nothing in:\n\n- the block headed “${NATIVE_GRID_HEADING}” in section 2`,
+      `Shorten nothing in:\n\n- the target size line in section 2\n- the smallest display size line in section 2\n- the resolution profile line in section 2, and the share of a cell it states\n- the block headed “${NATIVE_GRID_HEADING}” in section 2`,
     );
   });
 
@@ -494,7 +508,18 @@ describe('wrapForModel', () => {
     // conditional one, so all five were right. Nothing held them there — a section inserted before
     // the inventory moves the prompt body's own citations and would have left these behind, in the
     // two wrappers whose whole job is saying which blocks may not be shortened.
-    const sol = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
+    // The overlay sheet, which closes the series and carries the flat-piece rule cited below.
+    const sol = generatePrompt(
+      'ICON',
+      defaultSubjectFor('ICON'),
+      withOutput({ ...NATIVE_GRID_SHEET, sheetIndex: sweptSheetOf('ICON') }),
+    );
+    const iconSheet = generatePrompt(
+      'ICON',
+      defaultSubjectFor('ICON'),
+      withOutput({ ...NATIVE_GRID_SHEET, sheetIndex: 0 }),
+    );
+    const yawSheet = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
     const rigSheet = characterRigPrompt({});
     const seedream = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'SEEDREAM' }));
 
@@ -512,11 +537,62 @@ describe('wrapForModel', () => {
 
     cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `- the numbered items of section ${n}\n`);
     cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `What section ${n} states under`);
-    cites(sol, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `yaws in section ${n}\n`);
+    // The CAMERA entry names what that section carries on each orientation: the overlay sheet's
+    // flat-piece rule, an icon sheet's shared camera, and a turned subject's yaws.
+    cites(
+      sol,
+      'PROJECTION, CAMERA AND OBJECT ORIENTATION',
+      (n) => `- section ${n}’s rule that every component lies flat in the picture plane\n`,
+    );
+    cites(iconSheet, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `as section ${n} states it\n`);
+    cites(yawSheet, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `yaws in section ${n}\n`);
     cites(sol, 'COMPONENT INVENTORY', (n) => `the inventory in section ${n}\n`);
     cites(sol, 'RENDER STYLE', (n) => `${NATIVE_GRID_HEADING}” in section ${n}\n`);
     cites(rigSheet, 'CUT-OUT RIG REQUIREMENTS', (n) => `${RIG_GEOMETRY_HEADING}” in section ${n}\n`);
     cites(seedream, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `stated in section ${n} `);
+  });
+
+  it('protects an icon sheet’s colours, target size and display size in Sol’s hand-off (audit finding T3)', () => {
+    // A hand-off shortens what it is not told to keep, and on an icon sheet that was the set's
+    // colours, the size each icon is drawn at and the size it is shown at: three figures the delivered
+    // set is held to, left free to become “cool tones” and “small”.
+    const preset = PRESETS.find((candidate) => candidate.id === 'flat-system-button-set');
+    if (preset === undefined) throw new Error('the flat system button set should ship.');
+    const prompt = generatePrompt(
+      'ICON',
+      preset.subject,
+      withOutput({
+        ...preset.output,
+        sheetIndex: 0,
+        resolutionProfile: 'CUSTOM',
+        spriteTargetSize: '128 × 128 px',
+      }),
+    );
+    const wrapper = wrapperOnly(prompt);
+
+    expect(wrapper).toContain('- every colour section 1 names, with its hex code where it gives one');
+    expect(wrapper).toContain(
+      '- the target size line in section 2\n- the smallest display size line in section 2',
+    );
+    expect(prompt).toContain('- Target component size: 128 × 128 px');
+    expect(prompt).toContain('- Smallest display size:');
+  });
+
+  it('protects no colour or size line a prompt does not carry', () => {
+    const wrapper = wrapperOnly(
+      generatePrompt(
+        'ICON',
+        { ...defaultSubjectFor('ICON'), primary_colours: '', accent_colours: '', role: '' },
+        withOutput({
+          targetModel: 'CHATGPT_5_6_SOL',
+          resolutionProfile: 'HIGH_RESOLUTION',
+          spriteTargetSize: '',
+        }),
+      ),
+    );
+    expect(wrapper).not.toContain('every colour section');
+    expect(wrapper).not.toContain('target size line');
+    expect(wrapper).not.toContain('smallest display size line');
   });
 
   it('moves a wrapper citation with the heading it names', () => {
@@ -537,11 +613,28 @@ describe('wrapForModel', () => {
     ]);
     const sol = wrapForSol(
       'body',
-      { nativeGrid: true, palette: true, rigGeometry: true, oneSidedFeatures: true },
+      {
+        nativeGrid: true,
+        palette: true,
+        rigGeometry: true,
+        oneSidedFeatures: true,
+        orientation: 'SHEET_YAW',
+        colours: true,
+        targetSize: true,
+        displaySize: true,
+        tileShare: true,
+        transparent: true,
+      },
       new Map([...shifted, ['RIG', 6]]),
     );
 
-    expect(sol).toContain('- the numbered items of section 1\n- the block in section 4 headed');
+    expect(sol).toContain(
+      '- the numbered items of section 1\n- every colour section 2 names, with its hex code where it gives one\n- the block in section 4 headed',
+    );
+    expect(sol).toContain(
+      '- the target size line in section 3\n- the smallest display size line in section 3\n- the resolution profile line in section 3, and the share of a cell it states\n',
+    );
+    expect(sol).toContain('Section 1 asks for a transparent background.');
     expect(sol).toContain(
       [
         '- the object yaws in section 4',
@@ -554,17 +647,17 @@ describe('wrapForModel', () => {
     expect(sol).toContain(`${NATIVE_GRID_HEADING}” in section 3\n`);
     expect(sol).toContain('- every value in the palette block in section 3\n');
     expect(sol).toContain(`${RIG_GEOMETRY_HEADING}” in section 6\n`);
-    expect(wrapForSeedream('body', shifted)).toContain('precedence order stated in section 1');
+    const seedream = wrapForSeedream('body', shifted, 'SHEET_YAW');
+    expect(seedream).toContain('precedence order stated in section 1');
+    expect(seedream).toContain(
+      'the inventory in section 5, the background, or a component’s stated direction.',
+    );
   });
 
   it('throws rather than citing a section the prompt does not carry', () => {
     // The same refusal `applySectionNumbers` makes for a `[SEC:…]`, applied to the wrappers' half of
     // the citation: `section undefined` in front of a model reads as prose and would ship.
-    expect(() => wrapForSeedream('body', new Map([['STYLE', 2]]))).toThrow(/CONTRACT/);
-  });
-
-  it('has a selector entry for every wrapped model, and no more', () => {
-    expect(TARGET_MODELS.map((model) => model.id).sort()).toEqual([...TARGET_MODEL_IDS].sort());
+    expect(() => wrapForSeedream('body', new Map([['STYLE', 2]]), 'SHEET_YAW')).toThrow(/CONTRACT/);
   });
 });
 
@@ -655,8 +748,18 @@ describe('what a wrapper says about the surface', () => {
     // the form shadow and the material shading `RENDERED_3D` asks for. `shadow` qualifies to the
     // placement section 0 forbids; `gradient` cannot, because the qualifier it needs is the one word
     // this list may never carry — so it becomes the style's own claim or nothing.
-    expect(negatedByMidjourney('RENDERED_3D')).toEqual(['text', 'labels', 'cast shadow', 'frame', 'border']);
+    expect(negatedByMidjourney('RENDERED_3D')).toEqual([
+      'assembled character',
+      'posed figure',
+      'text',
+      'labels',
+      'cast shadow',
+      'frame',
+      'border',
+    ]);
     expect(negatedByMidjourney('PIXEL_ART')).toEqual([
+      'assembled character',
+      'posed figure',
       'text',
       'labels',
       'cast shadow',
@@ -714,6 +817,15 @@ describe('what a wrapper says about the surface', () => {
           expect(entry, `${where} / ${entry}`).not.toMatch(/background/i);
         }
       }
+    }
+    // ICON's first sheet, a full-bleed icon sheet, is held to the same rule: it negates no shadow cast
+    // inside a square, but never a bare `shadow`, a `gradient` or the background.
+    for (const renderStyle of RENDER_STYLES) {
+      const entries = negatedByMidjourney(renderStyle, 'ICON', 0);
+      const where = `ICON icon sheet / ${renderStyle}`;
+      expect(entries, where).not.toContain('shadow');
+      expect(entries, where).not.toContain('gradient');
+      for (const entry of entries) expect(entry, `${where} / ${entry}`).not.toMatch(/background/i);
     }
   });
 
@@ -791,8 +903,12 @@ describe('what a wrapper says about the assembled whole', () => {
     // on the one category whose components are lettering, which is the same conditional the two
     // negative blocks apply to their own `text` entries — so the expected sentence is built from
     // `LETTERING_IS_A_COMPONENT` rather than fixed, and asserts the *absence* on that category
-    // rather than skipping it.
-    const flux = generatePrompt(category, subject, withOutput({ targetModel: 'FLUX' }));
+    // rather than skipping it. Compiled on `sweptSheetOf`'s sheet, whose shadow clause is a cast one.
+    const flux = generatePrompt(
+      category,
+      subject,
+      withOutput({ targetModel: 'FLUX', sheetIndex: sweptSheetOf(category) }),
+    );
     const lettering = LETTERING_IS_A_COMPONENT[category];
     expect(flux.startsWith('The sheet shows only disconnected individual parts on a'), category).toBe(true);
     expect(flux, category).toContain(
@@ -911,8 +1027,148 @@ describe('what a wrapper says about text', () => {
       expect(flagged.includes(term), `MIDJOURNEY / ${category} / ${term}`).toBe(!lettering);
     }
 
-    // And Flux, whose claim is prose in the leading sentence rather than a term in a list.
-    const flux = generatePrompt(category, subject, withOutput({ targetModel: 'FLUX' }));
+    // And Flux, whose claim is prose in the leading sentence rather than a term in a list, on the sheet
+    // whose shadow clause is a cast one.
+    const flux = generatePrompt(
+      category,
+      subject,
+      withOutput({ targetModel: 'FLUX', sheetIndex: sweptSheetOf(category) }),
+    );
     expect(flux.includes('no cast shadow, no text,'), `FLUX / ${category}`).toBe(!lettering);
+  });
+});
+
+describe('what a wrapper says about a shadow on a full-bleed square', () => {
+  /**
+   * A full-bleed icon square asks for the contact shadow its subject casts on the backdrop inside it
+   * (audit finding P12), so no wrapper may negate a shadow cast there; a shadow outside the square, on
+   * the gutters, stays negated wherever a channel names it. An isolated mark and a character carry no
+   * backdrop of their own, and keep every shadow term they had.
+   */
+  const ICON_SUBJECT = defaultSubjectFor('ICON');
+  const iconSheet = (look: IconLook, targetModel: TargetModelId): string =>
+    generatePrompt(
+      'ICON',
+      { ...ICON_SUBJECT, icons: { look, colourMode: 'FULL_COLOUR', picks: ICON_SUBJECT.icons?.picks ?? [] } },
+      withOutput({ targetModel, directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY', sheetIndex: 0 }),
+    );
+  const characterSheet = (targetModel: TargetModelId): string =>
+    generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), withOutput({ targetModel }));
+
+  /** A negative block's or `--no` flag's entries, split on the comma so `cast shadow` stays one entry. */
+  function negativesOf(prompt: string): readonly string[] {
+    const line = /^(?:Negative prompt: |negative_prompt: |--ar .*? --no )(.+)$/m.exec(prompt)?.[1];
+    if (line === undefined) throw new Error('the wrapper should carry a negative channel.');
+    return line.replace(/\.$/, '').split(', ');
+  }
+
+  const CAST_INSIDE = {
+    QWEN_IMAGE: ['cast shadow', 'contact shadow'],
+    STABLE_DIFFUSION: ['floor shadow'],
+    MIDJOURNEY: ['cast shadow'],
+  } as const;
+  const CAST_OUTSIDE = {
+    QWEN_IMAGE: ['drop shadow'],
+    STABLE_DIFFUSION: ['drop shadow'],
+    MIDJOURNEY: [],
+  } as const;
+
+  it.each(Object.keys(CAST_INSIDE) as (keyof typeof CAST_INSIDE)[])(
+    'has %s negate no shadow cast inside a full-bleed square, and keep the one outside it',
+    (targetModel) => {
+      const fullBleed = negativesOf(iconSheet('FULL_BLEED_TILE', targetModel));
+      for (const term of CAST_INSIDE[targetModel]) expect(fullBleed).not.toContain(term);
+      for (const term of CAST_OUTSIDE[targetModel]) expect(fullBleed).toContain(term);
+
+      for (const [where, prompt] of [
+        ['isolated mark', iconSheet('ISOLATED_MARK', targetModel)],
+        ['character', characterSheet(targetModel)],
+      ] as const) {
+        const entries = negativesOf(prompt);
+        for (const term of [...CAST_INSIDE[targetModel], ...CAST_OUTSIDE[targetModel]]) {
+          expect(entries, `${where} / ${term}`).toContain(term);
+        }
+      }
+    },
+  );
+
+  it('has Flux forbid a drop shadow rather than a cast one on a full-bleed square', () => {
+    const fullBleed = iconSheet('FULL_BLEED_TILE', 'FLUX');
+    expect(fullBleed).toContain('with no drop shadow, no text, and');
+    expect(fullBleed).not.toContain('no cast shadow');
+    expect(iconSheet('ISOLATED_MARK', 'FLUX')).toContain('with no cast shadow, no text, and');
+    expect(characterSheet('FLUX_API')).toContain('with no cast shadow, no text, and');
+  });
+});
+
+/**
+ * Midjourney's `--no` on an icon series (audit finding T2): the frame decision is the sheet's, and the
+ * category's assembled whole is negated as it is in the two negative blocks.
+ */
+describe('Midjourney on an icon series', () => {
+  function negatedOn(subject: SubjectDefinition, sheetName: RegExp): readonly string[] {
+    const series = sheetSeriesFor('ICON', subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT');
+    const sheetIndex = series.findIndex((plan) => sheetName.test(plan.name));
+    if (sheetIndex === -1) throw new Error(`the series should hold a sheet named ${String(sheetName)}.`);
+    const prompt = generatePrompt('ICON', subject, withOutput({ targetModel: 'MIDJOURNEY', sheetIndex }));
+    return /--no ([^\n]+)/.exec(prompt)?.[1]?.split(', ') ?? [];
+  }
+  const STARTER = defaultSubjectFor('ICON');
+  // Two potions, whose looks name no frame — the starter roster's character icon sits in a gilded one.
+  const ICONS = {
+    ...STARTER,
+    icons: { ...STARTER.icons!, picks: cataloguePicks(['heal-minor', 'heal-major']) },
+  };
+
+  it('negates a frame and a border on an icon sheet, and keeps both on the overlay sheet', () => {
+    expect(negatedOn(ICONS, /^Icons /)).toEqual(expect.arrayContaining(['frame', 'border']));
+    expect(negatedOn(STARTER, /^Icons /)).not.toContain('frame');
+    expect(negatedOn(ICONS, /^Overlay/)).not.toContain('frame');
+    expect(negatedOn(ICONS, /^Overlay/)).not.toContain('border');
+  });
+
+  it('keeps a frame and a border on an icon sheet whose own entry draws one', () => {
+    const subject = { ...STARTER, icons: { ...STARTER.icons!, picks: cataloguePicks(['pin-quest-area']) } };
+    // The entry's own look names the border, in the inventory, rather than the exclusions' “frame, border”.
+    const prompt = generatePrompt('ICON', subject, withOutput({ targetModel: 'GENERIC', sheetIndex: 0 }));
+    expect(sectionOf(prompt, 'COMPONENT INVENTORY')).toMatch(/dotted border/);
+    expect(negatedOn(subject, /^Icon /)).not.toContain('border');
+    expect(negatedOn(subject, /^Icon /)).not.toContain('frame');
+  });
+
+  it('opens with the category’s assembled whole on every sheet', () => {
+    for (const sheet of [/^Icons /, /^Overlay/]) {
+      expect(negatedOn(ICONS, sheet).slice(0, 2)).toEqual(['menu screen', 'game screenshot']);
+    }
+  });
+});
+
+/** What Seedream may drop and what it may not, on an icon set (audit finding T4). */
+describe('Seedream’s keep list', () => {
+  it('names the inventory, and no direction on a sheet that states none', () => {
+    const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput({ targetModel: 'SEEDREAM' }));
+    expect(prompt).toContain('never the component count,\nthe inventory in section 4 or the background.');
+    expect(prompt).not.toContain('stated direction');
+  });
+});
+
+/** What the budget notice measures on a target whose wrapper writes a block for a field of its own (T4). */
+describe('the prompt field a budget is measured on', () => {
+  it.each(['QWEN_IMAGE', 'STABLE_DIFFUSION'] as const)('leaves %s’s negative block out', (targetModel) => {
+    const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput({ targetModel }));
+    const field = promptFieldText(prompt, targetModel);
+    expect(field.length).toBeLessThan(prompt.length);
+    expect(field).toContain('Generate the sheet now.');
+    expect(field).not.toMatch(/negative_prompt:|Negative prompt:/);
+    expect(readPromptBudget(prompt, targetModel)?.used).toBe(estimateTokens(field));
+  });
+
+  it('measures every other target on the whole prompt', () => {
+    const prompt = generatePrompt(
+      'ICON',
+      defaultSubjectFor('ICON'),
+      withOutput({ targetModel: 'GPT_IMAGE' }),
+    );
+    expect(promptFieldText(prompt, 'GPT_IMAGE')).toBe(prompt);
   });
 });

@@ -1,0 +1,148 @@
+# Overlay sheet in cells — plan
+
+> **Status:** ✅ COMPLETE — the follow-up to the Icon / Symbol Set audit’s open question (U1): each overlay piece leaves the Quantise tab as one icon tile with the piece at its place on the icon. Step 10 closed with the first real overlay sheet, `test_sprites/game_overlay_test.png`.
+
+## 1. The defect
+
+An ICON set’s overlay sheet (`src/constants/sheetPlans/iconOverlaySheet.ts`) draws each piece “within a
+square the size of one tile”, at the place it sits on the icon: a corner badge in its corner. The
+square has no backdrop, so the Quantise tab cuts each piece to its own bounding box, and every cell
+anchor centres it. A corner mark loses its corner. The audit’s phase 5 only changed the *Fit* card to
+say “use Scale evenly, not Fill square, for the overlay sheet”.
+
+The goal: each overlay piece leaves as a file the size of one icon tile (128 × 128 at the studio’s
+target), with the piece at its place on the icon.
+
+Band centres (`spriteBands`, `spritePitch`) cannot find this sheet’s cells, because the pieces sit off
+centre on purpose. The cells are found from the empty gaps between the pieces.
+
+## 2. Decisions
+
+The maintainer chose the most correct option for each.
+
+1. **More pieces than sixteen cells make a second overlay sheet**, cut evenly with `balancedChunks` as
+   the icon sheets are. There is no cap. The series stays “icon sheets, then overlay sheets”.
+2. **The tile size is stated and measured.** The prompt states the tile square as an exact share of
+   the cell. The quantiser measures it from the full-tile pieces (veil, halo, ring, sweeps, glow),
+   refuses with a reason where the measurement and the stated share disagree beyond a tolerance, and
+   uses the stated share where the sheet has no full-tile piece.
+3. **Pieces are named by cell index**, so an empty cell leaves its neighbours’ names intact.
+4. **A real overlay sheet** generated from the new prompt goes into `test_sprites/` and
+   `tests/sheetCorpus.ts`, and the lattice is pinned against it. Only the maintainer can generate one,
+   so the work is built and tested against synthetic drift first.
+
+## 3. Design
+
+### The prompt
+
+- The overlay plans declare `cellGrid: ICON_GRID_COLUMNS` and a `placement`: `WITHIN_TILE` under the
+  full-bleed look, `WITHIN_CELL` under the isolated look. The overlay sheet takes the icon sheets’ grid
+  and scale.
+- The cell sentence and the grid sentence move out of `iconSheet.ts` into their own files. The overlay
+  intro opens with the cell sentence and a placement sentence: one piece to a cell, four across, in
+  reading order. Under `WITHIN_TILE` a piece is drawn within the tile square, centred in its cell at the
+  stated share, and stands where it sits over the tile. Under `WITHIN_CELL` the reference square is the
+  cell itself.
+- The cell is described, never drawn: section 6 already forbids grid lines and frames.
+- Each look’s placement sentence says the piece stands where it sits over the icon, inside its cell.
+- `docs/todo/baseline-prompt-new.md` §2 states the overlay sheet’s grid and placement.
+
+### Extra overlay pieces across overlay sheets
+
+- The ICON series reads the subject’s *Extra Overlay Pieces*. The fixed library and the extras are one
+  run of lines, cut by `balancedChunks` into overlay sheets of at most sixteen components.
+- `SheetPlan.anatomy` becomes `'ELSEWHERE'` or the pieces a sheet draws (`{ pieces }`), so each overlay
+  sheet names its own share. `anatomyFacingsFor` becomes `sheetAnatomyFor`, which answers the facings
+  and the pieces together, and every reader of the anatomy (the count, the inventory, section 1, the
+  slots and the field’s note) reads the sheet’s share through it.
+- The roster summary, `describeSeries`, `outputForRoster` and the identity lock follow. A reader on an
+  overlay sheet stays on the same overlay sheet across a roster change.
+- `ICON_SERIES_LONGEST` goes. An ICON series has no longest length once the extras add sheets, so the
+  stored sheet index is held to a whole number in the safe range, and `resolveSheetIndex` remains the
+  validity check.
+
+### The quantiser
+
+- `src/utils/cellLattice.ts` (pure, new) reads the cells from the gaps between the segmentation boxes:
+  the nominal step from the grid, the row boundaries at the empty run nearest each nominal boundary,
+  then the column boundaries per row, the outer edges from the median measured step, and a reference
+  square per cell. It fails, naming the boxes, where a box straddles a boundary, a window holds no gap,
+  or the measured tile disagrees with the stated share. It never falls back to centring.
+- `shapeSheet` takes the lattice: boxes in one cell join before the reader’s joins, pieces order by
+  cell, and names follow the cell index.
+- A new fit, `IN_PLACE` (“Keep place”), places each piece’s own box at its place on the reference square,
+  scaled by one factor (1 on a sheet with a pixel scale). A piece that leaves its cell, or a failed
+  lattice, is refused by name.
+- The manifest states the piece’s own box, its placement, the fit `IN_PLACE`, and a pivot at the centre
+  of the reference square (`TILE_CENTRE`).
+
+### Types, data and controls
+
+- `SheetPlanFields.placement?: 'WITHIN_CELL' | 'WITHIN_TILE'`, rejected without `cellGrid`.
+- `useCellLattice` in `src/hooks/`; `DownloadControls` reads it.
+- On a placement sheet the fit resolves to `IN_PLACE`; elsewhere a stored `IN_PLACE` resolves to
+  `REFUSE`. `SpriteFitChoice` withholds the fits that do not apply, each with its reason.
+- `SpriteCellControls` hides the anchors under `IN_PLACE`; the cell badge states the factor or the
+  lattice failure.
+- The *Fit* card drops the phase 5 stopgap and gains a *Keep place* bullet.
+
+## 4. Order
+
+1. Types and validation.
+2. The plan, the prompt wording and the document’s §2.
+3. The second overlay sheet.
+4. `cellLattice`.
+5. Piece grouping, order and names.
+6. Placements, the manifest and the writer’s refusal.
+7. Hooks, controls and copy.
+8. The specification.
+9. A browser check in Edge on both storage backends, then a review.
+10. A real overlay sheet from the maintainer.
+
+## 5. Progress
+
+- **The prompt (steps 1 to 3)** landed in “Lay an icon set's overlay sheets out in cells, and state the
+  tile square exactly”. Three choices the design left open were settled there:
+  - The overlay sheets **list** the *Extra Overlay Pieces* in a group of their own
+    (`ComponentGroup.additional`) rather than append them, because a sheet the even cut leaves holding
+    extras alone would otherwise have no group to carry its cell sentence. Every ICON sheet declares
+    `anatomy: 'ELSEWHERE'`, `'APPENDED'` is gone, and section 1, the guard's exemption and the field's
+    note read the listed group (`anatomyLineFor`, `drawsAdditionalAnatomy`). A reader's piece takes a
+    label no drawing of the library answers to across all the overlay sheets.
+  - **The exact share is one figure per resolution profile**: 60% at high resolution and 45% at mid,
+    each inside its rung's range, and 60% after the figure of a target size or the 16-bit height.
+  - **The stored sheet index has no longest series to bound it**, so `ICON_SERIES_LONGEST` is gone and
+    `SHEET_INDEX_RANGE` holds a whole number from zero.
+- **The quantiser (steps 4 to 7)**: `cellLattice` reads the cells from the gaps, with a boundary in a
+  gap cut off by its search window taken at the pitch the even gaps measure rather than at the cut
+  gap's middle, which was ten pixels off on a row of bottom-corner marks. The full-tile cells come from
+  the plan (`ComponentEntry.fillsTile`) rather than from the boxes' sizes, so a sheet of small marks is
+  never measured as tiles. The segmentation carries the sheet's size. The fit `IN_PLACE`, the naming
+  `CELL`, the pivot `TILE_CENTRE` and manifest version 6 are new, and `SegmentedChoice` takes a reason
+  per group of withheld values. `TILE_TOLERANCE` (a fifth) is reasoned rather than measured.
+- **The review** settled four more choices:
+  - **A reader's piece is laid across sheets only where keeping it whole would cost one**
+    (`overlayRuns`). Whole lines are kept where they fill the fewest sheets the drawings need; otherwise
+    each reader's piece is cut into its drawings, balanced with the library's whole lines, and joined
+    back into one line per sheet naming its drawings (`parts`). The library's lines are never split.
+  - **Only the veil and the halo measure the tile square**, and each is held to the stated share on its
+    own, so one astray piece is refused rather than outvoted in a median.
+  - **The isolated look draws each piece within section 2's share of the cell**, centred, so its
+    placement sentence and section 2 state one square; the Quantise tab still maps the whole cell.
+  - **Editing the *Extra Overlay Pieces* settles the sheet index** (`outputForField`) by the rule a
+    roster change takes, and a look or colour mode chosen with no icons ticked moves no one.
+- **The second review** made placement exact at any factor: each edge of a placed piece is rounded
+  rather than its offset and size apart, and a veil or halo drawn a pixel off square is placed against
+  its box squared to the longer side, so neither is refused.
+- **Step 10 is open**: no overlay sheet generated from the new prompt is in `test_sprites/` yet.
+- **Step 10 closed on 2026-10-06** with `test_sprites/game_overlay_test.png`, pinned by
+  `tests/overlay-sheet-corpus.test.ts`. The reader found every cell, but the generator drew the tile
+  at 70% of the cell where 60% was asked, the halo, ring, glow and three-quarter sweep up to 17%
+  larger than the veil, and its squares up to seventeen pixels off the cells' middles, so the strict
+  rules refused the pack. The maintainer chose the remedy: only the veil measures the tile
+  (`TileRole` `MEASURES`); a piece drawn to the whole tile is placed against its own box (`SPANS`);
+  every other square is centred where the spanning pieces put its row and column (`lineCentres`, a
+  repeated-median line); a piece up to `PLACE_OVERSHOOT` (a sixteenth) past its file is clipped and
+  one further refused by name; and `TILE_TOLERANCE` is a quarter. The ring's prompt wording now puts
+  its outer edge on the tile's edge, to match its role. On this sheet the fourth tier mark, drawn a
+  ninth wider than the tile each side, is still refused.

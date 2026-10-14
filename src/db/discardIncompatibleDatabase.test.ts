@@ -163,6 +163,25 @@ describe('discardIncompatibleDatabase', () => {
     expect(declared(stored, 'studio_session')).toEqual(['studio_session']);
   });
 
+  it('keeps a library made before the icon library existed, and adds the icon library to it', () => {
+    // The DDL as it stood before `custom_icon_entries`: the additive table must not cost a reader the
+    // projects and presets they already have.
+    const earlier = CREATE_TABLES_SQL.replace(
+      /CREATE TABLE IF NOT EXISTS custom_icon_entries \([^)]*\);/,
+      '',
+    );
+    expect(earlier).not.toContain('custom_icon_entries');
+    const stored = database();
+    stored.exec(earlier);
+    seed(stored);
+
+    boot(stored);
+
+    expect(contents(stored)).toEqual(SEEDED);
+    expect(declared(stored, 'custom_icon_entries')).toEqual(['custom_icon_entries']);
+    expect(ids(stored, 'custom_icon_entries')).toEqual([]);
+  });
+
   it('keeps a database made by the same DDL laid out differently', () => {
     // Every column on one line, and space on both sides of every bracket and comma: nothing about the
     // schema has changed, so nothing about the library may.

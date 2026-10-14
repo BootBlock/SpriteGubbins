@@ -3,6 +3,7 @@ import { conesToOklabInto, srgbToConesInto } from '../src/utils/oklab.ts';
 import type { MutableCones, MutableOklab } from '../src/utils/oklab.ts';
 import { pixelDistanceOf } from '../src/utils/pixelDistance.ts';
 import type { GridMesh } from '../src/types/quantiser.ts';
+import { forEachMeshCell } from '../src/utils/forEachMeshCell.ts';
 
 /**
  * The metric the two dither tables in `constants/quantiser.ts` are stated in: the mean scaled-OKLab
@@ -43,34 +44,30 @@ export function cellMeanField(source: ImageData, mesh: GridMesh): ConeField {
   const width = mesh.x.length;
   const out = new Float64Array(width * mesh.y.length * 4);
   const cones: MutableCones = { long: 0, medium: 0, short: 0 };
-  for (const [row, top] of mesh.y.entries()) {
-    const bottom = Math.min(mesh.y[row + 1] ?? source.height, source.height);
-    for (const [column, left] of mesh.x.entries()) {
-      const right = Math.min(mesh.x[column + 1] ?? source.width, source.width);
-      let long = 0;
-      let medium = 0;
-      let short = 0;
-      let alpha = 0;
-      let counted = 0;
-      for (let y = top; y < bottom; y += 1) {
-        for (let x = left; x < right; x += 1) {
-          const at = pixelOffset(source.width, x, y);
-          srgbToConesInto(cones, source.data[at] ?? 0, source.data[at + 1] ?? 0, source.data[at + 2] ?? 0);
-          long += cones.long;
-          medium += cones.medium;
-          short += cones.short;
-          alpha += source.data[at + 3] ?? 0;
-          counted += 1;
-        }
+  forEachMeshCell(mesh, source.width, source.height, (column, row, left, top, right, bottom) => {
+    let long = 0;
+    let medium = 0;
+    let short = 0;
+    let alpha = 0;
+    let counted = 0;
+    for (let y = top; y < bottom; y += 1) {
+      for (let x = left; x < right; x += 1) {
+        const at = pixelOffset(source.width, x, y);
+        srgbToConesInto(cones, source.data[at] ?? 0, source.data[at + 1] ?? 0, source.data[at + 2] ?? 0);
+        long += cones.long;
+        medium += cones.medium;
+        short += cones.short;
+        alpha += source.data[at + 3] ?? 0;
+        counted += 1;
       }
-      const to = (row * width + column) * 4;
-      const divisor = Math.max(counted, 1);
-      out[to] = long / divisor;
-      out[to + 1] = medium / divisor;
-      out[to + 2] = short / divisor;
-      out[to + 3] = alpha / divisor;
     }
-  }
+    const to = (row * width + column) * 4;
+    const divisor = Math.max(counted, 1);
+    out[to] = long / divisor;
+    out[to + 1] = medium / divisor;
+    out[to + 2] = short / divisor;
+    out[to + 3] = alpha / divisor;
+  });
   return out;
 }
 

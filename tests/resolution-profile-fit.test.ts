@@ -1,13 +1,9 @@
+import { sheetIndicesOf } from '../src/test/sheetIndicesOf.ts';
 import { describe, expect, it } from 'vitest';
 import { CATEGORY_DIRECTION_SETS } from '../src/constants/categoryDirectionSets.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
 import { SHEET_CELL_PITCH } from '../src/constants/sheetCanvas.ts';
-import {
-  CATEGORY_SHEET_PLANS,
-  modesFor,
-  plansFor,
-  SHEET_INDEX_RANGE,
-} from '../src/constants/sheetPlans/index.ts';
+import { CATEGORY_SHEET_PLANS, modesFor, plansFor } from '../src/constants/sheetPlans/index.ts';
 import { assemblyBaseSubjectsOf } from '../src/test/assemblyBaseSubjects.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 import { generatePrompt } from '../src/utils/promptCompiler.ts';
@@ -53,13 +49,20 @@ import { generatePrompt } from '../src/utils/promptCompiler.ts';
 const RESOLUTION_LINE = /^- Resolution profile: (.*)$/gm;
 
 /**
- * The only share this suite knows how to price.
+ * The only two shares this suite knows how to price.
  *
- * A reworded share — or one stated against anything but the largest component's cell — fails to
- * match rather than being scored some other way, because the frame is what decides the arithmetic and
- * guessing it wrong is the failure this suite is named after.
+ * A reworded share — or one stated against anything but a cell — fails to match rather than being
+ * scored some other way, because the frame is what decides the arithmetic and guessing it wrong is the
+ * failure this suite is named after.
+ *
+ * **The second is an icon sheet's** (`SheetPlan.fit`, audit finding P10): every component is drawn to one
+ * square of one size, and the square occupies the share. It is priced the same way, because every square
+ * is as large as the largest component and no larger, so each spends the `f²` of the page the largest
+ * component would. **A square in a fixed grid states one exact figure** (`TILE_SHARE`), which is priced
+ * as the top of a range is.
  */
-const CELL_SHARE = /the largest component occupies (\d+)–(\d+)% of its cell height in the exploded grid/;
+const CELL_SHARE =
+  /(?:the largest component|every component is drawn to one square of the same size, however large or small the thing it depicts, and that square) occupies (?:\d+–(?<top>\d+)% of its cell height|exactly (?<exact>\d+)% of its cell’s width and height, centred in the cell) in the exploded grid/;
 
 /**
  * What the layout section's “generously and uniformly spaced” costs, as a share of the page.
@@ -106,7 +109,7 @@ describe('the resolution profile against the page it is drawn on', () => {
           // index decide which plan compiles — an eight-compass core is two sheets and an articulation
           // run after them, and the defect this suite exists for was on every one of the three.
           for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-            for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            for (const sheetIndex of sheetIndicesOf(category, subject, directionalMode, directions)) {
               for (const resolutionProfile of SHARE_BEARING) {
                 const where = `${category} / ${base} / ${directionalMode} / ${directions} / ${String(sheetIndex)} / ${resolutionProfile}`;
                 const prompt = generatePrompt(category, subject, {
@@ -126,10 +129,11 @@ describe('the resolution profile against the page it is drawn on', () => {
                   continue;
                 }
                 scored.add(`${category} / ${base} / ${directionalMode}`);
-                const top = Number(found[2]) / 100;
+                const percent = found.groups?.['top'] ?? found.groups?.['exact'] ?? '';
+                const top = Number(percent) / 100;
                 if (top * top > COVERAGE_CEILING) {
                   breaches.push(
-                    `${where}: ${String(found[2])}% of a cell covers ${(top * top).toFixed(2)} of the page`,
+                    `${where}: ${percent}% of a cell covers ${(top * top).toFixed(2)} of the page`,
                   );
                 }
               }

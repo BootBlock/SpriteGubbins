@@ -1,4 +1,5 @@
 import type { Rgba } from '../types/quantiser.ts';
+import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
 import { FULLY_OPAQUE, fromHex, unpackColor } from './imageData.ts';
 
 /**
@@ -33,7 +34,8 @@ import { FULLY_OPAQUE, fromHex, unpackColor } from './imageData.ts';
  *
  * Fully transparent pixels take no part, because `colorHistogram` leaves them out — a pixel
  * carrying no colour has no colour to name, so a sheet the keying took whole yields no entries at
- * all.
+ * all. Nor does a pixel under `COVERAGE_FLOOR`, whose channels are the browser's rounding rather
+ * than a colour anybody chose, so a faint fringe cannot put noise into a written palette.
  *
  * Population order, ties broken by packed value, so the order is deterministic on every input. It is
  * what a swatch strip lists and what a written file carries, so the sheet’s dominant colours lead.
@@ -41,6 +43,7 @@ import { FULLY_OPAQUE, fromHex, unpackColor } from './imageData.ts';
 export function paletteEntriesFrom(histogram: ReadonlyMap<number, number>): readonly Rgba[] {
   const counts = new Map<number, number>();
   for (const [packed, count] of histogram) {
+    if (packed % 256 < COVERAGE_FLOOR) continue;
     // The alpha byte off the end of the packing, leaving `0xRRGGBB` — the colour without its
     // coverage. `unpackColor` below turns it back into a full entry with `a` supplied.
     const color = Math.floor(packed / 256);

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_SPRITE_GAP, SPRITE_GAP_RANGE } from '../constants/quantiser.ts';
 import { channels, imageFrom } from '../test/images.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
-import { pixelOffset, readPixel } from './imageData.ts';
-import { type SettledSheet, settleSprites } from './settleSprites.ts';
+import { CHANNELS_PER_PIXEL, pixelOffset, readPixel } from './imageData.ts';
+import { type SettledSheet, settleRegions, settleSprites } from './settleSprites.ts';
 
 const CLEAR: Rgba = { r: 0, g: 0, b: 0, a: 0 };
 const FILL: Rgba = { r: 90, g: 110, b: 140, a: 255 };
@@ -230,24 +230,49 @@ function frameOverSpeck(): ImageData {
   });
 }
 
+/**
+ * A 9 × 9 block with a three-pixel break in its left edge, a three-pixel speck directly against that
+ * break, and a block one clear column past the speck.
+ *
+ * The block mirrors in 33 of its 36 pairs, which is past the floor, and settling it closes the break
+ * from the intact side. The closed edge then touches the speck, which the segmentation drops rather
+ * than boxes, and the joined component reaches within the gap of the other block.
+ */
+function brokenEdgeBySpeck(): ImageData {
+  return imageFrom(30, 12, (x, y) => {
+    if (x >= 3 && x < 6 && y >= 1 && y < 10) return FILL;
+    if (x >= 7 && x < 10 && y === 5) return EDGE;
+    if (x >= 10 && x < 19 && y >= 1 && y < 10) return x === 10 && y >= 4 && y < 7 ? CLEAR : FILL;
+    return CLEAR;
+  });
+}
+
 /** How many sprites a settled sheet reports, or `0` where it did not segment. */
 function spriteCount(sheet: SettledSheet): number {
   return sheet.sprites.kind === 'SEGMENTED' ? sheet.sprites.boxes.length : 0;
 }
 
 /**
- * A snap tidies the sprites it acts on and never changes how many there are. The count names every
- * piece, and cuts the pack, the manifest and the `.aseprite` file, so a pass that merged a neighbour
- * into the sprite it edited would shift all four.
+ * A snap never merges a neighbour into the sprite it acts on. The count names every piece, and cuts
+ * the pack, the manifest and the `.aseprite` file, so a pass that merged a neighbour into the sprite
+ * it edited would shift all four. The symmetry settle can still part a sprite by clearing a pixel out
+ * of a one-pixel bridge, which `settleSprites` reads the sheet again for; these cases are the merge.
  */
-describe('settleSprites — a snap keeps the sprite count', () => {
+describe('settleSprites — a snap merges no neighbour into its sprite', () => {
+  const settle = { symmetry: 'SNAP' as const };
   const fold = { duplicateSnap: true };
   const align = { frameAlignment: 'SNAP' as const };
+  // A sprite past the floor with a pair left to settle; one that already mirrors exactly has none.
+  const drifted = (read: SettledSheet) =>
+    read.symmetry?.filter(
+      (reading) => reading.confidence >= READING_ONLY.symmetryConfidence / 100 && reading.confidence < 1,
+    ).length ?? 0;
   const groups = (read: SettledSheet) => read.duplicates.length;
   const drifts = (read: SettledSheet) =>
     read.strips?.flatMap((strip) => strip.frames).filter((frame) => frame.drift.y !== 0).length ?? 0;
 
   it.each([
+    ['the symmetry settle', 'a speck against its write', brokenEdgeBySpeck, settle, drifted],
     ['the duplicate fold', 'a neighbour within the gap of its write', tallerCanonical, fold, groups],
     ['the duplicate fold', 'a speck against its write', tallerCanonicalOverSpeck, fold, groups],
     ['the frame alignment', 'a neighbour within the gap of its write', frameOverSliver, align, drifts],
@@ -261,5 +286,40 @@ describe('settleSprites — a snap keeps the sprite count', () => {
     expect(spriteCount(read)).toBeGreaterThan(0);
     expect(spriteCount(snapped)).toBe(spriteCount(read));
     expect(channels(snapped.image)).toEqual(channels(sheet()));
+  });
+});
+
+describe('settleRegions', () => {
+  const PAPER: Rgba = { r: 235, g: 235, b: 235, a: 255 };
+  const INK: Rgba = { r: 20, g: 20, b: 20, a: 255 };
+  const MID: Rgba = { r: 128, g: 128, b: 128, a: 255 };
+  const SNAPPING: QuantiseSettings = {
+    ...READING_ONLY,
+    symmetry: 'OFF',
+    frameAlignment: 'OFF',
+    antiAlias: 'BOTH',
+    antiAliasPalette: 'SNAP',
+    reduction: { kind: 'MAX_COLORS', maxColors: 16 },
+  };
+  /** One stepped contour between paper and ink, with no grey of its own. */
+  const contour = () => imageFrom(12, 6, (x, y) => (y < (x < 6 ? 2 : 3) ? PAPER : INK));
+  const holds = (image: ImageData, color: Rgba) =>
+    Array.from({ length: image.width * image.height }).some(
+      (_, pixel) => readPixel(image.data, pixel * CHANNELS_PER_PIXEL).r === color.r,
+    );
+
+  it('keeps each region’s blends to the colours every region holds', () => {
+    // The regions of one sheet hold its colours between them, so a blend in one of them may snap to a
+    // grey only its neighbour holds, exactly as it would on the whole sheet.
+    const [region] = settleRegions([contour(), imageFrom(4, 4, () => MID)], SNAPPING);
+
+    expect(holds(settleSprites(contour(), SNAPPING).image, MID)).toBe(false);
+    expect(region !== undefined && holds(region.image, MID)).toBe(true);
+  });
+
+  it('settles one region exactly as the sheet it is', () => {
+    const [region] = settleRegions([contour()], SNAPPING);
+
+    expect(region).toEqual(settleSprites(contour(), SNAPPING));
   });
 });

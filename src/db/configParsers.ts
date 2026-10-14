@@ -29,6 +29,7 @@ import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { parseCustomPalette } from '../utils/parseCustomPalette.ts';
 import { parseRigContract } from '../utils/parseRigContract.ts';
+import { parseIconRoster } from './iconRosterParser.ts';
 import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './readers.ts';
 
 /**
@@ -59,17 +60,27 @@ export function isTargetModelId(value: unknown): value is TargetModelId {
  * other than text in one, has been damaged or edited by hand, and defaulting that one field is better
  * than discarding the rest of the user's work with it. What it will not do is invent a *category* —
  * that comes from the row and is validated strictly.
+ *
+ * ICON's roster is read by `parseIconRoster` against the catalogue, and its absence is the one thing
+ * that discards the rest: see the line that checks for it. A roster on a category that declares none
+ * is not carried, so `icons` is present exactly where the category declares one.
  */
 export function parseSubject(value: unknown, category: SubjectCategory): SubjectDefinition {
   const defaults = defaultSubjectFor(category);
   if (!isRecord(value)) return defaults;
+  // A category with a roster whose stored subject has none was written by a build before the roster
+  // existed, and its fields meant something else then — ICON's `species` named an icon family where
+  // it now names where the set is shown. So the whole subject falls back rather than half of it.
+  if (defaults.icons !== undefined && !('icons' in value)) return defaults;
 
   const subject = { ...defaults };
   for (const key of SUBJECT_FIELD_KEYS) {
     const stored = value[key];
     if (typeof stored === 'string') subject[key] = stored;
   }
-  return subject;
+  return defaults.icons === undefined
+    ? subject
+    : { ...subject, icons: parseIconRoster(value['icons'], defaults.icons) };
 }
 
 /**

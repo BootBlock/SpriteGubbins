@@ -1,5 +1,10 @@
 import { deliberates, returnsText, seesCanvasBeforeDelivery } from './targetCapabilities.ts';
-import { isPlanView, LETTERING_IS_A_COMPONENT, perComponentLimit } from '../constants/promptText/index.ts';
+import {
+  isPlanView,
+  LETTERING_IS_A_COMPONENT,
+  LIGHTING_HAS_KEY,
+  perComponentLimit,
+} from '../constants/promptText/index.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
 import { seriesStatesOneCapability } from './seriesCapability.ts';
 import { viewCoverage } from './viewCoverage.ts';
@@ -45,7 +50,10 @@ export function promptConditions(
     anatomyFacings,
     additionalAnatomyLine,
     clothingIsAComponent,
+    clothingStylesComponents,
+    clothingDrawnElsewhere,
     oneSidedFeatures,
+    interiorDetail,
   } = facts;
   const views = viewCoverage(coveredDirections);
 
@@ -70,6 +78,23 @@ export function promptConditions(
     // subject itself — a rigid object's states, an effect's frames, a font's glyphs. Those are told
     // instead that each entry is one complete drawing. See `ComponentExtent`.
     COMPONENTS_ARE_WHOLE: plan.extent === 'WHOLE' ? 'yes' : '',
+    // Which identity rule the identity-consistency section states, and which sentence section 1's
+    // identity lock opens on. A sheet of one subject's parts and views holds its silhouette, colour
+    // blocking and material constant; a sheet of one set's members — an icon set, a font, a blend set —
+    // holds its manner of drawing constant and never what tells one member from the next. Asked of the
+    // resolved plan, so INTERFACE's state library and its nine-slice answer apart. See `SheetIdentity`.
+    COMPONENTS_ARE_ONE_SET: plan.identity === 'ONE_SET' ? 'yes' : '',
+    // Which camera section 3 states and how each component is oriented beneath it, and which items
+    // section 0's precedence order ranks. A sheet turned to its yaws keeps the left-and-right rules, the
+    // yaw block and the primary assembly direction; an icon sheet shares the camera and poses each
+    // subject for its own read; the overlay sheet's pieces lie flat in the picture plane under no camera
+    // at all. Asked of the resolved plan, so the overlay sheet and the icon sheets of one series answer
+    // apart. See `ComponentOrientation`.
+    ORIENTATION: plan.orientation,
+    // How section 1 introduces its list and what it says the list governs: the whole design of one
+    // subject, what a set's members share above entries that each carry their own design, or the set a
+    // sheet of overlay pieces is laid over. See `SubjectScope`.
+    SUBJECT_SCOPE: plan.subjectScope,
     // Whether section 4's generic paragraph is this sheet's one statement of where a piece ends. A
     // sheet of whole drawings has no joins to end at, and a group carrying `ends` names its joins in
     // the subject's own words — so printing the paragraph as well would state one rule twice, ten
@@ -89,6 +114,11 @@ export function promptConditions(
     // it is run to check — while a flat fill of one colour has no surface for a light to fall on.
     // Asked of the style's shading, which is where `RENDER_STYLE_TRAITS` records that difference.
     LIGHTING_STATED: styleSettings.lighting === null ? '' : 'yes',
+    // Narrower again: whether that lighting has a key light, and so a direction for every component to
+    // share. Sections 3 and 9 asked every sheet for "one light direction" and a "key-light direction",
+    // and under a flat albedo or an unlit model the prompt has just said there is none (audit finding
+    // P9). Off the key, they ask every component to be lit alike instead. See `LIGHTING_HAS_KEY`.
+    KEY_LIGHT: styleSettings.lighting !== null && LIGHTING_HAS_KEY[styleSettings.lighting] ? 'yes' : '',
     // Whether the target component size names a native pixel grid this sheet delivers enlarged.
     // Gates three places at once: the carve-out in section 0's resampling rule, the block in
     // section 2 that states the grid and the multiple, and the self-audit's check on what the
@@ -118,6 +148,24 @@ export function promptConditions(
     // Whether the background is a colour at all. Gates section 0's reservation of that colour and the
     // self-audit's check on it; a transparent field has no colour for a component to be drawn in.
     KEY_COLOUR: keyColor === null ? '' : 'yes',
+    // Whether each component is a square carrying its own backdrop (R5 of `docs/todo/done/icon-catalogue.md`),
+    // which is what the full-bleed icon sheets declare. Gates section 0's sentence handing the backdrop
+    // to the component and the gutters to the key, and the self-audit's check on it; without the pair,
+    // the background item's “no gradient, texture, vignette” forbids the backdrop the sheet asks for.
+    // Asked of the plan, so the overlay sheet of the same set, which declares none, is never told it.
+    OWN_BACKDROP: plan.backdrop === 'OWN_SQUARE' ? 'yes' : '',
+    // Whether the engine applies this sheet's opacity, which the overlay sheet declares (audit finding
+    // P8). Gates section 0's rule that every piece is drawn opaque at full strength — a veil as a solid
+    // shape, a glow as hard-edged bands — and the self-audit's check on it. See `SheetPlan.opacity`.
+    ENGINE_OPACITY: plan.opacity === 'ENGINE_APPLIED' ? 'yes' : '',
+    // A tint mask (audit finding M1): ICON's icon sheets under the roster's `TINT_MASK` are drawn in greys
+    // for the engine to tint, so section 1 turns every colour it names into a value, and the self-audit
+    // checks that no hue is left.
+    TINT_MASK: plan.tint === 'ENGINE_MASK' ? 'yes' : '',
+    // Whether the subject states the interior-detail treatment section 2's surface-detail level defers
+    // to (audit finding P11). Read off the fact, which is already `null` on a sheet whose section 1
+    // describes the set it is laid over. See `utils/statedInteriorDetail.ts`.
+    INTERIOR_DETAIL_STATED: interiorDetail === null ? '' : 'yes',
     // Read from the resolved reference rather than the stored id, for the reason `HARDWARE_PROFILE`
     // is: a configuration naming a look this build no longer ships emits no heading rather than an
     // empty one.
@@ -170,7 +218,9 @@ export function promptConditions(
     // being deleted — a subject the compiler cannot read still has to be checked, and asking the model
     // to pick a witness is all that is left for it. See `utils/oneSidedFeatureLedger.ts` for what the
     // named branch says instead, and why it is the better half.
-    ONE_SIDED_FEATURES: oneSidedFeatures.length > 0 ? 'yes' : '',
+    // Only a sheet turned to its yaws carries the ledger at all: the subject's own left and right are
+    // stated there and nowhere else, so on a sheet posed any other way there is no side to name.
+    ONE_SIDED_FEATURES: plan.orientation === 'SHEET_YAW' && oneSidedFeatures.length > 0 ? 'yes' : '',
     // Section 1's "painted onto, never a separate piece" rule names its exceptions, and this one is a
     // line that is often not there — cleared, `NONE`, or on an articulation sheet, which draws limbs
     // for a trunk the core sheets carry. Naming an absent line is worse here than anywhere else in
@@ -184,6 +234,20 @@ export function promptConditions(
     // the answer are resolved in `sheetFacts` — whether the sheet draws it, and whether the line was
     // emitted at all.
     CLOTHING_IS_A_COMPONENT: clothingIsAComponent ? 'yes' : '',
+    // The exception's style shape (audit finding O1): ICON's overlay sheet draws every piece in the
+    // *Overlay Style*, so section 1 states it as the style of section 4, and section 7's glow and
+    // particle licence reads that line, since a `Stepped Glow Bands` style asks for the glow it names.
+    CLOTHING_STYLES_COMPONENTS: clothingStylesComponents ? 'yes' : '',
+    // The exception's third shape (R3 of `docs/todo/done/icon-catalogue.md`): a sheet whose components carry
+    // none of the attribute because another sheet of its series draws it. ICON's icon sheets are the
+    // case — the overlay sheet draws its pieces in the *Overlay Style*, and the icons are drawn bare for
+    // the engine to lay those pieces on — so the paint rule stated over them would order the style painted
+    // onto every icon.
+    // The sentence is scoped to the overlay's own pieces: a padlock or a crack an icon's entry or another
+    // field asks for is part of that icon and is drawn (audit finding P5). Section 7's glow and particle
+    // licence reads section 1 apart from that line for the same reason, or `Stepped Glow Bands` would be
+    // handed back to every icon the sentence has just taken it from (P7).
+    CLOTHING_DRAWN_ELSEWHERE: clothingDrawnElsewhere ? 'yes' : '',
     // Which shape that exception sentence takes. On a multi-view sheet the anatomy turns with the
     // trunk — section 4 lists each piece at every one of the sheet's facings and counts it per view
     // — so the sentence must say so, or section 1 promises a single drawing the inventory below it

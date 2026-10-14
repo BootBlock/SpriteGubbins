@@ -1,3 +1,4 @@
+import { resolveAspectRatio } from '../../constants/categoryAspectRatios.ts';
 import { useState } from 'react';
 import {
   ATLAS_CANVAS_CHOICES,
@@ -84,7 +85,7 @@ export function AtlasCalculatorContents() {
     // The sheet the studio is showing, not the series it belongs to: an atlas is laid out from one
     // returned image, and two sheets of a batch are two atlases.
     componentCount,
-    widthBias: widthBiasFor(aspectRatio),
+    widthBias: widthBiasFor(resolveAspectRatio(category, aspectRatio)),
   };
   const metrics = calculateAtlasMetrics(config);
   // Derived during render rather than memoised. Every input is a primitive that changed this render

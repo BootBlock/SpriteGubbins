@@ -82,6 +82,7 @@ afterEach(() => {
  */
 const NOTHING_READ = {
   cell: null,
+  paletted: false,
   duplicates: [],
   names: [],
   naming: null,
@@ -185,6 +186,7 @@ describe('useImageDownload', () => {
           format: 'PNG',
           boxes: [],
           cell: null,
+          paletted: false,
           duplicates: [],
           names: [],
           naming: null,

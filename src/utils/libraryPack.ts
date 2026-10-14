@@ -2,23 +2,26 @@ import { DEFAULT_PROJECT_ID, PROJECT_NAME_MAX_LENGTH, createDefaultProject } fro
 import { PRESETS } from '../constants/presets/index.ts';
 import { parseJson, isRecord } from '../db/readers.ts';
 import {
+  parseImportedCustomIcon,
   parseImportedPreset,
   parseImportedProject,
   parseImportedQuantisePreset,
 } from '../db/importedRows.ts';
 import { firstOfEachId } from './firstOfEachId.ts';
+import { firstOfEachSlot } from './firstOfEachSlot.ts';
 import { uniqueNamesWithin } from './uniqueNamesWithin.ts';
 import type { LibraryPack } from '../types/libraryPack.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 
 /**
  * The library-pack file format, both directions.
  *
- * **One file for all three collections**, because the three refer to one another: a preset names
- * its project by id, so a file of presets without their projects describes a library that cannot be
- * assembled. That is also why this replaced the two array-shaped packs the app used to write — one
+ * **One file for the projects and every saved collection**, because they refer to one another: a
+ * preset, a set of dials and a library icon each name their project by id, so a file of presets
+ * without their projects describes a library that cannot be assembled. That is also why this replaced the two array-shaped packs the app used to write — one
  * for archetypes and one for dial positions — rather than joining them: each would have had to
  * carry a copy of the projects, and importing either would have been a decision about the
  * collection it was not for.
@@ -34,13 +37,17 @@ import type { QuantisePreset } from '../types/quantisePreset.ts';
 /** The built-in ids, so an import can skip them. */
 const BUILT_IN_IDS: ReadonlySet<string> = new Set(PRESETS.map((preset) => preset.id));
 
-/** The pack the app hands out: the projects, every archetype, and every saved set of dials. */
+/**
+ * The pack the app hands out: the projects, every archetype, every saved set of dials, and every
+ * project's library of icons of the reader's own.
+ */
 export function serialiseLibraryPack(pack: LibraryPack): string {
   return JSON.stringify(
     {
       projects: pack.projects,
       presets: [...PRESETS, ...pack.presets],
       quantisePresets: pack.quantisePresets,
+      customIcons: pack.customIcons,
     },
     null,
     2,
@@ -57,7 +64,7 @@ function entriesAt(value: Record<string, unknown>, key: string): unknown[] {
  * The library in a pack file's text, with `now` stamped on any timestamp the file did not carry.
  *
  * Returns `null` when the text is not a library pack at all — which is anything that is not a JSON
- * object, and an object holding none of the three collections as an array. An **empty** pack is a
+ * object, and an object holding none of the four collections as an array. An **empty** pack is a
  * different answer and is returned as one: it is what an install that has saved nothing exports,
  * and the caller has to be able to refuse it on its own terms, because importing *replaces* the
  * library and obeying an empty result would silently delete everything the reader has.
@@ -69,7 +76,12 @@ function entriesAt(value: Record<string, unknown>, key: string): unknown[] {
  * {@link uniqueNamesWithin}, which says why that is renamed rather than dropped. It runs after the
  * re-filing below, because two saves from different missing projects meet only under Default.
  *
- * **Every preset comes out naming a project that is in the pack.** A file may name a project it
+ * **A library icon is held to the form's own rules** (`parseImportedCustomIcon`), and of two icons of
+ * one project answering to one slot the first is kept ({@link firstOfEachSlot}) — dropped rather than
+ * renamed, because the slot is derived from the role, and renaming a role would rewrite the reader's
+ * words. That runs after the re-filing too, for the reason the names' rule does.
+ *
+ * **Every saved entry comes out naming a project that is in the pack.** A file may name a project it
  * does not carry — hand-written, edited, or assembled from two exports — and a preset filed under
  * one would be invisible after the import, since the Projects tab draws presets under the project
  * they belong to. So an unplaceable preset is re-filed under the Default project, and the Default
@@ -81,7 +93,7 @@ export function parseLibraryPack(text: string, now: number): LibraryPack | null 
   const parsed = parseJson(text);
   if (!isRecord(parsed)) return null;
 
-  const collections = ['projects', 'presets', 'quantisePresets'];
+  const collections = ['projects', 'presets', 'quantisePresets', 'customIcons'];
   if (!collections.some((key) => Array.isArray(parsed[key]))) return null;
 
   const projects = firstOfEachId(
@@ -103,7 +115,13 @@ export function parseLibraryPack(text: string, now: number): LibraryPack | null 
       .filter((preset): preset is QuantisePreset => preset !== null),
   );
 
-  return withUniqueNames(withEveryProjectPresent({ projects, presets, quantisePresets }, now));
+  const customIcons = firstOfEachId(
+    entriesAt(parsed, 'customIcons')
+      .map(parseImportedCustomIcon)
+      .filter((icon): icon is SavedCustomIcon => icon !== null),
+  );
+
+  return withUniqueNames(withEveryProjectPresent({ projects, presets, quantisePresets, customIcons }, now));
 }
 
 /**
@@ -121,22 +139,25 @@ function withEveryProjectPresent(pack: LibraryPack, now: number): LibraryPack {
 
   const presets = pack.presets.map(refile);
   const quantisePresets = pack.quantisePresets.map(refile);
+  const customIcons = pack.customIcons.map(refile);
 
   const needsDefault =
     !known.has(DEFAULT_PROJECT_ID) &&
-    [...presets, ...quantisePresets].some((entry) => entry.projectId === DEFAULT_PROJECT_ID);
+    [...presets, ...quantisePresets, ...customIcons].some((entry) => entry.projectId === DEFAULT_PROJECT_ID);
 
   return {
     projects: needsDefault ? [...pack.projects, createDefaultProject(now)] : pack.projects,
     presets,
     quantisePresets,
+    customIcons,
   };
 }
 
 /**
  * The pack with the app's name rules applied: a project's name is unique in the library, and a
- * save's name inside its project, separately for each of the two saved collections. The projects
- * share one scope, and a renamed project still fits the dropdown's limit.
+ * save's name inside its project, separately for each of the two preset collections. The projects
+ * share one scope, and a renamed project still fits the dropdown's limit. A library icon's slot is
+ * unique inside its project, the first kept ({@link firstOfEachSlot}).
  */
 function withUniqueNames(pack: LibraryPack): LibraryPack {
   const byProject = (entry: { readonly projectId: string }) => entry.projectId;
@@ -144,10 +165,11 @@ function withUniqueNames(pack: LibraryPack): LibraryPack {
     projects: uniqueNamesWithin(pack.projects, () => '', PROJECT_NAME_MAX_LENGTH),
     presets: uniqueNamesWithin(pack.presets, byProject),
     quantisePresets: uniqueNamesWithin(pack.quantisePresets, byProject),
+    customIcons: firstOfEachSlot(pack.customIcons),
   };
 }
 
 /** How many things a pack holds, which is what the confirmation counts and the toast reports. */
 export function libraryPackSize(pack: LibraryPack): number {
-  return pack.projects.length + pack.presets.length + pack.quantisePresets.length;
+  return pack.projects.length + pack.presets.length + pack.quantisePresets.length + pack.customIcons.length;
 }

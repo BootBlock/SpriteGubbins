@@ -7,6 +7,10 @@ import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { batchComponentCount } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetIdentity, sheetRuns } from './sheetRuns.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
+import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import { iconPickId } from './iconPickId.ts';
 
 /**
  * The batch an N-direction rig actually is, once every sheet of it has been compiled.
@@ -36,6 +40,9 @@ const EIGHT_WAY_RIG = withOutput({
 
 const runsCount = DIRECTION_LISTS.EIGHT_COMPASS.length;
 
+/** The eight-way rig's runs, compiled once: every test below reads this batch without changing it. */
+const RIG_RUNS = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
+
 /**
  * What a compiled prompt says its own sheet contracts for — section 0's first line.
  *
@@ -51,20 +58,18 @@ function statedCount(promptText: string): number {
 
 describe('sheetRuns', () => {
   it('turns eight facings into eight distinct prompts', () => {
-    const runs = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
-
-    expect(runs).toHaveLength(DIRECTION_LISTS.EIGHT_COMPASS.length);
-    expect(runs.map((run) => run.assembly)).toEqual([...DIRECTION_LISTS.EIGHT_COMPASS]);
+    expect(RIG_RUNS).toHaveLength(DIRECTION_LISTS.EIGHT_COMPASS.length);
+    expect(RIG_RUNS.map((run) => run.assembly)).toEqual([...DIRECTION_LISTS.EIGHT_COMPASS]);
     // Distinct *text*, not merely distinct labels: a split that produced the same prompt eight times
     // would be the manual workflow with extra steps.
-    expect(new Set(runs.map((run) => run.promptText)).size).toBe(runs.length);
+    expect(new Set(RIG_RUNS.map((run) => run.promptText)).size).toBe(RIG_RUNS.length);
   });
 
   it('names its own facing and its own depth order in each prompt', () => {
     // Depth order is the thing that actually differs. The pieces are identical across the eight, and
     // which side renders in front of the body is what stops a west-facing sheet being a mirrored
     // east-facing one.
-    for (const run of sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG)) {
+    for (const run of RIG_RUNS) {
       expect(run.promptText).toContain(`- Primary assembly direction: ${describeDirections([run.assembly])}`);
       expect(run.promptText).toContain(DEPTH_ORDER_TEXT[run.assembly]);
       expect(run.promptText).toContain(
@@ -76,7 +81,7 @@ describe('sheetRuns', () => {
   it('carries one identity lock across all eight', () => {
     // §5: the hardest part is not sheet one, it is sheet two matching sheet one. Eight sheets that
     // did not share the lock would return eight different characters in similar colours.
-    for (const run of sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG)) {
+    for (const run of RIG_RUNS) {
       expect(run.output.identityLock).toBe(EIGHT_WAY_RIG.identityLock);
       expect(run.promptText).toContain(EIGHT_WAY_RIG.identityLock);
     }
@@ -89,7 +94,7 @@ describe('sheetRuns', () => {
     //
     // Restoring one does *not* collapse the batch: the direction set is still the run list, so the
     // splitter reopens on all eight with this facing pinned as the studio's current sheet.
-    for (const run of sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG)) {
+    for (const run of RIG_RUNS) {
       expect(run.output.primaryDirection).toBe(run.assembly);
       expect(generatePrompt('CHARACTER', SUBJECT, run.output)).toBe(run.promptText);
       expect(sheetRuns('CHARACTER', SUBJECT, run.output)).toHaveLength(runsCount);
@@ -102,7 +107,7 @@ describe('sheetRuns', () => {
     // text declared all eight runs unstarted at exactly the moment the user followed that advice.
     const unlocked = withOutput({ ...EIGHT_WAY_RIG, identityLock: '' });
     const [firstUnlocked] = sheetRuns('CHARACTER', SUBJECT, unlocked);
-    const [firstLocked] = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
+    const [firstLocked] = RIG_RUNS;
     if (!firstUnlocked || !firstLocked) throw new Error('the rig should split into runs.');
 
     // The prompts genuinely differ...
@@ -114,14 +119,12 @@ describe('sheetRuns', () => {
   });
 
   it('gives every facing its own identity, and a different subject a different one', () => {
-    const identities = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG).map((run) =>
-      sheetIdentity('CHARACTER', SUBJECT, run.output),
-    );
+    const identities = RIG_RUNS.map((run) => sheetIdentity('CHARACTER', SUBJECT, run.output));
     expect(new Set(identities).size).toBe(runsCount);
 
     // Editing the subject makes these different sheets of a different character, and progress
     // against them should not carry over.
-    const [first] = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
+    const [first] = RIG_RUNS;
     if (!first) throw new Error('the rig should split into runs.');
     expect(sheetIdentity('CHARACTER', { ...SUBJECT, species: 'Something else' }, first.output)).not.toBe(
       sheetIdentity('CHARACTER', SUBJECT, first.output),
@@ -194,11 +197,10 @@ describe('sheetRuns', () => {
     // The half a run used to leave unsaid: eight prompts that differed only in their facing, each
     // describing its own fifteen components as the whole deliverable. The ordinal has to be the row
     // number the drawer shows, so it is asserted here against the position in this very list.
-    const runs = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
 
-    for (const [index, run] of runs.entries()) {
+    for (const [index, run] of RIG_RUNS.entries()) {
       expect(run.promptText, run.assembly).toContain(
-        `**This is sheet ${String(index + 1)} of ${String(runs.length)} of one deliverable`,
+        `**This is sheet ${String(index + 1)} of ${String(RIG_RUNS.length)} of one deliverable`,
       );
       expect(run.promptText, run.assembly).toContain('### The sheets in this series');
     }
@@ -208,12 +210,11 @@ describe('sheetRuns', () => {
     // The figure the app produced and never stated. It is asserted against the prompts rather than
     // against an arithmetic of its own, because that is the claim the drawer makes when it shows it:
     // this is what you are about to ask for, across these runs.
-    const runs = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
-    const stated = runs.reduce((total, run) => total + statedCount(run.promptText), 0);
-    const [first] = runs;
+    const stated = RIG_RUNS.reduce((total, run) => total + statedCount(run.promptText), 0);
+    const [first] = RIG_RUNS;
     if (!first) throw new Error('the rig should split into runs.');
 
-    expect(batchComponentCount('CHARACTER', SUBJECT, runs, [])).toBe(stated);
+    expect(batchComponentCount('CHARACTER', SUBJECT, RIG_RUNS, [])).toBe(stated);
     // And it is emphatically not the per-sheet figure the studio reports beside the prompt, which is
     // the whole of the gap: "this sheet asks for 15" is true of all eight of them.
     expect(stated).toBeGreaterThan(statedCount(first.promptText));
@@ -245,5 +246,83 @@ describe('sheetRuns', () => {
     expect(batchComponentCount('CHARACTER', SUBJECT, runs, [])).toBe(
       stated.reduce((total, count) => total + count, 0),
     );
+  });
+});
+
+describe('the identity of an icon set’s sheets', () => {
+  const ICON = defaultSubjectFor('ICON');
+  const output = withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY', directions: 'SINGLE_FRONT' });
+  const at = (sheetIndex: number): OutputConfig => ({ ...output, sheetIndex });
+
+  function withPicks(picks: readonly string[]) {
+    return {
+      ...ICON,
+      icons: {
+        look: ICON.icons?.look ?? 'FULL_BLEED_TILE',
+        colourMode: 'FULL_COLOUR',
+        picks: cataloguePicks(picks),
+      },
+    } as const;
+  }
+
+  it('survives an icon that fills the last icon sheet without cutting the set again', () => {
+    // Thirty-one icons are cut sixteen and fifteen, so the thirty-second fills the second sheet and moves
+    // no other icon: the full first grid and the overlay sheet, which closes the series at whatever index
+    // it falls, draw exactly what they drew before, and keep their ticks.
+    const defaults = (ICON.icons?.picks ?? []).map(iconPickId);
+    const singles = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries)
+      .filter((entry) => entry.states === undefined && !defaults.includes(entry.id))
+      .map((entry) => entry.id);
+    const before = withPicks([...defaults, ...singles.slice(0, 15)]);
+    const grown = withPicks([...defaults, ...singles.slice(0, 16)]);
+    const overlayOf = (subject: typeof before) =>
+      sheetSeriesFor('ICON', subject, 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT').length - 1;
+    expect(sheetIdentity('ICON', grown, at(overlayOf(grown)))).toBe(
+      sheetIdentity('ICON', before, at(overlayOf(before))),
+    );
+    expect(sheetIdentity('ICON', grown, at(0))).toBe(sheetIdentity('ICON', before, at(0)));
+  });
+
+  it('changes for the first icon sheet where a new icon cuts the set again, and keeps the overlay sheet', () => {
+    // Sixteen icons are one sheet; a seventeenth cuts them nine and eight (audit finding T5), so the
+    // first sheet draws something else and its ticks go, while the overlay sheet draws what it drew.
+    const defaults = (ICON.icons?.picks ?? []).map(iconPickId);
+    const extra = ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries).find(
+      (entry) => entry.states === undefined && !defaults.includes(entry.id),
+    );
+    if (extra === undefined) {
+      throw new Error('the catalogue should hold a single icon the starter roster lacks.');
+    }
+    const full = withPicks(defaults);
+    const grown = withPicks([...defaults, extra.id]);
+    expect(sheetIdentity('ICON', grown, at(0))).not.toBe(sheetIdentity('ICON', full, at(0)));
+    expect(sheetIdentity('ICON', grown, at(2))).toBe(sheetIdentity('ICON', full, at(1)));
+  });
+
+  it('changes for the sheet the new icon joins', () => {
+    const short = withPicks(['heal-minor', 'heal-major']);
+    const grown = withPicks(['heal-minor', 'heal-major', 'elixir']);
+    expect(sheetIdentity('ICON', grown, at(0))).not.toBe(sheetIdentity('ICON', short, at(0)));
+  });
+
+  it('still changes when a field every sheet states changes', () => {
+    const cyberpunk = { ...ICON, setting: 'Near-Future Cyberpunk' };
+    expect(sheetIdentity('ICON', cyberpunk, at(0))).not.toBe(sheetIdentity('ICON', ICON, at(0)));
+  });
+
+  it('changes on every sheet when the look changes, though an icon sheet’s entries do not', () => {
+    // The look rewrites every sheet's prompt and leaves an icon line's text alone, so a key built from
+    // the entries alone would keep the tick on a sheet the reader has not copied in its new look.
+    const picks = ICON.icons?.picks ?? [];
+    const squares = {
+      ...ICON,
+      icons: { look: 'FULL_BLEED_TILE', colourMode: 'FULL_COLOUR', picks },
+    } as const;
+    const marks = { ...ICON, icons: { look: 'ISOLATED_MARK', colourMode: 'FULL_COLOUR', picks } } as const;
+    for (const sheetIndex of [0, 1]) {
+      expect(sheetIdentity('ICON', squares, at(sheetIndex))).not.toBe(
+        sheetIdentity('ICON', marks, at(sheetIndex)),
+      );
+    }
   });
 });

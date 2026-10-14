@@ -1,8 +1,10 @@
-import { BACKGROUND_KEY_COLORS } from '../constants/backgroundKeyColors.ts';
+import type { BackgroundKey } from '../types/rendering.ts';
+import { resolveAspectRatio } from '../constants/categoryAspectRatios.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
+import { resolvePalette } from '../constants/palettesFor.ts';
 import type { HardwareProfile } from '../types/hardware.ts';
 import type { Palette } from '../types/palette.ts';
 import {
@@ -14,13 +16,22 @@ import type { StyleSettings } from '../types/renderStyleTraits.ts';
 import { resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { oneSidedFeatures } from './oneSidedFeatures.ts';
+import { statedInteriorDetail, type StatedInteriorDetail } from './statedInteriorDetail.ts';
 import { pinnedPalette } from './pinnedPalette.ts';
 import type { StyleReference } from '../types/styleReference.ts';
-import type { Direction, DirectionalMode, OutputConfig, Projection, RigMode } from '../types/output.ts';
+import type {
+  AspectRatio,
+  Direction,
+  DirectionalMode,
+  OutputConfig,
+  Projection,
+  RigMode,
+} from '../types/output.ts';
 import type { SheetPlan } from '../types/components.ts';
 import type { RigContract } from '../types/rigContract.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
-import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
+import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
+import { anatomyLineFor } from './anatomyLineFor.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { sheetRigContract } from './sheetRigContract.ts';
@@ -30,7 +41,10 @@ import { mirrorPairs } from './mirrorPairs.ts';
 import { sheetBatch } from './sheetBatch.ts';
 import type { SheetBatch } from './sheetBatch.ts';
 import { sheetDirections } from './sheetDirections.ts';
-import { drawnPlanFor, planDraws } from './sheetPlanAbsence.ts';
+import { drawnPlanFor } from './sheetPlanAbsence.ts';
+import { clothingException } from './clothingException.ts';
+import { sheetKey } from './sheetKey.ts';
+import { seatedCells } from './seatedCells.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**
@@ -57,12 +71,25 @@ export interface SheetFacts {
   readonly coveredMirrorPairs: ReturnType<typeof mirrorPairs>;
   readonly projection: Projection;
   readonly cameraElevation: number;
+  /**
+   * The sheet canvas, resolved through the category — ICON's grid is square — and read twice: by
+   * `promptValues` for the layout line and by the compiler for the wrapper's own aspect statement, so
+   * the two cannot name different canvases.
+   */
+  readonly aspectRatio: AspectRatio;
   readonly batch: SheetBatch;
   readonly emitComponentMap: boolean;
   readonly emitPromptFeedback: boolean;
   readonly anatomy: readonly AnatomyComponent[];
   readonly hardware: HardwareProfile | null;
   readonly palette: Palette | null;
+  /**
+   * The key the sheet is drawn on: the stored one where the subject can take it, and otherwise the
+   * first it is offered (`sheetKey`) — a tint mask never takes `PURE_WHITE` (audit finding
+   * M1). Every reader of the key in the compiler reads this, so section 0, the palette, the outline and
+   * the wrappers name one key.
+   */
+  readonly backgroundKey: BackgroundKey;
   /**
    * The colour the background is keyed on, or `null` for a transparent field.
    *
@@ -102,6 +129,23 @@ export interface SheetFacts {
    */
   readonly clothingIsAComponent: boolean;
   /**
+   * Whether section 1 states the `clothing` line as the style every component in section 4 is drawn in
+   * — ICON's overlay sheet and its *Overlay Style* (audit finding O1). The same two halves hold as for
+   * {@link SheetFacts.clothingIsAComponent}: the plan's entries are `'DRAWN_IN_IT'`, and the line was
+   * emitted.
+   */
+  readonly clothingStylesComponents: boolean;
+  /**
+   * Whether section 1 excepts the `clothing` line because another sheet of this series draws its pieces
+   * in it and nothing on this one carries it — ICON's icon sheets, whose *Overlay Style* is the overlay
+   * sheet's.
+   *
+   * The plan declares it (`SheetPlan.drawnElsewhere`), and two more halves have to hold for the sentence
+   * to be true: the line was emitted at all, and some sheet of the series, as this subject draws it,
+   * really does draw its pieces in the attribute.
+   */
+  readonly clothingDrawnElsewhere: boolean;
+  /**
    * Everything this subject carries on one flank and not the other, named — see
    * `utils/oneSidedFeatures.ts`, and `FieldOption.oneSidedOptions` for what may be declared.
    *
@@ -110,6 +154,15 @@ export interface SheetFacts {
    * Deriving it twice is how those two come to disagree about whether the sheet names any.
    */
   readonly oneSidedFeatures: readonly string[];
+  /**
+   * The interior-detail treatment section 2 defers to, or `null` — see `utils/statedInteriorDetail.ts`
+   * (audit finding P11).
+   *
+   * **`null` on a sheet whose section 1 describes the set it is laid over** (`LAID_OVER`): that section
+   * says no detail it names is drawn into a component, so section 2 deferring to one would put it back.
+   * A fact because a condition gates the deferral and a value names the line technique.
+   */
+  readonly interiorDetail: StatedInteriorDetail | null;
 }
 
 /** Resolve one studio configuration into the facts every phase below it reads. */
@@ -221,12 +274,14 @@ export function sheetFacts(
   // the contract says it has, which is the one arithmetic the whole template rests on.
   const anatomy = parseAdditionalAnatomy(subject.additional_anatomy);
 
-  // The machine and its colours, or `null` for `NONE`, for `FREE`, and for a `CUSTOM` palette with
-  // nothing loaded. Resolved once and read four times below, so the two blocks and the two flags
+  // The machine and its colours, or `null` for `NONE`, for `FREE`, for a `CUSTOM` palette with
+  // nothing loaded, and for any palette under a tint mask, which `resolvePalette` draws under `FREE`
+  // (audit finding M1) so section 0, section 2 and the self-audit never ask a grey mask for the Game
+  // Boy's greens. Resolved once and read four times below, so the two blocks and the two flags
   // that gate them cannot disagree about whether there is a machine — the failure mode being a
   // heading with nothing under it.
   const hardware = hardwareProfileFor(output.hardwareProfile);
-  const palette = pinnedPalette(output);
+  const palette = pinnedPalette({ ...output, palette: resolvePalette(subject, output.palette) });
   // The look this sheet is drawn to match, or `null` for `NONE`. Resolved once and read three times
   // below — the two values and the flag that gates their block — so a heading with nothing under it
   // is not expressible, exactly as it is not for the two above.
@@ -267,45 +322,15 @@ export function sheetFacts(
   // How big this sheet's things are and the grid they are drawn on, resolved together so the phrase
   // section 2 prints and the arithmetic under it cannot name different figures. See `sheetSizing.ts`
   // for why a loaded contract supersedes the field, and for the three ways there is no native grid.
-  const sizing = sheetSizing(category, subject, output, plan, rig, componentCount);
+  // Fitted to the cells a fixed grid declares, where the plan declares one (`seatedCells`).
+  const sizing = sheetSizing(category, subject, output, plan, rig, seatedCells(plan, componentCount));
 
-  // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the
-  // same anatomy: a field reading `Tail ×0` cannot say one thing at the top of the prompt and
-  // another in the inventory. It also empties for `NONE`, which drops the line entirely rather than
-  // putting a bare sentinel in the highest-weighted section.
-  //
-  // **And it empties on a sheet that does not carry the anatomy**, for the same reason and a sharper
-  // one. Section 1's own prose excepts additional anatomy from its paint rule, as the field section
-  // 4 lists and counts separately — so naming a tail here on the articulation sheet, whose inventory
-  // has no tail in it and whose contract demands an exact count without one, is a contradiction
-  // inside one prompt. The generator resolves it by drawing an uncounted piece or by ignoring a
-  // line it was told was binding, and neither is recoverable.
-  //
   // The facings are held rather than a boolean, because the exception sentence has two shapes: a
   // multi-view sheet draws each piece at each of its facings, so its sentence has to say so, where
   // a run sheet draws each piece once. Held in a local as well, because `config` below gates both on
-  // it and reading it back off `values` would come out `string | undefined`.
+  // it and reading it back off `values` would come out `string | undefined`. Section 1's line is
+  // `anatomyLineFor`'s, which says why it empties on a sheet that draws none of the pieces.
   const anatomyFacings = anatomyFacingsFor(category, subject, mode, output.directions, output.sheetIndex);
-  const additionalAnatomyLine = anatomyFacings !== null ? anatomy.map(formatAnatomyComponent).join(', ') : '';
-
-  // The second attribute section 1's paint rule has to except, and the reason that rule is no longer
-  // written as having exactly one exception. `clothing` is a different thing in every category —
-  // cladding on a vehicle, an applied overlay on an icon, trim on an interface — and six of the
-  // thirteen draw it as components of their own, so the fixed sentence told the generator the
-  // cladding was paint while section 4 listed a cladding panel beside the hull.
-  //
-  // **A value meaning the subject has none answers *no*, and it does so without a gate here.** The
-  // sentence is a statement about section 4, and `plan` above is the plan *as this subject draws it*
-  // — so a `Bare Unclad Frame` has already taken the cladding panel out of it and there is nothing
-  // left for the exception to name. That is the whole of the arrangement: the pool declares the value,
-  // `planAsDrawn` drops the entries, and this line reads the result rather than re-deciding it. A
-  // second test against the value here would be that decision written twice, free to disagree with
-  // the inventory the reader is actually shown.
-  //
-  // **Where a category's pool offers no such value the question does not arise**, which is the answer
-  // ICON and INTERFACE take: their sheets draw the attribute whatever is chosen, so the exception is
-  // always right and there is no value that could make it wrong. See `sheetPlans/icon.ts`.
-  const clothingIsAComponent = subject.clothing.trim() !== '' && planDraws(plan, 'clothing');
 
   return {
     mode,
@@ -316,13 +341,14 @@ export function sheetFacts(
     coveredMirrorPairs,
     projection,
     cameraElevation,
+    aspectRatio: resolveAspectRatio(category, output.aspectRatio),
     batch,
     emitComponentMap,
     emitPromptFeedback,
     anatomy,
     hardware,
     palette,
-    keyColor: BACKGROUND_KEY_COLORS[output.backgroundKey],
+    ...sheetKey(subject, output.targetModel, output.backgroundKey),
     reference,
     validationPass,
     styleSettings: styleSettingsFor(output),
@@ -330,11 +356,13 @@ export function sheetFacts(
     rig,
     sizing,
     anatomyFacings,
-    additionalAnatomyLine,
-    clothingIsAComponent,
+    additionalAnatomyLine: anatomyLineFor(plan, anatomy, anatomyFacings),
+    // Section 1's exception for the `clothing` line, in whichever of its three shapes this sheet takes.
+    ...clothingException(category, subject, plan, series),
     // Asked of the subject rather than of the plan, because a one-sided feature is an attribute the
     // reader chose and every component carrying it is drawn at every facing the sheet covers. The
     // pools are what bound it — see `utils/oneSidedFeatures.ts`.
     oneSidedFeatures: oneSidedFeatures(category, subject),
+    interiorDetail: plan.subjectScope === 'LAID_OVER' ? null : statedInteriorDetail(category, subject),
   };
 }

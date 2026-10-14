@@ -14,8 +14,11 @@
  * Alpha is a channel like the other three rather than a separate concern: it is what the histogram
  * keys on, one of the four axes a group of colours is split across, and what makes two
  * otherwise-identical pixels different colours — which is why a soft edge can hold a palette slot of
- * its own rather than being written opaque. The one place it is privileged is `FULLY_TRANSPARENT`,
- * which is excluded from the palette entirely — see `colorHistogram`.
+ * its own rather than being written opaque. It is privileged in three places. `FULLY_TRANSPARENT` is
+ * excluded from the palette entirely — see `colorHistogram`. An alpha under `COVERAGE_FLOOR` is
+ * absent to every pass that judges a pixel by its colour, since its channels are rounding noise. And
+ * `FULLY_OPAQUE` is matched only against opaque palette entries, since any alpha under it inside a
+ * sprite is a hole — see `nearestColorSearch`.
  */
 export interface Rgba {
   readonly r: number;
@@ -51,14 +54,33 @@ export type PixelGrid = number;
  * cut falls, each in `[0, grid)`.
  *
  * `{x: 0, y: 0}` is a grid anchored at the image's own corner, which returned sheets almost never
- * are — a generator places its art wherever composition puts it. The offset is read off the mesh
- * the transform measured rather than ever being typed, so it appears in no **setting**: a stored
- * offset would be the stale half of a pair the moment the grid beside it was overtyped. It does
- * ride on the {@link QuantiseResult} coming back the other way, because the pane that draws the
- * result against the source has to know how wide the leading cell was — a result's own facts
- * travel with it, exactly as its colour count does.
+ * are — a generator places its art wherever composition puts it. The offset is measured from the
+ * image (`exactGridOffset` in `edgeLattice.ts`) rather than ever being typed, so it appears in no
+ * **setting**: a stored offset would be the stale half of a pair the moment the grid beside it was
+ * overtyped.
  */
 export interface GridOffset {
+  readonly x: number;
+  readonly y: number;
+}
+
+/**
+ * How far the mesh's first interior cut falls from a full cell in, per axis, in source pixels:
+ * `mesh[1] − grid`, and 0 on an axis the mesh does not cut at all.
+ *
+ * **Signed, and not a {@link GridOffset}**, because the leading cell can be wider than the grid as
+ * well as narrower. `boundEndCells` folds an end band of fewer than three pixels into the cell beside
+ * it, so a leading cell of 7 or 8 at a grid of 6 is ordinary. A placement confined to `[0, grid)` has
+ * no value for one, and a pane reading one would draw the whole result a pixel or two off the
+ * source. Negative is a
+ * leading cell narrower than the grid, positive a wider one.
+ *
+ * It rides on the {@link QuantiseResult} rather than any setting, because the pane that draws the
+ * result against the source has to know how wide the leading cell was, and a stored figure would be
+ * stale the moment the grid beside it was overtyped. A result's own facts travel with it, exactly as
+ * its colour count does.
+ */
+export interface LeadingCellShift {
   readonly x: number;
   readonly y: number;
 }
@@ -72,11 +94,40 @@ export interface GridOffset {
  * art's own cells the further across the sheet it walks. `boundaryMesh` measures where the
  * boundaries actually are and completes the gaps at the expected spacing — except where the sheet is
  * exactly a grid of the scale in force, which has no drift to follow, and there it takes that grid's
- * lattice outright. The transforms in `gridAlignment.ts` walk
- * whatever this holds, so the two of them cannot disagree about where a cell begins.
+ * lattice outright.
+ *
+ * **`x` and `y` fix the result's size and are the cells everywhere no patch covers; `patches` re-cut
+ * the cells over the sprites.** A sheet's sprites are resampled one by one, so they sit at different
+ * phases, and one list of cuts per axis can agree with only some of them — see {@link MeshPatch}.
+ * Every pass that reads cells walks them through `forEachMeshCell`, which is what keeps them agreeing
+ * about where a cell begins.
  */
 export interface GridMesh {
   readonly x: readonly number[];
+  readonly y: readonly number[];
+  /**
+   * Disjoint in result cells, and empty on a sheet that is exact, opaque or scattered, and at any grid
+   * below `SMALLEST_PATCHED_GRID`.
+   */
+  readonly patches: readonly MeshPatch[];
+}
+
+/**
+ * The cells over one sprite, cut where that sprite's own boundaries are rather than where the sheet's.
+ *
+ * It covers result columns `column` to `column + x.length` and rows `row` to `row + y.length`, the
+ * same cells the mesh's own `x` and `y` cut there, so a patch moves cuts and never changes how many
+ * cells there are: the result keeps its size, and every pass that places the result against the
+ * source keeps working. Its first entries are the mesh's own cuts at `column` and `row`, and its far
+ * edges are the mesh's cuts after its last column and row, so the patches and the mesh's other cells
+ * still cover every source pixel exactly once. `meshPatches` argues how the cuts inside are placed.
+ */
+export interface MeshPatch {
+  readonly column: number;
+  readonly row: number;
+  /** The source column each of the patch's cells begins at, ascending. */
+  readonly x: readonly number[];
+  /** The source row each of the patch's cells begins at, ascending. */
   readonly y: readonly number[];
 }
 
@@ -90,7 +141,7 @@ export interface GridMesh {
  * and the two are measured in different units on different images.
  *
  * Whole numbers wherever it describes a shift that was applied to pixels, and fractional where it
- * describes a pitch that was *fitted* — see {@link SpriteStrip.pitch}, which is the only such use.
+ * describes where a *fitted* layout starts — see `FrameLattice.origin`, which is the only such use.
  */
 export interface PixelShift {
   readonly x: number;
@@ -193,7 +244,7 @@ export interface BackgroundKeying {
   /**
    * How far a pixel may sit in scaled OKLab, as `keyDistanceSquared` measures it — alpha ignored.
    *
-   * **Not the plain Euclidean distance `nearestColor` uses, and the difference is the feature.** That
+   * **Not the plain Euclidean distance `nearestColorSearch` uses, and the difference is the feature.** That
    * metric answers "how far apart are these two colours" across raw RGBA, which is the right question
    * when picking the nearest palette entry and the wrong one here: a key field varies by being shaded
    * and washed out, and measured plainly that variation costs more than a change of hue does. So this
@@ -335,8 +386,9 @@ export const VOTE_METHODS = ['DOMINANT', 'INK_WEIGHTED', 'K_CENTROID'] as const;
 /**
  * One of the three cell readings.
  *
- * `DOMINANT` selects — the modal colour, with the line rescue — and never invents a colour, so it
- * votes over reduced colours. The other two *average*, deliberately: `INK_WEIGHTED` darkens a
+ * `DOMINANT` selects — the modal colour of the cell's artwork, with the line rescue — and never
+ * invents a colour, so it votes over reduced colours. All three make a cell clear only when more
+ * than half of it is. The other two *average*, deliberately: `INK_WEIGHTED` darkens a
  * cell's body toward the line crossing it, and `K_CENTROID` takes the centre of the cell's
  * dominant colour cluster. An average has to see the unreduced colours to have anything to blend,
  * so for those the reduction runs after the vote — the order is `quantiseImage`'s to hold.
@@ -405,7 +457,8 @@ export const DITHER_PATTERNS = ['NONE', 'BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as c
 
 /**
  * One of the four — which threshold pattern decides, at each position, whether a pixel takes its
- * mixing plan's first colour or its second.
+ * mixing plan's first colour or its second, or under a channel-depth space, whether each channel
+ * takes the rung below it or the rung above.
  *
  * **Positional, never error-diffusion, and that is the constraint the whole feature rests on.** A
  * sprite sheet is source artwork for frames that are later animated and tiled, and error diffusion
@@ -460,20 +513,22 @@ export const ANTI_ALIAS_MODES = ['OFF', 'INTERIOR', 'SILHOUETTE', 'BOTH'] as con
 export type AntiAliasMode = (typeof ANTI_ALIAS_MODES)[number];
 
 /**
- * What becomes of a blended shade the sheet's colours do not already hold — the two positions the
- * control offers.
+ * What becomes of a blended shade the colour setting does not allow — the two positions the control
+ * offers.
  *
  * Validated out of storage like {@link ANTI_ALIAS_MODES}, and for the same reason.
  */
 export const ANTI_ALIAS_PALETTES = ['SNAP', 'BLEND'] as const;
 
 /**
- * Whether an anti-aliased pixel may be a colour the sheet did not already have.
+ * Whether an anti-aliased pixel may be a colour the colour setting does not allow.
  *
- * `SNAP` takes each blend to the nearest colour the sheet holds, so a sheet reduced to a machine's
- * four shades keeps exactly those four — which is what an artist working to a fixed palette does,
- * reaching for the intermediate tone that already exists rather than mixing a new one. `BLEND`
- * writes the mixed shade as computed.
+ * `SNAP` takes each blend to the nearest colour the reduction in force allows — a machine's entries
+ * or its channel ladder, a locked palette's entries and the colours it left alone, or the colours a
+ * budget chose for this sheet — so a sheet reduced to a machine's four shades keeps exactly those four. That is what an artist
+ * working to a fixed palette does, reaching for the intermediate tone that already exists rather
+ * than mixing a new one; `blendSnap` states it per reduction. `BLEND` writes the mixed shade as
+ * computed.
  *
  * **It bounds the hues, not the count**, and the two part company under
  * {@link AntiAliasMode}'s silhouette positions: a coverage is an *alpha*, and `countColors` keys on
@@ -503,7 +558,7 @@ export type AntiAliasPalette = (typeof ANTI_ALIAS_PALETTES)[number];
 export interface ThresholdMatrix {
   /** The tile's edge, in pixels — it repeats across the sheet from the image's own origin. */
   readonly size: number;
-  /** How many distinct ranks the tile holds, and the denominator every mixing ratio is stated over. */
+  /** How many distinct ranks the tile holds: the denominator of every mixing ratio and channel fraction. */
   readonly levels: number;
   /** Row-major, `size × size`, each entry `0 … levels − 1`. */
   readonly ranks: Uint16Array;
@@ -617,7 +672,8 @@ export interface QuantiseTuning {
    */
   readonly duplicateTolerance: number;
   /**
-   * Whether each near-duplicate is rewritten with the sprite its group is named after.
+   * Whether every member of each duplicate group is rewritten with the group's source, its most
+   * typical sprite (see `SpriteDuplicateGroup.source`).
    *
    * The one dial on this shape that is a boolean rather than a strength, because it is not a
    * strength: {@link duplicateTolerance} already decides how alike two sprites must be, and this
@@ -678,7 +734,7 @@ export interface QuantiseTuning {
    */
   readonly antiAliasRun: number;
   /**
-   * Whether a blended shade is kept to the colours the sheet already holds — see
+   * Whether a blended shade is kept to the colours the colour setting allows — see
    * {@link AntiAliasPalette}.
    *
    * Read only where {@link QuantiseSettings.reduction} states a palette to keep to.
@@ -837,6 +893,62 @@ export interface SpriteBox {
 }
 
 /**
+ * Which pixels of one sprite's box carry coverage, packed one bit per pixel.
+ *
+ * Each row of the box is `stride` 32-bit words, and column `c` of a row is bit `c & 31` of word
+ * `c >>> 5`. The bits past the box's own width in a row's last word are always clear, so a reader
+ * may AND whole words together without masking the tail. `left` and `top` are the box's corner on
+ * the sheet, which is what a shift between two masks is measured from. See `coverageMask`.
+ */
+export interface CoverageMask {
+  readonly left: number;
+  readonly top: number;
+  readonly height: number;
+  /** Words per row: the box's width rounded up to a whole number of words. */
+  readonly stride: number;
+  readonly bits: Uint32Array;
+}
+
+/**
+ * A sprite's coverage summed along each row and each column, and how many of its cells show at all.
+ *
+ * What `registerSprites` bounds an offset with before it pays to walk one. `pixelDistance` never
+ * scores a cell below the difference between its two alphas, so the sum `spriteDistance` builds is
+ * at least the sum of those differences — and summing a row's differences can only lose to the
+ * difference of the row's sums. So two profiles laid a few rows apart say how far apart the sprites
+ * must be at *every* horizontal offset with that vertical one, and the columns say the same the other
+ * way, each from a handful of numbers rather than a walk over every cell. See `alphaProfile`.
+ */
+export interface AlphaProfile {
+  /** The alpha summed across each row of the box, top to bottom. */
+  readonly rows: Int32Array;
+  /** The alpha summed down each column of the box, left to right. */
+  readonly columns: Int32Array;
+  /** The cells that are not fully transparent — the most any comparison can count on this side. */
+  readonly visible: number;
+}
+
+/**
+ * A sprite and its {@link AlphaProfile}, read once and carried together.
+ *
+ * The duplicate reading compares every pair of sprites, so a profile taken per comparison would be
+ * read off the sheet once for every other sprite. Carrying it beside the box is what makes it once
+ * per sprite.
+ */
+export interface ProfiledSprite {
+  readonly box: SpriteBox;
+  readonly profile: AlphaProfile;
+}
+
+/** Where one sprite matches another best, and how well it matches there. See `registerSprites`. */
+export interface SpriteRegistration {
+  /** The mean per-cell distance at {@link shift}, or `Infinity` where no offset comes under the limit. */
+  readonly distance: number;
+  /** Where the second sprite's top-left corner sits relative to the first's, in drawn pixels. */
+  readonly shift: PixelShift;
+}
+
+/**
  * What the sheet broke into, or why it did not break into anything a reader can act on.
  *
  * Three outcomes rather than a list with a flag beside it, because they are not one answer at
@@ -870,6 +982,12 @@ export type SpriteSegmentation =
       readonly boxes: readonly SpriteBox[];
       /** Pieces too small to be a sprite; see {@link SMALLEST_SPRITE_PIXELS}. */
       readonly specks: number;
+      /**
+       * The width of the sheet the boxes were found on, in the drawn pixels they are stated in — what a
+       * placement sheet's nominal cell is measured from (`cellLattice`), carried with the boxes so no
+       * reader pairs them with the size of another image.
+       */
+      readonly width: number;
     }
   | { readonly kind: 'SOLID' }
   | {
@@ -914,7 +1032,10 @@ export interface SpriteSymmetry {
    * sprite.
    */
   readonly confidence: number;
-  /** Whether the snap settled this sprite's pairs, which `SNAP` and the confidence floor decide. */
+  /**
+   * Whether the snap settled this sprite's pairs, which `SNAP` and the confidence floor decide — and
+   * which is refused wherever anything is drawn directly against the box (see `bordersArtwork`).
+   */
   readonly snapped: boolean;
 }
 
@@ -944,10 +1065,17 @@ export interface SpriteDuplicateMember {
  *
  * The canonical is the group's earliest sprite in the list the reading was handed — reading order,
  * because that is the order `spriteSegments` returns its boxes in. So it is stable across two runs
- * at the same settings, and it is the one a reader meets first in the preview.
+ * at the same settings, and it is the one a reader meets first in the preview. It names the group;
+ * {@link source} is what the snap copies.
  */
 export interface SpriteDuplicateGroup {
   readonly canonical: SpriteBox;
+  /**
+   * The member every other one is rewritten with when the snap is on: the group's medoid, which is
+   * the canonical itself where no member is closer to the rest. Chosen by consensus rather than by
+   * position, so a flaw one copy carries is not copied into all of them. See `groupMedoid`.
+   */
+  readonly source: SpriteBox;
   /** Every other member, in the same order — never empty, since a group of one is not a group. */
   readonly duplicates: readonly SpriteDuplicateMember[];
 }
@@ -982,7 +1110,7 @@ export interface AlignedFrame {
    * What the onion skin translates by to stack the row on one place — and it is carried rather than
    * recomputed from {@link SpriteStrip.pitch} because the pitch is fractional and rounding it a
    * second time is how the stack and the drift come to disagree by a pixel. Under a regular row it
-   * is the pitch times the frame's position; under a row that is *not* regular it is still exactly
+   * is the pitch times the frame's slot number, which skips any slot the row leaves empty; under a row that is *not* regular it is still exactly
    * the offset that leaves {@link drift} showing and nothing else.
    */
   readonly slot: PixelShift;
@@ -1012,7 +1140,8 @@ export interface SpriteStrip {
   /** Left to right, and never fewer than {@link SMALLEST_STRIP_FRAMES}. */
   readonly frames: readonly AlignedFrame[];
   /**
-   * The spacing the frames were fitted to, in drawn pixels per frame — fractional, deliberately.
+   * The spacing along the row the frames were fitted to, in drawn pixels per slot — fractional,
+   * deliberately. A row has no spacing down it: its frames share one baseline, see `fitLattice`.
    *
    * A generated sheet laid out at 21⅓ source pixels a frame comes back at 21, 21, 22 drawn pixels,
    * and rounding the fit to a whole number would make two frames in three report a drift of one that
@@ -1020,27 +1149,11 @@ export interface SpriteStrip {
    * that answers it is stated. It is here to be *reported*: what anything acts on is
    * {@link AlignedFrame.drift} and {@link AlignedFrame.slot}, both of which are already whole.
    */
-  readonly pitch: PixelShift;
+  readonly pitch: number;
 }
 
-/**
- * The transformed sheet, and every reading that falls out of producing it.
- *
- * **Separate from {@link QuantiseResult} because of what is missing, which is one field.** Every
- * reading here is either free or already paid for: the segmentation and the three readings taken
- * over it are what `settleSprites` had to have in order to edit the sheet at all, the colour count
- * and the palette come from one histogram of a result the transform has just written, and the
- * keyed share and the offset are facts the prologue already established. The difference map is the
- * one reading that is a *second* walk, and it is over the source rather than the result — which at
- * a grid of 6 is thirty-six times the pixels of everything above.
- *
- * So the split is a reading, not a knob: `quantiseFromPrologue` answers everything the transform
- * knows, and `quantiseImage` adds the one reading a caller has to ask for by asking for it. The
- * auto-tune sweep reads {@link image} and {@link colors} and nothing else, and over a sweep of
- * `test_sprites/armour.png` at a grid of 6 that map was built 710 times and dropped 710 times —
- * so it takes the narrower answer. Every other caller wants the map and takes the whole result.
- */
-export interface QuantiseSheet {
+/** What came back: the transformed sheet, the numbers that say what it did, and what it cost. */
+export interface QuantiseResult {
   readonly image: ImageData;
   /**
    * The separate sprites on {@link image}, and how big each of them is.
@@ -1074,14 +1187,14 @@ export interface QuantiseSheet {
    * where it says.
    *
    * **It always describes the sheet as it was read, never the sheet after a snap.** Where
-   * `duplicateSnap` is in force the members have been rewritten with the canonical by the time
+   * `duplicateSnap` is in force the members have been rewritten with each group's source by the time
    * {@link image} is returned, so measuring again would report a set of exact groups and lose the
    * only record of what the dial actually did. Empty where the segmentation found no sprites to
    * compare.
    */
   readonly duplicates: readonly SpriteDuplicateGroup[];
   /**
-   * Whether {@link duplicates} was acted on — every member rewritten with its group's canonical.
+   * Whether {@link duplicates} was acted on — every member rewritten with its group's source.
    *
    * A fact of the result rather than something read back off the dial that asked for it, because
    * those two are not the same thing while a transform is in flight: the dial is where the reader
@@ -1114,14 +1227,14 @@ export interface QuantiseSheet {
    */
   readonly strips: readonly SpriteStrip[] | null;
   /**
-   * Where the grid sat on the source, as the transform measured it.
+   * How far the leading cell on each axis differs from a full cell, as the transform measured it.
    *
-   * Carried because a non-zero offset changes what the first pixel of each axis *is* — a leading
-   * partial cell covering only `offset` source pixels — and the comparison view cannot place the
-   * result against the source without knowing that. See {@link GridOffset} for why it is a fact of
-   * the result rather than a setting.
+   * Carried because a non-zero shift changes what the first pixel of each axis *is* — a leading
+   * cell covering `grid + leadingShift` source pixels rather than `grid` — and the comparison view
+   * cannot place the result against the source without knowing that. See {@link LeadingCellShift}
+   * for why it is signed.
    */
-  readonly offset: GridOffset;
+  readonly leadingShift: LeadingCellShift;
   /**
    * Distinct non-transparent colours in {@link image}.
    *
@@ -1157,21 +1270,28 @@ export interface QuantiseSheet {
    * touched.
    */
   readonly keyedShare: number;
-}
-
-/** What came back: the transformed sheet, the numbers that say what it did, and what it cost. */
-export interface QuantiseResult extends QuantiseSheet {
   /**
-   * What {@link QuantiseSheet.image} cost, pixel by pixel — the preview's difference mode, as data.
+   * Whether a palette step decided {@link image}'s colours — a budget, a pinned or locked palette, or
+   * a channel depth — rather than the sheet keeping its own.
+   *
+   * A fact about the result, carried with it for the reason the grid travels with it in `Quantised`:
+   * the download reads it, and the settings in force may already have moved on from the ones this
+   * result was computed under. The sprite pack reads it to decide whether a sprite it resizes is
+   * mapped back onto the sheet's own colours; see `sheetColourHold`.
+   */
+  readonly paletted: boolean;
+  /**
+   * What {@link image} cost, pixel by pixel — the preview's difference mode, as data.
    *
    * A fact of the result rather than something asked for separately, and deliberately: a heatmap
    * computed on its own could describe an older result than the one beside it, which is precisely
-   * the failure the mode exists to expose. Travelling with the result, it cannot.
+   * the failure the mode exists to expose. Travelling with the result, it cannot. `quantiseImage`
+   * takes it in the same breath as the sheet it describes, so the pair cannot come apart; there is no
+   * second function offering to measure a map against a result somebody is holding.
    *
-   * **That is why it is the field a caller opts into rather than one it may fetch afterwards.**
-   * `quantiseFromPrologue` leaves it out and `quantiseImage` takes it in the same breath as the sheet it
-   * describes, so the pair cannot come apart; there is no third function offering to measure a map
-   * against a result somebody is holding.
+   * **It is the one reading here that is a second walk**, and over the source rather than the
+   * result, which at a grid of 6 is thirty-six times the pixels. Every other field is free or already
+   * paid for. The auto-tune sweep builds none, because `quantiseRegions` hands back only the images.
    */
   readonly difference: DifferenceMap;
 }

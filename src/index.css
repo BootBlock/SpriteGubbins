@@ -13,16 +13,35 @@
  *   classes (`bg-slate-…`, `text-cyan-…`, `text-amber-…`) in a column headed *"Not"*. The document
  *   forbidding those classes was shipping working versions of all ten of them.
  *
- * Worse than the wasted bytes: they are exactly the ad-hoc palette classes the design-token rule
- * bans, so a component reaching for a stock slate instead of `bg-foundry-800` would have *worked*,
- * and the thing that normally catches the mistake — an unknown utility emitting no CSS at all —
- * would not have fired. Excluding both makes the token vocabulary the only vocabulary that renders.
+ * They are also exactly the ad-hoc palette classes the design-token rule bans. Excluding both
+ * files took the dead bytes out, and it did not take the classes out of reach: Tailwind's default
+ * palette stayed defined, so a component that wrote a stock slate in its own markup still rendered
+ * it. The reset below is what does that.
  *
  * Note the elided suffixes above. A full class name written *anywhere* the scanner reads — this
  * comment included — is a candidate, and would emit the very rule it is describing.
  */
 @source not "../docs/todo/sprite-gubbins.html";
 @source not "../**/*.md";
+
+/*
+ * Tailwind's default palette, removed whole, so the token vocabulary is the only one that renders.
+ *
+ * `@import 'tailwindcss'` defines twenty-odd stock hues at eleven shades each, plus black and white,
+ * and every one of them generates a working utility. Left in place, a stock slate or cyan written
+ * instead of `bg-foundry-800` or `text-neon` renders exactly as its author meant, and the mistake
+ * that an unknown utility normally exposes by emitting nothing is invisible. Clearing the namespace
+ * here, before the first block below declares a token, leaves the stock classes as unknown as a
+ * typo. It is the first `@theme` in the file because `initial` clears whatever the namespace holds
+ * at that point, and this file's own tokens must come after it.
+ *
+ * `tests/stock-palette.test.ts` compiles this file and fails if a stock class emits a rule again,
+ * and it scans the app for one spelled by hand, which now emits nothing and would otherwise pass
+ * the gate unseen.
+ */
+@theme {
+  --color-*: initial;
+}
 
 /*
  * Sprite Gubbins design system.

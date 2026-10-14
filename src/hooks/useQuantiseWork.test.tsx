@@ -50,12 +50,13 @@ function resultOf(side: number): QuantiseResult {
     colors: 32,
     paletteEntries: [],
     keyedShare: 0,
-    sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
+    paletted: false,
+    sprites: { kind: 'SEGMENTED', boxes: [], specks: 0, width: 1024 },
     symmetry: null,
     duplicates: [],
     snapped: false,
     strips: null,
-    offset: { x: 0, y: 0 },
+    leadingShift: { x: 0, y: 0 },
   };
 }
 

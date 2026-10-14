@@ -3,6 +3,7 @@ import type { LibraryPack } from '../types/libraryPack.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import type { PersistenceBackend } from './backend.ts';
@@ -23,7 +24,7 @@ import { parseSettings } from './settingsParser.ts';
  *
  * **So it reads nothing and writes nothing, and says which it is.** Reading nothing rather than
  * refusing is deliberate: every store hydrates on boot, and a backend that rejected each of those
- * would open the app under a stack of error notifications describing one condition six times.
+ * would open the app under a stack of error notifications, one per store, describing one condition.
  * Writing nothing is the opposite case and is refused *loudly*, because a write is a thing the
  * reader did on purpose and a silent no-op is how work disappears — {@link HELD_ELSEWHERE_REFUSAL}
  * is what every one of them rejects with, and the app's existing failure paths put it in front of
@@ -111,6 +112,18 @@ export class HeldElsewhereBackend implements PersistenceBackend {
   }
 
   deleteQuantisePreset(_id: string): Promise<void> {
+    return this.refuse();
+  }
+
+  saveCustomIcon(_icon: SavedCustomIcon): Promise<void> {
+    return this.refuse();
+  }
+
+  listCustomIcons(): Promise<SavedCustomIcon[]> {
+    return Promise.resolve([]);
+  }
+
+  deleteCustomIcon(_id: string): Promise<void> {
     return this.refuse();
   }
 

@@ -23,13 +23,15 @@ export const STUDIO_ACTION_TOOLTIPS = {
     'Puts the whole studio, Output Configuration included, back the way it stood before your last:\n\n' +
     '- category switch, Randomise or Reset\n' +
     '- preset load, or restore from the prompt history\n' +
-    '- assembly base that moved your sheet\n\n' +
-    'Only those acts are recorded; editing a field records nothing. An edit you made after one of them is not lost, because Redo brings the studio back exactly as you left it. Nothing outside the Studio tab moves.\n\n' +
+    '- assembly base that moved your sheet\n' +
+    '- tick or untick in the icon catalogue\n' +
+    '- icon of your own added or changed on your set\n\n' +
+    'Only those acts are recorded; editing a field records nothing. An icon library is stored work rather than part of the studio, so Undo leaves it as it is. An edit you made after one of them is not lost, because Redo brings the studio back exactly as you left it. Nothing outside the Studio tab moves.\n\n' +
     'Ctrl+Z does the same, except while you are typing in a box, where it undoes your typing, or while a dialog is open.',
 
   redoSubject:
     'Steps forward again into a subject you have just stepped back from, which is the way out of an undo pressed once too often.\n\n' +
-    'Switching category, randomising, resetting, loading a subject or choosing an assembly base that moves your sheet replaces what was ahead of you, so this is offered only until you do one of those.\n\n' +
+    'Switching category, randomising, resetting, loading a subject, ticking icons, changing an icon of your own or choosing an assembly base that moves your sheet replaces what was ahead of you, so this is offered only until you do one of those.\n\n' +
     REDO_KEYBOARD_SHORTCUTS,
 
   expandAll:
@@ -48,7 +50,7 @@ export const STUDIO_ACTION_TOOLTIPS = {
     '- a cut-out rig covers one facing per sheet, so eight directions is eight runs\n' +
     '- an inventory too large for one sheet is split into parts, each generated once per facing if its components are drawn one facing at a time\n\n' +
     'Each row carries its own finished prompt, what it asks for, and whether you have copied it yet.\n\n' +
-    '**Set the identity lock from the first sheet you accept**, or the later runs are free to return a different individual in similar colours.',
+    '**Set the identity lock from the first sheet you accept**, or the later runs are free to drift from it: a different individual in similar colours, or members of a set drawn another way.',
 
   previousSheet:
     'Goes back one sheet in this batch, putting that sheet’s facing and its part of the inventory into the studio so the prompt recompiles for it.\n\n' +

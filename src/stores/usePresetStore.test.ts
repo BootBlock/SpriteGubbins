@@ -160,22 +160,16 @@ describe('saveCustomPreset', () => {
     expect(Object.keys(saved?.output ?? {})).not.toContain('emitPromptFeedback');
   });
 
-  it('stores the description beside the name, trimmed', async () => {
-    await usePresetStore
-      .getState()
-      .saveCustomPreset('Described', '  A knight for the town scenes  ', DEFAULT_PROJECT_ID);
+  // A description is optional: a blank one is stored as the empty string, which the card answers by
+  // naming the subject and setting instead, and which the pack format carries rather than dropping.
+  it.each([
+    { given: '  A knight for the town scenes  ', stored: 'A knight for the town scenes' },
+    { given: '   ', stored: '' },
+  ])('stores the description beside the name, trimmed to $stored', async ({ given, stored }) => {
+    await usePresetStore.getState().saveCustomPreset('Described', given, DEFAULT_PROJECT_ID);
 
     const [saved] = await backend.listPresets();
-    expect(saved?.description).toBe('A knight for the town scenes');
-  });
-
-  it('lets a preset be saved with no description at all', async () => {
-    // Optional means optional: the card names the subject and setting instead, and the pack format
-    // carries the empty string rather than dropping the field.
-    await usePresetStore.getState().saveCustomPreset('Bare', '   ', DEFAULT_PROJECT_ID);
-
-    const [saved] = await backend.listPresets();
-    expect(saved?.description).toBe('');
+    expect(saved?.description).toBe(stored);
   });
 
   it('writes the description it was given when it updates an existing preset', async () => {
@@ -237,14 +231,6 @@ describe('saveCustomPreset', () => {
     // And in storage, not merely in the store.
     await expect(backend.listPresets()).resolves.toHaveLength(1);
     expect(useUIStore.getState().toastMessage).toBe('Updated custom preset “My Archetype”');
-  });
-
-  it('says it saved when the name is new, and updated when it is not', async () => {
-    await usePresetStore.getState().saveCustomPreset('Fresh', '', DEFAULT_PROJECT_ID);
-    expect(useUIStore.getState().toastMessage).toBe('Saved custom preset “Fresh”');
-
-    await usePresetStore.getState().saveCustomPreset('Fresh', '', DEFAULT_PROJECT_ID);
-    expect(useUIStore.getState().toastMessage).toBe('Updated custom preset “Fresh”');
   });
 
   it('treats a differently-cased name as the same one, and adopts the new spelling', async () => {

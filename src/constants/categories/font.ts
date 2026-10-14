@@ -259,7 +259,8 @@ export const FONT: CategoryDefinition = {
       key: 'worn_details',
       label: 'Interior Detail',
       tooltip:
-        'How much detail the inside of each stroke carries. Text is read as a run, not as a picture, so restraint is usually right: every extra line inside a stem costs contrast the letterform needs, and detail lost at 8 px shows only as noise.',
+        'How much detail the inside of each stroke carries. Text is read as a run, not as a picture, so restraint is usually right: every extra line inside a stem costs contrast the letterform needs, and detail lost at 8 px shows only as noise.\n\n' +
+        'The prompt’s surface-detail level defers to it inside each glyph. On a pixel-art sheet, `Hatched Line Shading` and `Etched Engraved Channels` are drawn as deliberate pixel lines rather than banned as microtexture.',
       options: [
         'Flat Fill, No Interior Detail',
         'Two-Tone Block Shading',
@@ -272,6 +273,10 @@ export const FONT: CategoryDefinition = {
         'Split Two-Tone Diagonal Fill',
         'Outlined Hollow Counter',
       ],
+      // Section 2's surface-detail level defers to it, and a line technique it names is excepted from the
+      // pixel discipline's microtexture ban (audit finding P11).
+      rendering: 'INTERIOR_DETAIL',
+      lineTechniques: ['Hatched Line Shading', 'Etched Engraved Channels'],
     },
     {
       key: 'primary_colours',
@@ -306,7 +311,7 @@ export const FONT: CategoryDefinition = {
         'Arcane Violet #8B5CF6',
         'Frost Cyan #22D3EE',
         'Poison Green #4ADE80',
-        'Void Magenta #E879F9',
+        'Neon Rose #FB7185',
         'Critical Orange #F97316',
         'Rare Blue #60A5FA',
         'Experience Lime #84CC16',

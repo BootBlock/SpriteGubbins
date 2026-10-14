@@ -5,6 +5,8 @@ import { PALETTE_EXPORT_GUIDANCE } from './paletteExport.ts';
 import { PALETTE_EXPORT_TOOLTIPS } from './tooltips/paletteExport.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from './tooltips/quantise.ts';
 import { STUDIO_ACTION_TOOLTIPS } from './tooltips/studio.ts';
+import { ICON_CAPACITY_NOTICES } from './iconCatalogue/iconCapacityNotices.ts';
+import { ICON_CATALOGUE_ACTION_TOOLTIPS } from './tooltips/iconCatalogue.ts';
 
 /**
  * That a card stating a figure the app holds as a constant reads it from that constant.
@@ -25,7 +27,20 @@ const figures = vi.hoisted(() => ({
   paletteEntries: { moved: 173, real: 0 },
   componentCeiling: { moved: 57, real: 0 },
   noBudget: { moved: -1, real: 0 },
+  rosterCapacity: { moved: 293, real: 0 },
+  iconsPerSheet: { moved: 23, real: 0 },
 }));
+
+vi.mock('./iconCatalogue/iconSheetLimits.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./iconCatalogue/iconSheetLimits.ts')>();
+  figures.rosterCapacity.real = actual.ICON_ROSTER_CAPACITY;
+  figures.iconsPerSheet.real = actual.ICONS_PER_SHEET;
+  return {
+    ...actual,
+    ICON_ROSTER_CAPACITY: figures.rosterCapacity.moved,
+    ICONS_PER_SHEET: figures.iconsPerSheet.moved,
+  };
+});
 
 vi.mock('../utils/pngPalette.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../utils/pngPalette.ts')>();
@@ -89,5 +104,26 @@ describe('the component budget guidance', () => {
 
     expect(OUTPUT_TOOLTIPS.componentBudget).toContain(`\`${String(moved)}\``);
     expect(OUTPUT_TOOLTIPS.componentBudget).not.toContain(`\`${String(real)}\``);
+  });
+});
+
+describe('the icon roster’s figures in guidance', () => {
+  it.each([
+    ['tickGroup', ICON_CATALOGUE_ACTION_TOOLTIPS.tickGroup],
+    ['the full row’s reason', ICON_CAPACITY_NOTICES.row(1, 0)],
+    ['the short row’s reason', ICON_CAPACITY_NOTICES.row(2, 1)],
+    ['the refusal notice', ICON_CAPACITY_NOTICES.refused(3)],
+  ])('%s reads the capacity from ICON_ROSTER_CAPACITY', (_name, text) => {
+    const { moved, real } = figures.rosterCapacity;
+
+    expect(states(text, moved)).toBe(true);
+    expect(states(text, real)).toBe(false);
+  });
+
+  it('openCatalogue reads the sheet’s size from ICONS_PER_SHEET', () => {
+    const { moved, real } = figures.iconsPerSheet;
+
+    expect(states(ICON_CATALOGUE_ACTION_TOOLTIPS.openCatalogue, moved)).toBe(true);
+    expect(states(ICON_CATALOGUE_ACTION_TOOLTIPS.openCatalogue, real)).toBe(false);
   });
 });

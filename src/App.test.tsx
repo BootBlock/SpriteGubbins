@@ -3,14 +3,13 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { App } from './App.tsx';
 import { APP_TAB_CHOICE_BY_ID } from './constants/ui.ts';
 import { useUIStore } from './stores/useUIStore.ts';
-import { APP_TABS } from './types/ui.ts';
 import type { AppTab } from './types/ui.ts';
 
 /**
- * Every heading outline in the app used to start at `<h2>`, which left a screen-reader user with
- * nothing to orient from and the heading-navigation shortcut reaching nothing. The repair is one
- * `<h1>` in the shell rather than one per view, so these assertions are about the shell: that it
- * renders exactly one, and that the one it renders says which view is showing.
+ * The shell's own accessibility wiring: the page's one `<h1>`, and the bypass that opens the document.
+ * That the `<h1>` is the only one under every view, and names it, is asserted in
+ * `AppViewSplit.test.tsx`, which already mounts each view once; what is here is the rest of the
+ * heading's contract and the bypass, which the studio alone is enough to show.
  *
  * **Every case here waits for the view before asserting**, because the views are each behind
  * `React.lazy`. Asserting synchronously would not merely check less — the dynamic import it starts
@@ -40,16 +39,6 @@ async function renderApp(tab: AppTab) {
   return result;
 }
 describe('App', () => {
-  for (const tab of APP_TABS) {
-    it(`renders exactly one h1, naming the ${tab} view`, async () => {
-      await renderApp(tab);
-
-      const headings = screen.getAllByRole('heading', { level: 1 });
-      expect(headings).toHaveLength(1);
-      expect(headings[0]).toHaveTextContent(APP_TAB_CHOICE_BY_ID[tab].label);
-    }, 30_000);
-  }
-
   // The class rather than a computed style, because the tests render without the stylesheet — and
   // the class *is* the mechanism, so this is the assertion that would catch the heading being turned
   // into a visible title. It is deliberately not one: most of the views already paint their

@@ -19,8 +19,9 @@ import type { SpriteBox } from '../types/quantiser.ts';
  * it reaches into the band that row occupies, and the band grows to include it — which is what lets
  * one tall sprite in the middle of a row hold the shorter ones on either side of it together.
  *
- * **Any overlap joins, and the band widens.** That is deliberately not the rule `spriteStrips` uses,
- * and the two are answering different questions rather than duplicating one. This one has to place
+ * **Any overlap joins, and the band widens.** That is deliberately not the rule `spriteBands` uses for
+ * `spriteStrips` and `spritePitch`, and the two are answering different questions rather than
+ * duplicating one. This one has to place
  * *every* sprite the sheet holds, exactly once, in an order a reader would agree with; that one is
  * looking for the runs whose pitch is worth fitting, so it narrows its band to half-overlap and
  * drops what is left under `SMALLEST_STRIP_FRAMES`. A rule that admits fewer boxes into a row
@@ -31,10 +32,9 @@ import type { SpriteBox } from '../types/quantiser.ts';
  * opened before it — and a function whose answer depends on how its caller happened to order an
  * argument is how the two derivations came to part company in the first place.
  *
- * **It sorts a copy, and the copy is not tidiness.** `sheetLayout` is handed `SpriteSegmentation`'s
- * own box array whenever a download is written at 1×, because `scaleBoxes` returns its argument
- * unchanged at that scale — so sorting in place would reorder the list the store holds and the
- * preview draws its rings from, from inside a writer. The boxes themselves come back by reference:
+ * **It sorts a copy, because the array is its caller's.** A function that answers a question about
+ * a list has no business reordering the list it was asked about, which the `readonly` in its
+ * signature already promises. The boxes themselves come back by reference:
  * there is nothing to gain by cloning them, and one set of box objects travelling the whole pipeline
  * is what lets `frameAlignment` exclude a frame's own box from the sheet's by object identity.
  *

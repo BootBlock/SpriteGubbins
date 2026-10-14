@@ -122,7 +122,7 @@ export const INTERFACE_KIT_PRESETS: readonly PresetArchetype[] = [
     // the panel-and-frame one `fantasy-parchment-menu` above already covers.
     name: 'Flat Mobile UI Button Slices',
     description:
-      'Flat vector button pieces at 96 × 48 px on transparency, cut so the middle stretches and the ends hold their shape. The tile-set mode is what delivers a widget as parts rather than at one fixed size.',
+      'Flat vector button pieces at 96 × 48 px on a magenta key, cut so the middle stretches and the ends hold their shape. The tile-set mode is what delivers a widget as parts rather than at one fixed size.',
     category: 'INTERFACE',
     subject: {
       species: 'Button & Key Cap',
@@ -154,7 +154,7 @@ export const INTERFACE_KIT_PRESETS: readonly PresetArchetype[] = [
       surfaceDetail: 'MINIMAL',
       paletteLimit: 'RESTRAINED_64_COLOR',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
-      backgroundKey: 'TRANSPARENT',
+      backgroundKey: 'MAGENTA_FF00FF',
       resolutionProfile: 'CUSTOM',
       spriteTargetSize: '96 × 48 px per button slice',
       aspectRatio: 'SQUARE_1_1',

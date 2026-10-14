@@ -10,7 +10,6 @@
  */
 export type { OutputChoice } from './choices.ts';
 export {
-  ASPECT_RATIO_CHOICES,
   BACKGROUND_KEY_CHOICES,
   JOINT_CAP_STYLE_CHOICES,
   LIGHTING_MODEL_CHOICES,
@@ -21,6 +20,7 @@ export {
   RESOLUTION_PROFILE_CHOICES,
   SURFACE_DETAIL_CHOICES,
 } from './choices.ts';
+export { aspectRatioChoices } from './aspectRatioChoices.ts';
 export { directionalModeChoices } from './directionalModeChoices.ts';
 export { DIRECTIONAL_MODE_TOOLTIPS } from './directionalModeTooltips.ts';
 export { directionSetChoices } from './directionSetChoices.ts';

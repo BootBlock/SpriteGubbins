@@ -135,7 +135,7 @@ describe('the ladders', () => {
   });
 
   it('climbs, so no ladder states one position twice', () => {
-    // Two rungs at one value is a candidate run twice and an elbow ranking a duplicate, both of
+    // Two rungs at one value is a candidate run twice and a stage ranking a duplicate, both of
     // which are invisible in a report that only counts positions.
     for (const [rungs] of LADDERS) {
       expect(rungs.every((value, index) => index === 0 || value > (rungs[index - 1] ?? -Infinity))).toBe(

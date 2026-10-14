@@ -2,56 +2,111 @@ import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
+import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
 
 /**
- * Icon sets — the four grids an icon family is actually asked for.
+ * Icon sets — nine rosters a game actually asks for, each ticked from the catalogue.
  *
- * **The camera is what these four vary, and it is the one place this category is looser than
- * INTERFACE.** An icon depicts something, and the angle it is depicted at is a genuine art-direction
- * choice: a flat front-on ability glyph, a three-quarter potion bottle and an isometric map pin are
- * all shipped icon styles. `categoryProjections.ts` leaves the whole list open for that reason, so
- * the library is what demonstrates that the choice exists at all — four icon sets under one camera
- * would have taught a reader that icons have none.
+ * **Each preset is a roster as well as a look.** An icon sheet draws the reader's picks, so a preset
+ * that set only the fields would hand every reader the starter set whatever its card promised. Each
+ * one carries the icons its card names — a loot grid's potions and materials, a system bar's panels, a
+ * unit frame's status icons, a map's pins, an action bar's consumables, a spellbook's attacks, an
+ * emote wheel's gestures, a HUD's squad markers and a lobby's loadout slots — declared in the catalogue's shelving order, which is the order its sheets
+ * draw them and the order the store keeps every roster in (`iconRosterShelving.test.ts`).
  *
- * **The first two pin the two bans no other category needs**, and between them they say why. A
- * stack count, a cooldown and a keybind are drawn by the engine at runtime over the top of the
- * sprite, so an icon carrying one serves a single quantity in a single language. The slot plate
- * belongs to INTERFACE, whose own `Inventory Slot & Icon Plate` option is exactly that piece — an
- * icon sheet that draws its own plates delivers a set that cannot be dropped into the interface the
- * project already has. The other two pin what their own deliverable gets wrong instead: a badge at
- * 16 px is ruined by a shadow falling outside its cell, and a map marker attracts the ground it is
- * meant to be placed on.
+ * **The camera is what the four older ones vary**, and it is the one place this category is looser than
+ * INTERFACE: a flat front-on glyph, a three-quarter potion bottle and an isometric map pin are all
+ * shipped icon styles, so the library demonstrates that the choice exists at all.
  *
- * `SINGLE_FRONT` is the honest direction set for the reason it is on every category bound to it: the
- * one mode here covers a single facing whatever the control says, and any wider set turns one grid
- * into a run of identical grids at yaws a mark in a cell does not have.
+ * **Every one is square**, because `categoryAspectRatios.ts` binds ICON to `SQUARE_1_1`: four rows of
+ * four square cells need a square sheet. `SINGLE_FRONT` is the honest direction set for the reason it is
+ * on every category bound to it — an icon in a cell has no yaw.
+ *
+ * **The cyberpunk sets are the use case the catalogue was built for**: a cyberpunk MMORPG's
+ * consumables and its spellbook, drawn at 128 px for ChatGPT 5.6 Sol as full-bleed squares, the look of
+ * an action bar that draws its own frame round each one, and its emote wheel as marks for the wheel's
+ * own slots. The spellbook ticks two attacks from each of the eight damage schools, so every school's
+ * colour is on its sheet, and draws them face on, as a spell's emblem is; the emote wheel is the
+ * shipped set whose every icon is a figure, which only the figure-aware exclusions let it draw.
+ *
+ * **Two serve a multiplayer cyberpunk game** (audit finding M4), from entries the catalogue already
+ * holds. The squad HUD markers are the one shipped tint mask: a match colours one set of markers by
+ * team, so each is drawn in grey, told apart by shape at the 20 px a HUD shows it, and given the
+ * HUD's own overlay pieces. The loadout slots are the gear a lobby's loadout screen offers, in full
+ * colour, since a loadout is the player's own and never a side's.
+ *
+ * **Three draw full-bleed squares and six draw isolated marks**, by what the game does with them. An
+ * action bar, a spellbook and a bag grid show each icon as a painted square inside the slot's frame, as
+ * World of Warcraft does; a system button, a status badge, a map pin, an emote, a HUD marker and a
+ * loadout slot sit on a plate, over the scene or in a wheel's slot, so each is a mark alone.
+ *
+ * **Every value agrees with the card it is shown under** (audit finding O12): a status badge set is not
+ * cursed and cracked, a system button is never equipped, and an emote wheel is shown in the ping and
+ * emote wheel rather than in the social panels.
+ *
+ * **A full-bleed preset takes a key its squares' backdrops will not be keyed out with** (R15 of
+ * `docs/todo/done/icon-catalogue.md`). Every pixel within the key's reach is removed wherever it sits, and a
+ * square's backdrop is painted from the set's colours shaded towards black at its corners. Measured
+ * over every hex colour ICON's *Primary Colours* and *Accent Colours* offer, shaded and washed that
+ * way, `PURE_BLACK` reaches four primaries — the cyberpunk set's own Gunmetal among them — while
+ * `PURE_WHITE` and `MAGENTA_FF00FF` reach none, now that every light colour names its hex and no pool
+ * offers a magenta (audit findings O2 and O5). So the two full-bleed cyberpunk sets, the consumables
+ * and the spellbook, take `PURE_WHITE`, which keeps the key safe when a reader swaps their colours for
+ * others the fields offer, and name no chrome or other near-white word without its hex; the spellbook's eight school colours are
+ * held out of every key's reach by `damageSchools.test.ts`, so they leave the choice where the set's
+ * own colours put it, and no cyberpunk look names white (`iconCatalogue.test.ts`). The fantasy grid
+ * keeps `TRANSPARENT`, which no painted colour can be confused with, and so do the cyberpunk emote
+ * wheel and the loadout slots, whose isolated marks have no backdrop to shade, and the squad markers:
+ * a tint mask's lightest grey runs too close to white for the white key, so `backgroundKeysFor` never
+ * offers it one.
+ * `iconSetKeys.test.ts` holds all of this, and shows each measurement biting on the values it retired.
  */
 export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'fantasy-inventory-icon-grid',
     name: 'Fantasy Inventory Icon Grid',
     description:
-      'A painted loot grid drawn at three quarters, so a bottle and a chest both read as objects rather than as flat marks. The rarity tiers are separate pieces the engine lays over any icon.',
+      'A painted loot grid of potions, materials and chests at three quarters, each a square painted edge to edge for the bag slot to frame. The rarity tiers are separate pieces the engine lays over any icon.',
     category: 'ICON',
     subject: {
-      species: 'Inventory & Item Icon',
-      gender: 'Rare',
+      species: 'Bags & Inventory',
+      gender: 'Neutral, Tier Shown By Overlay Marks',
       age: 'Serviceable & Lightly Used',
-      role: 'Restores & Heals',
+      role: '32 × 32 Pixels',
       setting: 'High Fantasy',
       build: 'Standard Padded Margin',
-      silhouette: 'Bold Compact Blob',
-      face_head: 'Droplet & Wave',
-      anatomy: 'Base Icon In Rarity Tiers',
-      clothing: 'Rarity Glow & Aura',
-      worn_details: 'Soft Painterly Modelling',
+      silhouette: 'One Bold Readable Shape Each',
+      face_head: 'One Bright Focal Accent',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Filigree Scrollwork Trim',
+      worn_details: 'One Or Two Defining Lines',
       primary_colours: 'Aged Bronze & Verdigris',
       accent_colours: 'Health Red #EF4444',
       materials: 'Blown Glass & Cork',
-      // The one exclusion this category cannot do without. An icon with a stack count painted into
-      // it is an icon for one quantity, in one language.
-      exclusions: 'No lettering, numerals, stack counts or keybinds',
-      additional_anatomy: 'Tier Pip ×3',
+      exclusions: 'No real-world logo, brand or trademark',
+      additional_anatomy: 'Equipped Corner Tick ×1',
+      icons: {
+        colourMode: 'FULL_COLOUR',
+        look: 'FULL_BLEED_TILE',
+        picks: cataloguePicks([
+          'heal-minor',
+          'heal-standard',
+          'heal-major',
+          'mana-minor',
+          'mana-major',
+          'elixir',
+          'food-bread-ration',
+          'drink-ale',
+          'material-ore',
+          'material-ingot',
+          'material-herb',
+          'material-gemstone',
+          'currency-precious-coin',
+          'quest-relic',
+          'container-small-bag',
+          'container-treasure-chest',
+        ]),
+      },
     },
     output: {
       ...DEFAULT_IMAGE_CONFIG,
@@ -72,34 +127,52 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
     },
   },
   {
-    id: 'flat-ability-glyph-set',
-    name: 'Flat Ability Glyph Set',
+    id: 'flat-system-button-set',
+    name: 'Flat System Button Set',
     description:
-      'Abstract spell glyphs drawn face on with no object behind them, so the silhouette alone has to carry the meaning at the size a hotbar shows it.',
+      'The system panels a button bar opens, drawn face on as flat shapes with no object behind them, so each silhouette alone has to say which panel it opens at the size the bar shows it.',
     category: 'ICON',
     subject: {
-      species: 'Ability & Spell Icon',
+      species: 'System Button Bar',
       gender: 'Common',
-      age: 'Enchanted & Unblemished',
-      role: 'Damages & Attacks',
-      setting: 'Near-Future Cyberpunk',
-      build: 'Small Centred Mark',
-      silhouette: 'Radial & Symmetrical',
-      face_head: 'Bolt & Spark',
-      // Standalone, because the card above promises “no object behind them” and `exclusions` below
-      // bans the plate. The pool once offered a shared backing with a swappable motif, which is the
-      // thing being banned; no sheet drew it, so it went with issue #292.
-      anatomy: 'Single Standalone Icon',
-      clothing: 'Cooldown Dimming Veil',
+      age: 'Pristine & Newly Made',
+      role: '24 × 24 Pixels',
+      setting: 'Far-Future Space Opera',
+      build: 'Small Centred Subject',
+      silhouette: 'Distinct Outline For Every Icon',
+      face_head: 'Plain Object, No Added Motif',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Clean Flat Shapes',
       worn_details: 'Flat Fill, No Interior Detail',
-      primary_colours: 'Slate #1E293B & Pale Ice',
+      primary_colours: 'Slate #1E293B & Pale Ice #BFD7E6',
       accent_colours: 'Frost Cyan #22D3EE',
       materials: 'Brushed Alloy & Backlit Panel',
-      // The other ban an icon set needs, and the boundary with INTERFACE: the plate this glyph sits
-      // in is that category's component, so a set that draws its own cannot be dropped into an
-      // interface the project already has.
-      exclusions: 'No slot plate, frame or border behind the icon',
-      additional_anatomy: 'Element Corner Badge ×4',
+      exclusions: 'No real-world logo, brand or trademark',
+      // A system button is opened, never equipped, so the set adds no overlay piece to the library.
+      additional_anatomy: NO_ADDITIONAL_ANATOMY,
+      // Sixteen panels, two of them toggles drawn in both states, so the set runs to a second sheet.
+      icons: {
+        colourMode: 'FULL_COLOUR',
+        look: 'ISOLATED_MARK',
+        picks: cataloguePicks([
+          'system-main-options',
+          'system-settings',
+          'system-character',
+          'system-bags',
+          'system-abilities',
+          'system-talents',
+          'system-quest-log',
+          'system-achievements',
+          'system-collections',
+          'system-world-map',
+          'system-calendar',
+          'system-store',
+          'system-help',
+          'system-log-off',
+          'system-sound',
+          'system-layout-lock',
+        ]),
+      },
     },
     output: {
       ...DEFAULT_IMAGE_CONFIG,
@@ -125,25 +198,45 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
     id: 'pixel-status-badge-set',
     name: 'Pixel Status Badge Set',
     description:
-      'Tiny status badges at a fixed cell size, drawn to read as a condition rather than as an object. At this size every extra interior line arrives as noise instead of detail.',
+      'Tiny unit-frame status badges and loot-roll choices at a fixed cell size, drawn to read as a condition rather than as an object. At this size every extra interior line arrives as noise instead of detail.',
     category: 'ICON',
     subject: {
-      species: 'Status Effect Badge',
-      gender: 'Cursed & Corrupted',
-      age: 'Cracked & Failing',
-      role: 'Debuffs & Hinders',
+      species: 'Unit Frame & Status Row',
+      gender: 'Common',
+      age: 'Serviceable & Lightly Used',
+      role: '24 × 24 Pixels',
       setting: 'Grim Dark Fantasy',
-      build: 'Tightly Filling The Cell',
-      silhouette: 'Angular & Faceted',
-      face_head: 'Skull & Hazard Mark',
-      anatomy: 'Matched Pair, Enabled And Disabled',
-      clothing: 'Broken Crack Overlay',
-      worn_details: 'Two-Tone Block Shading',
-      primary_colours: 'Matte Black & Bone White',
+      build: 'Tightly Filling The Square',
+      silhouette: 'Chunky Low-Detail Forms',
+      face_head: 'One Bright Focal Accent',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Bold Outlined Shapes',
+      worn_details: 'Flat Fill, No Interior Detail',
+      primary_colours: 'Matte Black & Bone #D9D4C7',
       accent_colours: 'Poison Green #4ADE80',
       materials: 'Bone, Horn & Sinew',
-      exclusions: 'No drop shadow outside the icon’s own outline',
+      exclusions: 'No two icons told apart by hue alone',
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
+      icons: {
+        colourMode: 'FULL_COLOUR',
+        look: 'ISOLATED_MARK',
+        picks: cataloguePicks([
+          'loot-need',
+          'loot-greed',
+          'loot-pass',
+          'loot-salvage',
+          'status-in-combat',
+          'status-resting',
+          'status-pvp-flagged',
+          'status-dead',
+          'status-away',
+          'status-busy',
+          'status-group-leader',
+          'status-loot-master',
+          'status-ready-check',
+          'status-threat',
+        ]),
+      },
     },
     output: {
       ...DEFAULT_IMAGE_CONFIG,
@@ -155,7 +248,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       primaryDirection: 'front',
       rigMode: 'NONE',
       resolutionProfile: 'CUSTOM',
-      spriteTargetSize: '16 × 16 px per badge',
+      spriteTargetSize: '24 × 24 px per badge',
       paletteLimit: 'STRICT_32_COLOR',
       surfaceDetail: 'MINIMAL',
       lightingModel: 'FLAT_NEUTRAL_ALBEDO',
@@ -168,25 +261,44 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
     id: 'isometric-map-marker-set',
     name: 'Isometric Map Marker Set',
     description:
-      'Waypoint markers drawn in true isometric so they sit on the same grid the map does. A marker at a different angle from the terrain beneath it reads as pasted on rather than placed.',
+      'Map pins drawn in true isometric so they sit on the same grid the map does. A pin at a different angle from the terrain beneath it reads as pasted on rather than placed.',
     category: 'ICON',
     subject: {
-      species: 'Map & Waypoint Marker',
+      species: 'World Map & Minimap',
       gender: 'Uncommon',
       age: 'Pristine & Newly Made',
-      role: 'Marks A Place',
+      role: '32 × 32 Pixels',
       setting: 'Victorian Gaslamp',
-      build: 'Filling A Tall Portrait Cell',
-      silhouette: 'Upright Vertical Mass',
-      face_head: 'Chevron & Directional Wedge',
-      anatomy: 'Base Icon With State Overlays',
-      clothing: 'New Item Flare & Sparkle',
-      worn_details: 'Etched Engraved Lines',
+      build: 'Upright And Centred',
+      silhouette: 'One Bold Readable Shape Each',
+      face_head: 'Engraved Emblem On The Object',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Bold Outlined Shapes',
+      worn_details: 'One Or Two Defining Lines',
       primary_colours: 'Warm Leather Brown & Tan',
       accent_colours: 'Warning Amber #F59E0B',
       materials: 'Cast Iron & Riveted Plate',
-      exclusions: 'No background scene, tabletop or ground plane',
-      additional_anatomy: 'Empty Slot Mark ×1',
+      exclusions: 'No real-world flag or insignia',
+      additional_anatomy: 'Favourite Star ×1',
+      icons: {
+        colourMode: 'FULL_COLOUR',
+        look: 'ISOLATED_MARK',
+        picks: cataloguePicks([
+          'pin-quest-available',
+          'pin-quest-turn-in',
+          'pin-quest-area',
+          'pin-waypoint',
+          'pin-player',
+          'pin-party-member',
+          'pin-flight-point',
+          'pin-dungeon',
+          'pin-mailbox',
+          'pin-inn',
+          'pin-treasure',
+          'pin-dangerous-foe',
+          'pin-respawn',
+        ]),
+      },
     },
     output: {
       ...DEFAULT_IMAGE_CONFIG,
@@ -202,8 +314,339 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'FLAT_NEUTRAL_ALBEDO',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       backgroundKey: 'TRANSPARENT',
-      aspectRatio: 'WIDE_16_9',
+      aspectRatio: 'SQUARE_1_1',
       targetModel: 'GPT_IMAGE',
+    },
+  },
+  {
+    id: 'cyberpunk-action-bar-consumables',
+    name: 'Cyberpunk Action Bar — Consumables',
+    description:
+      'Sixteen action-bar consumables for a cyberpunk MMORPG: stim-packs in three sizes, a neural jack, a detox inhaler and grenades, each told apart by shape on a 128 px square painted edge to edge for the bar to frame.',
+    category: 'ICON',
+    subject: {
+      species: 'Action Bar',
+      gender: 'Rare',
+      age: 'Scuffed Street-Worn Kit',
+      role: '32 × 32 Pixels',
+      setting: 'Near-Future Cyberpunk',
+      build: 'Diagonal, Corner To Corner',
+      silhouette: 'One Bold Readable Shape Each',
+      face_head: 'Emissive Core Glow',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Neon Tube Strokes',
+      worn_details: 'Panel & Seam Lines',
+      primary_colours: 'Gunmetal #2B2F36 & Brushed Steel #A8B0BA',
+      accent_colours: 'Electric Cyan #00E5FF',
+      materials: 'Moulded Polymer & Light Strip',
+      exclusions: 'No gore, blood or open wound',
+      additional_anatomy: NO_ADDITIONAL_ANATOMY,
+      icons: {
+        colourMode: 'FULL_COLOUR',
+        look: 'FULL_BLEED_TILE',
+        picks: cataloguePicks([
+          'heal-minor',
+          'heal-standard',
+          'heal-major',
+          'mana-minor',
+          'mana-major',
+          'stamina-restore',
+          'cure-poison',
+          'cure-affliction',
+          'regeneration',
+          'revive',
+          'elixir',
+          'boost-strength',
+          'boost-agility',
+          'boost-move-speed',
+          'throw-frag-grenade',
+          'throw-smoke',
+        ]),
+      },
+    },
+    output: {
+      ...DEFAULT_IMAGE_CONFIG,
+      renderStyle: 'PAINTED_2D',
+      projection: 'THREE_QUARTER_TOPDOWN',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.THREE_QUARTER_TOPDOWN,
+      directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+      directions: 'SINGLE_FRONT',
+      primaryDirection: 'front',
+      rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '128 × 128 px per icon',
+      paletteLimit: 'UNRESTRICTED',
+      surfaceDetail: 'DETAILED_PRODUCTION',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
+      outlineStyle: 'DARK_LOCAL_CONTOUR',
+      backgroundKey: 'PURE_WHITE',
+      aspectRatio: 'SQUARE_1_1',
+      targetModel: 'CHATGPT_5_6_SOL',
+    },
+  },
+  {
+    id: 'cyberpunk-spellbook-combat-abilities',
+    name: 'Cyberpunk Spellbook — Combat Abilities',
+    description:
+      'Sixteen spellbook attacks for a cyberpunk MMORPG, two from each damage school, each a 128 px square painted edge to edge and led by its school’s one colour, so a player reads the school before the shape.',
+    category: 'ICON',
+    subject: {
+      species: 'Spellbook & Ability List',
+      gender: 'Epic',
+      age: 'Pristine & Newly Made',
+      role: '32 × 32 Pixels',
+      setting: 'Near-Future Cyberpunk',
+      build: 'Tightly Filling The Square',
+      silhouette: 'One Bold Readable Shape Each',
+      face_head: 'Emissive Core Glow',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Neon Tube Strokes',
+      worn_details: 'One Or Two Defining Lines',
+      primary_colours: 'Gunmetal #2B2F36 & Brushed Steel #A8B0BA',
+      accent_colours: 'Electric Cyan #00E5FF',
+      materials: 'Carbon Fibre & Neon Tubing',
+      exclusions: 'No gore, blood or open wound',
+      additional_anatomy: NO_ADDITIONAL_ANATOMY,
+      icons: {
+        colourMode: 'FULL_COLOUR',
+        look: 'FULL_BLEED_TILE',
+        picks: cataloguePicks([
+          'kinetic-strike',
+          'kinetic-finisher',
+          'thermal-strike',
+          'thermal-blast',
+          'cryo-strike',
+          'cryo-channel',
+          'voltaic-strike',
+          'voltaic-blast',
+          'toxic-strike',
+          'toxic-over-time',
+          'neural-strike',
+          'neural-vulnerability',
+          'netrun-strike',
+          'netrun-ultimate',
+          'nanite-strike',
+          'nanite-blast',
+        ]),
+      },
+    },
+    output: {
+      ...DEFAULT_IMAGE_CONFIG,
+      renderStyle: 'PAINTED_2D',
+      projection: 'ORTHOGRAPHIC_FRONT',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_FRONT,
+      directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+      directions: 'SINGLE_FRONT',
+      primaryDirection: 'front',
+      rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '128 × 128 px per icon',
+      paletteLimit: 'UNRESTRICTED',
+      surfaceDetail: 'DETAILED_PRODUCTION',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
+      outlineStyle: 'DARK_LOCAL_CONTOUR',
+      backgroundKey: 'PURE_WHITE',
+      aspectRatio: 'SQUARE_1_1',
+      targetModel: 'CHATGPT_5_6_SOL',
+    },
+  },
+  {
+    id: 'cyberpunk-emote-wheel',
+    name: 'Cyberpunk Emote Wheel',
+    description:
+      'Sixteen emotes for a cyberpunk MMORPG’s emote wheel, from a wave to a facepalm, each a steel cyber-hand, an android face-plate or a neon avatar drawn alone for the wheel’s own slot to hold.',
+    category: 'ICON',
+    subject: {
+      species: 'Ping & Emote Wheel',
+      gender: 'Common',
+      age: 'Scuffed Street-Worn Kit',
+      role: '32 × 32 Pixels',
+      setting: 'Near-Future Cyberpunk',
+      build: 'Upright And Centred',
+      silhouette: 'Distinct Outline For Every Icon',
+      face_head: 'One Bright Focal Accent',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Neon Tube Strokes',
+      worn_details: 'One Or Two Defining Lines',
+      primary_colours: 'Gunmetal #2B2F36 & Brushed Steel #A8B0BA',
+      accent_colours: 'Electric Cyan #00E5FF',
+      materials: 'Scratched Chrome & Rubber Grip',
+      exclusions: 'No real-world logo, brand or trademark',
+      additional_anatomy: NO_ADDITIONAL_ANATOMY,
+      icons: {
+        colourMode: 'FULL_COLOUR',
+        look: 'ISOLATED_MARK',
+        picks: cataloguePicks([
+          'emote-wave',
+          'emote-bow',
+          'emote-salute',
+          'emote-cheer',
+          'emote-laugh',
+          'emote-cry',
+          'emote-dance',
+          'emote-point',
+          'emote-thumbs-up',
+          'emote-thumbs-down',
+          'emote-shrug',
+          'emote-facepalm',
+          'emote-clap',
+          'emote-heart',
+          'emote-angry',
+          'emote-peace',
+        ]),
+      },
+    },
+    output: {
+      ...DEFAULT_IMAGE_CONFIG,
+      renderStyle: 'PAINTED_2D',
+      projection: 'ORTHOGRAPHIC_FRONT',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_FRONT,
+      directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+      directions: 'SINGLE_FRONT',
+      primaryDirection: 'front',
+      rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '128 × 128 px per icon',
+      paletteLimit: 'UNRESTRICTED',
+      surfaceDetail: 'CLEAN_PRODUCTION',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
+      outlineStyle: 'DARK_LOCAL_CONTOUR',
+      backgroundKey: 'TRANSPARENT',
+      aspectRatio: 'SQUARE_1_1',
+      targetModel: 'CHATGPT_5_6_SOL',
+    },
+  },
+  {
+    id: 'cyberpunk-squad-hud-markers',
+    name: 'Cyberpunk Squad HUD Markers',
+    description:
+      'Squad markers for a multiplayer cyberpunk HUD, from the waypoint to the respawn point, each drawn in grey as a tint mask your engine colours by team and told apart by its shape alone at 20 px.',
+    category: 'ICON',
+    subject: {
+      species: 'HUD & Compass',
+      gender: 'Neutral, Tier Shown By Overlay Marks',
+      age: 'Pristine & Newly Made',
+      role: '20 × 20 Pixels',
+      setting: 'Near-Future Cyberpunk',
+      build: 'Upright And Centred',
+      silhouette: 'Told Apart By Shape, Never By Colour',
+      face_head: 'Plain Object, No Added Motif',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Neon Tube Strokes',
+      worn_details: 'Flat Fill, No Interior Detail',
+      primary_colours: 'Asphalt Grey #374151 & Signal Teal #14B8A6',
+      accent_colours: 'Warning Amber #F59E0B',
+      materials: 'Pure Emissive Light, No Material',
+      // A tint mask is how a match gives every side one set of markers, so a colour baked into one would
+      // fight the team colour the engine lays over it.
+      exclusions: 'No baked team or faction colour',
+      additional_anatomy: 'Edge-Of-View Pointer ×1, Above & Below Height Arrows ×2, Hostile Chevron ×1',
+      icons: {
+        colourMode: 'TINT_MASK',
+        look: 'ISOLATED_MARK',
+        picks: cataloguePicks([
+          'pin-quest-available',
+          'pin-quest-area',
+          'pin-waypoint',
+          'pin-player',
+          'pin-party-member',
+          'pin-dangerous-foe',
+          'pin-respawn',
+          'status-in-combat',
+          'status-dead',
+          'status-group-leader',
+          'status-ready-check',
+          'status-threat',
+        ]),
+      },
+    },
+    output: {
+      ...DEFAULT_IMAGE_CONFIG,
+      // Flat shapes with no light of their own: a HUD marker floats over the scene in screen space, and
+      // the engine's tint is the only colour it takes.
+      renderStyle: 'VECTOR_FLAT',
+      projection: 'ORTHOGRAPHIC_FRONT',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_FRONT,
+      directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+      directions: 'SINGLE_FRONT',
+      primaryDirection: 'front',
+      rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '80 × 80 px per icon',
+      paletteLimit: 'RESTRAINED_64_COLOR',
+      surfaceDetail: 'MINIMAL',
+      lightingModel: 'UNLIT_EMISSIVE_BAKED',
+      // A dark contour keeps a marker readable over whatever the scene puts behind it, in any tint.
+      outlineStyle: 'DARK_LOCAL_CONTOUR',
+      backgroundKey: 'TRANSPARENT',
+      aspectRatio: 'SQUARE_1_1',
+      targetModel: 'CHATGPT_5_6_SOL',
+    },
+  },
+  {
+    id: 'cyberpunk-loadout-slots',
+    name: 'Cyberpunk Loadout Slots',
+    description:
+      'Sixteen loadout slots for a multiplayer cyberpunk lobby, from the smart-visor helmet to the smart-pistol, each piece of kit drawn alone in gunmetal and cyan for the loadout screen’s own slot to hold.',
+    category: 'ICON',
+    subject: {
+      species: 'Lobby & Loadout',
+      gender: 'Neutral, Tier Shown By Overlay Marks',
+      age: 'Scuffed Street-Worn Kit',
+      role: '32 × 32 Pixels',
+      setting: 'Near-Future Cyberpunk',
+      build: 'Standard Padded Margin',
+      silhouette: 'Distinct Outline For Every Icon',
+      face_head: 'One Bright Focal Accent',
+      anatomy: 'Icons With Engine-Applied Overlays',
+      clothing: 'Neon Tube Strokes',
+      worn_details: 'Panel & Seam Lines',
+      primary_colours: 'Gunmetal #2B2F36 & Brushed Steel #A8B0BA',
+      accent_colours: 'Electric Cyan #00E5FF',
+      materials: 'Carbon Fibre & Neon Tubing',
+      exclusions: 'No real-world logo, brand or trademark',
+      additional_anatomy: 'Equipped Corner Tick ×1',
+      icons: {
+        colourMode: 'FULL_COLOUR',
+        look: 'ISOLATED_MARK',
+        picks: cataloguePicks([
+          'gear-head',
+          'gear-neck',
+          'gear-shoulders',
+          'gear-back',
+          'gear-chest',
+          'gear-wrist',
+          'gear-hands',
+          'gear-waist',
+          'gear-legs',
+          'gear-feet',
+          'gear-finger',
+          'gear-trinket',
+          'gear-main-hand',
+          'gear-off-hand',
+          'gear-ranged',
+          'gear-tabard',
+        ]),
+      },
+    },
+    output: {
+      ...DEFAULT_IMAGE_CONFIG,
+      renderStyle: 'PAINTED_2D',
+      projection: 'ORTHOGRAPHIC_FRONT',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_FRONT,
+      directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+      directions: 'SINGLE_FRONT',
+      primaryDirection: 'front',
+      rigMode: 'NONE',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '128 × 128 px per icon',
+      paletteLimit: 'UNRESTRICTED',
+      surfaceDetail: 'CLEAN_PRODUCTION',
+      lightingModel: 'ISOMETRIC_TOP_LEFT',
+      outlineStyle: 'DARK_LOCAL_CONTOUR',
+      backgroundKey: 'TRANSPARENT',
+      aspectRatio: 'SQUARE_1_1',
+      targetModel: 'CHATGPT_5_6_SOL',
     },
   },
 ];

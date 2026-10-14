@@ -33,7 +33,9 @@ describe('statesAssembledSize', () => {
     // A tile, a glyph, an icon cell, a frame and a nine-slice piece are each the thing the reader is
     // pricing, and their presets say so. The nine-slice is the one that reads like a decomposition
     // and is not: what its corners, edges and centre assemble into is a panel at any width and
-    // height, so there is no assembled size to state.
+    // height, so there is no assembled size to state. A BUILDING module library is here although it
+    // may carry `CUTOUT_RIG` legitimately: the stored rig field answers a different question, which
+    // is why this reads the sheet plan alone, and its shipped preset states a size per module.
     for (const [category, mode] of [
       ['BUILDING', 'TILESET_MODULAR'],
       ['BUILDING', 'SINGLE_DIRECTION_POSE_LIBRARY'],
@@ -64,16 +66,6 @@ describe('statesAssembledSize', () => {
     ).toBe(false);
     expect(
       statesAssembledSize('FONT', standardSubject(), 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0),
-    ).toBe(false);
-  });
-
-  it('does not read the stored rig field, because that answers a different question', () => {
-    // A BUILDING module library may carry `CUTOUT_RIG` legitimately — its pieces do get bound to
-    // bones — and it still states a size per module, as its own shipped preset writes it: `96 × 128
-    // px per bay`. Keyed on `resolveRigMode` this would have withheld a size that is perfectly
-    // usable.
-    expect(
-      statesAssembledSize('BUILDING', standardSubject(), 'SINGLE_DIRECTION_POSE_LIBRARY', 'SINGLE_FRONT', 0),
     ).toBe(false);
   });
 });

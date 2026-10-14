@@ -10,7 +10,9 @@ import {
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { wrapForModel } from './modelWrappers.ts';
+import { alphaDeliveryFor } from './targetCapabilities.ts';
 import { promptConditions } from './promptConditions.ts';
+import { statesTileShare } from '../constants/promptText/statesTileShare.ts';
 import { sheetFacts } from './promptFacts.ts';
 import { promptValues } from './promptValues.ts';
 import {
@@ -19,6 +21,7 @@ import {
   applyOptionals,
   applySectionNumbers,
   assertBlocksResolved,
+  isSet,
   resolveCitations,
   sectionNumbers,
   substitute,
@@ -76,9 +79,10 @@ export function generatePrompt(
   const prompt = substitute(resolved, values);
 
   return wrapForModel(prompt, output.targetModel, {
-    aspectRatio: output.aspectRatio,
-    backgroundKeyDescription: BACKGROUND_KEY_TEXT[output.backgroundKey],
-    frameIsAComponent: FRAME_IS_A_COMPONENT[category],
+    aspectRatio: facts.aspectRatio,
+    backgroundKeyDescription: BACKGROUND_KEY_TEXT[facts.backgroundKey],
+    // A category whose every sheet draws a frame, or this sheet's own declaration (audit finding T2).
+    frameIsAComponent: FRAME_IS_A_COMPONENT[category] || facts.plan.frames === 'DRAWN',
     letteringIsAComponent: LETTERING_IS_A_COMPONENT[category],
     surface: RENDER_STYLE_SURFACE[output.renderStyle],
     limbsAreComponents: LIMBS_ARE_COMPONENTS[category],
@@ -89,6 +93,17 @@ export function generatePrompt(
     palette: facts.palette !== null,
     rigGeometry: facts.rig !== null,
     oneSidedFeatures: config.ONE_SIDED_FEATURES === 'yes',
+    orientation: facts.plan.orientation,
+    ownBackdrop: config.OWN_BACKDROP === 'yes',
+    // The optional lines Sol's hand-off protects, read off the values their optionals emit from, so a
+    // wrapper never names a line the prompt does not carry (audit finding T3).
+    colours: isSet(values.PRIMARY_COLOURS) || isSet(values.ACCENT_COLOURS),
+    targetSize: isSet(values.SPRITE_TARGET_SIZE),
+    displaySize: isSet(values.DISPLAY_REDUCTION),
+    tileShare: statesTileShare(facts.plan.fit, facts.plan.cellGrid),
+    // A target that draws through a tool whose call can ask for alpha (`AlphaDelivery`'s `TOOL_CALL`).
+    transparent:
+      facts.backgroundKey === 'TRANSPARENT' && alphaDeliveryFor(output.targetModel).kind === 'TOOL_CALL',
     // The headings' own numbers, from the same walk that resolved the prompt body's citations — so a
     // wrapper naming a section cannot come to name a different one than the prose does.
     sectionNumbers: numbers,
