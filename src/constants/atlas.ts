@@ -1,4 +1,5 @@
 import { ATLAS_CANVAS_SIZES, ATLAS_PADDING_SIZES, TEXTURE_FORMAT_IDS } from '../types/atlas.ts';
+import { deepestCleanMip } from '../utils/deepestCleanMip.ts';
 import type { AtlasCanvasSize, AtlasPadding, TextureFormat, TextureFormatId } from '../types/atlas.ts';
 
 /**
@@ -17,11 +18,11 @@ const CANVAS_SIZE_NOTES: Readonly<Record<AtlasCanvasSize, string>> = {
   8192: 'Extreme resolution',
 };
 
-/** What each gutter width buys. Widths come from {@link ATLAS_PADDING_SIZES}. */
+/** What each gutter width is called. Widths come from {@link ATLAS_PADDING_SIZES}. */
 const PADDING_NOTES: Readonly<Record<AtlasPadding, string>> = {
   0: 'No padding',
   2: 'Light gutter',
-  4: 'Standard gutter — recommended',
+  4: 'Standard gutter',
   8: 'Wide bleed buffer',
   16: 'Maximum isolation',
 };
@@ -31,10 +32,11 @@ export const ATLAS_CANVAS_CHOICES = ATLAS_CANVAS_SIZES.map((value) => ({
   label: `${value} × ${value} px (${CANVAS_SIZE_NOTES[value]})`,
 }));
 
-export const ATLAS_PADDING_CHOICES = ATLAS_PADDING_SIZES.map((value) => ({
-  value,
-  label: `${value} px (${PADDING_NOTES[value]})`,
-}));
+export const ATLAS_PADDING_CHOICES = ATLAS_PADDING_SIZES.map((value) => {
+  const mip = deepestCleanMip(value);
+  const note = mip === null ? PADDING_NOTES[value] : `${PADDING_NOTES[value]}, clean to mip ${mip}`;
+  return { value, label: `${value} px (${note})` };
+});
 
 /** The configuration the calculator opens on — a 2048px texture with a standard gutter. */
 export const DEFAULT_ATLAS_CANVAS_SIZE: AtlasCanvasSize = 2048;
@@ -77,12 +79,12 @@ export const ATLAS_TOOLTIPS = {
     'A larger texture gives each component more resolution and costs more graphics memory on every platform that loads it. 2048 px is the usual ceiling for mobile and 4096 px for desktop. Every size is a power of two, which keeps mipmapping available.',
   padding:
     'The gutter left around each cell, in pixels. It stops neighbouring cells bleeding into each other when the engine filters or mipmaps the texture, which shows as a faint edge of the next sprite as the camera pulls back.\n\n' +
-    'A 4 px gutter survives a full mip chain. 0 px is safe only with point filtering and no mipmaps.',
+    'Each mip level halves the gutter, so 2ⁿ px stays at least a texel wide to mip n: 4 px protects the first two levels. No gutter covers a full chain, so clamp the chain to the levels yours covers, or widen it. 0 px is safe only with point filtering and no mipmaps.',
   memory:
     'What this texture occupies in graphics memory once uploaded. Budget against this figure, not the size of the PNG on disk.\n\n' +
     '- **Uncompressed** is width × height × 4 bytes.\n' +
     '- **Block compressed** formats (BC7, BC3/DXT5, ETC2 RGBA, ASTC 4 × 4) store each 4 × 4 block in 16 bytes, a quarter of that. They differ only in which GPU accepts them.\n\n' +
-    'A full mip chain adds roughly a third again, and filtering needs it to stop distant sprites shimmering.',
+    'A full mip chain adds roughly a third again. Filtering needs mipmaps to stop distant sprites shimmering, and a chain clamped to the levels your gutter covers costs almost as much.',
   fit:
     'Whether the component size the studio asks the generator for fits the cell this texture affords, and the largest whole-number scale it fits at.\n\n' +
     'Only whole numbers count, because artwork placed at a fractional scale is resampled, and resampling destroys pixel art. A component that fits at 1.6× fits at 1×, and the rest of the cell is headroom.',
