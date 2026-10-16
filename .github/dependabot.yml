@@ -32,6 +32,15 @@ updates:
         update-types:
           - minor
           - patch
+    # TypeScript 7 is the native compiler, and it ships without the JavaScript API that
+    # `typescript-eslint` drives the type-aware rules through, so `typescript-eslint` caps its peer
+    # range below 6.1. A clean `npm ci` of a TypeScript 7 bump aborts, so the bump can never merge.
+    # Remove this entry once `typescript-eslint`'s peer range takes 7:
+    # `npm view typescript-eslint peerDependencies`.
+    ignore:
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
     open-pull-requests-limit: 5
 
   - package-ecosystem: github-actions

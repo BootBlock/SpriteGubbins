@@ -1,4 +1,4 @@
-// Flat ESLint config (ESLint 9). Codifies the house style — 2-space, single-quote,
+// Flat ESLint config (ESLint 10). Codifies the house style — 2-space, single-quote,
 // braceless single-line guards — and, more importantly, turns several of the spec's
 // architectural bans into rules a machine enforces rather than rules a reviewer has to
 // remember. Formatting (whitespace/quotes/width) is Prettier's job; `eslint-config-prettier`
@@ -7,7 +7,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
+import jsxA11y from 'eslint-plugin-jsx-a11y-x';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
@@ -114,7 +114,7 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
-      'jsx-a11y': jsxA11y,
+      'jsx-a11y-x': jsxA11y,
     },
     rules: {
       // The FULL react-hooks v7 preset, which is the two classic hook rules plus the React
@@ -127,8 +127,9 @@ export default tseslint.config(
       // Promote the hook-dependency check to an error: a stale or oversized dep array is a
       // real bug (a missed re-render, or an effect firing every render), not a style nit.
       'react-hooks/exhaustive-deps': 'error',
-      // Accessibility linting at the recommended preset's severities (errors).
-      ...jsxA11y.flatConfigs.recommended.rules,
+      // Accessibility linting at the recommended preset's severities (errors), from the maintained
+      // fork `eslint-plugin-jsx-a11y-x`: the original's last release accepts no ESLint after 9.
+      ...jsxA11y.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       // CLAUDE.md bans selecting a whole store. A store hook called with no selector, or with one
       // that hands back its argument untouched, subscribes the component to every field, so it
