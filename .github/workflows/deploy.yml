@@ -207,7 +207,7 @@ jobs:
   # invisible from the repository's front page and carries only the one line this job writes into
   # it, so for four releases the Releases page said nothing at all. The tag stays the machine-
   # readable answer to "which commit is serving?"; the Release is the human-readable one, and
-  # GitHub writes its body from the commits since the previous tag.
+  # `scripts/release-notes.ts` writes its body from the commits since the previous release.
   #
   # Both steps are idempotent and independent. Re-dispatching an existing tag leaves the tag alone
   # and still publishes a Release if one is missing, which is what makes this job able to catch up
@@ -223,6 +223,17 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
+          # Every commit and every tag, because the release notes are written from the history
+          # between this release's tag and the one before it.
+          fetch-depth: 0
+
+      - name: Set up Node
+        # The release notes are written by a TypeScript script node runs directly. It uses only
+        # node's own modules, so nothing is installed. The Node comes from `.nvmrc`, as it does in
+        # every other job.
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
 
       - name: Tag the deployed commit
         env:
@@ -255,39 +266,23 @@ jobs:
             exit 0
           fi
 
-          # The release before this one, which is the highest tag sorting BELOW it — not the highest
-          # other tag. Those differ whenever the tag being published is not the newest, which is both
-          # of the cases this has to get right: a rollback re-deploying an older tag, and a catch-up
-          # publish of a tag pushed before this step existed. Taking the maximum of the rest would
-          # hand GitHub a *newer* start tag and produce an empty set of notes.
+          # The body is written from the commits since the release before this one, by
+          # `scripts/release-notes.ts`, rather than by GitHub's `generate-notes`, which lists pull
+          # requests: work here lands as a fast-forward, so GitHub's notes for 0.14.0 named eighteen
+          # pull requests, seventeen of them dependency bumps, for a release of 522 commits besides
+          # merges. It picks the release before this one in semantic-versioning order, which is the
+          # highest tag below this one rather than the newest other tag, so a rollback or a catch-up
+          # publish of an older tag is measured from the right start.
           #
-          # `--refs` drops the peeled `^{}` entries these annotated tags also publish. `sort -V` is
-          # not semver: it orders `v1.0.0-rc.1` after `v1.0.0` rather than before it, so a
-          # prerelease can be chosen as the predecessor of the release that followed it. That costs
-          # a slightly short range of notes and nothing else.
-          remote_tags="$(git ls-remote --tags --refs origin 'refs/tags/v*' | awk '{print $2}' | sed 's#refs/tags/##')"
-          previous="$({ echo "$remote_tags"; echo "$TAG"; } | sort -V -u | awk -v tag="$TAG" '$0 == tag { print prev; exit } { prev = $0 }')"
-
-          # GitHub writes the body from the commits between the two tags. Passing the start tag
-          # rather than letting it be inferred is what keeps that range right when releases and
-          # tags disagree about which is newest.
-          notes_args="-f tag_name=$TAG"
-          if [ -n "$previous" ]; then
-            notes_args="$notes_args -f previous_tag_name=$previous"
-          fi
-          # Word splitting is what builds the argument list here, and every value in it is a version
-          # string this workflow already refused unless it matched MAJOR.MINOR.PATCH.
-          # shellcheck disable=SC2086
-          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" $notes_args --jq .body > "$RUNNER_TEMP/notes.md"
-
-          # What was deployed, above the generated list, because that is the question a reader opens
-          # a release to answer. Both files are written to the runner's temp directory rather than
-          # into the checkout, which is a git working tree this job has no business dirtying.
-          {
-            echo "Deployed to ${PAGE_URL:-https://bootblock.github.io/SpriteGubbins/} from commit $(git rev-parse HEAD) by run $GITHUB_RUN_ID."
-            echo
-            cat "$RUNNER_TEMP/notes.md"
-          } > "$RUNNER_TEMP/body.md"
+          # What was deployed opens the body, because that is the question a reader opens a release
+          # to answer. It is passed to the script so that GitHub's limit on a release body is
+          # measured against the whole body. The file is written to the runner's temp directory
+          # rather than into the checkout, which is a git working tree this job has no business
+          # dirtying.
+          node scripts/release-notes.ts "$TAG" \
+            --repository "$GITHUB_REPOSITORY" \
+            --preamble "Deployed to ${PAGE_URL:-https://bootblock.github.io/SpriteGubbins/} from commit $(git rev-parse HEAD) by run $GITHUB_RUN_ID." \
+            > "$RUNNER_TEMP/body.md"
 
           # `--verify-tag` refuses to invent a tag: this publishes the one the step above pushed, or
           # it fails.
