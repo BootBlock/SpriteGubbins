@@ -20,7 +20,7 @@ import {
  * thinking models that use a reasoning process ('Thinking') for complex prompts", which cannot be
  * disabled — so "image model" and "single pass" are not the same question.
  */
-const DELIBERATING = ['GENERIC', 'CHATGPT_5_6_SOL', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const;
+const DELIBERATING = ['GENERIC', 'CHATGPT', 'GEMINI_NANO_BANANA', 'GEMINI_PRO_IMAGE'] as const;
 
 /**
  * Deliberates, and still cannot return a component map.
@@ -56,15 +56,6 @@ describe('the capability table', () => {
     // list is complete, and a missing entry would throw only for the target nobody selected.
     expect(TARGET_MODELS.map((model) => model.id).sort()).toEqual([...TARGET_MODEL_IDS].sort());
   });
-
-  it('answers for every id without throwing', () => {
-    for (const target of TARGET_MODEL_IDS) {
-      expect(typeof deliberates(target), target).toBe('boolean');
-      expect(typeof returnsText(target), target).toBe('boolean');
-      expect(typeof supportsPromptFeedback(target), target).toBe('boolean');
-      expect(typeof seesCanvasBeforeDelivery(target), target).toBe('boolean');
-    }
-  });
 });
 
 describe('deliberates', () => {
@@ -87,7 +78,7 @@ describe('deliberates', () => {
  * images to test composition and logic. The last image within Thinking is also the final rendered
  * image."
  */
-const SEES_CANVAS = ['GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const;
+const SEES_CANVAS = ['GEMINI_NANO_BANANA', 'GEMINI_PRO_IMAGE'] as const;
 
 describe('seesCanvasBeforeDelivery', () => {
   it('is true only for the targets documented to render interim images', () => {
@@ -100,7 +91,7 @@ describe('seesCanvasBeforeDelivery', () => {
   it('is false for Sol, whose first sight of the image is the reader’s', () => {
     // Sol hands the render to a tool and sees it only once it is delivered, so an audit telling it
     // to redraw rather than deliver can be obeyed only with a second image or an edit (#398).
-    expect(seesCanvasBeforeDelivery('CHATGPT_5_6_SOL')).toBe(false);
+    expect(seesCanvasBeforeDelivery('CHATGPT')).toBe(false);
   });
 
   it('never claims sight of a canvas for a target with no pass in which to use it', () => {

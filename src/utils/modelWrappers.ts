@@ -1,3 +1,4 @@
+import type { ComponentOrientation } from '../types/components.ts';
 import type { AspectRatio, TargetModelId } from '../types/output.ts';
 import type { RenderStyleSurface } from '../types/rendering.ts';
 import type { CategoryAssembly } from '../types/subject.ts';
@@ -44,7 +45,8 @@ export function wrapForModel(
     readonly aspectRatio: AspectRatio;
     readonly backgroundKeyDescription: string;
     /**
-     * Whether a frame or a border is one of this sheet's components, from `FRAME_IS_A_COMPONENT`.
+     * Whether a frame or a border is one of this sheet's components, from `FRAME_IS_A_COMPONENT` for a
+     * category whose every sheet draws one or the sheet's own `SheetPlan.frames` (audit finding T2).
      *
      * Only Midjourney reads it, and only because `--no` negates a thing where section 0 negates a
      * *placement* — a limit no entry width gets round, which is what `wrapForMidjourney` says at
@@ -83,10 +85,10 @@ export function wrapForModel(
     /**
      * What this category's assembled-whole failure is called, from `CATEGORY_ASSEMBLY`.
      *
-     * The three targets with somewhere to say it read it — Flux as the clause closing its leading
-     * sentence, Stable Diffusion and Qwen as the run opening their negative blocks. All three stated
-     * it in a figure's vocabulary on every category until this was passed, so the highest-weighted
-     * term on a terrain sheet named a subject that sheet cannot contain.
+     * The four targets with somewhere to say it read it — Flux as the clause closing its leading
+     * sentence, Stable Diffusion and Qwen as the run opening their negative blocks, and Midjourney as
+     * the first entries of `--no` (audit finding T2). The first three stated it in a figure's vocabulary on every category until this was passed, so the
+     * highest-weighted term on a terrain sheet named a subject that sheet cannot contain.
      */
     readonly assembly: CategoryAssembly;
     /**
@@ -121,6 +123,49 @@ export function wrapForModel(
      */
     readonly oneSidedFeatures: boolean;
     /**
+     * How the sheet's components are oriented beneath its camera, from the resolved plan's
+     * `orientation` — the answer `ORIENTATION` gave the template's own gates.
+     *
+     * Read by Sol, whose hand-off list names what section 3 carries: the object yaws on a sheet turned
+     * to them, the shared camera on an icon sheet, and the flat-piece rule on the overlay sheet.
+     */
+    readonly orientation: ComponentOrientation;
+    /**
+     * Whether each component is a square carrying its own backdrop, from the plan's `backdrop` — the
+     * answer `OWN_BACKDROP` gave the template's own gate.
+     *
+     * Read by the two negative blocks, Stable Diffusion's and Qwen's, because each carries `gradient
+     * background` against a field that drifts — and on a sheet of full-bleed squares a model reads that
+     * term over the field behind every subject, which is the backdrop the sheet asks for (R13 of
+     * `docs/todo/done/icon-catalogue.md`). Neither channel can say "between the components only", so the term
+     * comes out there; section 0 still states the uniform gutters. `scene background` stays, because a
+     * backdrop is never a scene. Midjourney's `--no` carries only the style's surface terms
+     * (`smooth gradients` among them on the flat and pixel styles, which `backdropDescription` forbids
+     * the backdrop too), never `gradient background`, and Flux's leading sentence names no gradient.
+     *
+     * **Read by Midjourney and Flux as well, for the shadow.** Section 7 of that sheet asks for the
+     * contact shadow a subject casts on the backdrop inside its square, so no wrapper negates a shadow
+     * cast there: Qwen's `cast shadow` and `contact shadow`, Stable Diffusion's `floor shadow`,
+     * Midjourney's `cast shadow` and Flux's "no cast shadow" come out (audit finding P12). A shadow
+     * outside the square stays negated wherever a channel can name it without the bare word — `drop
+     * shadow` in the two negative blocks, "no drop shadow" in Flux's sentence — and each wrapper's own
+     * docblock says why.
+     */
+    readonly ownBackdrop: boolean;
+    /** Whether section 1 states a colour line, from the subject's colour fields. Read by Sol. */
+    readonly colours: boolean;
+    /** Whether section 2 states a target size, from the `SPRITE_TARGET_SIZE` value. Read by Sol. */
+    readonly targetSize: boolean;
+    /** Whether section 2 states the smallest display size, from `DISPLAY_REDUCTION`. Read by Sol. */
+    readonly displaySize: boolean;
+    /** Whether section 2 states an exact share of a cell, from the plan (`statesTileShare`). Read by Sol. */
+    readonly tileShare: boolean;
+    /**
+     * Whether the sheet's key is `TRANSPARENT` on a target that asks for alpha through its tool call,
+     * from the resolved key and `AlphaDelivery`'s `TOOL_CALL`. Read by Sol.
+     */
+    readonly transparent: boolean;
+    /**
      * Every section name this prompt carries and the number its heading landed on, from
      * `sectionNumbers`.
      *
@@ -134,7 +179,7 @@ export function wrapForModel(
   },
 ): string {
   switch (target) {
-    case 'CHATGPT_5_6_SOL':
+    case 'CHATGPT':
       return wrapForSol(
         prompt,
         {
@@ -142,6 +187,12 @@ export function wrapForModel(
           palette: options.palette,
           rigGeometry: options.rigGeometry,
           oneSidedFeatures: options.oneSidedFeatures,
+          orientation: options.orientation,
+          colours: options.colours,
+          targetSize: options.targetSize,
+          displaySize: options.displaySize,
+          tileShare: options.tileShare,
+          transparent: options.transparent,
         },
         options.sectionNumbers,
       );
@@ -153,6 +204,8 @@ export function wrapForModel(
         options.frameIsAComponent,
         options.letteringIsAComponent,
         options.surface,
+        options.ownBackdrop,
+        options.assembly,
       );
 
     case 'STABLE_DIFFUSION':
@@ -162,6 +215,7 @@ export function wrapForModel(
         options.limbsAreComponents,
         options.letteringIsAComponent,
         options.assembly,
+        options.ownBackdrop,
       );
 
     // One wrapper for both Flux tiers. They differ only in how much of the prompt is read, which is
@@ -180,6 +234,7 @@ export function wrapForModel(
         options.surface,
         options.letteringIsAComponent,
         options.assembly,
+        options.ownBackdrop,
       );
 
     case 'QWEN_IMAGE':
@@ -189,13 +244,14 @@ export function wrapForModel(
         options.limbsAreComponents,
         options.letteringIsAComponent,
         options.assembly,
+        options.ownBackdrop,
       );
 
     case 'SEEDREAM':
-      return wrapForSeedream(prompt, options.sectionNumbers);
+      return wrapForSeedream(prompt, options.sectionNumbers, options.orientation);
 
     case 'GPT_IMAGE':
-    case 'GEMINI_FLASH_IMAGE':
+    case 'GEMINI_NANO_BANANA':
     case 'GEMINI_PRO_IMAGE':
     case 'GENERIC':
       return prompt;

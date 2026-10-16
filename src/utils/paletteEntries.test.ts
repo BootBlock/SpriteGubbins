@@ -37,6 +37,12 @@ describe('paletteEntriesFrom', () => {
     // The state the lock panel holds its button shut for — see `PALETTE_LOCK_GUIDANCE.noColours`.
     expect(entriesOf(imageFrom(3, 2, () => CLEAR))).toEqual([]);
   });
+
+  it('names no colour for a pixel under the coverage floor, whose channels are rounding noise', () => {
+    const image = imageFrom(2, 1, (x) => (x === 0 ? GREEN : { r: 255, g: 0, b: 255, a: 10 }));
+
+    expect(entriesOf(image)).toEqual([GREEN]);
+  });
 });
 
 describe('fixedPaletteColors', () => {

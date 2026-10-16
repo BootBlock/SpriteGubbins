@@ -2,10 +2,12 @@ import { PROXY_CROP_CELLS, PROXY_CROP_COUNT, TUNE_ROUNDS } from '../constants/au
 import type { TuneOutcome, TuneStageName, TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings } from '../types/quantiser.ts';
 import { proxyCrops } from './proxyCrops.ts';
-import { quantisePrologue } from './quantisePrologue.ts';
-import { readCandidate } from './tuneCandidate.ts';
-import { chooseByElbow } from './tuneScore.ts';
+import { quantiseImage } from './quantiseImage.ts';
+import { candidateReader } from './candidateReader.ts';
+import { chooseByPrice } from './chooseByPrice.ts';
+import { colorPrice } from './colorPrice.ts';
 import { restoreSkipped, sameTunedDials, tunedDialsOf, withIncumbent } from './tuneStage.ts';
+import { tuneCrop } from './tuneCrop.ts';
 import { TUNE_STAGES } from './tuneStages.ts';
 
 /**
@@ -23,26 +25,28 @@ import { TUNE_STAGES } from './tuneStages.ts';
  * `proxyCrops` for how the windows are chosen and why they are aligned to the grid's lattice.
  *
  * **Each candidate is scored on how faithfully its result reproduces the crop and how few colours it
- * spends doing it** — see `readCandidate` — and the two are traded by the elbow rather than by a
- * weight nobody could defend, which is `chooseByElbow`.
+ * spends doing it** — see `readCandidate` — and the two are traded at one price of a colour for the
+ * whole sweep, read once off the sheet before any stage runs: that is `colorPrice`, and
+ * `chooseByPrice` is what every stage ranks with. A position the descent asks about twice is run
+ * once — see `candidateReader`.
  *
- * **Every stage ranks the positions in force alongside its own**, which is `withIncumbent`: a stage
- * that cannot separate its candidates therefore leaves each dial exactly where the reader had it, and
- * a stage that moves one has compared it against the one it replaced.
+ * **Every stage ranks the positions in force alongside its own**, which is `withIncumbent`, and moves
+ * off them only for a gain larger than `TUNE_SCORE_MARGIN`: a stage that cannot separate its
+ * candidates by that much leaves each dial exactly where the reader had it, and a stage that moves
+ * one has compared it against the one it replaced.
  *
- * **It goes round the stages until one of them ends somewhere it has already been**, up to
- * `TUNE_ROUNDS` times. One pass down a coordinate descent settles each dial against the ones ahead of
- * it in the pipeline and against the *opening positions* of the ones behind it, which is only half an
- * answer; a second round re-asks every one of those questions from where the first left everything.
+ * **It goes round the stages until a round moves nothing**, up to `TUNE_ROUNDS` times. One pass down
+ * a coordinate descent settles each dial against the ones ahead of it in the pipeline and against the
+ * *opening positions* of the ones behind it, which is only half an answer; a second round re-asks
+ * every one of those questions from where the first left everything. Measured over the corpus, five
+ * sheets stop at the third round and three at the second — `TUNE_ROUNDS` carries
+ * that table.
  *
- * **The stop is a repeat of any earlier round's position, not only of the round before.** What the
- * stages descend on is not a scalar objective — the elbow ranks a pair of figures and its knee moves
- * with the candidate set — so a round can end somewhere it has been two rounds earlier and go round
- * that loop for ever. Measured over the corpus, five of the eight sheets stop at the third round,
- * two at the second and one at the fourth — `TUNE_ROUNDS` carries that table. A repeat of *any* position
- * already seen means every later round would retrace the same ground, which is what makes stopping
- * there a fact about the descent rather than a budget running out. `TUNE_ROUNDS` is what bounds the
- * case where none is found.
+ * **A round that moves nothing is the only way it ends short of the cap, and the descent cannot
+ * circle.** Every stage ranks on the same score, every move raises it by more than the margin, and
+ * a stage handing back dials that reach no pixel leaves it where it was, so a round that moved
+ * anything ends higher than any position the descent has left. The elbow this replaced ranked each
+ * stage at its own price, and a descent on it could go round a loop for ever.
  *
  * **The third scorer the roadmap listed — how sharply the result sits on its lattice — is not here,
  * and the reason is that it cannot separate anything this function is choosing between.** Every
@@ -67,34 +71,35 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
   }
 
   // **Once per crop, for the whole sweep**, and that is the point of the shape rather than a
-  // convenience. The prologue is the key, the edge hardening and the mesh — three passes whose only
+  // convenience; the whole-sheet count at the end runs its own. The prologue is the key, the edge hardening and the mesh — three passes whose only
   // inputs are `key`, `silhouetteThreshold` and `grid`, none of which is in {@link TunedDials}, so
   // every candidate below would measure the same three answers again. A sweep of
-  // `test_sprites/armour.png` at a grid of 6 runs 142 positions over 5 crops, so that was 710
-  // calls to `boundaryMesh` answering the five meshes those crops have.
+  // `test_sprites/armour.png` at a grid of 6 ranked 142 positions over 5 crops and ran every one
+  // of them, so that was 710 calls to `boundaryMesh` answering the five meshes those crops have.
   //
   // **It is also what each candidate is scored against.** A result has been keyed and hardened, so a
   // reference that still carried the key field or the soft outline would score every candidate
   // against something none of them produces. That used to be built here and the identical value
   // built again inside every candidate; now it is one value, handed to `readCandidate` for both
-  // jobs — see {@link QuantisePrologue}.
-  const prologues = crops.map((crop) => quantisePrologue(crop.image, settings));
+  // jobs, with the likeness score's own measurements of it taken once beside it — see `TuneCrop`.
+  const tuneCrops = crops.map((crop) => tuneCrop(crop.image, settings));
+  const read = candidateReader(tuneCrops, settings);
 
   const opening = tunedDialsOf(settings);
   let settled = opening;
-  const baseline = readCandidate(settled, prologues, settings);
+  const baseline = read(settled);
   let reading = baseline;
-  // The starting position counts: it was run, and every stage below ranks it against its own.
-  let candidates = 1;
+  const price = colorPrice(tuneCrops, settings, read);
+  // The starting position counts: it was run, and every stage below ranks it against its own. So do
+  // the positions the price was read from, which were ranked to find the frontier's ends.
+  let candidates = 1 + price.positions;
   const spent = new Map<TuneStageName, number>();
   let skips = new Map<TuneStageName, string>();
-  // Seeded with where the reader started, so a first round that moves nothing is a first round that
-  // ends the sweep — the same fact every later round's repeat states.
-  const visited: TunedDials[] = [settled];
   let rounds = 0;
 
   while (rounds < TUNE_ROUNDS) {
     rounds += 1;
+    const began: TunedDials = settled;
     // Rebuilt each round rather than accumulated, because a skip is a fact about the round it
     // happened in: a stage that skipped in round one and swept in round two is a stage that ran.
     skips = new Map();
@@ -106,16 +111,18 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
         // **And its dials go back where the reader had them, here rather than at the end.** Rounds
         // are what make this necessary at all: a stage can sweep under one reading and then be
         // skipped because a later round moved off it, which leaves positions chosen under a reading
-        // the sweep has abandoned — measured on `test_sprites/vehicles_and_props.png` at a grid of 5,
-        // the cleanup-pass count is swept while the fill cleanup is on and set aside once a later
-        // round turns the cleanup off. A dial left where that sweep put it reaches no pixel of the
-        // result, because each skip predicate is exactly the pipeline's own gate; it reaches the
-        // *tab*, where it is a slider the reader never touched sitting somewhere new, ready to take
-        // effect the moment they change the control that was gating it.
+        // the sweep has abandoned — the line strength moved under `INK_WEIGHTED` and left behind
+        // once a later round chooses `DOMINANT`, which `auto-tune-stage-counts.test.ts` drives. No
+        // corpus sheet takes that path at the tab's opening dials today, and nothing about a sheet
+        // rules it out. A dial left where that
+        // sweep put it reaches no pixel of the result, because each skip predicate is exactly the
+        // pipeline's own gate; it reaches the *tab*, where it is a slider the reader never touched
+        // sitting somewhere new, ready to take effect the moment they change the control that was
+        // gating it.
         //
         // **Inside the round rather than after the last one**, so the position the descent carries
-        // is one it would report — which is what keeps the fixed point `visited` looks for a fixed
-        // point of the answer rather than of an intermediate the restore then moves. It also puts
+        // is one it would report — which is what keeps a round that moved nothing a round that ends
+        // where it began, rather than at an intermediate the restore then moves. It also puts
         // the reader's own ink dials back into the *next* round's reading stage, which is
         // `withIncumbent`'s principle one level up: a reading is ranked against the dials in force
         // rather than against ones an abandoned branch left behind.
@@ -124,12 +131,12 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
       }
 
       const tried = withIncumbent(plan.candidates, settled);
-      const readings = tried.map((dials) => readCandidate(dials, prologues, settings));
+      const readings = tried.map(read);
       const chosenFirst = readings[0];
       // `tried` is a non-empty list by its own type, so this holds; the check is what
       // `noUncheckedIndexedAccess` asks of an index rather than a case that arises.
       if (chosenFirst === undefined) continue;
-      const chosen = chooseByElbow([chosenFirst, ...readings.slice(1)]);
+      const chosen = chooseByPrice([chosenFirst, ...readings.slice(1)], price.perColor);
       settled = tried[chosen] ?? settled;
       reading = readings[chosen] ?? reading;
       candidates += tried.length;
@@ -138,12 +145,25 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
       spent.set(stage.name, (spent.get(stage.name) ?? 0) + tried.length);
     }
 
-    // A round that ended anywhere the descent has already stood is the round that ends the sweep:
-    // every stage is a function of the position it starts from, so retracing that position retraces
-    // every answer after it. That covers a fixed point and a longer loop alike.
-    if (visited.some((seen) => sameTunedDials(seen, settled))) break;
-    visited.push(settled);
+    // A round that moved nothing is the round that ends the sweep: every stage is a function of the
+    // position it starts from, so the next round would ask every question again and get every answer
+    // again. No earlier position can come back, because each move raises the score by more than the
+    // margin and a restore changes no pixel — so the descent cannot circle.
+    if (sameTunedDials(began, settled)) break;
   }
+
+  // **The colours are counted on the whole sheet, once at each end**, because that is the figure the
+  // panel reports and the crops cannot answer it: they count only the colours they sampled, which
+  // on the corpus is between 19% and 88% of the sheet's — see `TuneOutcome.sheetColors`. One run of
+  // the pipeline over a corpus sheet took 0.66–0.81 s where its sweep took 7–27 s, on one machine,
+  // and a sweep that moved nothing runs it once.
+  const baselineColors = quantiseImage(image, settings).colors;
+  const sheetColors = {
+    baseline: baselineColors,
+    settled: sameTunedDials(opening, settled)
+      ? baselineColors
+      : quantiseImage(image, { ...settings, ...settled }).colors,
+  };
 
   return {
     dials: settled,
@@ -153,6 +173,8 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
     candidates,
     reading,
     baseline,
+    sheetColors,
+    price,
     // Built here rather than as each stage ran, and in the order the stages run: a phrase describes
     // where a dial *ends up*, and a stage that ran early in the last round is describing a position
     // a later stage's restore may still have moved. Each stage reads only its own dials, so one pass

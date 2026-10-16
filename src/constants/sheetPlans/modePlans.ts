@@ -1,5 +1,6 @@
 import type { SheetSeries } from '../../types/components.ts';
 import type { DirectionalMode } from '../../types/output.ts';
+import type { SheetSubject } from '../../types/subject.ts';
 import type { FacingTuple } from './directionalViews.ts';
 
 /**
@@ -11,14 +12,19 @@ import type { FacingTuple } from './directionalViews.ts';
  */
 
 /**
- * One pairing's series, as a function of the facings the user chose.
+ * One pairing's series, as a function of the facings the user chose and of the subject.
  *
  * A function rather than a constant because the directional plans are *written against* the chosen
  * facings — the entries name them, the counts multiply by them, and the eight-compass core splits
  * across two sheets — where every other plan ignores the argument: a run-list sheet's inventory is
  * written for one facing whichever set drives the runs.
+ *
+ * **The subject is the second argument because ICON's inventory is the reader's list.** Every other
+ * series is fixed once its base is chosen — `plansFor` has already read the base — so `fixed` and the
+ * facing factories ignore it; ICON's icons are the roster's picks, drawn as the look the subject's
+ * *World & Era* maps to, so its series is built from both (`sheetPlans/icon.ts`).
  */
-export type SeriesFor = (facings: FacingTuple) => SheetSeries;
+export type SeriesFor = (facings: FacingTuple, subject: SheetSubject) => SheetSeries;
 
 /**
  * Which sheet modes can draw one assembly base, and the series each of them takes.

@@ -79,11 +79,6 @@ describe('widthBiasFor', () => {
 });
 
 describe('calculateAtlasMetrics', () => {
-  it('lays 43 components into a grid wide enough to hold them', () => {
-    const metrics = calculateAtlasMetrics(BASE);
-    expect(metrics.columns * metrics.rows).toBeGreaterThanOrEqual(BASE.componentCount);
-  });
-
   it('never lets the grid overflow the texture, in either axis', () => {
     // Both directions, because only one of them used to be true. Cell size was derived from the
     // column count alone, so a grid taller than it was wide — every 9:16 sheet — reported a cell
@@ -131,27 +126,17 @@ describe('calculateAtlasMetrics', () => {
     expect(metrics.usableBounds).toBeGreaterThanOrEqual(0);
   });
 
-  it('always produces at least one row and column', () => {
-    const metrics = calculateAtlasMetrics({ ...BASE, componentCount: 1 });
-    expect(metrics.columns).toBeGreaterThanOrEqual(1);
-    expect(metrics.rows).toBeGreaterThanOrEqual(1);
-  });
-
   it('gives a wide sheet more columns than a tall one for the same component count', () => {
     const wide = calculateAtlasMetrics({ ...BASE, widthBias: widthBiasFor('WIDE_16_9') });
     const tall = calculateAtlasMetrics({ ...BASE, widthBias: widthBiasFor('TALL_9_16') });
     expect(wide.columns).toBeGreaterThan(tall.columns);
   });
 
-  it('counts the slots the components do not reach', () => {
-    const metrics = calculateAtlasMetrics(BASE);
-    expect(metrics.slots).toBe(metrics.columns * metrics.rows);
-    expect(metrics.emptySlots).toBe(metrics.slots - BASE.componentCount);
-  });
-
-  it('never reports a negative number of empty slots', () => {
+  it('seats every component, and counts the slots the components do not reach', () => {
     // The row count is derived from the column count precisely so the grid always seats every
-    // component, and this is that invariant stated where it can fail.
+    // component, and this is that invariant stated where it can fail — at a single component too,
+    // where a grid of no rows or no columns would be the failure. The empty slots are the grid's
+    // own remainder, so a count clamped at zero could not hide a grid that seats too few.
     for (const componentCount of [1, 2, 43, 111]) {
       for (const aspectRatio of ASPECT_RATIOS) {
         const metrics = calculateAtlasMetrics({
@@ -159,7 +144,10 @@ describe('calculateAtlasMetrics', () => {
           componentCount,
           widthBias: widthBiasFor(aspectRatio),
         });
-        expect(metrics.emptySlots).toBeGreaterThanOrEqual(0);
+        const where = `${String(componentCount)} components at ${aspectRatio}`;
+        expect(metrics.slots, where).toBe(metrics.columns * metrics.rows);
+        expect(metrics.emptySlots, where).toBe(metrics.slots - componentCount);
+        expect(metrics.emptySlots, where).toBeGreaterThanOrEqual(0);
       }
     }
   });

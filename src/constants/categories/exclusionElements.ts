@@ -60,7 +60,7 @@ export interface ExcludedElement {
 /**
  * The elements, keyed by what the exclusion calls them.
  *
- * Eight, and each one is a pairing some category can make with itself. Four of them were made:
+ * Nine, and each one is a pairing some category can make with itself. Four of them were made:
  * `weapon` twice (the studio's own default subject, and the Cybernetic Attack Drone's cannons),
  * `cape` on the Sci-Fi Void Marine's cloak, and `facial feature` on the Isometric Cut-Out Rig's
  * single eye. Two more have gone. `backing` went when ICON's own pool stopped naming one: its two

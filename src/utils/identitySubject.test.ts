@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { absentOptionFor, defaultSubjectFor } from '../constants/categories/index.ts';
 import { IDENTITY_SUBJECT_SEGMENTS } from '../constants/identityLock.ts';
 import { DECLINABLE_FIELD_KEYS, SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
-import type { SubjectDefinition } from '../types/subject.ts';
+import type { SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { withSegments } from './identityDigest.ts';
 import { identitySubjectSegments } from './identitySubject.ts';
 
 /** Every field cleared, then the named ones answered — so each test states only what it is about. */
 function subjectWith(answers: Partial<SubjectDefinition>): SubjectDefinition {
-  const subject = Object.fromEntries(SUBJECT_FIELD_KEYS.map((key) => [key, ''])) as SubjectDefinition;
+  const subject = Object.fromEntries(SUBJECT_FIELD_KEYS.map((key) => [key, ''])) as Record<
+    SubjectFieldKey,
+    string
+  >;
   return { ...subject, ...answers };
 }
 

@@ -2,7 +2,7 @@ import type { Direction } from './rendering.ts';
 import type { RigContract } from './rigContract.ts';
 import type { RigMode } from './rigging.ts';
 import type { SpriteNaming } from './spriteAssignment.ts';
-import type { SpriteAnchor } from './spriteCell.ts';
+import type { SpriteAnchor, SpriteFit } from './spriteCell.ts';
 import type { SubjectCategory } from './subject.ts';
 
 /**
@@ -49,9 +49,8 @@ import type { SubjectCategory } from './subject.ts';
  *
  * **Where `named` is false the two cannot be joined at all**, and that is the honest answer rather
  * than a gap: positional names mean the pieces could not be matched to the inventory one for one, so
- * neither key identifies anything. {@link SpriteManifest.naming} says which of the two routes a
- * named file took, for a consumer that wants to treat a checked assignment differently from an
- * inferred one.
+ * neither key identifies anything. {@link SpriteManifest.naming} says which route a named file
+ * took, for a consumer that wants to treat a checked assignment differently from an inferred one.
  */
 
 /**
@@ -68,14 +67,19 @@ import type { SubjectCategory } from './subject.ts';
  * is that point. See `SpriteCell`. It is still not a *measurement* — nobody looked at the artwork to
  * find the joint — which is why it joins the default here rather than replacing it.
  *
- * Measuring the joint cap the prompt asks for would add a third member, and the silhouette cannot
+ * **`TILE_CENTRE` is a placement sheet's** (`SpriteFit` `IN_PLACE`): an overlay piece is laid over an
+ * icon, so it turns and scales about the centre of the square it was drawn against, which is the
+ * centre of the icon beneath it, and never about a corner of its own box. The point is that square's
+ * centre in the sheet's coordinates, so it lands at the centre of the file.
+ *
+ * Measuring the joint cap the prompt asks for would add a fourth member, and the silhouette cannot
  * supply it on its own. A mid-chain segment meets a piece at each end — a lower arm joins the upper
  * arm above it and the hand below it — and section 5 asks for the caps at a shared joint to match,
  * so the two ends of such a piece are alike and geometry cannot say which of them it hangs from.
  * That takes the bone parent the component map states, which the prompt already asks a model for and
  * nothing in this app reads yet.
  */
-export type PivotSource = 'DEFAULT_BOTTOM_CENTRE' | 'CELL_ANCHOR';
+export type PivotSource = 'DEFAULT_BOTTOM_CENTRE' | 'CELL_ANCHOR' | 'TILE_CENTRE';
 
 /** One sprite, where it sits in the written file, and what the inventory calls it. */
 export interface ManifestSprite {
@@ -108,8 +112,8 @@ export interface ManifestSprite {
    * **This is the box whatever the cut is**, and deliberately so. A fixed cell is roomier than the
    * artwork, and a sheet's sprites sit a gutter apart, so a rect widened to the cell would name a
    * region holding the neighbour as well — see `placeInCell`, which measured that. The cell is
-   * stated once in {@link SpriteManifest.cell} and the displacement per sprite in
-   * {@link cellOffset}, which together say how to build the cell from this box.
+   * stated once in {@link SpriteManifest.cell} and how each sprite fills it in {@link placement},
+   * which together say how to build the cell from the sheet.
    */
   readonly x: number;
   readonly y: number;
@@ -135,20 +139,23 @@ export interface ManifestSprite {
    * carries it, so the pivot is that same point and not a second convention beside it, and
    * {@link pivotSource} says so. The default anchor is bottom-centre, which reproduces the paragraph
    * above exactly. It is a point on the *box* either way, in the sheet's own coordinates —
-   * {@link cellOffset} is what moves it into a cell.
+   * {@link placement} is what moves it into a cell. Under the `FILL_SQUARE` fit it is a point on the
+   * square that was cut from the box, since that square is the artwork the cell holds. Under the
+   * `IN_PLACE` fit no anchor applies: it is the centre of the tile square the piece was drawn against
+   * (`TILE_CENTRE`), the point every piece of a placement sheet shares with the icon it is laid over.
    */
   readonly pivot: { readonly x: number; readonly y: number };
   /** Where {@link pivot} came from — see {@link PivotSource}. */
   readonly pivotSource: PivotSource;
   /**
-   * Where this sprite's box sits inside its cell, or `null` where each sprite keeps its own box.
+   * How this sprite fills its cell, or `null` where each sprite keeps its own box.
    *
    * The one thing a consumer cannot work out from the anchor alone without repeating this app's own
-   * rounding: an odd amount of slack is floored, at 1:1, and magnified with everything else. In the
-   * written file's own pixels, as the rect above is, and non-`null` exactly when
-   * {@link SpriteManifest.cell} is.
+   * arithmetic: an odd amount of slack is floored, at 1:1, and magnified with everything else, and
+   * under a resizing fit the drawn size is rounded per sprite. Non-`null` exactly when
+   * {@link SpriteManifest.cell} is. See {@link ManifestPlacement}.
    */
-  readonly cellOffset: { readonly x: number; readonly y: number } | null;
+  readonly placement: ManifestPlacement | null;
   /**
    * The index of the sprite this one duplicates, or `null` where it is its own drawing.
    *
@@ -157,6 +164,31 @@ export interface ManifestSprite {
    * this list rather than a name — a name is a convenience for a human, and this is a reference.
    */
   readonly duplicateOf: number | null;
+}
+
+/**
+ * Where one sprite's artwork comes from on the sheet and where it lands in its cell.
+ *
+ * **Two rectangles in two sets of pixels.** {@link from} is a region of the written sheet, in its own
+ * pixels as every rect in this file is. The rest is the rectangle that region is drawn into inside the
+ * cell, in the cell's own pixels. A consumer compositing from the sheet resizes `from` to `width` ×
+ * `height`, lays it at `x`, `y` on a clear cell and clips it to the cell, which is exactly what the
+ * pack's file holds. Only under `IN_PLACE` can the rectangle reach past the cell: `x` or `y` below
+ * zero, or past the far edge, by at most a sixteenth of the tile square, where a generator drew a
+ * piece a little past the square it was placed against or the square overhangs a smaller cell.
+ *
+ * Under the `REFUSE` fit the two sizes are equal, `from` is the sprite's own rect, and only the
+ * offset says anything; under `SCALE_SET` the sizes differ by the sheet's one factor, and under
+ * `FILL_SQUARE` `from` is the square at the centre of the sprite's box, drawn at the cell's shorter
+ * side; under `IN_PLACE` `from` is the box, drawn at its place on the tile square, which is centred in
+ * the cell and scaled onto its shorter side, or on a sheet with a pixel scale kept at its drawn size. See `cellPlacements`, which computes it, and `resampleArea`, which the pack resizes with.
+ */
+export interface ManifestPlacement {
+  readonly from: { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
 }
 
 /**
@@ -293,9 +325,10 @@ export interface SpriteManifest {
   /**
    * How the inventory names were given out, or `null` wherever {@link SpriteManifest.named} is false.
    *
-   * **Two routes to the same claim, and a consumer is entitled to know which.** `READING_ORDER` is
+   * **Three routes to the same claim, and a consumer is entitled to know which.** `READING_ORDER` is
    * the rule the prompt states and this app applied on its own: the *n*th sprite is the *n*th
-   * component, asserted because the counts agreed. `ASSIGNED` means a person looked at the sheet and
+   * component, asserted because the counts agreed. `CELL` is a placement sheet's: each piece takes the
+   * name of the component the prompt put in the cell it was found in. `ASSIGNED` means a person looked at the sheet and
    * said which sprite is which — a stronger warrant, and one that survives a sheet whose count was
    * right and whose order was not, which counting alone cannot detect at all.
    *
@@ -318,7 +351,7 @@ export interface SpriteManifest {
    * {@link ManifestSprite.pivot} carries wherever this is not `null`.
    *
    * **A cell is a canvas, not a region of the sheet.** Each sprite's file in a pack is this size,
-   * holding that sprite's bounding box at {@link ManifestSprite.cellOffset} and transparency
+   * holding that sprite's artwork as its {@link ManifestSprite.placement} states and transparency
    * everywhere else. Cutting the sheet at a cell-sized rect instead would take in whatever sits a
    * gutter away, which `placeInCell` measured on all eight reference sheets.
    */
@@ -352,4 +385,10 @@ export interface ManifestCell {
   readonly width: number;
   readonly height: number;
   readonly anchor: SpriteAnchor;
+  /**
+   * How the artwork met the cell: placed as drawn, resized by one factor for the whole sheet,
+   * cropped to its centred square and resized to fill, or kept where it was drawn against its tile
+   * square. See `SpriteFit`.
+   */
+  readonly fit: SpriteFit;
 }

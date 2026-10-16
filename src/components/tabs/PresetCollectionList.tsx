@@ -1,15 +1,16 @@
-import { PRESET_COLLECTION_IDS, presetCollectionLabel } from '../../constants/presets/collections.ts';
-import type { PresetCollectionId } from '../../constants/presets/collections.ts';
+import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
 import { presetCollectionGuidance } from '../../constants/tooltips/index.ts';
+import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
+import type { SubjectCategory } from '../../types/subject.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 interface PresetCollectionListProps {
   /** How many presets each collection currently holds — the filtered count while a query is live. */
-  readonly counts: ReadonlyMap<PresetCollectionId, number>;
-  readonly active: PresetCollectionId;
+  readonly counts: ReadonlyMap<SubjectCategory, number>;
+  readonly active: SubjectCategory;
   /** Whether a query is narrowing the library, which is what makes an empty collection unreachable. */
   readonly isFiltering: boolean;
-  readonly onSelect: (collection: PresetCollectionId) => void;
+  readonly onSelect: (collection: SubjectCategory) => void;
 }
 
 /**
@@ -29,7 +30,7 @@ export function PresetCollectionList({ counts, active, isFiltering, onSelect }: 
   return (
     <nav aria-label="Preset collections">
       <ul className="space-y-1">
-        {PRESET_COLLECTION_IDS.map((collection) => {
+        {SUBJECT_CATEGORIES.map((collection) => {
           const count = counts.get(collection) ?? 0;
           const isActive = collection === active;
           // The collection being *shown* is never disabled, even at zero matches. A query that matches
@@ -39,7 +40,7 @@ export function PresetCollectionList({ counts, active, isFiltering, onSelect }: 
           // unavailable. Selecting it is a no-op, which is the right outcome for a destination the
           // user is already at.
           const isUnreachable = isFiltering && count === 0 && !isActive;
-          const label = presetCollectionLabel(collection);
+          const label = CATEGORY_OPTIONS[collection].label;
 
           return (
             <li key={collection}>

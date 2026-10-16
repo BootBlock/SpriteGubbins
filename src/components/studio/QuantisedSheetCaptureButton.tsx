@@ -12,6 +12,8 @@ import { keyingInForce } from '../../utils/keyingInForce.ts';
 import { quantisedSheetCapture } from '../../utils/quantisedSheetCapture.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Button } from '../common/Button.tsx';
+import { useResolvedBackgroundKey } from '../../hooks/useResolvedBackgroundKey.ts';
+import { useResolvedPalette } from '../../hooks/useResolvedPalette.ts';
 
 /**
  * The second way into the identity lock: the sheet the Quantise tab is already holding.
@@ -47,8 +49,8 @@ export function QuantisedSheetCaptureButton() {
   const survey = useQuantiseAnswerStore((state) => state.survey);
   const attempt = useQuantiseAnswerStore((state) => state.attempt);
   const succeeded = useQuantiseAnswerStore((state) => state.succeeded);
-  const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
-  const palette = useOutputStore((state) => state.output.palette);
+  const backgroundKey = useResolvedBackgroundKey();
+  const palette = useResolvedPalette();
   const customPalette = useOutputStore((state) => state.output.customPalette);
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   // The style decides which budgets the sheet can be drawn under — see `resolvePaletteLimit`.
@@ -111,7 +113,10 @@ export function QuantisedSheetCaptureButton() {
         size="md"
         disabled={offer.kind !== 'READY'}
         onClick={() => {
-          if (offer.kind === 'READY') capture(offer.sheet);
+          if (offer.kind !== 'READY') return;
+          // A later choice than a file still decoding beside this, so the capture takes a ticket from
+          // `identityPaletteRequests` that retires that file.
+          capture(offer.sheet);
         }}
       >
         Use the quantised sheet

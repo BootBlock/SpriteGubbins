@@ -5,6 +5,24 @@ interface CheckboxFieldProps {
   readonly label: string;
   readonly tooltip: string;
   readonly checked: boolean;
+  /**
+   * A second line under the label saying what this option stands for — shown always, and wired as the
+   * control's accessible description.
+   *
+   * Optional because one kind of caller has one: the icon catalogue's rows, the catalogue's and the
+   * reader's own alike, where the label is an icon's game role and this is the look it is drawn as
+   * under the subject's world. That look is what a reader
+   * scans the list by, so it belongs on the row rather than behind the ⓘ.
+   */
+  readonly description?: string;
+  /**
+   * A line under the description about where the option stands — shown, wired into the accessible
+   * description after it, and painted as needing attention.
+   *
+   * Optional because one caller has one: a row of the reader's own icons in the catalogue dialog, which
+   * says when unticking it takes the icon away for good or when the set's copy is not the library's.
+   */
+  readonly note?: string;
   /** When set, the reason the option is unavailable — shown in place of nothing at all. */
   readonly disabledReason: string;
   readonly onChange: (checked: boolean) => void;
@@ -19,10 +37,26 @@ interface CheckboxFieldProps {
  * is the part worth saying: a string lets the caller name it, where a boolean could only hide the
  * control and leave the user guessing.
  */
-export function CheckboxField({ label, tooltip, checked, disabledReason, onChange }: CheckboxFieldProps) {
+export function CheckboxField({
+  label,
+  tooltip,
+  checked,
+  description,
+  note,
+  disabledReason,
+  onChange,
+}: CheckboxFieldProps) {
   const inputId = useId();
+  const descriptionId = useId();
+  const noteId = useId();
   const reasonId = useId();
+  const hasDescription = description !== undefined && description !== '';
+  const hasNote = note !== undefined && note !== '';
   const isDisabled = disabledReason !== '';
+  // Every paragraph a row carries, in the order they are rendered, as `SelectField` does.
+  const describedBy = [hasDescription ? descriptionId : '', hasNote ? noteId : '', isDisabled ? reasonId : '']
+    .filter((id) => id !== '')
+    .join(' ');
 
   return (
     <div>
@@ -35,7 +69,7 @@ export function CheckboxField({ label, tooltip, checked, disabledReason, onChang
           // and a keyboard user can reach it and hear *why* it is unavailable. A `disabled` input is
           // skipped entirely, which would hide the explanation from the people who most need it.
           aria-disabled={isDisabled}
-          aria-describedby={isDisabled ? reasonId : undefined}
+          aria-describedby={describedBy === '' ? undefined : describedBy}
           onChange={(event) => {
             // Honoured here rather than by the DOM, since `aria-disabled` does not block input.
             if (isDisabled) return;
@@ -51,6 +85,18 @@ export function CheckboxField({ label, tooltip, checked, disabledReason, onChang
         </label>
         <Tooltip text={tooltip} hint={label} />
       </div>
+
+      {hasDescription && (
+        <p id={descriptionId} className="mt-0.5 ml-6 text-2xs leading-relaxed text-ink-muted">
+          {description}
+        </p>
+      )}
+
+      {hasNote && (
+        <p id={noteId} className="mt-0.5 ml-6 text-2xs leading-relaxed text-gold">
+          {note}
+        </p>
+      )}
 
       {isDisabled && (
         <p id={reasonId} className="mt-1 ml-6 text-xs text-ink-faint">

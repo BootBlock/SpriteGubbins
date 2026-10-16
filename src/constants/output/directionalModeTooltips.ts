@@ -8,7 +8,7 @@ import type { DirectionalMode } from '../../types/output.ts';
  * read.** That entry ran to 1171 characters and spent 620 of them — 53% — on options the reader had
  * not chosen: a user who had picked `CORE_DIRECTIONAL_VARIANTS` was told what a cut-out rig does to
  * Rig Mode and what a terrain offers instead of a facing, two accounts to read past before reaching
- * their own. It is 496 characters now, and explains the *setting*, which reads the same whatever is
+ * their own. It now explains only the *setting*, which reads the same whatever is
  * chosen; this is the row for the chosen option, which is what `SelectField`'s `description` exists
  * for. **The other two entries are new prose rather than moved text** — that entry described neither
  * the single-facing library nor the tile field except in passing — so they carry the risk moved text
@@ -23,7 +23,7 @@ import type { DirectionalMode } from '../../types/output.ts';
  */
 export const DIRECTIONAL_MODE_TOOLTIPS: Readonly<Record<DirectionalMode, string>> = {
   SINGLE_DIRECTION_POSE_LIBRARY:
-    'A library of variants of one subject, drawn at a single facing: a character’s poses, an object’s parts or its states, an interface’s widget states, a font’s glyphs — whatever the inventory is a set of. Directions Covered is a run list here rather than a set of views, so every part of the inventory is drawn again at each facing you asked for, and the identity lock is what holds them to one individual.',
+    'A library drawn at a single facing: a character’s poses, an object’s parts or its states, an interface’s widget states, a font’s glyphs, an icon set’s icons — whatever the inventory is a set of. Directions Covered is a run list here rather than a set of views, so every part of the inventory is drawn again at each facing you asked for, and the identity lock is what holds them to one individual, or to one set’s shared style.',
   CORE_DIRECTIONAL_VARIANTS:
     'The subject turned to each facing Directions Covered names — one piece of geometry drawn at every yaw, never separate designs or mirrored copies. Up to five of those views share a sheet, and the eight-compass set splits them over two, so none is dropped or flipped to stand in for another. A subject with limbs takes a further sheet for them, or two for a body with six or eight legs, drawn one facing at a time, which is why the figure beside the option counts more sheets than views.',
   CUTOUT_RIG_SINGLE_DIRECTION:

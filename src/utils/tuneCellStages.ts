@@ -12,6 +12,26 @@ import { mergeIsExempt } from './mergeIsExempt.ts';
 import { ladder, type TuneStage } from './tuneStage.ts';
 
 /**
+ * The stage that decides how a cell is read: the three readings at every outline-expansion width.
+ *
+ * Named on its own as well as first in {@link TUNE_CELL_STAGES}, because it is the one ladder `colorPrice`
+ * reads the sweep's price of a colour from. It never skips, and its ladder is both dials' whole
+ * range, so it is the one stage whose candidates are the same set on every sheet.
+ */
+export const TUNE_READING_STAGE: TuneStage = {
+  name: 'READING',
+  dials: ['vote', 'outlineExpansion'],
+  plan: (settled) => ({
+    candidates: ladder(
+      VOTE_METHODS.flatMap((vote) =>
+        TUNE_OUTLINE_EXPANSIONS.map((outlineExpansion) => ({ ...settled, vote, outlineExpansion })),
+      ),
+    ),
+  }),
+  describe: (settled) => `${settled.vote}, expansion ${String(settled.outlineExpansion)}`,
+};
+
+/**
  * The six stages that decide how a cell is read and how its colours settle, in the pipeline's own
  * order.
  *
@@ -23,24 +43,13 @@ import { ladder, type TuneStage } from './tuneStage.ts';
  * anyway.** The two ink dials are read only by `INK_WEIGHTED`, the passes dial only where the fill
  * cleanup is on, and the merge does not run at all where the reader has *stated* which colours the
  * sheet is made of — so on a sheet in one of those states those candidates would be identical to one
- * another, and the elbow would be choosing between measurements of the same image. Each of the three
+ * another, and the sweep would be choosing between measurements of the same image. Each of the three
  * predicates is `quantiseImage`'s own gate rather than a second opinion about it, which is what lets
  * a stage that skips hand its dials back; see `restoreSkipped`. Only the reading and the fill
  * cleanup always run.
  */
 export const TUNE_CELL_STAGES: readonly TuneStage[] = [
-  {
-    name: 'READING',
-    dials: ['vote', 'outlineExpansion'],
-    plan: (settled) => ({
-      candidates: ladder(
-        VOTE_METHODS.flatMap((vote) =>
-          TUNE_OUTLINE_EXPANSIONS.map((outlineExpansion) => ({ ...settled, vote, outlineExpansion })),
-        ),
-      ),
-    }),
-    describe: (settled) => `${settled.vote}, expansion ${String(settled.outlineExpansion)}`,
-  },
+  TUNE_READING_STAGE,
   {
     name: 'INK_BLEND',
     dials: ['lineStrength', 'trimStrength'],

@@ -158,7 +158,7 @@ export const PORTRAIT_BUST_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'FLAT_NEUTRAL_ALBEDO',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {
@@ -198,7 +198,7 @@ export const PORTRAIT_BUST_PRESETS: readonly PresetArchetype[] = [
       surfaceDetail: 'DETAILED_PRODUCTION',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
-      backgroundKey: 'TRANSPARENT',
+      backgroundKey: 'MAGENTA_FF00FF',
       aspectRatio: 'TALL_9_16',
       targetModel: 'GEMINI_PRO_IMAGE',
     },

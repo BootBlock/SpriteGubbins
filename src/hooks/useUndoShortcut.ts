@@ -19,7 +19,8 @@ import { isTextEntry } from './isTextEntry.ts';
  * still mounted, still holds this listener, and is the only thing back there that still answers. A
  * reader on the settings dialog's accent select, or part-way through the split drawer, would press
  * Ctrl+Z at that dialog and silently rewrite the studio underneath it, with nothing on screen to say
- * so. The four overlays are all opened from the studio's own chrome, which is where the reach is.
+ * so. The five overlays all open over the studio — four from the chrome around it and the icon
+ * catalogue from its own Subject Definition panel — which is where the reach is.
  */
 export function useUndoShortcut(undo: () => void, redo: () => void): void {
   useEffect(() => {

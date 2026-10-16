@@ -15,10 +15,17 @@ import { APP_TABS } from './types/ui.ts';
  * placeholder only the first time, and one that renders all four up front sees it never. Vitest
  * gives each test file its own module registry, which is what makes each tab's first render happen
  * here exactly once.
+ *
+ * **The page's one `<h1>` is asserted here too, once the view is up**, because this is the one place
+ * every view is mounted. Every heading outline in the app used to start at `<h2>`, which left a
+ * screen-reader user with nothing to orient from; the repair is one `<h1>` in the shell rather than
+ * one per view, so what is held is that the shell's is the only one with any view beneath it, and
+ * that it names the view showing. Rendering each view a second time in `App.test.tsx` to ask that
+ * cost a cold load of every chunk for no assertion this one cannot make.
  */
 describe('App view split', () => {
   for (const tab of APP_TABS) {
-    it(`holds the space with a loading placeholder until the ${tab} chunk lands`, async () => {
+    it(`holds the space with a loading placeholder until the ${tab} chunk lands, under one h1 naming it`, async () => {
       // Through the store's own action: `App` fetches the settings on boot, and `openInitialTab`
       // moves the app to the stored opening view unless somebody has navigated. `setActiveTab` is
       // what records that they have, so the view being waited for stays the view under test.
@@ -46,6 +53,10 @@ describe('App view split', () => {
       const main = screen.getByRole('main');
       expect(main.children).toHaveLength(2);
       expect(main.children[1]).not.toHaveAttribute('role', 'status');
+
+      const headings = screen.getAllByRole('heading', { level: 1 });
+      expect(headings).toHaveLength(1);
+      expect(headings[0]).toHaveTextContent(APP_TAB_CHOICE_BY_ID[tab].label);
     }, 30_000);
   }
 });

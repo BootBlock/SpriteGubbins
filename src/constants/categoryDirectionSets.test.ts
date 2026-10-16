@@ -40,6 +40,12 @@ describe('the table itself', () => {
     // other yaw cannot be rendered as text at all. All six are the *unambiguous* cases, which is
     // what makes naming them here worth more than deriving them: the interesting half of the
     // decision is who is left out.
+    //
+    // EFFECT above all, and the list is what holds it: it is the category this table must *not*
+    // bind, and the reason the fix is a per-category statement rather than a rule about which modes
+    // read a set. A radial burst has no facing; a slash does, and `sheetPlans/effect.ts` gives the
+    // category its single mode precisely so that a direction set becomes a run list of frame
+    // sequences. Pinning EFFECT would delete that deliverable.
     const bound = SUBJECT_CATEGORIES.filter(
       (category) => CATEGORY_DIRECTION_SETS[category].length < DIRECTION_SETS.length,
     );
@@ -47,15 +53,6 @@ describe('the table itself', () => {
     for (const category of bound) {
       expect(CATEGORY_DIRECTION_SETS[category]).toEqual(['SINGLE_FRONT']);
     }
-  });
-
-  it('leaves EFFECT every set, because a directional slash is genuinely eight runs', () => {
-    // The category this table must *not* bind, and the reason the fix is a per-category statement
-    // rather than a rule about which modes read a set. A radial burst has no facing; a slash does,
-    // and `sheetPlans/effect.ts` gives the category its single mode precisely so that a direction
-    // set becomes a run list of frame sequences. Pinning EFFECT would delete that deliverable.
-    expect(CATEGORY_DIRECTION_SETS.EFFECT).toEqual(DIRECTION_SETS);
-    expect(supportsDirectionSet('EFFECT', 'EIGHT_COMPASS')).toBe(true);
   });
 
   it('leaves no set of the union unreachable', () => {

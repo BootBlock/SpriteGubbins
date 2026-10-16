@@ -15,7 +15,7 @@ import { isOnStep } from '../utils/isOnStep.ts';
  * `typeof [] === 'object'` and an array is not null, so without the last clause every caller
  * treats `[]` as a record with no keys — and a parser that repairs field by field then returns a
  * complete set of defaults for it. That is how `parseImportedQuantisePreset` came to accept
- * `{ dials: [] }` as a preset carrying twenty settings nobody chose: the check meant to refuse a
+ * `{ dials: [] }` as a preset carrying a whole set of settings nobody chose: the check meant to refuse a
  * foreign file passed, because the foreign value happened to be an array.
  *
  * Every caller wants an object and none of them wants an array — the rows, the session, the

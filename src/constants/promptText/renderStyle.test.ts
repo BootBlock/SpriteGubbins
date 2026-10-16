@@ -9,7 +9,9 @@ import { statedTargetSize } from '../../utils/componentTargetSize.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { OUTPUT_TOOLTIPS } from '../output/tooltips.ts';
 import { PRESETS } from '../presets/index.ts';
+import { SHEET_CELL_PITCH } from '../sheetCanvas.ts';
 import { minFeatureSize, resolutionProfileDescription, shareRange } from './renderStyle.ts';
+import { TILE_SHARE } from './tileShare.ts';
 
 /** The three profiles that *are* a scale, and so state a range. `CUSTOM` is not one. */
 const SCALE_BEARING = ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const;
@@ -309,5 +311,32 @@ describe('resolutionProfileDescription — the frame a share is stated in', () =
       `fills ${STATED.HIGH_RESOLUTION} of its cell height at high resolution and ${STATED.MID_RESOLUTION} at mid`,
     );
     expect(OUTPUT_TOOLTIPS.resolutionProfile).not.toContain('sheet height');
+  });
+});
+
+describe('the exact share of a fixed grid’s square', () => {
+  it('sits inside each share rung’s range, and leaves the other two room for their spacing', () => {
+    for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION'] as const) {
+      const [low, high] = shareRange(profile).split(/[–%]/).map(Number);
+      expect(TILE_SHARE[profile]).toBeGreaterThanOrEqual(low ?? Number.NaN);
+      expect(TILE_SHARE[profile]).toBeLessThanOrEqual(high ?? Number.NaN);
+    }
+    expect(TILE_SHARE.HIGH_RESOLUTION).toBeGreaterThan(TILE_SHARE.MID_RESOLUTION);
+    for (const profile of ['RETRO_16_BIT', 'CUSTOM'] as const) {
+      expect(TILE_SHARE[profile] / 100).toBeLessThanOrEqual(1 / SHEET_CELL_PITCH);
+    }
+  });
+
+  it('is stated in place of the range, or after the profile’s own figure, on a square in a fixed grid', () => {
+    expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'one icon', 'SAME_SQUARE', 4)).toContain(
+      `occupies exactly ${String(TILE_SHARE.HIGH_RESOLUTION)}% of its cell’s width and height`,
+    );
+    expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'one icon', 'SAME_SQUARE')).toContain(
+      shareRange('HIGH_RESOLUTION'),
+    );
+    expect(resolutionProfileDescription('CUSTOM', false, 'one icon', 'SAME_SQUARE', 4)).toMatch(
+      /^Custom — work to the target component size where one is stated, and to the sheet aspect otherwise; every component is drawn to one square/,
+    );
+    expect(resolutionProfileDescription('CUSTOM', false, 'one icon')).not.toContain('exactly');
   });
 });

@@ -33,8 +33,9 @@ import type { PinnedPaletteSource } from './pinnedPalette.ts';
  * setting stands exactly as it would with no palette held. The alternative was measured on the
  * reference sheet and is a cliff: a lock that superseded the budget while taking no colour at all
  * left the sheet unreduced, and dragging one dial to its off position took it from 64 colours to
- * 10,031. A dial's off position has to mean the pass does not run, not that a different pass stops
- * running with it.
+ * 9,975 — at grid 6, unkeyed, every other dial where it opens, which
+ * `tests/quantiser-figures-color-plan.test.ts` holds. A dial's off position has to mean the pass
+ * does not run, not that a different pass stops running with it.
  *
  * Pure, so it can be asserted on directly rather than through a rendered tab.
  */

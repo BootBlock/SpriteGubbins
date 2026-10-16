@@ -3,12 +3,12 @@ import type { LibraryPack } from '../types/libraryPack.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import { HISTORY_LIMIT, type PersistenceBackend } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
-import { parseHistoryRow, parsePresetRow, parseProjectRow, parseQuantisePresetRow } from './rows.ts';
-import { toHistoryRow, toPresetRow, toProjectRow, toQuantisePresetRow } from './localStorageRows.ts';
+import { STORED_COLLECTIONS, type StoredCollection } from './localStorageCollections.ts';
 import { deleteProjectFrom, replaceLibraryIn, type CollectionPort } from './localStorageLibrary.ts';
 import { discardIncompatibleLibrary } from './discardIncompatibleLibrary.ts';
 import { parseJson } from './readers.ts';
@@ -120,18 +120,18 @@ export class LocalStorageBackend implements PersistenceBackend {
   }
 
   addHistoryLog(log: PromptHistoryLog): Promise<void> {
-    const existing = this.read(STORAGE_KEYS.promptHistory, parseHistoryRow);
+    const existing = this.list(STORED_COLLECTIONS.history);
     const next = [log, ...existing.filter((entry) => entry.id !== log.id)].slice(0, HISTORY_LIMIT);
-    return writeHistoryRows(this.storage, next.map(toHistoryRow));
+    return writeHistoryRows(this.storage, next.map(STORED_COLLECTIONS.history.toRow));
   }
 
   listHistoryLogs(): Promise<PromptHistoryLog[]> {
-    const logs = this.read(STORAGE_KEYS.promptHistory, parseHistoryRow);
+    const logs = this.list(STORED_COLLECTIONS.history);
     return Promise.resolve([...logs].sort((a, b) => b.createdAt - a.createdAt));
   }
 
   deleteHistoryLog(id: string): Promise<void> {
-    return this.removeById(STORAGE_KEYS.promptHistory, parseHistoryRow, toHistoryRow, id);
+    return this.removeById(STORED_COLLECTIONS.history, id);
   }
 
   clearHistoryLogs(): Promise<void> {
@@ -142,42 +142,39 @@ export class LocalStorageBackend implements PersistenceBackend {
    * Write one entry to the front of a collection, replacing whatever stood under its id.
    *
    * The fallback's whole answer to `INSERT OR REPLACE … ORDER BY updated_at DESC`, and it is one
-   * method rather than three because the three collections keyed by id want exactly the same
+   * method rather than four because the four collections keyed by id want exactly the same
    * behaviour: the prepend is what keeps them newest-first, since a stored order is all this
    * backend has — see `localStorageRows.ts`, which says why no timestamp is written here.
    */
   private upsert<T extends { readonly id: string }>(
-    key: string,
-    parse: (value: unknown) => T | null,
-    toRow: (entry: T) => Record<string, unknown>,
+    collection: StoredCollection<T>,
     entry: T,
   ): Promise<void> {
-    const existing = this.read(key, parse);
-    return this.write(key, [entry, ...existing.filter((held) => held.id !== entry.id)].map(toRow));
+    const kept = this.list(collection).filter((held) => held.id !== entry.id);
+    return this.write(collection.key, [entry, ...kept].map(collection.toRow));
   }
 
   /** Remove one entry by id. An id nothing holds rewrites the collection unchanged, as SQL does. */
   private removeById<T extends { readonly id: string }>(
-    key: string,
-    parse: (value: unknown) => T | null,
-    toRow: (entry: T) => Record<string, unknown>,
+    collection: StoredCollection<T>,
     id: string,
   ): Promise<void> {
-    return this.write(
-      key,
-      this.read(key, parse)
-        .filter((entry) => entry.id !== id)
-        .map(toRow),
-    );
+    const kept = this.list(collection).filter((entry) => entry.id !== id);
+    return this.write(collection.key, kept.map(collection.toRow));
+  }
+
+  /** One collection's rows that parse, in stored order. */
+  private list<T extends { readonly id: string }>(collection: StoredCollection<T>): T[] {
+    return this.read(collection.key, collection.parse);
   }
 
   /** In stored order, which {@link upsert}'s prepend keeps most-recently-edited first. */
   listProjects(): Promise<Project[]> {
-    return Promise.resolve(this.read(STORAGE_KEYS.projects, parseProjectRow));
+    return Promise.resolve(this.list(STORED_COLLECTIONS.projects));
   }
 
   saveProject(project: Project): Promise<void> {
-    return this.upsert(STORAGE_KEYS.projects, parseProjectRow, toProjectRow, project);
+    return this.upsert(STORED_COLLECTIONS.projects, project);
   }
 
   /**
@@ -192,33 +189,46 @@ export class LocalStorageBackend implements PersistenceBackend {
   }
 
   savePreset(preset: CustomArchetype): Promise<void> {
-    return this.upsert(STORAGE_KEYS.customPresets, parsePresetRow, toPresetRow, preset);
+    return this.upsert(STORED_COLLECTIONS.presets, preset);
   }
 
   /** In stored order, which {@link upsert}'s prepend keeps newest-first. */
   listPresets(): Promise<CustomArchetype[]> {
-    return Promise.resolve(this.read(STORAGE_KEYS.customPresets, parsePresetRow));
+    return Promise.resolve(this.list(STORED_COLLECTIONS.presets));
   }
 
   deletePreset(id: string): Promise<void> {
-    return this.removeById(STORAGE_KEYS.customPresets, parsePresetRow, toPresetRow, id);
+    return this.removeById(STORED_COLLECTIONS.presets, id);
   }
 
   saveQuantisePreset(preset: QuantisePreset): Promise<void> {
-    return this.upsert(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow, toQuantisePresetRow, preset);
+    return this.upsert(STORED_COLLECTIONS.quantisePresets, preset);
   }
 
   /** In stored order, which {@link upsert}'s prepend keeps newest-first. */
   listQuantisePresets(): Promise<QuantisePreset[]> {
-    return Promise.resolve(this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow));
+    return Promise.resolve(this.list(STORED_COLLECTIONS.quantisePresets));
   }
 
   deleteQuantisePreset(id: string): Promise<void> {
-    return this.removeById(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow, toQuantisePresetRow, id);
+    return this.removeById(STORED_COLLECTIONS.quantisePresets, id);
+  }
+
+  saveCustomIcon(icon: SavedCustomIcon): Promise<void> {
+    return this.upsert(STORED_COLLECTIONS.customIcons, icon);
+  }
+
+  /** In stored order, which {@link upsert}'s prepend keeps most-recently-written first. */
+  listCustomIcons(): Promise<SavedCustomIcon[]> {
+    return Promise.resolve(this.list(STORED_COLLECTIONS.customIcons));
+  }
+
+  deleteCustomIcon(id: string): Promise<void> {
+    return this.removeById(STORED_COLLECTIONS.customIcons, id);
   }
 
   /**
-   * Replace all three collections with an imported pack's.
+   * Replace the projects and every saved collection with an imported pack's.
    *
    * `localStorageLibrary.ts` again, for the reason the delete above gives, and it is the operation
    * whose promise is the more carefully hedged of the two — read it there rather than assuming a
@@ -231,7 +241,7 @@ export class LocalStorageBackend implements PersistenceBackend {
   /**
    * The settings, stored as the object itself rather than as a row.
    *
-   * All three collections above keep the SQLite table's `snake_case` shape so one parser can read
+   * Every collection above keeps the SQLite table's `snake_case` shape so one parser can read
    * both backends; there is nothing to align here, because the SQLite side stores this same object
    * serialised into a single column. `parseSettings` is that shared parser — the SQLite backend
    * unwraps its row and hands the payload to it, and this hands over what it read.

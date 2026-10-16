@@ -22,8 +22,8 @@ export interface SettledSheet extends Pick<
  * force.
  *
  * Split out of the raster pipeline proper — key, harden and measure the mesh in `quantisePrologue`,
- * then resolve the cells, reduce, clean and dither in `quantiseFromPrologue`, which is what calls
- * this. **Three of the four passes here need the sheet to
+ * then resolve the cells, reduce, clean and dither in `reducedRegions` — and `quantiseImage` and
+ * `quantiseRegions` are what call this. **Three of the four passes here need the sheet to
  * have been *segmented* first**, and none of the passes above them does: the symmetry settle scores
  * an axis inside a sprite's own bounds, the duplicate fold compares one sprite with another, and the
  * frame alignment fits a lattice to a row of them. That is the same line the pipeline's own docblock
@@ -42,10 +42,47 @@ export interface SettledSheet extends Pick<
  * moved by one pass is at the position it left until the sheet is read again.
  */
 export function settleSprites(reduced: ImageData, settings: QuantiseSettings): SettledSheet {
-  // **The last passes of all, and the two of them run *over a reading* rather than over the sheet.**
-  // Both ask a question about the sprites the sheet holds — is this one symmetric, is this one a
-  // repeat of that one — so both need the segmentation to exist before they can ask anything, and
-  // both are taken here rather than earlier for that reason.
+  const aligned = alignSprites(reduced, settings);
+  return smoothSprites(aligned, settings, [aligned.image]);
+}
+
+/**
+ * The same passes over several regions of one sheet, each settled alone — see `quantiseRegions`,
+ * which is the one caller.
+ *
+ * **Alone, because every reading here is taken inside a region's own bounds.** A region's edge is a
+ * cut through the sheet's artwork, so nothing may run across it, and nothing that treats it as a
+ * contour may run along it either.
+ *
+ * **Except for the one question about the sheet's colours.** Under a colour budget or a lock the
+ * anti-aliasing's snap keeps each blend to colours the sheet already holds, and the regions of a
+ * sheet hold its colours between them rather than each of them all — so every region's blends are
+ * kept to the colours every region holds once the three settles have run, which is the set the whole
+ * sheet's snap would draw from.
+ */
+export function settleRegions(
+  regions: readonly ImageData[],
+  settings: QuantiseSettings,
+): readonly SettledSheet[] {
+  const aligned = regions.map((region) => alignSprites(region, settings));
+  const held = aligned.map(({ image }) => image);
+  return aligned.map((region) => smoothSprites(region, settings, held));
+}
+
+/** What the three settles over the segmentation left, and what the anti-aliasing needs of it. */
+interface AlignedSheet extends Omit<SettledSheet, 'sprites'> {
+  /** The segmentation the fold left, which is what the last reading reuses where nothing moved. */
+  readonly foldedSprites: SettledSheet['sprites'];
+  /** Whether the frame alignment carried a frame, so every box it owns has moved. */
+  readonly realigned: boolean;
+}
+
+/** The symmetry settle, the duplicate fold and the frame alignment, with the readings each forces. */
+function alignSprites(reduced: ImageData, settings: QuantiseSettings): AlignedSheet {
+  // **The first two passes here, and both run *over a reading* rather than over the sheet.** Both
+  // ask a question about the sprites the sheet holds — is this one symmetric, is this one a repeat
+  // of that one — so both need the segmentation to exist before they can ask anything, and both are
+  // taken here rather than earlier for that reason.
   //
   // The order between them is stated rather than incidental: **the symmetry settle runs first, and
   // the duplicate reading is then taken over what it produced.** A settle can bring two sprites that
@@ -56,7 +93,7 @@ export function settleSprites(reduced: ImageData, settings: QuantiseSettings): S
   // Each reading therefore describes the sheet as it stood immediately before *its own* edit, which
   // is the only state in which either means anything: a sprite that has just been made symmetric
   // reports perfect confidence whatever it arrived as, and a member that has just been overwritten
-  // with its canonical is an exact duplicate of it by construction.
+  // with its group's source is an exact duplicate of it by construction.
   const segmented = spriteSegments(reduced, settings.spriteGap);
 
   // `OFF` skips the sweep outright rather than scoring and discarding, which is how the outline
@@ -108,13 +145,13 @@ export function settleSprites(reduced: ImageData, settings: QuantiseSettings): S
   const folded = fold !== null && snapped ? fold.image : settled;
   const foldedSprites = snapped ? spriteSegments(folded, settings.spriteGap) : settledSprites;
 
-  // **The last reading of all, and the only pass that *moves* artwork rather than editing it.** It
-  // asks a question about the rows the sprites are laid out in — does this run hold still — so it
-  // needs the segmentation, and it needs the one taken over the sheet as it will actually be
-  // downloaded: every pass above may have changed a silhouette, and a strip is fitted to where the
-  // silhouettes are. That is also why it goes after the fold rather than before it. The fold copies
-  // whole sprites between positions, so reading strips first would fit a lattice to a layout the
-  // fold is about to change.
+  // **The last of the three settles, and the only one that *moves* artwork rather than editing
+  // it.** It asks a question about the rows the sprites are laid out in — does this run hold
+  // still — so it needs the segmentation, and it needs the one taken over the sheet as it will
+  // actually be downloaded: every pass above may have changed a silhouette, and a strip is fitted
+  // to where the silhouettes are. That is also why it goes after the fold rather than before it.
+  // The fold copies whole sprites between positions, so reading strips first would fit a lattice
+  // to a layout the fold is about to change.
   //
   // `OFF` skips it outright rather than reading and discarding, which is how the outline expansion,
   // the reductions and the symmetry sweep are all guarded: it registers every frame of every row
@@ -144,6 +181,21 @@ export function settleSprites(reduced: ImageData, settings: QuantiseSettings): S
   const realigned = realignment !== null && realignment.moved > 0;
   const aligned = realignment !== null && realigned ? realignment.image : folded;
 
+  return { image: aligned, foldedSprites, realigned, symmetry, duplicates, snapped, strips };
+}
+
+/**
+ * The anti-aliasing, and the reading its output forces. `held` is every image whose colours a blend
+ * may be snapped to under a colour budget or a lock: the sheet's own, or every region of it — see
+ * {@link settleRegions}.
+ */
+function smoothSprites(
+  sheet: AlignedSheet,
+  settings: QuantiseSettings,
+  held: readonly ImageData[],
+): SettledSheet {
+  const { image: aligned, foldedSprites, realigned } = sheet;
+
   // **The last pass of all, and the only one that puts smooth colour back.** Everything above takes
   // a resampled render apart into flat cells, which is what turns a returned sheet into pixel art
   // and what leaves every contour a staircase of axis-aligned steps; this reads those steps back
@@ -162,13 +214,17 @@ export function settleSprites(reduced: ImageData, settings: QuantiseSettings): S
   // one is a figure a reader reads, the other is a figure a coverage is multiplied by. The snap is
   // gated on a reduction being in force for the reason `AntiAliasPalette` gives — with no palette
   // stated there is nothing for a blend to be kept to — which is the same gate the dither keeps.
-  const output = antiAlias(aligned, {
-    mode: settings.antiAlias,
-    threshold: settings.antiAliasThreshold,
-    strength: settings.antiAliasStrength / 100,
-    shortestRun: settings.antiAliasRun,
-    snap: settings.antiAliasPalette === 'SNAP' && settings.reduction !== null,
-  });
+  const output = antiAlias(
+    aligned,
+    {
+      mode: settings.antiAlias,
+      threshold: settings.antiAliasThreshold,
+      strength: settings.antiAliasStrength / 100,
+      shortestRun: settings.antiAliasRun,
+      snapTo: settings.antiAliasPalette === 'SNAP' ? settings.reduction : null,
+    },
+    held,
+  );
 
   // **`INTERIOR` is exempted, and provably rather than by assumption.** `inScope` in `edgeClaims`
   // reads that position as `!silhouette`, so what it refuses is the boundary with one clear pixel
@@ -196,9 +252,9 @@ export function settleSprites(reduced: ImageData, settings: QuantiseSettings): S
   return {
     image: output,
     sprites: finalSprites,
-    symmetry,
-    duplicates,
-    snapped,
-    strips,
+    symmetry: sheet.symmetry,
+    duplicates: sheet.duplicates,
+    snapped: sheet.snapped,
+    strips: sheet.strips,
   };
 }

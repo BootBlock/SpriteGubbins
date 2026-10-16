@@ -21,6 +21,7 @@ const SEGMENTED: SpriteSegmentation = {
   kind: 'SEGMENTED',
   boxes: [{ left: 0, top: 0, width: 6, height: 6, pixels: 24 }],
   specks: 0,
+  width: 1024,
 };
 
 function reading(confidence: number, snapped: boolean): SpriteSymmetry {
@@ -47,7 +48,7 @@ describe('SymmetryControls', () => {
 
   it('offers the tolerance once a reading is being taken, and the floor only once one is acted on', async () => {
     show();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.selectOptions(screen.getByRole('combobox', { name: /Symmetry/ }), 'CHECK');
     expect(screen.getByRole('slider', { name: /Symmetry tolerance/ })).toBeInTheDocument();

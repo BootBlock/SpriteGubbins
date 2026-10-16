@@ -39,7 +39,7 @@ export const MIDJOURNEY_VERSION = '--v 8.2';
  * one with no citation at all, because the link makes it look checked. Two entries were removed
  * once checked rather than left to rot, and both retirements are on a vendor deprecation table:
  * Google Imagen (`imagen-3.0-generate-002` shut down 10 November 2025; the three
- * `imagen-4.0-*-001` endpoints shut down 17 August 2026, replacement `gemini-3.1-flash-image`)
+ * `imagen-4.0-*-001` endpoints shut down 17 August 2026, replacement `gemini-nano-banana-2.1`)
  * and DALL·E 3 (`dall-e-2` and `dall-e-3` removed from the API on 12 May 2026, replacements
  * `gpt-image-2` / `gpt-image-1` / `gpt-image-1-mini`). Both had been dead or dying while the app
  * went on offering them. https://ai.google.dev/gemini-api/docs/deprecations and
@@ -65,6 +65,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // image. Checking the plan before the render is true of any target that deliberates.
       seesCanvasBeforeDelivery: false,
       emitsText: true,
+      // No model is named, so no vendor has documented whether it returns alpha, and nothing is withdrawn
+      // on its behalf: the reader may be pasting into a target that does (audit finding T1).
+      alpha: { kind: 'NO_VENDOR' },
+      canvas: { kind: 'PROMPT' },
       // The one entry with nobody to cite. It names no model, so there is no vendor page to hold a
       // figure and no product a figure would be about — which is a different answer from Midjourney
       // below, where a vendor exists and publishes none, and the reason the two are separate states
@@ -148,17 +152,18 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // was true when it was written and is not true now** — which is the more useful failure of the
     // two, because nothing about it decayed visibly. It rested on OpenAI's GPT-5.6 help page, which
     // then said Sol powered the Medium, High and Extra High reasoning options while Instant was
-    // GPT-5.5 Instant. That page now says "GPT-5.6 Sol powers Instant, Medium, High, and Extra High
-    // on eligible paid plans", and describes Instant as "Fast responses for everyday questions".
-    // Sol reaches the picker's *non*-thinking option, so picking Sol settles nothing about the tier.
-    // The API side agrees: `reasoning.effort` on `gpt-5.6-sol` accepts `none`.
+    // GPT-5.5 Instant. The same page, now titled "GPT-6 and other models in ChatGPT", says "When
+    // GPT-6 is selected, GPT-6 Sol powers Instant, Medium, High, and Extra High", and describes
+    // Instant as "Fast responses for everyday questions". Sol reaches the picker's *non*-thinking
+    // option, so picking Sol settles nothing about the tier. The API side agrees: `reasoning.effort`
+    // on `gpt-6-sol` accepts `none`, as it did on `gpt-5.6-sol`.
     // https://help.openai.com/en/articles/20001354-gpt-56-in-chatgpt and
-    // https://developers.openai.com/api/docs/models/gpt-5.6-sol
+    // https://developers.openai.com/api/docs/models/gpt-6-sol
     //
     // **What the plan list replaces is a long correction, and its lesson outlives the sentence.**
     // The release notes' 21 April 2026 entry words the same feature as "available on all paid
     // ChatGPT plans … when you select Thinking and Pro models", and the description quoted that
-    // verbatim because OpenAI's current picker has no Thinking on it: the GPT-5.6 page describes a
+    // verbatim because OpenAI's current picker has no Thinking on it: the help page describes a
     // reasoning slider reading Instant, Medium, High, Extra High and Pro, and its one Think-named
     // option runs GPT-5.6 Luna on the Free and Go plans that have no Sol at all. A reader following
     // the release note found either no such option or one that took them off the target they picked.
@@ -170,10 +175,33 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // may put the picker back.** It names plans and no control at all. No OpenAI page says a slider
     // position switches the feature on, so a sentence pointing at one would be the same reading
     // wearing a fresher citation.
-    id: 'CHATGPT_5_6_SOL',
-    name: 'ChatGPT 5.6 Sol (OpenAI)',
+    //
+    // **The entry is named for the surface rather than for one model, because the model moved under
+    // it.** On 7 October 2026 OpenAI moved ChatGPT's Chat tab to GPT-6, and the release notes say
+    // "Plus, Pro, Business, and Enterprise use GPT-6 Sol; Free and Go use GPT-6 Luna." The help page
+    // says "In the model menu, GPT-6 replaces Latest. Existing Latest selections move to GPT-6 at the
+    // same effort; explicit GPT-5.6 Sol selections stay on GPT-5.6", and "The GPT-6 rollout does not
+    // retire older selectable models". The entry's id named GPT-5.6 Sol until then, and a reader who
+    // pastes into ChatGPT reaches GPT-6 unless they pick GPT-5.6 Sol by hand.
+    // https://openai.com/index/gpt-6-for-everyone/ and
+    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    //
+    // **OpenAI's pages disagree about Free and Go, so the description names no model for them.** The
+    // announcement and the release notes give those plans GPT-6 Luna, while the help page still says
+    // "Instant — Fast responses for everyday questions. Free and Go use GPT-5.6 Luna." Either way the
+    // reader reaches a text model that calls the same image tool, which is the one fact this entry's
+    // flags and wrapper rest on. GPT-6 Luna's model page gives the same modalities, tool row and
+    // token figures as GPT-6 Sol's. https://developers.openai.com/api/docs/models/gpt-6-luna
+    //
+    // **The wrapper's protections were measured on GPT-5.6 Sol, and nothing yet shows how GPT-6 Sol
+    // handles the hand-off.** Every docblock that reports a figure "across 27 real GPT-5.6 Sol
+    // sheets" names the model the runs were made on, and keeps it. A re-run of the adherence pack on
+    // GPT-6 Sol is what would say whether those protections still hold, and the description says
+    // what the reader can do in the meantime.
+    id: 'CHATGPT',
+    name: 'ChatGPT (GPT-6)',
     description:
-      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names each part the call must carry unshortened. ChatGPT Images 2.5 is what renders behind that call. OpenAI say that image surface is on all ChatGPT tiers, and that images with thinking is on Plus, Pro and Business with Enterprise and Edu to come — Sol itself is a paid-plan model either way. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
+      'ChatGPT’s Chat tab runs GPT-6 Sol on Plus, Pro, Business and Enterprise, and a Luna model on Free and Go. Neither returns an image: each calls an image tool, and ChatGPT Images 2.5 renders whatever that call carries — which is where adherence is lost. Its wrapper names each part the call must carry unshortened. That wrapper was measured on GPT-5.6 Sol, which you can still pick by hand in the model menu. OpenAI say ChatGPT Images is on every tier, and images with thinking on Plus, Pro and Business. The model reasons over the brief, so it gets the self-audit and can return a companion component map.',
     // ChatGPT's own image surface, which is where a person rather than an API client reaches this
     // model. OpenAI announce it as “ChatGPT Images 2.5” and the page is indexed under that name.
     // https://openai.com/index/introducing-chatgpt-images-2-5/
@@ -185,9 +213,20 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // first — two images, or one that no longer matches the composition it was written to.
       seesCanvasBeforeDelivery: false,
       emitsText: true,
+      // The image tool Sol calls takes the option: “Transparent backgrounds are available in preview;
+      // set `background: "transparent"` to request one. Use `png` (the default) or `webp`; `jpeg`
+      // isn't supported with transparent backgrounds.” Sol composes that call, so its wrapper tells it to
+      // set the option (audit finding T1). https://developers.openai.com/api/docs/guides/tools-image-generation
+      //
+      // The ChatGPT side says the same of its own image surface: "ChatGPT Images can follow
+      // instructions to add text, add details within the image, or make the background transparent."
+      // https://help.openai.com/en/articles/11084440-images-in-chatgpt
+      alpha: { kind: 'TOOL_CALL' },
+      canvas: { kind: 'PROMPT' },
       // The *input* ceiling, not the 1,050,000 context window: the window is input plus the
       // 128,000 output tokens reserved against it, and what this field is measured against is the
-      // prompt alone. https://developers.openai.com/api/docs/models/gpt-5.6-sol
+      // prompt alone. GPT-6 Sol's model page gives the same two figures `gpt-5.6-sol` did, and so
+      // does GPT-6 Luna's. https://developers.openai.com/api/docs/models/gpt-6-sol
       //
       // It is also not the ceiling that binds on this target, and the one that does cannot honestly
       // be recorded here: what reaches the renderer is whatever Sol's tool call carries, which this
@@ -203,42 +242,48 @@ export const TARGET_MODELS: readonly TargetModel[] = [
   },
   {
     // Google name this the migration target for the retired Imagen models: their deprecation table
-    // gives `gemini-3.1-flash-image` as the replacement against all three `imagen-4.0-*-001`
-    // endpoints. https://ai.google.dev/gemini-api/docs/deprecations
-    //
-    // It is a *thinking* model — "Gemini 3 image models are thinking models that use a reasoning
-    // process ('Thinking') for complex prompts", and it "cannot be disabled in the API" — and it
-    // returns interleaved text and images, so unlike Imagen it can both work through the
-    // specification and hand back a component map.
+    // gives `gemini-nano-banana-2.1` as the replacement against all three `imagen-4.0-*-001`
+    // endpoints, and against `gemini-3.1-flash-image` as well. The image-generation guide's *When to
+    // use Imagen* section now reads "Imagen models are shut down. Use Nano Banana models for all image
+    // generation tasks." https://ai.google.dev/gemini-api/docs/deprecations and
     // https://ai.google.dev/gemini-api/docs/image-generation
     //
-    // **That page does name Gemini as the replacement, and this comment used to say it did not.** It
-    // read that "what it does not do is name Gemini as Imagen's replacement — its one mention of
-    // Imagen is a line under 'Other image generation modes'". The page carries a section headed
-    // *When to use Imagen* whose opening notice reads "Imagen models are deprecated and will be shut
-    // down on August 17, 2026. We recommend using Nano Banana models for all image generation
-    // tasks." Nano Banana is this entry — Google's model list gives "Nano Banana 2 …
-    // `gemini-3.1-flash-image`". The count was wrong too: a case-insensitive search of the fetched
-    // page finds Imagen at four distinct places, not one.
+    // **This entry was Nano Banana 2 (`gemini-3.1-flash-image`) until Google released 2.1 on 6
+    // October 2026, and it moved with the line rather than being split.** The changelog calls 2.1
+    // "the latest high-efficiency image generation and conversational editing model" and "An update
+    // to Nano Banana 2", and the guide now describes Nano Banana 2 as "The previous-generation
+    // high-efficiency workhorse model". The two take the same prompt and declare the same flags and
+    // the same input limit, so a second entry would offer the reader a choice this app's output does
+    // not vary on — the reading `GPT_IMAGE` below applies to OpenAI's 2.5 pair. The id names the
+    // line rather than a version, so the next release moves a name and not an id.
+    // https://ai.google.dev/gemini-api/docs/changelog
     //
-    // **The claim the paragraph existed to justify is unaffected**, which is why this is a rewrite
-    // and not a retraction. The deprecation table is still the right citation for the *per-model*
-    // replacement, because that is what it states: all three `imagen-4.0-*-001` rows give
-    // `gemini-3.1-flash-image` as the recommended replacement with a shutdown date of 17 August
-    // 2026. What was wrong is only the sentence saying the image-generation guide could not have
-    // supported it. https://ai.google.dev/gemini-api/docs/models
-    id: 'GEMINI_FLASH_IMAGE',
-    name: 'Gemini 3.1 Flash Image / Nano Banana 2',
+    // **The quotation the description's claim of a replacement rested on was the guide's, and it
+    // went with the shutdown.** This comment quoted the guide's Imagen notice as saying the models "will be shut
+    // down on August 17, 2026" — a date that has passed, and a sentence the page no longer carries.
+    // The claim now rests on the deprecation table, which names 2.1 against each retired id.
+    //
+    // It is a *thinking* model — "Gemini 3 image models are thinking models that use a reasoning
+    // process ("Thinking") for complex prompts", which "cannot be disabled in the API"; the guide's
+    // own example of a thinking level passes `gemini-nano-banana-2.1`, and the model page lists
+    // "Configurable Thinking levels" of minimal, medium and high rather than an off switch. It
+    // returns text as well as images, so unlike Imagen it can both work through the specification
+    // and hand back a component map. https://ai.google.dev/gemini-api/docs/image-generation and
+    // https://ai.google.dev/gemini-api/docs/models/gemini-nano-banana-2.1
+    id: 'GEMINI_NANO_BANANA',
+    name: 'Gemini Nano Banana 2.1',
     description:
-      'Google’s replacement for the retired Imagen models. A thinking model that reasons over complex prompts, so it receives the full specification including the self-audit, and it can return a companion component map alongside the image.',
-    // The deep-link shape is Google's own: every “Open in Google AI Studio” button on the DeepMind
-    // model pages is `prompts/new_chat?model=<id>`, and the id below is the one those buttons carry
-    // for this model. It is the `-preview` spelling rather than the `gemini-3.1-flash-image` the API
-    // model page names — the two OpenAI-style surfaces disagree, and what the button has to match is
-    // AI Studio's, not the API's. https://deepmind.google/models/gemini-image/
+      'Google’s current Nano Banana model, and the replacement Google name for the retired Imagen models. A thinking model that reasons over complex prompts, so it receives the full specification including the self-audit, and it can return a companion component map alongside the image.',
+    // The deep link is the one Google's own model page carries: its "Try in Google AI Studio" button
+    // is `aistudio.google.com?model=gemini-nano-banana-2.1`. The DeepMind model pages, whose buttons
+    // read the same and use the `prompts/new_chat?model=` shape, carry no button for 2.1 yet — only
+    // for Nano Banana 2's `-preview` id, which the deprecation table shut down on 25 June 2026, for
+    // Nano Banana 2 Lite and for Pro — so the API page is the only Google page that names the id AI
+    // Studio opens this model with.
+    // https://ai.google.dev/gemini-api/docs/models/gemini-nano-banana-2.1
     generatorSite: {
       kind: 'PUBLIC',
-      url: 'https://aistudio.google.com/prompts/new_chat?model=gemini-3.1-flash-image-preview',
+      url: 'https://aistudio.google.com?model=gemini-nano-banana-2.1',
     },
     capabilities: {
       deliberates: true,
@@ -247,8 +292,14 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // anything is delivered. https://ai.google.dev/gemini-api/docs/image-generation
       seesCanvasBeforeDelivery: true,
       emitsText: true,
-      // "Input token limit: 131,072", and Outputs "Image and Text" — which is what earns the
-      // component map. https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image
+      // Neither the image-generation guide nor the model page mentions transparency, alpha or RGBA, as
+      // searched on 16 October 2026, so a sheet asked for alpha comes back opaque (audit finding T1).
+      // https://ai.google.dev/gemini-api/docs/image-generation
+      alpha: { kind: 'UNDOCUMENTED' },
+      canvas: { kind: 'PROMPT' },
+      // "Input token limit 131,072", and Output "Image and Text" — which is what earns the component
+      // map. Nano Banana 2's page gives the same figure.
+      // https://ai.google.dev/gemini-api/docs/models/gemini-nano-banana-2.1
       promptBudget: {
         kind: 'CEILING',
         limit: 131_072,
@@ -264,19 +315,26 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'GEMINI_PRO_IMAGE',
     name: 'Gemini 3 Pro Image / Nano Banana Pro',
     description:
-      'The heavier Gemini image model, built for complex layouts and precise text rendering. Same handling as Nano Banana 2 — full specification, self-audit and optional component map — at higher cost and quality.',
-    // The same shape, with the id DeepMind's Nano Banana Pro page carries.
-    // https://deepmind.google/models/gemini-image/pro/
+      'The heavier Gemini image model, built for complex layouts and precise text rendering. Same handling as Nano Banana 2.1 — full specification, self-audit and optional component map — at higher cost and quality.',
+    // The same source as Nano Banana 2.1's link: Google's own model page, whose “Try in Google AI
+    // Studio” button is `aistudio.google.com?model=gemini-3-pro-image`. This linked the id DeepMind's
+    // Nano Banana Pro page still carries, `gemini-3-pro-image-preview`, which the deprecation table
+    // shut down on 25 June 2026 with `gemini-3-pro-image` as its replacement.
+    // https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image and
+    // https://ai.google.dev/gemini-api/docs/deprecations
     generatorSite: {
       kind: 'PUBLIC',
-      url: 'https://aistudio.google.com/prompts/new_chat?model=gemini-3-pro-image-preview',
+      url: 'https://aistudio.google.com?model=gemini-3-pro-image',
     },
     capabilities: {
       deliberates: true,
-      // The same interim images as Nano Banana 2, from the same page.
+      // The same interim images as Nano Banana 2.1, from the same page.
       // https://ai.google.dev/gemini-api/docs/image-generation
       seesCanvasBeforeDelivery: true,
       emitsText: true,
+      // The same finding, from the same guide and https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image
+      alpha: { kind: 'UNDOCUMENTED' },
+      canvas: { kind: 'PROMPT' },
       // https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image
       promptBudget: {
         kind: 'CEILING',
@@ -327,6 +385,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // renders" — and nothing about looking at the result, so its audit is of the plan.
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // **ByteDance document alpha, and not for a prompt.** Their `background` parameter “Controls whether
+      // to generate an image with an alpha channel”, and “is supported only for image-to-image generation
+      // with exactly one input image that has an alpha channel”. A sheet this app composes is text to
+      // image, so for it the answer is none (audit finding T1). https://docs.byteplus.com/en/docs/ModelArk/1541523
+      alpha: { kind: 'UNDOCUMENTED' },
+      canvas: { kind: 'PROMPT' },
       // **Guidance, and it is published — which is why it is no longer silence.** ByteDance state
       // it on the `prompt` parameter itself: “Use no more than 300 Chinese characters or 600 English
       // words. Excessively long prompts may scatter information, causing the model to overlook
@@ -396,6 +460,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // The 3.0 entries of the API reference state only “Image format: PNG”. Its one alpha sentence is
+      // about `qwen-image-2.1-pro`, a different model, and Qwen-Image-Layered decomposes an existing
+      // image rather than drawing one (audit finding T1).
+      // https://help.aliyun.com/en/model-studio/qwen-image-generation-and-editing-api-reference
+      alpha: { kind: 'UNDOCUMENTED' },
+      canvas: { kind: 'PROMPT' },
       // "Supports input of up to 4.5k tokens", on Alibaba's model page for `qwen-image-3.0-pro`. The
       // figure was first taken from launch coverage and cited to an API reference that did not carry
       // it; this is the page that does.
@@ -416,7 +486,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // is the contradiction it looks like and is not. That page states "The `qwen-image-2.0` series
       // accept up to 1,300 tokens. Other models accept up to 800 tokens" — and its own model overview
       // sends the 3.0 series away: "For 3.0 series API calls, see Qwen Image Generation and Editing
-      // 3.0". So it documents the 2.0 and legacy series, and its figures are not this model's.
+      // 3.0". So it documents the 2.0 and legacy series, and its figures are not this model's. This
+      // paragraph quoted that page without citing it, so a re-check read its sentences against the
+      // two pages above and found neither; both are on the page below, as read on 16 October 2026.
+      // https://help.aliyun.com/en/model-studio/qwen-image-api
       //
       // No multiplier is claimed against 2.0 here, because Alibaba's own figure for the 2.0 series is
       // 1,300 tokens, which makes the widely-repeated "4.5× longer" wrong.
@@ -453,6 +526,11 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // No page documents a transparent generation. The Editor exports “a transparent PNG of the areas you
+      // erased”, which is an edit made afterwards rather than an output (audit finding T1).
+      // https://docs.midjourney.com/hc/en-us/articles/32764383466893-Editor
+      alpha: { kind: 'UNDOCUMENTED' },
+      canvas: { kind: 'PROMPT' },
       promptBudget: {
         kind: 'UNPUBLISHED',
         note: 'Midjourney publish no prompt length anywhere in their documentation, only advice to keep prompts short.',
@@ -476,6 +554,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // Neither model card mentions transparency; an alpha channel takes an extension the weights do not
+      // ship with (audit finding T1). https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0
+      alpha: { kind: 'UNDOCUMENTED' },
+      canvas: { kind: 'PROMPT' },
       // **Both halves of the note below are the front end's, because there is no vendor page to
       // cite.** Stability publish weights rather than a prompt syntax, which is the whole finding
       // recorded at length in `utils/modelWrapperText/stableDiffusion.ts`. The target is the weights,
@@ -497,16 +579,14 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
   },
   {
-    // **FLUX 3 was announced on 23 July 2026 and is not yet what these two entries should name.**
-    // The announcement post puts the whole model in early access and sets out a launch plan whose
-    // capabilities each arrive "after an early access phase": video and audio first, then action
-    // prediction, then FLUX 3 Image, and last an open-weight backbone it names FLUX 3 Dev. Of those,
-    // only the first has shipped — the release notes date FLUX 3 Video to 4 August 2026 on
-    // `POST /v1/flux-3-video`, and describe it as "available now as a preview". Nothing announces
-    // FLUX 3 Image or FLUX 3 Dev, so neither has a date to record and this entry stays on FLUX.2.
-    // Recorded here because the whole lesson of this entry is that a third-party version is a claim
-    // with an expiry date — this one's is visible in advance, so re-check it rather than waiting to
-    // be surprised again. https://bfl.ai/blog/flux-3 and https://docs.bfl.ai/release-notes
+    // **These two entries name FLUX.2, and FLUX 3 Image has now shipped in both of their forms.**
+    // The release notes date FLUX 3 Image to 1 October 2026, on one endpoint that generates, edits
+    // and combines references, and FLUX 3 Image Klein to 15 October 2026 — "a 5.6B parameter version
+    // of FLUX 3 Image with open weights". This comment said the entries stayed on FLUX.2 because
+    // nothing announced FLUX 3 Image, which was true when written and is not now. Everything the two
+    // entries tell a reader is still true of FLUX.2, which they name; moving them to FLUX 3 means
+    // re-establishing the encoder, the ceilings and the negative-prompt argument from Black Forest
+    // Labs' pages and code, and is issue #507. https://docs.bfl.ai/release-notes
     //
     // **A previous wording said FLUX 3 Video was "generally available" and FLUX 3 Image "in limited
     // early access", and the pages say neither.** It was written uncited and a citation was added
@@ -529,30 +609,32 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // `cli.py` loads T5 at 256 for Schnell and 512 for everything else.
     // https://github.com/black-forest-labs/flux2/blob/main/src/flux2/text_encoder.py
     //
-    // **Black Forest Labs address negative prompts in two places, and this paragraph used to say
-    // there was one.** It read that what they say "is written for the hosted tier, and this entry is
+    // **Black Forest Labs addressed FLUX.2's negative prompts in two places for a while, and this
+    // paragraph said there was one.** It read that what they say "is written for the hosted tier, and this entry is
     // not it", that their guide "addresses no open weight in any of its advice", and that the one
     // place [dev] appears is a Quick Reference multi-reference count. The tier-titled guide is still
     // as described — "Prompting Guide - FLUX.2 [pro] & [max]", no token limit, `[dev]: ~6` in the
     // Quick Reference. https://docs.bfl.ai/guides/prompting_guide_flux2
     //
-    // The second guide is the one this entry said did not exist. The FLUX Prompting Guide states it
-    // "covers prompting for the entire FLUX model family — FLUX.1, FLUX.1 Kontext and FLUX.2"; its
-    // Technical Parameters page carries a section headed *Working Without Negative Prompts* opening
-    // "Most FLUX models do not support negative prompts"; and the same page addresses an open weight
-    // by name — "On FLUX.2 [klein], what you write is what you get — be descriptive."
-    // https://docs.bfl.ai/guides/prompting_summary and
-    // https://docs.bfl.ai/guides/prompting_unified_technical
+    // The second guide is the family-scoped FLUX Prompting Guide, and **it is now written for FLUX 3
+    // Image, with FLUX.2 in one section of its reference page.** This paragraph quoted its scope as
+    // covering FLUX.1 to FLUX.2, its Technical Parameters page as hedging about most FLUX models, and
+    // the same page as advising [klein] by name. As read on 16 October 2026 the summary opens "Prompt
+    // FLUX 3 Image with text, reference images, and optional bounding boxes", and the technical page
+    // says "FLUX 3 Image has no negative prompt field." What it keeps for FLUX.2 is on its Prompt
+    // Reference page: under "FLUX.2 [pro] & [max]" it lists "No negative prompts supported", and under
+    // "FLUX.2 [klein]" it says "What you write is exactly what the model receives" — still nothing on
+    // negative prompts for an open weight. https://docs.bfl.ai/guides/prompting_summary,
+    // https://docs.bfl.ai/guides/prompting_unified_technical and
+    // https://docs.bfl.ai/guides/prompting_unified_reference
     //
-    // **The conclusion holds and the argument changes.** "Most FLUX models" is a hedge rather than a
-    // statement about a named model, so it does not settle [dev] and [klein] — which is why the
-    // reference implementation is still what does, and why this entry still argues from the code
-    // rather than borrowing a sentence. The CLI exposes no negative field, and classifier-free
-    // guidance runs its unconditional branch on the empty string, which `denoise_cfg` documents as
-    // the concatenation of an empty prompt with the real one. The FLUX.2 [dev] model card was not
-    // re-checked this pass: Hugging Face answers 401 for that repository's README without an
-    // accepted licence, so the sentence claiming it says nothing about prompting is left out rather
-    // than restated.
+    // **The conclusion holds, and the argument is the one this entry already made.** The guide never
+    // settled [dev] and [klein], so the reference implementation always did, and it still does. The
+    // CLI exposes no negative field, and classifier-free guidance runs its unconditional branch on
+    // the empty string, which `denoise_cfg` documents as the concatenation of an empty prompt with
+    // the real one. The FLUX.2 [dev] model card was not re-checked this pass: Hugging Face answers
+    // 401 for that repository's README without an accepted licence, so the sentence claiming it says
+    // nothing about prompting is left out rather than restated.
     id: 'FLUX',
     name: 'Flux (open weights — FLUX.2 dev / klein)',
     description:
@@ -585,6 +667,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // Black Forest Labs document no transparent output for FLUX.2; the one alpha channel in their
+      // documentation is an inpainting *input* to FLUX.1 Fill (audit finding T1). https://docs.bfl.ml/llms-full.txt
+      alpha: { kind: 'UNDOCUMENTED' },
+      canvas: { kind: 'PROMPT' },
       promptBudget: {
         kind: 'CEILING',
         limit: 512,
@@ -612,13 +698,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // bind. If a per-variant figure is ever published, cite that and delete this paragraph.
     // https://docs.bfl.ai/quick_start/generating_images
     //
-    // **A second page now carries the figure, and it is the better citation of the two.** The
-    // paragraph above sends a re-checking reader to a marketing page when Black Forest Labs' own
-    // documentation states it: the FLUX Prompting Guide's *Building a prompt* page, under a heading
-    // *Prompt length*, reads "FLUX.2 supports prompts up to 32K tokens." That does not change the
-    // inference — the documentation states it just as unscoped as the marketing page does, naming no
-    // variant — so the paragraph above still holds. It changes which page a re-check starts from.
-    // https://docs.bfl.ai/guides/prompting_unified_building
+    // **The marketing page is the only citation again.** A second paragraph here cited the FLUX
+    // Prompting Guide's *Building a prompt* page as stating the same 32K figure under a *Prompt
+    // length* heading. As read on 16 October 2026 that page describes FLUX 3 Image, its *Prompt
+    // length* section gives no figure, and neither does the guide's Prompt Reference page, which is
+    // where its FLUX.2 advice now sits. The model page still reads "32K text input tokens", so the ceiling stands on it alone.
+    // https://bfl.ai/models/flux-2
     //
     // **The negative-prompt claim is scoped to the guide that makes it**, and this entry is the
     // three models that guide speaks to. Its title names [pro] and [max], and its Quick Reference
@@ -638,6 +723,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // The same finding for the hosted tier: its `output_format` takes `jpeg`, `png` and `webp`, and no
+      // parameter asks for alpha. https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[pro]
+      alpha: { kind: 'UNDOCUMENTED' },
+      canvas: { kind: 'PROMPT' },
       promptBudget: {
         kind: 'CEILING',
         limit: 32_000,
@@ -651,7 +740,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // API endpoint, not ChatGPT** — a distinction it spent its first release blurring, by declaring
     // the capabilities of `gpt-image-2` called directly while sending the reader to chatgpt.com,
     // where the prompt is read by a thinking chat model and the picture arrives from a tool call.
-    // That arrangement already has an entry: it is `CHATGPT_5_6_SOL` above. So the two are split the
+    // That arrangement already has an entry: it is `CHATGPT` above. So the two are split the
     // way `FLUX` and `FLUX_API` are, by the surface a reader reaches the weights through.
     //
     // **The version this entry names moved on 8 September 2026, and the entry moved with it rather
@@ -671,8 +760,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // two claims below are about it rather than about the pair that replaced it.
     // https://developers.openai.com/api/docs/models/gpt-image-2
     //
-    // Both model pages settle both capability flags below. "Output modalities: image", so there is
-    // no channel a component map could come back through; and the only endpoints either marks
+    // Both model pages settle both capability flags below. Their *Modalities* table reads "Text
+    // Input only" and "Image Input and output", so there is no channel a component map could come
+    // back through — the pages used to put the same fact as one line of output modalities, and the
+    // table is the form they carry now; and the only endpoints either marks
     // supported are `v1/images/generations` and `v1/images/edits`, with Chat Completions, Responses
     // and Batch all marked unsupported — so there is no conversational pass in which it could check
     // its own work. **Batch is the one that moved**: `gpt-image-2` marks it supported and neither
@@ -682,7 +773,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // API image generation tool", and that is not the contradiction of the table it looks like.** The
     // table answers whether this model can be a *mainline* model on `v1/responses`, which it cannot;
     // the sentence is about being the model the `image_generation` tool renders with, which is the
-    // far side of the hand-off `CHATGPT_5_6_SOL` above describes. The two are different seats, and
+    // far side of the hand-off `CHATGPT` above describes. The two are different seats, and
     // only the first is a conversational pass. Reading the sentence as the table's answer would give
     // this entry Sol's capabilities, which is the blur the split above exists to undo.
     //
@@ -700,14 +791,14 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'GPT_IMAGE',
     name: 'GPT Image 2.5 (OpenAI Images API)',
     description:
-      'OpenAI’s image models as the Images API serves them: Sunburst for quality, Flare for speed. Both return an image and nothing else, so this target gets the specification without the self-audit or the component map. OpenAI say both models may struggle to place elements precisely in a layout-sensitive composition, which is what a component grid is. Pasting into ChatGPT is a different path with an entry of its own, and that entry is ChatGPT 5.6 Sol above.',
+      'OpenAI’s image models as the Images API serves them: Sunburst for quality, Flare for speed. Both return an image and nothing else, so this target gets the specification without the self-audit or the component map. OpenAI say both models may struggle to place elements precisely in a layout-sensitive composition, which is what a component grid is. Pasting into ChatGPT is a different path with an entry of its own, and that entry is ChatGPT (GPT-6) above.',
     // **Checked, and there is none.** Every endpoint the model page marks supported takes a request
     // rather than a person, and OpenAI publish no playground in front of them — the API reference is
     // documentation rather than a place to paste a prompt. ChatGPT Images is not this endpoint and
     // cannot stand in for it: OpenAI's release notes give that surface *images with thinking*, where
     // "When given more time to think, it can plan and refine image outputs before generating them"
     // — which is a deliberating pass, the opposite of what the flags below declare, and the hand-off
-    // `CHATGPT_5_6_SOL` exists to describe. Where it is available is a plan list on OpenAI's Images
+    // `CHATGPT` exists to describe. Where it is available is a plan list on OpenAI's Images
     // in ChatGPT page rather than a picker setting: "Images with thinking is available on Plus, Pro,
     // and Business. It is coming to Enterprise and Edu soon." This note stated a reasoning-effort
     // condition instead, which was that entry's own reading rather than OpenAI's and is recorded
@@ -716,12 +807,40 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // https://help.openai.com/en/articles/11084440-images-in-chatgpt
     generatorSite: {
       kind: 'NONE',
-      note: 'OpenAI run no page that generates through the Images API. ChatGPT’s own image surface is the _ChatGPT 5.6 Sol_ target.',
+      note: 'OpenAI run no page that generates through the Images API. ChatGPT’s own image surface is the _ChatGPT (GPT-6)_ target.',
     },
     capabilities: {
       deliberates: false,
       seesCanvasBeforeDelivery: false,
       emitsText: false,
+      // “`gpt-image-2.5-sunburst` and `gpt-image-2.5-flare`, including their `2026-09-08` snapshots,
+      // support `opaque` and `transparent` backgrounds”, on the `background` property of the OpenAPI
+      // file, and for `gpt-image-2` “this support is in preview”. A request option rather than prompt
+      // text, so the Background Key control tells the reader to set it (audit finding T1).
+      // https://github.com/openai/openai-openapi/blob/master/openapi.yaml
+      alpha: {
+        kind: 'REQUEST_PARAMETER',
+        note: 'GPT Image returns an alpha channel only when your request sets background to “transparent” and output_format to “png” or “webp”.',
+      },
+      // The image generation guide: “Width and height must be multiples of 16, the aspect ratio must be
+      // between 1:3 and 3:1, and neither edge may exceed 3840 pixels. The total pixel count must be
+      // between 655,360 and 8,294,400 (4K). Resolutions above 2560x1440 are experimental.” The GPT
+      // Image 2.5 prompting guide states the same limits. The prompt's own canvas line cannot move the
+      // dimensions this request option sets, so the Aspect Ratio control states the size to ask for.
+      // https://developers.openai.com/api/docs/guides/image-generation
+      // https://developers.openai.com/api/docs/guides/image-prompting
+      canvas: {
+        kind: 'REQUEST_SIZE',
+        parameter: 'size',
+        limits: {
+          edgeMultiple: 16,
+          maxEdge: 3840,
+          minPixels: 655_360,
+          maxPixels: 8_294_400,
+          maxRatio: 3,
+          stable: { width: 2560, height: 1440 },
+        },
+      },
       // "The maximum length is 32000 characters for the GPT image models." Recorded in characters
       // because that is the unit OpenAI states it in, and taken from OpenAI's own published OpenAPI
       // description of the `prompt` field rather than from the rendered reference page, which draws

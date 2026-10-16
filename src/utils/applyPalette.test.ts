@@ -47,4 +47,20 @@ describe('applyPalette', () => {
       if (before.a === 255) expect(readPixel(applied.data, offset)).toEqual(before);
     }
   });
+
+  it('never writes a translucent entry into an opaque pixel, however near its colour', () => {
+    // Three populous colours fill a budget of three, one of them a soft edge. The lone opaque pixel
+    // sits 25 from the soft entry and 60 from the opaque red, and taking the soft one made a hole.
+    const soft = { r: 140, g: 0, b: 0, a: 230 };
+    const lone = { r: 140, g: 0, b: 0, a: 255 };
+    const image = imageFrom(3001, 1, (x) => {
+      if (x === 3000) return lone;
+      return [{ r: 200, g: 0, b: 0, a: 255 }, { r: 0, g: 0, b: 200, a: 255 }, soft][x % 3] ?? lone;
+    });
+    const palette = buildPalette(image, 3);
+    // The precondition: the soft edge holds a slot, or there is nothing for the pixel to wrongly take.
+    expect(palette).toContainEqual(soft);
+
+    expect(readPixel(applyPalette(image, palette).data, 3000 * 4)).toEqual({ r: 200, g: 0, b: 0, a: 255 });
+  });
 });

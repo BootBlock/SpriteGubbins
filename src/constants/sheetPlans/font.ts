@@ -7,10 +7,10 @@ import { spellNumber } from '../../utils/numberWords.ts';
  *
  * **It is a series because the character set does not fit a generation, not because it has parts.**
  * Printable ASCII is 95 codepoints; one of them is the space, which is drawn as nothing, so 94
- * glyphs have to be delivered and `PRACTICAL_COMPONENT_CEILING` is 43. That is the arithmetic
+ * glyphs have to be delivered, more than twice `PRACTICAL_COMPONENT_CEILING`. That is the arithmetic
  * `SheetSeries` exists for. The split is along the boundaries an engine and a reader both already
  * recognise — capitals, lower case, digits with the punctuation a sentence needs, and the remaining
- * symbols — rather than at whatever position 43 falls on, because a sheet that stops in the middle of
+ * symbols — rather than wherever the ceiling falls, because a sheet that stops in the middle of
  * the alphabet is a sheet nobody can check by eye.
  *
  * **One mode, and the other three are declined.** A glyph is a flat mark on a baseline: it has no
@@ -160,6 +160,9 @@ export const FONT_CAPITALS: SheetPlan = {
     'a run of set text at any size — every capital sharing one baseline and one cap height, so no letter sits high, low or heavy against the ones beside it, and each cuts out as a single character an engine can index by codepoint.',
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
+  identity: 'ONE_SET',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
   // The agreement shape, for EFFECT's reason and one more of its own: these components are not
@@ -196,6 +199,9 @@ export const FONT_LOWER_CASE: SheetPlan = {
     'a run of set text at any size — every lower-case letter sharing one baseline and one height against it, with any ascender or descender reaching the same distance throughout, and each cutting out as a single character an engine can index by codepoint.',
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
+  identity: 'ONE_SET',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
   scaleExample:
@@ -225,6 +231,9 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
     'a run of set text carrying numbers and punctuation — the digits aligning with each other in a column of figures, and each mark sitting at the height against the baseline that its own use asks for.',
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
+  identity: 'ONE_SET',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // Digits and marks, each drawn once.
   posing: 'UNSTATED',
   scaleExample:
@@ -259,6 +268,9 @@ export const FONT_SYMBOLS: SheetPlan = {
     'the rest of a printable ASCII set — every symbol drawn to the same construction and weight as the letters it will be set among, so none of them reads as borrowed from another font.',
   targetQuantity: 'COMPONENT',
   extent: 'WHOLE',
+  identity: 'ONE_SET',
+  orientation: 'SHEET_YAW',
+  subjectScope: 'ONE_DESIGN',
   // Symbols and operators, each drawn once.
   posing: 'UNSTATED',
   scaleExample:

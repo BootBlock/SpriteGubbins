@@ -59,7 +59,7 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       'A prop that is genuinely rigged: the base never moves, the yoke yaws and the barrel pitches, over four cardinal runs. Squared caps and no overlap, because the joints hide behind armour collars.',
     category: 'OBJECT',
     subject: {
-      species: 'Defense Turret',
+      species: 'Defence Turret',
       gender: 'Overclocked / Active',
       age: 'Futuristic Sci-Fi',
       role: 'Hazard Obstacle',
@@ -141,7 +141,7 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
     id: 'portal-gate-shrine',
     name: 'Ancient Portal Gate',
     description:
-      'A rendered 3D gate under a true-isometric camera — textured, no colour budget, delivered on transparency. The set piece to compare against the flatter object presets.',
+      'A rendered 3D gate under a true-isometric camera — textured, no colour budget, delivered on a magenta key. The set piece to compare against the flatter object presets.',
     category: 'OBJECT',
     subject: {
       species: 'Portal Gate',
@@ -171,10 +171,10 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
-      backgroundKey: 'TRANSPARENT',
+      backgroundKey: 'MAGENTA_FF00FF',
       rigMode: 'NONE',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'GEMINI_FLASH_IMAGE',
+      targetModel: 'GEMINI_NANO_BANANA',
     },
   },
 ];

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
+import { chosenProjectId } from '../../utils/chosenProjectId.ts';
 import { SelectField } from '../common/SelectField.tsx';
 
 interface ProjectSelectFieldProps {
@@ -51,7 +52,7 @@ export function ProjectSelectField({
     [projects],
   );
 
-  const chosen = projects.some((project) => project.id === value) ? value : (projects[0]?.id ?? '');
+  const chosen = chosenProjectId(projects, value);
 
   return (
     <div className="max-w-md">

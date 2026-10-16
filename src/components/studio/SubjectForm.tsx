@@ -1,16 +1,23 @@
 import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
+import { ICON_ROSTER_SECTION } from '../../constants/iconRosterSection.ts';
 import { SUBJECT_FIELD_GROUPS } from '../../constants/subjectGroups.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
+import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
+import { additionalAnatomyNote } from '../../utils/additionalAnatomyNote.ts';
+import { subjectFieldInputId } from '../../utils/subjectFieldInputId.ts';
 import { subjectGroupDigest } from '../../utils/studioDigests.ts';
 import { CollapsibleSection } from '../common/CollapsibleSection.tsx';
 import { ComboBox } from '../common/ComboBox.tsx';
 import { SectionToggleAll } from '../common/SectionToggleAll.tsx';
 import { CategorySelector } from './CategorySelector.tsx';
+import { IconRosterSection } from './IconRosterSection.tsx';
 import { SubjectActions } from './SubjectActions.tsx';
 
 /**
  * What is being drawn: the category, and the sixteen fields that describe the subject, in five
- * foldable groups.
+ * foldable groups — and, for a category drawing an icon roster, a sixth holding the roster's summary.
  *
  * `SUBJECT_FIELD_GROUPS` decides which fields appear and in what order; the category supplies each
  * one's label, tooltip and option pool. Nothing is written out field by field, so a category stays a
@@ -33,8 +40,22 @@ export function SubjectForm() {
   const category = useSubjectStore((state) => state.category);
   const subject = useSubjectStore((state) => state.subject);
   const setField = useSubjectStore((state) => state.setField);
+  const sheetSubject = useSheetSubject();
+  const mode = useOutputStore((state) => state.output.directionalMode);
+  const directions = useOutputStore((state) => state.output.directions);
+  const rig = useOutputStore((state) => state.output.rigContract);
+  const anatomyNote = additionalAnatomyNote(
+    category,
+    sheetSubject,
+    parseAdditionalAnatomy(subject.additional_anatomy),
+    { mode, directions, rig },
+  );
 
-  const { fields } = CATEGORY_OPTIONS[category];
+  const { fields, iconRoster } = CATEGORY_OPTIONS[category];
+  // The roster's section folds with the field groups, so the expand-all control counts it among them
+  // wherever the category draws one.
+  const sections =
+    iconRoster === undefined ? SUBJECT_FIELD_GROUPS : [...SUBJECT_FIELD_GROUPS, ICON_ROSTER_SECTION];
   // Keyed for lookup because the groups name fields by key while a category defines them as a list.
   // Built per render: `fields` changes with the category, and a module-level map could not.
   const fieldsByKey = new Map(fields.map((field) => [field.key, field]));
@@ -58,7 +79,7 @@ export function SubjectForm() {
         </h2>
 
         <div className="flex items-center gap-2">
-          <SectionToggleAll sections={SUBJECT_FIELD_GROUPS} panelLabel="Subject Definition" />
+          <SectionToggleAll sections={sections} panelLabel="Subject Definition" />
 
           <SubjectActions />
         </div>
@@ -96,10 +117,14 @@ export function SubjectForm() {
                 return (
                   <ComboBox
                     key={field.key}
+                    id={subjectFieldInputId(field.key)}
                     label={field.label}
                     tooltip={field.tooltip}
                     value={subject[field.key]}
                     options={field.options}
+                    // What the pieces do to the sheets that draw them, which the card cannot say ahead of
+                    // the reader's own list (audit finding T8); otherwise the category's own note.
+                    description={field.key === 'additional_anatomy' ? anatomyNote : (field.note ?? '')}
                     onChange={(value) => {
                       setField(field.key, value);
                     }}
@@ -109,6 +134,8 @@ export function SubjectForm() {
             </div>
           </CollapsibleSection>
         ))}
+
+        <IconRosterSection />
       </div>
     </section>
   );

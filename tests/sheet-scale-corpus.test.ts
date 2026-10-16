@@ -8,14 +8,15 @@ import { stepProfile } from '../src/utils/stepProfile.ts';
 import type { SheetScale } from '../src/types/quantiser.ts';
 
 /**
- * What each of the four scale readings answers on the eight sheets in `test_sprites/`.
+ * What each of the four scale readings answers on the eight calibration sheets in `test_sprites/`.
  *
  * **The hit rate, written down.** Every calibrated figure these readings carry was measured on
  * hand-built fixtures — softened art at 4, 6, 8, 12 and 16, a small sprite on a large key field —
  * and each of their docblocks says so. What nothing recorded was what the readings do on the only
- * real generator output this project has, so a change that halved the hit rate would have passed
- * every test in the suite. This file is that record: the answer each reading gives on each sheet,
- * pinned exactly, so the next recalibration has to state what it did to all eight.
+ * real generator output this project calibrates against, so a change that halved the hit rate would
+ * have passed every test in the suite. This file is that record: the answer each reading gives on each
+ * sheet, pinned exactly, so the next recalibration has to state what it did to all eight. The ninth
+ * sheet, `game_overlay_test.png`, has no one pitch to pin, and `overlay-sheet-scale.test.ts` pins why.
  *
  * **The true pitch of each sheet is measured, not assumed.** It is read off the correlation of each
  * axis's differenced step profile — the comb a pixel grid puts at multiples of its own pitch — with
@@ -158,7 +159,7 @@ const EXPECTED: Record<CorpusSheetName, CorpusReadings> = {
     correlated: null,
     drifting: null,
     offered: null,
-    note: 'The rows settle on the true 5 with 0.448 of support against a floor of 0.5, and the columns find no peak to corroborate it.',
+    note: 'The rows peak at 5, measure 4.65 and would offer 4, but with 0.448 of support against a floor of 0.5, and the columns find no peak to corroborate it.',
   },
   'vehicles_and_props.png': {
     detected: null,

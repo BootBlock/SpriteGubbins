@@ -86,22 +86,19 @@ describe('GridControls', () => {
     expect(screen.getByRole('button', { name: /8× estimated/ })).toBeInTheDocument();
   });
 
-  it('asks for a number when no reading found a scale', () => {
-    show(readWith(null), null);
-
-    expect(screen.getByText(/none of the four readings of the sheet found a scale/)).toBeInTheDocument();
-  });
-
-  it('goes on asking for it after one has been typed', () => {
-    // The counterpart to the estimate's paragraph disappearing, and the asymmetry is deliberate:
-    // this one is *instructions* — what to type, what a grid of 1 does, what to do about a margin —
-    // and every word stays true after the reader answers.
-    //
-    // Its own `it`, because `cleanup` runs between tests and not between renders: a second `show`
-    // in one case mounts a second panel beside the first, and an assertion that the paragraph is
-    // present is then satisfied by the *previous* render whatever this one did. `getByText` rather
-    // than `getAllByText` for the same reason — it throws on a duplicate, so the leak cannot hide.
-    show(readWith(null), 6);
+  // The typed case is the counterpart to the estimate's paragraph disappearing, and the asymmetry is
+  // deliberate: this one is *instructions* — what to type, what a grid of 1 does, what to do about a
+  // margin — and every word stays true after the reader answers.
+  //
+  // A case each, because `cleanup` runs between tests and not between renders: a second `show` in
+  // one case mounts a second panel beside the first, and an assertion that the paragraph is present
+  // is then satisfied by the *previous* render whatever this one did. `getByText` rather than
+  // `getAllByText` for the same reason — it throws on a duplicate, so the leak cannot hide.
+  it.each([
+    ['asks for a number when no reading found a scale', null],
+    ['goes on asking for it after one has been typed', 6],
+  ])('%s', (_, grid) => {
+    show(readWith(null), grid);
 
     expect(screen.getByText(/none of the four readings of the sheet found a scale/)).toBeInTheDocument();
   });

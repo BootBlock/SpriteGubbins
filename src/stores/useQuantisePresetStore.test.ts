@@ -67,15 +67,6 @@ afterEach(() => {
 });
 
 describe('saveQuantisePreset', () => {
-  it('stores the dials as they stand in the tab, not as they were passed in', async () => {
-    useQuantiseStore.setState({ ...TUNED });
-
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
-
-    const [stored] = await backend.listQuantisePresets();
-    expect(stored?.dials).toEqual(TUNED);
-  });
-
   it('leaves the sheet, the grid and a held palette out of what it hands to storage', async () => {
     useQuantiseStore.setState({
       ...TUNED,
@@ -87,7 +78,7 @@ describe('saveQuantisePreset', () => {
       },
     });
     // Asserted on what reaches the backend, not on what comes back out of it. The reader builds a
-    // fresh object holding exactly the twenty dials, so a `saveQuantisePreset` that spread the
+    // fresh object holding exactly the dials, so a `saveQuantisePreset` that spread the
     // whole store — sheet, grid, locked palette and all — would still read back clean. This is the
     // only place the extra keys are still visible.
     const written = vi.spyOn(backend, 'saveQuantisePreset');
@@ -235,6 +226,25 @@ describe('moveQuantisePreset', () => {
     expect(stored[0]?.projectId).toBe(HARBOUR);
     expect(stored[0]?.dials).toEqual(TUNED);
     expect(useUIStore.getState().toastMessage).toBe('Moved “Flat sheets”');
+  });
+
+  it('refuses to move a set into a project that already has its name, and writes nothing', async () => {
+    // Issue #454: two sets with one name in one project leave a save there overwriting whichever the
+    // list shows first.
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', 'Theirs', HARBOUR);
+    await useQuantisePresetStore.getState().saveQuantisePreset('FLAT SHEETS', 'Mine', DEFAULT_PROJECT_ID);
+    const mine = useQuantisePresetStore
+      .getState()
+      .presets.find((preset) => preset.projectId === DEFAULT_PROJECT_ID);
+    if (!mine) throw new Error('the preset should have been saved.');
+
+    await useQuantisePresetStore.getState().moveQuantisePreset(mine.id, HARBOUR);
+
+    const stored = await backend.listQuantisePresets();
+    expect(stored.find((preset) => preset.id === mine.id)?.projectId).toBe(DEFAULT_PROJECT_ID);
+    expect(useUIStore.getState().toastMessage).toBe(
+      'Saved settings named “FLAT SHEETS” are already in that project',
+    );
   });
 
   it('says nothing and writes nothing when the set is already there', async () => {

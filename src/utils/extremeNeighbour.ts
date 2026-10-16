@@ -26,9 +26,9 @@ export const TRANSPARENT_DILATE_KEY = -1;
  * minimum of each channel independently, so its output holds colours assembled from three different
  * pixels: a red from here, a green from there. That is harmless where the result is about to be
  * resampled, and not harmless here, because the Quantise panel tells the reader in as many words
- * that under the standard vote every colour which survives is one the image already contained. An
- * index cannot break that promise. It also keeps the palette step honest — a budget chosen from
- * invented tones spends slots on colours the artist never drew.
+ * that under the standard vote with anti-aliasing off every colour which survives is one the image
+ * already contained. An index cannot break that promise. It also keeps the palette step honest — a
+ * budget chosen from invented tones spends slots on colours the artist never drew.
  *
  * **Separable, because a square is.** The minimum over a square is the minimum over one axis of the
  * minima over the other, so two one-dimensional passes give the two-dimensional answer — and each

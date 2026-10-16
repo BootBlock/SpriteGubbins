@@ -4,10 +4,9 @@ import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { DIRECTION_SETS } from '../types/rendering.ts';
 import type { RigContract } from '../types/rigContract.ts';
-import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import { sheetBatch } from './sheetBatch.ts';
 import { sheetIdentity } from './sheetIdentity.ts';
-import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { standardSubject } from '../test/sheetSubject.ts';
 
 /**
@@ -200,17 +199,17 @@ describe('sheetIdentity', () => {
     });
 
     it('withholds it from a sheet that draws several facings', () => {
-      // The two core sheets above. A sheet covering four facings is not any one of them, so the
-      // download falls back to the ordinal rather than claiming the first.
-      const { facing, sheet } = sheetIdentity(
-        'CHARACTER',
-        standardSubject(),
-        config({ directions: 'EIGHT_COMPASS', sheetIndex: 0 }),
-        '',
+      // A sheet covering four facings is not any one of them, so the download falls back to the
+      // ordinal rather than claiming the first. An OBJECT's eight-compass views, because that batch
+      // is two such sheets and no run: on the character above, each core sheet's first facing is also
+      // a run's, so the shared-facing rule withholds the name there whether or not this one holds.
+      const sheets = [0, 1].map((sheetIndex) =>
+        sheetIdentity('OBJECT', standardSubject(), config({ directions: 'EIGHT_COMPASS', sheetIndex }), ''),
       );
 
-      expect(sheet?.facings).toHaveLength(4);
-      expect(facing).toBeNull();
+      expect(sheets.map((entry) => entry.sheet?.total)).toStrictEqual([2, 2]);
+      expect(sheets.map((entry) => entry.sheet?.facings?.length)).toStrictEqual([4, 4]);
+      expect(sheets.map((entry) => entry.facing)).toStrictEqual([null, null]);
     });
 
     it('withholds it where the batch is one sheet, which has nothing to be told apart from', () => {
@@ -243,31 +242,32 @@ describe('sheetIdentity', () => {
       expect(sheets.map((entry) => entry.facing)).toStrictEqual([null, null, null, null]);
     });
 
-    it('never gives two sheets of one batch the same facing, over every pairing there is', () => {
-      // The property the whole change rests on, swept rather than argued: a name two downloads share
-      // is the failure this replaced, so it may not be reintroduced by a plan, a mode or a set that
-      // nobody had in mind here. Every category, assembly base, mode and direction set, which is
-      // every batch the studio can compose — the base because a declared one draws sheets of its own.
-      for (const category of SUBJECT_CATEGORIES) {
-        for (const subject of assemblyBaseSubjectsOf(category)) {
-          for (const directionalMode of DIRECTIONAL_MODES) {
-            for (const directions of DIRECTION_SETS) {
-              const batch = config({ directionalMode, directions });
-              const named = sheetBatch(category, subject, batch)
-                .sheets.map(
-                  (sheet) => sheetIdentity(category, subject, { ...batch, ...sheet.output }, '').facing,
-                )
-                .filter((facing): facing is string => facing !== null);
+    it.each(
+      assemblyBaseCases().flatMap(([name, category, subject]) =>
+        DIRECTIONAL_MODES.flatMap((mode) =>
+          DIRECTION_SETS.map((directions) => [name, mode, directions, category, subject] as const),
+        ),
+      ),
+    )(
+      'never gives two sheets of one batch the same facing, on %s under %s and %s',
+      (_name, directionalMode, directions, category, subject) => {
+        // The property the whole change rests on, swept rather than argued: a name two downloads share
+        // is the failure this replaced, so it may not be reintroduced by a plan, a mode or a set that
+        // nobody had in mind here. Every category, assembly base, mode and direction set, which is
+        // every batch the studio can compose — the base because a declared one draws sheets of its
+        // own. One case per batch, which is the unit the property is about: one per subject and mode
+        // passed the one-second limit a slow runner stands in for on an ICON roster's twenty-odd sheets.
+        const batch = config({ directionalMode, directions });
+        const named = sheetBatch(category, subject, batch)
+          .sheets.map((sheet) => sheetIdentity(category, subject, { ...batch, ...sheet.output }, '').facing)
+          .filter((facing): facing is string => facing !== null);
 
-              expect(
-                new Set(named).size,
-                `${category} / ${subject.anatomy} / ${directionalMode} / ${directions}`,
-              ).toBe(named.length);
-            }
-          }
-        }
-      }
-    });
+        expect(
+          new Set(named).size,
+          `${category} / ${subject.anatomy} / ${directionalMode} / ${directions}`,
+        ).toBe(named.length);
+      },
+    );
   });
 
   it('counts the subject’s own anatomy, which the sheet contracts for too', () => {

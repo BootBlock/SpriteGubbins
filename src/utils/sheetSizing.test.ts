@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import { standardSubject } from '../test/sheetSubject.ts';
@@ -32,7 +33,9 @@ const CONTRACT: RigContract = {
   ],
 };
 
-const SUBJECT = standardSubject();
+// A whole subject, since the sizing reads a display size from the subject's own fields as well; the sheet
+// fields are the standard ones, so every plan keeps the entries it declares.
+const SUBJECT = { ...defaultSubjectFor('CHARACTER'), ...standardSubject() };
 
 /** A rig sheet under `CUSTOM`, the one profile that reads a typed size. */
 function output(over: Partial<OutputConfig> = {}): OutputConfig {

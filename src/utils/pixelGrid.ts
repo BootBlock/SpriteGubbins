@@ -27,7 +27,7 @@ import { stepProfile } from './stepProfile.ts';
  * list has to tell the boundaries apart from, where autocorrelation of the whole profile needs no
  * such separation and reads straight through them. `estimateMeshPeriod` stays behind it for *small*
  * sheets: a handful of drifting cells across a few dozen pixels sits under the correlation's repeat
- * floor, and a clean median of the boundary spacings still speaks there —
+ * floor, and boundary spacings that keep a clean habit still speak there —
  * `meshPeriod.test.ts` holds the sheet that proves the path. Every estimated answer is offered
  * under the same hedge: a candidate to click and judge, never adopted on its own. **Which of them
  * answered is carried out with the number** rather than pooled into one `ESTIMATED`, because the

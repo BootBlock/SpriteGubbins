@@ -1,11 +1,20 @@
 import { create } from 'zustand';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
+import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
-import { plansFor } from '../constants/sheetPlans/index.ts';
+import type { CustomIconDraft, CustomIconRefusal } from '../types/customIconDraft.ts';
+import type { CustomIconEntry, IconRoster } from '../types/iconRoster.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { StudioHistory, StudioPosition } from '../types/studioHistory.ts';
-import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
+import type { SubjectState } from '../types/subjectState.ts';
+import { checkCustomIcon } from '../utils/checkCustomIcon.ts';
+import { iconPickId } from '../utils/iconPickId.ts';
+import { outputForField } from '../utils/outputForField.ts';
 import { resolveOutputForSubject } from '../utils/resolveOutputForSubject.ts';
+import { outputForReset } from '../utils/outputForReset.ts';
+import { outputForRoster } from '../utils/outputForRoster.ts';
+import { toggleIconPicks } from '../utils/toggleIconPicks.ts';
+import { withCustomIcon } from '../utils/withCustomIcon.ts';
 import {
   currentStudioPosition,
   openStudioHistory,
@@ -15,56 +24,7 @@ import {
 } from '../utils/studioHistory.ts';
 import { useOutputStore } from './useOutputStore.ts';
 
-/**
- * What is being drawn: the category and the sixteen answers that describe the subject.
- *
- * Deliberately holds no compiled prompt, word count or token estimate. All three are functions of
- * this state and the output configuration, so they are derived where they are displayed — mirroring
- * them into a store would be the same "syncing derived state" defect the specification bans, only
- * moved out of a component where the lint rules can no longer see it.
- *
- * It does hold the studio's undo stack, because the acts that fill it are the methods below — a stack
- * kept anywhere else is one a new call site can forget to record into.
- */
-export interface SubjectState {
-  readonly category: SubjectCategory;
-  readonly subject: SubjectDefinition;
-  /** Every position the studio has been in, and which of them it is at. */
-  readonly history: StudioHistory;
-
-  /** Switch category. Resets the subject: the field *pools* differ, so the answers cannot carry over. */
-  setCategory(category: SubjectCategory): void;
-  /** Set one field. Recorded only where a new assembly base moves the sheet mode, the rig or the sheet. */
-  setField(key: SubjectFieldKey, value: string): void;
-  /**
-   * Replace the whole studio at once — what loading a preset, restoring a prompt and restoring a
-   * session all do. The three parts are not separable.
-   *
-   * A subject only means anything against the category whose labels and pools it was written for, so
-   * setting those in two steps would leave the store briefly describing a creature with a building's
-   * answers. The output has to land inside the same act for a different reason: a load that happens
-   * to leave the sixteen answers alone would otherwise record nothing while replacing every output
-   * setting, which is the loss this stack exists to prevent. It arrives as a *write* rather than a
-   * value because the callers want different halves — a preset keeps the reader's companion outputs,
-   * where a history entry is the configuration that produced its prompt and takes the lot.
-   */
-  setStudio(category: SubjectCategory, subject: SubjectDefinition, writeOutput: () => void): void;
-  /** Reroll every field from the current category's option pool. */
-  randomizeSubject(): void;
-  /** Back to the current category's defaults, without changing category. */
-  resetSubject(): void;
-  /**
-   * Start the stack again at the position the studio is in now, recording nothing — what restoring
-   * a saved session does. That position is the one the reader is *starting* from, and recording it
-   * as a step would offer them an undo back to a default studio they never saw.
-   */
-  openStudio(): void;
-  /** Step back to the position before the last act, subject and output settings together. */
-  undoStudio(): void;
-  /** Step forward into a position stepped back from. */
-  redoStudio(): void;
-}
-
+/** The studio's subject, its icon roster and its undo stack — see {@link SubjectState}. */
 export const useSubjectStore = create<SubjectState>((set, get) => ({
   category: DEFAULT_PRESET.category,
   subject: DEFAULT_PRESET.subject,
@@ -83,11 +43,9 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
       const subject = defaultSubjectFor(category);
       set({ category, subject });
       // A category switch invalidates the most of the technical half; `resolveOutputForSubject`
-      // settles the seven claims a category can refuse. Written back only where something moved, so
+      // settles the claims a category can refuse. Written back only where something moved, so
       // a switch that decides nothing leaves that object alone.
-      const store = useOutputStore.getState();
-      const resolved = resolveOutputForSubject(category, subject, store.output, from);
-      if (resolved !== store.output) store.setOutputConfig(resolved);
+      settleOutput((output) => resolveOutputForSubject(category, subject, output, from));
     });
   },
 
@@ -98,10 +56,12 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     // despite never being recorded. A base whose plans cannot draw the stored sheet is the exception:
     // it settles the mode, the rig and the sheet index, and typing the old base back returns the field
     // without returning those, so that edit is an act. It records only on the keystroke whose plans
-    // move the output, never on the keystrokes between.
+    // move the output, never on the keystrokes between. An icon set's *Extra Overlay Pieces* are the
+    // second: they decide how many overlay sheets close the series, so an edit that adds or removes
+    // one keeps the reader on the sheet they were on (`outputForRoster`).
     const { category, subject } = get();
     const next = { ...subject, [key]: value };
-    const output = outputFollowing(category, subject, next);
+    const output = outputForField(category, subject, next, useOutputStore.getState().output);
     if (output === null) {
       set({ subject: next });
       return;
@@ -119,6 +79,32 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     });
   },
 
+  toggleIcons: (ids, on) => {
+    const toggled = toggleIconPicks(get().subject.icons?.picks ?? [], ids, on, ICON_ROSTER_CAPACITY);
+    writeRoster((roster) => ({ ...roster, picks: toggled.picks }));
+    return get().subject.icons === undefined ? [] : toggled.refused;
+  },
+
+  clearIcons: () => {
+    writeRoster((roster) => ({ ...roster, picks: [] }));
+  },
+
+  addCustomIcon: (draft, library) => saveCustomIcon(draft, null, library),
+
+  updateCustomIcon: (id, draft, library) => saveCustomIcon(draft, id, library),
+
+  removeCustomIcon: (id) => {
+    writeRoster((roster) => ({ ...roster, picks: roster.picks.filter((pick) => iconPickId(pick) !== id) }));
+  },
+
+  setIconLook: (look) => {
+    if (get().subject.icons?.look !== look) writeRoster((roster) => ({ ...roster, look }));
+  },
+
+  setIconColourMode: (colourMode) => {
+    if (get().subject.icons?.colourMode !== colourMode) writeRoster((roster) => ({ ...roster, colourMode }));
+  },
+
   randomizeSubject: () => {
     act(() => {
       const { category, subject: before } = get();
@@ -130,7 +116,7 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
         if (choice !== undefined) subject[field.key] = choice;
       }
       set({ subject });
-      followBase(category, before, subject);
+      settleOutput((output) => outputForField(category, before, subject, output));
     });
   },
 
@@ -139,7 +125,7 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
       const { category, subject: before } = get();
       const subject = defaultSubjectFor(category);
       set({ subject });
-      followBase(category, before, subject);
+      settleOutput((output) => outputForReset(category, before, subject, output));
     });
   },
 
@@ -157,32 +143,53 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
 }));
 
 /**
- * The output settled against a subject whose assembly base may have changed, or `null` where nothing
- * moves.
- *
- * **Only where the change reaches the plans.** A base chooses which sheets its category draws (issue
- * #283), so a reader who picks `Single Rigid Object` has left behind a cut-out rig sheet that nothing
- * on the object could turn on, and the store would otherwise hold a mode the studio no longer offers.
- * Where the plans are one table before and after, nothing moves — which is what keeps a reader's sheet
- * index while they type, since the combo box writes every keystroke through `setField`.
+ * Write the output configuration `settle` answers with for the one in force, where it answers with a
+ * different one: `resolveOutputForSubject` after a category switch, `outputForField` after a field edit or a reroll,
+ * `outputForReset` after a reset, and `outputForRoster` after a roster change. Each hands back the same
+ * object, or `null`, for a change that decides nothing, and that writes nothing.
  */
-function outputFollowing(
-  category: SubjectCategory,
-  before: SubjectDefinition,
-  after: SubjectDefinition,
-): OutputConfig | null {
-  if (plansFor(category, before) === plansFor(category, after)) return null;
-  const { output } = useOutputStore.getState();
-  // The plans differ, so a contract loaded for the body before the edit does not survive it: it
-  // replaces an inventory the new base no longer draws (issue #286).
-  const resolved = resolveOutputForSubject(category, after, output, { category, subject: before });
-  return resolved === output ? null : resolved;
+function settleOutput(settle: (output: OutputConfig) => OutputConfig | null): void {
+  const { output, setOutputConfig } = useOutputStore.getState();
+  const settled = settle(output);
+  if (settled !== null && settled !== output) setOutputConfig(settled);
 }
 
-/** Write {@link outputFollowing}'s answer, where it has one. */
-function followBase(category: SubjectCategory, before: SubjectDefinition, after: SubjectDefinition): void {
-  const output = outputFollowing(category, before, after);
-  if (output !== null) useOutputStore.getState().setOutputConfig(output);
+/**
+ * Add or replace an entry of the reader's own once `checkCustomIcon` has passed it against the roster
+ * and `library`, or return why not. A replacement equal to what it replaces records nothing, because
+ * `recordStudio` compares the rosters by value.
+ */
+function saveCustomIcon(
+  draft: CustomIconDraft,
+  replacing: string | null,
+  library: readonly CustomIconEntry[],
+): readonly CustomIconRefusal[] {
+  const roster = useSubjectStore.getState().subject.icons;
+  if (roster === undefined) return [];
+  const { entry, refusals } = checkCustomIcon(draft, roster.picks, replacing, library);
+  if (entry === null) return refusals;
+  writeRoster((roster) => ({ ...roster, picks: withCustomIcon(roster.picks, entry, replacing) }));
+  return [];
+}
+
+/**
+ * Put a changed roster on the subject as one act, with the sheet index pulled back inside the series it
+ * now draws and the background key and palette moved to ones the set can take — a tick, a clear, a new
+ * look or colour mode, or an entry of the reader's own added, changed or removed.
+ *
+ * Both stores move in the one act, so an undo restores the roster, the sheet the reader was on, the key
+ * and the palette together. A look or a colour mode leaves the series its length, so for one the index
+ * never moves; only a tint mask moves the key, off `PURE_WHITE`, and the palette, onto `FREE`
+ * (`outputForRoster`).
+ */
+function writeRoster(change: (roster: IconRoster) => IconRoster): void {
+  const { category, subject } = useSubjectStore.getState();
+  if (subject.icons === undefined) return;
+  const next = { ...subject, icons: change(subject.icons) };
+  act(() => {
+    useSubjectStore.setState({ subject: next });
+    settleOutput((output) => outputForRoster(category, subject, next, output));
+  });
 }
 
 /** The studio as it stands, across both stores — one entry's worth of state. */

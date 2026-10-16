@@ -14,7 +14,7 @@ describe('hardenSilhouette', () => {
 
   it('clears what falls below the threshold and makes solid what does not', () => {
     // 50% is 127.5 of 255, so 192 is kept and 64 goes. The kept pixel keeps its own colour and takes
-    // full alpha; the cleared one is the canonical `{0, 0, 0, 0}` the modal vote downstream needs.
+    // full alpha; the cleared one is the canonical `{0, 0, 0, 0}` the mesh measurement downstream needs.
     //
     // The fourth pixel arrived clear and is copied through carrying its own RGB, which is the
     // boundary on that canonicalisation: extending it to a pixel this pass did not clear would edit

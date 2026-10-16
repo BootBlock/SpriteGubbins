@@ -1,8 +1,7 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import { useAdoptedStyles } from '../../hooks/useAdoptedStyles.ts';
-import { ToastSurface } from '../../hooks/useShowToast.ts';
 import { useSettingsStore } from '../../stores/useSettingsStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { Toast } from '../common/Toast.tsx';
@@ -38,10 +37,12 @@ interface DetachedPreviewProps {
  * and the panel's toolbar travels here whole, so those presses happen in this document. The page's
  * `<Toast />` cannot paint here, and a second unaddressed one would show the page's notifications
  * too: the store holds one message and one timer, so every notification would be shown and announced
- * twice, once in a document nobody raised it from. So `ToastSurface` tells everything below where it is, the
- * `<Toast />` here shows only what is addressed to it, and `recallToast` brings a notification that
- * is still up back into the page when this window goes — which it can do at any moment, since the
- * reader may close it themselves.
+ * twice, once in a document nobody raised it from. So the `<Toast />` here shows only what is
+ * addressed to it, and this component tells the store the panel is here for as long as it is mounted.
+ * The store addresses the panel's notifications by that as each one is raised — a download pressed
+ * in the page and answered after the panel came here is shown here, and one pressed here and answered
+ * after the window went is shown in the page. Going also brings a notification still up here back
+ * into the page, since the window can go at any moment: the reader may close it themselves.
  *
  * `--pane-height` is the one thing that is deliberately *not* the same as in the page. The panes are
  * capped at 24rem there because they sit in a column beside ten panels of controls; here the window
@@ -69,17 +70,19 @@ export function DetachedPreview({ target, children }: DetachedPreviewProps) {
 
   useAdoptedStyles(target.document);
 
-  // Unmount only, and deliberately not keyed on `target`: the reader pressing Return, closing the
-  // window, and navigating away from the quantiser all arrive here as this component going away, and
-  // a notification still on screen has nowhere left to be shown. Strict Mode's spurious first
-  // cleanup finds nothing addressed here — this surface is the only thing that can address one — so
-  // it recalls nothing.
-  useEffect(
-    () => () => {
-      useUIStore.getState().recallToast();
-    },
-    [],
-  );
+  // Not keyed on `target`: the reader pressing Return, closing the window, and navigating away from
+  // the quantiser all arrive here as this component going away, and a notification raised after that
+  // has nowhere to be shown but the page. A layout effect, so the store knows in the same commit that
+  // moves the panel — a write settling between that commit and a passive effect would be addressed
+  // to a document the panel has left. Strict Mode's spurious first cleanup finds nothing addressed
+  // here, since nothing is raised between it and the remount, so it recalls nothing.
+  useLayoutEffect(() => {
+    const { setPreviewDetached } = useUIStore.getState();
+    setPreviewDetached(true);
+    return () => {
+      setPreviewDetached(false);
+    };
+  }, []);
 
   return createPortal(
     // A `<main>`, because this document has no other content and no chrome to navigate: without a
@@ -95,15 +98,13 @@ export function DetachedPreview({ target, children }: DetachedPreviewProps) {
       // must not be judged against.
       className="min-h-dvh bg-foundry-900 p-[var(--page-gutter)] text-ink [--pane-height:max(16rem,calc(100dvh_-_2_*_var(--page-gutter)_-_9rem))]"
     >
-      <ToastSurface value="detached">
-        {children}
-        {/*
-          Inside the `<main>` rather than beside it, so it inherits `data-accent` — the card's ground
-          is `accent-strong` fading to `accent`, and a subtree with no such ancestor resolves those
-          custom properties to nothing at all. `Modal` mounts its own for the same shape of reason.
-        */}
-        <Toast target="detached" />
-      </ToastSurface>
+      {children}
+      {/*
+        Inside the `<main>` rather than beside it, so it inherits `data-accent` — the card's ground
+        is `accent-strong` fading to `accent`, and a subtree with no such ancestor resolves those
+        custom properties to nothing at all. `Modal` mounts its own for the same shape of reason.
+      */}
+      <Toast target="detached" />
     </main>,
     target.document.body,
   );

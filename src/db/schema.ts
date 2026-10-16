@@ -20,6 +20,7 @@ export const CUSTOM_PRESETS_TABLE = 'custom_presets';
 export const APP_SETTINGS_TABLE = 'app_settings';
 export const STUDIO_SESSION_TABLE = 'studio_session';
 export const QUANTISE_PRESETS_TABLE = 'quantise_presets';
+export const CUSTOM_ICONS_TABLE = 'custom_icon_entries';
 
 /**
  * The settings table holds exactly one row, and this is its key.
@@ -105,6 +106,13 @@ CREATE TABLE IF NOT EXISTS ${QUANTISE_PRESETS_TABLE} (
   updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS ${CUSTOM_ICONS_TABLE} (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  entry_json TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_prompt_history_created_at
   ON ${PROMPT_HISTORY_TABLE} (created_at DESC);
 `;
@@ -140,6 +148,7 @@ export const STORAGE_KEYS = {
   appSettings: 'sprite_gubbins_app_settings',
   studioSession: 'sprite_gubbins_studio_session',
   quantisePresets: 'sprite_gubbins_quantise_presets',
+  customIcons: 'sprite_gubbins_custom_icon_entries',
 } as const;
 
 /**
@@ -171,18 +180,20 @@ VALUES (?, ?, ?, ?, ?)
 export const DELETE_PROJECT_SQL = `DELETE FROM ${PROJECTS_TABLE} WHERE id = ?`;
 
 /**
- * The two statements that make deleting a project delete what is in it.
+ * The two statements that make deleting a project delete the presets in it; its icon library's is
+ * `DELETE_CUSTOM_ICONS_BY_PROJECT_SQL`.
  *
  * The cascade is written here rather than declared with `REFERENCES … ON DELETE CASCADE`, because
  * SQLite enforces foreign keys only where `PRAGMA foreign_keys = ON` is set on the connection —
  * it is off by default, and a constraint that is silently not enforced is worse than none. The
- * worker runs these three inside one transaction instead, which the localStorage fallback matches
- * by rewriting both collections; see `sqliteRequests.ts`.
+ * worker runs these, the icon library's own (`customIconStatements.ts`) and the project's delete
+ * inside one transaction instead, which the localStorage fallback matches by rewriting every
+ * collection; see `sqliteLibrary.ts`.
  */
 export const DELETE_PRESETS_BY_PROJECT_SQL = `DELETE FROM ${CUSTOM_PRESETS_TABLE} WHERE project_id = ?`;
 export const DELETE_QUANTISE_PRESETS_BY_PROJECT_SQL = `DELETE FROM ${QUANTISE_PRESETS_TABLE} WHERE project_id = ?`;
 
-/** Empty the collection — the first third of importing a library pack. */
+/** Empty the collection — the first of the four deletes an imported library pack begins with. */
 export const DELETE_ALL_PROJECTS_SQL = `DELETE FROM ${PROJECTS_TABLE}`;
 
 /** Newest first — the order the history drawer lists entries in. */
@@ -280,11 +291,10 @@ VALUES (?, ?, ?, ?, ?, ?)
 export const DELETE_QUANTISE_PRESET_SQL = `DELETE FROM ${QUANTISE_PRESETS_TABLE} WHERE id = ?`;
 
 /**
- * Empty the collection — the last third of importing a library pack.
+ * Empty the collection — one of the four deletes an imported library pack begins with.
  *
  * Beside {@link DELETE_ALL_PROJECTS_SQL} and {@link DELETE_ALL_PRESETS_SQL} and for the same
- * reason: an import *replaces* what is stored rather than merging into it, so the three deletes and
- * the inserts that follow are one transaction. See the `replaceLibrary` case in
- * `sqliteRequests.ts`.
+ * reason: an import *replaces* what is stored rather than merging into it, so the four deletes and
+ * the inserts that follow are one transaction. See `replaceLibraryIn` in `sqliteLibrary.ts`.
  */
 export const DELETE_ALL_QUANTISE_PRESETS_SQL = `DELETE FROM ${QUANTISE_PRESETS_TABLE}`;

@@ -1,6 +1,8 @@
+import { resolveBackgroundKey } from '../../constants/backgroundKeysFor.ts';
 import { TARGET_MODELS } from '../../constants/models.ts';
 import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
 import { TARGET_MODEL_ENTRIES } from '../../constants/targetModelEntries.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { SelectField } from '../common/SelectField.tsx';
 import { GeneratorSiteLink } from './GeneratorSiteLink.tsx';
@@ -41,7 +43,8 @@ const MODEL_DESCRIPTIONS = new Map(TARGET_MODELS.map((model) => [model.id, model
  */
 export function TargetModelSelector() {
   const targetModel = useOutputStore((state) => state.output.targetModel);
-  const setOutputField = useOutputStore((state) => state.setOutputField);
+  const applyOutputPatch = useOutputStore((state) => state.applyOutputPatch);
+  const subject = useSheetSubject();
   const entry = TARGET_MODEL_ENTRIES.get(targetModel);
 
   return (
@@ -60,8 +63,14 @@ export function TargetModelSelector() {
         // an explanation that resolved to nothing can still render the control it belongs to, while
         // a link with no target is a button that would do nothing when pressed.
         action={entry && <GeneratorSiteLink name={entry.name} site={entry.generatorSite} />}
+        // The key moves with the target in the same act, so an undo restores both: a target that
+        // documents no alpha output cannot take TRANSPARENT (audit finding T1, `backgroundKeysFor`).
         onChange={(value) => {
-          setOutputField('targetModel', value);
+          const { backgroundKey } = useOutputStore.getState().output;
+          applyOutputPatch({
+            targetModel: value,
+            backgroundKey: resolveBackgroundKey(subject, value, backgroundKey),
+          });
         }}
       />
     </section>

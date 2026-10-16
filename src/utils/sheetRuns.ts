@@ -50,6 +50,14 @@ export interface SheetRun extends BatchSheet {
  * invalidate the batch, and correctly resets the progress: those are different sheets of a different
  * character.
  *
+ * **What is on it is the sheet's own entries, not ICON's whole roster.** An icon set is the one subject
+ * whose inventory is a list the reader extends, and keying on the roster un-marked every copied sheet the
+ * moment one more icon was ticked — including the overlay sheet and every full grid, whose prompts had
+ * not changed. So the roster is left out of the subject and the drawn sheet's entries stand in for it:
+ * a sheet whose icons did not move keeps its tick, and the sheet that took the new icon loses its own.
+ * The roster's look stays in the key, because it rewrites every sheet's prompt while leaving an icon
+ * sheet's entries as they were: a set switched to full-bleed squares has copied none of them yet.
+ *
  * **Every part is the *resolved* answer, never the stored field it came from.** A configuration
  * holds a direction set and a primary facing whether or not the mode reads them — a
  * `CORE_DIRECTIONAL_VARIANTS` sheet discards both — so keying on the raw fields declared a finished
@@ -65,7 +73,12 @@ export function sheetIdentity(
   const mode = resolveMode(category, subject, output.directionalMode);
   const plan = sheetPlanFor(category, subject, mode, output.directions, output.sheetIndex);
   const { covered } = sheetDirections(category, output, plan);
-  return JSON.stringify([category, subject, mode, plan.name, covered]);
+  const { icons, ...fields } = subject;
+  const entries = plan.groups.flatMap((group) => group.entries.map((entry) => [entry.label, entry.text]));
+  // The look joins the key only where there is a roster, so every other category keeps the key it had,
+  // and a tint mask only on the sheets it rewords: the overlay sheet keeps its colours under one.
+  const look = icons === undefined ? [] : [icons.look, ...(plan.tint === undefined ? [] : [plan.tint])];
+  return JSON.stringify([category, fields, ...look, mode, plan.name, entries, covered]);
 }
 
 /**

@@ -109,6 +109,18 @@ describe('parseRigContract', () => {
     expect(problems.join(' ')).toContain('‘pelvis’');
   });
 
+  it('refuses a pack piece name that cannot be a file name, since the pack writes one under it', () => {
+    // `x/../../evil` would be written as `south/03-x/../../evil.png`, an entry that climbs out of the
+    // extraction root in any extractor that does not guard against it.
+    const broken = document();
+    (broken['slots'] as Record<string, unknown>[])[1]!['pack_piece_name'] = 'x/../../evil';
+
+    const { contract, problems } = parseRigContract(broken);
+
+    expect(contract).toBeNull();
+    expect(problems).toStrictEqual([expect.stringContaining('‘x/../../evil’ holds a path separator')]);
+  });
+
   it('refuses a frame that encloses nothing, which every piece size is a share of', () => {
     const { contract, problems } = parseRigContract({
       ...document(),

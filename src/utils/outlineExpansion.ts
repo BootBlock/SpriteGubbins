@@ -1,5 +1,6 @@
 import { extremeNeighbours, TRANSPARENT_DILATE_KEY, TRANSPARENT_ERODE_KEY } from './extremeNeighbour.ts';
-import { alphaAt, CHANNELS_PER_PIXEL, copyPixel, createImage, FULLY_TRANSPARENT } from './imageData.ts';
+import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
+import { alphaAt, CHANNELS_PER_PIXEL, copyPixel, createImage } from './imageData.ts';
 import { lumaOfChannels } from './lineVote.ts';
 import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolarity.ts';
 
@@ -32,27 +33,28 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * figures, because either alone picks the wrong setting:
  *
  * - **survival** — of the 6,433 cells holding ink as a *minority* of their own pixels, which is
- *   every cell a one-pixel contour crosses, the share that resolve to ink. It runs **29.6% with the
- *   pass off, then 42.7%, 54.1%, 61.4% and 65.4%** across thicknesses 1 to 4;
+ *   every cell a one-pixel contour crosses, the share that resolve to ink. It runs **24.4% with the
+ *   pass off, then 40.1%, 53.4%, 60.9% and 64.6%** across thicknesses 1 to 4;
  * - **surface loss** — of the 33,575 cells the source says are under a fifth ink, which is a stray
- *   fringe rather than a contour crossing, the share that come out ink anyway. It runs **0.39%, then
- *   2.70%, 5.12%, 7.81% and 10.51%**. Against it, the sheet's own ink share is 14.2% of its opaque
- *   pixels and the result's runs 16.5, 17.2, 18.9, 20.8 and 22.9%.
+ *   fringe rather than a contour crossing, the share that come out ink anyway. It runs **0.25%, then
+ *   2.35%, 5.10%, 7.69% and 10.07%**. Against it, the sheet's own ink share is 14.2% of its opaque
+ *   pixels and the result's runs 15.4, 16.6, 18.7, 20.6 and 22.4%.
  *
- * The first step buys 13.1 points of survival for 2.3 of surface, and every step after it buys less
- * for the same: 11.4 for 2.4, then 7.3 for 2.7, then 4.0 for 2.7. So the knee is at **1**, and the
- * range runs to 4 because a sheet whose contours are thinner or whose scale is coarser will want
- * more. **The ink-weighted reading climbs the same ladder from far lower down**, and that is the
- * argument for the pass rather than against it: 8.4% survival with the pass off, then 18.0%, 32.5%,
- * 40.5% and 48.5%, against 0.00%, 0.47%, 2.32%, 3.97% and 6.08% surface, and a result ink share of
- * 10.2, 9.8, 12.8, 14.3 and 16.1%. A vote that exists to keep outlines still loses nine cells in ten
- * of them until this pass runs, because it can only *darken* a cell ink is losing rather than hand
- * it the cell — and each of its steps buys survival more cheaply than the standard vote's does, 20
- * points per point of surface at the first step against the standard vote's 6.
+ * The first step buys 15.7 points of survival for 2.1 of surface, and every step after it buys less
+ * survival for each point of surface it costs: 13.4 for 2.7, then 7.5 for 2.6, then 3.7 for 2.4. So
+ * the knee is at **1**, and the range runs to 4 because a sheet whose contours are thinner or whose
+ * scale is coarser will want more. **The ink-weighted reading climbs the same ladder from half as
+ * high**, and that is the argument for the pass rather than against it: 12.7% survival with the
+ * pass off, then 20.3%, 31.3%, 40.0% and 47.7%, against 0.00%, 0.68%, 2.03%, 3.82% and 5.85%
+ * surface, and a result ink share of 11.0, 10.4, 12.3, 14.1 and 15.8%. A vote that exists to keep
+ * outlines still loses seven cells in eight of them until this pass runs, because it can only
+ * *darken* a cell ink is losing rather than hand it the cell — and each of its steps buys survival
+ * more cheaply than the standard vote's does, 11 points per point of surface at the first step
+ * against the standard vote's 7.
  *
  * **The second figure is here because the first one on its own chose wrongly.** The obvious cheap
  * reading of surface loss is to count only the 31,268 cells with *no* source ink at all, and that
- * one puts the cost of a thickness of 2 at 1.73% where the under-a-fifth set puts it at 5.12% —
+ * one puts the cost of a thickness of 2 at 1.73% where the under-a-fifth set puts it at 5.10% —
  * three times smaller, and small enough to look like a free step. Driving the tab in a browser at 2
  * showed helmets whose interiors had gone blotchy, the gold and green masses broken up by dark that
  * had grown along every seam between them. Almost every cell on a sheet like this holds a pixel or
@@ -60,12 +62,12 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * of this dial needs both numbers and a look at the preview.
  *
  * Every ladder in the three paragraphs above is re-derived by
- * `tests/quantiser-docblock-figures.test.ts`, the no-ink reading included, and the per-step figures
- * are subtractions of them. It fails when a pass upstream of this one moves one — so a
- * recalibration is told to come back here rather than leaving the ladder stale. Point 5 below is
- * the exception, and cannot be covered: its *carried* half is a variant this app does not ship, so
- * it says how that half was reconstructed instead. (Its other half is this ladder's own t1, t2 and
- * t3.)
+ * `tests/quantiser-figures-outline-expansion.test.ts`, the no-ink reading included, and the per-step
+ * figures are subtractions of them. It fails when a pass upstream of this one moves one — so a
+ * recalibration is told to come back here rather than leaving the ladder stale. The same suite pins
+ * point 5 below and the ground-term ladder in `outlinePolarity`, whose *carried* halves are variants
+ * this app does not ship: `tests/outlineVariants.ts` rebuilds each from the shipped parts, and the
+ * suite checks that the rebuild reproduces the shipped pass exactly before it trusts either.
  *
  * **The cost is flat in the thickness**, which is the whole reason `runningExtremum` is written the
  * way it is: the pass took the same time at a thickness of 4 as at 1 in every run of that sweep. It
@@ -85,9 +87,9 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * 1. **The morphology is vector-valued, not per-channel.** OpenCV's `erode` on a colour image takes
  *    the minimum of each channel separately, so its output holds colours assembled from three
  *    different pixels. The Quantise panel tells the reader in as many words that under the standard
- *    vote every colour which survives is one the image already contained, and a per-channel minimum
- *    falsifies that sentence. Here the structuring element orders whole pixels by lightness and the
- *    winner is taken entire — see `extremeNeighbour.ts`.
+ *    vote with anti-aliasing off every colour which survives is one the image already contained, and
+ *    a per-channel minimum falsifies that sentence. Here the structuring element orders whole pixels
+ *    by lightness and the winner is taken entire — see `extremeNeighbour.ts`.
  * 2. **The polarity is a decision, not a blend.** The reference forms `eroded × w + dilated × (1 − w)`
  *    against a sigmoid weight, which invents a tone everywhere the two regimes meet and would hand
  *    the vote and the palette colours the sheet never had. Here the score is thresholded. That is not
@@ -97,10 +99,12 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  *    the full range and a decision has no range to span. It also sidesteps the legacy
  *    implementation's normalisation, which divides by the maximum rather than by the spread.
  * 3. **The silhouette is left exactly where keying left it.** The reference has no alpha channel to
- *    consider. Here a fully transparent pixel takes the identity element of whichever operation is
- *    running, so it can never win a neighbourhood, and it is copied through untouched — the artwork
- *    neither grows into the field the reader asked to delete nor drags that field's undefined bytes
- *    into itself. Alpha is never morphed, and the pass therefore cannot change `keyedShare`.
+ *    consider. Here a pixel under `COVERAGE_FLOOR` — the keyed field, and the faint fringe whose
+ *    channels are rounding noise — takes the identity element of whichever operation is running, so
+ *    it can never win a neighbourhood, and it is copied through untouched — the artwork neither
+ *    grows into the field the reader asked to delete nor drags that field's undefined bytes, or a
+ *    near-invisible pixel's noise, into itself. Alpha is never morphed, and the pass therefore
+ *    cannot change `keyedShare`.
  * 4. **The polarity has no ground term.** `outlinePolarity` records why: the reference's prior about
  *    what colour a neighbourhood is drawn on outweighs the measurement it is a prior for, and on a
  *    sprite sheet it inverts the answer.
@@ -109,17 +113,15 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  *    seam between the two regimes, and which collapses into three passes because the two dilations
  *    run as one at twice the radius. Measured here — the tail reconstructed as `erode(t)`,
  *    `dilate(2t)`, `erode(t)` over this pass's own output, on the two populations the docblock above
- *    defines — it does not earn them. Carried, the pass scores 40.6% / 44.7% / 52.5% survival at
- *    2.34% / 4.21% / 6.92% surface loss for thicknesses 1, 2 and 3, against 42.7% / 54.1% / 61.4% at
- *    2.70% / 5.12% / 7.81% without it. It is buying a little less surface for rather less survival.
- *    **At a thickness of 1 that is an even trade** — interpolated to the same surface loss, dropping
- *    it is worth a tenth of a point. From 2 upwards it is not close: at the carried pass's own 4.21%
- *    of surface, dropping it buys 49.8% survival against 44.7%, and at 6.92% it buys 59.0% against
- *    52.5%. What settles the low end, where the trade is even, is the other column: those three
- *    extra passes measured **two thirds again** on the pass's own running time, and at the low
- *    thicknesses anyone will actually use they buy nothing. The tab already offers a speckle cleanup
- *    after the vote, where the reader can judge it against the preview and turn it off; one welded
- *    in here can only be paid for.
+ *    defines — it does not earn them. Carried, the pass scores 36.8% / 45.5% / 53.0% survival at
+ *    2.09% / 4.41% / 6.99% surface loss for thicknesses 1, 2 and 3, against 40.1% / 53.4% / 60.9% at
+ *    2.35% / 5.10% / 7.69% without it. It is buying a little less surface for rather less survival,
+ *    and **it loses that trade at every thickness**: interpolated to the carried pass's own surface
+ *    loss, dropping it buys 38.1% survival against 36.8% at 2.09%, 50.1% against 45.5% at 4.41%, and
+ *    58.9% against 53.0% at 6.99%. The other column only widens the gap: those three extra passes
+ *    measured **two thirds again** on the pass's own running time, to buy less than the pass without
+ *    them. The tab already offers a speckle cleanup after the vote, where the reader can judge it
+ *    against the preview and turn it off; one welded in here can only be paid for.
  */
 export function outlineExpansion(image: ImageData, block: number, thickness: number): ImageData {
   if (thickness <= 0 || block <= 0) {
@@ -130,8 +132,8 @@ export function outlineExpansion(image: ImageData, block: number, thickness: num
 }
 
 /**
- * Every opaque pixel replaced by its darkest or lightest neighbour, whichever the local polarity
- * asks for.
+ * Every pixel at or above the coverage floor replaced by its darkest or lightest neighbour,
+ * whichever the local polarity asks for.
  *
  * The two neighbourhoods are resolved **one after the other rather than together**, and the pixels
  * each is responsible for are written before the next is asked for. Holding both answers at once
@@ -162,7 +164,7 @@ function paint(
 ): void {
   for (let pixel = 0; pixel < winners.length; pixel += 1) {
     const offset = pixel * CHANNELS_PER_PIXEL;
-    if (alphaAt(image.data, offset) === FULLY_TRANSPARENT) {
+    if (alphaAt(image.data, offset) < COVERAGE_FLOOR) {
       // Written on the dark pass alone, so the bright pass does not copy it a second time.
       if (darkSide) copyPixel(image.data, output.data, offset);
       continue;
@@ -192,7 +194,7 @@ function writeKeys(image: ImageData, keys: Int16Array, absent: number): void {
   for (let pixel = 0; pixel < keys.length; pixel += 1) {
     const offset = pixel * CHANNELS_PER_PIXEL;
     keys[pixel] =
-      alphaAt(data, offset) === FULLY_TRANSPARENT
+      alphaAt(data, offset) < COVERAGE_FLOOR
         ? absent
         : lumaOfChannels(data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0);
   }

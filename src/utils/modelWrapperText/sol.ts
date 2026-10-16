@@ -4,12 +4,23 @@ import {
   RIG_GEOMETRY_HEADING,
   SCOPE_AND_PRECEDENCE_HEADING,
 } from '../../constants/promptTemplate.ts';
+import type { ComponentOrientation } from '../../types/components.ts';
 import type { SolGatedBlocks } from '../../types/solGatedBlocks.ts';
 import { citeSection } from '../templateEngine.ts';
 import type { SectionNumbers } from '../templateEngine.ts';
 
+/** What the CAMERA section carries for each orientation, as the hand-off list names it. */
+const CAMERA_ENTRY: Readonly<Record<ComponentOrientation, (section: string) => string>> = {
+  SHEET_YAW: (section) => `- the object yaws in section ${section}`,
+  OWN_POSE: (section) => `- the camera every component shares, as section ${section} states it`,
+  PICTURE_PLANE: (section) =>
+    `- section ${section}’s rule that every component lies flat in the picture plane`,
+};
+
 /**
- * ChatGPT 5.6 Sol, which is the one target here that **cannot draw**.
+ * The ChatGPT target, which is the one target here that **cannot draw**. Sol is the model behind
+ * it on the paid plans: GPT-6 Sol since 7 October 2026, and GPT-5.6 Sol when this wrapper was
+ * measured.
  *
  * Its model page lists `text` as its only output modality and `image_generation` among its *tools*,
  * and the **tool** guide names what is on the far side of that boundary: "It uses GPT Image models,
@@ -175,6 +186,13 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * closing sentence counts nothing — "never anything in that list" — because a count written beside
  * a list whose length varies is a second statement of one fact.
  *
+ * **The CAMERA section's entry names what that section states, which depends on the sheet's
+ * orientation.** It read "the object yaws" on every sheet, and an icon sheet poses each subject for its
+ * own read beneath a shared camera and states no yaw at all, while the overlay sheet's pieces lie flat
+ * under no camera. Pointing at a block that is not there reads as an instruction rather than a fault,
+ * so `CAMERA_ENTRY` names the yaws, the shared camera or the flat-piece rule by
+ * `SolGatedBlocks.orientation`, the plan's own declaration.
+ *
  * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
  * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
  * citations out by hand as numerals, for the CONTRACT, STYLE, CAMERA and INVENTORY sections. The
@@ -200,13 +218,18 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * verification pass. Reasoning effort is a request parameter rather than something prose sets, and
  * the two pointers restate what the template already carries — the CONTRACT section is titled
  * NON-NEGOTIABLE OUTPUT CONTRACT and opens "Satisfy this section before any aesthetic
- * consideration", and the LAYOUT section carries its own checklist. OpenAI's own guidance for this
- * model family is that such lines are not free: it says to remove "repeated statements of the same
- * rule" and "process instructions for behavior the model already performs reliably", and warns that
- * "GPT-5-class models follow prompt contracts closely, so conflicting rules can create more
- * instability than missing detail". A target-specific wrapper that repeats the template is
- * therefore a cost here, not a reinforcement. **Naming a block is not repeating it** — the addition
- * below quotes no rule, it says which rules may not be shortened.
+ * consideration", and the LAYOUT section carries its own checklist. OpenAI's own guidance for the
+ * GPT-5.6 family is that such lines are not free: under "Favor leaner prompts" it says "Removing
+ * repeated instructions and examples and simplifying tool descriptions can improve task performance
+ * and token efficiency", and "State each instruction once." A target-specific wrapper that repeats
+ * the template is therefore a cost here, not a reinforcement. The GPT-5.6 guidance page this file
+ * cited before, which now redirects there, also said to remove "repeated statements of the same
+ * rule" and "process instructions for behavior the model already performs reliably", and warned
+ * that "GPT-5-class models follow prompt contracts closely". The page it redirects to carries none
+ * of the three. Its GPT-6 section says nothing about prompt length either: its best practices
+ * address GPT-6 Astra's behaviour as an agent, so the GPT-5.6 guidance stays the one cited.
+ * **Naming a block is not repeating it** — the addition below quotes no rule, it says which rules
+ * may not be shortened.
  *
  * **The measurement behind that is quoted with its scope, because the scope is load-bearing.** The
  * sentence is "*In a sample of internal coding-agent eval runs*, configurations with leaner system
@@ -231,12 +254,16 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * pages rather than one, and they agree.
  * https://developers.openai.com/api/docs/guides/image-prompting
  *
- * The same guidance is why the self-audit stays, and it is also why the audit on this target checks
- * a plan rather than pixels. That guidance says "Render the artifact before finalizing. Inspect
- * layout, clipping, spacing, missing content, and visual consistency" — a verification pass, which
- * is not a repeated statement of a rule. But on this target rendering *is* delivering: Sol sees
- * nothing until the tool returns, and the reader sees it then too, so an audit ending "redraw
- * rather than delivering" could only be obeyed with a second render or an edit of the first — two
+ * **The self-audit stays on this target on the template's own reasoning, and no OpenAI page is
+ * cited for it now.** This paragraph quoted the GPT-5.6 guidance as telling a model to render the
+ * artefact and inspect it before finalising, which it read as a verification pass rather than a
+ * repeated rule. As read on 16 October 2026 the guidance page covers GPT-6 and carries no such
+ * sentence, and the image prompting guide does not either. The audit was never there for OpenAI's
+ * sake: it is what the template gives every target that deliberates, gated in `constants/models.ts`.
+ *
+ * What the audit checks on this target is a plan rather than pixels, because here rendering *is*
+ * delivering: Sol sees nothing until the tool returns, and the reader sees it then too, so an
+ * audit ending "redraw rather than delivering" could only be obeyed with a second render or an edit of the first — two
  * images, or one that no longer matches the composition it was written to. So the template gives
  * this target the plan-before-render audit, gated on `seesCanvasBeforeDelivery` in
  * `constants/models.ts`, and the verification pass happens where Sol can still act: on the call.
@@ -250,10 +277,11 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * plan. The same paragraph settles who "you" is in the body, which addresses whoever draws, while
  * the directive's first sentence says Sol does not.
  *
- * Sources: [model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
+ * Sources: [GPT-6 Sol model page](https://developers.openai.com/api/docs/models/gpt-6-sol),
+ * [GPT-5.6 Sol model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
  * [image generation tool](https://developers.openai.com/api/docs/guides/tools-image-generation),
  * [image generation guide](https://developers.openai.com/api/docs/guides/image-generation),
- * [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/prompt-guidance-gpt-5p6),
+ * [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-5.6#prompting-best-practices),
  * [GPT Image 2.5 prompting guide](https://developers.openai.com/api/docs/guides/image-prompting),
  * [ChatGPT image prompting](https://learn.chatgpt.com/docs/image-generation).
  */
@@ -262,10 +290,13 @@ export function wrapForSol(prompt: string, gated: SolGatedBlocks, sections: Sect
   // the list never names a block the prompt does not carry.
   const carried = [
     `- the numbered items of section ${citeSection(sections, 'CONTRACT')}`,
+    gated.colours
+      ? `- every colour section ${citeSection(sections, 'SUBJECT')} names, with its hex code where it gives one`
+      : '',
     gated.oneSidedFeatures
       ? `- the block in section ${citeSection(sections, 'CAMERA')} headed “${ONE_SIDED_FEATURES_HEADING}”`
       : '',
-    `- the object yaws in section ${citeSection(sections, 'CAMERA')}`,
+    CAMERA_ENTRY[gated.orientation](citeSection(sections, 'CAMERA')),
     `- the inventory in section ${citeSection(sections, 'INVENTORY')}`,
     sections.has('INVARIANTS')
       ? `- the render-critical invariants in section ${citeSection(sections, 'INVARIANTS')}`
@@ -278,6 +309,11 @@ export function wrapForSol(prompt: string, gated: SolGatedBlocks, sections: Sect
   // Each entry cites its own section, because they are no longer all in one. The citation is made
   // only inside its gate: `citeSection` throws for a section the prompt does not carry.
   const blocks = [
+    gated.targetSize ? `- the target size line in section ${citeSection(sections, 'STYLE')}` : '',
+    gated.displaySize ? `- the smallest display size line in section ${citeSection(sections, 'STYLE')}` : '',
+    gated.tileShare
+      ? `- the resolution profile line in section ${citeSection(sections, 'STYLE')}, and the share of a cell it states`
+      : '',
     gated.nativeGrid
       ? `- the block headed “${NATIVE_GRID_HEADING}” in section ${citeSection(sections, 'STYLE')}`
       : '',
@@ -302,6 +338,16 @@ ${blocks.join('\n')}
 A figure is what the delivered sheet can be held to. Restating one of these in your own words keeps
 the idea and drops the figure, which leaves the image nothing to be measured against.`;
 
+  // The one option this app knows the tool's call can carry beyond the prompt, and the only route to the
+  // alpha channel the CONTRACT section asks for: OpenAI's tool guide says to “set `background:
+  // "transparent"` to request one”, with `png` or `webp` (audit finding T1).
+  const transparency = gated.transparent
+    ? `
+
+Section ${citeSection(sections, 'CONTRACT')} asks for a transparent background. Request it in the call itself: set the image
+tool’s \`background\` option to \`transparent\` and its output format to \`png\` or \`webp\`.`
+    : '';
+
   return `[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]
 You are not the model that draws this sheet: you will call an image tool, and a GPT Image model
 renders whatever that call carries. So the call is where a sheet loses its component count, its
@@ -318,7 +364,7 @@ act on it yourself before you make the call, and leave it out of what you send.
 Make exactly one image-tool call, and make it: render the sheet rather than describe it. You see the
 image only when the reader does, so the self-audit in section ${citeSection(sections, 'LAYOUT')} is a check of what that call carries,
 made before you make it — never a second call or an edit of the image afterwards. Where the text
-below says to draw, it states what the image your call obtains must show.${otherFigures}
+below says to draw, it states what the image your call obtains must show.${transparency}${otherFigures}
 
 ${prompt}`;
 }

@@ -1,3 +1,4 @@
+import { resolveAspectRatio } from '../../constants/categoryAspectRatios.ts';
 import { useState } from 'react';
 import {
   ATLAS_CANVAS_CHOICES,
@@ -84,7 +85,7 @@ export function AtlasCalculatorContents() {
     // The sheet the studio is showing, not the series it belongs to: an atlas is laid out from one
     // returned image, and two sheets of a batch are two atlases.
     componentCount,
-    widthBias: widthBiasFor(aspectRatio),
+    widthBias: widthBiasFor(resolveAspectRatio(category, aspectRatio)),
   };
   const metrics = calculateAtlasMetrics(config);
   // Derived during render rather than memoised. Every input is a primitive that changed this render
@@ -115,9 +116,10 @@ export function AtlasCalculatorContents() {
           Stacked, not a two-column grid — which is how every other `SelectField` in the app is laid
           out, and for the reason this one has to be too. A native `<select>` renders the selected
           option into a box its container sizes, and the user agent cuts whatever overflows from the
-          *right*; these labels are `2048 × 2048 px (HD atlas — recommended)`, so the part that goes
-          is the recommendation — the half that tells a first-time user which option to take. Half of
-          this 576px modal is a 257px control for options that need 354px, and the full width is
+          *right*; these labels are `2048 × 2048 px (HD atlas — recommended)` and
+          `16 px (Maximum isolation, clean to mip 4)`, so the part that goes is the recommendation or
+          the mip level — the half that tells a first-time user which option to take. Half of this
+          576px modal is a 257px control for options that need up to 370px, and the full width is
           526px, so the column is the whole difference between the two.
         */}
         <div className="space-y-3">

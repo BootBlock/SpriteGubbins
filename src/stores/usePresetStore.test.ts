@@ -160,22 +160,16 @@ describe('saveCustomPreset', () => {
     expect(Object.keys(saved?.output ?? {})).not.toContain('emitPromptFeedback');
   });
 
-  it('stores the description beside the name, trimmed', async () => {
-    await usePresetStore
-      .getState()
-      .saveCustomPreset('Described', '  A knight for the town scenes  ', DEFAULT_PROJECT_ID);
+  // A description is optional: a blank one is stored as the empty string, which the card answers by
+  // naming the subject and setting instead, and which the pack format carries rather than dropping.
+  it.each([
+    { given: '  A knight for the town scenes  ', stored: 'A knight for the town scenes' },
+    { given: '   ', stored: '' },
+  ])('stores the description beside the name, trimmed to $stored', async ({ given, stored }) => {
+    await usePresetStore.getState().saveCustomPreset('Described', given, DEFAULT_PROJECT_ID);
 
     const [saved] = await backend.listPresets();
-    expect(saved?.description).toBe('A knight for the town scenes');
-  });
-
-  it('lets a preset be saved with no description at all', async () => {
-    // Optional means optional: the card names the subject and setting instead, and the pack format
-    // carries the empty string rather than dropping the field.
-    await usePresetStore.getState().saveCustomPreset('Bare', '   ', DEFAULT_PROJECT_ID);
-
-    const [saved] = await backend.listPresets();
-    expect(saved?.description).toBe('');
+    expect(saved?.description).toBe(stored);
   });
 
   it('writes the description it was given when it updates an existing preset', async () => {
@@ -237,14 +231,6 @@ describe('saveCustomPreset', () => {
     // And in storage, not merely in the store.
     await expect(backend.listPresets()).resolves.toHaveLength(1);
     expect(useUIStore.getState().toastMessage).toBe('Updated custom preset “My Archetype”');
-  });
-
-  it('says it saved when the name is new, and updated when it is not', async () => {
-    await usePresetStore.getState().saveCustomPreset('Fresh', '', DEFAULT_PROJECT_ID);
-    expect(useUIStore.getState().toastMessage).toBe('Saved custom preset “Fresh”');
-
-    await usePresetStore.getState().saveCustomPreset('Fresh', '', DEFAULT_PROJECT_ID);
-    expect(useUIStore.getState().toastMessage).toBe('Updated custom preset “Fresh”');
   });
 
   it('treats a differently-cased name as the same one, and adopts the new spelling', async () => {
@@ -495,12 +481,11 @@ describe('moveCustomPreset', () => {
     expect(useUIStore.getState().toastMessage).toBe('Moved “Mine”');
   });
 
-  it('lets a preset land beside one of the same name, rather than folding the two together', async () => {
-    // The opposite of what saving does, and deliberately: a name decides an update when it is being
-    // *typed*, and a move is not a save. Folding them would destroy whichever the reader did not
-    // have in mind, and neither of them asked for it.
+  it('refuses to move a preset into a project that already has its name, and writes nothing', async () => {
+    // Issue #454. Folding the two would destroy whichever the reader did not have in mind, and
+    // letting both in left Save and Edit details there acting on whichever the list showed first.
     await usePresetStore.getState().saveCustomPreset('Hero', 'Theirs', HARBOUR);
-    await usePresetStore.getState().saveCustomPreset('Hero', 'Mine', DEFAULT_PROJECT_ID);
+    await usePresetStore.getState().saveCustomPreset('hero', 'Mine', DEFAULT_PROJECT_ID);
     const mine = usePresetStore
       .getState()
       .customPresets.find((preset) => preset.projectId === DEFAULT_PROJECT_ID);
@@ -509,8 +494,11 @@ describe('moveCustomPreset', () => {
     await usePresetStore.getState().moveCustomPreset(mine.id, HARBOUR);
 
     const stored = await backend.listPresets();
-    expect(stored).toHaveLength(2);
-    expect(stored.every((preset) => preset.projectId === HARBOUR)).toBe(true);
+    expect(stored.find((preset) => preset.id === mine.id)?.projectId).toBe(DEFAULT_PROJECT_ID);
+    expect(usePresetStore.getState().customPresets.find((preset) => preset.id === mine.id)?.projectId).toBe(
+      DEFAULT_PROJECT_ID,
+    );
+    expect(useUIStore.getState().toastMessage).toBe('A preset named “hero” is already in that project');
   });
 
   it('says nothing and writes nothing when the preset is already there', async () => {

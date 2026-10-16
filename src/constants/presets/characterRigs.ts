@@ -61,7 +61,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       resolutionProfile: 'CUSTOM',
       spriteTargetSize: '64 × 96 px assembled',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {
@@ -107,7 +107,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       resolutionProfile: 'CUSTOM',
       spriteTargetSize: '56 × 88 px assembled',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {
@@ -165,7 +165,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       silhouette: 'Broad-Shouldered Fortress',
       face_head: 'Full Enclosed Helmet',
       anatomy: 'Standard Humanoid',
-      clothing: 'Spiked Bone Armor',
+      clothing: 'Spiked Bone Armour',
       worn_details: 'Shoulder Pauldrons & Cloak',
       // The three fields the pass supersedes, written to agree with it rather than against it. They
       // read `Deep Obsidian & Gold`, `Molten Copper` and `Etched Obsidian Plate` until the prompt

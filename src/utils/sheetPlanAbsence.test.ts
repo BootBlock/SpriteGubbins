@@ -1,4 +1,6 @@
+import { componentTally } from './componentTally.ts';
 import { describe, expect, it } from 'vitest';
+import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
 import {
   absentOptionFor,
@@ -11,7 +13,7 @@ import { modesFor, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/
 import { sectionOf } from '../test/promptSections.ts';
 import { decliningEverything, decliningSubject, standardSubject } from '../test/sheetSubject.ts';
 import { DECLINABLE_FIELD_KEYS, SUBJECT_CATEGORIES } from '../types/subject.ts';
-import type { DeclinableFieldKey, SubjectCategory } from '../types/subject.ts';
+import type { DeclinableFieldKey, SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { componentCountFor, planComponentCount } from './componentSet.ts';
 import { componentSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
@@ -22,9 +24,11 @@ import {
   entryDeclinedBy,
   planAsDrawn,
   planDraws,
+  planDrawsIn,
 } from './sheetPlanAbsence.ts';
 import { slugify } from './slugify.ts';
 import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 
 /**
  * Section 1's paint rule against section 4's inventory, on every sheet the app can compile.
@@ -49,17 +53,20 @@ import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
  * turn (issue #283). A check compiling that subject is compiling the sheet it was handed.
  */
 function sheetsOf(category: SubjectCategory) {
-  return assemblyBaseSubjectsOf(category).flatMap((subject) =>
-    modesFor(category, subject).flatMap((mode) =>
-      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-        sheetSeriesFor(category, subject, mode, directions).map((_, sheetIndex) => ({
-          subject,
-          mode,
-          directions,
-          sheetIndex,
-          plan: sheetPlanFor(category, subject, mode, directions, sheetIndex),
-        })),
-      ),
+  return assemblyBaseSubjectsOf(category).flatMap((subject) => sheetsOfSubject(category, subject));
+}
+
+/** {@link sheetsOf}, for the one subject a sweep split into `assemblyBaseCases` holds per case. */
+function sheetsOfSubject(category: SubjectCategory, subject: SubjectDefinition) {
+  return modesFor(category, subject).flatMap((mode) =>
+    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+      sheetSeriesFor(category, subject, mode, directions).map((_, sheetIndex) => ({
+        subject,
+        mode,
+        directions,
+        sheetIndex,
+        plan: sheetPlanFor(category, subject, mode, directions, sheetIndex),
+      })),
     ),
   );
 }
@@ -85,66 +92,130 @@ function pooledValue(category: SubjectCategory, key: DeclinableFieldKey): string
 }
 
 describe('section 1 excepts from its paint rule exactly what section 4 draws', () => {
-  it.each(SUBJECT_CATEGORIES)('holds on every %s sheet', (category) => {
-    const label = fieldLabelFor(category, 'clothing');
-    const clothing = pooledValue(category, 'clothing');
+  const SUBJECT_SECTIONS = new Map<string, string>();
 
-    for (const { subject, mode, directions, sheetIndex, plan } of sheetsOf(category)) {
-      const prompt = generatePrompt(
-        category,
-        { ...subject, clothing },
-        { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
-      );
-      const subjectSection = sectionOf(prompt, 'SUBJECT DEFINITION');
-      const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
+  /**
+   * Section 1 of one sheet, compiled with the clothing value and additional anatomy given — once,
+   * however many of the sweeps below read it.
+   *
+   * The three sweeps compile the same sheets from overlapping subjects: the paint-rule sweep walks
+   * both values of each field, and the other two each take one of its corners. Sharing the compile
+   * leaves each sweep reading exactly the section it read before, at a third less work.
+   */
+  function subjectSectionAt(
+    category: SubjectCategory,
+    { subject, mode, directions, sheetIndex }: ReturnType<typeof sheetsOf>[number],
+    clothing: string,
+    additional: string,
+  ): string {
+    // The whole subject, because ICON's sheets differ by roster and world under one base.
+    const key = [
+      category,
+      JSON.stringify(subject),
+      mode,
+      directions,
+      String(sheetIndex),
+      clothing,
+      additional,
+    ].join('|');
+    const cached = SUBJECT_SECTIONS.get(key);
+    if (cached !== undefined) return cached;
+    const prompt = generatePrompt(
+      category,
+      { ...subject, clothing, additional_anatomy: additional },
+      { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
+    );
+    const section = sectionOf(prompt, 'SUBJECT DEFINITION');
+    SUBJECT_SECTIONS.set(key, section);
+    return section;
+  }
 
-      expect(subjectSection, where).toContain(`- ${label}: ${clothing}`);
-      expect(subjectSection.includes(`**${label}** is excepted`), where).toBe(planDraws(plan, 'clothing'));
-    }
+  /**
+   * Every sheet of every assembly-base case, as one case each. A case's sheets in one test passed the
+   * one-second limit a slow runner stands in for on an ICON roster's two dozen sheets
+   * (`assemblyBaseCases`); a sheet is one compile, shared across the three sweeps by the cache above.
+   */
+  const BASES = assemblyBaseCases();
+  const SHEET_CASES = BASES.flatMap(([name, category, subject]) =>
+    sheetsOfSubject(category, subject).map(
+      (sheet) =>
+        [
+          `${name} / ${sheet.mode} / ${sheet.directions} / sheet ${String(sheet.sheetIndex + 1)}`,
+          category,
+          sheet,
+        ] as const,
+    ),
+  );
+
+  it('walks a sheet of every assembly-base case', () => {
+    const walked = new Set(SHEET_CASES.map(([, , sheet]) => sheet.subject));
+    expect(BASES.every(([, , subject]) => walked.has(subject))).toBe(true);
   });
 
-  it.each(SUBJECT_CATEGORIES)('says nothing about a %s clothing line nobody wrote', (category) => {
+  it.each(SHEET_CASES)('holds on %s', (where, category, sheet) => {
+    const label = fieldLabelFor(category, 'clothing');
+    const clothing = pooledValue(category, 'clothing');
+    const subjectSection = subjectSectionAt(category, sheet, clothing, NO_ADDITIONAL_ANATOMY);
+
+    expect(subjectSection, where).toContain(`- ${label}: ${clothing}`);
+    expect(subjectSection.includes(`**${label}** is excepted: section`), where).toBe(
+      planDraws(sheet.plan, 'clothing'),
+    );
+    // The exception's style shape: a sheet whose pieces are drawn in the attribute says so, and only
+    // that sheet — ICON's overlay sheet, whose every piece is drawn in the *Overlay Style* (audit
+    // finding O1). A value is a piece or the style of the pieces, never both on one sheet.
+    expect(subjectSection.includes(`**${label}** is excepted: it is the style every component`), where).toBe(
+      planDrawsIn(sheet.plan, 'clothing'),
+    );
+    expect(planDraws(sheet.plan, 'clothing') && planDrawsIn(sheet.plan, 'clothing'), where).toBe(false);
+    // And its shape for a sheet that leaves the attribute to a sibling of its series: ICON's icon
+    // sheets, whose overlay pieces are the overlay sheet's.
+    expect(
+      subjectSection.includes(`**${label}** is excepted: it is the style of the pieces another sheet`),
+      where,
+    ).toBe(sheet.plan.drawnElsewhere === 'clothing');
+  });
+
+  it.each(SHEET_CASES)('says nothing about a clothing line nobody wrote, on %s', (where, category, sheet) => {
     // A cleared field emits no line, so an exception paragraph naming it would name an absent line
     // in the section the template calls the sole authority for the subject's design — the reason the
     // additional-anatomy paragraph is gated on its own rendered value rather than on the plan.
     const label = fieldLabelFor(category, 'clothing');
+    const subjectSection = subjectSectionAt(category, sheet, '', NO_ADDITIONAL_ANATOMY);
 
-    for (const { subject, mode, directions, sheetIndex } of sheetsOf(category)) {
-      const prompt = generatePrompt(
-        category,
-        { ...subject, clothing: '' },
-        { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
-      );
-      const subjectSection = sectionOf(prompt, 'SUBJECT DEFINITION');
-
-      expect(subjectSection).not.toContain(`- ${label}:`);
-      expect(subjectSection).not.toContain(`**${label}** is excepted`);
-    }
+    expect(subjectSection, where).not.toContain(`- ${label}:`);
+    expect(subjectSection, where).not.toContain(`**${label}** is excepted`);
   });
 
-  it.each(SUBJECT_CATEGORIES)(
-    'states the paint rule on a %s sheet without promising anything',
-    (category) => {
+  it.each(
+    SHEET_CASES.flatMap(([where, category, sheet]) =>
+      [NO_ADDITIONAL_ANATOMY, 'Extra Piece ×2'].flatMap((anatomy) =>
+        [false, true].map((clothed) => [where, anatomy, clothed, category, sheet] as const),
+      ),
+    ),
+  )(
+    'states the paint rule without promising anything, on %s with anatomy %s, clothed %s',
+    (where, anatomy, clothed, category, sheet) => {
       // The rule has to stand on its own, because both paragraphs under it are gated. A first draft of
       // this change closed it with "… except where named below", which on 71 of the 118 sheets this app
       // can compile promised a named exception and named none — leaving "Do not infer props, weapons or
       // equipment from the role", the next line, as the only candidate for the exemption it had just
       // announced. The full stop is what makes the sentence true whether or not a paragraph follows.
-      for (const { subject, mode, directions, sheetIndex } of sheetsOf(category)) {
-        for (const anatomy of ['', 'Extra Piece ×2']) {
-          for (const clothing of ['', pooledValue(category, 'clothing')]) {
-            const prompt = generatePrompt(
-              category,
-              { ...subject, clothing, additional_anatomy: anatomy },
-              { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
-            );
-            const section = sectionOf(prompt, 'SUBJECT DEFINITION');
-            const where = `${category} / ${mode} / sheet ${String(sheetIndex + 1)}`;
+      //
+      // The anatomy paragraph's off position is the field's own `NONE`, which is what every category's
+      // subject opens on, rather than a cleared field: both render no paragraph, and this is the one a
+      // reader who touches nothing actually gets.
+      //
+      // A sheet whose section 1 describes the set its pieces are laid over states the opposite rule —
+      // nothing listed is drawn into a component — and the exceptions follow it the same way.
+      const clothing = clothed ? pooledValue(category, 'clothing') : '';
+      const section = subjectSectionAt(category, sheet, clothing, anatomy);
+      const rule =
+        sheet.plan.subjectScope === 'LAID_OVER'
+          ? 'no\nmaterial, condition, finish or detail named there is drawn into one.\n'
+          : 'never drawn as a separate piece.\n';
 
-            expect(section, where).toContain('never drawn as a separate piece.\n');
-          }
-        }
-      }
+      expect(section, where).toContain(rule);
     },
   );
 });
@@ -153,11 +224,13 @@ describe('which categories draw the clothing value as components of their own', 
   /**
    * The content decision, pinned so it cannot drift back.
    *
-   * Six of the thirteen draw it: the *Armour & Cladding* a vehicle's hull is clad in, the *Applied
-   * Overlay* an engine lays over any icon in the set, the *Applied Atmosphere* a background scrolls
-   * at its own rate, the *Ornament & Trim* over an interface frame, the *Awning & Addons* on a
+   * Five of the thirteen draw it: the *Armour & Cladding* a vehicle's hull is clad in, the *Applied
+   * Atmosphere* a background scrolls at its own rate, the *Ornament & Trim* over an interface frame, the *Awning & Addons* on a
    * building's façade, and the *Mounting / Framework* an object stands on. Each is a piece an engine
    * has a reason to composite or to leave out, and each is one section 4 already listed.
+   *
+   * ICON draws it as neither a piece nor paint: its *Overlay Style* is the style every overlay piece
+   * is drawn in (audit finding O1), so its overlay sheet is `'DRAWN_IN_IT'` and no sheet draws it.
    *
    * The other seven are paint: a character's clothing is "drawn into the limb and torso surfaces", a
    * font's applied treatment "goes into the glyph", and TERRAIN's scatter layer and EFFECT's
@@ -173,7 +246,6 @@ describe('which categories draw the clothing value as components of their own', 
     'BUILDING',
     'VEHICLE',
     'INTERFACE',
-    'ICON',
     'BACKGROUND',
   ];
 
@@ -509,7 +581,7 @@ describe('a subject that says it has none of the attribute', () => {
           directions,
           sheetIndex,
         });
-        expect(prompt, where).toContain(`Exactly ${String(count)} components`);
+        expect(prompt, where).toContain(`Exactly ${componentTally(count)}`);
         expect(prompt, where).toContain(`Component count is exactly ${String(count)}.`);
       }
     }

@@ -20,7 +20,7 @@ import type { CategoryAssembly, SubjectCategory } from '../../types/subject.ts';
  * picture instead of a sequence — and none of those had a word spent on them anywhere.
  *
  * **The three body forms began in this record and belong to the sheet now** (issue #278). They reach
- * every target the app composes for rather than the three that declare a wrapper channel, which is why
+ * every target the app composes for rather than the four that declare a wrapper channel, which is why
  * they were given a category at all — the figure vocabulary was being read by a TERRAIN sheet on
  * ChatGPT, Gemini and Midjourney alike while the negative blocks had already stopped saying it. But a
  * form names pieces, and a category's sheets do not share their pieces: filed here, BACKGROUND's layer
@@ -29,8 +29,8 @@ import type { CategoryAssembly, SubjectCategory } from '../../types/subject.ts';
  * terms stay here because `categoryAssembly.test.ts` holds each against every sheet the category can
  * compile, so a term that passes names no piece of any of them.
  *
- * **One list serves both negative channels**, as `RENDER_STYLE_SURFACE`'s does and for the same
- * reason: Stable Diffusion weighted two terms while Qwen stated three, one of which — `complete
+ * **One list serves every negative channel** — Stable Diffusion's and Qwen's blocks, and Midjourney's
+ * `--no` since audit finding T2 — as `RENDER_STYLE_SURFACE`'s does and for the same reason: Stable Diffusion weighted two terms while Qwen stated three, one of which — `complete
  * figure` — was `assembled character` said again. A per-category record cannot hold two spellings of
  * one entry without the categories quietly diverging by target, so the redundant synonym goes and
  * each wrapper decides only *how* to say what is here. Weighting stays Stable Diffusion's:

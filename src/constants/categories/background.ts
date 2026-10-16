@@ -309,7 +309,7 @@ export const BACKGROUND: CategoryDefinition = {
       options: [
         'Lantern Amber #F59E0B',
         'Lit Window Warm White',
-        'Neon Magenta #E879F9',
+        'Neon Rose #FB7185',
         'Signal Cyan #22D3EE',
         'Moonlit Silver #CBD5E1',
         'Molten Orange #EA580C',

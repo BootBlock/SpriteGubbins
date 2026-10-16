@@ -84,11 +84,22 @@ function additionsFor(category: SubjectCategory, own: string): readonly string[]
   return [...new Set([own, ...pool])];
 }
 
-/** Every target whose ceiling holds some of what the app composes. */
-const MEASURED_TARGETS = TARGET_MODEL_IDS.filter((target) => {
-  const fit = measurePromptFit(target);
-  return fit !== null && fit.fit !== 'NONE';
-});
+/**
+ * Every target whose ceiling holds some of what the app composes, with its reading.
+ *
+ * Measured once here and handed to each case, because a reading compiles the whole library for its
+ * target and the cases below would otherwise compile it a second time to learn the allowance.
+ */
+const MEASURED_FITS = new Map(
+  TARGET_MODEL_IDS.flatMap((target) => {
+    const fit = measurePromptFit(target);
+    return fit !== null && fit.fit !== 'NONE' ? [[target, fit] as const] : [];
+  }),
+);
+const MEASURED_TARGETS = [...MEASURED_FITS.keys()];
+
+/** {@link exemptedClaims} for every category, composed once rather than once per configuration. */
+const EXEMPTED_CLAIMS = new Map(SUBJECT_CATEGORIES.map((category) => [category, exemptedClaims(category)]));
 
 describe('the exemption for the subject’s own pieces, against every ceiling that holds a sheet', () => {
   it('has a ceiling to measure against', () => {
@@ -110,12 +121,15 @@ describe('the exemption for the subject’s own pieces, against every ceiling th
   it.each(MEASURED_TARGETS)(
     '%s still reads the leanest sheet that lists the subject’s own pieces',
     (target) => {
-      const fit = measurePromptFit(target);
-      if (fit === null) throw new Error(`${target} was measured and has no ceiling`);
+      const fit = MEASURED_FITS.get(target);
+      if (fit === undefined) throw new Error(`${target} was measured and has no ceiling`);
 
+      // The leanest fits exactly when any one does, so the walk stops at the first prompt carrying
+      // the exemption inside the allowance: compiling the rest could not change the verdict. A walk
+      // that finds none has read every prompt, so the leanest a failure names is the true one.
       let leanest: { readonly name: string; readonly additions: string; readonly used: number } | null = null;
       for (const { name, category, subject, output } of LIBRARY_CONFIGURATIONS) {
-        const exempted = exemptedClaims(category);
+        const exempted = EXEMPTED_CLAIMS.get(category) ?? [];
         for (const additions of additionsFor(category, subject[ADDITIONS])) {
           const prompt = generatePrompt(
             category,
@@ -126,6 +140,7 @@ describe('the exemption for the subject’s own pieces, against every ceiling th
 
           const reading = readPromptBudget(prompt, target);
           if (reading === null) throw new Error(`${target} has a ceiling and read no budget`);
+          if (reading.used <= fit.allowance) return;
           if (leanest === null || reading.used < leanest.used) {
             leanest = { name, additions, used: reading.used };
           }

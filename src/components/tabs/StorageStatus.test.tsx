@@ -29,43 +29,27 @@ describe('StorageStatus', () => {
     expect(screen.getByText('Checking…')).toBeInTheDocument();
   });
 
-  it('names SQLite when that is what the app got', async () => {
-    databasePromise = Promise.resolve(backendOfKind('sqlite-opfs'));
+  /**
+   * One label per backend, each checked against the label it could be mistaken for.
+   *
+   * The fallback is the case the component is really for: the app behaves identically either way, so
+   * this is the only place the difference is visible. A store in memory behaves exactly like the one
+   * over localStorage until a reload empties it, so naming local storage there would promise the
+   * reader a library they lack. A second tab is the one state that is a fault rather than a statement
+   * of fact, so its label has to name a cause and a fix: this tab can read nothing and store nothing
+   * until the other closes, and an empty Projects panel is all the reader would otherwise have to go on.
+   */
+  it.each<readonly [BackendKind, RegExp, RegExp]>([
+    ['sqlite-opfs', /SQLite/, /local storage/],
+    ['localstorage', /local storage/, /SQLite/],
+    ['memory', /memory only/, /local storage/],
+    ['held-elsewhere', /Open in another tab/, /local storage/],
+  ])('names the %s backend when that is what the app got, and nothing else', async (kind, shown, absent) => {
+    databasePromise = Promise.resolve(backendOfKind(kind));
     render(<StorageStatus />);
 
-    expect(await screen.findByText(/SQLite/)).toBeInTheDocument();
-    expect(screen.queryByText(/local storage/)).not.toBeInTheDocument();
-  });
-
-  it('names the fallback when that is what the app got', async () => {
-    // The case the component is really for: the app behaves identically either way, so this is the
-    // only place the difference is visible.
-    databasePromise = Promise.resolve(backendOfKind('localstorage'));
-    render(<StorageStatus />);
-
-    expect(await screen.findByText(/local storage/)).toBeInTheDocument();
-    expect(screen.queryByText(/SQLite/)).not.toBeInTheDocument();
-  });
-
-  it('says so when the work is kept only in this tab’s memory', async () => {
-    // The fallback over a store in memory behaves exactly like the one over localStorage until a
-    // reload empties it, so naming local storage here would promise the reader a library they lack.
-    databasePromise = Promise.resolve(backendOfKind('memory'));
-    render(<StorageStatus />);
-
-    expect(await screen.findByText(/memory only/)).toBeInTheDocument();
-    expect(screen.queryByText(/local storage/)).not.toBeInTheDocument();
-  });
-
-  it('tells a second tab what is holding its library, and what to do about it', async () => {
-    // The one state here that is a fault rather than a statement of fact, so the one label that has
-    // to name a cause and a fix: this tab can read nothing and store nothing until the other closes,
-    // and an empty Projects panel is all the reader would otherwise have to go on.
-    databasePromise = Promise.resolve(backendOfKind('held-elsewhere'));
-    render(<StorageStatus />);
-
-    expect(await screen.findByText(/Open in another tab/)).toBeInTheDocument();
-    expect(screen.queryByText(/local storage/)).not.toBeInTheDocument();
+    expect(await screen.findByText(shown)).toBeInTheDocument();
+    expect(screen.queryByText(absent)).not.toBeInTheDocument();
   });
 
   it('marks the two states that will not keep this tab’s work for attention, and the two working ones not', async () => {

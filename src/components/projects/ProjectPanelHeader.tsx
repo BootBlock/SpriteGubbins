@@ -37,7 +37,7 @@ export function ProjectPanelHeader({ project, savedCount }: ProjectPanelHeaderPr
 
   const [isEditing, setIsEditing] = useState(false);
   // The delete confirmation replaces this row of buttons, so it takes the keyboard with it at each
-  // of its three edges — see `useConfirmInPlace`, which is where all five of these live.
+  // of its three edges — see `useConfirmInPlace`, which is where all six of these live.
   const { isConfirming, attachAsk, attachCancel, ask, cancel, confirm } = useConfirmInPlace();
   const editButtonRef = useRef<HTMLButtonElement>(null);
 

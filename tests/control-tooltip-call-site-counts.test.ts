@@ -33,14 +33,14 @@ import { callSitesPassing, callSitesWrappingAttribute } from './jsxCallSites.ts'
  */
 
 /** Every `<ControlTooltip>` the app renders, counted through the `text` its props type requires. */
-const CALL_SITE_COUNT = 88;
+const CALL_SITE_COUNT = 105;
 
 /**
  * Where the wrapped control is written with `disabled`, by the file that renders each.
  *
  * Every one of them is a `<button>`, and every value is an expression bar `GeneratorSiteLink`’s,
  * which writes the bare attribute. That is why the walk parses rather than matches: a regular
- * expression looking for `disabled=` returns eighteen of these nineteen and reports a figure that is
+ * expression looking for `disabled=` returns nineteen of these twenty and reports a figure that is
  * almost right.
  */
 const DISABLED_CAPABLE = [
@@ -50,8 +50,13 @@ const DISABLED_CAPABLE = [
   'src/components/common/JsonPackTransfer.tsx',
   'src/components/common/SheetStepButtons.tsx',
   'src/components/common/SheetStepButtons.tsx',
+  'src/components/modals/CustomIconVariantFields.tsx',
+  'src/components/modals/CustomIconVariantFields.tsx',
   'src/components/modals/HistoryFooter.tsx',
   'src/components/modals/HistoryFooter.tsx',
+  'src/components/modals/IconCatalogueFooter.tsx',
+  'src/components/modals/IconCatalogueGroupSection.tsx',
+  'src/components/modals/IconCatalogueGroupSection.tsx',
   'src/components/projects/PresetDetailsForm.tsx',
   'src/components/projects/ProjectCreateForm.tsx',
   'src/components/projects/ProjectDetailsForm.tsx',
@@ -59,6 +64,7 @@ const DISABLED_CAPABLE = [
   'src/components/quantise/DownloadControls.tsx',
   'src/components/quantise/PaletteLockControls.tsx',
   'src/components/quantise/QuantisePresetControls.tsx',
+  'src/components/studio/CustomPaletteField.tsx',
   'src/components/studio/GeneratorSiteLink.tsx',
   'src/components/studio/PresetSavePanel.tsx',
   'src/components/studio/QuantisedSheetCaptureButton.tsx',
@@ -66,14 +72,16 @@ const DISABLED_CAPABLE = [
 ];
 
 /**
- * A whole number under a hundred, spelled the way this repository's prose spells one.
+ * A whole number under a thousand, spelled the way this repository's prose spells one: “eighty-two”,
+ * and “a hundred and one” in the British way.
  *
  * The house voice writes a figure of this size as words, so an assertion looking for the digits
  * would find nothing — and one looking for a hand-typed “eighty-two” beside an `82` above is two
  * literals free to part company: the count moves, the first case fails, whoever fixes it edits the
  * constant, and the prose case goes on passing against a sentence that still says the old number.
- * That is this suite reproducing inside itself the drift it exists to stop. Throws rather than
- * guessing past 99, since a count that reaches a hundred wants the sentences re-read anyway.
+ * That is this suite reproducing inside itself the drift it exists to stop. It stopped at 99 until
+ * the count reached a hundred and one, when the sentences were re-read and still held; it throws past
+ * 999 for the same reason it once threw past 99.
  */
 function inWords(value: number): string {
   const units = [
@@ -100,8 +108,13 @@ function inWords(value: number): string {
   ];
   const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
 
-  if (!Number.isInteger(value) || value < 0 || value > 99) {
+  if (!Number.isInteger(value) || value < 0 || value > 999) {
     throw new Error(`no spelling for ${String(value)} — extend inWords, and re-read the sentences`);
+  }
+  if (value >= 100) {
+    const hundreds = Math.floor(value / 100);
+    const head = hundreds === 1 ? 'a hundred' : `${units[hundreds] ?? ''} hundred`;
+    return value % 100 === 0 ? head : `${head} and ${inWords(value % 100)}`;
   }
 
   const under20 = units[value];
@@ -144,6 +157,6 @@ describe('the call-site counts ControlTooltip’s docblock states', () => {
     expect(component).toContain(`There are ${total} of those`);
     expect(component).toContain(`${total} more targets`);
     expect(component).toContain(`${disabled} of these wrap a control that can be disabled`);
-    expect(component).toContain(`two of the ${disabled} disabled-capable controls`);
+    expect(component).toContain(`four of the ${disabled} disabled-capable controls`);
   });
 });

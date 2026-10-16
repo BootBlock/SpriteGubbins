@@ -18,11 +18,11 @@ import {
   validationPassFor,
 } from '../../constants/promptText/index.ts';
 import { resolveMode, sheetPlanFor } from '../../constants/sheetPlans/index.ts';
+import { usePinnedPalette } from '../../hooks/usePinnedPalette.ts';
 import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { statesAssembledSize } from '../../utils/componentTargetSize.ts';
-import { pinnedPalette } from '../../utils/pinnedPalette.ts';
 import { resolveResolutionProfile } from '../../utils/resolveResolutionProfile.ts';
 import { sheetRigContract } from '../../utils/sheetRigContract.ts';
 import { SelectField } from '../common/SelectField.tsx';
@@ -47,7 +47,9 @@ import { PaletteField } from './PaletteField.tsx';
  * The question is asked as `pinnedPalette(…) === null` rather than `=== 'FREE'` because that is where
  * "no palette" is defined — one resolver reads the palette and the reader's own colours together, so
  * every reader of the rule gets it from the same answer and none of them can drift. It is also what
- * keeps the budget on screen while `CUSTOM` is chosen and nothing has been loaded into it yet.
+ * keeps the budget on screen while `CUSTOM` is chosen and nothing has been loaded into it yet. It is
+ * asked through `usePinnedPalette`, of the palette the subject can take, as the compiler asks it, so a
+ * tint mask, which is drawn under `FREE`, keeps the budget its prompt states.
  * `PaletteField` decides whether to explain the supersession on exactly that predicate, which is
  * what keeps the explanation and the withdrawal from ever both being absent.
  *
@@ -87,6 +89,7 @@ export function RenderStyleFields() {
   // The subject fields the sheet is a function of: a rigid object's views state a component size where
   // the standard views state an assembled one.
   const subject = useSheetSubject();
+  const pinned = usePinnedPalette();
 
   const pass = validationPassFor(output.renderStyle);
   const settings = styleSettingsFor(output);
@@ -187,7 +190,7 @@ export function RenderStyleFields() {
 
       <PaletteField />
 
-      {pinnedPalette(output) === null && pass === null && (
+      {pinned === null && pass === null && (
         <SelectField
           label="Palette Limit"
           tooltip={OUTPUT_TOOLTIPS.paletteLimit}

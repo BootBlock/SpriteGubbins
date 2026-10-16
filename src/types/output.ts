@@ -106,8 +106,8 @@ export type AspectRatio = (typeof ASPECT_RATIOS)[number];
  */
 export const TARGET_MODEL_IDS = [
   'GENERIC',
-  'CHATGPT_5_6_SOL',
-  'GEMINI_FLASH_IMAGE',
+  'CHATGPT',
+  'GEMINI_NANO_BANANA',
   'GEMINI_PRO_IMAGE',
   'SEEDREAM',
   'QWEN_IMAGE',
@@ -213,6 +213,66 @@ export interface TargetCapabilities {
   readonly emitsText: boolean;
   /** What the vendor publishes about prompt length, including that they publish nothing. */
   readonly promptBudget: PromptBudget;
+  /** Whether, and how, the target returns a sheet with an alpha channel. See {@link AlphaDelivery}. */
+  readonly alpha: AlphaDelivery;
+  /** What decides the shape of the canvas the target returns. See {@link CanvasDelivery}. */
+  readonly canvas: CanvasDelivery;
+}
+
+/**
+ * How a target returns a transparent background, which is what the `TRANSPARENT` key asks for (audit
+ * finding T1).
+ *
+ * **Four states, for the reason {@link PromptBudget} has four**: an absent alpha channel is several
+ * findings, and they need different answers.
+ *
+ * - `TOOL_CALL` — the model draws through an image tool whose call can ask for a transparent
+ *   background, so its wrapper tells it to set that option.
+ * - `REQUEST_PARAMETER` — the endpoint returns alpha only when the reader's own request sets an option
+ *   the prompt cannot set; `note` says which, and the Background Key control shows it.
+ * - `UNDOCUMENTED` — the vendor documents no transparent output for a prompt alone, so `TRANSPARENT`
+ *   is withdrawn (`backgroundKeysFor`): a sheet asked for alpha comes back with a drawn checkerboard
+ *   or a flat matte, which the Quantise tab cannot key.
+ * - `NO_VENDOR` — no model is named, so nothing is withdrawn on its behalf.
+ */
+export type AlphaDelivery =
+  | { readonly kind: 'TOOL_CALL' }
+  | { readonly kind: 'REQUEST_PARAMETER'; readonly note: string }
+  | { readonly kind: 'UNDOCUMENTED' }
+  | { readonly kind: 'NO_VENDOR' };
+
+/**
+ * What decides the shape of the canvas a target returns, which the Aspect Ratio control chooses.
+ *
+ * - `PROMPT` — this app states the canvas in the prompt, in prose or in a flag such as Midjourney's
+ *   `--ar`, and records no request option for it. That is a statement about what the app relies on:
+ *   a target whose own API also takes a size has not had that option recorded here.
+ * - `REQUEST_SIZE` — the reader's own request sets the returned image's dimensions through
+ *   `parameter`, and the prompt's prose cannot change them. The Aspect Ratio control states the size
+ *   to request, derived from `limits` by `requestSizeFor`, as the Background Key control states the
+ *   request options a `REQUEST_PARAMETER` alpha channel needs.
+ */
+export type CanvasDelivery =
+  | { readonly kind: 'PROMPT' }
+  | { readonly kind: 'REQUEST_SIZE'; readonly parameter: string; readonly limits: RequestSizeLimits };
+
+/** The sizes a target's request option accepts, as its vendor documents them. */
+export interface RequestSizeLimits {
+  /** Both edges are a multiple of this many pixels. */
+  readonly edgeMultiple: number;
+  /** The longest either edge may be. */
+  readonly maxEdge: number;
+  /** The fewest pixels the whole image may have. */
+  readonly minPixels: number;
+  /** The most pixels the whole image may have. */
+  readonly maxPixels: number;
+  /** The most the long edge may be over the short edge. */
+  readonly maxRatio: number;
+  /**
+   * The largest size the vendor supports without qualification. A size with a longer edge or more
+   * pixels than this is experimental, and the app recommends none.
+   */
+  readonly stable: PixelExtent;
 }
 
 /**
@@ -292,7 +352,7 @@ export interface StatedTargetSize {
  *
  * **A `PUBLIC` url belongs to one entry only.** A page the vendor runs is a surface with its own
  * behaviour, so two entries naming it are two accounts of that behaviour and at most one can be
- * right — which is what `GPT_IMAGE` and `CHATGPT_5_6_SOL` were, both pointing at ChatGPT Images
+ * right — which is what `GPT_IMAGE` and `CHATGPT` were, both pointing at ChatGPT Images
  * while declaring opposite capabilities. `constants/models.test.ts` holds the urls apart.
  *
  * **A URL is a checkable claim about somebody else's product**, exactly as a capability or a prompt
@@ -385,8 +445,8 @@ export interface ImageOutputConfig {
    * Choosing one in the studio writes the settings package it implies — see `HardwareProfile` — and
    * then stays, because the machine's *name* is what the compiled prompt carries. What it emits is
    * geometry alone: the display, and the tile grid, sprite sizes and sprite count where the machine
-   * had them. Colour is `palette`'s, which is
-   * why the two can be set independently without the prompt contradicting itself.
+   * had them. Colour is `palette`'s, which is why the two can be set independently without the
+   * prompt contradicting itself.
    */
   readonly hardwareProfile: HardwareProfileId;
   /**

@@ -1,3 +1,4 @@
+import { OVER_BUDGET_EXPLANATION } from '../../constants/componentBudget.ts';
 import { useExpectedComponents } from '../../hooks/useExpectedComponents.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { exceedsComponentBudget } from '../../utils/componentBudget.ts';
@@ -51,12 +52,7 @@ export function ComponentBudgetNotice() {
             </p>
           </div>
 
-          <p className="text-xs leading-relaxed text-ink-muted">
-            Around forty components is what current models deliver before they start merging or dropping
-            pieces, and they do not reliably count their own output — so the sheet comes back a plausible
-            subset rather than short in an obvious way. Choose lighter sheet contents, trim the additional
-            anatomy, or raise the component budget if your target model can take it.
-          </p>
+          <p className="text-xs leading-relaxed text-ink-muted">{OVER_BUDGET_EXPLANATION}</p>
 
           <p className="mt-2 text-xs leading-relaxed text-ink-faint">
             The prompt below is unchanged. The budget caps what you ask for, never what the sheet contracts

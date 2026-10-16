@@ -3,10 +3,12 @@ import type { LibraryPack } from '../types/libraryPack.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import type { PersistenceBackend } from './backend.ts';
 import {
+  parseCustomIconRow,
   parseHistoryRow,
   parsePresetRow,
   parseProjectRow,
@@ -92,7 +94,7 @@ export class SqliteBackend implements PersistenceBackend {
    *
    * The refusal is the half that is easy to leave out and the half that matters most. Every caller
    * `await`s {@link request} — but a promise that never settles reaches neither the `catch` around
-   * that `await` nor the `finally` beside it, so `usePresetStore` holds `isExporting` true and
+   * that `await` nor the `finally` beside it, so `useLibraryTransferStore` holds `isTransferring` true and
    * freezes its transfer controls behind a spinner nothing stops, and `useHistoryStore.addLog`
    * records nothing and says nothing. A rejection is what turns both back into the failures they
    * were written to report. `useSessionStore` is unaffected either way, and deliberately: its write
@@ -186,6 +188,19 @@ export class SqliteBackend implements PersistenceBackend {
 
   async deleteQuantisePreset(id: string): Promise<void> {
     await this.request({ kind: 'deleteQuantisePreset', presetId: id });
+  }
+
+  async saveCustomIcon(icon: SavedCustomIcon): Promise<void> {
+    await this.request({ kind: 'saveCustomIcon', icon });
+  }
+
+  async listCustomIcons(): Promise<SavedCustomIcon[]> {
+    const rows = await this.requestRows({ kind: 'listCustomIcons' });
+    return rows.map(parseCustomIconRow).filter((icon): icon is SavedCustomIcon => icon !== null);
+  }
+
+  async deleteCustomIcon(id: string): Promise<void> {
+    await this.request({ kind: 'deleteCustomIcon', iconId: id });
   }
 
   async replaceLibrary(pack: LibraryPack): Promise<void> {

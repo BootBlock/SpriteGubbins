@@ -8,6 +8,7 @@ import { useImagePaste } from '../../hooks/useImagePaste.ts';
 import { useQuantiseTuning } from '../../hooks/useQuantiseTuning.ts';
 import { useQuantiseWork } from '../../hooks/useQuantiseWork.ts';
 import { useSuggestedGrid } from '../../hooks/useSuggestedGrid.ts';
+import { quantiseSheetRequests } from '../../stores/quantiseSheetRequests.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { borderKeyShare } from '../../utils/borderKeyShare.ts';
@@ -18,6 +19,8 @@ import { ImageDropVeil } from '../quantise/ImageDropVeil.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
 import { QuantiseWorkspace } from '../quantise/QuantiseWorkspace.tsx';
+import { useResolvedBackgroundKey } from '../../hooks/useResolvedBackgroundKey.ts';
+import { useResolvedPalette } from '../../hooks/useResolvedPalette.ts';
 
 /**
  * Turning a returned sheet into genuine pixel art, after the fact.
@@ -60,9 +63,9 @@ export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   // The style decides which budgets the sheet can be drawn under — see `resolvePaletteLimit`.
   const renderStyle = useOutputStore((state) => state.output.renderStyle);
-  const palette = useOutputStore((state) => state.output.palette);
+  const palette = useResolvedPalette();
   const customPalette = useOutputStore((state) => state.output.customPalette);
-  const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
+  const backgroundKey = useResolvedBackgroundKey();
   // In a store rather than here, because the workflow crosses tabs: the colour budget, the target
   // size and the background key are studio settings, and `App` unmounts this view when the user goes
   // to change one.
@@ -79,7 +82,7 @@ export function QuantiseTab() {
   const setSource = useQuantiseStore((state) => state.setSource);
   const clear = useQuantiseStore((state) => state.clear);
 
-  const acceptFile = useImageFile(setSource);
+  const acceptFile = useImageFile(setSource, quantiseSheetRequests);
   // Both claimed for the whole page, which is right here and nowhere else: this tab's only input is
   // an image, so a paste or a drop anywhere in it is unambiguously meant for the drop zone. The two
   // hooks stay apart because the gestures are not alike — a drop has to say where it will land while

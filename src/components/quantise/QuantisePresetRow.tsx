@@ -1,7 +1,12 @@
-import { PROJECT_ACTION_TOOLTIPS, QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import {
+  PROJECT_ACTION_TOOLTIPS,
+  QUANTISE_ACTION_TOOLTIPS,
+  moveQuantiseRefusal,
+} from '../../constants/tooltips/index.ts';
 import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
 import type { QuantisePreset } from '../../types/quantisePreset.ts';
+import { findByNameIn } from '../../utils/findByNameIn.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { ProjectMoveField } from '../projects/ProjectMoveField.tsx';
 import { Button } from '../common/Button.tsx';
@@ -46,6 +51,7 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
   const loadQuantisePreset = useQuantisePresetStore((state) => state.loadQuantisePreset);
   const deleteQuantisePreset = useQuantisePresetStore((state) => state.deleteQuantisePreset);
   const moveQuantisePreset = useQuantisePresetStore((state) => state.moveQuantisePreset);
+  const presets = useQuantisePresetStore((state) => state.presets);
   // The confirmation replaces this row's buttons, so it takes the keyboard with it at each of its
   // three edges — see `useConfirmInPlace`, which is where all five of the app's confirmations live.
   const { isConfirming, attachAsk, attachCancel, ask, cancel, confirm } = useConfirmInPlace();
@@ -129,6 +135,12 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
         tooltip={PROJECT_ACTION_TOOLTIPS.moveQuantiseProject}
         moveTooltip={PROJECT_ACTION_TOOLTIPS.confirmMoveQuantise}
         onMove={(projectId) => moveQuantisePreset(preset.id, projectId)}
+        // The store's own rule, asked before the press, so the row never offers a move it refuses.
+        refusalFor={(destination) =>
+          findByNameIn(presets, destination.id, preset.name) === undefined
+            ? null
+            : moveQuantiseRefusal(destination.name, preset.name)
+        }
       />
     </li>
   );

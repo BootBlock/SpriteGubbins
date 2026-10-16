@@ -132,9 +132,9 @@ export function answer({ id, request }: QuantiseCall): void {
       }
 
       case 'quantise': {
-        // Not an error the user caused or can act on: the tab only asks for a transform once it has
-        // been told a sheet is loaded, so this is reachable only if the two ends have gone out of
-        // step. Saying so plainly beats an empty reply the tab would wait on forever.
+        // Reached when the sheet never crossed: a `load` the browser would not clone leaves the
+        // session on a thread holding nothing (see `loadSheet`), and a typed grid needs no survey,
+        // so the tab still asks. Saying so plainly beats an empty reply the tab would wait on forever.
         if (sheet === null) {
           post({ id, kind: 'failed', reason: 'No sheet has been loaded to quantise' });
           return;

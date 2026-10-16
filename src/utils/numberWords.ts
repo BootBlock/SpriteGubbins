@@ -10,8 +10,8 @@ import { capitalised } from './capitalised.ts';
  * are derived now, and this is what turns the sum back into the word the sentence needs.
  *
  * **The range stops at 99 and the refusal is loud.** Every figure a plan spells is a group total or
- * a small sum of one, and `PRACTICAL_COMPONENT_CEILING` is 43 — so a hundred is already past what
- * one generation can return, and a plan asking for one has a bigger problem than its wording. A
+ * a small sum of one, and `PRACTICAL_COMPONENT_CEILING` is far short of a hundred — so a hundred is
+ * already past what one generation can return, and a plan asking for one has a bigger problem than its wording. A
  * silent fallback to digits would put a numeral in the middle of a sentence written for a word, so
  * the function throws instead: every caller is a module-level constant, which makes the failure an
  * import-time one rather than something that reaches a prompt.

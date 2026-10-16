@@ -1,13 +1,36 @@
-import { describe, expect, it } from 'vitest';
-import { DEFAULT_SPRITE_GAP } from '../constants/quantiser.ts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_SPRITE_GAP, FRAME_DRIFT_SEARCH } from '../constants/quantiser.ts';
 import { imageFrom } from '../test/images.ts';
-import type { PixelShift, SpriteBox } from '../types/quantiser.ts';
+import type { CoverageMask, PixelShift, SpriteBox } from '../types/quantiser.ts';
 import { sheetStrips } from './frameAlignment.ts';
 import { FULLY_OPAQUE, FULLY_TRANSPARENT } from './imageData.ts';
 import { spriteSegments } from './spriteSegments.ts';
 
 const INK = { r: 20, g: 30, b: 40, a: FULLY_OPAQUE };
 const CLEAR = { r: 0, g: 0, b: 0, a: FULLY_TRANSPARENT };
+
+/** Every registration the pass asked for, with the reference and reach it was handed. */
+const registrations = vi.hoisted(() => [] as { reference: CoverageMask; reach: number }[]);
+
+/**
+ * The real `registerFrame`, recorded — which is how a test tells the reach the pass searched at and
+ * whether a strip's reference was packed once or once per frame, neither of which a drift shows on a
+ * sheet whose frames sit within a pixel of their seeds.
+ */
+vi.mock('./frameRegister.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./frameRegister.ts')>();
+  return {
+    ...actual,
+    registerFrame: (reference: CoverageMask, frame: CoverageMask, reach: number) => {
+      registrations.push({ reference, reach });
+      return actual.registerFrame(reference, frame, reach);
+    },
+  };
+});
+
+beforeEach(() => {
+  registrations.length = 0;
+});
 
 const FRAME_SIDE = 6;
 const SHEET_WIDTH = 200;
@@ -176,5 +199,90 @@ describe('sheetStrips', () => {
     // row has enough evidence to name the culprit.
     expect(driftsOf(twoRows)[0]?.map((drift) => drift.x)).toEqual([0, 0, 0]);
     expect(driftsOf(twoRows)[1]?.map((drift) => drift.x)).toEqual([0, -1, 0]);
+  });
+
+  describe('on frames 12 × 16 under SNAP at the strictest tolerance', () => {
+    /** A row of 12 × 16 frames at the given left edges and tops, with room above and below to move. */
+    function framesAt(lefts: readonly number[], tops: readonly number[] = []): ImageData {
+      return imageFrom(220, 40, (x, y) =>
+        lefts.some((left, index) => {
+          const top = tops[index] ?? 8;
+          return x >= left && x < left + 12 && y >= top && y < top + 16;
+        })
+          ? INK
+          : CLEAR,
+      );
+    }
+
+    /** Each frame's drift and whether it was marked for the move, frame by frame. */
+    function snapOf(image: ImageData): readonly { readonly drift: PixelShift; readonly snapped: boolean }[] {
+      const [strip] = sheetStrips(image, boxesOf(image), 0, GAP);
+      return strip?.frames.map(({ drift, snapped }) => ({ drift, snapped })) ?? [];
+    }
+
+    const STILL = { drift: { x: 0, y: 0 }, snapped: false };
+
+    it('moves nothing in a regular row', () => {
+      expect(snapOf(framesAt([10, 42, 74, 106, 138]))).toEqual([STILL, STILL, STILL, STILL, STILL]);
+    });
+
+    it('moves nothing in a row whose fourth slot is empty', () => {
+      // Numbered by list position, the row fitted a pitch of 40, read three frames as drifting
+      // −8, −16 and +8 pixels, and moved them +8, +16 and −8 to re-space it.
+      expect(snapOf(framesAt([10, 42, 74, 138, 170]))).toEqual([STILL, STILL, STILL, STILL, STILL]);
+    });
+
+    it('moves nothing in a row whose second slot is empty', () => {
+      // Numbered by list position, the first frame was carried a whole pitch into the empty slot.
+      expect(snapOf(framesAt([10, 74, 106, 138, 170]))).toEqual([STILL, STILL, STILL, STILL, STILL]);
+    });
+
+    it('settles a sagging row on its baseline rather than moving its level frame into the sag', () => {
+      // Tops 5, 5, 6, 7, 8, 9. A fitted slope read the sag as the layout and moved only frame zero.
+      const sagging = snapOf(framesAt([10, 42, 74, 106, 138, 170], [5, 5, 6, 7, 8, 9]));
+
+      expect(sagging.map((frame) => frame.drift)).toEqual([
+        { x: 0, y: -1 },
+        { x: 0, y: -1 },
+        { x: 0, y: 0 },
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: 2 },
+      ]);
+      expect(sagging.map((frame) => frame.snapped)).toEqual([true, true, false, false, true, true]);
+    });
+
+    it('reports a frame further from its slot than the search reaches, and leaves it there', () => {
+      // The third frame sits ten pixels right of its slot with clear room to move back. Ten is past
+      // `FRAME_DRIFT_SEARCH`, so it is a different drawing rather than a frame that slipped; the
+      // same frame two pixels out is moved.
+      expect(FRAME_DRIFT_SEARCH).toBeLessThan(10);
+      expect(snapOf(framesAt([10, 42, 84, 106, 138]))[2]).toEqual({ drift: { x: 10, y: 0 }, snapped: false });
+      expect(snapOf(framesAt([10, 42, 76, 106, 138]))[2]).toEqual({ drift: { x: 2, y: 0 }, snapped: true });
+    });
+  });
+
+  it('packs each strip’s reference once, and searches every frame at the reach the budget affords', () => {
+    const small = rowOf([10, 30, 50, 70]);
+    sheetStrips(small, boxesOf(small), null, GAP);
+
+    expect(registrations.map((call) => call.reach)).toEqual([
+      FRAME_DRIFT_SEARCH,
+      FRAME_DRIFT_SEARCH,
+      FRAME_DRIFT_SEARCH,
+    ]);
+    expect(new Set(registrations.map((call) => call.reference)).size).toBe(1);
+
+    // The shape of issue #470: four painted frames 1000 × 1001 on a 4096 × 1100 sheet, which the
+    // full reach would read 289 times over and the budget reads 121 times — see `affordableDriftReach`.
+    registrations.length = 0;
+    const lefts = [24, 1048, 2072, 3090];
+    const large = imageFrom(4096, 1100, (x, y) =>
+      y >= 50 && y < 1051 && lefts.some((left) => x >= left && x < left + 1000) ? INK : CLEAR,
+    );
+    sheetStrips(large, boxesOf(large), null, GAP);
+
+    expect(registrations.map((call) => call.reach)).toEqual([5, 5, 5]);
+    expect(new Set(registrations.map((call) => call.reference)).size).toBe(1);
   });
 });

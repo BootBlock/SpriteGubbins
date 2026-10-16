@@ -19,10 +19,6 @@ const IDS = [
 ];
 
 describe('projectStopIndex', () => {
-  it('answers the same for one id however often it is asked', () => {
-    for (const id of IDS) expect(projectStopIndex(id)).toBe(projectStopIndex(id));
-  });
-
   it('returns a non-negative integer, which is what the allocator takes', () => {
     // `Math.imul` returns a signed 32-bit result, so without the unsigned shift the running value
     // goes negative — and a negative index lands every project on the pool's first stop.

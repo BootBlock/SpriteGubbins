@@ -1,3 +1,5 @@
+import type { CellLattice } from './cellLattice.ts';
+
 /**
  * The fixed cell a sprite may be cut into, and where its artwork stands inside that cell.
  *
@@ -18,9 +20,12 @@
  * cell that manifest states, so the file and the manifest cannot end up describing one cut at two
  * coordinates.
  *
- * **Nothing here resamples.** A sprite larger than the cell is a sheet that came back at a coarser
- * scale than the prompt asked for, and the honest answer is to refuse and say so — see
- * `oversizedSprites`, which both the panel and the writer read.
+ * **A third statement says how the artwork meets the cell**, {@link SpriteFit}. Its default resamples
+ * nothing: a sprite larger than the cell is a sheet that came back at a coarser scale than the prompt
+ * asked for, and the honest answer is to refuse and say so — see `oversizedSprites`, which both the
+ * panel and the writer read. The other two exist for painted sheets, which have no pixel scale to
+ * honour and are drawn far larger than the files a game wants: a painted 4 × 4 icon sheet draws each
+ * tile at 230 to 380 pixels, and an action bar takes 128.
  */
 
 /**
@@ -58,7 +63,35 @@ export interface SpriteAnchor {
   readonly y: CellAnchorY;
 }
 
-/** What the reader set: which source sizes the cell, the size they typed, and the anchor. */
+/**
+ * How a sprite's artwork meets its cell.
+ *
+ * - `REFUSE` places the artwork at its own size and refuses a sprite larger than the cell. The
+ *   default, and the only fit a sheet with a pixel scale above 1 takes: resizing pixel art blends
+ *   the pixels the lattice reading exists to keep apart. See `resolveSpriteCell`.
+ * - `SCALE_SET` resizes every sprite of the sheet by **one** factor, so a set of isolated marks keeps
+ *   the sizes its icons have relative to each other. The factor maps the sheet's measured grid pitch
+ *   onto the cell — see `evenScale` — so a mark filling seven tenths of its step of the grid fills
+ *   seven tenths of the cell.
+ * - `FILL_SQUARE` crops each sprite to the square at the centre of its own box and resizes that square
+ *   to fill the cell, for full-bleed tiles, whose every file must be the whole cell edge to edge
+ *   whatever size the generator drew each tile at.
+ * - `IN_PLACE` keeps each piece where it was drawn in its cell of a placement sheet
+ *   (`SheetPlan.placement`): the square it was placed against is laid on the cell, centred, so a corner
+ *   badge lands in that square's corner, which is the file's corner on a square cell. One factor maps
+ *   the square onto the cell's shorter side, and it is 1 on a sheet with a pixel scale (`squareInFile`). The only fit a placement sheet takes, and one no other sheet offers; see
+ *   `resolveSpriteCell`.
+ *
+ * **The reader states it rather than the app reading it off the artwork**, which is the call this
+ * file makes about the size and the anchor. A full-bleed tile and a dense isolated mark can have the
+ * same box and the same fill, and guessing wrong either crops a mark or shrinks every tile by a
+ * different amount. Both resizing fits resample by area (`resampleArea`).
+ */
+export const SPRITE_FITS = ['REFUSE', 'SCALE_SET', 'FILL_SQUARE', 'IN_PLACE'] as const;
+
+export type SpriteFit = (typeof SPRITE_FITS)[number];
+
+/** What the reader set: which source sizes the cell, the size they typed, the anchor and the fit. */
 export interface SpriteCellChoice {
   readonly source: SpriteCellSource;
   /**
@@ -69,6 +102,7 @@ export interface SpriteCellChoice {
    */
   readonly fixed: { readonly width: number; readonly height: number };
   readonly anchor: SpriteAnchor;
+  readonly fit: SpriteFit;
 }
 
 /**
@@ -82,4 +116,62 @@ export interface SpriteCell {
   readonly width: number;
   readonly height: number;
   readonly anchor: SpriteAnchor;
+  /** The fit in force, which is `REFUSE` wherever the sheet has a pixel scale — see `resolveSpriteCell`. */
+  readonly fit: SpriteFit;
+  /**
+   * The step of the grid the studio's sheet states, in the sheet's pixels each way, or `null` where it
+   * states none — read by `SCALE_SET` only on an axis its sprites give no step to measure.
+   *
+   * An icon sheet states one cell, 1/4 of its width each way, however few icons it holds
+   * (`SheetPlan.cellGrid`, audit finding T5). A sheet of one icon has no step between sprites to
+   * measure, so without this its one icon was resized to fill the cell edge to edge, where the same
+   * icon on a sheet of nine kept the margin its cell gave it.
+   */
+  readonly statedStep: SheetStep | null;
+  /**
+   * The cells of a placement sheet, read from the gaps between its pieces, or `null` off one — read by
+   * `IN_PLACE`, which places each piece against its cell's square (`cellLattice`). Plain data, so the
+   * cell crosses to `sheetWriteWorker` as it is.
+   */
+  readonly lattice: CellLattice | null;
+  /**
+   * Whether the artwork may be resampled into the cell: `false` on a sheet read at a pixel scale above 1
+   * (`resizingFitAllowed`), where `IN_PLACE` places each piece at its drawn size, its square centred in
+   * the cell rather than scaled onto it (`squareInFile`). The other fits answer the same question by which fit is in force.
+   */
+  readonly resamples: boolean;
+}
+
+/** A grid step in a sheet's own pixels, across and down. */
+export interface SheetStep {
+  readonly x: number;
+  readonly y: number;
+}
+
+/** A rectangle of the sheet, in its own pixels. */
+export interface SheetRegion {
+  readonly left: number;
+  readonly top: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
+ * How one sprite becomes its cell: the region of the sheet cut for it, and where that region lands
+ * in the cell and at what size. Under `IN_PLACE` it may reach past the cell's edge, and past its tile
+ * square, by up to `PLACE_OVERSHOOT` of that square, and the part past the edge is clipped (`placeInCell`).
+ *
+ * Under `REFUSE` the region is the sprite's own bounding box and its size in the cell is the box's,
+ * so the placement is a displacement and nothing more. Under `SCALE_SET` the region is still the box
+ * and the size is the box times the sheet's one factor; under `FILL_SQUARE` the region is the box's
+ * centred square and the size is the cell's shorter side. `cellPlacements` computes it at 1:1, and
+ * every field is multiplied by the download's magnification together, so the 1× file and the 4× file
+ * are one placement.
+ */
+export interface SpritePlacement {
+  readonly source: SheetRegion;
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
 }

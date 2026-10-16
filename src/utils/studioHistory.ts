@@ -1,5 +1,6 @@
 import { STUDIO_HISTORY_LIMIT } from '../constants/studioHistory.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
+import { sameIconRoster } from './sameIconRoster.ts';
 import type { StudioHistory, StudioPosition } from '../types/studioHistory.ts';
 
 /**
@@ -112,7 +113,7 @@ function entryAt(history: StudioHistory, index: number): StudioPosition {
 /**
  * Whether two positions describe the same studio.
  *
- * The category and the sixteen answers are compared value by value, because a preset load and a
+ * The category, the sixteen answers and ICON's roster are compared value by value, because a preset load and a
  * category switch both hand over a freshly built subject whose values may be exactly the ones
  * already in force — an identity check would call those changes and record a step for each.
  *
@@ -125,5 +126,8 @@ function entryAt(history: StudioHistory, index: number): StudioPosition {
 function samePosition(a: StudioPosition, b: StudioPosition): boolean {
   if (a === b) return true;
   if (a.category !== b.category || a.output !== b.output) return false;
-  return SUBJECT_FIELD_KEYS.every((key) => a.subject[key] === b.subject[key]);
+  return (
+    SUBJECT_FIELD_KEYS.every((key) => a.subject[key] === b.subject[key]) &&
+    sameIconRoster(a.subject.icons, b.subject.icons)
+  );
 }

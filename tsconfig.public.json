@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.public.tsbuildinfo",
+    "target": "ES2022",
+    /* The page's globals and nothing else: `public/` is served to the browser as written, and a
+       name only a worker or Node defines is a mistake here rather than a type to borrow. */
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* `public/` is copied into the build byte for byte, so what is checked here is what ships.
+       Nothing compiles it: `checkJs` is how a hand-written script gets the compiler at all, and
+       without this program a mistyped global passed the gate and stopped the isolation reload in
+       production alone, where the dev and preview servers never run it (issue #449). */
+    "allowJs": true,
+    "checkJs": true,
+
+    /* Bundler mode. `auto` rather than the other programs' `force`, because the file is a classic
+       `<script>`, not a module: a top-level declaration in it is a global of the page, and the
+       compiler should read it as one. */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "auto",
+    "noEmit": true,
+
+    /* Strictness. The same block as `tsconfig.app.json` and `tsconfig.node.json`, and
+       `tests/tsconfig-strictness.test.ts` fails on any flag set in one program and not the others. */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedSideEffectImports": true,
+    "verbatimModuleSyntax": true,
+
+    /* None: every `@types` package in `node_modules` would otherwise join the program, and Node's
+       would declare `process` and `require` to a script that runs in a browser. */
+    "types": []
+  },
+  "include": ["public/**/*.js"]
+}

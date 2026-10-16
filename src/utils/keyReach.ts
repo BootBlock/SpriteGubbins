@@ -23,11 +23,13 @@ import { keyBasis, keyDistanceSquared } from './keyDistance.ts';
  * reader who lowers the dial gets some of these colours back, and one who raises it loses more —
  * the prompt cannot follow a dial on a sheet it has not seen, and this is where the two part company.
  *
- * **The fringe pass is deliberately not asked.** It reaches only a pixel beside the field, so the
- * most it costs a component is the outermost pixel of its silhouette, and `KEY_TINT_OFF_HUE` names
- * the three colours on the key's own hue that it takes there along with the rung that returns them.
- * Withholding a colour from every component to save one pixel of edge would cost a sixteen-colour
- * palette a whole entry for a loss the tab already lets the reader undo.
+ * **The fringe pass and the despill are deliberately not asked.** The fringe pass reaches only a
+ * pixel beside the field, so the most it costs a component is the outermost pixel of its
+ * silhouette, and `KEY_TINT_OFF_HUE` names the three colours on the key's own hue that it takes
+ * there along with the rung that returns them. `despillKey` reaches `DESPILL_DEPTH` pixels further
+ * and deletes none of them: it greys those same colours there, and only where they do not run
+ * deeper than that. Withholding a colour from every component to save an edge would cost a
+ * sixteen-colour palette a whole entry for a loss the tab already lets the reader undo.
  */
 export function keyReaches(key: Rgba, color: Rgba): boolean {
   const pixel = new Uint8ClampedArray([color.r, color.g, color.b, color.a]);

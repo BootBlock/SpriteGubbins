@@ -1,9 +1,11 @@
-import type { SpriteManifest } from '../types/spriteManifest.ts';
+import type { ManifestPlacement, ManifestSprite, SpriteManifest } from '../types/spriteManifest.ts';
 import type { WrittenSpritePack } from '../types/sheetFormat.ts';
 import { cropSprite } from './cropSprite.ts';
 import { encodePng } from './encodePng.ts';
 import type { PackLayout } from './packLayout.ts';
 import { placeInCell } from './placeInCell.ts';
+import { resampleArea } from './resampleArea.ts';
+import { sheetColourHold } from './sheetColourHold.ts';
 import { encodeManifest } from './spriteManifest.ts';
 import { spriteOrdinal } from './spriteOrdinal.ts';
 import { zipArchive } from './zipArchive.ts';
@@ -28,10 +30,17 @@ import type { ZipEntry } from './zipArchive.ts';
  * one sprite two sizes depending on which file it left in. See `cropSprite`.
  *
  * **A fixed cell is then a canvas that box is laid on, never a wider cut.** Where the manifest
- * states a cell, each sprite's file is that size with the box at the displacement the manifest gives
+ * states a cell, each sprite's file is that size with its artwork where the manifest's placement puts
  * it — because a sheet's sprites sit a gutter apart, and cutting the sheet at a cell-sized rect
  * would bake the neighbour into the margin. `placeInCell` measured that on all eight reference
  * sheets and says what it costs; `SpriteCell` says why a cell is offered at all.
+ *
+ * **Under a fit that resizes, the placement's region is resampled to its drawn size first**
+ * (`resampleArea`), and then, on a sheet a palette step decided, mapped back onto the sheet's own
+ * colours (`sheetColourHold`, which argues that order). A placement whose drawn size is its region's
+ * own is cut exactly as before, so a sheet whose sprites are placed as drawn writes the same bytes it
+ * always did. The resample reads the magnified sheet it is handed, which at a whole-number
+ * magnification is the same average as reading the 1:1 result at the magnified size.
  *
  * **What every entry is called is `packLayout`'s answer, not this function's.** All three names
  * turn on the one word that tells this sheet apart from the rest of its batch — `sheetToken`'s
@@ -60,25 +69,24 @@ export async function encodeSpritePack(
   sheet: ImageData,
   manifest: SpriteManifest,
   layout: PackLayout,
+  paletted: boolean,
 ): Promise<WrittenSpritePack> {
   const written = await encodePng(sheet);
   const files: ZipEntry[] = [{ name: layout.sheetFile, bytes: written.bytes }];
+  // Built only where a sprite is resized on a paletted sheet, since reading it walks the whole sheet.
+  const resizes = manifest.sprites.some((sprite) => sprite.placement !== null && resized(sprite.placement));
+  const hold = paletted && resizes ? sheetColourHold(sheet) : null;
 
   for (const [index, sprite] of manifest.sprites.entries()) {
-    const box = cropSprite(sheet, {
-      left: sprite.x,
-      top: sprite.y,
-      width: sprite.width,
-      height: sprite.height,
-      // Not read by the crop, and not worth recovering from the manifest, which states a sprite's
-      // extent rather than how much of the box its artwork fills.
-      pixels: 0,
-    });
-    // The two are `null` together — see `ManifestSprite.cellOffset` — and are read as a pair rather
+    // The two are `null` together — see `ManifestSprite.placement` — and are read as a pair rather
     // than one of them being trusted to imply the other.
     const { cell } = manifest;
-    const offset = sprite.cellOffset;
-    const cut = await encodePng(cell === null || offset === null ? box : placeInCell(box, cell, offset));
+    const { placement } = sprite;
+    const cut = await encodePng(
+      cell === null || placement === null
+        ? ownBox(sheet, sprite)
+        : placeInCell(drawn(sheet, placement, hold), cell, placement),
+    );
     files.push({ name: spriteFileName(manifest, index, layout.spriteDirectory), bytes: cut.bytes });
   }
 
@@ -95,4 +103,40 @@ export async function encodeSpritePack(
     sprites: manifest.sprites.length,
     naming: manifest.naming,
   };
+}
+
+/** A sprite's own bounding box, cut from the sheet with nothing resized. */
+function ownBox(sheet: ImageData, sprite: ManifestSprite): ImageData {
+  return cropSprite(sheet, {
+    left: sprite.x,
+    top: sprite.y,
+    width: sprite.width,
+    height: sprite.height,
+    // Not read by the crop, and not worth recovering from the manifest, which states a sprite's
+    // extent rather than how much of the box its artwork fills.
+    pixels: 0,
+  });
+}
+
+/** Whether a placement draws its region at a size other than the region's own. */
+function resized(placement: ManifestPlacement): boolean {
+  return placement.width !== placement.from.width || placement.height !== placement.from.height;
+}
+
+/**
+ * The artwork a placement lays in the cell: the sprite's own box where nothing is resized, which is
+ * the cut this pack always made, and otherwise its region resampled to the drawn size and held to the
+ * sheet's colours where `hold` is given.
+ */
+function drawn(
+  sheet: ImageData,
+  placement: ManifestPlacement,
+  hold: ((sprite: ImageData) => ImageData) | null,
+): ImageData {
+  const { from } = placement;
+  const region = { left: from.x, top: from.y, width: from.width, height: from.height };
+  // `pixels` is not read by the crop, as in `ownBox`.
+  if (!resized(placement)) return cropSprite(sheet, { ...region, pixels: 0 });
+  const resampled = resampleArea(sheet, region, placement.width, placement.height);
+  return hold === null ? resampled : hold(resampled);
 }

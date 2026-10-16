@@ -4,7 +4,8 @@ import { createImage } from '../src/utils/imageData.ts';
 import { decodePng } from '../src/test/decodePng.ts';
 
 /**
- * The eight reference sheets in `test_sprites/`, as `ImageData`.
+ * The eight reference sheets in `test_sprites/`, and the overlay sheets a placement reading is pinned
+ * against ({@link PlacementSheetName}), as `ImageData`.
  *
  * The only real generator output this project has, and the corpus every measurement about *what
  * models actually return* has to be checked against. There are eight rather than one because
@@ -37,6 +38,19 @@ export type CorpusSheetName =
   | 'vehicles_and_props.png';
 
 /**
+ * A sheet in `test_sprites/` that a placement reading is pinned against rather than a quantiser
+ * calibration: each is an icon set's overlay sheet a generator drew from the cell prompt, fourteen
+ * pieces one to a cell of a four-column grid (`cellLattice`). `game_overlay_test.png` and
+ * `icons_fullbleed.png` are drawn under the full-bleed look, the second from the prompt that puts each
+ * tier mark in its corner, and `icons_isolated.png` under the isolated look. Kept out of
+ * {@link CorpusSheetName}, so the surveys that state a figure for every calibration sheet do not have
+ * to state one for each. Nor is the first a calibration sheet for scale: each of its pieces was drawn at
+ * a pixel pitch of its own, from about 7½ to about 10½, so it has no one scale to read, and
+ * `overlay-sheet-scale.test.ts` pins the refusal and its reason. The other two each read one scale.
+ */
+export type PlacementSheetName = 'game_overlay_test.png' | 'icons_fullbleed.png' | 'icons_isolated.png';
+
+/**
  * Every sheet: the reference first, then the seven it is checked against.
  */
 export const CORPUS_SHEETS: readonly CorpusSheetName[] = [
@@ -51,13 +65,25 @@ export const CORPUS_SHEETS: readonly CorpusSheetName[] = [
 ];
 
 /**
+ * The corpus in two halves of four, the reference sheet in the first, for a survey run as two files.
+ *
+ * Vitest gives each file to one worker, so a survey over all eight sheets takes as long as one
+ * worker needs for the whole corpus, however many others are idle. Run as two files over a half
+ * each, the same survey can take two workers — and, once the gate shards the suite, two runners.
+ */
+export const CORPUS_HALVES: readonly [readonly CorpusSheetName[], readonly CorpusSheetName[]] = [
+  CORPUS_SHEETS.slice(0, 4),
+  CORPUS_SHEETS.slice(4),
+];
+
+/**
  * One sheet, decoded. Truecolour, so every pixel comes back opaque — see `decodePng`.
  *
  * Resolved from `process.cwd()`, which Vitest sets to the project root, rather than from
  * `import.meta.url` — Vitest rewrites module URLs, so they are not `file:` URLs the filesystem can
  * be asked about. `tests/design-tokens.test.ts` records the same trap.
  */
-export async function loadCorpusSheet(name: CorpusSheetName): Promise<ImageData> {
+export async function loadCorpusSheet(name: CorpusSheetName | PlacementSheetName): Promise<ImageData> {
   const path = resolve(process.cwd(), 'test_sprites', name);
   const decoded = await decodePng(new Uint8Array(await readFile(path)));
   const image = createImage(decoded.width, decoded.height);
@@ -65,10 +91,12 @@ export async function loadCorpusSheet(name: CorpusSheetName): Promise<ImageData>
   return image;
 }
 
-/** The whole corpus, decoded once — what a survey over all eight loads in `beforeAll`. */
-export async function loadCorpus(): Promise<ReadonlyMap<CorpusSheetName, ImageData>> {
-  const sheets = await Promise.all(
-    CORPUS_SHEETS.map(async (name) => [name, await loadCorpusSheet(name)] as const),
-  );
+/**
+ * The corpus, or the named part of it, decoded once — what a survey loads in `beforeAll`.
+ */
+export async function loadCorpus(
+  names: readonly CorpusSheetName[] = CORPUS_SHEETS,
+): Promise<ReadonlyMap<CorpusSheetName, ImageData>> {
+  const sheets = await Promise.all(names.map(async (name) => [name, await loadCorpusSheet(name)] as const));
   return new Map(sheets);
 }

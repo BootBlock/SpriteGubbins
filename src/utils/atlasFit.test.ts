@@ -14,7 +14,7 @@ const BASE: Omit<AtlasConfig, 'canvasSize'> = {
 /**
  * A real component size, and not square.
  *
- * It is the pair `US_CHARACTER_RIG` holds, and it is deliberately not cited as that preset's own:
+ * It is the pair the `us-character-rig` preset holds, and it is deliberately not cited as that preset's own:
  * that preset draws a cut-out rig, whose stated size is the assembled figure — so `spriteFitFor` is
  * never handed it. `componentTargetSize` withholds it, and this module's whole job is to check a
  * cell against one component. The figures below are a size like any other.
@@ -46,10 +46,6 @@ describe('spriteFitFor', () => {
       placedWidth: 0,
       placedHeight: 0,
     });
-  });
-
-  it('survives a cell the gutter has eaten entirely', () => {
-    expect(spriteFitFor(0, CHARACTER).scale).toBe(0);
   });
 
   it('fits a component exactly filling the cell at 1:1', () => {

@@ -16,6 +16,15 @@ describe('despeckle', () => {
     expect(channels(cleaned)).toEqual(channels(imageFrom(5, 5, () => GREEN)));
   });
 
+  it('neither counts nor repaints a pixel under the coverage floor', () => {
+    // Five of the stray's eight neighbours are faint pixels whose channels read as green. Counted as
+    // votes they were a majority that pulled the stray onto their noise; absent, the stray has three
+    // neighbours that agree with it, and the faint pixels themselves are left as they arrived.
+    const faintGreen: Rgba = { ...GREEN, a: 10 };
+    const sheet = imageFrom(3, 3, (x, y) => (x === 1 && y === 1 ? STRAY : y === 0 ? STRAY : faintGreen));
+    expect(channels(despeckle(sheet, 32))).toEqual(channels(sheet));
+  });
+
   it('never merges a line pixel, however settled the neighbours', () => {
     // Ink against the green measures 109 — past double any tolerance offered.
     const sheet = imageFrom(5, 5, (x, y) => (x === 2 && y === 2 ? INK : GREEN));

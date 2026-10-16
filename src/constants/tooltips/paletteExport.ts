@@ -1,3 +1,5 @@
+import { MAX_PALETTE_ENTRIES } from '../../utils/pngPalette.ts';
+
 /**
  * Guidance for the three buttons that write a settled palette to a file.
  *
@@ -13,7 +15,7 @@
 export const PALETTE_EXPORT_TOOLTIPS = {
   swatchPng:
     'Saves the colours as a picture: one 16-pixel block per colour, left to right, in the palette’s own order. This is the form an engine importer reads when it maps artwork onto a fixed set of colours.\n\n' +
-    'The file is written from the colours themselves, so no swatch painted by hand can drift a step off. It is offered up to 256 colours, holds no artwork and changes nothing about the sheet, the prompt or the studio.',
+    `The file is written from the colours themselves, so no swatch painted by hand can drift a step off. It is offered up to ${String(MAX_PALETTE_ENTRIES)} colours, holds no artwork and changes nothing about the sheet, the prompt or the studio.`,
 
   gpl:
     'Saves the colours as a GIMP palette, a `.gpl` file that Aseprite, Krita, GIMP and most pixel editors open. Load it to paint in exactly the colours the rest of the series uses, rather than picking them off a screenshot.\n\n' +

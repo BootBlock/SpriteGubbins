@@ -61,7 +61,7 @@ describe('SheetStepButtons', () => {
     // Both axes in one write. Setting the sheet index and the facing separately is what this replaced,
     // and on this batch moving from the multi-view trunk to the first run changes the series position
     // *and* pins a facing that was inert a moment ago.
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     // Settings a step must carry across untouched, at values no default could stand in for.
     const before = {
       ...useOutputStore.getState().output,
@@ -82,7 +82,7 @@ describe('SheetStepButtons', () => {
   });
 
   it('walks the whole batch in order, and stops at both ends rather than wrapping', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SheetStepButtons />);
     const total = batch().sheets.length;
     expect(total).toBe(1 + CLASSIC.length);

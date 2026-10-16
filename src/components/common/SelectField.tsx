@@ -17,30 +17,41 @@ interface SelectFieldProps<T extends string | number> {
    * once what the list is missing — shown under the control and wired as its accessible description.
    *
    * Orthogonal to `tooltip`, which explains the field and reads the same whatever is chosen. Six of
-   * the nine call sites are selects whose options differ from each other in a way no single
+   * the eleven call sites are selects whose options differ from each other in a way no single
    * sentence can cover — the palette, the render style, the art style reference, the system profile,
    * the target generator and the sheet contents. Each of those has a table behind it holding a
    * different account of what some of its options mean, and this is where the row for the chosen one
    * is read out.
    *
-   * **The other three read the other way: the rig mode, the colour budget and the outline system.**
-   * Their options need no per-option account, but their *lists* narrow. Sheet contents that deliver a
-   * sheet drawing each moving part once per position it takes do not offer the cut-out rig, because
+   * **The other four read the other way: the rig mode, the colour budget, the outline system and the
+   * background key.** Their options need no per-option account, but their *lists* narrow. Sheet contents
+   * that deliver a sheet drawing each moving part once per position it takes do not offer the cut-out rig, because
    * that rig's first rule is that no piece commits to a position; and a render style whose own line
    * names a small palette or its own contour does not offer a budget or an outline that contradicts
-   * it. An option that disappears with no explanation reads as a control that failed to render, so
+   * it, and an icon set drawn as a tint mask does not offer the white key its greys would be cut by. An
+   * option that disappears with no explanation reads as a control that failed to render, so
    * the sentence naming what withdrew it goes here — where a screen reader announces it with the
    * control, rather than in a paragraph beside it.
    *
-   * Optional because the other twenty-three have nothing of either kind to say, and twenty-three
-   * call sites passing a permanently-empty string would bury the nine that do — while empty *is*
-   * still accepted from those nine, as `CheckboxField`'s reason is, so a caller resolving the text
+   * **The aspect ratio reads neither way.** Its options need no account and its list narrows for
+   * reasons the tooltip already gives, but on a target whose request rather than its prompt decides
+   * the canvas, it names the size that request must ask for, which nothing in the prompt can set.
+   *
+   * **The palette is both.** It reads out the pinned palette's account, and its list narrows too: an
+   * icon set drawn as a tint mask is offered `FREE` alone, so its description is the sentence naming
+   * what withdrew the others, which stands where a pinned palette's account would.
+   *
+   * Optional because the other twenty-five have nothing of any kind to say, and twenty-five
+   * call sites passing a permanently-empty string would bury the eleven that do — while empty *is*
+   * still accepted from those eleven, as `CheckboxField`'s reason is, so a caller resolving the text
    * out of its table can hand over what it found rather than choosing between a prop and no prop.
-   * Seven of the nine need that in earnest — four whose tables are keyed on something the select can
-   * hold and the table has no row for, and the three narrowing lists, whose sentences apply to some
-   * sheets or styles and not others — and the other two never take it up: the target generator's is a guard over a miss
-   * its own call site records as unreachable, and the sheet contents' table has a row for every mode
-   * a category can offer, because both are keyed on the same closed union.
+   * Nine of the eleven need that in earnest — four whose tables are keyed on something the select can
+   * hold and the table has no row for, the palette among them, the four narrowing lists, whose
+   * sentences apply to some sheets or styles and not others, and the aspect ratio, whose sentence
+   * applies to one target alone — and the other two never take it up: the
+   * target generator's is a guard over a miss its own call site records as unreachable, and the sheet
+   * contents' table has a row for every mode a category can offer, because both are keyed on the same
+   * closed union.
    */
   readonly description?: string;
   /**
@@ -48,8 +59,8 @@ interface SelectFieldProps<T extends string | number> {
    * `NumberField` and `CheckboxField` both show theirs.
    *
    * Optional here where those two require it, for the reason `description` is: two of the app's
-   * thirty-two selects — the rig mode and the resolution profile — have a setting that takes their
-   * value over, and the other thirty passing a permanently-empty string would bury the two that do.
+   * thirty-seven selects — the rig mode and the resolution profile — have a setting that takes their
+   * value over, and the other thirty-five passing a permanently-empty string would bury the two that do.
    * The rig mode also carries its narrowing `description`, and the two say different things: this
    * one is the sheet taking the choice over, that one the sheet withdrawing an option from a choice
    * the reader still has.
@@ -73,7 +84,7 @@ interface SelectFieldProps<T extends string | number> {
    * Words that follow `label` in the control's accessible name, and appear nowhere on screen — for a
    * select rendered once for each item in a list, where `label` alone gives every copy one name.
    *
-   * One of the thirty-two passes it: `ProjectSelectField`, which `ProjectMoveField` renders on each
+   * One of the thirty-seven passes it: `ProjectSelectField`, which `ProjectMoveField` renders on each
    * saved row to choose where its save moves. Those were a select called “Project” per saved item, beside an ⓘ called
    * “Guidance: Project”, so a reader moving control to control met a run of identical names with
    * nothing saying which save each would move — while the buttons in the same rows already named
@@ -95,9 +106,10 @@ interface SelectFieldProps<T extends string | number> {
 /**
  * A labelled dropdown over a closed set of choices.
  *
- * Thirty-two controls in this app are exactly this — the studio's output settings, the category, the
- * target model, the quantiser's dials, the atlas calculator's two and the settings dialog's one — so
- * it is one component rather than thirty-two copies of the same label, tooltip and `<select>` markup.
+ * Thirty-seven controls in this app are exactly this — the studio's output settings, the category, the
+ * target model, the quantiser's dials, the atlas calculator's two, the settings dialog's one, the icon
+ * catalogue's kind and school filters, and the kind, school and shape of an icon of the reader's own — so it
+ * is one component rather than thirty-seven copies of the same label, tooltip and `<select>` markup.
  *
  * A native `<select>` on purpose. It is keyboard-operable, type-to-select, and renders as the
  * platform's own picker on touch devices; `ComboBox` exists for the fields where free text is
@@ -145,7 +157,7 @@ export function SelectField<T extends string | number>({
       {/*
         The row the control and its action share. Always rendered, rather than only where an action
         was passed: a single-child flex row lays a `w-full` select out exactly as a bare one, so one
-        path serves all thirty-two call sites and there is no second arrangement to keep in step.
+        path serves all thirty-seven call sites and there is no second arrangement to keep in step.
       */}
       <div className="flex items-center gap-2">
         <select

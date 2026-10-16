@@ -22,8 +22,12 @@ import {
 } from '../constants/promptText/index.ts';
 import { everySeriesOf, everySheetOf, planProseFor, sheetsProseFor } from '../test/categoryProse.ts';
 import { sectionOf } from '../test/promptSections.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { assemblyBaseSubjectsOf, standardSubjectOf } from '../test/assemblyBaseSubjects.ts';
 import { decliningEverything, standardSubject } from '../test/sheetSubject.ts';
+import { sweepSubjectsOf } from '../test/sweepSubjectsOf.ts';
+import { iconCatalogueSubjects } from '../test/iconCatalogueSubjects.ts';
+import { ICON_GRID_COLUMNS, ICONS_PER_SHEET } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
@@ -31,11 +35,13 @@ import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
-import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
+import { componentCountFor } from './componentSet.ts';
+import { drawsAdditionalAnatomy } from './drawsAdditionalAnatomy.ts';
 import { planSlots } from './componentSlots.ts';
+import { componentTally } from './componentTally.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
-import { planAsDrawn } from './sheetPlanAbsence.ts';
+import { planAsDrawn, planDraws, planDrawsIn } from './sheetPlanAbsence.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
 /**
@@ -195,11 +201,39 @@ function promptFor(
   });
 }
 
+const SHEET_PROMPTS = new Map<string, string>();
+
+/**
+ * One sheet compiled from the base subject that selects it, with no additional anatomy and every
+ * other output setting at its default — once, however many sweeps read it.
+ *
+ * `no category emits another category’s components` and `every sheet of one series states the same
+ * finished capability` each walk every sheet the app can compile and compile exactly this prompt, so
+ * sharing it halves the most expensive work in the file without changing what either sweep reads.
+ * Keyed on the base's anatomy, which is the one field that tells the subjects
+ * `assemblyBaseSubjectsOf` returns for a category apart.
+ */
+function sheetPrompt(
+  category: SubjectCategory,
+  subject: SubjectDefinition,
+  mode: DirectionalMode,
+  directions: DirectionSet,
+  sheetIndex: number,
+): string {
+  // The whole subject, because ICON's sheets differ by roster and world under one base.
+  const key = [category, JSON.stringify(subject), mode, directions, String(sheetIndex)].join('|');
+  const cached = SHEET_PROMPTS.get(key);
+  if (cached !== undefined) return cached;
+  const prompt = promptFor(category, mode, undefined, sheetIndex, directions, subject);
+  SHEET_PROMPTS.set(key, prompt);
+  return prompt;
+}
+
 describe('the plan table itself', () => {
   it('files no plan under a category that cannot contain it', () => {
     // Structural, not textual: an entry of kind `tile` under CHARACTER is the contamination, and it
     // is visible in the data long before it becomes a sentence in a prompt.
-    expect(validateAllSheetPlans()).toEqual([]);
+    expect(validateAllSheetPlans(sweepSubjectsOf)).toEqual([]);
   });
 
   it.each(SUBJECT_CATEGORIES)('%s offers at least one mode, and defaults to one it supports', (category) => {
@@ -258,9 +292,13 @@ describe('the plan table itself', () => {
     // line worth several components is equally how a tileset lists four corners, and the portrait's
     // twelve expressions are twelve lines each worth exactly one. So what this holds is that a plan
     // changing its answer is a deliberate edit that shows up here.
+    // ICON's icon sheets are built from the roster, so their names follow it; each answers by whether
+    // it holds a two-state entry, which the assertion after the list holds them to.
+    const isIconSheet = ({ category, plan }: (typeof EVERY_PLAN)[number]): boolean =>
+      category === 'ICON' && plan.placement === undefined;
     const posed = [
       ...new Set(
-        EVERY_PLAN.filter(({ plan }) => plan.posing === 'PER_POSITION').map(
+        EVERY_PLAN.filter((entry) => entry.plan.posing === 'PER_POSITION' && !isIconSheet(entry)).map(
           ({ category, sheet }) => `${category} / ${sheet}`,
         ),
       ),
@@ -323,8 +361,38 @@ describe('the plan table itself', () => {
       // them in; and one overlay drawn at two stages of a cooldown.
       'PORTRAIT / Expression set',
       'PORTRAIT / Feature cut',
-      'ICON / Symbol set',
+      'ICON / Overlay pieces',
     ]);
+
+    // A sound toggle drawn unmuted and muted is one icon in two positions, so an icon sheet holding a
+    // two-state entry settles that change and one holding none settles nothing.
+    for (const entry of EVERY_PLAN.filter(isIconSheet)) {
+      const pairs = entry.plan.groups.some((group) => group.entries.some((line) => line.count > 1));
+      expect(entry.plan.posing, entry.sheet).toBe(pairs ? 'PER_POSITION' : 'UNSTATED');
+    }
+  });
+
+  it('lets a sheet leave an attribute to a sibling only where a sibling draws in it and it does not', () => {
+    // `drawnElsewhere` is what puts “the style of the pieces another sheet of this series draws” into
+    // section 1, so a sheet declaring it has to sit in a series where some other sheet really draws its
+    // pieces in the attribute, and must draw none of it itself — or the sentence is false of the sheet
+    // it is printed on.
+    let declared = 0;
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const series of everySeriesOf(category)) {
+        series.forEach((plan, index) => {
+          if (plan.drawnElsewhere === undefined) return;
+          declared += 1;
+          const key = plan.drawnElsewhere;
+          expect(planDraws(plan, key) || planDrawsIn(plan, key), `${category} / ${plan.name}`).toBe(false);
+          expect(
+            series.some((other, at) => at !== index && planDrawsIn(other, key)),
+            `${category} / ${plan.name}`,
+          ).toBe(true);
+        });
+      }
+    }
+    expect(declared).toBeGreaterThan(0);
   });
 
   it('gives the tileset only to the categories that assemble from repeating pieces', () => {
@@ -716,22 +784,31 @@ describe('every sheet of one series states the same finished capability', () => 
     };
   }
 
-  it('gives every sheet of a batch one answer about the deliverable, and its own share beside it', () => {
-    // The reported defect, swept over every pairing the app can compile: on a `CHARACTER` /
-    // `CORE_DIRECTIONAL_VARIANTS` / `EIGHT_COMPASS` series, sheet 1 told the reader the finished
-    // ten-sheet deliverable was a trunk at four cardinal facings, sheet 2 that it was a trunk at
-    // four diagonals, and sheets 3 to 10 that it was limbs at one facing and no trunk at all —
-    // each of them two lines above a list of all ten sheets.
-    let multiSheet = 0;
-    for (const { category, subject, mode, directions } of EVERY_SERIES) {
-      const output = { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions };
-      const sheets = sheetSeriesFor(category, subject, mode, directions).map((_, sheetIndex) =>
-        capabilityOf(generatePrompt(category, subject, { ...output, sheetIndex })),
-      );
-      if (sheets.length < 2) continue;
-      multiSheet += 1;
-      const where = `${category} / ${subject.anatomy} / ${mode} / ${directions}`;
+  /**
+   * Every series the app can compile, named and one case each — a subject's mode and direction set —
+   * because the sweep as one test outgrew Vitest's five-second limit on a slow runner. ICON's
+   * whole-catalogue rosters make its series the long ones; a case is one of them.
+   */
+  const SERIES_CASES = assemblyBaseCases().flatMap(([name, category, subject]) =>
+    modesFor(category, subject).flatMap((mode) =>
+      CATEGORY_DIRECTION_SETS[category].map(
+        (directions) => [`${name} / ${mode} / ${directions}`, category, subject, mode, directions] as const,
+      ),
+    ),
+  );
 
+  it.each(SERIES_CASES)(
+    'gives every sheet of a batch one answer about the deliverable, and its own share beside it: %s',
+    (where, category, subject, mode, directions) => {
+      // The reported defect, swept over every pairing the app can compile: on a `CHARACTER` /
+      // `CORE_DIRECTIONAL_VARIANTS` / `EIGHT_COMPASS` series, sheet 1 told the reader the finished
+      // ten-sheet deliverable was a trunk at four cardinal facings, sheet 2 that it was a trunk at
+      // four diagonals, and sheets 3 to 10 that it was limbs at one facing and no trunk at all —
+      // each of them two lines above a list of all ten sheets.
+      const sheets = sheetSeriesFor(category, subject, mode, directions).map((_, sheetIndex) =>
+        capabilityOf(sheetPrompt(category, subject, mode, directions, sheetIndex)),
+      );
+      if (sheets.length < 2) return;
       // One statement of the deliverable across the series, whichever sheet was compiled, and
       // one branch — a batch cannot be told both that every one of its sheets delivers the
       // answer and that this one is only a share of it.
@@ -763,10 +840,17 @@ describe('every sheet of one series states the same finished capability', () => 
           );
         }
       }
-    }
-    // Without this the loop above passes on having found no series at all, which is exactly what a
+    },
+  );
+
+  it('finds some pairing whose series runs to more than one sheet', () => {
+    // Without this the cases above pass on having found no series at all, which is exactly what a
     // plan table collapsed to one sheet per pairing would look like.
-    expect(multiSheet, 'no pairing produces a series to check').toBeGreaterThan(0);
+    const multiSheet = EVERY_SERIES.filter(
+      ({ category, subject, mode, directions }) =>
+        sheetSeriesFor(category, subject, mode, directions).length > 1,
+    );
+    expect(multiSheet.length, 'no pairing produces a series to check').toBeGreaterThan(0);
   });
 
   it('writes no assembly sentence whose meaning moves with the sheet reading it', () => {
@@ -835,10 +919,14 @@ describe('no category’s exclusion line names a component of its own plans', ()
     // The compiled pair the issue reported, on every configuration ICON can reach — its one mode
     // against all five direction sets. Section 4 orders the sweep, section 8 bans a timer, and the
     // sentence between them now covers whatever the inventory lists rather than three named pieces.
+    // On the overlay sheet, which lists the pieces and closes the series.
     for (const directions of CATEGORY_DIRECTION_SETS.ICON) {
-      const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), {
+      const subject = defaultSubjectFor('ICON');
+      const prompt = generatePrompt('ICON', subject, {
         ...DEFAULT_OUTPUT_CONFIG,
         directions,
+        sheetIndex:
+          sheetSeriesFor('ICON', subject, DEFAULT_OUTPUT_CONFIG.directionalMode, directions).length - 1,
       });
       const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
       const exclusions = sectionOf(prompt, 'EXCLUSIONS');
@@ -857,7 +945,7 @@ describe('section 5’s Mirroring rule describes only the sets the sheet in fron
    * The four categories that can be asked for a cut-out rig, and whether that rig draws any piece
    * twice — once a side.
    *
-   * Written out rather than read off the plans, for the reason `PAIRING_FRAME` above is: an
+   * Written out rather than read off the plans, because an
    * expectation gathered from `planMirrorsPieces` would move with whatever the plans say and assert
    * nothing about which answer is right. CHARACTER and CREATURE's standard sheets draw a left and a
    * right of every limb, so one silhouette is the other reflected — a CREATURE base with no sided
@@ -995,8 +1083,10 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
 
   it('bans only the particles the inventory did not name', () => {
     const { exclusions } = sectionsOf({ ...defaultSubjectFor('EFFECT'), clothing: SPARKS });
-    expect(exclusions).toContain('any particle');
-    expect(exclusions).toContain('the inventory in section 4 does not name');
+    expect(exclusions).toContain('or particle');
+    // Section 1's own attributes are excepted too, so a motif the subject asks for is not cancelled by
+    // the line meant to stop unasked-for glow (audit finding P7).
+    expect(exclusions).toContain('that neither section 1 nor the inventory in section 4 names');
     // The unqualified form is what made the two sections contradict each other.
     expect(exclusions).not.toContain('silhouette, particle effects');
   });
@@ -1021,7 +1111,7 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
     const exclusions = sectionOf(prompt, 'EXCLUSIONS');
     const inventory = sectionOf(prompt, 'COMPONENT INVENTORY').toLowerCase();
 
-    expect(exclusions).toContain('any particle');
+    expect(exclusions).toContain('or particle');
     expect(inventory).not.toContain('particle');
     expect(inventory).not.toContain('spark');
   });
@@ -1065,10 +1155,12 @@ describe('no category calls the subject’s own additions an error in the specif
   );
 
   /** Every sheet that appends no block, so no sentence on it may except one. */
-  const APPENDS_NOTHING = SHEETS.filter(
-    ({ category, subject, mode, directions, sheetIndex }) =>
-      anatomyFacingsFor(category, subject, mode, directions, sheetIndex) === null,
-  );
+  // Asked with the pieces typed in, because ICON's overlay sheets list the ones the subject names.
+  const APPENDS_NOTHING = SHEETS.filter(({ category, subject, mode, directions, sheetIndex }) => {
+    const option = POOLED.find((row) => row.category === category)?.option ?? '';
+    const typed = { ...subject, additional_anatomy: option };
+    return !drawsAdditionalAnatomy(category, typed, mode, directions, sheetIndex);
+  });
 
   it.each(SUBJECT_CATEGORIES)('%s splices the exemption into its opening claim', (category) => {
     const label = labelFor(category);
@@ -1112,7 +1204,15 @@ describe('no category calls the subject’s own additions an error in the specif
       const mode = DEFAULT_MODE_FOR[category];
       const label = labelFor(category);
       const pieces = parseAdditionalAnatomy(option);
-      const prompt = promptFor(category, mode, option);
+      // The sheet that draws the pieces: the first of most series, and ICON's overlay sheet, which closes its own.
+      const subject = { ...defaultSubjectFor(category), additional_anatomy: option };
+      const { directions } = DEFAULT_OUTPUT_CONFIG;
+      const { length } = sheetSeriesFor(category, subject, mode, directions);
+      const sheetIndex =
+        Array.from({ length }, (_, index) => index).find((index) =>
+          drawsAdditionalAnatomy(category, subject, mode, directions, index),
+        ) ?? 0;
+      const prompt = promptFor(category, mode, option, sheetIndex);
       const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
 
       // The contradiction needs both halves in the prompt to exist at all: §4 has to be asking for
@@ -1124,7 +1224,7 @@ describe('no category calls the subject’s own additions an error in the specif
         expect(inventory).toContain(`- ${formatAnatomyComponent(piece)}`);
       }
       expect(prompt).toContain(
-        `Exactly ${String(componentCountFor(category, defaultSubjectFor(category), mode, DEFAULT_OUTPUT_CONFIG.directions, 0, pieces, null))} components`,
+        `Exactly ${String(componentCountFor(category, subject, mode, directions, sheetIndex, pieces, null))} components`,
       );
 
       // Sliced by section rather than searched for in the whole prompt: the guard's exemption has to
@@ -1156,8 +1256,10 @@ describe('no category emits another category’s components', () => {
   it.each(SHEETS)(
     '$category / $mode / $directions / $sheet',
     ({ category, subject, mode, directions, sheetIndex }) => {
-      const prompt = promptFor(category, mode, undefined, sheetIndex, directions, subject);
-      const section = sectionOf(prompt, 'COMPONENT INVENTORY');
+      const section = sectionOf(
+        sheetPrompt(category, subject, mode, directions, sheetIndex),
+        'COMPONENT INVENTORY',
+      );
       expect(section).not.toBe('');
 
       // Neither half is a list of category names, and that is the fix rather than the tidy-up: the
@@ -1303,11 +1405,15 @@ describe('a BUILDING tileset is still a tileset', () => {
 describe('the declared count is the inventory’s own length', () => {
   it.each(SHEETS)(
     '$category / $mode / $directions / $sheet',
-    ({ category, subject, mode, directions, sheetIndex, sheet }) => {
+    ({ category, subject, mode, directions, sheetIndex }) => {
       const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1', sheetIndex, directions, subject);
+      // The pieces typed in, because ICON's overlay sheets list the ones the subject names — and three
+      // after the library's fourteen are a second overlay sheet, so the name is read from that series.
+      const typed = { ...subject, additional_anatomy: 'Demon Horn ×2, Tail ×1' };
+      const sheet = sheetSeriesFor(category, typed, mode, directions)[sheetIndex]?.name;
       const expected = componentCountFor(
         category,
-        subject,
+        typed,
         mode,
         directions,
         sheetIndex,
@@ -1318,9 +1424,10 @@ describe('the declared count is the inventory’s own length', () => {
         null,
       );
 
-      // Stated four times over; all four are the same sum or the sheet is silently wrong.
-      expect(prompt).toContain(`Exactly ${String(expected)} components`);
-      expect(prompt).toContain(`### Component inventory: ${sheet} — ${String(expected)} in total`);
+      // Stated four times over; all four are the same sum or the sheet is silently wrong. The contract
+      // agrees in number, since an icon set's last sheet can hold a single icon.
+      expect(prompt).toContain(`Exactly ${componentTally(expected)}`);
+      expect(prompt).toContain(`### Component inventory: ${sheet ?? ''} — ${String(expected)} in total`);
       expect(prompt).toContain(`Component count is exactly ${String(expected)}.`);
     },
   );
@@ -1350,52 +1457,36 @@ describe('every mode of the union is reachable from some category', () => {
 });
 
 describe('every inventory line carries an identifier the manifest can use', () => {
-  /** Every plan the table holds, whatever base and direction set produce it, with the facings it was built for. */
-  const everyPlan = SUBJECT_CATEGORIES.flatMap((category) =>
-    assemblyBaseSubjectsOf(category).flatMap((subject) =>
-      modesFor(category, subject).flatMap((mode) =>
-        (CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[]).flatMap((directions) =>
-          sheetSeriesFor(category, subject, mode, directions).map((plan) => ({
-            category,
-            mode,
-            directions,
-            plan,
-          })),
-        ),
-      ),
-    ),
-  );
+  const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-  it('spells every label as a slug', () => {
-    for (const { category, mode, plan } of everyPlan) {
-      for (const entry of plan.groups.flatMap((group) => group.entries)) {
-        expect(entry.label, `${category}/${mode}/${plan.name}: ${entry.text}`).toMatch(
-          /^[a-z0-9]+(-[a-z0-9]+)*$/,
-        );
-      }
-    }
+  it('spells every label and every part name as a slug', () => {
+    // Collected and asserted once rather than asserted per entry, so a failure lists every offender
+    // and the sweep does not pay for thousands of passing assertions.
+    const offenders = EVERY_PLAN.flatMap(({ category, mode, plan }) =>
+      plan.groups
+        .flatMap((group) => group.entries)
+        .flatMap((entry) =>
+          [entry.label, ...(entry.parts ?? [])]
+            .filter((name) => !SLUG.test(name))
+            .map((name) => `${category}/${mode}/${plan.name}: “${name}” in ${entry.text}`),
+        ),
+    );
+
+    expect(offenders).toStrictEqual([]);
   });
 
   it('gives a line that names its parts exactly one name per component', () => {
     // `componentSlots` takes the names straight from `parts`, so a list of the wrong length makes the
     // name list a different length from the component count — which maps every sprite after the
     // divergence onto the wrong component, the failure the whole arrangement is arranged against.
-    for (const { category, mode, plan } of everyPlan) {
-      for (const entry of plan.groups.flatMap((group) => group.entries)) {
-        if (entry.parts === undefined) continue;
-        expect(entry.parts, `${category}/${mode}/${plan.name}: ${entry.text}`).toHaveLength(entry.count);
-      }
-    }
-  });
+    const offenders = EVERY_PLAN.flatMap(({ category, mode, plan }) =>
+      plan.groups
+        .flatMap((group) => group.entries)
+        .filter((entry) => entry.parts !== undefined && entry.parts.length !== entry.count)
+        .map((entry) => `${category}/${mode}/${plan.name}: ${entry.text}`),
+    );
 
-  it('spells every part name as a slug', () => {
-    for (const { category, mode, plan } of everyPlan) {
-      for (const entry of plan.groups.flatMap((group) => group.entries)) {
-        for (const part of entry.parts ?? []) {
-          expect(part, `${category}/${mode}/${plan.name}: ${entry.text}`).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
-        }
-      }
-    }
+    expect(offenders).toStrictEqual([]);
   });
 
   it('never names two components of one plan the same thing', () => {
@@ -1410,7 +1501,7 @@ describe('every inventory line carries an identifier the manifest can use', () =
     // reaches 98 of the table's 418 entries, missing exactly the collision that is live — an
     // authored name landing on one another line *derives*, since the authoring convention puts
     // ordinals inside part names (`mounting-bracket-1`) and the derived branch produces that shape.
-    for (const { category, mode, plan } of everyPlan) {
+    for (const { category, mode, plan } of EVERY_PLAN) {
       const names = planSlots(plan);
       expect(new Set(names).size, `${category}/${mode}/${plan.name}: ${names.join(', ')}`).toBe(names.length);
     }
@@ -1420,7 +1511,7 @@ describe('every inventory line carries an identifier the manifest can use', () =
     // Within a plan a label is an identity: `componentSlots` suffixes it with a facing or an ordinal,
     // so two lines sharing one label produce two runs of the same names for different components.
     // Across plans they may repeat freely — a vehicle's `fittings` and an item's are not related.
-    for (const { category, mode, plan } of everyPlan) {
+    for (const { category, mode, plan } of EVERY_PLAN) {
       const labels = plan.groups.flatMap((group) => group.entries.map((entry) => entry.label));
       expect(new Set(labels).size, `${category}/${mode}/${plan.name}: ${labels.join(', ')}`).toBe(
         labels.length,
@@ -1451,14 +1542,21 @@ describe('every inventory line carries an identifier the manifest can use', () =
  * naming the number rather than quietly agreeing with whatever the plan now says.
  */
 const FIGURE_WORDS: Readonly<Record<number, string>> = {
+  1: 'one',
   2: 'two',
+  3: 'three',
+  4: 'four',
+  5: 'five',
   6: 'six',
+  7: 'seven',
   8: 'eight',
   9: 'nine',
   10: 'ten',
   11: 'eleven',
   12: 'twelve',
+  13: 'thirteen',
   14: 'fourteen',
+  15: 'fifteen',
   16: 'sixteen',
   21: 'twenty-one',
   26: 'twenty-six',
@@ -1571,15 +1669,31 @@ describe('no count in a plan’s prose contradicts the entries it describes', ()
     expect(transitions.outro).toContain(`The ${figureWord(joined)} pure tiles`);
   });
 
-  it('states ICON’s family size where the sheet opens, and where a redrawn state is priced', () => {
-    const plan = sheetNamed('ICON', 'SINGLE_DIRECTION_POSE_LIBRARY', 'Symbol set');
-    const icons = groupNamed(plan, null);
-    const family = totalOf(icons);
+  it('states every ICON icon sheet’s grid from the icons it holds', () => {
+    // The intro is the generator's map of the sheet — how many drawings, how many across and how many
+    // down — so it is held to the entries under it on every icon sheet the starter set and the whole
+    // catalogue build, a short last sheet included.
+    for (const subject of [standardSubjectOf('ICON'), ...iconCatalogueSubjects()]) {
+      // Every sheet but the overlay sheet, which closes the series.
+      const iconSheets = sheetSeriesFor(
+        'ICON',
+        subject,
+        'SINGLE_DIRECTION_POSE_LIBRARY',
+        'SINGLE_FRONT',
+      ).slice(0, -1);
+      expect(iconSheets.length).toBeGreaterThan(0);
+      for (const plan of iconSheets) {
+        const icons = groupNamed(plan, null);
+        const count = totalOf(icons);
+        const across = Math.min(count, ICON_GRID_COLUMNS);
+        const down = Math.ceil(count / ICON_GRID_COLUMNS);
 
-    expect(icons.intro).toContain(`${figureWordCapitalised(family)} members of the one family`);
-    expect(groupNamed(plan, 'State pieces').intro).toContain(
-      `costs one component here and ${figureWord(family)}`,
-    );
+        expect(count, plan.name).toBeLessThanOrEqual(ICONS_PER_SHEET);
+        expect(icons.intro, plan.name).toContain(
+          `${figureWordCapitalised(count)} ${count === 1 ? 'drawing' : 'drawings'}${count === 1 ? ', alone' : `, ${figureWord(across)} across and ${figureWord(down)} down`}`,
+        );
+      }
+    }
   });
 
   it('states PORTRAIT’s expression count in the sentence a reader checks the delivery against', () => {

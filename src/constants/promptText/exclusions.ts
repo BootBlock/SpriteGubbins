@@ -14,6 +14,13 @@ import { kindsIn } from '../../utils/sheetPlanValidation.ts';
 const listsRepeatingPieces = (plan: SheetPlan): boolean => kindsIn(plan).includes('tile');
 
 /**
+ * What ICON's exclusion line bans in place of backgrounds on a sheet of full-bleed squares — the
+ * scenery a backdrop must not become, and the edge nothing may cross or be drawn along.
+ */
+const ICON_SQUARE_SCENERY_BAN =
+  'Any scene, environment, horizon, ground plane, floor tile, terrain or sky behind a subject, and any scenery beyond a square’s own backdrop; anything crossing a square’s edge, and any frame, border or bevel drawn along it';
+
+/**
  * What the exclusions section bans, per category, stated for one sheet.
  *
  * This used to be one static line naming "backgrounds, environments, ground planes, floor tiles,
@@ -60,9 +67,15 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, (plan: Sh
   // this category rather than incidental to it: it read "…glow bleeding beyond a component's
   // silhouette, particle effects", which was true of six categories and became false the moment a
   // seventh could ask for a spark shower in section 4 and be told in section 8 that particle effects
-  // were absent from the image entirely. It is now qualified — "any particle effect the inventory in
-  // section 4 does not name" — which is the same repair VEHICLE's audit line took, and which leaves
-  // the ban exactly as strong for the six whose inventories name none.
+  // were absent from the image entirely. It was qualified to "any particle effect the inventory in
+  // section 4 does not name", the same repair VEHICLE's audit line took, which left the ban exactly as
+  // strong for the six whose inventories name none. It now reads two ways (audit finding P7): a glow
+  // or particle effect "that neither section 1 nor the inventory in section 4 names" — section 1 read
+  // apart from its *Overlay Style* line where another sheet draws its pieces in that style — and, on
+  // the overlay sheet, whose section 1 describes the icons beneath it, one "that the inventory in
+  // section 4 does not name", or that its *Overlay Style* line names, since that line is the style the
+  // sheet's own pieces are drawn in (audit finding O1). Either way a named one belongs to its component
+  // and ends at a hard edge with it.
   //
   // **Every noun in the source ban is bound to its own relation, and the closing sentence names the
   // effect types that collide with one.** The ban began as a seven-noun list with a single modifier
@@ -129,8 +142,22 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, (plan: Sh
   // the plan; a reference cannot, so a fifth overlay piece is covered the moment the plan lists it.
   // `utils/sheetPlans.test.ts` holds the general form: no category's exclusion line may name a
   // component of its own plans, because a line that names one can name all but one.
-  ICON: () =>
-    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any hand, character or creature holding or presenting the subject; any slot plate, tooltip or interface panel drawn behind or around a component; and any lettering, numeral, stack count, timer or key name on a component. The lettering ban above is on what a component carries, never on what this sheet draws: an entry the inventory in section [SEC:INVENTORY] names is a component in its own right, and one that is a mark an engine lays over a finished icon is still drawn — clear in its own cell, never applied to an icon here. An input prompt is the blank cap or button shape the engine writes a binding onto, never the key name it is named after.',
+  //
+  // **The figure ban defers to the inventory too** (R4 of `docs/todo/done/icon-catalogue.md`). Exclusions
+  // outrank what the subject asks for, so a flat “any hand, character or creature” took the bust off
+  // the character panel's icon and would take the hand off every emote. A catalogue entry whose
+  // subject is a figure declares `figure`, and the line now bans only the figure no entry names and
+  // says outright that a named one is drawn. The input-prompt sentence went with the *Icon Family*
+  // option that offered button caps.
+  //
+  // **The ban on backgrounds follows the sheet's look** (R5 of `docs/todo/done/icon-catalogue.md`). A
+  // full-bleed square (`SheetPlan.backdrop`) is painted to its edge, backdrop included, so “Backgrounds”
+  // would forbid half of every icon; on that sheet the line bans the scenery beyond each square's own
+  // backdrop and anything crossing a square's edge instead, and says the backdrop is no slot plate —
+  // which is what keeps the *Explicit Exclusions* option against a plate true under both looks. The
+  // overlay sheet declares no backdrop, so its pieces keep the isolated wording under either look.
+  ICON: (plan) =>
+    `${plan.backdrop === 'OWN_SQUARE' ? ICON_SQUARE_SCENERY_BAN : 'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery'}; any hand, character or creature an entry in section [SEC:INVENTORY] does not name, holding or presenting the subject; any slot plate, tooltip or interface panel drawn behind or around a component; and any lettering, numeral, stack count, timer or key name on a component. The lettering ban above is on what a component carries, never on what this sheet draws: an entry the inventory in section [SEC:INVENTORY] names is a component in its own right, and one that is a mark an engine lays over a finished icon is still drawn — clear in its own cell, never applied to an icon here. A hand, face or figure an entry names is part of that icon’s subject and is drawn as the entry describes it.${plan.backdrop === 'OWN_SQUARE' ? ' A square’s own backdrop is part of its icon, never a slot plate or a background scene, and is drawn.' : ''}`,
   // No environment ban, for a third version of BUILDING’s reason: the scenery the other categories
   // forbid is this one’s entire deliverable. What is foreign to a backdrop is the *playfield* — the
   // things a player acts on — and playable geometry is named first because it is the one that costs
@@ -183,8 +210,10 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, (plan: Sh
  *
  * **It is a function of the sheet, not a sentence the record states.** The block it exempts is
  * conditional — `componentBreakdownFor` appends nothing when the subject named no pieces, and
- * `anatomyFacingsFor` returns `null` on every sheet of a series but the first, which is what keeps a
- * tail off the articulation sheets that would have nothing to hang it on. An unconditional clause
+ * `anatomyFacingsFor` returns `null` on every sheet of a series but the one that draws the pieces —
+ * the first, and on ICON none, whose overlay sheets list the pieces in a group of their own under the
+ * same label (`drawsAdditionalAnatomy`) — and that is what keeps a tail off the
+ * articulation sheets that would have nothing to hang it on. An unconditional clause
  * therefore shipped an exception with no members on the commonest prompt the app composes — the
  * default subject names none — and on every later sheet of a series besides: the character and
  * creature articulation sheets under each of their five direction sets, and the font's three
@@ -309,9 +338,16 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, CategorySente
   // set’s inventory names overlays and marks that sit on top of an icon, and section 0 forbids
   // annotation drawn over the image. Those are two different things, and saying so where the
   // inventory is about to list a locked mark is what stops a generator resolving the apparent
-  // conflict by omitting the overlays.
+  // conflict by omitting the overlays. It is said only on the sheet that lists them: an icon sheet
+  // declares the overlay `drawnElsewhere`, and telling it that the overlays it lists are components
+  // would name entries it does not have.
+  //
+  // **Anatomy is banned only where no entry names it** (R4 of `docs/todo/done/icon-catalogue.md`). A
+  // catalogue entry whose subject is a figure — the character panel's bust — is an icon, and a guard
+  // calling every entry that describes anatomy an error would send it to section 0's tripwire as a
+  // malformed specification to report rather than draw.
   ICON: (plan, additions) =>
-    `Every entry below is ${plan.componentClass}${guardExemption(additions)}. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The overlays and marks it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.`,
+    `Every entry below is ${plan.componentClass}${guardExemption(additions)}. An entry describing a floor tile, a wall or a terrain piece, or anatomy other than the hand, face or figure that is the subject of an icon’s own entry, does not belong to this sheet and is an error in this specification, not an instruction to follow.${plan.drawnElsewhere === 'clothing' ? '' : ' The overlays and marks it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.'}`,
   BACKGROUND: (plan, additions) =>
     `Every entry below is ${plan.componentClass}${guardExemption(additions)}. An entry describing anatomy, a wall the player walks against, a platform, a vehicle part or an interface element does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
   // The second sentence is this category's own and is the load-bearing one in the whole record: it is
@@ -405,9 +441,17 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, CategorySente
   // Qualified throughout, as VEHICLE’s and INTERFACE’s are: this sheet’s components include marks
   // and overlays, so an unqualified “no marks” would fail it on the entries section 4 required. The
   // second half is the check this deliverable actually needs — an icon grid fails by disagreeing
-  // with itself about weight and margin, and that only shows when the members are seen together.
+  // with itself about weight and margin, and that only shows when the members are seen together. That
+  // check is worded for the sheet it lands on: an icon sheet (the overlay `drawnElsewhere`) compares
+  // icons, and the overlay sheet, which draws none, compares its pieces at one icon's cell.
+  //
+  // **A full-bleed sheet (`SheetPlan.backdrop`) is checked for its squares**, as its exclusion line bans
+  // them: no scenery beyond a square's own backdrop, nothing across its edge and no frame along it, and
+  // every square one size — the check the isolated wording's “same cell” makes of a loose mark.
   ICON: (plan, additions) =>
-    `Every component is ${plan.componentClass}${auditExemption(additions)} — no anatomy, floor or terrain tiles, scenery, and no interface panel or slot plate drawn behind an icon — and no component carries a letter, a numeral, a stack count or a key name. Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.`,
+    plan.backdrop === 'OWN_SQUARE'
+      ? `Every component is ${plan.componentClass}${auditExemption(additions)} — no anatomy or figure its entry does not name, no floor or terrain tiles, no scenery or horizon beyond its square’s own backdrop, nothing crossing its square’s edge, and no frame, border, bevel, interface panel or slot plate drawn round an icon — and no component carries a letter, a numeral, a stack count or a key name. Every square is the same size, and every subject fills its square to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.`
+      : `Every component is ${plan.componentClass}${auditExemption(additions)} — no anatomy or figure its entry does not name, no floor or terrain tiles or scenery, and no interface panel or slot plate drawn behind an icon — and no component carries a letter, a numeral, a stack count or a key name. ${plan.drawnElsewhere === 'clothing' ? 'Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.' : 'Every piece sits in a cell the size of one icon, at the same outline weight and under the same light, so no piece reads as belonging to a different set.'}`,
   // The seam check reaches only a sheet that lists a band meant to loop, for the reason the exclusion
   // line's seam clause does (issue #278): the layer library draws no band, and the check named one.
   // Scoping it in words alone was TERRAIN's arrangement copied, and TERRAIN lays tiles on both sheets.
@@ -431,8 +475,8 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, CategorySente
  * Whether a frame or a border can be a *component* of this category's sheet rather than annotation
  * drawn around one.
  *
- * Read in exactly one place, and it exists because that place cannot say what section 0 says.
- * Midjourney's `--no` takes things to avoid — a multi-word entry is read as one of them, but never
+ * Read in exactly one place, beside the sheet's own `SheetPlan.frames`, and it exists because that
+ * place cannot say what section 0 says. Midjourney's `--no` takes things to avoid — a multi-word entry is read as one of them, but never
  * as a *placement* — so the wrapper cannot express "no border **around the image or around a
  * component**", which is a relation to the rest of the sheet rather than a thing. The term is either
  * in the negative prompt and suppressing the subject, or out of it. For every category but one a
@@ -462,15 +506,14 @@ export const FRAME_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = 
   // the head for exactly that reason, so a border on one is the surround this term exists to
   // suppress.
   PORTRAIT: false,
-  // INTERFACE's answer, for INTERFACE's reason, and it took a review pass to get here. The *plate*
-  // an icon sits in is genuinely that category's component and this one's exclusions ban it, which
-  // is what made `false` look right. But `ICON_SYMBOL_SET`'s state group requires a selected ring
-  // and a highlight halo, and those are edges around something by construction: `--no border`
-  // suppresses exactly them, and `--no` cannot express the placement that would separate an edge the
-  // sheet requires from a surround a generator adds. The rule `modelWrapperText/midjourney.ts`
-  // states for this term is that it stays out wherever excluding it would take the sheet's own
-  // subject with it, and one of this sheet's three groups is that subject.
-  ICON: true,
+  // **The overlay sheet's answer is INTERFACE's, and the icon sheets' is not** (audit finding T2). The
+  // overlay sheet's selected ring and highlight halo are edges round a square by construction, so `--no
+  // border` would suppress exactly them; an icon sheet draws no frame, and the plate and frame a
+  // generator adds round an icon are what its exclusions ban. This record answered for both sheets at
+  // once and so negated neither, which is why the answer moved to the sheet: an overlay sheet holding
+  // the ring, the halo or the glow declares `frames`, and so does any sheet whose own entry names a
+  // frame or a border (`namesAFrame`).
+  ICON: false,
   // A band has edges but no border: it is cut to a strip and butted against its own copy, so a frame
   // drawn round one is the surround this term suppresses — and a border would sit exactly where the
   // seam has to be invisible.

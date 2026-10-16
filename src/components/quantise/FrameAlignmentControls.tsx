@@ -124,7 +124,7 @@ export function FrameAlignmentControls({ sprites, strips, busy }: FrameAlignment
         >
           {readings.map((strip, index) => (
             <li key={stripKey(strip, index)}>
-              {`row ${String(index + 1)} · pitch ${strip.pitch.x.toFixed(1)} × ${strip.pitch.y.toFixed(1)} · `}
+              {`row ${String(index + 1)} · pitch ${strip.pitch.toFixed(1)} · `}
               {strip.frames.map((frame) => driftOf(frame.drift, frame.snapped)).join(' ')}
             </li>
           ))}

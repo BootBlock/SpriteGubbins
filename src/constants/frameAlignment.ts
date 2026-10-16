@@ -53,9 +53,9 @@ export const FRAME_ALIGNMENT_GUIDANCE = {
 
   /** `SNAP`, and at least one frame was moved. */
   moved:
-    'The frames marked below sat further from their slot than the tolerance allows, so each has been carried onto it. Nothing about the artwork changed — every pixel of a moved frame is the same pixel in the same colour, in a different place — and the box it left behind is now empty. A move that would have brought a frame within the sprite gap of its neighbour was refused rather than made, so a row with no gutter keeps its drift instead of losing a sprite. Switch the preview to Onion skin to see the row laid over itself.',
+    'The frames marked below sat further from their slot than the tolerance allows, so each has been carried onto it. Nothing about the artwork changed — every pixel of a moved frame is the same pixel in the same colour, in a different place — and the box it left behind is now empty. A move that would have brought a frame within the sprite gap of its neighbour was refused rather than made, so a row with no gutter keeps its drift instead of losing a sprite, and a frame so far from its slot that it holds a different drawing was left where it is. Switch the preview to Onion skin to see the row laid over itself.',
 
   /** `SNAP`, and nothing qualified — the state that reads as a broken feature and is not. */
   refused:
-    'No frame on this sheet sits further from its slot than the tolerance allows, so none has been moved. On a row that came back evenly spaced that is the whole answer and the right one. It is also what a sheet looks like when the tolerance is set above the drift it holds, or when every drifting frame sits too close to a neighbour for the move to be made without reaching it — the drifts listed below say which of the three is in front of you.',
+    'No frame on this sheet sits further from its slot than the tolerance allows, so none has been moved. On a row that came back evenly spaced that is the whole answer and the right one. It is also what a sheet looks like when the tolerance is set above the drift it holds, when every drifting frame sits too close to a neighbour for the move to be made without reaching it, or when every drifting frame sits so far from its slot that it holds a different drawing — the drifts listed below say which of the four is in front of you.',
 } as const;

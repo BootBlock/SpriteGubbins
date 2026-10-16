@@ -1,10 +1,11 @@
-import type { ComponentEntry, SheetFacings, SheetPlan } from '../types/components.ts';
+import type { SheetFacings, SheetPlan } from '../types/components.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { DirectionalMode, DirectionSet } from '../types/output.ts';
 import type { RigContract } from '../types/rigContract.ts';
 import type { SheetSubject, SubjectCategory } from '../types/subject.ts';
 import { anatomyFacingsFor } from './componentSet.ts';
 import { drawnPlanFor } from './sheetPlanAbsence.ts';
+import { entrySlots } from './entrySlots.ts';
 import { slugify } from './slugify.ts';
 
 /**
@@ -37,29 +38,6 @@ import { slugify } from './slugify.ts';
  *
  * Pure, as everything in this directory is.
  */
-
-/**
- * One entry's names: its own where it states them, the facing where a sheet draws one per facing,
- * an ordinal where neither applies.
- *
- * **`parts` wins over the facing suffix**, because it is the more specific claim and the only one
- * authored per entry: a line that names its components has said what they are, and deriving a facing
- * name over the top of that would answer a question the entry already answered. No entry carries
- * both today — every directional entry comes from `viewsOf` or `atEachYaw`, neither of which names
- * parts — so the precedence is a statement about which fact is authoritative rather than a branch
- * anything currently takes.
- *
- * The facing is slugged rather than used as it stands, because one of them is two words: the classic
- * vocabulary's `right side` would otherwise put a space in a file name and in an identifier.
- */
-function entrySlots(entry: ComponentEntry, facings: SheetFacings): readonly string[] {
-  if (entry.parts !== undefined) return entry.parts;
-  if (facings !== 'run' && entry.count === facings.length) {
-    return facings.map((facing) => `${entry.label}-${slugify(facing)}`);
-  }
-  if (entry.count === 1) return [entry.label];
-  return Array.from({ length: entry.count }, (_, index) => `${entry.label}-${String(index + 1)}`);
-}
 
 /**
  * The subject's own anatomy, once per facing where the sheet turns it.

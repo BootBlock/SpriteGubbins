@@ -104,7 +104,7 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
       silhouette: 'Humped Carapace',
       face_head: 'Single Glowing Monocular Sensor',
       anatomy: 'Quadruped Beast',
-      clothing: 'Cybernetic Leg Armor',
+      clothing: 'Cybernetic Leg Armour',
       worn_details: 'Chitin Cracks',
       primary_colours: 'Rusty Iron & Moss',
       accent_colours: 'Magma Orange Glow #F97316',
@@ -167,7 +167,7 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
       resolutionProfile: 'CUSTOM',
       spriteTargetSize: '64 × 64 px assembled',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
 ];

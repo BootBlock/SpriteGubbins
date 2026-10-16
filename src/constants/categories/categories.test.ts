@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { drawsAdditionalAnatomy } from '../../utils/drawsAdditionalAnatomy.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
+import type { OutputConfig } from '../../types/output.ts';
 import { DECLINABLE_FIELD_KEYS, SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../../types/subject.ts';
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { sheetSeriesFor } from '../sheetPlans/index.ts';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from './index.ts';
 
 /**
@@ -14,6 +17,20 @@ import { CATEGORY_OPTIONS, defaultSubjectFor } from './index.ts';
  * is exactly why a *pooled* value going nowhere would be invisible: the field would look answered and
  * the generator would never be told. These tests are the check that every offered value is live.
  */
+
+/**
+ * The default output at the sheet that draws the subject's additional anatomy, which is the one whose
+ * section 1 states it: the first sheet of most series, and ICON's overlay sheet, which closes its own.
+ */
+function anatomySheetOutput(category: SubjectCategory, subject: SubjectDefinition): OutputConfig {
+  const { directionalMode, directions } = DEFAULT_OUTPUT_CONFIG;
+  const { length } = sheetSeriesFor(category, subject, directionalMode, directions);
+  const sheetIndex =
+    Array.from({ length }, (_, index) => index).find((index) =>
+      drawsAdditionalAnatomy(category, subject, directionalMode, directions, index),
+    ) ?? 0;
+  return { ...DEFAULT_OUTPUT_CONFIG, sheetIndex };
+}
 
 /**
  * A word of an option that opens in lower case — every match is a title-case violation.
@@ -145,6 +162,22 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
     }
   });
 
+  it('declares each section 2 reading on one field at most, and line techniques only where they are read', () => {
+    // `renderingFieldFor` takes the first field declaring a reading, so a second would be silently
+    // ignored. And `lineTechniques` names values section 2 excepts from the microtexture ban by name, so
+    // one the pool does not offer never matches, and one on another reading is never read.
+    for (const rendering of ['DISPLAY_SIZE', 'INTERIOR_DETAIL'] as const) {
+      expect(fields.filter((field) => field.rendering === rendering).length, rendering).toBeLessThanOrEqual(
+        1,
+      );
+    }
+    for (const field of fields) {
+      if (field.lineTechniques === undefined) continue;
+      expect(field.rendering, `${category}.${field.key}`).toBe('INTERIOR_DETAIL');
+      for (const technique of field.lineTechniques) expect(field.options, technique).toContain(technique);
+    }
+  });
+
   it('declares nothing under additional_anatomy, whose entries are components of their own', () => {
     // The one field-wide exclusion, and it is about where the thing is drawn rather than about
     // whether it is one-sided. An attached module is an inventory entry in its own cell — `Missile
@@ -214,7 +247,7 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
     // to `NONE` and that line is deliberately omitted — which would leave the one field whose label
     // section 4 reads as well untested.
     const subject = subjectAt(category, 1);
-    const bullets = subjectLines(generatePrompt(category, subject, DEFAULT_OUTPUT_CONFIG));
+    const bullets = subjectLines(generatePrompt(category, subject, anatomySheetOutput(category, subject)));
 
     // The category line, then one per field except `exclusions`, which section 8 carries instead.
     expect(bullets[0]).toBe(`- Category: ${category}`);
@@ -241,7 +274,7 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
 
     for (let pick = 0; pick < passes; pick += 1) {
       const subject = subjectAt(category, pick);
-      const prompt = generatePrompt(category, subject, DEFAULT_OUTPUT_CONFIG);
+      const prompt = generatePrompt(category, subject, anatomySheetOutput(category, subject));
 
       for (const field of fields) {
         const value = subject[field.key];

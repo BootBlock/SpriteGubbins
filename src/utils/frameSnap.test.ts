@@ -22,7 +22,7 @@ function box(left: number, top: number): SpriteBox {
 
 /** One strip of one frame, marked or not, which is all these cases need. */
 function stripOf(frame: AlignedFrame): SpriteStrip {
-  return { frames: [frame], pitch: { x: 0, y: 0 } };
+  return { frames: [frame], pitch: 0 };
 }
 
 /** Which pixels of the sheet carry any coverage at all, as `x,y` strings. */
@@ -76,8 +76,8 @@ describe('snapFrames', () => {
       stripOf({ box: box(9, 2), drift: { x: 3, y: 0 }, slot: { x: 0, y: 0 }, snapped: false }),
     ]);
 
-    // By reference, which is what lets `quantiseImage` reuse the segmentation it already took rather
-    // than labelling the sheet a second time to arrive at the same boxes.
+    // By reference, so a caller may ask by identity as well as by `moved` whether to reuse the
+    // segmentation it already took — `settleSprites` asks by the count.
     expect(read.image).toBe(sheet);
     expect(read.moved).toBe(0);
   });
@@ -109,7 +109,7 @@ describe('snapFrames', () => {
           { box: box(2, 2), drift: { x: -8, y: 0 }, slot: { x: 0, y: 0 }, snapped: true },
           { box: box(10, 2), drift: { x: 8, y: 0 }, slot: { x: 8, y: 0 }, snapped: true },
         ],
-        pitch: { x: 8, y: 0 },
+        pitch: 8,
       },
     ]);
 

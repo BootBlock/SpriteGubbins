@@ -39,7 +39,7 @@ describe('CheckboxField', () => {
   });
 
   it('says why it is unavailable, and keeps its place in the tab order to say it', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { checkbox } = renderCheckbox(REASON);
 
     expect(checkbox).toHaveAttribute('aria-disabled', 'true');
@@ -58,5 +58,23 @@ describe('CheckboxField', () => {
     await userEvent.click(checkbox);
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('shows its description under the label and announces it, before any reason', () => {
+    const description = 'a slim red stim-pack auto-injector';
+    render(
+      <CheckboxField
+        label="Minor healing consumable"
+        tooltip="Adds the slot heal-minor to your set."
+        checked={false}
+        description={description}
+        disabledReason={REASON}
+        onChange={vi.fn()}
+      />,
+    );
+    const checkbox = screen.getByRole('checkbox', { name: 'Minor healing consumable' });
+
+    expect(screen.getByText(description)).toBeInTheDocument();
+    expect(checkbox).toHaveAccessibleDescription(`${description} ${REASON}`);
   });
 });

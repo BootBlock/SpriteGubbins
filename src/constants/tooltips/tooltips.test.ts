@@ -16,7 +16,24 @@ import { SHEET_IDENTITY_GUIDANCE } from '../sheetIdentity.ts';
 import { STUDIO_HISTORY_GUIDANCE } from '../studioHistory.ts';
 import { APP_TAB_CHOICES } from '../ui.ts';
 import { RESULT_PREVIEW_MODES_UNAVAILABLE } from '../previewModes.ts';
+import { SPRITE_FIT_UNAVAILABLE } from '../spriteCell.ts';
 import { presetCollectionGuidance } from './presets.ts';
+import { movePresetRefusal, moveQuantiseRefusal } from './projects.ts';
+import { ICON_CAPACITY_NOTICES } from '../iconCatalogue/iconCapacityNotices.ts';
+import { ASPECT_RATIO_NOTICES } from '../aspectRatioNotices.ts';
+import { iconContentSource } from '../iconContentSource.ts';
+import { SUBJECT_FIELD_GROUPS } from '../subjectGroups.ts';
+import { backgroundKeyNote } from '../backgroundKeyNote.ts';
+import { defaultSubjectFor } from '../categories/index.ts';
+import { ICON_CATALOGUE_GROUPS } from '../iconCatalogue/index.ts';
+import { everyLookWorld } from '../../test/iconCatalogueSubjects.ts';
+import { iconEntryGuidance } from '../../utils/iconEntryGuidance.ts';
+import { ICON_COLOUR_MODES } from '../../types/iconRoster.ts';
+import type { IconColourMode, IconEntry } from '../../types/iconRoster.ts';
+import { CUSTOM_ICON_NOTICES } from '../iconCatalogue/customIconNotices.ts';
+import { CUSTOM_ICON_REFUSALS } from '../iconCatalogue/customIconRefusals.ts';
+import { CUSTOM_ICON_WARNING_TEXT } from '../iconCatalogue/customIconWarningText.ts';
+import { LONGEST_CUSTOM_ICON, RELIC, SALUTE, SPELL, TOGGLE } from '../../test/customIcons.ts';
 
 /**
  * Every module under `src/constants/`, so the guidance sets can be *found* rather than listed.
@@ -97,11 +114,31 @@ const TOOLTIP_SETS = discoverTooltipSets();
  * only be written per target is rendered under the control instead. It is the control's own
  * explanation shown a second way, not a label — so it is held to the same rules.
  */
+/** The colour modes whose card for `entry` differs: both for a spell, whose school colour a mask greys. */
+function modesThatReword(entry: IconEntry): readonly IconColourMode[] {
+  return entry.school === undefined ? ['FULL_COLOUR'] : ICON_COLOUR_MODES;
+}
+
 const GUIDANCE: readonly (readonly [string, string])[] = [
   ...records(TOOLTIP_SETS),
   ...Object.entries(CATEGORY_OPTIONS).flatMap(([category, definition]) =>
     definition.fields.map((field) => [`${category}.${field.key}`, field.tooltip] as const),
   ),
+  // The text a field shows under itself on one category, beside the card every field carries.
+  ...Object.entries(CATEGORY_OPTIONS).flatMap(([category, definition]) =>
+    definition.fields.flatMap((field) =>
+      field.note === undefined ? [] : [[`FIELD_NOTES.${category}.${field.key}`, field.note] as const],
+    ),
+  ),
+  // The roster section's sentence, on every category drawing a roster, built from that category's own
+  // world field and the group it sits in.
+  ...Object.entries(CATEGORY_OPTIONS).flatMap(([category, definition]) => {
+    const world = definition.fields.find((field) => field.key === 'setting');
+    const group = SUBJECT_FIELD_GROUPS.find((candidate) => candidate.keys.includes('setting'));
+    return definition.iconRoster === undefined || world === undefined || group === undefined
+      ? []
+      : [[`iconContentSource(${category})`, iconContentSource(world.label, group.heading)] as const];
+  }),
   ...TARGET_MODELS.map((model) => [`TARGET_MODELS.${model.id}`, model.description] as const),
   // The second thing that list carries, and it reaches the reader the same way the first does: a
   // target with nowhere to open renders its link button disabled, and this note is what the card
@@ -115,6 +152,9 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ...APP_TAB_CHOICES.map((tab) => [`APP_TAB_CHOICES.${tab.id}`, tab.guidance] as const),
   ...ACCENT_HUES.map((hue) => [`accentSwatchGuidance(${hue})`, accentSwatchGuidance(hue)] as const),
   ['presetCollectionGuidance', presetCollectionGuidance('Humanoid Character')],
+  // The move control's note in place of its button, where the chosen project already has the name.
+  ['movePresetRefusal', movePresetRefusal('Harbour Game', 'Hero')],
+  ['moveQuantiseRefusal', moveQuantiseRefusal('Harbour Game', 'Flat sheets')],
   // Two of `AUTO_TUNE_GUIDANCE`'s five, and the split is the rule this suite is named for: what
   // counts is the surface, not the filing. `idle` says what pressing Auto does and `waiting` says
   // why it is unavailable — both are the control's own explanation rendered under it rather than
@@ -125,6 +165,9 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   // Why four of the preview layout's pills cannot be chosen yet, on the `waiting` footing: a reason
   // a control is unavailable, rendered under it and pointed at by each of the pills it withholds.
   ['RESULT_PREVIEW_MODES_UNAVAILABLE', RESULT_PREVIEW_MODES_UNAVAILABLE],
+  // Why the sprite fit's two resizing pills cannot be chosen on a sheet with a pixel scale, on the
+  // same footing as the line above.
+  ['SPRITE_FIT_UNAVAILABLE', SPRITE_FIT_UNAVAILABLE],
   // Both entries of both undo panels, on the same footing as the two above: each says what the two
   // buttons beside it do — what a step back restores, and what performing another act costs — which
   // is a control's own explanation rendered under it rather than behind an ⓘ. Neither record is
@@ -166,6 +209,82 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ...Object.entries(IDENTITY_CAPTURE_UNAVAILABLE).map(
     ([key, text]) => [`IDENTITY_CAPTURE_UNAVAILABLE.${key}`, text] as const,
   ),
+  // The card behind every icon catalogue row, for every entry under every look a world can send and
+  // the hand-typed fallback, and a spell's in both colour modes, the one card a mode changes — written
+  // by one function, so it is a templated origin below.
+  ...ICON_CATALOGUE_GROUPS.flatMap((group) => group.entries).flatMap((entry) =>
+    everyLookWorld().flatMap((world) =>
+      modesThatReword(entry).map(
+        (mode) =>
+          [
+            `iconEntryGuidance(${entry.id}, ${world}, ${mode})`,
+            iconEntryGuidance(entry, world, mode),
+          ] as const,
+      ),
+    ),
+  ),
+  // Why a catalogue row cannot be ticked, rendered under it as `CheckboxField`'s reason — the
+  // `TARGET_MODELS[].generatorSite.note` footing — in both of its wordings, and the notice a group
+  // tick left short raises, which is the same refusal said after the press rather than before it.
+  ['ICON_CAPACITY_NOTICES.row(full)', ICON_CAPACITY_NOTICES.row(1, 0)],
+  ['ICON_CAPACITY_NOTICES.row(short)', ICON_CAPACITY_NOTICES.row(2, 1)],
+  ['ICON_CAPACITY_NOTICES.refused(one)', ICON_CAPACITY_NOTICES.refused(1)],
+  ['ICON_CAPACITY_NOTICES.refused(several)', ICON_CAPACITY_NOTICES.refused(3)],
+  // What the Background Key and Aspect Ratio controls say under themselves, on the same footing: a
+  // key a target withdraws, the request options GPT Image's alpha needs, and the size it must ask for.
+  [
+    'backgroundKeyNote(withdrawn)',
+    backgroundKeyNote(defaultSubjectFor('ICON'), 'MIDJOURNEY', 'MAGENTA_FF00FF'),
+  ],
+  ['backgroundKeyNote(request)', backgroundKeyNote(defaultSubjectFor('ICON'), 'GPT_IMAGE', 'TRANSPARENT')],
+  ['ASPECT_RATIO_NOTICES.size', ASPECT_RATIO_NOTICES.size('size', 2560, 1440)],
+  ['ASPECT_RATIO_NOTICES.none', ASPECT_RATIO_NOTICES.none('size')],
+  // The card behind a row of the reader's own, for one entry of each shape and one written to every
+  // limit, under every world, held by the library and on the set alone: the same function, with the
+  // reader's words where the catalogue's go.
+  ...[RELIC, SPELL, TOGGLE, SALUTE, LONGEST_CUSTOM_ICON].flatMap((entry) =>
+    everyLookWorld().flatMap((world) =>
+      modesThatReword(entry).flatMap((mode) =>
+        [true, false].map(
+          (inLibrary) =>
+            [
+              `iconEntryGuidance(own ${entry.id}, ${world}, ${mode}, ${inLibrary ? 'in library' : 'set only'})`,
+              iconEntryGuidance(entry, world, mode, inLibrary),
+            ] as const,
+        ),
+      ),
+    ),
+  ),
+  // What the form for an icon of the reader's own says beside a refused field, under a row of theirs
+  // the library does not hold or holds another copy of, after an untick, a keep or a delete, when the
+  // library refuses a write, and as a warning — text shown under a control or after its press, on the
+  // `ICON_CAPACITY_NOTICES` footing.
+  ...Object.entries(CUSTOM_ICON_REFUSALS).flatMap(([key, text]) =>
+    typeof text === 'string' ? [[`CUSTOM_ICON_REFUSALS.${key}`, text] as const] : [],
+  ),
+  ['CUSTOM_ICON_REFUSALS.stateEmpty', CUSTOM_ICON_REFUSALS.stateEmpty('first')],
+  ['CUSTOM_ICON_REFUSALS.tooLong', CUSTOM_ICON_REFUSALS.tooLong('look', 201)],
+  ['CUSTOM_ICON_REFUSALS.brackets', CUSTOM_ICON_REFUSALS.brackets('state')],
+  [
+    'CUSTOM_ICON_REFUSALS.taken',
+    CUSTOM_ICON_REFUSALS.taken('heal-minor', 'the catalogue’s “Minor healing consumable”'),
+  ],
+  ['CUSTOM_ICON_NOTICES.setOnly', CUSTOM_ICON_NOTICES.setOnly],
+  ['CUSTOM_ICON_NOTICES.differs', CUSTOM_ICON_NOTICES.differs],
+  ['CUSTOM_ICON_NOTICES.removed', CUSTOM_ICON_NOTICES.removed(LONGEST_CUSTOM_ICON.role)],
+  ['CUSTOM_ICON_NOTICES.kept', CUSTOM_ICON_NOTICES.kept(LONGEST_CUSTOM_ICON.role)],
+  ['CUSTOM_ICON_NOTICES.deleted', CUSTOM_ICON_NOTICES.deleted(LONGEST_CUSTOM_ICON.role)],
+  ['CUSTOM_ICON_NOTICES.setOnlyAfterRefusal', CUSTOM_ICON_NOTICES.setOnlyAfterRefusal],
+  ...(['MAGENTA_FF00FF', 'PURE_WHITE', 'PURE_BLACK'] as const).map(
+    (key) =>
+      [
+        `CUSTOM_ICON_WARNING_TEXT.keyColour(${key})`,
+        CUSTOM_ICON_WARNING_TEXT.keyColour('white', key),
+      ] as const,
+  ),
+  ['CUSTOM_ICON_WARNING_TEXT.lettering', CUSTOM_ICON_WARNING_TEXT.lettering('dial')],
+  ['CUSTOM_ICON_WARNING_TEXT.redCross', CUSTOM_ICON_WARNING_TEXT.redCross('red cross')],
+  ['CUSTOM_ICON_WARNING_TEXT.figure', CUSTOM_ICON_WARNING_TEXT.figure('hand')],
 ];
 
 /** Flattens the records into `NAME.key` pairs, so a failure names the entry rather than a position. */
@@ -227,6 +346,14 @@ const PLAIN_SURFACES = [
   'SHEET_IDENTITY_GUIDANCE.',
   'PALETTE_EXPORT_GUIDANCE.',
   'RESULT_PREVIEW_MODES_UNAVAILABLE',
+  'SPRITE_FIT_UNAVAILABLE',
+  'movePresetRefusal',
+  'moveQuantiseRefusal',
+  'ICON_CAPACITY_NOTICES.',
+  'backgroundKeyNote',
+  'ASPECT_RATIO_NOTICES.',
+  'FIELD_NOTES.',
+  'iconContentSource',
 ] as const;
 
 /** Whether an entry is rendered as plain text rather than as a card. */
@@ -280,8 +407,15 @@ function blockLengths(text: string): number[] {
  * rather than a rule about names.** Its two branches are two written-out strings, so a sentence
  * appearing in both of them is a copy-paste inside one file and is meant to fail — which is how the
  * sentence about the search count came to be in `constants/guidanceSentences.ts`.
+ *
+ * `CUSTOM_ICON_WARNING_TEXT.keyColour` is one template literal filled with each key's colour, so its
+ * closing advice is one piece of writing however many keys it is rendered for.
  */
-const TEMPLATED_ORIGINS = ['accentSwatchGuidance'] as const;
+const TEMPLATED_ORIGINS = [
+  'accentSwatchGuidance',
+  'iconEntryGuidance',
+  'CUSTOM_ICON_WARNING_TEXT.keyColour',
+] as const;
 
 /** Where an entry's words are written: the entry itself, unless a template above wrote them. */
 function originOf(name: string): string {

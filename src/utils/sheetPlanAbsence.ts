@@ -1,6 +1,6 @@
 import { absentOptionFor } from '../constants/categories/index.ts';
 import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
-import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
+import type { AttributeRole, ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import type { RigContract } from '../types/rigContract.ts';
@@ -111,13 +111,14 @@ export function planAsDrawn(plan: SheetPlan, category: SubjectCategory, subject:
  * declined — the one question {@link planAsDrawn} asks of each line, over the fields `declined`
  * names.
  *
- * Two of `AttributeRole`'s three answers say yes, for two different reasons, and reading them
+ * Two of `AttributeRole`'s four answers say yes, for two different reasons, and reading them
  * through one predicate is what keeps the filter and the section 1 sentence from being two opinions
  * about the same plan. `'DRAWS_IT'` is the attribute and nothing else, so it goes with it.
  * `'VARIES_IN_IT'` draws none of it and exists to differ in it, so a subject that has none is
  * ordering tiles that must differ in a property it has just denied — and it goes for that reason
  * instead. `'DRAWS_IT_PARTLY'` stays, and a field declaring an `absentOption` may have none bound to
- * it.
+ * it. `'DRAWN_IN_IT'` stays too: the entry draws none of the attribute and is only drawn in its style,
+ * so a subject without one still has the piece to draw.
  */
 export function entryDeclinedBy(entry: ComponentEntry, declined: readonly DeclinableFieldKey[]): boolean {
   const bound = entry.attribute;
@@ -148,12 +149,24 @@ export function entryDeclinedBy(entry: ComponentEntry, declined: readonly Declin
  * order the scatter as loose sprites, which is what `sheetPlans/terrain.ts` argues against at length.
  */
 export function planDraws(plan: SheetPlan, key: DeclinableFieldKey): boolean {
+  return planBinds(plan, key, ['DRAWS_IT', 'DRAWS_IT_PARTLY']);
+}
+
+/**
+ * Whether this sheet's inventory is drawn in the style `key` describes — ICON's overlay sheet, whose
+ * every piece is drawn in the *Overlay Style* (`'DRAWN_IN_IT'`, audit finding O1).
+ *
+ * The other half of section 1's exception, and asked the same way {@link planDraws} is: of the plan
+ * as this subject draws it, so the sentence states what section 4 lists. Its answer and that one's are
+ * never both yes for one field, because a value is either a piece or the style of the pieces.
+ */
+export function planDrawsIn(plan: SheetPlan, key: DeclinableFieldKey): boolean {
+  return planBinds(plan, key, ['DRAWN_IN_IT']);
+}
+
+function planBinds(plan: SheetPlan, key: DeclinableFieldKey, roles: readonly AttributeRole[]): boolean {
   return plan.groups.some((group) =>
-    group.entries.some(
-      (entry) =>
-        entry.attribute?.field === key &&
-        (entry.attribute.role === 'DRAWS_IT' || entry.attribute.role === 'DRAWS_IT_PARTLY'),
-    ),
+    group.entries.some((entry) => entry.attribute?.field === key && roles.includes(entry.attribute.role)),
   );
 }
 

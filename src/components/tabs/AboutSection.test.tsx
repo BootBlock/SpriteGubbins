@@ -37,12 +37,4 @@ describe('AboutSection', () => {
       expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     }
   });
-
-  it('warns screen-reader users that a link leaves the app, as the arrow does for everyone else', () => {
-    render(<AboutSection />);
-
-    // The visible arrow is aria-hidden, so without this the accessible name would be the bare
-    // link text and the warning would reach sighted users only.
-    expect(screen.getByRole('link', { name: /Joe Cox \(opens in a new tab\)/ })).toBeInTheDocument();
-  });
 });

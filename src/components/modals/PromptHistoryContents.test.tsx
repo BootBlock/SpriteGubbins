@@ -30,7 +30,7 @@ function log(id: string, overrides: Partial<PromptHistoryLog> = {}): PromptHisto
     promptText: `Prompt ${id}`,
     createdAt: WHEN,
     wordCount: 120,
-    modelUsed: 'CHATGPT_5_6_SOL',
+    modelUsed: 'CHATGPT',
     subject: DEFAULT_PRESET.subject,
     // The preset pins the image half; a stored entry carries the whole configuration.
     output: { ...DEFAULT_OUTPUT_CONFIG, ...DEFAULT_PRESET.output },
@@ -78,7 +78,7 @@ describe('PromptHistoryContents', () => {
   });
 
   it('asks on the button the press landed on, which is what keeps the focus', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PromptHistoryContents />);
 
     rowAction('Delete').focus();
@@ -92,7 +92,7 @@ describe('PromptHistoryContents', () => {
   });
 
   it('gives the keyboard back to the delete button when the question is cancelled', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PromptHistoryContents />);
 
     rowAction('Delete').focus();
@@ -107,7 +107,7 @@ describe('PromptHistoryContents', () => {
   });
 
   it('hands the keyboard to the next row when a delete takes the one it was in', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const deleteLog = vi.fn(async (id: string) => {
       useHistoryStore.setState((state) => ({
         historyLogs: state.historyLogs.filter((entry) => entry.id !== id),
@@ -131,7 +131,7 @@ describe('PromptHistoryContents', () => {
   });
 
   it('moves the keyboard onto the confirmation when the whole history is asked about', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<PromptHistoryContents />);
 
     screen.getByRole('button', { name: 'Clear history' }).focus();
@@ -143,7 +143,7 @@ describe('PromptHistoryContents', () => {
   });
 
   it('gives the keyboard somewhere to be once the history it was in is empty', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const clearHistory = vi.fn(async () => {
       useHistoryStore.setState({ historyLogs: [] });
       return undefined;

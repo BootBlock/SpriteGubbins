@@ -1,5 +1,7 @@
+import { COVERAGE_FLOOR } from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
-import { createImage, packedColorAt, pixelOffset, writePackedColor } from './imageData.ts';
+import { forEachMeshCell } from './forEachMeshCell.ts';
+import { alphaAt, createImage, packedColorAt, pixelOffset, writePackedColor } from './imageData.ts';
 import { lineAwareWinner } from './lineVote.ts';
 
 /**
@@ -20,7 +22,8 @@ import { lineAwareWinner } from './lineVote.ts';
  * in `boundEndCells.ts` merges an end band of fewer than three source pixels into the cell beside it, so
  * nothing here has to ask whether the cell it is reducing to one pixel stands for a real band or a
  * one-pixel sliver. None of the three may start deciding that for itself: they walk the mesh they
- * are given, which is the whole of what keeps them agreeing about where a cell begins.
+ * are given through `forEachMeshCell`, which is the whole of what keeps them agreeing about where a
+ * cell begins — a patch's cells included.
  */
 
 /**
@@ -39,6 +42,17 @@ import { lineAwareWinner } from './lineVote.ts';
  * The pixel nearest the cell's centre is the pixel furthest from every boundary, which is what a
  * representative of the cell means; where two colours tie on distance as well, the earlier in scan
  * order keeps the cell, so the result is deterministic on every input.
+ *
+ * **Coverage is decided before colour, as the other two readings decide it.** A cell is clear —
+ * `{0, 0, 0, 0}`, the keyed field's value — only when more than half of it is under
+ * `COVERAGE_FLOOR`, and otherwise takes the modal colour of the pixels at or above it, the clear ones
+ * casting no vote. Voted as one more bucket, the clear pixels were a single colour against artwork
+ * split across several shades, so transparency won a cell on plurality even where most of it was
+ * art. On `test_sprites/armour.png` at grid 6, keyed on `#FF00FF` at `DEFAULT_KEY_TOLERANCE` with no
+ * reduction, that erased 622 cells more than half artwork, 272 of them at least three-quarters, and
+ * every one on a silhouette, where the outline is; now it erases none, and no mostly clear cell
+ * comes out drawn under either rule. Counting a clear pixel by its bytes would be worse still — a
+ * fully transparent pixel's leftover RGB and a faint pixel's rounding noise would each be a colour.
  *
  * **Idempotent over the same mesh**: after this each cell is already one colour, so running it
  * again changes nothing — the clearest single check that the step did what it claims, and the
@@ -70,25 +84,21 @@ export function alignToGrid(image: ImageData, mesh: GridMesh, lineAware = false)
   const counts = new Map<number, number>();
   const distances = new Map<number, number>();
 
-  for (const [rowIndex, top] of mesh.y.entries()) {
-    const bottom = Math.min(mesh.y[rowIndex + 1] ?? image.height, image.height);
-    for (const [columnIndex, left] of mesh.x.entries()) {
-      const right = Math.min(mesh.x[columnIndex + 1] ?? image.width, image.width);
-      const color = modalColor(image, counts, distances, left, top, right, bottom, lineAware);
-
-      for (let y = top; y < bottom; y += 1) {
-        for (let x = left; x < right; x += 1) {
-          writePackedColor(output.data, pixelOffset(image.width, x, y), color);
-        }
+  forEachMeshCell(mesh, image.width, image.height, (_column, _row, left, top, right, bottom) => {
+    const color = modalColor(image, counts, distances, left, top, right, bottom, lineAware);
+    for (let y = top; y < bottom; y += 1) {
+      for (let x = left; x < right; x += 1) {
+        writePackedColor(output.data, pixelOffset(image.width, x, y), color);
       }
     }
-  }
+  });
 
   return output;
 }
 
 /**
- * The most frequent colour in one cell as a packed value — ties resolved towards the cell's centre,
+ * One cell's colour as a packed value: `0` where more than half the cell is clear, and otherwise
+ * the most frequent colour among the pixels that are not — ties resolved towards the cell's centre,
  * then by scan order.
  *
  * Takes the two tallies it counts into rather than making them, and leaves both empty for the next
@@ -114,16 +124,25 @@ function modalColor(
   distances.clear();
   const centreX = (left + right - 1) / 2;
   const centreY = (top + bottom - 1) / 2;
+  let clear = 0;
 
   for (let y = top; y < bottom; y += 1) {
     for (let x = left; x < right; x += 1) {
-      const key = packedColorAt(image.data, pixelOffset(image.width, x, y));
+      const offset = pixelOffset(image.width, x, y);
+      if (alphaAt(image.data, offset) < COVERAGE_FLOOR) {
+        clear += 1;
+        continue;
+      }
+      const key = packedColorAt(image.data, offset);
       counts.set(key, (counts.get(key) ?? 0) + 1);
       const distance = (x - centreX) * (x - centreX) + (y - centreY) * (y - centreY);
       const nearest = distances.get(key);
       if (nearest === undefined || distance < nearest) distances.set(key, distance);
     }
   }
+
+  // Exactly half clear keeps the art, the same boundary `inkWeightedCells` and `kCentroidCells` draw.
+  if (clear * 2 > (right - left) * (bottom - top)) return 0;
 
   let winner = 0;
   let winningCount = 0;
@@ -166,12 +185,10 @@ function modalColor(
 export function downscaleNearest(image: ImageData, mesh: GridMesh): ImageData {
   const output = createImage(mesh.x.length, mesh.y.length);
 
-  for (const [y, top] of mesh.y.entries()) {
-    for (const [x, left] of mesh.x.entries()) {
-      const color = packedColorAt(image.data, pixelOffset(image.width, left, top));
-      writePackedColor(output.data, pixelOffset(mesh.x.length, x, y), color);
-    }
-  }
+  forEachMeshCell(mesh, image.width, image.height, (column, row, left, top) => {
+    const color = packedColorAt(image.data, pixelOffset(image.width, left, top));
+    writePackedColor(output.data, pixelOffset(mesh.x.length, column, row), color);
+  });
 
   return output;
 }
@@ -182,10 +199,11 @@ export function downscaleNearest(image: ImageData, mesh: GridMesh): ImageData {
  *
  * `upscaleNearest` is the same idea on a lattice that starts at the corner and never drifts, and
  * that is the one mesh `boundaryMesh` is not guaranteed to return: `boundEndCells` can make the
- * leading cell narrower or wider than the grid, and a walk that follows drift moves every boundary
- * after it. Magnified by the grid instead, a result sits a fixed offset off its source past a phased
- * first cell and a growing one across a drifting sheet, so every comparison made against it is made
- * against art it does not sit over. Painted over its own mesh, each cell covers exactly the source
+ * leading cell narrower or wider than the grid, a walk that follows drift moves every boundary
+ * after it, and a patch moves the cuts over a sprite to that sprite's own phase. Magnified by the
+ * grid instead, a result sits a fixed offset off its source past a phased first cell and a growing
+ * one across a drifting sheet, so every comparison made against it is made against art it does not
+ * sit over. Painted over its own mesh, each cell covers exactly the source
  * pixels it was read from, so `downscaleNearest` of this over the same mesh returns `cells`.
  *
  * `cells` must be one pixel per cell of `mesh`; anything else was not read from it, and is refused
@@ -197,18 +215,14 @@ export function upscaleOverMesh(cells: ImageData, mesh: GridMesh, width: number,
   }
   const output = createImage(width, height);
 
-  for (const [row, top] of mesh.y.entries()) {
-    const bottom = Math.min(mesh.y[row + 1] ?? height, height);
-    for (const [column, left] of mesh.x.entries()) {
-      const right = Math.min(mesh.x[column + 1] ?? width, width);
-      const color = packedColorAt(cells.data, pixelOffset(cells.width, column, row));
-      for (let y = top; y < bottom; y += 1) {
-        for (let x = left; x < right; x += 1) {
-          writePackedColor(output.data, pixelOffset(width, x, y), color);
-        }
+  forEachMeshCell(mesh, width, height, (column, row, left, top, right, bottom) => {
+    const color = packedColorAt(cells.data, pixelOffset(cells.width, column, row));
+    for (let y = top; y < bottom; y += 1) {
+      for (let x = left; x < right; x += 1) {
+        writePackedColor(output.data, pixelOffset(width, x, y), color);
       }
     }
-  }
+  });
 
   return output;
 }

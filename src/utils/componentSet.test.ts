@@ -1,3 +1,4 @@
+import { componentTally } from './componentTally.ts';
 import { describe, expect, it } from 'vitest';
 import { MAX_ANATOMY_MULTIPLIER, NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { DEFAULT_OUTPUT_CONFIG, directionalModeChoices } from '../constants/output/index.ts';
@@ -17,6 +18,7 @@ import { calculateAtlasMetrics, widthBiasFor } from './atlasCalculator.ts';
 import { batchComponentCount, componentCountFor, sheetCountFor } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetBatch } from './sheetBatch.ts';
+import { assemblyBaseCases } from '../test/assemblyBaseCases.ts';
 import { assemblyBaseSubjectsOf } from '../test/assemblyBaseSubjects.ts';
 import { standardSubject } from '../test/sheetSubject.ts';
 
@@ -51,23 +53,32 @@ function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
  * their own, and a count checked against the standard OBJECT sheets while the prompt compiled the
  * rigid ones would be comparing two deliverables.
  */
-const SHEETS = SUBJECT_CATEGORIES.flatMap((category) =>
-  assemblyBaseSubjectsOf(category).flatMap((subject) =>
-    modesFor(category, subject).flatMap((mode) =>
-      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-        sheetSeriesFor(category, subject, mode, directions).map((plan, sheetIndex) => ({
-          category,
-          subject,
-          base: subject.anatomy,
-          mode,
-          directions,
-          sheetIndex,
-          sheet: plan.name,
-        })),
-      ),
+const CASES = assemblyBaseCases();
+
+const SHEETS = CASES.flatMap(([name, category, subject]) =>
+  modesFor(category, subject).flatMap((mode) =>
+    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+      sheetSeriesFor(category, subject, mode, directions).map((plan, sheetIndex) => ({
+        name,
+        category,
+        subject,
+        base: subject.anatomy,
+        mode,
+        directions,
+        sheetIndex,
+        sheet: plan.name,
+      })),
     ),
   ),
 );
+
+/**
+ * The sheets one of {@link CASES} draws: what a sweep compiling a prompt per sheet walks per case, so no
+ * one case outgrows the time limit as ICON's rosters grow (`assemblyBaseCases`).
+ */
+function sheetsOf(name: string): typeof SHEETS {
+  return SHEETS.filter((sheet) => sheet.name === name);
+}
 
 describe('component counts', () => {
   it.each(SHEETS)(
@@ -89,7 +100,7 @@ describe('component counts', () => {
         subject,
         withOutput({ directionalMode: mode, directions, sheetIndex }),
       );
-      expect(prompt).toContain(`Exactly ${count} components`);
+      expect(prompt).toContain(`Exactly ${componentTally(count)}`);
       expect(prompt).toContain(`Component count is exactly ${count}.`);
       // The inventory's own heading is the fourth statement of the number, and the one that reads
       // right beside the entries — a heading disagreeing with section 0 is what a model resolves
@@ -120,34 +131,42 @@ describe('component counts', () => {
     }
   });
 
-  it('promises the selector the whole batch, since that is what the user is choosing', () => {
-    // The one reader that is deliberately *not* per sheet. A pairing costing six generations reading
-    // the same figure as one that costs a single sheet would have the two looking like the same size
-    // of job, which is the question this label exists to answer.
-    //
-    // **The batch axis, not the inventory axis** — the reported failure this pins. The label used to
-    // sum the parts of the plan and count them, so a CHARACTER's directional pairing over the five
-    // classic facings read "49 across 2 sheets" and then produced six generations of 185 components:
-    // the trunk once, and the limbs at each of the five facings. Both figures now come off the very
-    // batch `sheetBatch` enumerates, which is the list the split drawer, the studio's progress strip
-    // and every prompt's own section 6 are counting.
-    for (const { category, subject, mode, directions } of SHEETS) {
-      const output = withOutput({ directionalMode: mode, directions });
-      const { sheets } = sheetBatch(category, subject, output);
-      const choice = directionalModeChoices(category, subject, output, []).find(
-        (candidate) => candidate.value === mode,
-      );
-
-      expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
-        String(batchComponentCount(category, subject, sheets, [])),
-      );
-      if (sheets.length > 1) {
-        expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
-          `in ${String(sheets.length)} sheets`,
+  it.each(CASES)(
+    'promises the selector the whole batch, since that is what the user is choosing, on %s',
+    (name) => {
+      // The one reader that is deliberately *not* per sheet. A pairing costing six generations reading
+      // the same figure as one that costs a single sheet would have the two looking like the same size
+      // of job, which is the question this label exists to answer.
+      //
+      // **The batch axis, not the inventory axis** — the reported failure this pins. The label used to
+      // sum the parts of the plan and count them, so a CHARACTER's directional pairing over the five
+      // classic facings read "49 across 2 sheets" and then produced six generations of 185 components:
+      // the trunk once, and the limbs at each of the five facings. Both figures now come off the very
+      // batch `sheetBatch` enumerates, which is the list the split drawer, the studio's progress strip
+      // and every prompt's own section 6 are counting.
+      //
+      // Once per pairing rather than per sheet: nothing here reads the sheet index, so a series' later
+      // sheets would only repeat the first one's assertions.
+      for (const { category, subject, mode, directions } of sheetsOf(name).filter(
+        (sheet) => sheet.sheetIndex === 0,
+      )) {
+        const output = withOutput({ directionalMode: mode, directions });
+        const { sheets } = sheetBatch(category, subject, output);
+        const choice = directionalModeChoices(category, subject, output, []).find(
+          (candidate) => candidate.value === mode,
         );
+
+        expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
+          String(batchComponentCount(category, subject, sheets, [])),
+        );
+        if (sheets.length > 1) {
+          expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
+            `in ${String(sheets.length)} sheets`,
+          );
+        }
       }
-    }
-  });
+    },
+  );
 
   it('states the batch the reported configuration actually produces, not its two inventory parts', () => {
     // The figure from the report, spelled out rather than derived, so the two axes cannot both move
@@ -189,7 +208,7 @@ describe('component counts', () => {
     // Fifteen, not three: a five-view core draws the three named pieces at each of its facings.
     expect(prompt).toContain('#### Deployable Modules — 15');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('OBJECT', subject, 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, anatomy, null))} components`,
+      `Exactly ${componentTally(componentCountFor('OBJECT', subject, 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, anatomy, null))}`,
     );
   });
 
@@ -215,18 +234,45 @@ describe('component counts', () => {
     // unstated yaw, and the diagonal half of a split core got no anatomy at all. A multi-view
     // sheet now draws each named piece at each of its own facings, exactly as the plan's entries
     // are drawn; a run sheet keeps one drawing per generation, but only where it is the series'
-    // trunk — the articulation runs stay bare, because their limbs hang on a trunk the core
-    // sheets carry.
+    // trunk — the articulation runs stay bare, because their limbs hang on a trunk the core sheets
+    // carry. ICON appends the pieces to no sheet: its overlay sheets list the ones the subject names
+    // among their own entries (`iconOverlaySheets`), which a list handed in beside the subject never
+    // reaches.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
     for (const { category, subject, mode, directions, sheetIndex } of SHEETS) {
-      const plan = sheetSeriesFor(category, subject, mode, directions)[sheetIndex];
+      const series = sheetSeriesFor(category, subject, mode, directions);
+      const plan = series[sheetIndex];
       if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
-      const views = plan.facings === 'run' ? (sheetIndex === 0 ? 1 : 0) : plan.facings.length;
+      // Stated rather than read off the plans: every run series but ICON's carries them on its first sheet.
+      const carrier = category === 'ICON' ? -1 : 0;
+      const views = plan.facings === 'run' ? (sheetIndex === carrier ? 1 : 0) : plan.facings.length;
       expect(
         componentCountFor(category, subject, mode, directions, sheetIndex, anatomy, null),
         `${category}/${mode}/${directions}/${plan.name}`,
       ).toBe(componentCountFor(category, subject, mode, directions, sheetIndex, [], null) + 3 * views);
     }
+  });
+
+  it('counts an icon set’s extra overlay pieces on its overlay sheets, once each', () => {
+    // ICON's carrier is no sheet, so the pieces the subject names reach the count only through the
+    // overlay sheets' own entries. Handing the parsed list in beside the subject, as every caller does,
+    // must not count them a second time.
+    const icon = SHEETS.find((sheet) => sheet.category === 'ICON');
+    if (icon === undefined) throw new Error('unreachable: CASES holds an icon set');
+    const { category, subject, mode, directions } = icon;
+    const extras = { ...subject, additional_anatomy: 'Frost Rim ×2, Ember Glow ×1' };
+    const overlayTotal = (of: typeof subject, additional: readonly AnatomyComponent[]) =>
+      sheetSeriesFor(category, of, mode, directions).reduce(
+        (sum, plan, sheetIndex) =>
+          plan.placement === undefined
+            ? sum
+            : sum + componentCountFor(category, of, mode, directions, sheetIndex, additional, null),
+        0,
+      );
+
+    expect(overlayTotal(extras, parseAdditionalAnatomy(extras.additional_anatomy))).toBe(
+      overlayTotal(subject, []) + 3,
+    );
   });
 
   it('carries the anatomy on both chunks of a split eight-compass core, each at its own facings', () => {
@@ -295,17 +341,20 @@ describe('component counts', () => {
     expect(articulation).not.toContain('Demon Horn');
   });
 
-  it('states the within-entry reading order wherever an entry can expand along two axes', () => {
-    // The ambiguity this pins: section 4 fixes reading order *between* entries only, and an anatomy
-    // entry carrying both a ×N and a facing list expands along two axes — `Demon Horn ×2: south,
-    // west, north, east` is eight components in either piece-major or facing-major order, and a
-    // generator free to pick either silently mis-maps every anatomy component's identity. The
-    // intro now states the sub-order — facings in listed order, the ×N copies together at each —
-    // as the extension of how every `viewsOf` entry above it already reads. Every multi-view sheet
-    // carries the sentence, because every one of them accepts a ×N entry; a run sheet has one axis
-    // and stays without it.
-    const anatomy = 'Demon Horn ×2, Tail ×1';
-    for (const { category, subject, mode, directions, sheetIndex } of SHEETS) {
+  // One case per sheet: a case's sheets in one test passed the one-second limit a slow runner stands in
+  // for on an ICON roster's twenty-odd sheets.
+  it.each(SHEETS)(
+    'states the within-entry reading order wherever an entry can expand along two axes, on $name / $mode / $directions / $sheet',
+    ({ category, subject, mode, directions, sheetIndex }) => {
+      // The ambiguity this pins: section 4 fixes reading order *between* entries only, and an anatomy
+      // entry carrying both a ×N and a facing list expands along two axes — `Demon Horn ×2: south,
+      // west, north, east` is eight components in either piece-major or facing-major order, and a
+      // generator free to pick either silently mis-maps every anatomy component's identity. The
+      // intro now states the sub-order — facings in listed order, the ×N copies together at each —
+      // as the extension of how every `viewsOf` entry above it already reads. Every multi-view sheet
+      // carries the sentence, because every one of them accepts a ×N entry; a run sheet has one axis
+      // and stays without it.
+      const anatomy = 'Demon Horn ×2, Tail ×1';
       const plan = sheetSeriesFor(category, subject, mode, directions)[sheetIndex];
       if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
       const prompt = generatePrompt(
@@ -323,31 +372,35 @@ describe('component counts', () => {
       } else {
         expect(prompt, label).not.toContain('Within one entry');
       }
-    }
-  });
+    },
+  );
 
-  it('gives an entry that refers to its facings the same arithmetic as one that names them', () => {
-    // The `atEachYaw` shape — `Handle, at each of the yaws section 3 lists` — names no facing on
-    // the entry itself, so section 4's rule as first written ("an entry naming several facings
-    // names one drawing at each") bound it only by charitable reading: a generator taking the
-    // sentence literally had no stated arithmetic for the entry at all. The rule now says
-    // reference counts as naming, and this walks every sheet carrying such an entry to check the
-    // two travel together.
-    let referringSheets = 0;
-    for (const { category, subject, mode, directions, sheetIndex } of SHEETS) {
-      const prompt = generatePrompt(
-        category,
-        subject,
-        withOutput({ directionalMode: mode, directions, sheetIndex }),
-      );
-      if (!prompt.includes('at each of the yaws section 3 lists')) continue;
-      referringSheets += 1;
-      expect(prompt, `${category}/${mode}/${directions}`).toContain(
+  /** One sheet's prompt, as the referring-entry checks below compile it. */
+  function promptOf({ category, subject, mode, directions, sheetIndex }: (typeof SHEETS)[number]) {
+    return generatePrompt(category, subject, withOutput({ directionalMode: mode, directions, sheetIndex }));
+  }
+
+  it.each(SHEETS)(
+    'gives an entry that refers to its facings the same arithmetic as one that names them, on $name / $mode / $directions / $sheet',
+    (sheet) => {
+      // The `atEachYaw` shape — `Handle, at each of the yaws section 3 lists` — names no facing on
+      // the entry itself, so section 4's rule as first written ("an entry naming several facings
+      // names one drawing at each") bound it only by charitable reading: a generator taking the
+      // sentence literally had no stated arithmetic for the entry at all. The rule now says
+      // reference counts as naming, and this walks every sheet carrying such an entry to check the
+      // two travel together.
+      const prompt = promptOf(sheet);
+      if (!prompt.includes('at each of the yaws section 3 lists')) return;
+      expect(prompt, `${sheet.category}/${sheet.mode}/${sheet.directions}`).toContain(
         'an entry naming or referring to several facings names one drawing at',
       );
-    }
-    // The pairing above is vacuous unless the referring shape actually ships on some sheet.
-    expect(referringSheets).toBeGreaterThan(0);
+    },
+  );
+
+  it('ships the referring shape on some sheet, so the pairing above is not vacuous', () => {
+    expect(SHEETS.some((sheet) => promptOf(sheet).includes('at each of the yaws section 3 lists'))).toBe(
+      true,
+    );
   });
 });
 
@@ -375,7 +428,7 @@ describe('the count once a subject names anatomy of its own', () => {
     // pieces than it counted. Both statements of the number have to move together.
     const prompt = generatePrompt('CHARACTER', withAnatomy('Demon Horn ×2, Tail ×1'), RIG);
 
-    expect(prompt).toContain(`Exactly ${String(BASE + 3)} components`);
+    expect(prompt).toContain(`Exactly ${componentTally(BASE + 3)}`);
     expect(prompt).toContain(`Component count is exactly ${String(BASE + 3)}.`);
   });
 
@@ -392,11 +445,6 @@ describe('the count once a subject names anatomy of its own', () => {
     expect(prompt).toContain('Head ×1, torso ×1, pelvis ×1.');
   });
 
-  it('states it in the subject definition as well as the inventory', () => {
-    const prompt = generatePrompt('CHARACTER', withAnatomy('Serpentine Tail ×1'), RIG);
-    expect(prompt).toContain('- Additional Genuine Anatomy: Serpentine Tail ×1');
-  });
-
   it('keeps the single-drawing exception sentence on a run sheet', () => {
     // The rig draws one facing per generation, so its exception sentence promises one drawing per
     // piece — the per-view wording belongs to the multi-view sheets, whose inventories multiply.
@@ -411,7 +459,7 @@ describe('the count once a subject names anatomy of its own', () => {
     for (const value of [NO_ADDITIONAL_ANATOMY, '']) {
       const prompt = generatePrompt('CHARACTER', withAnatomy(value), RIG);
 
-      expect(prompt).toContain(`Exactly ${String(BASE)} components`);
+      expect(prompt).toContain(`Exactly ${componentTally(BASE)}`);
       expect(prompt).not.toContain('Additional Genuine Anatomy —');
       expect(prompt).not.toContain('- Additional Genuine Anatomy:');
       // And section 1's prose stops naming it as well. That sentence is the exception to "painted
@@ -455,7 +503,7 @@ describe('the count once a subject names anatomy of its own', () => {
       `CUTOUT_RIG_SINGLE_DIRECTION (${String(count * facings)} in ${String(facings)} sheets)`,
     );
     expect(generatePrompt('CHARACTER', withAnatomy('Demon Horn ×2, Tail ×1'), RIG)).toContain(
-      `Exactly ${String(count)} components`,
+      `Exactly ${componentTally(count)}`,
     );
 
     const metrics = calculateAtlasMetrics({
@@ -473,7 +521,7 @@ describe('the count once a subject names anatomy of its own', () => {
     // would read "Exactly Infinity components".
     const prompt = generatePrompt('CHARACTER', withAnatomy('Tail ×5000000000'), RIG);
 
-    expect(prompt).toContain(`Exactly ${String(BASE + MAX_ANATOMY_MULTIPLIER)} components`);
+    expect(prompt).toContain(`Exactly ${componentTally(BASE + MAX_ANATOMY_MULTIPLIER)}`);
     expect(prompt).not.toContain('Infinity');
     expect(prompt).not.toContain('e+');
     // Section 1 states the clipped count too, so it cannot promise more than section 4 lists.
@@ -487,7 +535,7 @@ describe('the count once a subject names anatomy of its own', () => {
 
     expect(prompt).toContain('- Additional Genuine Anatomy: Tail ×1');
     expect(prompt).toContain('- Tail ×1.');
-    expect(prompt).toContain(`Exactly ${String(BASE + 1)} components`);
+    expect(prompt).toContain(`Exactly ${componentTally(BASE + 1)}`);
     // Never two counts in one entry — that is an instruction to draw both.
     expect(prompt).not.toContain('×0');
   });
@@ -500,7 +548,7 @@ describe('the count once a subject names anatomy of its own', () => {
 
     const prompt = generatePrompt('CHARACTER', withAnatomy(odd), RIG);
     expect(prompt).toContain('- [IF:X] Tail [/IF] ×2.');
-    expect(prompt).toContain(`Exactly ${String(BASE + 2)} components`);
+    expect(prompt).toContain(`Exactly ${componentTally(BASE + 2)}`);
   });
 });
 

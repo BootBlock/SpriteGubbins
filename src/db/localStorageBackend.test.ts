@@ -5,17 +5,20 @@ import { createBoundedStorage, createRefusingStorage } from '../test/storageDoub
 import { HISTORY_LIMIT } from './backend.ts';
 import { HISTORY_STORAGE_BUDGET } from './historyEviction.ts';
 import { STORAGE_KEYS } from './schema.ts';
+import { toHistoryRow } from './localStorageRows.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import { DEFAULT_PROJECT_ID, createDefaultProject } from '../constants/projects.ts';
 import type { PromptHistoryLog } from '../types/history.ts';
+import { ICON_COLOUR_MODES, ICON_LOOKS } from '../types/iconRoster.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 
 /**
  * The localStorage backend is not a safety net — it is the backend the app genuinely runs on
@@ -126,6 +129,21 @@ describe('LocalStorageBackend — history', () => {
     expect(restored?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
   });
 
+  it('keeps a row whose target was retired, through the next write, under the default target', async () => {
+    // The next write rewrites the collection from what the parser kept, so a row rejected here
+    // would be deleted for good rather than hidden.
+    storage.setItem(
+      STORAGE_KEYS.promptHistory,
+      JSON.stringify([{ ...historyRowWithoutPayloads(), model_used: 'RETIRED_MODEL' }]),
+    );
+
+    await backend.addHistoryLog(log({ id: 'next', createdAt: 900 }));
+
+    const logs = await backend.listHistoryLogs();
+    expect(logs.map((entry) => entry.id)).toEqual(['next', 'bare-1']);
+    expect(logs[1]?.modelUsed).toBe(DEFAULT_OUTPUT_CONFIG.targetModel);
+  });
+
   it('returns logs newest first, whatever order they went in', async () => {
     await backend.addHistoryLog(log({ id: 'old', createdAt: 100 }));
     await backend.addHistoryLog(log({ id: 'new', createdAt: 300 }));
@@ -144,13 +162,28 @@ describe('LocalStorageBackend — history', () => {
   });
 
   it('caps the history so it cannot grow without bound across sessions', async () => {
-    for (let i = 0; i < HISTORY_LIMIT + 25; i += 1) {
-      await backend.addHistoryLog(log({ id: `log-${i}`, createdAt: i }));
-    }
-    const logs = await backend.listHistoryLogs();
-    expect(logs).toHaveLength(HISTORY_LIMIT);
+    // A full history left by earlier sessions, seeded as raw storage in the newest-first order the
+    // backend keeps it in — filling it through `addHistoryLog` would re-read and re-parse the whole
+    // collection once per entry, which is all this case's running time and none of its claim.
+    storage.setItem(
+      STORAGE_KEYS.promptHistory,
+      JSON.stringify(
+        Array.from({ length: HISTORY_LIMIT }, (_, index) =>
+          toHistoryRow(log({ id: `log-${HISTORY_LIMIT - 1 - index}`, createdAt: HISTORY_LIMIT - 1 - index })),
+        ),
+      ),
+    );
+
+    await backend.addHistoryLog(log({ id: `log-${HISTORY_LIMIT}`, createdAt: HISTORY_LIMIT }));
+    await backend.addHistoryLog(log({ id: `log-${HISTORY_LIMIT + 1}`, createdAt: HISTORY_LIMIT + 1 }));
+
+    const ids = (await backend.listHistoryLogs()).map((entry) => entry.id);
+    expect(ids).toHaveLength(HISTORY_LIMIT);
     // The cap must drop the oldest, not the newest.
-    expect(logs[0]?.id).toBe(`log-${HISTORY_LIMIT + 24}`);
+    expect(ids[0]).toBe(`log-${HISTORY_LIMIT + 1}`);
+    expect(ids).not.toContain('log-0');
+    expect(ids).not.toContain('log-1');
+    expect(ids).toContain('log-2');
   });
 
   it('deletes one entry without touching the others', async () => {
@@ -270,15 +303,23 @@ describe('LocalStorageBackend — a full store', () => {
     expect((await backend.listHistoryLogs()).map((entry) => entry.id)).toEqual(['kept']);
   });
 
-  it('leaves room for the settings and the session, which the history may not crowd out', async () => {
+  it('keeps the history inside its budget, leaving room for the settings and the session', async () => {
     // The reason the budget exists at all. A history allowed to fill the quota takes the app's own
     // preferences down with it, and losing the oldest prompt is recoverable where that is not.
-    backend = new LocalStorageBackend(createBoundedStorage(HISTORY_STORAGE_BUDGET + 200_000));
+    //
+    // The store has a megabyte more than the budget, so it is the budget and not the quota that has
+    // to stop the history: twelve half-megabyte prompts are six megabytes offered, and without the
+    // budget the history would go on growing until the store refused it. Its stored length is the assertion
+    // that tells the two apart — the two saves below would find room in either case.
+    const bounded = createBoundedStorage(HISTORY_STORAGE_BUDGET + 1_000_000);
+    backend = new LocalStorageBackend(bounded);
 
-    for (let i = 0; i < 200; i += 1) {
-      await backend.addHistoryLog(bigLog(`log-${i}`, i, 30_000));
+    for (let i = 0; i < 12; i += 1) {
+      await backend.addHistoryLog(bigLog(`log-${i}`, i, 500_000));
     }
 
+    expect(bounded.getItem(STORAGE_KEYS.promptHistory)?.length).toBeLessThanOrEqual(HISTORY_STORAGE_BUDGET);
+    expect((await backend.listHistoryLogs())[0]?.id).toBe('log-11');
     await expect(backend.saveSettings(DEFAULT_SETTINGS)).resolves.toBeUndefined();
     await expect(backend.saveSession(session())).resolves.toBeUndefined();
   });
@@ -320,6 +361,7 @@ describe('LocalStorageBackend — presets', () => {
       projects: [project()],
       presets: [customPreset({ id: 'new', name: 'New' })],
       quantisePresets: [],
+      customIcons: [],
     });
 
     expect((await backend.listPresets()).map((preset) => preset.id)).toEqual(['new']);
@@ -492,14 +534,6 @@ describe('LocalStorageBackend — hostile storage', () => {
           word_count: 1,
           model_used: 'GENERIC',
         },
-        {
-          id: 'bad-model',
-          category: 'CHARACTER',
-          prompt_text: 'x',
-          created_at: 1,
-          word_count: 1,
-          model_used: 'NOPE',
-        },
         null,
       ]),
     );
@@ -627,6 +661,7 @@ describe('LocalStorageBackend — a refused write', () => {
       projects: [project()],
       presets: [customPreset()],
       quantisePresets: [],
+      customIcons: [],
     });
     await expect(promise).rejects.toThrow(/refused the write/i);
   });
@@ -715,6 +750,54 @@ describe('LocalStorageBackend — the studio session', () => {
     expect(loaded?.category).toBe('OBJECT');
     expect(loaded?.subject).toEqual(defaultSubjectFor('OBJECT'));
     expect(loaded?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
+  });
+
+  it.each(ICON_LOOKS.flatMap((look) => ICON_COLOUR_MODES.map((colourMode) => [look, colourMode] as const)))(
+    'round-trips a %s %s icon set’s roster with its subject',
+    async (look, colourMode) => {
+      const subject = {
+        ...defaultSubjectFor('ICON'),
+        icons: {
+          look,
+          colourMode,
+          picks: cataloguePicks(['heal-major', 'system-sound', 'pin-waypoint']),
+        },
+      } as const;
+      await backend.saveSession(session({ category: 'ICON', subject }));
+
+      expect((await backend.loadSession())?.subject).toEqual(subject);
+    },
+  );
+
+  it('reads an ICON session stored before the roster existed as the default icon set', async () => {
+    const { icons: _dropped, ...preCatalogue } = defaultSubjectFor('ICON');
+    storage.setItem(
+      STORAGE_KEYS.studioSession,
+      JSON.stringify({ category: 'ICON', subject: preCatalogue, output: DEFAULT_OUTPUT_CONFIG }),
+    );
+
+    expect((await backend.loadSession())?.subject).toEqual(defaultSubjectFor('ICON'));
+  });
+
+  it('drops a pick the catalogue no longer holds from a stored icon set', async () => {
+    const subject = {
+      ...defaultSubjectFor('ICON'),
+      icons: {
+        look: 'ISOLATED_MARK',
+        colourMode: 'FULL_COLOUR',
+        picks: cataloguePicks(['retired-entry', 'elixir']),
+      },
+    };
+    storage.setItem(
+      STORAGE_KEYS.studioSession,
+      JSON.stringify({ category: 'ICON', subject, output: DEFAULT_OUTPUT_CONFIG }),
+    );
+
+    expect((await backend.loadSession())?.subject.icons).toEqual({
+      look: 'ISOLATED_MARK',
+      colourMode: 'FULL_COLOUR',
+      picks: cataloguePicks(['elixir']),
+    });
   });
 
   it('stores the session under its own key, leaving the other collections alone', async () => {

@@ -31,15 +31,18 @@ export interface ConfirmInPlace {
    *
    * The act is awaited, so pass the store call itself rather than a `void`-ed one — see
    * `keepFocusThrough` about why the answer has to have landed before the destination is chosen.
+   * `home` names where the keyboard goes where the act leaves the row standing but takes the ask
+   * button away — a library icon's row, which a delete turns into one offering Save to library —
+   * and defaults to the ask button.
    */
-  readonly confirm: (act: () => void | Promise<void>) => Promise<void>;
+  readonly confirm: (act: () => void | Promise<void>, home?: () => HTMLElement | null) => Promise<void>;
 }
 
 /**
  * The app's two-press confirmation, and where the keyboard lands at each of its three edges.
  *
- * Five of these are rendered — a history entry, the history drawer's footer, a saved studio preset,
- * a saved quantiser preset and a project — and every one of them answers a keypress by unmounting
+ * Six of these are rendered — a history entry, the history drawer's footer, a saved studio preset,
+ * a saved quantiser preset, a project and an icon in a project's library — and every one of them answers a keypress by unmounting
  * the button that was pressed. The user agent's only fallback is `<body>`: the ring goes, the
  * position goes, and a keyboard reader's next Tab starts again from the top of the page. It happens
  * on the way *into* a confirmation, on the way out of one, and on the confirmation itself.
@@ -58,7 +61,7 @@ export interface ConfirmInPlace {
  * choreography, and the code here is theirs — but they are a *staged import* rather than a row's
  * two-press question: the state that decides whether the confirmation is showing is a pending import
  * held in a store, and it is read by two sibling components rather than one. This hook owns
- * `isConfirming` itself, which is what the five call sites need and what those two cannot use.
+ * `isConfirming` itself, which is what the six call sites need and what those two cannot use.
  * Making it accept externally-driven state as well would be a knob added for one caller, which is
  * the speculative generality the same rulebook bans. The other four are single-edge moves — a focus
  * handed on before a state change, or caught after one — and are not this shape at all.
@@ -76,10 +79,25 @@ export interface ConfirmInPlace {
  * back unusable, which is the history drawer's *Clear history* returning `disabled` the moment the
  * collection it counts is empty. So the keyboard goes to **where the next Tab would have gone**,
  * which `keepFocusThrough` works out: it is shared with `ProjectMoveField`, whose Move button takes
- * its row out of a filtered list in exactly this way.
+ * its row out of a filtered list in exactly this way. A row the act leaves standing without its ask
+ * button names its own destination instead (`confirm`'s `home`).
+ *
+ * **`subject` is what the question is about**, for a row whose subject can change while it stays
+ * mounted: a library icon's row keeps its place when the dialog moves to another project, and a
+ * question asked of one project's icon must not stand over another's, nor return when the first comes
+ * back. The open question is dropped whenever the subject moves. A row whose subject never changes
+ * passes none.
  */
-export function useConfirmInPlace(): ConfirmInPlace {
-  const [isConfirming, setIsConfirming] = useState(false);
+export function useConfirmInPlace(subject?: string): ConfirmInPlace {
+  // The subject the open question was asked about, or `null` while none is open. A row whose subject
+  // changes under it — a library icon's row when the dialog moves to another project — drops the
+  // question during render rather than asking it of something the reader never pressed Delete on.
+  const [asked, setAsked] = useState<{ readonly subject: string | undefined } | null>(null);
+  if (asked !== null && asked.subject !== subject) setAsked(null);
+  const isConfirming = asked !== null;
+  const setIsConfirming = (open: boolean): void => {
+    setAsked(open ? { subject } : null);
+  };
   const askRef = useRef<HTMLButtonElement | null>(null);
   const cancelRef = useRef<HTMLButtonElement | null>(null);
   // Memoised, so React is not detaching and re-attaching the ref on every render — `PanViewport`'s
@@ -121,7 +139,7 @@ export function useConfirmInPlace(): ConfirmInPlace {
     setIsConfirming(false);
   }
 
-  async function confirm(act: () => void | Promise<void>): Promise<void> {
+  async function confirm(act: () => void | Promise<void>, home?: () => HTMLElement | null): Promise<void> {
     await keepFocusThrough({
       // The Cancel button where the confirmation swapped the row out, and the ask button where it
       // asked on the button itself — either way, the control the press was aimed at.
@@ -130,7 +148,7 @@ export function useConfirmInPlace(): ConfirmInPlace {
       settle: () => {
         setIsConfirming(false);
       },
-      home: () => askRef.current,
+      home: home ?? (() => askRef.current),
     });
   }
 

@@ -23,7 +23,11 @@ import { standardSubject } from '../test/sheetSubject.ts';
  */
 const COMPONENT_MAP_EXAMPLE = /^\{".*"[^"]*\}$/;
 
-/** Tokens the compiler computes rather than looking up. See the test that pins each one. */
+/**
+ * Tokens the compiler computes rather than looking up: the directions line describes the set the
+ * compiler *narrowed to*, and the mirror pairs are the ones that set holds, so no map keyed on a
+ * stored value could fill either. `utils/promptCompiler.test.ts` pins what each one compiles to.
+ */
 const COMPUTED_DESCRIPTIONS = new Set(['DIRECTIONS_DESCRIPTION', 'MIRROR_PAIRS_DESCRIPTION']);
 
 /**
@@ -133,14 +137,6 @@ describe('the template itself', () => {
         /^\[DEFINE:[A-Z0-9_]+_LABEL\]( \((?:dominant|highlights only)\))?$/,
       );
     }
-  });
-
-  it('computes the descriptions that no fixed map could hold', () => {
-    // The one documented exception to the convention, asserted rather than merely allowed: the
-    // directions line describes the set the compiler *narrowed to*, which is a function of the mode
-    // as well as the chosen set, so a lookup keyed on the set alone would state the wrong thing.
-    expect(typeof promptText.describeDirections).toBe('function');
-    expect(promptText.describeDirections(['south', 'west'])).toBe('South, west');
   });
 
   it('writes no section number of its own, in a heading or in prose', () => {

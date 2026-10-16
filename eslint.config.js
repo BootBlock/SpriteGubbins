@@ -1,4 +1,4 @@
-// Flat ESLint config (ESLint 9). Codifies the house style — 2-space, single-quote,
+// Flat ESLint config (ESLint 10). Codifies the house style — 2-space, single-quote,
 // braceless single-line guards — and, more importantly, turns several of the spec's
 // architectural bans into rules a machine enforces rather than rules a reviewer has to
 // remember. Formatting (whitespace/quotes/width) is Prettier's job; `eslint-config-prettier`
@@ -7,12 +7,16 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
+import jsxA11y from 'eslint-plugin-jsx-a11y-x';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
+// A call to one of the app's store hooks, which are all named `use…Store`.
+const STORE_HOOK = "CallExpression[callee.name=/^use[A-Z]\\w*Store$/][callee.name!='useSyncExternalStore']";
+
 export default tseslint.config(
-  // Never lint build output, deps, or generated service-worker scaffolding.
+  // Never lint build output, deps, or generated service-worker scaffolding. `public/` is *not*
+  // here: its script ships to every visitor as written, and ESLint reads no image or icon beside it.
   //
   // `.claude/**` is here because these ignore patterns are anchored to this file's directory, so
   // `dist/**` only ever meant the *root* `dist`. Worktrees live under `.claude/worktrees/`, and a
@@ -20,15 +24,7 @@ export default tseslint.config(
   // walks into its `dist/` and reports thousands of errors from a minified bundle — while also
   // quietly linting another branch's `src/` as though it were this one's.
   {
-    ignores: [
-      'dist/**',
-      'dist-ssr/**',
-      'dev-dist/**',
-      'coverage/**',
-      'node_modules/**',
-      'public/**',
-      '.claude/**',
-    ],
+    ignores: ['dist/**', 'dist-ssr/**', 'dev-dist/**', 'coverage/**', 'node_modules/**', '.claude/**'],
   },
 
   // Base: ESLint core + typescript-eslint (syntactic — fast, no type information needed).
@@ -70,11 +66,11 @@ export default tseslint.config(
     },
   },
 
-  // Every TypeScript file the repository lints — `src/`, `tests/`, `scripts/` and `vite.config.ts`
-  // alike: type information, and the rules that cannot run without it. The parser is pointed at the
-  // nearest tsconfig through the project service, which finds `src/` in `tsconfig.app.json` and the
-  // rest in `tsconfig.node.json`; a TypeScript file in neither program fails to parse rather than
-  // being linted without types.
+  // Every file a TypeScript program checks — `src/`, `tests/`, `scripts/`, `vite.config.ts` and the
+  // hand-written scripts in `public/` alike: type information, and the rules that cannot run without
+  // it. The parser is pointed at the nearest tsconfig through the project service, which finds `src/`
+  // in `tsconfig.app.json`, `public/` in `tsconfig.public.json` and the rest in `tsconfig.node.json`;
+  // a file in no program fails to parse rather than being linted without types.
   //
   // These rules sat in the `src/` block below until issue #257, because both sets were written
   // beside the one parser config there was — and so a floating promise in `tests/` or `scripts/`
@@ -84,7 +80,7 @@ export default tseslint.config(
   // on any rule declaring that it needs type information which is missing from, or set differently
   // on, one of them.
   {
-    files: ['**/*.{ts,tsx,mts,cts}'],
+    files: ['**/*.{ts,tsx,mts,cts}', 'public/**/*.js'],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -118,7 +114,7 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
-      'jsx-a11y': jsxA11y,
+      'jsx-a11y-x': jsxA11y,
     },
     rules: {
       // The FULL react-hooks v7 preset, which is the two classic hook rules plus the React
@@ -131,15 +127,47 @@ export default tseslint.config(
       // Promote the hook-dependency check to an error: a stale or oversized dep array is a
       // real bug (a missed re-render, or an effect firing every render), not a style nit.
       'react-hooks/exhaustive-deps': 'error',
-      // Accessibility linting at the recommended preset's severities (errors).
-      ...jsxA11y.flatConfigs.recommended.rules,
+      // Accessibility linting at the recommended preset's severities (errors), from the maintained
+      // fork `eslint-plugin-jsx-a11y-x`: the original's last release accepts no ESLint after 9.
+      ...jsxA11y.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // CLAUDE.md bans selecting a whole store. A store hook called with no selector, or with one
+      // that hands back its argument untouched, subscribes the component to every field, so it
+      // re-renders on every write anywhere in the store. A selector cannot be matched against its
+      // own parameter's name, so the second entry reports any arrow selector whose body is a bare
+      // name: its argument, or a value from outside the store that no selector has a reason to
+      // return. React's own `useSyncExternalStore` shares the name's shape and is no store, so it
+      // is left out. `tests/whole-store-select.test.ts` lints these shapes against the rule this
+      // file resolves for `src/`.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: `${STORE_HOOK}[arguments.length=0]`,
+          message:
+            'Select the fields you use from a store; calling its hook with no selector subscribes to all of it.',
+        },
+        {
+          selector: `${STORE_HOOK} > ArrowFunctionExpression[body.type="Identifier"]`,
+          message:
+            'Select the fields you use from a store; a selector that returns a bare name, such as its argument, selects no field of it.',
+        },
+      ],
     },
   },
 
-  // Node-side code: the Vite config, everything under `scripts/` — the icon generator, the
-  // secret scanner, and the build-time helpers the config imports — and the tests that assert
-  // on files on disk rather than on app behaviour.
+  // The scripts in `public/`, which the host serves as they are written: classic `<script>` files,
+  // not modules, run by the page before the app. `tsconfig.public.json` type-checks them.
+  {
+    files: ['public/**/*.js'],
+    languageOptions: {
+      sourceType: 'script',
+      globals: { ...globals.browser },
+    },
+  },
+
+  // Node-side code: the Vite config, everything under `scripts/` — the runners node starts
+  // directly and the helpers they and the config import — and the tests that assert on files on
+  // disk rather than on app behaviour.
   {
     files: ['*.{js,ts}', 'scripts/**/*.{js,mjs,ts}', 'tests/**/*.ts'],
     languageOptions: {

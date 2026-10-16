@@ -96,56 +96,88 @@ const RULES: readonly Rule[] = [
   },
 ];
 
-describe('section 2 of every stored style combination', () => {
-  it('states no line that contradicts the style beside it', () => {
-    const failures: string[] = [];
-    // How many compiled combinations each rule compared a line on. A rule whose phrase no style
-    // states any more, or whose line is always dropped, would pass by never running, so each has to
-    // have compared at least once.
-    const applied = new Map<string, number>();
+/** One stored combination of the style's neighbours, as section 2 compiles it. */
+interface Combination {
+  readonly where: string;
+  readonly lines: ReturnType<typeof linesOf>;
+}
 
-    for (const renderStyle of RENDER_STYLES) {
-      for (const outlineStyle of OUTLINE_STYLES) {
-        const keys: readonly BackgroundKey[] =
-          outlineStyle === 'PURE_BLACK_OUTLINE'
-            ? [DEFAULT_OUTPUT_CONFIG.backgroundKey, 'PURE_BLACK']
-            : [DEFAULT_OUTPUT_CONFIG.backgroundKey];
-        for (const backgroundKey of keys) {
-          for (const lightingModel of LIGHTING_MODELS) {
-            for (const paletteLimit of PALETTE_LIMITS) {
-              for (const surfaceDetail of SURFACE_DETAILS) {
-                const lines = linesOf({
-                  ...DEFAULT_OUTPUT_CONFIG,
-                  renderStyle,
-                  outlineStyle,
-                  lightingModel,
-                  paletteLimit,
-                  surfaceDetail,
-                  backgroundKey,
-                });
-                for (const rule of RULES) {
-                  const stated = lines[rule.line];
-                  // A line the template dropped cannot contradict anything, except the lighting line a
-                  // shaded style needs, which the rule's own `^$` names.
-                  if (!rule.when.test(lines.style)) continue;
-                  if (stated === '' && !rule.forbids.test('')) continue;
-                  applied.set(rule.name, (applied.get(rule.name) ?? 0) + 1);
-                  if (rule.forbids.test(stated)) {
-                    failures.push(
-                      `${rule.name}: ${renderStyle} ${outlineStyle} ${lightingModel} ${paletteLimit} ${surfaceDetail} ${backgroundKey} — “${stated}”`,
-                    );
-                  }
-                }
-              }
-            }
+/**
+ * Every stored combination under one render style, compiled once and kept, so the per-style cases and
+ * the check that every rule was compared somewhere read the same compilations.
+ *
+ * **One case per render style**, because the whole sweep as one test outgrew Vitest's five-second limit
+ * on a slow runner; a style's combinations are a tenth of it.
+ */
+const COMBINATIONS = new Map<OutputConfig['renderStyle'], readonly Combination[]>();
+
+function combinationsOf(renderStyle: OutputConfig['renderStyle']): readonly Combination[] {
+  const cached = COMBINATIONS.get(renderStyle);
+  if (cached !== undefined) return cached;
+  const combinations: Combination[] = [];
+  for (const outlineStyle of OUTLINE_STYLES) {
+    const keys: readonly BackgroundKey[] =
+      outlineStyle === 'PURE_BLACK_OUTLINE'
+        ? [DEFAULT_OUTPUT_CONFIG.backgroundKey, 'PURE_BLACK']
+        : [DEFAULT_OUTPUT_CONFIG.backgroundKey];
+    for (const backgroundKey of keys) {
+      for (const lightingModel of LIGHTING_MODELS) {
+        for (const paletteLimit of PALETTE_LIMITS) {
+          for (const surfaceDetail of SURFACE_DETAILS) {
+            combinations.push({
+              where: `${renderStyle} ${outlineStyle} ${lightingModel} ${paletteLimit} ${surfaceDetail} ${backgroundKey}`,
+              lines: linesOf({
+                ...DEFAULT_OUTPUT_CONFIG,
+                renderStyle,
+                outlineStyle,
+                lightingModel,
+                paletteLimit,
+                surfaceDetail,
+                backgroundKey,
+              }),
+            });
           }
         }
       }
     }
+  }
+  COMBINATIONS.set(renderStyle, combinations);
+  return combinations;
+}
 
+/** Whether a rule compares a line on this combination: its style phrase is stated, its line present. */
+function applies(rule: Rule, lines: Combination['lines']): boolean {
+  // A line the template dropped cannot contradict anything, except the lighting line a shaded style
+  // needs, which the rule's own `^$` names.
+  if (!rule.when.test(lines.style)) return false;
+  return lines[rule.line] !== '' || rule.forbids.test('');
+}
+
+describe('section 2 of every stored style combination', () => {
+  it.each(RENDER_STYLES)('states no line that contradicts the %s style beside it', (renderStyle) => {
+    const failures: string[] = [];
+    for (const { where, lines } of combinationsOf(renderStyle)) {
+      for (const rule of RULES) {
+        const stated = lines[rule.line];
+        if (applies(rule, lines) && rule.forbids.test(stated)) {
+          failures.push(`${rule.name}: ${where} — “${stated}”`);
+        }
+      }
+    }
     expect(failures.slice(0, 20)).toEqual([]);
-    for (const rule of RULES) expect(applied.get(rule.name) ?? 0, rule.name).toBeGreaterThan(0);
   });
+
+  it.each(RULES.map((rule) => [rule.name, rule] as const))(
+    'compares a line under the rule %s somewhere',
+    (_name, rule) => {
+      // A rule whose phrase no style states any more, or whose line is always dropped, would pass the
+      // cases above by never running, so each has to have compared at least once.
+      const compared = RENDER_STYLES.some((renderStyle) =>
+        combinationsOf(renderStyle).some(({ lines }) => applies(rule, lines)),
+      );
+      expect(compared).toBe(true);
+    },
+  );
 });
 
 /**

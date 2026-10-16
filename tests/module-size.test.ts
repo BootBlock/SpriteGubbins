@@ -54,6 +54,8 @@ const DECLARATION_PATHS = [
   'src/constants/presets/',
   // What a sheet contains, keyed by category and mode.
   'src/constants/sheetPlans/',
+  // The icon catalogue: every entry's role and its look in each of five families of world.
+  'src/constants/iconCatalogue/',
   // The named looks a style reference may cite.
   'src/constants/styleReferences/',
   // The prompt skeleton, mirrored character for character into the baseline document.

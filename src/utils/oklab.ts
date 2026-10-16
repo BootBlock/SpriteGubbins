@@ -73,9 +73,10 @@ for (let byte = 0; byte < 256; byte += 1) {
  * The linear light one sRGB byte carries, from the table above.
  *
  * The accessor rather than the array, because the array is indexed in the hot paths inside this
- * file and reached from outside it exactly once — {@link linearToByte}'s partner, for the mix in
- * `coverageBlend.ts`. Handing out the `Float64Array` would hand out something a caller could write
- * to, and every read of it would need the `?? 0` that the indexed-access rule demands.
+ * file and reached from outside it twice — {@link linearToByte}'s partner, for the mix in
+ * `coverageBlend.ts`, and the per-channel fraction `ditherChannelDepth.ts` tabulates. Handing out
+ * the `Float64Array` would hand out something a caller could write to, and every read of it would
+ * need the `?? 0` that the indexed-access rule demands.
  *
  * Off the end of the table is `0`, which is the same answer an out-of-range channel gets from every
  * other reader in this file — a fractional or negative channel is a caller error, not a colour.

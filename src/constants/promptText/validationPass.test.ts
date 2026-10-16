@@ -44,7 +44,7 @@ describe('VALIDATION_PASS_TEXT', () => {
 
       expect(pass.text, style).toContain('validation pass');
       expect(pass.text, style).toContain(
-        'the subject definition above names a colour, a material or a finish',
+        'the subject definition above names a colour, a material or a finish, or an entry of the',
       );
       expect(pass.text, style).toContain('this pass supersedes');
     }

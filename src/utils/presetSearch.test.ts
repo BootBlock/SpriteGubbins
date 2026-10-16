@@ -133,3 +133,12 @@ describe('countByCollection', () => {
     expect([...counts.entries()]).toEqual([['BUILDING', 1]]);
   });
 });
+
+describe('matching an icon set by the icons it holds', () => {
+  it('finds a preset by the role of an icon its roster ticks', () => {
+    // Neither phrase is in any preset's name, description or fields; only the rosters hold those roles.
+    // The looks are not searched — a preset is found by what its icons are for.
+    expect(namesFor('ability-resource restorative')).toContain('Cyberpunk Action Bar — Consumables');
+    expect(namesFor('quest log')).toContain('Flat System Button Set');
+  });
+});

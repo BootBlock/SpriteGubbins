@@ -45,7 +45,7 @@ export const PRESET_ACTION_TOOLTIPS = {
     'The sentence this preset carries under its name on the Projects tab. Leaving it empty is fine, because the row names the subject and the setting instead. Enter saves both boxes and Escape abandons the edit; neither the stored configuration nor the studio is affected.',
 
   confirmDetails:
-    'Stores the name and the description together. It is refused if another of your presets already uses that name, and the boxes stay open so you can pick a different one. The configuration behind the preset is not touched either way.',
+    'Stores the name and the description together. It is refused if another preset in this project already uses that name, and the boxes stay open so you can pick a different one. The configuration behind the preset is not touched either way.',
 
   confirmDeletePreset:
     'Deletes this preset for good. **There is no undo**, and no other copy of it unless you have exported your library. The configuration currently in the studio is untouched either way.',

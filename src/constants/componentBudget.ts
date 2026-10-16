@@ -1,3 +1,5 @@
+import { PRACTICAL_COMPONENT_CEILING } from './promptText/inventory.ts';
+
 /**
  * The cap the user puts on how many components one generation may be asked for.
  *
@@ -26,3 +28,11 @@ export const NO_COMPONENT_BUDGET = 0;
  * has to be comfortably past it.
  */
 export const COMPONENT_BUDGET_RANGE = { min: NO_COMPONENT_BUDGET, max: 999 } as const;
+
+/**
+ * Why the over-budget notice is worth heeding, shown under its headline in `ComponentBudgetNotice`.
+ *
+ * Here rather than in the component because it states `PRACTICAL_COMPONENT_CEILING`, and a figure
+ * typed into the markup would go on stating the old one after the ceiling moved.
+ */
+export const OVER_BUDGET_EXPLANATION = `Current models deliver about ${String(PRACTICAL_COMPONENT_CEILING)} components before they start merging or dropping pieces, and they do not reliably count their own output — so the sheet comes back a plausible subset rather than short in an obvious way. Choose lighter sheet contents, trim the additional anatomy, or raise the component budget if your target model can take it.`;

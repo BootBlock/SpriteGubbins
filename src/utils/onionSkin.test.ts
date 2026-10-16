@@ -29,7 +29,7 @@ function stripOf(lefts: readonly number[], drifts: readonly number[]): SpriteStr
     slot: { x: index * PITCH, y: 0 },
     snapped: false,
   }));
-  return { frames, pitch: { x: PITCH, y: 0 } };
+  return { frames, pitch: PITCH };
 }
 
 /** The alpha of one pixel of the stack. */
@@ -71,7 +71,7 @@ describe('onionSkin', () => {
       slot: { x: index * PITCH, y: 0 },
       snapped: index === 2,
     }));
-    const stacked = onionSkin(settled, [{ frames, pitch: { x: PITCH, y: 0 } }]);
+    const stacked = onionSkin(settled, [{ frames, pitch: PITCH }]);
 
     for (let x = 2; x < 2 + SIDE; x += 1) {
       expect(alphaAtPixel(stacked, x, 3)).toBe(FULLY_OPAQUE);

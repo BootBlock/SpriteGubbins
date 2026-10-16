@@ -113,22 +113,28 @@ describe('crisp art with stray pixels', () => {
 
     for (const options of straySheets()) {
       const image = spottedGrid(options);
+      // On every sheet here an adopted grid is the art's own or one dividing it, so it is one of the
+      // typed grids below as well: reduced once and compared under both names, not reduced twice.
+      const reductions = new Map<PixelGrid, ImageData>();
+      const reduced = (grid: PixelGrid): ImageData => {
+        const cached = reductions.get(grid) ?? reduce(image, grid);
+        reductions.set(grid, cached);
+        return cached;
+      };
       const where = `drawn at ${String(options.grid)}, inset ${String(options.inset)}, strays at (${String(options.stray?.x)}, ${String(options.stray?.y)})`;
 
       const inForce = gridInForce(null, { scale: measureSheetScale(image), colors: countColors(image) });
       if (inForce !== null) {
         adopted += 1;
         expect(
-          sameImage(reduce(image, inForce), clean(options, inForce)),
+          sameImage(reduced(inForce), clean(options, inForce)),
           `${where}, adopted ${String(inForce)}`,
         ).toBe(true);
       }
 
       for (const grid of divisors(options.grid ?? 4)) {
         typed += 1;
-        expect(sameImage(reduce(image, grid), clean(options, grid)), `${where}, typed ${String(grid)}`).toBe(
-          true,
-        );
+        expect(sameImage(reduced(grid), clean(options, grid)), `${where}, typed ${String(grid)}`).toBe(true);
       }
     }
 

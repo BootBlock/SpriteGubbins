@@ -60,7 +60,7 @@ body:
     attributes:
       label: App version
       description: The version shown in the About section of the Architecture tab.
-      placeholder: 0.13.0
+      placeholder: 0.14.0
     validations:
       required: true
 

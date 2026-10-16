@@ -22,7 +22,7 @@ interface ArchetypeShape {
    * title and the search matches on.
    *
    * A name says what a preset is *of* and the specs line says what its sheet *is*; neither says why
-   * anyone would reach for it, which is the question a library of seventy answers badly. Every
+   * anyone would reach for it, which is the question a library this size answers badly. Every
    * built-in ships one, and `presets.test.ts` fails a built-in that does not.
    *
    * Empty is a legitimate value and only a user's own preset may hold it: the box is optional when

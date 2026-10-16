@@ -23,7 +23,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
     category: 'ITEM',
     subject: {
       species: 'Melee Weapon (Sword/Axe)',
-      gender: 'Legendary / Artifact',
+      gender: 'Legendary / Artefact',
       age: 'Pristine Forge Condition',
       role: 'Primary Offensive Weapon',
       setting: 'High Fantasy Magic',
@@ -60,7 +60,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
     subject: {
       species: 'Ranged Weapon (Rifle/Bow)',
       gender: 'Crafted Masterwork',
-      age: 'Freshly Synthesized',
+      age: 'Freshly Synthesised',
       role: 'Primary Offensive Weapon',
       setting: 'Sci-Fi Energy Weapon',
       build: 'Medium Dual-Wield',

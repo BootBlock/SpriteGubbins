@@ -2,9 +2,10 @@ import type { PromptHistoryLog } from '../types/history.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 
 /**
- * The four collections in the writing direction: a domain object as the `snake_case` row shape the
+ * The five collections in the writing direction: a domain object as the `snake_case` row shape the
  * SQLite table uses.
  *
  * `rows.ts` is the reading direction and is *shared*, because a row has to be parsed identically
@@ -13,7 +14,7 @@ import type { QuantisePreset } from '../types/quantisePreset.ts';
  * inside the worker. They exist so the fallback writes rows the shared parsers can read — which is
  * what stops the two backends drifting in what they accept.
  *
- * **None of the three collections written by position writes `updated_at`, and that is a real
+ * **None of the four collections written by position writes `updated_at`, and that is a real
  * difference between the backends rather than an omission.** The column exists on the other side
  * because SQLite orders those collections with it; here the order *is* the array's, kept
  * newest-first by the caller's prepend, so a timestamp would be a number nothing reads. Writing one
@@ -47,7 +48,7 @@ export function toHistoryRow(log: PromptHistoryLog): Record<string, unknown> {
  * A project as a `projects` row.
  *
  * The one row here that writes its timestamps, where the file's note above says none of them does.
- * The exception is exactly the case that note describes: the other three are ordered by position in
+ * The exception is exactly the case that note describes: the other four are ordered by position in
  * the array, so a timestamp would be a number nothing reads — while a project's `updated_at` is
  * *content*, shown on its row and carried through a pack, and its `created_at` is the project's
  * age. Both are decided by the store when it writes the project, not stamped here, so rewriting the
@@ -84,5 +85,14 @@ export function toQuantisePresetRow(preset: QuantisePreset): Record<string, unkn
     name: preset.name,
     description: preset.description,
     dials_json: JSON.stringify(preset.dials),
+  };
+}
+
+/** An entry of a project's icon library as a `custom_icon_entries` row. */
+export function toCustomIconRow(icon: SavedCustomIcon): Record<string, unknown> {
+  return {
+    id: icon.id,
+    project_id: icon.projectId,
+    entry_json: JSON.stringify(icon.entry),
   };
 }

@@ -29,7 +29,7 @@ beforeEach(() => {
 
 describe('SubjectActions', () => {
   it('puts every field back to the category’s defaults, recording a step to undo it', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<SubjectActions />);
 
     await user.click(screen.getByRole('button', { name: /randomise/i }));
@@ -47,7 +47,7 @@ describe('SubjectActions', () => {
   });
 
   it('leaves the category where it is — Reset is not a category switch', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     useSubjectStore.setState({ category: 'VEHICLE', subject: defaultSubjectFor('VEHICLE') });
     useSubjectStore.getState().openStudio();
     render(<SubjectActions />);

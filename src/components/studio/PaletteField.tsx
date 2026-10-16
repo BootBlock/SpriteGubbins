@@ -1,10 +1,14 @@
 import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
 import { PALETTE_CHOICES } from '../../constants/palettes/index.ts';
+import { palettesFor } from '../../constants/palettesFor.ts';
+import { paletteWithdrawal } from '../../constants/paletteWithdrawal.ts';
+import { usePinnedPalette } from '../../hooks/usePinnedPalette.ts';
+import { useResolvedPalette } from '../../hooks/useResolvedPalette.ts';
+import { useSheetSubject } from '../../hooks/useSheetSubject.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import type { Palette } from '../../types/palette.ts';
 import { channelLevels, channelSpaceSize } from '../../utils/channelLevels.ts';
 import { fixedPaletteColors } from '../../utils/paletteEntries.ts';
-import { pinnedPalette } from '../../utils/pinnedPalette.ts';
 import { ColorSwatch } from '../common/ColorSwatch.tsx';
 import { PaletteDownload } from '../common/PaletteDownload.tsx';
 import { SelectField } from '../common/SelectField.tsx';
@@ -32,13 +36,18 @@ import { CustomPaletteField } from './CustomPaletteField.tsx';
  * third of the three places this app settles an exact set of colours, and the only one that is
  * settled before any image exists — the other two are on the Quantise tab, where the same row is
  * offered by `PaletteExportControls`.
+ *
+ * **The choices are the ones the subject can take** (`palettesFor`), and the value is the stored one
+ * resolved through it, as `SheetFields` does for the background key. A tint mask takes only `FREE`
+ * (audit finding M1), so its list is that one option and the description says why, in place of the
+ * summary a pinned palette would show.
  */
 export function PaletteField() {
-  const palette = useOutputStore((state) => state.output.palette);
-  const customPalette = useOutputStore((state) => state.output.customPalette);
+  const subject = useSheetSubject();
+  const palette = useResolvedPalette();
   const setOutputField = useOutputStore((state) => state.setOutputField);
 
-  const pinned = pinnedPalette({ palette, customPalette });
+  const pinned = usePinnedPalette();
 
   return (
     <div>
@@ -46,8 +55,8 @@ export function PaletteField() {
         label="Palette"
         tooltip={OUTPUT_TOOLTIPS.palette}
         value={palette}
-        choices={PALETTE_CHOICES}
-        description={pinned === null ? '' : summarise(pinned)}
+        choices={PALETTE_CHOICES.filter((choice) => palettesFor(subject).includes(choice.value))}
+        description={pinned === null ? paletteWithdrawal(subject) : summarise(pinned)}
         onChange={(value) => {
           setOutputField('palette', value);
         }}
@@ -83,7 +92,7 @@ export function PaletteField() {
  *
  * It says "the colour budget" rather than "the colour budget *below*" because there is nothing below
  * once this text is on screen: `RenderStyleFields` withdraws that control on the same
- * `pinnedPalette(…) === null` this sentence hangs off, so the two are complementary by construction
+ * `usePinnedPalette() === null` this sentence hangs off, so the two are complementary by construction
  * rather than by coincidence — including for a `CUSTOM` palette with nothing loaded, where the
  * budget control stays and this sentence is absent.
  */

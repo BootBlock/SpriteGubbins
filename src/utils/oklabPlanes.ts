@@ -5,24 +5,13 @@ import { srgbToOklabInto } from './oklab.ts';
 export interface OklabPlanes {
   /** Lightness, 0 black to 255 white. */
   readonly L: Float64Array;
-  /** The green–red axis, offset so it is non-negative — see {@link CHROMA_OFFSET}. */
+  /** The green–red axis, about −80 to +71 across the sRGB gamut, 0 where a colour is neutral. */
   readonly a: Float64Array;
-  /** The blue–yellow axis, offset the same way. */
+  /** The blue–yellow axis, on the same footing. */
   readonly b: Float64Array;
   /** Coverage, 0 cleared to 255 opaque — the image's own alpha, in the colour planes' units. */
   readonly alpha: Float64Array;
 }
-
-/**
- * How far the two chroma axes are shifted to make them non-negative.
- *
- * On the app's scaled OKLab axes `a` and `b` run about −80 to +71 across the sRGB gamut, and the
- * readers built on these planes want channels that behave alike. 128 is the offset an 8-bit Lab
- * image conventionally stores those axes with, and it lands the whole gamut inside 48 to 199 —
- * comfortably within the 0–255 range the lightness axis already occupies, so one dynamic range
- * covers all four planes.
- */
-export const CHROMA_OFFSET = 128;
 
 /**
  * The lightness a cleared pixel's colour is read as: the middle of the axis.
@@ -81,8 +70,8 @@ export function oklabPlanes(image: ImageData): OklabPlanes {
     const opacity = coverage / 255;
     srgbToOklabInto(color, image.data[at] ?? 0, image.data[at + 1] ?? 0, image.data[at + 2] ?? 0);
     L[index] = CLEARED_LIGHTNESS + (color.L - CLEARED_LIGHTNESS) * opacity;
-    a[index] = CHROMA_OFFSET + color.a * opacity;
-    b[index] = CHROMA_OFFSET + color.b * opacity;
+    a[index] = color.a * opacity;
+    b[index] = color.b * opacity;
     alpha[index] = coverage;
   }
 

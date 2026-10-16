@@ -242,16 +242,28 @@ describe('a subject with no facing is one sheet per plan, whatever set the confi
   });
 
   it.each(UNTURNABLE)('%s asks for no yaw it does not have', (category) => {
-    const runs = sheetRuns(category, defaultSubjectFor(category), TURNED);
-    expect(runs).toHaveLength(seriesLength(category));
+    // The category's own default subject, so ICON compiles its starter roster's icon sheets as well
+    // as the overlay sheet — and the series is measured with that same subject.
+    const subject = defaultSubjectFor(category);
+    const runs = sheetRuns(category, subject, TURNED);
+    expect(runs).toHaveLength(
+      sheetSeriesFor(category, subject, TURNED.directionalMode, TURNED.directions).length,
+    );
 
     for (const run of runs) {
       // The two lines the report quotes, and their replacements. `object yaw 0°` is the whole point:
       // section 3 states the rotation as a figure, so a facing the subject cannot take is not a
       // wording problem but a number the generator will act on. Every sheet of the series is checked,
       // because each is compiled from its own copy of the specification.
-      expect(run.promptText).toContain('Directions required: Front');
-      expect(run.promptText).toContain('object yaw 0°');
+      // ICON's sheets state no yaw at all: each icon is posed for its own read beneath a shared camera,
+      // and the overlay pieces lie flat (`SheetPlan.orientation`).
+      if (category === 'ICON') {
+        expect(run.promptText).not.toContain('Directions required');
+        expect(run.promptText).not.toContain('object yaw 0°');
+      } else {
+        expect(run.promptText).toContain('Directions required: Front');
+        expect(run.promptText).toContain('object yaw 0°');
+      }
       expect(run.promptText).not.toContain('Front-three-quarter');
       expect(run.promptText).not.toContain('object yaw 45°');
     }

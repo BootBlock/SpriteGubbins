@@ -79,7 +79,7 @@ export function ComparisonToolbar({
             onChange={onModeChange}
             unavailable={
               resultImage === null
-                ? { values: RESULT_PREVIEW_MODES, reason: RESULT_PREVIEW_MODES_UNAVAILABLE }
+                ? [{ values: RESULT_PREVIEW_MODES, reason: RESULT_PREVIEW_MODES_UNAVAILABLE }]
                 : undefined
             }
           />

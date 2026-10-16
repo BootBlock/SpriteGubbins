@@ -9,6 +9,7 @@ import { PWAInstallBanner } from './components/layout/PWAInstallBanner.tsx';
 import { SkipLink } from './components/layout/SkipLink.tsx';
 import { APP_TAB_CHOICE_BY_ID } from './constants/ui.ts';
 import { useFileDropGuard } from './hooks/useFileDropGuard.ts';
+import { useCustomIconLibraryStore } from './stores/useCustomIconLibraryStore.ts';
 import { useProjectStore } from './stores/useProjectStore.ts';
 import { usePresetStore } from './stores/usePresetStore.ts';
 import { useQuantisePresetStore } from './stores/useQuantisePresetStore.ts';
@@ -62,6 +63,7 @@ export function App() {
   const fetchSettings = useSettingsStore((state) => state.fetchSettings);
   const restoreSession = useSessionStore((state) => state.restoreSession);
   const fetchQuantisePresets = useQuantisePresetStore((state) => state.fetchQuantisePresets);
+  const fetchCustomIcons = useCustomIconLibraryStore((state) => state.fetchCustomIcons);
 
   // Refuse a file, or a link, dropped anywhere in the page that can make no use of it, which is
   // otherwise a navigation away from the app and the loss of everything the Quantise tab holds. A
@@ -89,10 +91,10 @@ export function App() {
     void fetchCustomPresets();
   }, [fetchCustomPresets]);
 
-  // …and the projects both collections are filed under, which also makes the Default project on an
-  // install that has none. It is fetched here rather than by the Projects tab for the reason the
-  // two collections are: the save panels in the Studio and the Quantise tab both offer the list, so
-  // it has to be loaded whether or not that tab has ever been opened.
+  // …and the projects the saved collections are filed under, which also makes the Default project on
+  // an install that has none. It is fetched here rather than by the Projects tab for the reason the
+  // collections are: the save panels in the Studio and the Quantise tab and the icon catalogue's
+  // library all offer the list, so it has to be loaded whether or not that tab has ever been opened.
   useEffect(() => {
     void fetchProjects();
   }, [fetchProjects]);
@@ -103,6 +105,12 @@ export function App() {
   useEffect(() => {
     void fetchQuantisePresets();
   }, [fetchQuantisePresets]);
+
+  // …and each project's library of icons of the reader's own, for the reason the quantiser's
+  // collection is fetched here: the catalogue dialog reads it, and the Projects view counts it.
+  useEffect(() => {
+    void fetchCustomIcons();
+  }, [fetchCustomIcons]);
 
   // …and the interface preferences, which also decide which view this lands on. The app is on the
   // studio until this resolves — opening a database is a worker, a WebAssembly module and an OPFS

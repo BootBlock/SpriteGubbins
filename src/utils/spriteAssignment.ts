@@ -1,3 +1,4 @@
+import type { CellLattice } from '../types/cellLattice.ts';
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { AssignedSprite, SpriteAssignment, SpriteEdit } from '../types/spriteAssignment.ts';
 import { namePieces } from './pieceNames.ts';
@@ -15,14 +16,19 @@ import { spritePin } from './spritePin.ts';
  * coincidence of two copies on exactly the pair this issue was about — the same argument
  * `useSheetIdentity` makes for being a hook rather than two store reads.
  *
+ * **A placement sheet's cells come first** (`lattice`, from `cellLattice`): the fragments of one cell
+ * are one piece, the pieces come in cell order, and each is named for its cell. A lattice that could
+ * not be read groups nothing, and the cut it would have placed is refused where it is written.
+ *
  * Pure, as everything in this directory is; `useSpriteAssignment` is the React half that feeds it.
  */
 export function resolveAssignment(
   boxes: readonly SpriteBox[],
   edits: readonly SpriteEdit[],
   inventory: readonly string[],
+  lattice: CellLattice | null,
 ): SpriteAssignment {
-  const shaped = shapeSheet(boxes, edits);
+  const shaped = shapeSheet(boxes, edits, lattice?.kind === 'CELLS' ? lattice.cellOf : null);
   const named = namePieces(shaped.pieces, inventory);
 
   // Which sprite leads each piece, so the preview knows which one carries the name and the others

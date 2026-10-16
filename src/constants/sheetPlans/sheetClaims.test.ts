@@ -53,13 +53,18 @@ import { TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
  * the wording itself, where these sweeps can only say what it must not name.
  */
 
-/** Every distinct sheet a category can be asked for, once each — the plans told apart by their names. */
+/**
+ * Every distinct sheet a category can be asked for, once each — the plans told apart by their names and
+ * by the claims this suite reads, since ICON's sheets keep their names under both looks and change their
+ * class and assembly sentence with it.
+ */
 function sheetsOf(category: SubjectCategory): readonly SheetPlan[] {
-  const byName = new Map<string, SheetPlan>();
+  const byClaims = new Map<string, SheetPlan>();
   for (const plan of everySheetOf(category)) {
-    if (!byName.has(plan.name)) byName.set(plan.name, plan);
+    const key = JSON.stringify([plan.name, plan.componentClass, plan.assemblyFailure]);
+    if (!byClaims.has(key)) byClaims.set(key, plan);
   }
-  return [...byName.values()];
+  return [...byClaims.values()];
 }
 
 /**
@@ -147,6 +152,7 @@ function claimsOf(plan: SheetPlan): readonly (readonly [string, string])[] {
  *
  * `inventory` is what sits under the claims in a compiled prompt — the plan itself, or the plan as a
  * subject draws it — and each drawer is a plan paired with the words saying where its pieces are.
+ * Each drawer's piece words are read once, before the claims are walked, rather than once per word.
  */
 function unwrittenPieces(
   plan: SheetPlan,
@@ -154,10 +160,11 @@ function unwrittenPieces(
   drawers: readonly (readonly [string, SheetPlan])[],
 ): readonly string[] {
   const written = wordsOf(planProseFor(inventory));
+  const pieces = drawers.map(([where, other]) => [where, pieceWordsOf(other)] as const);
   return claimsOf(plan).flatMap(([claim, text]) =>
     [...new Set(wordsOf(text))].flatMap((word) => {
       if (written.some((writtenWord) => sameWord(word, writtenWord))) return [];
-      const drawer = drawers.find(([, other]) => pieceWordsOf(other).some((piece) => sameWord(word, piece)));
+      const drawer = pieces.find(([, named]) => named.some((piece) => sameWord(word, piece)));
       return drawer === undefined ? [] : [`“${word}” in its ${claim}, ${drawer[0]}`];
     }),
   );

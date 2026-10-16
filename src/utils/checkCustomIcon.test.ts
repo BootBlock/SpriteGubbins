@@ -1,0 +1,386 @@
+import { describe, expect, it, vi } from 'vitest';
+import { CUSTOM_ICON_REFUSALS } from '../constants/iconCatalogue/customIconRefusals.ts';
+import { ICON_CAPACITY_NOTICES } from '../constants/iconCatalogue/iconCapacityNotices.ts';
+import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
+import {
+  FAMILY,
+  LONGEST_CUSTOM_ICON,
+  RELIC,
+  RELIC_DRAFT,
+  SPELL,
+  TOGGLE,
+  customPick,
+} from '../test/customIcons.ts';
+import { customIconDraftOf } from './customIconDraftOf.ts';
+import type { CustomIconDraft, CustomIconField, CustomIconVariantDraft } from '../types/customIconDraft.ts';
+import { CUSTOM_ICON_FAMILY_SIZE } from '../constants/iconCatalogue/customIconLimits.ts';
+import { checkCustomIcon } from './checkCustomIcon.ts';
+
+// A capacity a few entries fill, so the refusal for a full set is reachable; the real figure is held by
+// the catalogue's own suite.
+vi.mock('../constants/iconCatalogue/iconSheetLimits.ts', async (original) => ({
+  ...(await original<typeof import('../constants/iconCatalogue/iconSheetLimits.ts')>()),
+  ICON_ROSTER_CAPACITY: 4,
+}));
+
+/** The fields a check refused, in the order it refused them. */
+function refusedFields(
+  draft: Partial<CustomIconDraft>,
+  picks = cataloguePicks(['heal-minor']),
+): CustomIconField[] {
+  return checkCustomIcon({ ...RELIC_DRAFT, ...draft }, picks, null, []).refusals.map(
+    (refusal) => refusal.field,
+  );
+}
+
+/** The messages a check refused with. */
+function messages(draft: Partial<CustomIconDraft>, picks = cataloguePicks(['heal-minor'])): string[] {
+  return checkCustomIcon({ ...RELIC_DRAFT, ...draft }, picks, null, []).refusals.map(
+    (refusal) => refusal.message,
+  );
+}
+
+describe('checkCustomIcon — what it accepts', () => {
+  it('makes the entry a draft describes, its slot name derived from the role', () => {
+    expect(checkCustomIcon(RELIC_DRAFT, cataloguePicks(['heal-minor']), null, [])).toEqual({
+      entry: RELIC,
+      refusals: [],
+    });
+  });
+
+  it('makes a spell with its school, a pair with its states as slugs, and a figure', () => {
+    expect(checkCustomIcon(customIconDraftOf(SPELL), [], null, []).entry).toEqual(SPELL);
+    const typed = { ...customIconDraftOf(TOGGLE), states: ['  Engaged ', 'IDLE'] as const };
+    expect(checkCustomIcon(typed, [], null, []).entry).toEqual(TOGGLE);
+    expect(checkCustomIcon({ ...RELIC_DRAFT, figure: true }, [], null, []).entry).toEqual({
+      ...RELIC,
+      figure: true,
+    });
+  });
+
+  it('collapses whitespace, line breaks included, and keeps the reader’s own punctuation', () => {
+    const { entry } = checkCustomIcon(
+      { ...RELIC_DRAFT, role: '  Nightcity’s   keycard ', look: 'a brass card,\n  “scorched” at one end' },
+      [],
+      null,
+      [],
+    );
+    expect(entry?.role).toBe('Nightcity’s keycard');
+    expect(entry?.id).toBe('nightcity-s-keycard');
+    expect(entry?.look).toBe('a brass card, “scorched” at one end');
+  });
+
+  it('takes off the punctuation a role or a look ends on, which the inventory line supplies', () => {
+    const { entry } = checkCustomIcon(
+      { ...RELIC_DRAFT, role: 'Nightcity keycard relic!', look: 'a brass card, scorched at one end. ;… ' },
+      [],
+      null,
+      [],
+    );
+    expect(entry?.role).toBe('Nightcity keycard relic');
+    expect(entry?.look).toBe('a brass card, scorched at one end');
+    expect(refusedFields({ look: ' . ' }, [])).toEqual(['look']);
+  });
+
+  it('accepts texts at their limits exactly', () => {
+    expect(refusedFields({ role: `R${'o'.repeat(47)}`, look: 'a'.repeat(200) }, [])).toEqual([]);
+    expect(refusedFields({ states: ['o'.repeat(24), 'off'] }, [])).toEqual([]);
+    expect(checkCustomIcon(customIconDraftOf(LONGEST_CUSTOM_ICON), [], null, []).entry).toEqual(
+      LONGEST_CUSTOM_ICON,
+    );
+  });
+
+  it('measures a changed entry as if the one it replaces were gone', () => {
+    const picks = [customPick(RELIC)];
+    expect(checkCustomIcon({ ...RELIC_DRAFT, look: 'a cracked card' }, picks, RELIC.id, []).entry?.look).toBe(
+      'a cracked card',
+    );
+    expect(refusedFields({}, picks)).toEqual(['role']);
+  });
+});
+
+describe('checkCustomIcon — what it refuses', () => {
+  it('refuses an empty role and look, and a role with no plain letter or digit', () => {
+    expect(messages({ role: '   ', look: '' })).toEqual([
+      CUSTOM_ICON_REFUSALS.roleEmpty,
+      CUSTOM_ICON_REFUSALS.lookEmpty,
+    ]);
+    expect(messages({ role: '¿¡ · ¿¡' })).toEqual([CUSTOM_ICON_REFUSALS.roleUnnamed]);
+  });
+
+  it('refuses a text past its limit, saying how long it is', () => {
+    expect(messages({ role: 'R'.repeat(49) })).toEqual([CUSTOM_ICON_REFUSALS.tooLong('role', 49)]);
+    expect(messages({ look: 'a'.repeat(201) })).toEqual([CUSTOM_ICON_REFUSALS.tooLong('look', 201)]);
+    expect(refusedFields({ states: ['o'.repeat(25), 'off'] })).toEqual(['firstState']);
+  });
+
+  it.each([
+    ['role', { role: 'Relic [SEC:X]' }],
+    ['look', { look: 'a relic [SEC:X]' }],
+    ['firstState', { states: ['[SEC:X]', 'off'] as const }],
+    ['secondState', { states: ['on', 'off]'] as const }],
+  ] as const)(
+    'refuses a square bracket in the %s, which the compiler would read as a citation',
+    (field, draft) => {
+      const found = checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null, []);
+      expect(found.entry).toBeNull();
+      expect(found.refusals.map((refusal) => refusal.field)).toContain(field);
+      expect(found.refusals.map((refusal) => refusal.message).join(' ')).toContain('square bracket');
+    },
+  );
+
+  it('refuses a state with no plain letter or digit, and two states of one name', () => {
+    expect(messages({ states: ['', '…'] })).toEqual([
+      CUSTOM_ICON_REFUSALS.stateEmpty('first'),
+      CUSTOM_ICON_REFUSALS.stateEmpty('second'),
+    ]);
+    expect(messages({ states: ['On', 'on!'] })).toEqual([CUSTOM_ICON_REFUSALS.sameStates]);
+  });
+
+  it('refuses a spell with no school, and a school on any other kind', () => {
+    expect(messages({ kind: 'SPELL', school: null })).toEqual([CUSTOM_ICON_REFUSALS.schoolMissing]);
+    expect(messages({ kind: 'ITEM', school: 'CRYO' })).toEqual([CUSTOM_ICON_REFUSALS.schoolStray]);
+  });
+
+  it.each([
+    ['a catalogue entry’s id', 'Heal minor', 'heal-minor', 'the catalogue’s “Minor healing consumable”'],
+    ['a catalogue pair’s drawing', 'System sound muted', 'system-sound-muted', 'the catalogue’s “Sound”'],
+    ['an overlay piece', 'Locked mark', 'locked-mark', 'a piece of the overlay sheets'],
+    ['an overlay piece’s drawing', 'Tier mark 2', 'tier-mark-2', 'a piece of the overlay sheets'],
+    [
+      'an entry of the reader’s own',
+      'Nightcity  keycard relic!',
+      'nightcity-keycard-relic',
+      'your own “Nightcity Keycard Relic”',
+    ],
+  ])('refuses a role whose slot name %s already answers to', (_what, role, slot, owner) => {
+    const found = messages({ role }, [customPick(RELIC)]);
+    expect(found).toHaveLength(1);
+    expect(found[0]).toContain(`\`${slot}\``);
+    expect(found[0]).toContain(owner);
+  });
+
+  it('refuses a pair whose drawing would take a slot something else answers to', () => {
+    // `cloak-field-engaged` is the toggle's first drawing, so an entry named that collides with it.
+    const found = messages({ role: 'Cloak field engaged' }, [customPick(TOGGLE)]);
+    expect(found[0]).toContain('`cloak-field-engaged`');
+    const pair = messages({ role: 'Cloak', states: ['field engaged', 'idle'] }, [
+      customPick({ ...RELIC, id: 'cloak-field-engaged' }),
+    ]);
+    expect(pair[0]).toContain('`cloak-field-engaged`');
+  });
+
+  it('refuses an entry the set has no room for, counting a pair twice', () => {
+    const full = cataloguePicks(['heal-minor', 'heal-major', 'mana-minor']);
+    expect(refusedFields({}, full)).toEqual([]);
+    expect(messages({ states: ['on', 'off'] }, full)).toEqual([ICON_CAPACITY_NOTICES.row(2, 1)]);
+    expect(refusedFields({}, [...full, ...cataloguePicks(['elixir'])])).toEqual(['set']);
+  });
+
+  it('reports every refusal at once, and makes no entry', () => {
+    const found = checkCustomIcon(
+      { ...RELIC_DRAFT, role: '', look: '[x]', kind: 'SPELL', school: null },
+      [],
+      null,
+      [],
+    );
+    expect(found.entry).toBeNull();
+    expect(found.refusals.map((refusal) => refusal.field)).toEqual(['look', 'role', 'school']);
+  });
+
+  it('refuses a change to an entry the roster no longer holds', () => {
+    const found = checkCustomIcon(RELIC_DRAFT, cataloguePicks(['heal-minor']), RELIC.id, []);
+    expect(found.entry).toBeNull();
+    expect(found.refusals).toEqual([{ field: 'set', message: CUSTOM_ICON_REFUSALS.gone }]);
+    // A catalogue pick of that name is not the entry being changed either.
+    expect(messages({}, cataloguePicks(['heal-minor']))).toEqual([]);
+  });
+
+  it.each([
+    ['role', { role: 'Arrow ×5' }],
+    ['role', { role: 'Arrow 5×' }],
+    ['role', { role: 'Arrow x5' }],
+    ['role', { role: 'Arrows X 10' }],
+    ['role', { role: '5x arrow bundle' }],
+    ['role', { role: 'Grid 3×3' }],
+    ['look', { look: 'bolt ×3 — fire' }],
+    ['look', { look: 'a quiver of arrows x 12' }],
+    ['firstState', { states: ['x2', 'off'] as const }],
+  ] as const)(
+    'refuses a count in the %s, which the sheet would read as that many drawings',
+    (field, draft) => {
+      const found = checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null, []);
+      expect(found.entry).toBeNull();
+      expect(found.refusals).toContainEqual({
+        field,
+        message: CUSTOM_ICON_REFUSALS.countMarker(field === 'firstState' ? 'state' : field),
+      });
+    },
+  );
+
+  it('refuses a state whose slug shows a count the text typed hides, so a reload reads it back', () => {
+    // The slug drops the accented letter, which leaves `x5`, and the slug is what is stored and checked
+    // again on every read.
+    for (const states of [
+      ['éx5', 'off'],
+      ['5xé', 'off'],
+    ] as const) {
+      const found = checkCustomIcon({ ...RELIC_DRAFT, states }, [], null, []);
+      expect(found.entry).toBeNull();
+      expect(found.refusals).toEqual([
+        { field: 'firstState', message: CUSTOM_ICON_REFUSALS.countMarker('state') },
+      ]);
+    }
+  });
+
+  it('refuses a role whose slot name shows a count the text typed hides', () => {
+    // `Éx5 relic` is the slot `x5-relic`, which the sheet's manifest and every reader of it name.
+    expect(messages({ role: 'Éx5 relic' }, [])).toEqual([CUSTOM_ICON_REFUSALS.countMarker('role')]);
+  });
+
+  it('reads back every entry it accepts as that same entry', () => {
+    const drafts = [
+      { ...RELIC_DRAFT, states: ['Engagé', 'idle'] as const },
+      { ...RELIC_DRAFT, states: ['  Field  ON ', 'off'] as const },
+      { ...RELIC_DRAFT, role: 'Hex 0x1F relic' },
+    ];
+    for (const draft of drafts) {
+      const { entry } = checkCustomIcon(draft, [], null, []);
+      expect(entry).not.toBeNull();
+      if (entry === null) continue;
+      expect(checkCustomIcon(customIconDraftOf(entry), [], null, []).entry).toEqual(entry);
+    }
+  });
+
+  it('lets an x inside a word or between numbers through, as no count', () => {
+    expect(refusedFields({ role: 'Hex 0x1F relic', look: 'a 4x4 crate on an axle, boxed' }, [])).toEqual([]);
+  });
+
+  it.each([
+    ['role', { role: 'Relic — fire' }, 'role'],
+    ['role', { role: 'Relic – fire' }, 'role'],
+    ['secondState', { states: ['on', 'off — dim'] as const }, 'state'],
+  ] as const)('refuses the line’s own dash in the %s', (field, draft, what) => {
+    expect(checkCustomIcon({ ...RELIC_DRAFT, ...draft }, [], null, []).refusals).toContainEqual({
+      field,
+      message: CUSTOM_ICON_REFUSALS.separator(what),
+    });
+  });
+
+  it('lets a dash through in the look, which the line closes on anyway', () => {
+    expect(refusedFields({ look: 'a keycard — scorched at one end' }, [])).toEqual([]);
+  });
+});
+
+/** A family of `count` members named `m1`, `m2` and on, none with a phrase. */
+function family(count: number): readonly CustomIconVariantDraft[] {
+  return Array.from({ length: count }, (_, index) => ({ name: `m${String(index + 1)}`, look: '' }));
+}
+
+describe('checkCustomIcon — a family of variants', () => {
+  it('makes the family a draft describes: names slugged, phrases closed, an empty phrase dropped', () => {
+    const typed = {
+      ...customIconDraftOf(FAMILY),
+      variants: [
+        { name: '  Small ', look: 'a thumb-length pen with one green cell.' },
+        { name: 'STANDARD', look: '   ' },
+        { name: 'large', look: 'a pistol-grip injector with three green cells' },
+      ],
+    };
+    expect(checkCustomIcon(typed, [], null, [])).toEqual({ entry: FAMILY, refusals: [] });
+    // And an entry already checked makes itself again, as a tick or a library save measures it.
+    expect(checkCustomIcon(customIconDraftOf(FAMILY), [], null, []).entry).toEqual(FAMILY);
+  });
+
+  it('refuses a family outside its size, at both ends', () => {
+    expect(refusedFields({ variants: family(CUSTOM_ICON_FAMILY_SIZE.fewest) }, [])).toEqual([]);
+    expect(refusedFields({ variants: family(CUSTOM_ICON_FAMILY_SIZE.most) }, [])).toEqual(['set']);
+    expect(messages({ variants: family(1) }, [])).toEqual([CUSTOM_ICON_REFUSALS.familySize(1)]);
+    expect(messages({ variants: family(CUSTOM_ICON_FAMILY_SIZE.most + 1) }, [])).toContain(
+      CUSTOM_ICON_REFUSALS.familySize(CUSTOM_ICON_FAMILY_SIZE.most + 1),
+    );
+  });
+
+  it('refuses a member with no name, and a second member of one name, beside that member', () => {
+    const found = checkCustomIcon(
+      {
+        ...RELIC_DRAFT,
+        variants: [
+          { name: 'Rare', look: '' },
+          { name: 'rare!', look: '' },
+          { name: '¿', look: '' },
+        ],
+      },
+      [],
+      null,
+      [],
+    ).refusals;
+    expect(found).toEqual([
+      { field: 'variantName1', message: CUSTOM_ICON_REFUSALS.sameVariants },
+      { field: 'variantName2', message: CUSTOM_ICON_REFUSALS.variantEmpty(3) },
+    ]);
+  });
+
+  it.each([
+    ['a semicolon', 'a vial; a cap', CUSTOM_ICON_REFUSALS.variantSemicolon],
+    ['the line’s dash', 'a vial — capped', CUSTOM_ICON_REFUSALS.separator('variantLook')],
+    ['a count', 'a vial x3', CUSTOM_ICON_REFUSALS.countMarker('variantLook')],
+    ['a bracket', 'a vial [SEC:X]', CUSTOM_ICON_REFUSALS.brackets('variantLook')],
+    ['too many characters', 'a'.repeat(81), CUSTOM_ICON_REFUSALS.tooLong('variantLook', 81)],
+  ])(
+    'refuses %s in a member’s look, which would move its words into the next member or the look',
+    (_what, look, message) => {
+      const found = checkCustomIcon(
+        {
+          ...RELIC_DRAFT,
+          variants: [
+            { name: 'small', look },
+            { name: 'large', look: '' },
+          ],
+        },
+        [],
+        null,
+        [],
+      ).refusals;
+      expect(found).toEqual([{ field: 'variantLook0', message }]);
+    },
+  );
+
+  it('refuses a member name whose slug alone shows a count, as a state’s is', () => {
+    expect(
+      refusedFields(
+        {
+          variants: [
+            { name: 'éx5', look: '' },
+            { name: 'large', look: '' },
+          ],
+        },
+        [],
+      ),
+    ).toEqual(['variantName0']);
+  });
+
+  it('refuses a pair and a family on one entry', () => {
+    expect(messages({ states: ['on', 'off'], variants: family(2) }, [])).toEqual([
+      CUSTOM_ICON_REFUSALS.statesAndVariants,
+    ]);
+  });
+
+  it('refuses a member whose sprite something else answers to, and a set with no room for every member', () => {
+    // `heal-minor` is a catalogue entry, so a family named `Heal` with a `minor` member collides with it.
+    const found = messages(
+      {
+        role: 'Heal',
+        variants: [
+          { name: 'minor', look: '' },
+          { name: 'huge', look: '' },
+        ],
+      },
+      [],
+    );
+    expect(found).toHaveLength(1);
+    expect(found[0]).toContain('`heal-minor`');
+    const two = cataloguePicks(['heal-minor', 'heal-major']);
+    expect(messages({ variants: family(3) }, two)).toEqual([ICON_CAPACITY_NOTICES.row(3, 2)]);
+  });
+});

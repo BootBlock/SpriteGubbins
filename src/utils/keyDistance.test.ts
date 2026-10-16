@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FRINGE_TOLERANCE_CEILING, KEY_TOLERANCES } from '../constants/quantiser.ts';
+import { FRINGE_TOLERANCE_CEILING, KEY_LATITUDE_FLOOR, KEY_TOLERANCES } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { fromHex } from './imageData.ts';
 import { carriesKeyTint, keyBasis, keyDistanceSquared } from './keyDistance.ts';
@@ -126,11 +126,30 @@ describe('keyDistance', () => {
     expect(distance(MAGENTA, washed)).toBeLessThan(straightDistance(MAGENTA, washed) / 1.9);
   });
 
-  it('keeps the latitude bounded, so the key’s plane is cheap rather than free', () => {
-    // Pure green lies *in* the magenta plane — both have red equal to blue — so nothing about the
-    // direction of the difference counts against it. It is still beyond every tolerance the control
-    // offers, because halving a very large distance leaves a large one.
-    expect(distance(MAGENTA, rgb('#00FF00'))).toBeGreaterThan(Math.max(...KEY_TOLERANCES));
+  it('gives no latitude to a colour without the key’s hue, however near the key’s plane it lies', () => {
+    // Greys lie in the plane, on its grey axis, and greens and teals on the far side of it. With the
+    // whole plane discounted each read about half its distance — mid grey 43 and this green 64 — so
+    // the top rung keyed them with the field. They carry none of the key's chroma, or less than none,
+    // so they are measured straight and survive every rung. Pure green is the far end: both it and
+    // magenta have red equal to blue, so it lies in the plane with almost nothing off it.
+    for (const hex of ['#808080', '#C0C0C0', '#282828', '#0A9B41', '#00415A', '#14B43C', '#00FF00']) {
+      const color = rgb(hex);
+      expect(distance(MAGENTA, color), hex).toBeCloseTo(straightDistance(MAGENTA, color), 9);
+      expect(distance(MAGENTA, color), hex).toBeGreaterThan(Math.max(...KEY_TOLERANCES));
+    }
+  });
+
+  it('discounts every field fixture, because each keeps well over the floor of the key’s hue', () => {
+    // The floor's own claim: a field the generator painted keeps 0.67 to 0.98 of the key's chroma
+    // along its hue, so the floor never reaches it and the separation above is the latitude's.
+    const key = srgbToOklab(MAGENTA.r, MAGENTA.g, MAGENTA.b);
+    const shares = FIELD.map(({ r, g, b }) => {
+      const color = srgbToOklab(r, g, b);
+      return (color.a * key.a + color.b * key.b) / (key.a * key.a + key.b * key.b);
+    });
+    expect(Math.min(...shares)).toBeCloseTo(0.67, 2);
+    expect(Math.max(...shares)).toBeCloseTo(0.98, 2);
+    expect(Math.min(...shares)).toBeGreaterThan(KEY_LATITUDE_FLOOR);
   });
 
   it('gives a key with no hue no latitude, so it is measured straight', () => {
@@ -144,12 +163,6 @@ describe('keyDistance', () => {
         expect(distance(key, rgb(sample))).toBeCloseTo(straightDistance(key, rgb(sample)), 9);
       }
     }
-
-    // Black is also the key with no direction of its own — scaling it toward black leaves it where it
-    // was — so it reaches that answer through a different guard than white does. Same answer, and
-    // neither divides by a zero-length vector on the way.
-    expect(keyBasis(BLACK)).toEqual(keyBasis({ ...BLACK }));
-    expect(distance(BLACK, BLACK)).toBe(0);
   });
 
   it('keeps the fringe ceiling between the halo it must take and the artwork it must not', () => {

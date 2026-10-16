@@ -2,6 +2,13 @@ import type { RenderStyleSurface } from '../../types/rendering.ts';
 import type { CategoryAssembly } from '../../types/subject.ts';
 
 /**
+ * What opens the block a front end takes in its own negative-prompt field, which the budget notice
+ * leaves out of what it measures: CLIP's window is the positive prompt's (audit finding T4,
+ * `promptFieldText`).
+ */
+export const STABLE_DIFFUSION_NEGATIVE_BLOCK = 'Negative prompt: ';
+
+/**
  * Stable Diffusion's negative block, weighted on the two failures that actually recur: assembling
  * the figure instead of exploding it, and adding shadows.
  *
@@ -66,6 +73,11 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * weight in the whole block naming a figure on sheets whose components are floor tiles and panel
  * frames. `CATEGORY_ASSEMBLY` holds each category's own assembled-whole failure; the weighting is
  * applied here rather than stored there, because it is this channel's convention and not Qwen's.
+ *
+ * **`gradient background` comes out on a sheet of full-bleed squares** (`ownBackdrop`), for the reason
+ * `wrapForModel`'s option gives: the term would be read over the backdrop each square carries. **So
+ * does `floor shadow`**, which on that sheet names the contact shadow a subject casts on the backdrop
+ * inside its square — a shadow the sheet asks for. `drop shadow`, cast outside the square, stays.
  */
 export function wrapForStableDiffusion(
   prompt: string,
@@ -73,6 +85,7 @@ export function wrapForStableDiffusion(
   limbsAreComponents: boolean,
   letteringIsAComponent: boolean,
   assembly: CategoryAssembly,
+  ownBackdrop: boolean,
 ): string {
   const negatives = [
     ...assembly.negatives.map((term) => `(${term}:1.3)`),
@@ -80,9 +93,9 @@ export function wrapForStableDiffusion(
     'watermark',
     'signature',
     ...(letteringIsAComponent ? [] : ['labels']),
-    'floor shadow',
+    ...(ownBackdrop ? [] : ['floor shadow']),
     'drop shadow',
-    'gradient background',
+    ...(ownBackdrop ? [] : ['gradient background']),
     'scene background',
     ...surface.negatives,
     'motion blur',
@@ -90,5 +103,5 @@ export function wrapForStableDiffusion(
     ...(limbsAreComponents ? ['extra limbs', 'merged limbs'] : []),
     'cropped',
   ];
-  return `${prompt}\n\nNegative prompt: ${negatives.join(', ')}`;
+  return `${prompt}\n\n${STABLE_DIFFUSION_NEGATIVE_BLOCK}${negatives.join(', ')}`;
 }

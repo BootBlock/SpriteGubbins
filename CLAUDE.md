@@ -36,7 +36,7 @@ for reading and merging only.
 
 ```bash
 git worktree add .claude/worktrees/<topic> -b worktree-<topic>
-# inside the tree: npm install, change it, run the gate, then
+# inside the tree: npm ci, change it, run the gate, then
 git status --short                  # every ?? line is work too
 git add -A && git diff --cached     # the secrets self-audit
 git commit -F <message-file>
@@ -130,6 +130,6 @@ npm run format
 ```
 
 All five run clean before a change lands. Drive a change with a runtime surface in a browser with
-the `verify` skill, then run `/auto-review high` over the diff and fix every confirmed finding. A
+the `verify` skill, then run `/auto-review medium` over the diff and fix every confirmed finding. A
 phase ships with the spec's status banner updated, and a plan's record under `docs/todo/` is never
 rewritten.

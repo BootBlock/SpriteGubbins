@@ -54,8 +54,8 @@ describe('sameTunedDials', () => {
 
 describe('withIncumbent', () => {
   it('puts the dials in force first, so a tie leaves every one of them alone', () => {
-    // `chooseByElbow` settles a tie on the earliest candidate, and this is what makes that mean
-    // "where the reader had it" rather than "wherever the ladder happens to start".
+    // `chooseByPrice` keeps the first candidate unless another beats it by the margin, and this is
+    // what makes that mean "where the reader had it" rather than "wherever the ladder happens to start".
     const settled: TunedDials = { ...DIALS, inkThreshold: 63 };
 
     const tried = withIncumbent([{ ...DIALS, inkThreshold: 16 }], settled);

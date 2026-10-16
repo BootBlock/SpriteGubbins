@@ -7,29 +7,32 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * instead. **The two tiers establish that separately**, and the reason is how firmly each is
  * documented rather than a page existing for only one of them.
  *
- * Black Forest Labs address negative prompts in **two** places. The tier-titled guide says it
- * outright — "FLUX.2 does not support negative prompts. Focus on describing what you want, not what
- * you don't want" — in a guide titled for [pro] and [max], whose Quick Reference addresses [flex] as
- * well. https://docs.bfl.ai/guides/prompting_guide_flux2
+ * Black Forest Labs say it outright in the tier-titled guide — "FLUX.2 does not support negative
+ * prompts. Focus on describing what you want, not what you don't want" — in a guide titled for [pro]
+ * and [max], whose Quick Reference addresses [flex] as well.
+ * https://docs.bfl.ai/guides/prompting_guide_flux2
  *
- * The second is the family-scoped FLUX Prompting Guide, which states that it "covers prompting for
- * the entire FLUX model family — FLUX.1, FLUX.1 Kontext and FLUX.2", and whose Technical Parameters
- * page opens a section headed *Working Without Negative Prompts* with "Most FLUX models do not
- * support negative prompts." The same page addresses an open weight by name: "On FLUX.2 [klein],
- * what you write is what you get — be descriptive."
- * https://docs.bfl.ai/guides/prompting_summary and
- * https://docs.bfl.ai/guides/prompting_unified_technical
+ * **The family-scoped FLUX Prompting Guide is now written for FLUX 3 Image, and keeps FLUX.2 in one
+ * section of its reference page.** This docblock quoted its scope as covering FLUX.1 to FLUX.2, a
+ * hedge about most FLUX models, and a line advising [klein] by name. As read on 16 October 2026 the
+ * summary opens "Prompt FLUX 3 Image with text, reference images, and optional bounding boxes", and
+ * its Technical Parameters page says "FLUX 3 Image has no negative prompt field." The Prompt
+ * Reference page lists "No negative prompts supported" under "FLUX.2 [pro] & [max]" — the hosted
+ * tier again — and says of "FLUX.2 [klein]" only "What you write is exactly what the model
+ * receives". What this wrapper does for FLUX 3 is issue #507.
+ * https://docs.bfl.ai/guides/prompting_summary,
+ * https://docs.bfl.ai/guides/prompting_unified_technical and
+ * https://docs.bfl.ai/guides/prompting_unified_reference
  *
- * **This docblock used to say that guide did not exist**, in the words "which advises no open weight
- * anywhere" and "the one vendor page that says it outright is written for the hosted one". Both are
- * false as those pages read today, and a negative claim about a live third-party page is the kind
- * that decays without anything here changing — a vendor adding a paragraph falsifies it silently.
+ * **Before that guide, this docblock said it did not exist**, in the words "which advises no open
+ * weight anywhere" and "the one vendor page that says it outright is written for the hosted one". A
+ * negative claim about a live third-party page decays without anything here changing, and the same
+ * guide has now shown the positive kind decays too.
  *
- * **The conclusion survives, and the argument is now the right one.** "Most FLUX models" is a hedge
- * rather than a statement about a named model, so it does not settle [dev] and [klein] — which is
- * why the reference implementation is still what does, and why the two tiers are still argued
- * apart. The CLI exposes no negative field, and classifier-free guidance runs its unconditional
- * branch on an empty prompt rather than on anything the caller supplies.
+ * **The open weights are argued from the code, and always were.** The guide never settled [dev]
+ * and [klein], so the reference implementation settles it, which is why the two tiers are
+ * argued apart. The CLI exposes no negative field, and classifier-free guidance runs its
+ * unconditional branch on an empty prompt rather than on anything the caller supplies.
  * https://github.com/black-forest-labs/flux2/blob/main/scripts/cli.py
  *
  * **It leads the prompt rather than trailing it, and that is a fix rather than a preference.** On
@@ -61,6 +64,12 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * form shadow is the shading that gives a component its volume — and it is `RENDERED_3D`'s and
  * `CLAY_RENDER`'s subject. The unqualified plural took both.
  *
+ * **On a sheet of full-bleed squares (`ownBackdrop`) it is "no drop shadow" instead**, because that
+ * sheet asks for the contact shadow each subject casts on the backdrop inside its square, which "no
+ * cast shadow" forbade. What it still forbids is a shadow outside the square, on the gutters, and a
+ * drop shadow is the name that shadow goes by. This sentence is the only statement of the ban the open
+ * weights read, so it is narrowed rather than dropped.
+ *
  * **`no text` is the sheet's too, and on one category it is the opposite of what the sheet needs.**
  * A glyph set's components *are* lettering, so the strongest position in the strongest sentence this
  * wrapper writes would be spent negating the subject — and Flux has no negative channel to correct it
@@ -80,13 +89,15 @@ export function wrapForFlux(
   surface: RenderStyleSurface,
   letteringIsAComponent: boolean,
   assembly: CategoryAssembly,
+  ownBackdrop: boolean,
 ): string {
   // Two clauses take `and`, three take a serial comma before it. Interpolating the middle clause on
   // its own left the two-clause form reading "no cast shadow, and …", which is the one category this
   // branch is for — so the whole closing run is written per shape rather than patched in the middle.
+  const shadow = ownBackdrop ? 'no drop shadow' : 'no cast shadow';
   const closing = letteringIsAComponent
-    ? `no cast shadow and ${assembly.statement}`
-    : `no cast shadow, no text, and ${assembly.statement}`;
+    ? `${shadow} and ${assembly.statement}`
+    : `${shadow}, no text, and ${assembly.statement}`;
   return `The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with ${closing}. Every part is drawn ${surface.statement}.
 
 ${prompt}`;

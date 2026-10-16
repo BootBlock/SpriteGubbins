@@ -114,16 +114,22 @@ describe('detectPixelGrid', () => {
     }
   });
 
-  it('still refuses an interior stray feature, phase search or none', () => {
-    // The guard the phase search could have weakened, asserted where it holds: a one-pixel line in
-    // the sheet's interior is two transition columns one pixel apart — where it starts and where it
-    // ends — and no phase class of any scale of 2 or more contains both. The corner-anchored version
-    // of this test lives above; this one moves the line to a position that is *not* a multiple of
-    // anything convenient, which is exactly where a phase would have found it.
-    const flat = { r: 40, g: 40, b: 40, a: 255 };
-    const mark = { r: 200, g: 10, b: 10, a: 255 };
-    expect(detectPixelGrid(imageFrom(256, 256, (x) => (x === 97 ? mark : flat)))).toBeNull();
-  });
+  it.each([97, 100])(
+    'refuses a one-pixel stray line at column %i, whatever phase or raised ceiling admits',
+    (column) => {
+      // The guard the phase search and the raised ceiling could each have weakened, asserted where it
+      // holds: a one-pixel line in the sheet's interior is two transition columns one pixel apart —
+      // where it starts and where it ends — and no phase class of any scale of 2 or more contains
+      // both, so no candidate accounts for nine tenths of this sheet however coarse the image's own
+      // ceiling lets it look. Column 97 is *not* a multiple of anything convenient, which is exactly
+      // where a phase would have found it. (A line touching the far edge has no end inside the
+      // image, and is the case below: the one line it does change on sits in the end band every mesh
+      // coarser than 2 folds away.)
+      const flat = { r: 40, g: 40, b: 40, a: 255 };
+      const mark = { r: 200, g: 10, b: 10, a: 255 };
+      expect(detectPixelGrid(imageFrom(256, 256, (x) => (x === column ? mark : flat)))).toBeNull();
+    },
+  );
 
   it('measures a sprite-scale sheet, past the old fixed ceiling', () => {
     // One 16 × 16 sprite filling a 1024-pixel canvas is a grid of 64. Under a fixed ceiling of 32
@@ -149,17 +155,6 @@ describe('detectPixelGrid', () => {
       (x + y) % 2 === 0 ? { r: 30, g: 200, b: 90, a: 255 } : { r: 220, g: 60, b: 40, a: 255 },
     );
     expect(detectPixelGrid(upscaleNearest(twoCells, 512))).toBe(256);
-  });
-
-  it('refuses a stray feature whatever candidates the raised ceiling admits', () => {
-    // A one-pixel line in the sheet's interior is two transition columns — where it starts and
-    // where it ends — and no lattice holds both, so no candidate accounts for nine tenths of this
-    // sheet however coarse the image's own ceiling lets it look. (A line touching the far edge has
-    // no end inside the image, and is the case below: the one line it does change on sits in the end
-    // band every mesh coarser than 2 folds away.)
-    const flat = { r: 40, g: 40, b: 40, a: 255 };
-    const mark = { r: 200, g: 10, b: 10, a: 255 };
-    expect(detectPixelGrid(imageFrom(256, 256, (x) => (x === 100 ? mark : flat)))).toBeNull();
   });
 
   it('reads no scale off a band the mesh would fold into the cell beside it', () => {

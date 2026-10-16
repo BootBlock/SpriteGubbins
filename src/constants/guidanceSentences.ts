@@ -222,3 +222,30 @@ export const SAVED_WORK_SURVIVES_A_RELOAD =
  */
 export const MOVE_WAITS_FOR_THE_BUTTON =
   'Nothing moves until you press **Move**, so you can step through the list with the arrow keys first.';
+
+/**
+ * What a catalogue filter leaves alone, on the icon catalogue's search box and its school filter.
+ *
+ * Both hide rows and nothing else, and a reader who has just watched rows vanish needs to know their
+ * ticks did not go with them, so both say it in the same words because it is the same behaviour.
+ */
+export const FILTER_HIDES_ROWS_ONLY =
+  'It hides rows and nothing more: your ticks, the set and the prompt stay as they are.';
+
+/**
+ * What an undo does to an icon set's whole-set choices, on the look and the colour mode.
+ *
+ * Both rewrite every sheet of a set at once and both are one act on the studio's undo stack, so each
+ * card says so in the same words because it is the same behaviour.
+ */
+export const ROSTER_CHANGE_IS_ONE_UNDO_STEP = 'Each change is a step Undo can take back.';
+
+/**
+ * What a tint mask does to a damage school's colour, on the school filter and the school field of the
+ * reader's own icon.
+ *
+ * Both cards state that a school leads its icons with one colour, which a tint mask draws in grey (audit
+ * finding M1), so both say what becomes of it in the same words because it is the same behaviour.
+ */
+export const TINT_MASK_GREYS_THE_SCHOOL =
+  'On a tint mask, the sheet draws that colour as its lightness in grey, and your engine’s tint colours the icon.';

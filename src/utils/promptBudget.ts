@@ -1,3 +1,4 @@
+import { promptFieldText } from './promptFieldText.ts';
 import type { PromptBudgetFigure, TargetModelId } from '../types/output.ts';
 import { countWords, estimateTokens } from './promptMetrics.ts';
 import { promptBudgetFigureFor } from './targetCapabilities.ts';
@@ -63,7 +64,9 @@ export function readPromptBudget(prompt: string, target: TargetModelId): BudgetR
   const budget = promptBudgetFigureFor(target);
   if (budget === null) return null;
 
-  const used = MEASURES[budget.unit].count(prompt);
+  // What the target reads in its prompt field, less a block bound for a field of its own (audit
+  // finding T4).
+  const used = MEASURES[budget.unit].count(promptFieldText(prompt, target));
   return {
     budget,
     used,

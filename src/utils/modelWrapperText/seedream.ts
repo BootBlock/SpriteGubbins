@@ -1,3 +1,4 @@
+import type { ComponentOrientation } from '../../types/components.ts';
 import { citeSection } from '../templateEngine.ts';
 import type { SectionNumbers } from '../templateEngine.ts';
 
@@ -20,12 +21,26 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * statement of a number the prompt body already derives — and a misdirected citation would send the
  * whole precedence order to the wrong block. `sections` comes from the walk that numbered the
  * headings, so a section added before the contract moves both at once.
+ *
+ * **What it may never drop names the inventory, and names a direction only where the sheet states
+ * one** (audit finding T4). The list protected the count and not the entries it counts, so a sheet
+ * could keep sixteen cells and lose what each icon is; and “a component’s stated direction” is a
+ * yaw a sheet of icons posed for their own read, or of overlay pieces flat to the screen, never
+ * states. It reads the plan's `orientation`, as Sol's hand-off list does.
  */
-export function wrapForSeedream(prompt: string, sections: SectionNumbers): string {
+export function wrapForSeedream(
+  prompt: string,
+  sections: SectionNumbers,
+  orientation: ComponentOrientation,
+): string {
+  const direction =
+    orientation === 'SHEET_YAW'
+      ? ', the background, or a component’s stated direction'
+      : ' or the background';
   return `Plan the grid and the per-component cells before rendering: this is a layout brief, not a scene.
 It is longer than one image can hold every detail of. If anything must be dropped, keep the
 precedence order stated in section ${citeSection(sections, 'CONTRACT')} and drop surface detail first — never the component count,
-the background, or a component’s stated direction.
+the inventory in section ${citeSection(sections, 'INVENTORY')}${direction}.
 
 ${prompt}`;
 }
