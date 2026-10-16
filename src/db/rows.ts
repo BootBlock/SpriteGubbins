@@ -5,16 +5,12 @@ import type { SavedCustomIcon } from '../types/savedCustomIcon.ts';
 import type { CustomArchetype } from '../types/preset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
-import {
-  isSubjectCategory,
-  isTargetModelId,
-  parseImageConfig,
-  parseOutputConfig,
-  parseSubject,
-} from './configParsers.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
+import { TARGET_MODEL_IDS } from '../types/output.ts';
+import { isSubjectCategory, parseImageConfig, parseOutputConfig, parseSubject } from './configParsers.ts';
 import { parseCustomIconEntry } from './customIconEntryParser.ts';
 import { parseQuantiseDials } from './quantiseDialsParser.ts';
-import { isRecord, parseJson, readNumber, readString } from './readers.ts';
+import { isRecord, parseJson, pick, readNumber, readString } from './readers.ts';
 import { parseSession } from './sessionParser.ts';
 import { parseSettings } from './settingsParser.ts';
 
@@ -47,6 +43,13 @@ import { parseSettings } from './settingsParser.ts';
  * category's defaults — while rejecting the row would lose the prompt as well, which is the part
  * worth keeping.
  *
+ * `model_used` falls back to the default target on the same ground, as the payload's own
+ * `targetModel` does. It is a label on the prompt, so a target retired from `TARGET_MODEL_IDS` costs
+ * the entry its label and nothing else. On the fallback, rejecting the row would delete it for good,
+ * because the next write rewrites the collection from what this parser kept. The `category` is the
+ * one column of that kind still required: the subject payload is read against it, and an invented
+ * category would restore the entry's fields into another category's subject.
+ *
  * `parsePresetRow` requires the same two columns, and the difference is what is left without them:
  * a preset *is* its two payloads, where a history entry is a prompt that also records its studio
  * state.
@@ -59,10 +62,9 @@ export function parseHistoryRow(row: unknown): PromptHistoryLog | null {
   const createdAt = readNumber(row, 'created_at');
   const wordCount = readNumber(row, 'word_count');
   const category = row['category'];
-  const modelUsed = row['model_used'];
 
   if (id === null || promptText === null || createdAt === null || wordCount === null) return null;
-  if (!isSubjectCategory(category) || !isTargetModelId(modelUsed)) return null;
+  if (!isSubjectCategory(category)) return null;
 
   const subjectJson = readString(row, 'subject_json');
   const outputJson = readString(row, 'output_json');
@@ -73,7 +75,7 @@ export function parseHistoryRow(row: unknown): PromptHistoryLog | null {
     promptText,
     createdAt,
     wordCount,
-    modelUsed,
+    modelUsed: pick(row, 'model_used', DEFAULT_OUTPUT_CONFIG.targetModel, TARGET_MODEL_IDS),
     subject: parseSubject(subjectJson === null ? undefined : parseJson(subjectJson), category),
     output: parseOutputConfig(outputJson === null ? undefined : parseJson(outputJson)),
   };

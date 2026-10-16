@@ -129,6 +129,21 @@ describe('LocalStorageBackend — history', () => {
     expect(restored?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
   });
 
+  it('keeps a row whose target was retired, through the next write, under the default target', async () => {
+    // The next write rewrites the collection from what the parser kept, so a row rejected here
+    // would be deleted for good rather than hidden.
+    storage.setItem(
+      STORAGE_KEYS.promptHistory,
+      JSON.stringify([{ ...historyRowWithoutPayloads(), model_used: 'RETIRED_MODEL' }]),
+    );
+
+    await backend.addHistoryLog(log({ id: 'next', createdAt: 900 }));
+
+    const logs = await backend.listHistoryLogs();
+    expect(logs.map((entry) => entry.id)).toEqual(['next', 'bare-1']);
+    expect(logs[1]?.modelUsed).toBe(DEFAULT_OUTPUT_CONFIG.targetModel);
+  });
+
   it('returns logs newest first, whatever order they went in', async () => {
     await backend.addHistoryLog(log({ id: 'old', createdAt: 100 }));
     await backend.addHistoryLog(log({ id: 'new', createdAt: 300 }));
@@ -518,14 +533,6 @@ describe('LocalStorageBackend — hostile storage', () => {
           created_at: 1,
           word_count: 1,
           model_used: 'GENERIC',
-        },
-        {
-          id: 'bad-model',
-          category: 'CHARACTER',
-          prompt_text: 'x',
-          created_at: 1,
-          word_count: 1,
-          model_used: 'NOPE',
         },
         null,
       ]),

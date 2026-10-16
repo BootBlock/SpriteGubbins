@@ -23,7 +23,7 @@ import {
   SURFACE_DETAILS,
   TARGET_MODEL_IDS,
 } from '../types/output.ts';
-import type { ImageOutputConfig, OutputConfig, TargetModelId } from '../types/output.ts';
+import type { ImageOutputConfig, OutputConfig } from '../types/output.ts';
 import type { Direction, DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
@@ -47,10 +47,6 @@ import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './read
 
 export function isSubjectCategory(value: unknown): value is SubjectCategory {
   return typeof value === 'string' && SUBJECT_CATEGORIES.some((category) => category === value);
-}
-
-export function isTargetModelId(value: unknown): value is TargetModelId {
-  return typeof value === 'string' && TARGET_MODEL_IDS.some((id) => id === value);
 }
 
 /**

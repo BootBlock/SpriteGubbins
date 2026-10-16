@@ -215,3 +215,32 @@ describe('SqliteBackend — the icon roster', () => {
     });
   });
 });
+
+describe('SqliteBackend — history', () => {
+  it('keeps a history row whose target was retired, labelled with the default target', async () => {
+    // The rows stay in the table either way; rejecting this one would only hide the prompt.
+    const backend = await open();
+    const listing = backend.listHistoryLogs();
+    thread().answer({
+      id: thread().lastId('listHistoryLogs'),
+      ok: true,
+      value: [
+        {
+          id: 'retired-1',
+          category: 'CHARACTER',
+          prompt_text: 'A prompt composed for a retired target.',
+          created_at: 1,
+          word_count: 7,
+          model_used: 'RETIRED_MODEL',
+          subject_json: JSON.stringify(defaultSubjectFor('CHARACTER')),
+          output_json: JSON.stringify({ ...DEFAULT_OUTPUT_CONFIG, targetModel: 'RETIRED_MODEL' }),
+        },
+      ],
+    });
+
+    const [log] = await listing;
+    expect(log?.promptText).toBe('A prompt composed for a retired target.');
+    expect(log?.modelUsed).toBe(DEFAULT_OUTPUT_CONFIG.targetModel);
+    expect(log?.output.targetModel).toBe(DEFAULT_OUTPUT_CONFIG.targetModel);
+  });
+});
