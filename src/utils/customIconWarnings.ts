@@ -12,7 +12,7 @@ import {
   redCrossIn,
   wordNamed,
 } from '../constants/iconCatalogue/iconLookRules.ts';
-import { NEUTRAL_RARITY_TIER, RARITY_TIERS } from '../constants/iconCatalogue/rarityTiers.ts';
+import { RARITY_TIERS } from '../constants/iconCatalogue/rarityTiers.ts';
 import type { CustomIconDraft } from '../types/customIconDraft.ts';
 import type { BackgroundKey } from '../types/rendering.ts';
 import { expandShortHex } from './expandShortHex.ts';
@@ -42,9 +42,10 @@ import { keyReaches } from './keyReach.ts';
  * - **A red cross not called diagonal** (`redCrossIn`), which may be drawn as the protected emblem.
  * - **A person or part of one** on an entry not declaring `figure`.
  * - **A family member naming a rarity tier** while the set's *Rarity Tier* (`rarityTier`, the subject's
- *   value as it stands) is not the neutral one: that field draws every icon at one tier, so members told
+ *   value as it stands) is one of the field's tiers: that field draws every icon at that tier, so members told
  *   apart by tier would all be drawn at the set's. Only the members are read, since a role or a look
- *   naming a tier describes the one icon, and a tier the set states is no conflict for one icon.
+ *   naming a tier describes the one icon, and a tier the set states is no conflict for one icon. The
+ *   neutral choice, a cleared field and a typed value naming no tier state no tier, so they warn of none.
  *
  * The role, the look, the states and the members are all read, since all of them reach the inventory
  * line.
@@ -77,7 +78,7 @@ export function customIconWarnings(
   const figure = FIGURE_WORDS.exec(text)?.[0];
   if (!draft.figure && figure !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.figure(figure));
 
-  const tier = rarityTier === NEUTRAL_RARITY_TIER ? undefined : tierNamed(members.join(' '));
+  const tier = RARITY_TIERS.includes(rarityTier) ? tierNamed(members.join(' ')) : undefined;
   if (tier !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.rarityTier(tier, rarityTier));
 
   return warnings;

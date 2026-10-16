@@ -21,11 +21,10 @@ export const CUSTOM_ICON_LIMITS = {
 /**
  * How many members a family of the reader's own may have (`CustomIconEntry.variants`).
  *
- * **At least two**, since one member is a single icon. **At most half a sheet**, because a family is
- * kept on one sheet so its members are drawn side by side to one design: half a sheet leaves the
- * balanced cut room to place it, and keeps its one inventory line, each member's name and phrase
- * included, short enough to read as one icon's line. Eight covers a dose ladder and every rarity a game
- * names.
+ * **At least two**, since one member is a single icon. **At most half a sheet**, because a family is one
+ * inventory line that names every member with its phrase, and the line has to stay short enough to read
+ * as one design drawn in turn: eight members written to their limits already make it several times the
+ * longest catalogue line. Eight covers a dose ladder and the five tiers *Rarity Tier* offers.
  */
 export const CUSTOM_ICON_FAMILY_SIZE = {
   fewest: 2,

@@ -60,7 +60,7 @@ interface SelectFieldProps<T extends string | number> {
    *
    * Optional here where those two require it, for the reason `description` is: two of the app's
    * thirty-seven selects — the rig mode and the resolution profile — have a setting that takes their
-   * value over, and the other thirty-four passing a permanently-empty string would bury the two that do.
+   * value over, and the other thirty-five passing a permanently-empty string would bury the two that do.
    * The rig mode also carries its narrowing `description`, and the two say different things: this
    * one is the sheet taking the choice over, that one the sheet withdrawing an option from a choice
    * the reader still has.
@@ -106,9 +106,9 @@ interface SelectFieldProps<T extends string | number> {
 /**
  * A labelled dropdown over a closed set of choices.
  *
- * Thirty-six controls in this app are exactly this — the studio's output settings, the category, the
+ * Thirty-seven controls in this app are exactly this — the studio's output settings, the category, the
  * target model, the quantiser's dials, the atlas calculator's two, the settings dialog's one, the icon
- * catalogue's kind and school filters, and the kind and school of an icon of the reader's own — so it
+ * catalogue's kind and school filters, and the kind, school and shape of an icon of the reader's own — so it
  * is one component rather than thirty-seven copies of the same label, tooltip and `<select>` markup.
  *
  * A native `<select>` on purpose. It is keyboard-operable, type-to-select, and renders as the

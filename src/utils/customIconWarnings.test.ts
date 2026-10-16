@@ -132,8 +132,11 @@ describe('customIconWarnings', () => {
     expect(warn({ variants: TIERED }, 'MAGENTA_FF00FF', tier)).toEqual([
       CUSTOM_ICON_WARNING_TEXT.rarityTier('Common', tier),
     ]);
-    // The neutral emphasis leaves the tiers to the overlay marks, which is what such a family needs.
+    // The neutral emphasis leaves the tiers to the overlay marks, which is what such a family needs,
+    // and a cleared or typed value states no tier for a member to disagree with.
     expect(warn({ variants: TIERED })).toEqual([]);
+    expect(warn({ variants: TIERED }, 'MAGENTA_FF00FF', '')).toEqual([]);
+    expect(warn({ variants: TIERED }, 'MAGENTA_FF00FF', 'Battle-scarred')).toEqual([]);
     // A role naming a tier describes one icon, which a set-wide tier does not contradict.
     expect(warn({ role: 'Rare relic' }, 'MAGENTA_FF00FF', tier)).toEqual([]);
     // `uncommon` is not `common`.

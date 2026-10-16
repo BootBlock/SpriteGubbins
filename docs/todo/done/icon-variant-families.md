@@ -61,10 +61,11 @@ tiers are read from the field's own pool (`rarityTiers.ts`), not written again.
 
 ### 2.4 Size: two to eight
 
-At least two, since one member is a single icon. At most half a sheet (`ICONS_PER_SHEET / 2`), so
-the balanced cut has room to place the family whole and its one line stays readable as one icon's
-line with every member's name and phrase in it. Eight covers a dose ladder and every rarity a game
-names. A member's name is held to a state's 24 characters, since it ends a file name, and its phrase
+At least two, since one member is a single icon. At most half a sheet (`ICONS_PER_SHEET / 2`),
+because the family is one inventory line naming every member with its phrase, and that line has to
+stay readable as one design drawn in turn. The balanced cut never splits a line, so any family up to
+a sheet would stay whole; the cap is about the line, not the cut. Eight covers a dose ladder and the
+five tiers *Rarity Tier* offers. A member's name is held to a state's 24 characters, since it ends a file name, and its phrase
 to 80, since the shared look says the rest.
 
 ### 2.5 The form

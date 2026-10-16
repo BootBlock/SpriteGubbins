@@ -31,7 +31,7 @@ interface CustomIconFormProps {
 }
 
 /**
- * The form for an icon of the reader's own: its role, kind, school, figure, states and look, checked as
+ * The form for an icon of the reader's own: its role, kind, school, figure, shape and look, checked as
  * typed against the roster it will join and the chosen project's library it is saved to.
  *
  * **One check for the form and the stores** (`checkCustomIcon`): the refusals beside each field are the

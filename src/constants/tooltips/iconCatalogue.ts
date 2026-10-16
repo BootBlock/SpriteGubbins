@@ -36,7 +36,7 @@ export const ICON_CATALOGUE_ACTION_TOOLTIPS = {
   addVariant:
     'Adds another member to the end of the family, drawn after the rest. It needs a name of its own, which ends its sprite’s slot name, and each member counts as one more of the set’s components.',
 
-  addVariantAtMost: `A family holds at most ${String(CUSTOM_ICON_FAMILY_SIZE.most)} variants, half a sheet, so it is drawn beside its siblings on one sheet. Remove one to add another, or write a second entry for the rest.`,
+  addVariantAtMost: `A family holds at most ${String(CUSTOM_ICON_FAMILY_SIZE.most)} variants, since the sheet names every member in one line. Remove one to add another, or write a second entry for the rest.`,
 
   removeVariant:
     'Takes this member out of the family, and the members after it move up one place. Nothing changes on your set until you save the form.',
@@ -47,7 +47,7 @@ export const ICON_CATALOGUE_ACTION_TOOLTIPS = {
     'Closes the form without changing your set or your library. Whatever you typed into it is discarded.',
 
   editOwn:
-    'Opens this icon in the form above the shelves, so you can change its role, kind, look or states. Saving changes your library’s copy and, where it is ticked, your set’s together. Nothing changes until you save.',
+    'Opens this icon in the form above the shelves, so you can change its role, kind, look, states or variants. Saving changes your library’s copy and, where it is ticked, your set’s together. Nothing changes until you save.',
 
   deleteOwn:
     'Deletes this icon from the chosen project’s library, after asking once. A ticked copy stays on your set, and every preset and history entry holding one keeps it, so no prompt you kept changes.',
