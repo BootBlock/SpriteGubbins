@@ -1,5 +1,6 @@
 import { COMPONENT_BUDGET_RANGE } from '../../constants/componentBudget.ts';
 import { backgroundKeysFor, resolveBackgroundKey } from '../../constants/backgroundKeysFor.ts';
+import { aspectRatioNote } from '../../constants/aspectRatioNote.ts';
 import { backgroundKeyNote } from '../../constants/backgroundKeyNote.ts';
 import { resolveAspectRatio } from '../../constants/categoryAspectRatios.ts';
 import {
@@ -48,6 +49,7 @@ export function SheetFields() {
   const subject = useSheetSubject();
   const category = useSubjectStore((state) => state.category);
   const backgroundKey = resolveBackgroundKey(subject, output.targetModel, output.backgroundKey);
+  const aspectRatio = resolveAspectRatio(category, output.aspectRatio);
 
   // Only the modes this subject can actually be drawn on. Offering the others is what put a
   // tileset's floors and walls one click away from a character, and a rig sheet one click away from
@@ -175,8 +177,9 @@ export function SheetFields() {
         tooltip={OUTPUT_TOOLTIPS.aspectRatio}
         // Resolved through the category, as the projection control resolves its camera: ICON's grid
         // is drawn on a square canvas alone, so a stored wide ratio shows as the canvas it compiles to.
-        value={resolveAspectRatio(category, output.aspectRatio)}
+        value={aspectRatio}
         choices={aspectRatioChoices(category)}
+        description={aspectRatioNote(output.targetModel, aspectRatio)}
         onChange={(value) => {
           setOutputField('aspectRatio', value);
         }}

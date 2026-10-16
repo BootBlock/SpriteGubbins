@@ -1,6 +1,7 @@
 import { TARGET_MODELS } from '../constants/models.ts';
 import type {
   AlphaDelivery,
+  CanvasDelivery,
   PromptBudget,
   PromptBudgetFigure,
   TargetCapabilities,
@@ -144,4 +145,12 @@ export function promptBudgetFigureFor(target: TargetModelId): PromptBudgetFigure
  */
 export function alphaDeliveryFor(target: TargetModelId): AlphaDelivery {
   return capabilitiesFor(target).alpha;
+}
+
+/**
+ * What decides the shape of the canvas this target returns — see {@link CanvasDelivery}. Read by the
+ * Aspect Ratio control's note, which states the size to request where the request decides it.
+ */
+export function canvasDeliveryFor(target: TargetModelId): CanvasDelivery {
+  return capabilitiesFor(target).canvas;
 }

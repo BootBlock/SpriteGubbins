@@ -1,5 +1,6 @@
 import type { TargetSize } from '../../types/output.ts';
 import type { DisplayReduction } from '../../utils/displayReduction.ts';
+import { greatestCommonDivisor } from '../../utils/greatestCommonDivisor.ts';
 
 /**
  * Section 2's *Smallest display size* line: how far each component is reduced to reach the size the game
@@ -59,8 +60,4 @@ function size({ width, height }: TargetSize): string {
 function fraction(part: number, whole: number): string {
   const divisor = greatestCommonDivisor(part, whole);
   return `${String(part / divisor)}/${String(whole / divisor)}`;
-}
-
-function greatestCommonDivisor(a: number, b: number): number {
-  return b === 0 ? a : greatestCommonDivisor(b, a % b);
 }

@@ -17,7 +17,7 @@ interface SelectFieldProps<T extends string | number> {
    * once what the list is missing — shown under the control and wired as its accessible description.
    *
    * Orthogonal to `tooltip`, which explains the field and reads the same whatever is chosen. Six of
-   * the ten call sites are selects whose options differ from each other in a way no single
+   * the eleven call sites are selects whose options differ from each other in a way no single
    * sentence can cover — the palette, the render style, the art style reference, the system profile,
    * the target generator and the sheet contents. Each of those has a table behind it holding a
    * different account of what some of its options mean, and this is where the row for the chosen one
@@ -33,17 +33,22 @@ interface SelectFieldProps<T extends string | number> {
    * the sentence naming what withdrew it goes here — where a screen reader announces it with the
    * control, rather than in a paragraph beside it.
    *
+   * **The aspect ratio reads neither way.** Its options need no account and its list narrows for
+   * reasons the tooltip already gives, but on a target whose request rather than its prompt decides
+   * the canvas, it names the size that request must ask for, which nothing in the prompt can set.
+   *
    * **The palette is both.** It reads out the pinned palette's account, and its list narrows too: an
    * icon set drawn as a tint mask is offered `FREE` alone, so its description is the sentence naming
    * what withdrew the others, which stands where a pinned palette's account would.
    *
-   * Optional because the other twenty-six have nothing of either kind to say, and twenty-six
-   * call sites passing a permanently-empty string would bury the ten that do — while empty *is*
-   * still accepted from those ten, as `CheckboxField`'s reason is, so a caller resolving the text
+   * Optional because the other twenty-five have nothing of any kind to say, and twenty-five
+   * call sites passing a permanently-empty string would bury the eleven that do — while empty *is*
+   * still accepted from those eleven, as `CheckboxField`'s reason is, so a caller resolving the text
    * out of its table can hand over what it found rather than choosing between a prop and no prop.
-   * Eight of the ten need that in earnest — four whose tables are keyed on something the select can
-   * hold and the table has no row for, the palette among them, and the four narrowing lists, whose
-   * sentences apply to some sheets or styles and not others — and the other two never take it up: the
+   * Nine of the eleven need that in earnest — four whose tables are keyed on something the select can
+   * hold and the table has no row for, the palette among them, the four narrowing lists, whose
+   * sentences apply to some sheets or styles and not others, and the aspect ratio, whose sentence
+   * applies to one target alone — and the other two never take it up: the
    * target generator's is a guard over a miss its own call site records as unreachable, and the sheet
    * contents' table has a row for every mode a category can offer, because both are keyed on the same
    * closed union.

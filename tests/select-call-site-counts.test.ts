@@ -5,8 +5,9 @@ import { callSitesPassing } from './jsxCallSites.ts';
  * The call-site counts `SelectField`’s docblock states, re-counted from the components themselves.
  *
  * That docblock argues three of its optional props into existence by counting: `description` is
- * optional because only nine of the app’s selects have anything to say under them — six reading a
- * row out of a table behind them, and three saying what withdrew an option from their list —
+ * optional because only eleven of the app’s selects have anything to say under them — six reading
+ * a row out of a table behind them, four saying what withdrew an option from their list, and one
+ * naming the size a request must ask for —
  * `disabledReason` because exactly two have a setting that takes their value over, and
  * `nameQualifier` because exactly one is rendered once for each item in a list. The counts *are* the
  * argument — at one exception, the claim that a permanently-empty string everywhere else would bury
@@ -23,19 +24,19 @@ import { callSitesPassing } from './jsxCallSites.ts';
  * that figure argues, which is the step that was being skipped; whether the restated argument still
  * holds at the new figure is a judgement no assertion can make. The exception lists are pinned by name as
  * well as by length, so a select that swaps one exception for another — leaving the totals alone —
- * fails here too, and the docblock’s account of *which* nine they are stays true with them.
+ * fails here too, and the docblock’s account of *which* eleven they are stays true with them.
  */
 
 /** Every `<SelectField>` the app renders. */
 const CALL_SITE_COUNT = 36;
 
 /**
- * Where a `description` is passed: the docblock’s ten, by the file that renders each.
+ * Where a `description` is passed: the docblock’s eleven, by the file that renders each.
  *
  * `RenderStyleFields` renders three: the render style's own account of what it withdrew, and the
  * colour budget and the outline system saying which of their options the style does not offer.
- * `SheetFields` renders two: the sheet contents' account, and the background key saying which key a
- * tint-masked icon set does not offer.
+ * `SheetFields` renders three: the sheet contents' account, the background key saying which key a
+ * tint-masked icon set does not offer, and the aspect ratio naming the size a GPT Image request sets.
  */
 const DESCRIPTION_CALL_SITES = [
   'src/components/studio/PaletteField.tsx',
@@ -43,6 +44,7 @@ const DESCRIPTION_CALL_SITES = [
   'src/components/studio/RenderStyleFields.tsx',
   'src/components/studio/RenderStyleFields.tsx',
   'src/components/studio/RiggingFields.tsx',
+  'src/components/studio/SheetFields.tsx',
   'src/components/studio/SheetFields.tsx',
   'src/components/studio/SheetFields.tsx',
   'src/components/studio/StyleReferenceField.tsx',

@@ -215,6 +215,8 @@ export interface TargetCapabilities {
   readonly promptBudget: PromptBudget;
   /** Whether, and how, the target returns a sheet with an alpha channel. See {@link AlphaDelivery}. */
   readonly alpha: AlphaDelivery;
+  /** What decides the shape of the canvas the target returns. See {@link CanvasDelivery}. */
+  readonly canvas: CanvasDelivery;
 }
 
 /**
@@ -238,6 +240,40 @@ export type AlphaDelivery =
   | { readonly kind: 'REQUEST_PARAMETER'; readonly note: string }
   | { readonly kind: 'UNDOCUMENTED' }
   | { readonly kind: 'NO_VENDOR' };
+
+/**
+ * What decides the shape of the canvas a target returns, which the Aspect Ratio control chooses.
+ *
+ * - `PROMPT` — this app states the canvas in the prompt, in prose or in a flag such as Midjourney's
+ *   `--ar`, and records no request option for it. That is a statement about what the app relies on:
+ *   a target whose own API also takes a size has not had that option recorded here.
+ * - `REQUEST_SIZE` — the reader's own request sets the returned image's dimensions through
+ *   `parameter`, and the prompt's prose cannot change them. The Aspect Ratio control states the size
+ *   to request, derived from `limits` by `requestSizeFor`, as the Background Key control states the
+ *   request options a `REQUEST_PARAMETER` alpha channel needs.
+ */
+export type CanvasDelivery =
+  | { readonly kind: 'PROMPT' }
+  | { readonly kind: 'REQUEST_SIZE'; readonly parameter: string; readonly limits: RequestSizeLimits };
+
+/** The sizes a target's request option accepts, as its vendor documents them. */
+export interface RequestSizeLimits {
+  /** Both edges are a multiple of this many pixels. */
+  readonly edgeMultiple: number;
+  /** The longest either edge may be. */
+  readonly maxEdge: number;
+  /** The fewest pixels the whole image may have. */
+  readonly minPixels: number;
+  /** The most pixels the whole image may have. */
+  readonly maxPixels: number;
+  /** The most the long edge may be over the short edge. */
+  readonly maxRatio: number;
+  /**
+   * The largest size the vendor supports without qualification. A size with a longer edge or more
+   * pixels than this is experimental, and the app recommends none.
+   */
+  readonly stable: PixelExtent;
+}
 
 /**
  * A width and a height in pixels, for the two things this app measures that are not a component:

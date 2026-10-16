@@ -20,6 +20,9 @@ import { SPRITE_FIT_UNAVAILABLE } from '../spriteCell.ts';
 import { presetCollectionGuidance } from './presets.ts';
 import { movePresetRefusal, moveQuantiseRefusal } from './projects.ts';
 import { ICON_CAPACITY_NOTICES } from '../iconCatalogue/iconCapacityNotices.ts';
+import { ASPECT_RATIO_NOTICES } from '../aspectRatioNotices.ts';
+import { backgroundKeyNote } from '../backgroundKeyNote.ts';
+import { defaultSubjectFor } from '../categories/index.ts';
 import { ICON_CATALOGUE_GROUPS } from '../iconCatalogue/index.ts';
 import { everyLookWorld } from '../../test/iconCatalogueSubjects.ts';
 import { iconEntryGuidance } from '../../utils/iconEntryGuidance.ts';
@@ -210,6 +213,15 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ['ICON_CAPACITY_NOTICES.row(short)', ICON_CAPACITY_NOTICES.row(2, 1)],
   ['ICON_CAPACITY_NOTICES.refused(one)', ICON_CAPACITY_NOTICES.refused(1)],
   ['ICON_CAPACITY_NOTICES.refused(several)', ICON_CAPACITY_NOTICES.refused(3)],
+  // What the Background Key and Aspect Ratio controls say under themselves, on the same footing: a
+  // key a target withdraws, the request options GPT Image's alpha needs, and the size it must ask for.
+  [
+    'backgroundKeyNote(withdrawn)',
+    backgroundKeyNote(defaultSubjectFor('ICON'), 'MIDJOURNEY', 'MAGENTA_FF00FF'),
+  ],
+  ['backgroundKeyNote(request)', backgroundKeyNote(defaultSubjectFor('ICON'), 'GPT_IMAGE', 'TRANSPARENT')],
+  ['ASPECT_RATIO_NOTICES.size', ASPECT_RATIO_NOTICES.size('size', 2560, 1440)],
+  ['ASPECT_RATIO_NOTICES.none', ASPECT_RATIO_NOTICES.none('size')],
   // The card behind a row of the reader's own, for one entry of each shape and one written to every
   // limit, under every world, held by the library and on the set alone: the same function, with the
   // reader's words where the catalogue's go.
@@ -321,6 +333,8 @@ const PLAIN_SURFACES = [
   'movePresetRefusal',
   'moveQuantiseRefusal',
   'ICON_CAPACITY_NOTICES.',
+  'backgroundKeyNote',
+  'ASPECT_RATIO_NOTICES.',
 ] as const;
 
 /** Whether an entry is rendered as plain text rather than as a card. */
