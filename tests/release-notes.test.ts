@@ -18,12 +18,12 @@ import { retryRefusedStart } from '../scripts/retryRefusedStart.ts';
 /**
  * The release notes the deploy workflow publishes, written from commits rather than pull requests.
  *
- * GitHub's generated notes for 0.14.0 listed thirteen pull requests, twelve of them dependency
- * bumps, for a release of 719 commits: work here lands as a fast-forward, so almost none of it is a
- * pull request. These cases pin what replaced them — which commits each section takes, which
- * release a tag is measured from, and that the body fits the limit GitHub sets — and the last
- * suite runs the runner over a throwaway repository, so the log format it asks git for is the one
- * the parser reads.
+ * GitHub's generated notes for 0.14.0 listed eighteen pull requests, seventeen of them dependency
+ * bumps, for a release of 522 commits besides merges: work here lands as a fast-forward, so almost
+ * none of it is a pull request. These cases pin what replaced them — which commits each section
+ * takes, which release a tag is measured from, and that the body fits the limit GitHub sets — and
+ * the last suite runs the runner over a throwaway repository, so the log format it asks git for is
+ * the one the parser reads.
  */
 
 function commit(subject: string, files: readonly string[], author = 'Joe Cox', parents = 1): ReleaseCommit {
@@ -163,12 +163,22 @@ describe('releaseNotes', () => {
 });
 
 describe('parseLog', () => {
+  const A = 'a'.repeat(40);
+  const B = 'b'.repeat(40);
+
   it('reads the header fields and every path, and ignores blank lines', () => {
-    const log = `${RECORD}aaa${FIELD}p1${FIELD}Joe Cox${FIELD}One\n\nsrc/a.ts\nsrc/b.ts\n${RECORD}bbb${FIELD}p1 p2${FIELD}Joe Cox${FIELD}Merge\n`;
+    const log = `${RECORD}${A}${FIELD}p1${FIELD}Joe Cox${FIELD}One\n\nsrc/a.ts\nsrc/b.ts\n${RECORD}${B}${FIELD}p1 p2${FIELD}Joe Cox${FIELD}Merge\n`;
     expect(parseLog(log)).toEqual([
-      { sha: 'aaa', parents: 1, author: 'Joe Cox', subject: 'One', files: ['src/a.ts', 'src/b.ts'] },
-      { sha: 'bbb', parents: 2, author: 'Joe Cox', subject: 'Merge', files: [] },
+      { sha: A, parents: 1, author: 'Joe Cox', subject: 'One', files: ['src/a.ts', 'src/b.ts'] },
+      { sha: B, parents: 2, author: 'Joe Cox', subject: 'Merge', files: [] },
     ]);
+  });
+
+  it.each([
+    ['a header with a field missing', `${RECORD}${A}${FIELD}p1${FIELD}Joe Cox\n`],
+    ['a header that is not led by a commit id', `${RECORD}HEAD${FIELD}p1${FIELD}Joe Cox${FIELD}One\n`],
+  ])('refuses %s', (_, log) => {
+    expect(() => parseLog(log)).toThrow('cannot read');
   });
 });
 

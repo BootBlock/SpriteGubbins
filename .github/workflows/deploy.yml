@@ -268,11 +268,11 @@ jobs:
 
           # The body is written from the commits since the release before this one, by
           # `scripts/release-notes.ts`, rather than by GitHub's `generate-notes`, which lists pull
-          # requests: work here lands as a fast-forward, so GitHub's notes for 0.14.0 named thirteen
-          # pull requests, twelve of them dependency bumps, for a release of 719 commits. It picks the
-          # release before this one in semantic-versioning order, which is the highest tag below
-          # this one rather than the newest other tag, so a rollback or a catch-up publish of an
-          # older tag is measured from the right start.
+          # requests: work here lands as a fast-forward, so GitHub's notes for 0.14.0 named eighteen
+          # pull requests, seventeen of them dependency bumps, for a release of 522 commits besides
+          # merges. It picks the release before this one in semantic-versioning order, which is the
+          # highest tag below this one rather than the newest other tag, so a rollback or a catch-up
+          # publish of an older tag is measured from the right start.
           #
           # What was deployed opens the body, because that is the question a reader opens a release
           # to answer. It is passed to the script so that GitHub's limit on a release body is

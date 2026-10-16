@@ -3,10 +3,10 @@
  *
  * **GitHub's own generated notes list pull requests, and most of this project's work is not one.**
  * Work lands as a fast-forward of a worktree branch (CLAUDE.md), so the only pull requests are
- * Dependabot's and the occasional outside one. The 0.14.0 notes GitHub wrote listed thirteen of
- * them — twelve dependency bumps — for a release of 719 commits that added the icon library, the
- * overlay sheets and Keep place, none of which a reader of the Releases page could learn of. The
- * commits are the record of what changed, so the notes are written from them.
+ * Dependabot's and the occasional outside one. The 0.14.0 notes GitHub wrote listed eighteen of
+ * them — seventeen dependency bumps — for a release of 522 commits besides merges that added the
+ * icon library, the overlay sheets and Keep place, none of which a reader of the Releases page
+ * could learn of. The commits are the record of what changed, so the notes are written from them.
  *
  * Each commit is filed by the paths it touches, which is a fact about the commit rather than a
  * judgement of its subject line:
@@ -54,14 +54,30 @@ export function isAppFile(path: string): boolean {
   return path.startsWith('src/') && !/\.test\.tsx?$/.test(path);
 }
 
-/** Every commit in a `git log --format=LOG_FORMAT --name-only` listing. */
+/**
+ * Every commit in a `git log --format=LOG_FORMAT --name-only` listing.
+ *
+ * A header that is not four fields led by a full commit id throws rather than becoming an entry
+ * with an empty subject, because the notes it would publish are wrong without anything failing.
+ */
 export function parseLog(log: string): ReleaseCommit[] {
   return log
     .split(RECORD)
     .filter((record) => record.trim() !== '')
     .map((record) => {
-      const [header = '', ...paths] = record.split('\n');
-      const [sha = '', parents = '', author = '', subject = ''] = header.split(FIELD);
+      const [header, ...paths] = record.split('\n');
+      const fields = (header ?? '').split(FIELD);
+      const [sha, parents, author, subject] = fields;
+      if (
+        fields.length !== 4 ||
+        sha === undefined ||
+        !/^[0-9a-f]{40}([0-9a-f]{24})?$/.test(sha) ||
+        parents === undefined ||
+        author === undefined ||
+        subject === undefined
+      ) {
+        throw new Error(`git log gave a commit header this parser cannot read: “${header ?? ''}”.`);
+      }
       return {
         sha,
         parents: parents.split(' ').filter(Boolean).length,
