@@ -6,6 +6,7 @@ import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { additionalAnatomyNote } from '../../utils/additionalAnatomyNote.ts';
+import { subjectFieldInputId } from '../../utils/subjectFieldInputId.ts';
 import { subjectGroupDigest } from '../../utils/studioDigests.ts';
 import { CollapsibleSection } from '../common/CollapsibleSection.tsx';
 import { ComboBox } from '../common/ComboBox.tsx';
@@ -116,13 +117,14 @@ export function SubjectForm() {
                 return (
                   <ComboBox
                     key={field.key}
+                    id={subjectFieldInputId(field.key)}
                     label={field.label}
                     tooltip={field.tooltip}
                     value={subject[field.key]}
                     options={field.options}
                     // What the pieces do to the sheets that draw them, which the card cannot say ahead of
-                    // the reader's own list (audit finding T8).
-                    description={field.key === 'additional_anatomy' ? anatomyNote : ''}
+                    // the reader's own list (audit finding T8); otherwise the category's own note.
+                    description={field.key === 'additional_anatomy' ? anatomyNote : (field.note ?? '')}
                     onChange={(value) => {
                       setField(field.key, value);
                     }}

@@ -12,7 +12,8 @@ import { IconRosterSection } from './IconRosterSection.tsx';
 import { cataloguePicks } from '../../constants/iconCatalogue/cataloguePicks.ts';
 
 /**
- * The studio's roster section: what the set amounts to, and the way into the catalogue.
+ * The studio's roster section: what the set amounts to, where its icons' content comes from, and the
+ * ways into the catalogue.
  *
  * The sheet count is the case worth pinning, because it is the figure a reader plans generations by
  * and the one a summary could get wrong on its own: it has to count the overlay sheet, and it has to
@@ -39,7 +40,7 @@ function singles(count: number): string[] {
 
 beforeEach(() => {
   useSectionStore.setState({ openSections: {} });
-  useUIStore.setState({ isIconCatalogueModalOpen: false });
+  useUIStore.setState({ isIconCatalogueModalOpen: false, iconCatalogueOpensOn: 'SHELVES' });
 });
 
 describe('IconRosterSection', () => {
@@ -73,6 +74,28 @@ describe('IconRosterSection', () => {
     await user.click(screen.getByRole('button', { name: /open the icon catalogue/i }));
 
     expect(useUIStore.getState().isIconCatalogueModalOpen).toBe(true);
+  });
+
+  it('says where each icon’s content comes from', () => {
+    iconStudio(['heal-minor']);
+    render(<IconRosterSection />);
+
+    expect(
+      screen.getByText(
+        'What each icon shows comes from two places. World & Era, under Identity & context, decides how every catalogue icon looks, and the catalogue is where you choose icons or write your own.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('opens the catalogue at the form for an icon of your own', async () => {
+    const user = userEvent.setup({ delay: null });
+    iconStudio(['heal-minor']);
+    render(<IconRosterSection />);
+
+    await user.click(screen.getByRole('button', { name: 'Add your own icon' }));
+
+    expect(useUIStore.getState().isIconCatalogueModalOpen).toBe(true);
+    expect(useUIStore.getState().iconCatalogueOpensOn).toBe('NEW_ICON_FORM');
   });
 
   it('keeps the set’s figures in its header while folded', async () => {

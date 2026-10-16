@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { TOAST_DURATION_MS, TOAST_EXIT_MS } from '../constants/ui.ts';
 import type { AppUpdate } from '../types/appUpdate.ts';
 import type { BeforeInstallPromptEvent } from '../types/pwa.ts';
-import type { AppTab, ToastSource, ToastTarget } from '../types/ui.ts';
+import type { AppTab, IconCatalogueOpening, ToastSource, ToastTarget } from '../types/ui.ts';
 
 /**
  * The shell: which view is showing, what the toast says, which overlay is open, whether the browser
@@ -84,6 +84,12 @@ export interface UIState {
   readonly isSplitModalOpen: boolean;
   readonly isSettingsModalOpen: boolean;
   readonly isIconCatalogueModalOpen: boolean;
+  /**
+   * What the icon catalogue shows as it opens: its shelves, or the form for a new icon of the reader's
+   * own above them. An instruction read once, as the dialog mounts — the form's later state is the
+   * dialog's own — so it says where the dialog *opened*, not whether the form is open now.
+   */
+  readonly iconCatalogueOpensOn: IconCatalogueOpening;
   /** The deferred `beforeinstallprompt` event, or `null` when the app can't offer an install. */
   readonly deferredPWAInstallPrompt: BeforeInstallPromptEvent | null;
   /** Where this tab stands against the newest build, written by `src/workers/registerAppUpdates.ts`. */
@@ -166,6 +172,12 @@ export interface UIState {
   toggleSettingsModal(): void;
   /** Open or close the icon catalogue. Closes whichever other overlay was open. */
   toggleIconCatalogueModal(): void;
+  /**
+   * Open the icon catalogue on the form for a new icon of the reader's own — the studio's direct way
+   * to the one place an icon's description is written (issue #504). Closes whichever other overlay
+   * was open.
+   */
+  openNewIconForm(): void;
   setInstallPrompt(prompt: BeforeInstallPromptEvent | null): void;
   setAppUpdate(update: AppUpdate): void;
 }
@@ -229,6 +241,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   isToastLeaving: false,
   isPreviewDetached: false,
   ...ALL_OVERLAYS_CLOSED,
+  iconCatalogueOpensOn: 'SHELVES',
   deferredPWAInstallPrompt: null,
   appUpdate: 'current',
 
@@ -297,7 +310,15 @@ export const useUIStore = create<UIState>((set, get) => ({
   },
 
   toggleIconCatalogueModal: () => {
-    set((state) => ({ ...ALL_OVERLAYS_CLOSED, isIconCatalogueModalOpen: !state.isIconCatalogueModalOpen }));
+    set((state) => ({
+      ...ALL_OVERLAYS_CLOSED,
+      isIconCatalogueModalOpen: !state.isIconCatalogueModalOpen,
+      iconCatalogueOpensOn: 'SHELVES',
+    }));
+  },
+
+  openNewIconForm: () => {
+    set({ ...ALL_OVERLAYS_CLOSED, isIconCatalogueModalOpen: true, iconCatalogueOpensOn: 'NEW_ICON_FORM' });
   },
 
   setInstallPrompt: (deferredPWAInstallPrompt) => {
