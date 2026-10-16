@@ -2,13 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
+import { CUSTOM_ICON_FAMILY_SIZE } from '../../constants/iconCatalogue/customIconLimits.ts';
 import { CUSTOM_ICON_REFUSALS } from '../../constants/iconCatalogue/customIconRefusals.ts';
 import { CUSTOM_ICON_WARNING_TEXT } from '../../constants/iconCatalogue/customIconWarningText.ts';
 import { cataloguePicks } from '../../constants/iconCatalogue/cataloguePicks.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { RELIC, customPick } from '../../test/customIcons.ts';
+import { FAMILY, RELIC, customPick } from '../../test/customIcons.ts';
 import type { IconPick } from '../../types/iconRoster.ts';
 import { CustomIconForm } from './CustomIconForm.tsx';
 
@@ -37,6 +38,11 @@ function picks(): readonly IconPick[] {
 const role = () => screen.getByRole('textbox', { name: 'Role' });
 const look = () => screen.getByRole('textbox', { name: 'Look' });
 const add = () => screen.getByRole('button', { name: 'Add to your set' });
+const member = (position: number) => screen.getByRole('textbox', { name: `Variant ${String(position)}` });
+const memberLook = (position: number) =>
+  screen.getByRole('textbox', { name: `Variant ${String(position)}’s look` });
+const remove = (position: number) =>
+  screen.getByRole('button', { name: `Remove variant ${String(position)}` });
 
 beforeEach(() => {
   iconStudio();
@@ -67,7 +73,7 @@ describe('CustomIconForm — adding', () => {
     // The school is named as the subject's world names it.
     await user.selectOptions(screen.getByRole('combobox', { name: 'Damage school' }), 'Storm (voltaic)');
     await user.click(screen.getByRole('checkbox', { name: 'Shows a figure' }));
-    await user.click(screen.getByRole('checkbox', { name: 'Two states' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Drawn as' }), 'STATES');
     await user.type(screen.getByRole('textbox', { name: 'First state' }), 'Charged');
     await user.type(screen.getByRole('textbox', { name: 'Second state' }), 'Spent Out');
     await user.type(look(), 'a hand folding a cube of power lines');
@@ -84,6 +90,49 @@ describe('CustomIconForm — adding', () => {
         look: 'a hand folding a cube of power lines',
       }),
     );
+  });
+
+  it('adds a family as one entry, with the keyboard following each member added and removed', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<CustomIconForm entry={null} onClose={vi.fn()} />);
+    await user.type(role(), FAMILY.role);
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Drawn as' }), 'VARIANTS');
+    // The family opens at its fewest, so neither member can be removed.
+    expect(remove(1)).toBeDisabled();
+
+    await user.type(member(1), 'Small');
+    await user.type(memberLook(1), 'a thumb-length pen with one green cell.');
+    await user.type(member(2), 'Spare');
+    await user.click(screen.getByRole('button', { name: 'Add a variant' }));
+    expect(member(3)).toHaveFocus();
+    await user.type(member(3), 'Standard');
+    await user.click(screen.getByRole('button', { name: 'Add a variant' }));
+    await user.type(member(4), 'Large');
+    await user.type(memberLook(4), 'a pistol-grip injector with three green cells');
+
+    // Removing the second moves the third and fourth up, and the keyboard lands on the one now second.
+    await user.click(remove(2));
+    expect(member(2)).toHaveFocus();
+    expect(member(2)).toHaveValue('Standard');
+    await user.type(look(), FAMILY.look);
+    await user.click(add());
+
+    expect(picks()).toContainEqual(customPick(FAMILY));
+  });
+
+  it('refuses two members of one name beside the second, and a family past its size', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<CustomIconForm entry={null} onClose={vi.fn()} />);
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Drawn as' }), 'VARIANTS');
+    await user.type(member(1), 'Rare');
+    await user.type(member(2), 'rare!');
+    expect(member(1)).not.toHaveAttribute('aria-invalid', 'true');
+    expect(member(2)).toHaveAccessibleDescription(CUSTOM_ICON_REFUSALS.sameVariants);
+
+    for (let count = 2; count < CUSTOM_ICON_FAMILY_SIZE.most; count += 1) {
+      await user.click(screen.getByRole('button', { name: 'Add a variant' }));
+    }
+    expect(screen.getByRole('button', { name: 'Add a variant' })).toBeDisabled();
   });
 
   it('cancels without changing the set', async () => {
@@ -170,5 +219,28 @@ describe('CustomIconForm — warnings and changes', () => {
       ...cataloguePicks(['system-bags']),
     ]);
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('opens a family with its members as typed, and saves a change to one of them as a change', async () => {
+    const user = userEvent.setup({ delay: null });
+    iconStudio([customPick(FAMILY)]);
+    render(<CustomIconForm entry={FAMILY} onClose={vi.fn()} />);
+
+    expect(screen.getByRole('combobox', { name: 'Drawn as' })).toHaveValue('VARIANTS');
+    expect(member(3)).toHaveValue('large');
+    expect(memberLook(2)).toHaveValue('');
+
+    await user.type(memberLook(2), 'a palm-length pen with two green cells');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    const [small, , large] = FAMILY.variants ?? [];
+    expect(picks()).toEqual([
+      customPick({
+        ...FAMILY,
+        variants: [small, { name: 'standard', look: 'a palm-length pen with two green cells' }, large].filter(
+          (variant) => variant !== undefined,
+        ),
+      }),
+    ]);
   });
 });

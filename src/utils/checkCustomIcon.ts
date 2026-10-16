@@ -1,16 +1,11 @@
-import { CUSTOM_ICON_LIMITS } from '../constants/iconCatalogue/customIconLimits.ts';
 import { CUSTOM_ICON_REFUSALS } from '../constants/iconCatalogue/customIconRefusals.ts';
 import { ICON_CAPACITY_NOTICES } from '../constants/iconCatalogue/iconCapacityNotices.ts';
-import { COUNT_MARKER, LINE_SEPARATOR } from '../constants/iconCatalogue/iconLookRules.ts';
 import { ICON_ROSTER_CAPACITY } from '../constants/iconCatalogue/iconSheetLimits.ts';
 import { iconComponentCount } from '../constants/iconCatalogue/index.ts';
-import type {
-  CustomIconCheck,
-  CustomIconDraft,
-  CustomIconField,
-  CustomIconRefusal,
-} from '../types/customIconDraft.ts';
+import type { CustomIconCheck, CustomIconDraft, CustomIconRefusal } from '../types/customIconDraft.ts';
 import type { CustomIconEntry, IconPick } from '../types/iconRoster.ts';
+import { checkIconVariants } from './checkIconVariants.ts';
+import { collapsed, namedRefusals, textRefusals, unclosed } from './customIconTextRefusals.ts';
 import { iconPickId } from './iconPickId.ts';
 import { iconRosterTally } from './iconRosterTally.ts';
 import { iconSlotNames } from './iconSlotNames.ts';
@@ -25,7 +20,7 @@ import { takenIconSlotNames } from './takenIconSlotNames.ts';
  *
  * **What it refuses, and why each is a refusal rather than a warning:**
  *
- * - **An empty, over-long or bracketed role, look or state.** Each text reaches the inventory, which the
+ * - **An empty, over-long or bracketed role, look, state or family member** (`customIconTextRefusals`). Each text reaches the inventory, which the
  *   compiler resolves `[SEC:…]` citations over, so a square bracket either throws out of the compiler or
  *   is silently replaced by a section number (R9 of `docs/todo/done/icon-catalogue.md`). An empty text is a
  *   line with nothing to draw, and the limits are `CUSTOM_ICON_LIMITS`'.
@@ -33,7 +28,9 @@ import { takenIconSlotNames } from './takenIconSlotNames.ts';
  *   Section 4 reads `×N` as N separate drawings and the dash as the line's divide between role and look,
  *   so either in the reader's words breaks the line: `Arrow ×5` would ask for five arrows in one slot
  *   and shift every slot after it.
- * - **A role or state with no plain letter or digit**, since the slot name is made of those alone.
+ * - **A role, state or member's name with no plain letter or digit**, since the slot name is made of
+ *   those alone, and **a family of the wrong size, two members of one name, or a pair and a family on one
+ *   entry** (`checkIconVariants`): an entry is one drawing, a pair or a family.
  * - **A slot name something else already answers to** — a catalogue entry or one of its pair's drawings,
  *   an overlay piece, another pick on this roster, or another entry of the project's library (`library`)
  *   — because two sprites answering to one name are cut to one file, and the second overwrites the
@@ -73,6 +70,10 @@ export function checkCustomIcon(
   if (look === '') refusals.push({ field: 'look', message: CUSTOM_ICON_REFUSALS.lookEmpty });
 
   const states = draft.states === null ? null : statesOf(draft.states, refusals);
+  const variants = draft.variants === null ? null : checkIconVariants(draft.variants, refusals);
+  if (states !== null && variants !== null) {
+    refusals.push({ field: 'variants', message: CUSTOM_ICON_REFUSALS.statesAndVariants });
+  }
   if (draft.kind === 'SPELL' && draft.school === null) {
     refusals.push({ field: 'school', message: CUSTOM_ICON_REFUSALS.schoolMissing });
   } else if (draft.kind !== 'SPELL' && draft.school !== null) {
@@ -92,6 +93,7 @@ export function checkCustomIcon(
     ...(draft.kind === 'SPELL' && draft.school !== null ? { school: draft.school } : {}),
     ...(draft.figure ? { figure: true } : {}),
     ...(states === null ? {} : { states }),
+    ...(variants === null ? {} : { variants }),
     look,
   };
   if (id !== '') refusals.push(...slotRefusals(entry, others, shelved));
@@ -104,43 +106,9 @@ export function checkCustomIcon(
   return refusals.length === 0 ? { entry, refusals } : { entry: null, refusals };
 }
 
-/** A text with every run of whitespace, line breaks included, made one space, and its ends trimmed. */
-function collapsed(text: string): string {
-  return text.replaceAll(/\s+/g, ' ').trim();
-}
-
 /**
- * A text with the punctuation it ends on taken off — the full stop, comma, semicolon, colon, question or
- * exclamation mark or ellipsis a reader closes a phrase with — since the line it joins supplies its own.
- */
-function unclosed(text: string): string {
-  return text.replace(/[\s.,;:!?…]+$/u, '');
-}
-
-/** The refusals any one text earns on its own: its length, its brackets, a count, and a dash outside a look. */
-function textRefusals(
-  field: CustomIconField,
-  text: string,
-  what: 'role' | 'look' | 'state',
-): readonly CustomIconRefusal[] {
-  const found: CustomIconRefusal[] = [];
-  if (text.length > CUSTOM_ICON_LIMITS[what]) {
-    found.push({ field, message: CUSTOM_ICON_REFUSALS.tooLong(what, text.length) });
-  }
-  if (/[[\]]/.test(text)) found.push({ field, message: CUSTOM_ICON_REFUSALS.brackets(what) });
-  if (COUNT_MARKER.test(text)) found.push({ field, message: CUSTOM_ICON_REFUSALS.countMarker(what) });
-  if (what !== 'look' && LINE_SEPARATOR.test(text)) {
-    found.push({ field, message: CUSTOM_ICON_REFUSALS.separator(what) });
-  }
-  return found;
-}
-
-/**
- * The two states as slugs, with a refusal for each that cannot be one or that repeats the other.
- *
- * **The slug is held to the count rule as well as the text typed**, because the slug is what is stored
- * and read back through this same check: dropping a letter the slug cannot hold can leave a count where
- * the text had none (`éx5` is stored as `x5`), and an entry accepted as typed was refused on reload.
+ * The two states as slugs, with a refusal for each that cannot be one or that repeats the other. The
+ * slug is held to the count rule as well as the text typed (`namedRefusals`).
  */
 function statesOf(
   typed: readonly [string, string],
@@ -162,23 +130,6 @@ function statesOf(
     refusals.push({ field: 'secondState', message: CUSTOM_ICON_REFUSALS.sameStates });
   }
   return slugs;
-}
-
-/**
- * The refusals a role or a state earns as typed, and a count its slug alone shows: the slug is the
- * slot and file name, and a state's is what is stored and read back.
- */
-function namedRefusals(
-  field: 'role' | 'firstState' | 'secondState',
-  text: string,
-  slug: string,
-  what: 'role' | 'state',
-): readonly CustomIconRefusal[] {
-  const found = textRefusals(field, text, what);
-  const counted = found.some((refusal) => refusal.message === CUSTOM_ICON_REFUSALS.countMarker(what));
-  return counted || !COUNT_MARKER.test(slug)
-    ? found
-    : [...found, { field, message: CUSTOM_ICON_REFUSALS.countMarker(what) }];
 }
 
 /**

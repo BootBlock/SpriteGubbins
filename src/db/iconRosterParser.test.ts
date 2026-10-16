@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
-import { RELIC, SPELL, TOGGLE, customPick } from '../test/customIcons.ts';
+import { FAMILY, RELIC, SPELL, TOGGLE, customPick } from '../test/customIcons.ts';
 import { ICON_LOOKS } from '../types/iconRoster.ts';
 import type { IconRoster } from '../types/iconRoster.ts';
 import { parseIconRoster } from './iconRosterParser.ts';
@@ -111,6 +111,7 @@ describe('parseIconRoster — the reader’s own entries', () => {
       picks: [...cataloguePicks(['heal-minor']), customPick(RELIC), customPick(SPELL)],
     });
     expect(parseIconRoster(stored([customPick(TOGGLE)]), FALLBACK).picks).toEqual([customPick(TOGGLE)]);
+    expect(parseIconRoster(stored([customPick(FAMILY)]), FALLBACK).picks).toEqual([customPick(FAMILY)]);
   });
 
   it.each([
@@ -131,6 +132,16 @@ describe('parseIconRoster — the reader’s own entries', () => {
     ['a figure that is not `true`', { figure: 'yes' }],
     ['states that are not a pair', { states: ['on'] }],
     ['two states of one name', { states: ['On', 'on'] }],
+    ['members that are not a list', { variants: 'small, large' }],
+    ['a member with no name', { variants: [{ look: 'a vial' }, { name: 'large' }] }],
+    ['a member whose look is not text', { variants: [{ name: 'small', look: 3 }, { name: 'large' }] }],
+    ['a family of one', { variants: [{ name: 'small' }] }],
+    ['two members of one name', { variants: [{ name: 'small' }, { name: 'Small' }] }],
+    [
+      'a semicolon in a member’s look',
+      { variants: [{ name: 'small', look: 'a vial; a cap' }, { name: 'large' }] },
+    ],
+    ['a pair and a family on one entry', { states: ['on', 'off'], variants: [{ name: 'a' }, { name: 'b' }] }],
     ['a role that is not text', { role: 7 }],
     ['the slot of a catalogue entry', { role: 'Heal minor' }],
     ['the slot of an overlay piece', { role: 'Locked mark' }],
@@ -159,6 +170,15 @@ describe('parseIconRoster — the reader’s own entries', () => {
       ...cataloguePicks(['heal-minor', 'heal-major']),
       customPick(RELIC),
     ]);
+  });
+
+  it('counts a family once per member against the capacity', () => {
+    // Three members fill the set of three alone, so the relic after it has no room.
+    const picks = [customPick(FAMILY), customPick(RELIC)];
+    expect(parseIconRoster(stored(picks), FALLBACK).picks).toEqual([customPick(FAMILY)]);
+    expect(
+      parseIconRoster(stored([...cataloguePicks(['heal-minor']), customPick(FAMILY)]), FALLBACK).picks,
+    ).toEqual(cataloguePicks(['heal-minor']));
   });
 
   it('skips a repeated entry before measuring the room, so it never costs the set a pick after it', () => {

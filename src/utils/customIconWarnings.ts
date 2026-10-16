@@ -12,6 +12,7 @@ import {
   redCrossIn,
   wordNamed,
 } from '../constants/iconCatalogue/iconLookRules.ts';
+import { NEUTRAL_RARITY_TIER, RARITY_TIERS } from '../constants/iconCatalogue/rarityTiers.ts';
 import type { CustomIconDraft } from '../types/customIconDraft.ts';
 import type { BackgroundKey } from '../types/rendering.ts';
 import { expandShortHex } from './expandShortHex.ts';
@@ -40,11 +41,22 @@ import { keyReaches } from './keyReach.ts';
  *   the lettering is read.
  * - **A red cross not called diagonal** (`redCrossIn`), which may be drawn as the protected emblem.
  * - **A person or part of one** on an entry not declaring `figure`.
+ * - **A family member naming a rarity tier** while the set's *Rarity Tier* (`rarityTier`, the subject's
+ *   value as it stands) is not the neutral one: that field draws every icon at one tier, so members told
+ *   apart by tier would all be drawn at the set's. Only the members are read, since a role or a look
+ *   naming a tier describes the one icon, and a tier the set states is no conflict for one icon.
  *
- * The role, the look and the states are all read, since all three reach the inventory line.
+ * The role, the look, the states and the members are all read, since all of them reach the inventory
+ * line.
  */
-export function customIconWarnings(draft: CustomIconDraft, key: BackgroundKey): readonly string[] {
-  const text = [draft.role, draft.look, ...(draft.states ?? [])].join(' ');
+export function customIconWarnings(
+  draft: CustomIconDraft,
+  key: BackgroundKey,
+  rarityTier: string,
+): readonly string[] {
+  const members = (draft.variants ?? []).flatMap((variant) => [variant.name, variant.look]);
+  const parts = [draft.role, draft.look, ...(draft.states ?? []), ...members];
+  const text = parts.join(' ');
   const warnings: string[] = [];
 
   const spared = draft.kind === 'SPELL' && draft.school === 'NETRUN' ? ['pink'] : [];
@@ -59,13 +71,14 @@ export function customIconWarnings(draft: CustomIconDraft, key: BackgroundKey): 
   if (lettering !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.lettering(lettering));
 
   // Each part on its own, so a red in the role is not read as the colour of a cross in the look.
-  const cross = [draft.role, draft.look, ...(draft.states ?? [])]
-    .map(redCrossIn)
-    .find((found) => found !== undefined);
+  const cross = parts.map(redCrossIn).find((found) => found !== undefined);
   if (cross !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.redCross(cross));
 
   const figure = FIGURE_WORDS.exec(text)?.[0];
   if (!draft.figure && figure !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.figure(figure));
+
+  const tier = rarityTier === NEUTRAL_RARITY_TIER ? undefined : tierNamed(members.join(' '));
+  if (tier !== undefined) warnings.push(CUSTOM_ICON_WARNING_TEXT.rarityTier(tier, rarityTier));
 
   return warnings;
 }
@@ -93,4 +106,11 @@ function letteringIn(text: string): string | undefined {
   const found = LETTERING_OBJECTS.exec(text)?.[0] ?? ACRONYM.exec(text)?.[0];
   if (found !== undefined) return found;
   return UNWRITTEN.test(text) ? undefined : WRITING_SURFACE.exec(text)?.[0];
+}
+
+/** The first rarity tier `text` names as a whole word, in any case, as the reader wrote it. */
+function tierNamed(text: string): string | undefined {
+  return RARITY_TIERS.map((tier) => new RegExp(String.raw`\b${tier}\b`, 'iu').exec(text)?.[0]).find(
+    (found) => found !== undefined,
+  );
 }

@@ -10,13 +10,14 @@ import type { CustomIconFormValues } from '../../types/customIconFormValues.ts';
 import type { CustomIconEntry, IconPick } from '../../types/iconRoster.ts';
 import { checkCustomIcon } from '../../utils/checkCustomIcon.ts';
 import { customIconFormDraft } from '../../utils/customIconFormDraft.ts';
+import { customIconFieldText } from '../../utils/customIconFieldText.ts';
 import { customIconFormValues } from '../../utils/customIconFormValues.ts';
 import { customIconWarnings } from '../../utils/customIconWarnings.ts';
 import { Button } from '../common/Button.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { TextAreaField } from '../common/TextAreaField.tsx';
 import { CustomIconIdentityFields } from './CustomIconIdentityFields.tsx';
-import { CustomIconStateFields } from './CustomIconStateFields.tsx';
+import { CustomIconShapeFields } from './CustomIconShapeFields.tsx';
 import { useResolvedBackgroundKey } from '../../hooks/useResolvedBackgroundKey.ts';
 
 /** Picks for a subject with no roster, which the dialog is never opened over but has to type. */
@@ -37,19 +38,20 @@ interface CustomIconFormProps {
  * ones the library store would return, so a form that lets the reader press Add has an entry it accepts.
  * The press writes the set and the library (`useCustomIconLibraryStore.writeCustomIcon`), and the form
  * closes once the write is settled — at once for the set, after the library for a library entry alone.
- * A field's refusal shows once it holds text or once Add has been pressed, so an empty form does not
+ * A field's refusal shows once it holds text (`customIconFieldText`) or once Add has been pressed, so an empty form does not
  * open on a column of errors; a press with refusals moves focus to the first field refused.
  *
  * **Escape cancels the form, not the dialog**, as Cancel does, so a reader backing out of a draft
  * stays in the catalogue with focus on the button that opened it.
  *
  * **Warnings never block** (`customIconWarnings`): they name a word the sheet's own rules will overrule,
- * under the background key in force now, and the entry is saved as written. They sit in a polite live
+ * under the background key and the *Rarity Tier* in force now, and the entry is saved as written. They sit in a polite live
  * region, so a reader typing hears one arrive.
  */
 export function CustomIconForm({ entry, onClose }: CustomIconFormProps) {
   const picks = useSubjectStore((state) => state.subject.icons?.picks ?? NO_PICKS);
   const world = useSubjectStore((state) => state.subject.setting);
+  const rarityTier = useSubjectStore((state) => state.subject.gender);
   const writeCustomIcon = useCustomIconLibraryStore((state) => state.writeCustomIcon);
   const library = useIconLibrary();
   const backgroundKey = useResolvedBackgroundKey();
@@ -63,7 +65,10 @@ export function CustomIconForm({ entry, onClose }: CustomIconFormProps) {
     () => checkCustomIcon(draft, picks, entry?.id ?? null, library.entries),
     [draft, picks, entry, library.entries],
   );
-  const warnings = useMemo(() => customIconWarnings(draft, backgroundKey), [draft, backgroundKey]);
+  const warnings = useMemo(
+    () => customIconWarnings(draft, backgroundKey, rarityTier),
+    [draft, backgroundKey, rarityTier],
+  );
 
   // The role on opening, and the first refused field after a press that was refused.
   useEffect(() => {
@@ -88,18 +93,8 @@ export function CustomIconForm({ entry, onClose }: CustomIconFormProps) {
     };
   }, [onClose]);
 
-  // What each field holds, so a refusal waits until there is something to refuse or Add was pressed.
-  // The school always holds a value, and the set's room is measured whatever the fields hold.
-  const typed: Readonly<Record<CustomIconField, string>> = {
-    role: values.role,
-    school: values.school,
-    firstState: values.firstState,
-    secondState: values.secondState,
-    look: values.look,
-    set: 'measured',
-  };
   const problem = (field: CustomIconField): string =>
-    attempts === 0 && typed[field].trim() === ''
+    attempts === 0 && customIconFieldText(values, field).trim() === ''
       ? ''
       : (check.refusals.find((refusal) => refusal.field === field)?.message ?? '');
   const update = (change: Partial<CustomIconFormValues>): void => {
@@ -131,7 +126,7 @@ export function CustomIconForm({ entry, onClose }: CustomIconFormProps) {
       </h3>
 
       <CustomIconIdentityFields values={values} world={world} problem={problem} onChange={update} />
-      <CustomIconStateFields values={values} problem={problem} onChange={update} />
+      <CustomIconShapeFields values={values} problem={problem} onChange={update} />
       <TextAreaField
         label="Look"
         tooltip={CUSTOM_ICON_TOOLTIPS.look}

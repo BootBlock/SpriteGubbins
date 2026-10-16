@@ -13,6 +13,7 @@ export function customIconDraftOf(entry: CustomIconEntry): CustomIconDraft {
     school: entry.school ?? null,
     figure: entry.figure === true,
     states: entry.states ?? null,
+    variants: entry.variants?.map((variant) => ({ name: variant.name, look: variant.look ?? '' })) ?? null,
     look: entry.look,
   };
 }

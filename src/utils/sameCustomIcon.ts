@@ -1,8 +1,8 @@
 import type { CustomIconEntry } from '../types/iconRoster.ts';
 
 /**
- * Whether two entries of the reader's own are the same entry, field by field — so an edit that changes
- * only the look is a change, and saving one unchanged is not. Read by `sameIconRoster`, and by the
+ * Whether two entries of the reader's own are the same entry, field by field and member by member of a
+ * family, in order — so an edit that changes only the look, or only reorders a family, is a change, and saving one unchanged is not. Read by `sameIconRoster`, and by the
  * catalogue dialog's shelves to tell a set's copy of an entry from a library copy that has moved on.
  */
 export function sameCustomIcon(a: CustomIconEntry, b: CustomIconEntry): boolean {
@@ -14,6 +14,11 @@ export function sameCustomIcon(a: CustomIconEntry, b: CustomIconEntry): boolean 
     a.figure === b.figure &&
     a.look === b.look &&
     a.states?.[0] === b.states?.[0] &&
-    a.states?.[1] === b.states?.[1]
+    a.states?.[1] === b.states?.[1] &&
+    a.variants?.length === b.variants?.length &&
+    (a.variants ?? []).every(
+      (variant, index) =>
+        variant.name === b.variants?.[index]?.name && variant.look === b.variants[index]?.look,
+    )
   );
 }

@@ -33,7 +33,7 @@ import { callSitesPassing, callSitesWrappingAttribute } from './jsxCallSites.ts'
  */
 
 /** Every `<ControlTooltip>` the app renders, counted through the `text` its props type requires. */
-const CALL_SITE_COUNT = 101;
+const CALL_SITE_COUNT = 103;
 
 /**
  * Where the wrapped control is written with `disabled`, by the file that renders each.
@@ -50,6 +50,8 @@ const DISABLED_CAPABLE = [
   'src/components/common/JsonPackTransfer.tsx',
   'src/components/common/SheetStepButtons.tsx',
   'src/components/common/SheetStepButtons.tsx',
+  'src/components/modals/CustomIconVariantFields.tsx',
+  'src/components/modals/CustomIconVariantFields.tsx',
   'src/components/modals/HistoryFooter.tsx',
   'src/components/modals/HistoryFooter.tsx',
   'src/components/modals/IconCatalogueFooter.tsx',
@@ -155,6 +157,6 @@ describe('the call-site counts ControlTooltip’s docblock states', () => {
     expect(component).toContain(`There are ${total} of those`);
     expect(component).toContain(`${total} more targets`);
     expect(component).toContain(`${disabled} of these wrap a control that can be disabled`);
-    expect(component).toContain(`two of the ${disabled} disabled-capable controls`);
+    expect(component).toContain(`four of the ${disabled} disabled-capable controls`);
   });
 });

@@ -2,9 +2,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { CUSTOM_ICON_REFUSALS } from '../constants/iconCatalogue/customIconRefusals.ts';
 import { ICON_CAPACITY_NOTICES } from '../constants/iconCatalogue/iconCapacityNotices.ts';
 import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
-import { LONGEST_CUSTOM_ICON, RELIC, RELIC_DRAFT, SPELL, TOGGLE, customPick } from '../test/customIcons.ts';
+import {
+  FAMILY,
+  LONGEST_CUSTOM_ICON,
+  RELIC,
+  RELIC_DRAFT,
+  SPELL,
+  TOGGLE,
+  customPick,
+} from '../test/customIcons.ts';
 import { customIconDraftOf } from './customIconDraftOf.ts';
-import type { CustomIconDraft, CustomIconField } from '../types/customIconDraft.ts';
+import type { CustomIconDraft, CustomIconField, CustomIconVariantDraft } from '../types/customIconDraft.ts';
+import { CUSTOM_ICON_FAMILY_SIZE } from '../constants/iconCatalogue/customIconLimits.ts';
 import { checkCustomIcon } from './checkCustomIcon.ts';
 
 // A capacity a few entries fill, so the refusal for a full set is reachable; the real figure is held by
@@ -260,5 +269,118 @@ describe('checkCustomIcon — what it refuses', () => {
 
   it('lets a dash through in the look, which the line closes on anyway', () => {
     expect(refusedFields({ look: 'a keycard — scorched at one end' }, [])).toEqual([]);
+  });
+});
+
+/** A family of `count` members named `m1`, `m2` and on, none with a phrase. */
+function family(count: number): readonly CustomIconVariantDraft[] {
+  return Array.from({ length: count }, (_, index) => ({ name: `m${String(index + 1)}`, look: '' }));
+}
+
+describe('checkCustomIcon — a family of variants', () => {
+  it('makes the family a draft describes: names slugged, phrases closed, an empty phrase dropped', () => {
+    const typed = {
+      ...customIconDraftOf(FAMILY),
+      variants: [
+        { name: '  Small ', look: 'a thumb-length pen with one green cell.' },
+        { name: 'STANDARD', look: '   ' },
+        { name: 'large', look: 'a pistol-grip injector with three green cells' },
+      ],
+    };
+    expect(checkCustomIcon(typed, [], null, [])).toEqual({ entry: FAMILY, refusals: [] });
+    // And an entry already checked makes itself again, as a tick or a library save measures it.
+    expect(checkCustomIcon(customIconDraftOf(FAMILY), [], null, []).entry).toEqual(FAMILY);
+  });
+
+  it('refuses a family outside its size, at both ends', () => {
+    expect(refusedFields({ variants: family(CUSTOM_ICON_FAMILY_SIZE.fewest) }, [])).toEqual([]);
+    expect(refusedFields({ variants: family(CUSTOM_ICON_FAMILY_SIZE.most) }, [])).toEqual(['set']);
+    expect(messages({ variants: family(1) }, [])).toEqual([CUSTOM_ICON_REFUSALS.familySize(1)]);
+    expect(messages({ variants: family(CUSTOM_ICON_FAMILY_SIZE.most + 1) }, [])).toContain(
+      CUSTOM_ICON_REFUSALS.familySize(CUSTOM_ICON_FAMILY_SIZE.most + 1),
+    );
+  });
+
+  it('refuses a member with no name, and a second member of one name, beside that member', () => {
+    const found = checkCustomIcon(
+      {
+        ...RELIC_DRAFT,
+        variants: [
+          { name: 'Rare', look: '' },
+          { name: 'rare!', look: '' },
+          { name: '¿', look: '' },
+        ],
+      },
+      [],
+      null,
+      [],
+    ).refusals;
+    expect(found).toEqual([
+      { field: 'variantName1', message: CUSTOM_ICON_REFUSALS.sameVariants },
+      { field: 'variantName2', message: CUSTOM_ICON_REFUSALS.variantEmpty(3) },
+    ]);
+  });
+
+  it.each([
+    ['a semicolon', 'a vial; a cap', CUSTOM_ICON_REFUSALS.variantSemicolon],
+    ['the line’s dash', 'a vial — capped', CUSTOM_ICON_REFUSALS.separator('variantLook')],
+    ['a count', 'a vial x3', CUSTOM_ICON_REFUSALS.countMarker('variantLook')],
+    ['a bracket', 'a vial [SEC:X]', CUSTOM_ICON_REFUSALS.brackets('variantLook')],
+    ['too many characters', 'a'.repeat(81), CUSTOM_ICON_REFUSALS.tooLong('variantLook', 81)],
+  ])(
+    'refuses %s in a member’s look, which would move its words into the next member or the look',
+    (_what, look, message) => {
+      const found = checkCustomIcon(
+        {
+          ...RELIC_DRAFT,
+          variants: [
+            { name: 'small', look },
+            { name: 'large', look: '' },
+          ],
+        },
+        [],
+        null,
+        [],
+      ).refusals;
+      expect(found).toEqual([{ field: 'variantLook0', message }]);
+    },
+  );
+
+  it('refuses a member name whose slug alone shows a count, as a state’s is', () => {
+    expect(
+      refusedFields(
+        {
+          variants: [
+            { name: 'éx5', look: '' },
+            { name: 'large', look: '' },
+          ],
+        },
+        [],
+      ),
+    ).toEqual(['variantName0']);
+  });
+
+  it('refuses a pair and a family on one entry', () => {
+    expect(messages({ states: ['on', 'off'], variants: family(2) }, [])).toEqual([
+      CUSTOM_ICON_REFUSALS.statesAndVariants,
+    ]);
+  });
+
+  it('refuses a member whose sprite something else answers to, and a set with no room for every member', () => {
+    // `heal-minor` is a catalogue entry, so a family named `Heal` with a `minor` member collides with it.
+    const found = messages(
+      {
+        role: 'Heal',
+        variants: [
+          { name: 'minor', look: '' },
+          { name: 'huge', look: '' },
+        ],
+      },
+      [],
+    );
+    expect(found).toHaveLength(1);
+    expect(found[0]).toContain('`heal-minor`');
+    const two = cataloguePicks(['heal-minor', 'heal-major']);
+    expect(messages({ variants: family(3) }, two)).toEqual([ICON_CAPACITY_NOTICES.row(3, 2)]);
   });
 });

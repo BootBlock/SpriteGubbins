@@ -1,3 +1,4 @@
+import { CUSTOM_ICON_FAMILY_SIZE } from '../iconCatalogue/customIconLimits.ts';
 import { ICON_ROSTER_CAPACITY, ICONS_PER_SHEET } from '../iconCatalogue/iconSheetLimits.ts';
 
 /**
@@ -31,6 +32,16 @@ export const ICON_CATALOGUE_ACTION_TOOLTIPS = {
   submitChange:
     'Saves your changes to this icon in the chosen project’s library and, where it is ticked, on your set, as one step Undo can take back there. Its line on the sheet and its slot name follow your new words, and it keeps its place unless you changed its kind.\n\n' +
     'A preset or history entry saved earlier keeps the copy it was saved with, so no prompt you kept changes.',
+
+  addVariant:
+    'Adds another member to the end of the family, drawn after the rest. It needs a name of its own, which ends its sprite’s slot name, and each member counts as one more of the set’s components.',
+
+  addVariantAtMost: `A family holds at most ${String(CUSTOM_ICON_FAMILY_SIZE.most)} variants, half a sheet, so it is drawn beside its siblings on one sheet. Remove one to add another, or write a second entry for the rest.`,
+
+  removeVariant:
+    'Takes this member out of the family, and the members after it move up one place. Nothing changes on your set until you save the form.',
+
+  removeVariantAtFewest: `A family has at least ${String(CUSTOM_ICON_FAMILY_SIZE.fewest)} variants. To draw one icon, choose _One icon_ under _Drawn as_ instead.`,
 
   cancelOwn:
     'Closes the form without changing your set or your library. Whatever you typed into it is discarded.',

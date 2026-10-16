@@ -4,6 +4,8 @@ import type { CustomIconEntry, IconColourMode, IconEntry } from '../types/iconRo
 import { damageSchoolName } from './damageSchoolName.ts';
 import { iconLookText } from './iconLookText.ts';
 import { iconSlotNames } from './iconSlotNames.ts';
+import { spellNumber } from './numberWords.ts';
+import { spokenList } from './spokenList.ts';
 import { spokenIconState } from './spokenIconState.ts';
 
 /**
@@ -105,16 +107,17 @@ function slotParagraph(entry: IconCatalogueEntry): string {
   return `Ticking this adds two slots to your set, \`${entry.id}-${first}\` and \`${entry.id}-${second}\`: the names its two sprites take in the sheet’s manifest and in the sprite pack’s file names.`;
 }
 
-/** The sprite names an entry of the reader's own takes — one per state of a pair. */
+/** The sprite names an entry of the reader's own takes — one per state of a pair or member of a family. */
 function ownSlotParagraph(entry: CustomIconEntry): string {
   const slots = iconSlotNames(entry).map((slot) => `\`${slot}\``);
-  return slots.length === 1
-    ? `Your entry names its sprite ${slots.join('')} in the sheet’s manifest and the sprite pack.`
-    : `Your entry names its two sprites ${slots.join(' and ')} in the sheet’s manifest and the sprite pack.`;
+  if (slots.length === 1) {
+    return `Your entry names its sprite ${slots.join('')} in the sheet’s manifest and the sprite pack.`;
+  }
+  return `Your entry names its ${spellNumber(slots.length)} sprites ${spokenList(slots)} in the sheet’s manifest and the sprite pack.`;
 }
 
 /**
- * Whether it is one drawing or a toggle pair, and whether it may show a figure.
+ * Whether it is one drawing, a toggle pair or a family, and whether it may show a figure.
  *
  * The figure sentence differs by origin because the flag means different things. A catalogue entry's is
  * held by the catalogue test to a look that names a figure. A custom entry's is the reader's own mark,
@@ -122,10 +125,13 @@ function ownSlotParagraph(entry: CustomIconEntry): string {
  * unconditional, so the card says what the mark does and no more.
  */
 function shapeParagraph(entry: IconEntry): string {
+  const members = 'variants' in entry ? entry.variants : undefined;
   const drawings =
-    entry.states === undefined
-      ? 'It is one drawing, and counts as one of the set’s components.'
-      : `It is one icon drawn ${spokenIconState(entry.states[0])} and then ${spokenIconState(entry.states[1])}, so it counts as two of the set’s components, and the pair always shares a sheet.`;
+    members !== undefined
+      ? `It is one design drawn as a family of ${spellNumber(members.length)} variants, so it counts as ${spellNumber(members.length)} of the set’s components, and the family always shares a sheet.`
+      : entry.states === undefined
+        ? 'It is one drawing, and counts as one of the set’s components.'
+        : `It is one icon drawn ${spokenIconState(entry.states[0])} and then ${spokenIconState(entry.states[1])}, so it counts as two of the set’s components, and the pair always shares a sheet.`;
   const figure =
     entry.figure !== true
       ? ''

@@ -52,6 +52,19 @@ export const ICON_COLOUR_MODES = ['FULL_COLOUR', 'TINT_MASK'] as const;
 export type IconColourMode = (typeof ICON_COLOUR_MODES)[number];
 
 /**
+ * One member of a family of icons the reader writes as one entry (`CustomIconEntry.variants`): a small,
+ * a standard and a large dose of one potion, or one relic at each rarity.
+ *
+ * `name` is a slug, as a state is, because it ends the member's slot name (`<id>-<name>`); `look` is the
+ * reader's own phrase for how this member differs from its siblings, present only where they wrote one,
+ * so a family told apart by its names alone (`small`, `large`) carries none.
+ */
+export interface CustomIconVariant {
+  readonly name: string;
+  readonly look?: string;
+}
+
+/**
  * An icon the reader writes for their own game — a named quest relic, a faction's signature spell — where
  * the catalogue's archetypes have nothing to tick.
  *
@@ -79,10 +92,27 @@ export interface CustomIconEntry {
   readonly school?: DamageSchool;
   /** Whether the drawing includes a hand, a face or a figure, as on a catalogue entry. */
   readonly figure?: true;
-  /** The two states of a toggle, each a slug, as on a catalogue entry. */
+  /** The two states of a toggle, each a slug, as on a catalogue entry. Never beside `variants`. */
   readonly states?: readonly [string, string];
+  /**
+   * The members of a family drawn from this one entry, in the order the sheet draws them: one pick worth
+   * a component per member, each named `<id>-<name>`, sharing the role and the look, and kept on one
+   * sheet as a pair is, so the generator draws the siblings side by side to one design. Never beside
+   * `states`: an entry is one drawing, a toggle pair or a family. The catalogue has none, since its
+   * families are separate entries written per world (`Minor healing consumable` and its siblings).
+   */
+  readonly variants?: readonly CustomIconVariant[];
   /** What the icon is drawn as, in the reader's words, completing “Role ×1 — …”. */
   readonly look: string;
+}
+
+/**
+ * What decides how many drawings an entry is and what each is named after its slot name: the states of
+ * a pair or the members of a family. A catalogue entry has no members, so the field is optional here.
+ */
+export interface IconDrawings {
+  readonly states?: readonly string[];
+  readonly variants?: readonly CustomIconVariant[];
 }
 
 /** Anything a roster can draw: a catalogue archetype, or an entry of the reader's own. */

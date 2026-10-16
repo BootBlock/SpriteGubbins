@@ -131,7 +131,9 @@ describe('the ICON series', () => {
     const [sheet] = seriesOf(subjectWith(['system-sound', 'heal-minor']));
     const intro = sheet?.groups[0]?.intro?.replaceAll(/\s+/g, ' ') ?? '';
     expect(intro).toContain('Three drawings, three across and one down, in the reading order below.');
-    expect(intro).toContain('an entry marked ×2 is one icon drawn once in each of its two states');
+    expect(intro).toContain(
+      'an entry marked ×2 or more is one design drawn once for each state or variant it names',
+    );
     expect(intro).not.toMatch(/\bicons,/);
     expect(entriesOf(sheet ?? ISOLATED_OVERLAY)[0]?.text).toMatch(
       /^Sound ×2, one icon drawn unmuted and then muted — /,

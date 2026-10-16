@@ -5,7 +5,7 @@ import type { IconCatalogueEntry } from '../types/iconCatalogue.ts';
 import { guidanceMarkupProblems } from './guidanceMarkupProblems.ts';
 import { iconEntryGuidance } from './iconEntryGuidance.ts';
 import { iconLookText } from './iconLookText.ts';
-import { RELIC, SPELL } from '../test/customIcons.ts';
+import { FAMILY, RELIC, SPELL } from '../test/customIcons.ts';
 
 /**
  * The card behind every catalogue row, written for every entry under every look a world can send.
@@ -92,5 +92,16 @@ describe('the card behind a row of the reader’s own', () => {
     expect(held).toContain('your library keeps its own copy');
     expect(setOnly).not.toContain('your library keeps');
     expect(setOnly).toContain('unticking takes it away for good');
+  });
+
+  it('names every member’s sprite of a family, and says it counts once per member on one sheet', () => {
+    const card = iconEntryGuidance(FAMILY, 'Modern Day', 'FULL_COLOUR', true);
+    expect(guidanceMarkupProblems(card)).toEqual([]);
+    expect(card).toContain(
+      'Your entry names its three sprites `stim-injector-small`, `stim-injector-standard` and `stim-injector-large`',
+    );
+    expect(card).toContain(
+      'one design drawn as a family of three variants, so it counts as three of the set’s components, and the family always shares a sheet',
+    );
   });
 });

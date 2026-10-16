@@ -1,3 +1,4 @@
+import type { IconDrawings } from '../../types/iconRoster.ts';
 import type { IconCatalogueEntry, IconCatalogueGroup } from '../../types/iconCatalogue.ts';
 import { AMMUNITION } from './ammunition.ts';
 import { BOOSTS } from './boosts.ts';
@@ -143,13 +144,14 @@ export function iconCatalogueEntry(id: string): IconCatalogueEntry | undefined {
 }
 
 /**
- * How many components one entry is on a sheet: one drawing, or one for each state of a toggle.
+ * How many components one entry is on a sheet: one drawing, one for each state of a toggle, or one for
+ * each member of a family of the reader's own.
  *
  * The one place that arithmetic is written, because four readers need it and agree only if they share
- * it — the roster parser's capacity, the sheet's inventory line, the chunking that keeps a pair on one
- * sheet, and the test rosters built from the whole catalogue. It reads only the states, so a catalogue
- * entry and one of the reader's own are counted alike.
+ * it — the roster parser's capacity, the sheet's inventory line, the chunking that keeps a pair or a
+ * family on one sheet, and the test rosters built from the whole catalogue. It reads only the states and
+ * the members, so a catalogue entry and one of the reader's own are counted alike.
  */
-export function iconComponentCount(entry: Pick<IconCatalogueEntry, 'states'>): number {
-  return entry.states === undefined ? 1 : entry.states.length;
+export function iconComponentCount(entry: IconDrawings): number {
+  return entry.variants?.length ?? entry.states?.length ?? 1;
 }

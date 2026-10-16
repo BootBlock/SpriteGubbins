@@ -15,14 +15,32 @@ export interface CustomIconDraft {
   readonly figure: boolean;
   /** The two states of a toggle as typed, or `null` for one drawing. */
   readonly states: readonly [string, string] | null;
+  /** The members of a family as typed, or `null` for an entry that is not one. */
+  readonly variants: readonly CustomIconVariantDraft[] | null;
+  readonly look: string;
+}
+
+/** One member of a family as typed: its name, and its own phrase, empty where it has none. */
+export interface CustomIconVariantDraft {
+  readonly name: string;
   readonly look: string;
 }
 
 /**
- * Which part of a draft a refusal is about: one of the form's fields, or `set` for the roster as a
- * whole, which has no room for it.
+ * Which part of a draft a refusal is about: one of the form's fields, a family member's name or phrase
+ * by its position from 0, `variants` for the family as a whole, or `set` for the roster as a whole,
+ * which has no room for it.
  */
-export type CustomIconField = 'role' | 'school' | 'firstState' | 'secondState' | 'look' | 'set';
+export type CustomIconField =
+  | 'role'
+  | 'school'
+  | 'firstState'
+  | 'secondState'
+  | 'variants'
+  | `variantName${number}`
+  | `variantLook${number}`
+  | 'look'
+  | 'set';
 
 /** One reason a draft cannot join the roster, said to the reader beside the field it is about. */
 export interface CustomIconRefusal {

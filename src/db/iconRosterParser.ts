@@ -80,7 +80,10 @@ function readPick(item: unknown): ReadPick | null {
   return {
     source: 'CUSTOM',
     draft,
-    count: iconComponentCount(draft.states === null ? {} : { states: draft.states }),
+    count: iconComponentCount({
+      ...(draft.states === null ? {} : { states: draft.states }),
+      ...(draft.variants === null ? {} : { variants: draft.variants }),
+    }),
   };
 }
 

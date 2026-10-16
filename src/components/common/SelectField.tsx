@@ -59,7 +59,7 @@ interface SelectFieldProps<T extends string | number> {
    * `NumberField` and `CheckboxField` both show theirs.
    *
    * Optional here where those two require it, for the reason `description` is: two of the app's
-   * thirty-six selects — the rig mode and the resolution profile — have a setting that takes their
+   * thirty-seven selects — the rig mode and the resolution profile — have a setting that takes their
    * value over, and the other thirty-four passing a permanently-empty string would bury the two that do.
    * The rig mode also carries its narrowing `description`, and the two say different things: this
    * one is the sheet taking the choice over, that one the sheet withdrawing an option from a choice
@@ -84,7 +84,7 @@ interface SelectFieldProps<T extends string | number> {
    * Words that follow `label` in the control's accessible name, and appear nowhere on screen — for a
    * select rendered once for each item in a list, where `label` alone gives every copy one name.
    *
-   * One of the thirty-six passes it: `ProjectSelectField`, which `ProjectMoveField` renders on each
+   * One of the thirty-seven passes it: `ProjectSelectField`, which `ProjectMoveField` renders on each
    * saved row to choose where its save moves. Those were a select called “Project” per saved item, beside an ⓘ called
    * “Guidance: Project”, so a reader moving control to control met a run of identical names with
    * nothing saying which save each would move — while the buttons in the same rows already named
@@ -109,7 +109,7 @@ interface SelectFieldProps<T extends string | number> {
  * Thirty-six controls in this app are exactly this — the studio's output settings, the category, the
  * target model, the quantiser's dials, the atlas calculator's two, the settings dialog's one, the icon
  * catalogue's kind and school filters, and the kind and school of an icon of the reader's own — so it
- * is one component rather than thirty-six copies of the same label, tooltip and `<select>` markup.
+ * is one component rather than thirty-seven copies of the same label, tooltip and `<select>` markup.
  *
  * A native `<select>` on purpose. It is keyboard-operable, type-to-select, and renders as the
  * platform's own picker on touch devices; `ComboBox` exists for the fields where free text is
@@ -157,7 +157,7 @@ export function SelectField<T extends string | number>({
       {/*
         The row the control and its action share. Always rendered, rather than only where an action
         was passed: a single-child flex row lays a `w-full` select out exactly as a bare one, so one
-        path serves all thirty-six call sites and there is no second arrangement to keep in step.
+        path serves all thirty-seven call sites and there is no second arrangement to keep in step.
       */}
       <div className="flex items-center gap-2">
         <select

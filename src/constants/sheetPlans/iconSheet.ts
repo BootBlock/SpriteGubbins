@@ -45,8 +45,8 @@ the subject and its own backdrop together, with no frame, border or bevel along 
 because the interface draws the frame. The backdrop is a field behind the subject, drawn as section
 [SEC:CONTRACT] states, never a scene with a horizon, and it keeps a clear gap in value from the subject so the
 subject’s silhouette reads against it. The set agrees on weight, margin, outline, light and backdrop
-treatment; an entry marked ×2 is one icon drawn once in each of its two states, in the order it names
-them.`,
+treatment; an entry marked ×2 or more is one design drawn once for each state or variant it names, in
+the order it names them.`,
     agreement: `Every tile is the same square at the same size, and every subject fills its tile to the same margin,
 carries the same outline weight, and is lit as every other icon of the set is, on this sheet and on
 every other sheet of it — an icon that is heavier, larger or lit differently reads as belonging to
@@ -60,7 +60,8 @@ square to the edge, and nothing of the icon crosses that edge.`,
       'one icon and the icon beside it are drawn to the same weight, each filling its own cell to the same margin',
     componentClass: 'one icon of this one set',
     intro: `Each entry is a different icon of this one set, drawn so the set agrees on weight, margin, outline and
-light; an entry marked ×2 is one icon drawn once in each of its two states, in the order it names them.`,
+light; an entry marked ×2 or more is one design drawn once for each state or variant it names, in the
+order it names them.`,
     agreement: `Every icon fills the same cell to the same margin, carries the same outline weight, and is lit as
 every other icon of the set is, on this sheet and on every other sheet of it — an icon that is heavier,
 larger or lit differently reads as belonging to another pack.`,
@@ -89,9 +90,10 @@ const COLOUR_SENTENCES: Readonly<Record<IconColourMode, string>> = {
  * is what lets `capabilityRuns` in `utils/seriesCapability.ts` fold them into one run when section 6
  * states what the series delivers — and a series has one look, so the look never splits that run.
  *
- * **It counts drawings, not icons.** A two-state entry is one icon drawn twice and takes two cells, so the
- * grid is stated in drawings and the intro says what a ×2 line is; a sheet holding a sound toggle and a
- * potion is three drawings of two icons.
+ * **It counts drawings, not icons.** A two-state entry is one icon drawn twice and takes two cells, and a
+ * family of the reader's own takes a cell per member, so the grid is stated in drawings and the intro
+ * says what a line marked ×2 or more is; a sheet holding a sound toggle and a potion is three drawings
+ * of two icons.
  *
  * **Each icon is posed on its own, and its entry is its design.** The plan declares `OWN_POSE`, so section
  * 3 states the camera the set shares and lets each subject turn or lie corner to corner for its clearest
@@ -122,7 +124,8 @@ export function iconSheet(
     orientation: 'OWN_POSE',
     // Section 1 states what the set shares; each icon's own design is its entry in section 4.
     subjectScope: 'SHARED_BY_SET',
-    // A two-state entry is drawn once per state, which is the inventory settling a change of position.
+    // A two-state entry is drawn once per state and a family once per member, which is the inventory
+    // settling a change of position.
     posing: entries.some((entry) => entry.count > 1) ? 'PER_POSITION' : 'UNSTATED',
     // The agreement shape, for EFFECT's reason: these icons are not pieces of each other, so what has to
     // hold is that no member arrives at half the weight of the one beside it.

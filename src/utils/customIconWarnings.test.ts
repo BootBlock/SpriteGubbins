@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CUSTOM_ICON_WARNING_TEXT } from '../constants/iconCatalogue/customIconWarningText.ts';
+import { NEUTRAL_RARITY_TIER, RARITY_TIERS } from '../constants/iconCatalogue/rarityTiers.ts';
 import { RELIC_DRAFT } from '../test/customIcons.ts';
 import type { CustomIconDraft } from '../types/customIconDraft.ts';
 import { checkCustomIcon } from './checkCustomIcon.ts';
@@ -8,9 +9,16 @@ import { customIconWarnings } from './customIconWarnings.ts';
 function warn(
   draft: Partial<CustomIconDraft>,
   key: Parameters<typeof customIconWarnings>[1] = 'MAGENTA_FF00FF',
+  tier: string = NEUTRAL_RARITY_TIER,
 ) {
-  return customIconWarnings({ ...RELIC_DRAFT, ...draft }, key);
+  return customIconWarnings({ ...RELIC_DRAFT, ...draft }, key, tier);
 }
+
+/** A family told apart by tier: the two members a set drawn at one tier would draw alike. */
+const TIERED = [
+  { name: 'Common', look: '' },
+  { name: 'rare', look: 'with a gilded rim' },
+] as const;
 
 describe('customIconWarnings', () => {
   it('says nothing about an entry the sheet draws as written', () => {
@@ -105,14 +113,38 @@ describe('customIconWarnings', () => {
     expect(warn({ look: 'a keycard in a gloved hand', figure: true })).toEqual([]);
   });
 
-  it('reads the role and the states as well as the look', () => {
+  it('reads the role, the states and a family’s members as well as the look', () => {
     expect(warn({ role: 'Black relic' }, 'PURE_BLACK')).toHaveLength(1);
     expect(warn({ states: ['face up', 'face down'] })).toEqual([CUSTOM_ICON_WARNING_TEXT.figure('face')]);
+    expect(
+      warn({
+        variants: [
+          { name: 'small', look: '' },
+          { name: 'held', look: 'in a gloved hand' },
+        ],
+      }),
+    ).toEqual([CUSTOM_ICON_WARNING_TEXT.figure('hand')]);
+  });
+
+  it('warns of a member naming a tier the set’s Rarity Tier draws every icon at, and only then', () => {
+    // Under `Epic` every icon is drawn epic, so a common and a rare member come back alike.
+    const tier = RARITY_TIERS.at(-2) ?? '';
+    expect(warn({ variants: TIERED }, 'MAGENTA_FF00FF', tier)).toEqual([
+      CUSTOM_ICON_WARNING_TEXT.rarityTier('Common', tier),
+    ]);
+    // The neutral emphasis leaves the tiers to the overlay marks, which is what such a family needs.
+    expect(warn({ variants: TIERED })).toEqual([]);
+    // A role naming a tier describes one icon, which a set-wide tier does not contradict.
+    expect(warn({ role: 'Rare relic' }, 'MAGENTA_FF00FF', tier)).toEqual([]);
+    // `uncommon` is not `common`.
+    expect(
+      warn({ variants: [{ name: 'uncommonly big', look: '' }, TIERED[1]] }, 'MAGENTA_FF00FF', 'Rare'),
+    ).toEqual([CUSTOM_ICON_WARNING_TEXT.rarityTier('rare', 'Rare')]);
   });
 
   it('reports every rule a draft breaks, and never stops the check passing it', () => {
     const draft = { ...RELIC_DRAFT, look: 'a white keycard with a dial in a hand' };
-    expect(customIconWarnings(draft, 'PURE_WHITE')).toHaveLength(3);
+    expect(customIconWarnings(draft, 'PURE_WHITE', NEUTRAL_RARITY_TIER)).toHaveLength(3);
     expect(checkCustomIcon(draft, [], null, []).entry?.look).toBe(draft.look);
   });
 });

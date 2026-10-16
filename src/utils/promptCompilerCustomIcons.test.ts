@@ -5,7 +5,15 @@ import { ICON_CATALOGUE_GROUPS } from '../constants/iconCatalogue/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { parseIconRoster } from '../db/iconRosterParser.ts';
-import { RELIC, SALUTE, SPELL, TOGGLE, customPick, hostileStoredSubject } from '../test/customIcons.ts';
+import {
+  FAMILY,
+  RELIC,
+  SALUTE,
+  SPELL,
+  TOGGLE,
+  customPick,
+  hostileStoredSubject,
+} from '../test/customIcons.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import type { IconPick } from '../types/iconRoster.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -91,6 +99,14 @@ describe('an icon of the reader’s own in the compiled prompt', () => {
     expect(slots(subject)).toEqual(['cloak-field-engaged', 'cloak-field-idle']);
   });
 
+  it('compiles a family as one design drawn once per member, in order, naming each drawing', () => {
+    const subject = iconSet([customPick(FAMILY)]);
+    expect(inventory(subject)).toContain(
+      `Stim injector ×3, one design drawn as a family of three variants in this order: small, a thumb-length pen with one green cell; standard; large, a pistol-grip injector with three green cells — ${FAMILY.look}`,
+    );
+    expect(slots(subject)).toEqual(['stim-injector-small', 'stim-injector-standard', 'stim-injector-large']);
+  });
+
   it('rescues a hand the look names on every ICON sheet, and compiles the figure mark to nothing', () => {
     // The rescue sentences are unconditional on an ICON sheet, so they reach a custom look naming a
     // hand whether or not the entry is marked as showing a figure; no compiler code reads the mark.
@@ -135,6 +151,21 @@ describe('an icon of the reader’s own in the compiled prompt', () => {
     expect(slots(subject, 0).slice(8)).toEqual(['cloak-field-engaged', 'cloak-field-idle']);
     expect(slots(subject, 1)).toHaveLength(8);
     expect(slots(subject, 1).at(-1)).toBe('nightcity-keycard-relic');
+  });
+
+  it('keeps a family together where it would straddle two sheets, and counts it once per member', () => {
+    // Seven catalogue icons, the family of three and eight more: eighteen drawings, which an even cut
+    // of nine and nine would split the family across, so the family closes the first sheet at ten.
+    const catalogue = singles(15);
+    const subject = iconSet([...catalogue.slice(0, 7), customPick(FAMILY), ...catalogue.slice(7)]);
+    expect(sheetSeriesFor('ICON', subject, OUTPUT.directionalMode, OUTPUT.directions)).toHaveLength(3);
+    expect(slots(subject, 0)).toHaveLength(10);
+    expect(slots(subject, 0).slice(7)).toEqual([
+      'stim-injector-small',
+      'stim-injector-standard',
+      'stim-injector-large',
+    ]);
+    expect(slots(subject, 1)).toHaveLength(8);
   });
 
   it('throws on a citation a hand-built entry carries, which is why intake refuses one', () => {

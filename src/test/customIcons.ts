@@ -6,7 +6,8 @@ import type { SubjectDefinition } from '../types/subject.ts';
 
 /**
  * Entries of the reader's own for the suites to put on a roster: one of each shape a custom entry can
- * take — an item, a spell with its school, a two-state toggle, and an emote that shows a figure — each
+ * take — an item, a spell with its school, a two-state toggle, a family of variants, and an emote that
+ * shows a figure — each
  * as `checkCustomIcon` would make it from the draft beside it.
  */
 
@@ -16,6 +17,7 @@ export const RELIC_DRAFT: CustomIconDraft = {
   school: null,
   figure: false,
   states: null,
+  variants: null,
   look: 'a scorched brass keycard on a snapped chain',
 };
 
@@ -40,6 +42,18 @@ export const TOGGLE: CustomIconEntry = {
   kind: 'SYSTEM',
   states: ['engaged', 'idle'],
   look: 'a hexagonal shimmer panel over a slim emitter',
+};
+
+export const FAMILY: CustomIconEntry = {
+  id: 'stim-injector',
+  role: 'Stim injector',
+  kind: 'ITEM',
+  variants: [
+    { name: 'small', look: 'a thumb-length pen with one green cell' },
+    { name: 'standard' },
+    { name: 'large', look: 'a pistol-grip injector with three green cells' },
+  ],
+  look: 'a chrome auto-injector with a green glowing cell',
 };
 
 export const SALUTE: CustomIconEntry = {
@@ -83,6 +97,7 @@ export function customIconSubject(): SubjectDefinition {
       picks: [
         ...cataloguePicks(['heal-minor']),
         customPick(RELIC),
+        customPick(FAMILY),
         customPick(SPELL),
         customPick(SALUTE),
         customPick(TOGGLE),
