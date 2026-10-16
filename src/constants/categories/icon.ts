@@ -173,6 +173,7 @@ export const ICON: CategoryDefinition = {
       tooltip:
         'The world the icons belong to. It decides what every icon is drawn as, since each catalogue icon has a look written for each family of world, and it aligns the trim and the marks across the whole set.\n\n' +
         'A world you type that is not in this list draws each icon from its role, as that world would make it.',
+      note: 'On an icon set, this decides what every catalogue icon shows: each one has a look written for each family of world, and the catalogue’s rows show the look in the world you choose.',
       options: [
         'High Fantasy',
         'Grim Dark Fantasy',

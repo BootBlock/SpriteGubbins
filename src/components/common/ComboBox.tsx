@@ -17,6 +17,11 @@ interface ComboBoxProps {
    * sheet already draws (`additionalAnatomyNote`).
    */
   readonly description?: string;
+  /**
+   * The text input's `id`, where something else on the page moves focus to it
+   * (`subjectFieldInputId`). Left out, the id is this control's own and unique.
+   */
+  readonly id?: string;
 }
 
 /**
@@ -38,7 +43,7 @@ interface ComboBoxProps {
  * the page. It stays a DOM child of the container regardless, which is what keeps the
  * outside-press check and `aria-activedescendant` working unchanged.
  */
-export function ComboBox({ label, tooltip, value, options, onChange, description = '' }: ComboBoxProps) {
+export function ComboBox({ label, tooltip, value, options, onChange, description = '', id }: ComboBoxProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
   const listboxRef = useRef<HTMLDivElement>(null);
@@ -49,7 +54,7 @@ export function ComboBox({ label, tooltip, value, options, onChange, description
   // further off the field than it should. `containerRef` stays what the outside-press check reads.
   useAnchoredSurface(fieldRef, listboxRef, combo.isOpen, 'stretch');
   const baseId = useId();
-  const inputId = `${baseId}-input`;
+  const inputId = id ?? `${baseId}-input`;
   const listboxId = `${baseId}-listbox`;
   const descriptionId = `${baseId}-description`;
   const optionId = (index: number) => `${baseId}-option-${index}`;

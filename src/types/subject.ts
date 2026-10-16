@@ -134,6 +134,12 @@ export interface FieldOption {
   readonly tooltip: string;
   readonly options: readonly string[];
   /**
+   * Plain text shown under the field on this category, and wired as its accessible description: what
+   * the field decides here that a reader would not look for in it. ICON's *World & Era*, which picks
+   * the look of every catalogue icon (issue #504). Left out, the field shows none.
+   */
+  readonly note?: string;
+  /**
    * The one option in the pool above that means *the subject has none of what this field
    * describes* — `Bare Unclad Frame`, `Clear — No Overlay`, `NONE`.
    *
