@@ -30,7 +30,7 @@ function log(id: string, overrides: Partial<PromptHistoryLog> = {}): PromptHisto
     promptText: `Prompt ${id}`,
     createdAt: WHEN,
     wordCount: 120,
-    modelUsed: 'CHATGPT_5_6_SOL',
+    modelUsed: 'CHATGPT',
     subject: DEFAULT_PRESET.subject,
     // The preset pins the image half; a stored entry carries the whole configuration.
     output: { ...DEFAULT_OUTPUT_CONFIG, ...DEFAULT_PRESET.output },

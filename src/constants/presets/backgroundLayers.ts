@@ -112,7 +112,7 @@ export const BACKGROUND_LAYER_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'UNLIT_EMISSIVE_BAKED',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {

@@ -58,7 +58,7 @@ describe('LocalStorageBackend — icons of the reader’s own', () => {
       promptText: '# MODULAR SPRITE-SHEET PROMPT ARCHITECTURE (ICON)',
       createdAt: 1_000,
       wordCount: 5,
-      modelUsed: 'CHATGPT_5_6_SOL',
+      modelUsed: 'CHATGPT',
       subject: customIconSubject(),
       output: DEFAULT_OUTPUT_CONFIG,
     });

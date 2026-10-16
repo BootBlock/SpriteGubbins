@@ -150,7 +150,7 @@ describe('the full-bleed icon square in the wrappers', () => {
   );
 
   it.each(ICON_LOOKS)('has Sol carry every %s inventory entry and the backdrop rule unshortened', (look) => {
-    const prompt = iconPrompt(look, 'ICONS', { targetModel: 'CHATGPT_5_6_SOL' });
+    const prompt = iconPrompt(look, 'ICONS', { targetModel: 'CHATGPT' });
     const directive = prompt.slice(0, prompt.indexOf('# MODULAR SPRITE-SHEET SPECIFICATION'));
     expect(directive).toMatch(/- the numbered items of section 0\n/);
     expect(directive).toMatch(/- the inventory in section \d+\n/);

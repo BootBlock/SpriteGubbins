@@ -23,7 +23,7 @@ import { cataloguePicks } from '../iconCatalogue/cataloguePicks.ts';
  * on every category bound to it — an icon in a cell has no yaw.
  *
  * **The cyberpunk sets are the use case the catalogue was built for**: a cyberpunk MMORPG's
- * consumables and its spellbook, drawn at 128 px for ChatGPT 5.6 Sol as full-bleed squares, the look of
+ * consumables and its spellbook, drawn at 128 px for ChatGPT as full-bleed squares, the look of
  * an action bar that draws its own frame round each one, and its emote wheel as marks for the wheel's
  * own slots. The spellbook ticks two attacks from each of the eight damage schools, so every school's
  * colour is on its sheet, and draws them face on, as a spell's emblem is; the emote wheel is the
@@ -191,7 +191,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       backgroundKey: 'TRANSPARENT',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {
@@ -254,7 +254,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'FLAT_NEUTRAL_ALBEDO',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {
@@ -381,7 +381,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       backgroundKey: 'PURE_WHITE',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {
@@ -447,7 +447,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       backgroundKey: 'PURE_WHITE',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {
@@ -513,7 +513,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       backgroundKey: 'TRANSPARENT',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {
@@ -580,7 +580,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       backgroundKey: 'TRANSPARENT',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {
@@ -646,7 +646,7 @@ export const ICON_SET_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       backgroundKey: 'TRANSPARENT',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
 ];

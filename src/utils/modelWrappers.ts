@@ -179,7 +179,7 @@ export function wrapForModel(
   },
 ): string {
   switch (target) {
-    case 'CHATGPT_5_6_SOL':
+    case 'CHATGPT':
       return wrapForSol(
         prompt,
         {

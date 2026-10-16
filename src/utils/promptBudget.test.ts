@@ -33,7 +33,7 @@ describe('readPromptBudget', () => {
     // Sol's is the *input* ceiling. Its model page states both, and 1,050,000 — the context window,
     // which the 128,000 output tokens are also drawn from — is the one this reading must not use:
     // every other row here is an input limit, and what is measured against it is the prompt alone.
-    expect(readPromptBudget('x', 'CHATGPT_5_6_SOL')?.budget.limit).toBe(922_000);
+    expect(readPromptBudget('x', 'CHATGPT')?.budget.limit).toBe(922_000);
     expect(readPromptBudget('x', 'GPT_IMAGE')?.budget.limit).toBe(32_000);
     expect(readPromptBudget('x', 'QWEN_IMAGE')?.budget.limit).toBe(4_500);
   });

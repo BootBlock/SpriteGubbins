@@ -204,7 +204,7 @@ describe('the overlay sheet’s cells in the compiled prompt', () => {
   it.each(ICON_SET_PRESETS.map((preset) => [preset.id, preset] as const))(
     'states the cell and the exact share on every sheet of %s, for two targets',
     (_id, preset) => {
-      for (const targetModel of ['CHATGPT_5_6_SOL', 'MIDJOURNEY'] as const) {
+      for (const targetModel of ['CHATGPT', 'MIDJOURNEY'] as const) {
         const output = { ...DEFAULT_OUTPUT_CONFIG, ...preset.output, targetModel };
         const series = sheetSeriesFor('ICON', preset.subject, output.directionalMode, output.directions);
         for (const sheetIndex of series.keys()) {

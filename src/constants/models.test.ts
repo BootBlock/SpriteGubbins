@@ -29,7 +29,7 @@ import { TARGET_MODELS } from './models.ts';
  */
 const DECLARED_FIT: Record<TargetModelId, PromptFit | null> = {
   GENERIC: null,
-  CHATGPT_5_6_SOL: 'ALL',
+  CHATGPT: 'ALL',
   GEMINI_FLASH_IMAGE: 'ALL',
   GEMINI_PRO_IMAGE: 'ALL',
   // ByteDance publish advice rather than a ceiling, so there is nothing here to fit *inside*: past
@@ -150,7 +150,7 @@ describe('where each target model can be generated with', () => {
   });
 
   it('sends no two targets to the same page', () => {
-    // The defect this closes shipped: `GPT_IMAGE` and `CHATGPT_5_6_SOL` both named
+    // The defect this closes shipped: `GPT_IMAGE` and `CHATGPT` both named
     // https://chatgpt.com/images while declaring opposite capabilities — one a single-pass image
     // endpoint denied the self-audit and the component map, the other a thinking model that hands
     // off to an image tool. A reader choosing between them was choosing between two descriptions of

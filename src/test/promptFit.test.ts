@@ -55,6 +55,6 @@ describe('measurePromptFit', () => {
             generatePrompt(category, subject, { ...output, targetModel: target }).length,
         ),
       );
-    expect(longest('GPT_IMAGE')).toBeLessThan(longest('CHATGPT_5_6_SOL'));
+    expect(longest('GPT_IMAGE')).toBeLessThan(longest('CHATGPT'));
   });
 });

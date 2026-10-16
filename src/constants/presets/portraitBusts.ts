@@ -158,7 +158,7 @@ export const PORTRAIT_BUST_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'FLAT_NEUTRAL_ALBEDO',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {

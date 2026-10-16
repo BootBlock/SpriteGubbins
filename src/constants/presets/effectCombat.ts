@@ -112,7 +112,7 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'UNLIT_EMISSIVE_BAKED',
       backgroundKey: 'PURE_BLACK',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {

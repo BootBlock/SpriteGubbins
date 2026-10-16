@@ -61,7 +61,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       resolutionProfile: 'CUSTOM',
       spriteTargetSize: '64 × 96 px assembled',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {
@@ -107,7 +107,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       resolutionProfile: 'CUSTOM',
       spriteTargetSize: '56 × 88 px assembled',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {

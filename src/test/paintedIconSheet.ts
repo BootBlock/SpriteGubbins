@@ -3,7 +3,8 @@ import type { Rgba, SpriteBox } from '../types/quantiser.ts';
 import { imageFrom } from './images.ts';
 
 /**
- * A painted 4 × 4 icon sheet of the kind ChatGPT 5.6 Sol returns, scaled down to keep a test quick.
+ * A painted 4 × 4 icon sheet of the kind GPT-5.6 Sol returned in ChatGPT, scaled down to keep a
+ * test quick.
  *
  * A real one draws each tile at 230 to 380 pixels; this draws them on a 170-pixel step, which still
  * asks every resizing fit for a reduction to 128 that is not a whole number, and still holds a

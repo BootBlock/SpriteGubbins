@@ -112,7 +112,7 @@ export const INTERFACE_KIT_PRESETS: readonly PresetArchetype[] = [
       paletteLimit: 'STRICT_32_COLOR',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {

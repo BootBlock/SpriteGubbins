@@ -110,7 +110,7 @@ describe('the generator link beside the target model', () => {
       backgroundKey: 'MAGENTA_FF00FF',
     });
 
-    await userEvent.selectOptions(selector(), 'CHATGPT_5_6_SOL');
+    await userEvent.selectOptions(selector(), 'CHATGPT');
     expect(useOutputStore.getState().output.backgroundKey).toBe('MAGENTA_FF00FF');
   });
 });

@@ -58,7 +58,7 @@ const CYBERPUNK_KATANA: PresetArchetype = {
     outlineStyle: 'DARK_LOCAL_CONTOUR',
     lightingModel: 'FLAT_NEUTRAL_ALBEDO',
     aspectRatio: 'WIDE_16_9',
-    targetModel: 'CHATGPT_5_6_SOL',
+    targetModel: 'CHATGPT',
   },
 };
 

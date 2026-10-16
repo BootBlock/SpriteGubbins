@@ -2076,6 +2076,12 @@ text with the image — as, since the corrections above, are both Gemini image t
 > for the image model's own planning pass. Nothing in the prompt can set that — it is the user's
 > pick — which is why it belongs in what the app *tells* them, not in what it emits.
 >
+> **Noted 16 October 2026 — the page quoted above no longer says this, and the target was renamed.**
+> The same help page is now titled "GPT-6 and other models in ChatGPT" and says "When GPT-6 is
+> selected, GPT-6 Sol powers Instant, Medium, High, and Extra High". The target is `CHATGPT` now,
+> named "ChatGPT (GPT-6)" (#499). The passage below on the thinking tier records how this inference
+> decayed.
+>
 > **And §8 stays.** OpenAI's guidance for an *image* prompt is "**Repeat any requirement that must
 > stay fixed**" — the exact opposite of the line the paragraph above was weighing, for the exact
 > repetition it was weighing cutting. The two do not contradict: the lean guidance addresses the model
@@ -2300,6 +2306,13 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > survives is the release-notes sentence on its own: images with thinking is on every paid plan and
 > is conditioned on the *model you pick*, not on Sol. `CHATGPT_5_6_SOL`'s description now says that
 > and no more.
+>
+> **Noted 16 October 2026 — the quotation in that passage is gone from its page too.** The help page
+> it cites is now titled "GPT-6 and other models in ChatGPT", and says "When GPT-6 is selected,
+> GPT-6 Sol powers Instant, Medium, High, and Extra High". The conclusion holds: Sol still reaches
+> the non-thinking option, and `reasoning.effort` on
+> [`gpt-6-sol`](https://developers.openai.com/api/docs/models/gpt-6-sol) accepts `none`. The target
+> is `CHATGPT` now (#499), and its comment in `src/constants/models.ts` cites the current wording.
 >
 > **Seedream's "5.0 Pro became the flagship on 8 July 2026"** is cited above to a fal.ai guide that
 > carries no release dates at all. BytePlus date the Lite half themselves — "On February 24,
