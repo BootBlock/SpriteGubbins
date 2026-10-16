@@ -174,7 +174,7 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       backgroundKey: 'MAGENTA_FF00FF',
       rigMode: 'NONE',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'GEMINI_FLASH_IMAGE',
+      targetModel: 'GEMINI_NANO_BANANA',
     },
   },
 ];

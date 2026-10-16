@@ -163,7 +163,7 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
       // eighteen tokens is not enough for a reader to edit a field. The target is a property of
       // whoever is generating rather than of the art being taught, so nothing this preset
       // demonstrates moves with it.
-      targetModel: 'GEMINI_FLASH_IMAGE',
+      targetModel: 'GEMINI_NANO_BANANA',
     },
   },
   {
@@ -205,7 +205,7 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       backgroundKey: 'PURE_WHITE',
       aspectRatio: 'TALL_9_16',
-      targetModel: 'GEMINI_FLASH_IMAGE',
+      targetModel: 'GEMINI_NANO_BANANA',
     },
   },
 ];

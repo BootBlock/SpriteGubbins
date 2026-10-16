@@ -251,7 +251,7 @@ export function wrapForModel(
       return wrapForSeedream(prompt, options.sectionNumbers, options.orientation);
 
     case 'GPT_IMAGE':
-    case 'GEMINI_FLASH_IMAGE':
+    case 'GEMINI_NANO_BANANA':
     case 'GEMINI_PRO_IMAGE':
     case 'GENERIC':
       return prompt;

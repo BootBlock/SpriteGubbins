@@ -30,7 +30,7 @@ import { TARGET_MODELS } from './models.ts';
 const DECLARED_FIT: Record<TargetModelId, PromptFit | null> = {
   GENERIC: null,
   CHATGPT: 'ALL',
-  GEMINI_FLASH_IMAGE: 'ALL',
+  GEMINI_NANO_BANANA: 'ALL',
   GEMINI_PRO_IMAGE: 'ALL',
   // ByteDance publish advice rather than a ceiling, so there is nothing here to fit *inside*: past
   // 600 English words Seedream reads the whole brief and drops detail out of the sheet. The entry's

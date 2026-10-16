@@ -20,7 +20,7 @@ import {
  * thinking models that use a reasoning process ('Thinking') for complex prompts", which cannot be
  * disabled — so "image model" and "single pass" are not the same question.
  */
-const DELIBERATING = ['GENERIC', 'CHATGPT', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const;
+const DELIBERATING = ['GENERIC', 'CHATGPT', 'GEMINI_NANO_BANANA', 'GEMINI_PRO_IMAGE'] as const;
 
 /**
  * Deliberates, and still cannot return a component map.
@@ -78,7 +78,7 @@ describe('deliberates', () => {
  * images to test composition and logic. The last image within Thinking is also the final rendered
  * image."
  */
-const SEES_CANVAS = ['GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const;
+const SEES_CANVAS = ['GEMINI_NANO_BANANA', 'GEMINI_PRO_IMAGE'] as const;
 
 describe('seesCanvasBeforeDelivery', () => {
   it('is true only for the targets documented to render interim images', () => {

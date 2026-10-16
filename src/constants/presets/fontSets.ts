@@ -160,7 +160,7 @@ export const FONT_SET_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       backgroundKey: 'MAGENTA_FF00FF',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'GEMINI_FLASH_IMAGE',
+      targetModel: 'GEMINI_NANO_BANANA',
     },
   },
   {

@@ -28,7 +28,7 @@ describe('readPromptBudget', () => {
     // These four were first written down as "none published" because the figures are on the model
     // pages rather than the image-generation guides. "I did not find one" is not "there isn't one",
     // and the whole point of `null` is that it makes the difference visible.
-    expect(readPromptBudget('x', 'GEMINI_FLASH_IMAGE')?.budget.limit).toBe(131_072);
+    expect(readPromptBudget('x', 'GEMINI_NANO_BANANA')?.budget.limit).toBe(131_072);
     expect(readPromptBudget('x', 'GEMINI_PRO_IMAGE')?.budget.limit).toBe(65_536);
     // Sol's is the *input* ceiling. Its model page states both, and 1,050,000 — the context window,
     // which the 128,000 output tokens are also drawn from — is the one this reading must not use:
