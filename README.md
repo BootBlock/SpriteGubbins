@@ -103,6 +103,7 @@ mirrors that so paths behave identically in both.
 | `npm run lint` | ESLint |
 | `npm run format` | Prettier |
 | `npm run icons` | Regenerate the app icon set from the source pixel glyph |
+| `npm run check:vendor-quotes` | Fetch every vendor page a comment under `src/` cites, and report each quotation the page no longer carries (needs the network and `curl`) |
 
 ## Where the database runs
 

@@ -1,6 +1,7 @@
 import { relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { commentRuns } from '../scripts/commentRuns.ts';
 import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 
 /**
@@ -39,24 +40,6 @@ const GENERATED_WIKIS = ['deepwiki.com', 'zread.ai'];
 /** The file's path from the project root, in the spelling the failure message should print. */
 function sourcePath(file: string): string {
   return relative(process.cwd(), file).replaceAll('\\', '/');
-}
-
-/**
- * Every contiguous run of comment prose in a module — one docblock, or one unbroken block of `//`
- * lines, blank comment lines included.
- *
- * **Deliberately the whole run rather than the paragraph inside it**, and that was measured rather
- * than assumed. A paragraph-scoped version of the check below passes or fails on whether the author
- * left a bare `//` before the closing URL, which is a formatting choice this repository makes both
- * ways — and Prettier will insert one. Reformatting a comment must not change what a guard says
- * about it. The run is the smallest unit that is stable against that and still narrow enough to
- * mean something: it is one entry's own argument, so a URL from the entry above cannot satisfy it.
- */
-function commentRuns(source: string): string[] {
-  return [
-    ...[...source.matchAll(/\/\*[\s\S]*?\*\//g)].map((match) => match[0]),
-    ...[...source.matchAll(/(?:^|\n)(?:[ \t]*\/\/[^\n]*\n?)+/g)].map((match) => match[0]),
-  ];
 }
 
 /** The first line with anything on it, for a failure message that names the comment. */
@@ -142,6 +125,7 @@ describe('where the app’s claims about other products are cited from', () => {
     const offenders = scannableSources().flatMap((file) => {
       const source = sourceText(file);
       return commentRuns(source)
+        .map(({ raw }) => raw)
         .filter((run) => ANY_URL.test(run) && CLAIMS_FOREIGN_CODE.test(run) && !CODE_HOST.test(run))
         .map((run) => `${sourcePath(file)}: ${firstLine(run)}`);
     });
