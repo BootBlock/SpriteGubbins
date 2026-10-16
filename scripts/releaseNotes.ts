@@ -98,15 +98,16 @@ function compareIdentifier(a: string, b: string): number {
 
 /** Semantic-versioning order, in which `1.0.0-rc.1` comes before `1.0.0`. */
 function compareVersions(a: Version, b: Version): number {
-  for (let index = 0; index < 3; index++) {
-    const difference = a.core[index]! - b.core[index]!;
-    if (difference !== 0) return difference;
-  }
+  const core = a.core[0] - b.core[0] || a.core[1] - b.core[1] || a.core[2] - b.core[2];
+  if (core !== 0) return core;
   if (a.prerelease.length === 0 || b.prerelease.length === 0) {
     return b.prerelease.length - a.prerelease.length;
   }
-  for (let index = 0; index < Math.min(a.prerelease.length, b.prerelease.length); index++) {
-    const difference = compareIdentifier(a.prerelease[index]!, b.prerelease[index]!);
+  for (const [index, identifier] of a.prerelease.entries()) {
+    const other = b.prerelease[index];
+    // Every identifier so far is equal and `b` has run out, so the longer `a` sorts after it.
+    if (other === undefined) return 1;
+    const difference = compareIdentifier(identifier, other);
     if (difference !== 0) return difference;
   }
   return a.prerelease.length - b.prerelease.length;
