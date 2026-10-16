@@ -259,11 +259,12 @@ describe('wrapForModel', () => {
   });
 
   it('tells Sol that what its tool call carries is what gets drawn', () => {
-    // The one fact about this target the template cannot know: `gpt-5.6-sol` outputs text only and
-    // reaches an image through a *tool*, which OpenAI say "uses GPT Image models". So the rendered
-    // sheet comes from whatever that call carries, not from this specification. The sentence quoted
-    // here read "always a GPT Image model" over a shorter model list; that page no longer carries it,
-    // and `utils/modelWrapperText/sol.ts` records what stands in its place.
+    // The one fact about this target the template cannot know: `gpt-6-sol` outputs text only, as
+    // `gpt-5.6-sol` did, and reaches an image through a *tool*, which OpenAI say "uses GPT Image
+    // models". So the rendered sheet comes from whatever that call carries, not from this
+    // specification. The sentence quoted here read "always a GPT Image model" over a shorter model
+    // list; that page no longer carries it, and `utils/modelWrapperText/sol.ts` records what stands
+    // in its place.
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT' }));
 
     expect(prompt.startsWith('[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]')).toBe(true);
