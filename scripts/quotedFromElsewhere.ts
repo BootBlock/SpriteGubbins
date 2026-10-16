@@ -33,8 +33,6 @@ export const QUOTED_FROM_ELSEWHERE: Readonly<Record<string, string>> = {
   'is `--raw` on the V8 line and `--style raw` on V7': EARLIER,
   'puts you on a thinking tier': EARLIER,
   'raise the reasoning level': EARLIER,
-  "what it does not do is name Gemini as Imagen's replacement — its one mention of Imagen is a line under 'Other image generation modes'":
-    EARLIER,
   'released 21 July 2026': EARLIER,
   'carried no weights and no API pricing, so this is the only place a reader can use it at all': EARLIER,
   '*not* on the API reference, which states no length for either `text` or `negative_prompt`': EARLIER,

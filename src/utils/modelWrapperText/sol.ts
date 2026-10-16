@@ -254,12 +254,16 @@ const CAMERA_ENTRY: Readonly<Record<ComponentOrientation, (section: string) => s
  * pages rather than one, and they agree.
  * https://developers.openai.com/api/docs/guides/image-prompting
  *
- * The same guidance is why the self-audit stays, and it is also why the audit on this target checks
- * a plan rather than pixels. That guidance says "Render the artifact before finalizing. Inspect
- * layout, clipping, spacing, missing content, and visual consistency" — a verification pass, which
- * is not a repeated statement of a rule. But on this target rendering *is* delivering: Sol sees
- * nothing until the tool returns, and the reader sees it then too, so an audit ending "redraw
- * rather than delivering" could only be obeyed with a second render or an edit of the first — two
+ * **The self-audit stays on this target on the template's own reasoning, and no OpenAI page is
+ * cited for it now.** This paragraph quoted the GPT-5.6 guidance as telling a model to render the
+ * artefact and inspect it before finalising, which it read as a verification pass rather than a
+ * repeated rule. As read on 16 October 2026 the guidance page covers GPT-6 and carries no such
+ * sentence, and the image prompting guide does not either. The audit was never there for OpenAI's
+ * sake: it is what the template gives every target that deliberates, gated in `constants/models.ts`.
+ *
+ * What the audit checks on this target is a plan rather than pixels, because here rendering *is*
+ * delivering: Sol sees nothing until the tool returns, and the reader sees it then too, so an
+ * audit ending "redraw rather than delivering" could only be obeyed with a second render or an edit of the first — two
  * images, or one that no longer matches the composition it was written to. So the template gives
  * this target the plan-before-render audit, gated on `seesCanvasBeforeDelivery` in
  * `constants/models.ts`, and the verification pass happens where Sol can still act: on the call.

@@ -107,7 +107,7 @@ export type AspectRatio = (typeof ASPECT_RATIOS)[number];
 export const TARGET_MODEL_IDS = [
   'GENERIC',
   'CHATGPT',
-  'GEMINI_FLASH_IMAGE',
+  'GEMINI_NANO_BANANA',
   'GEMINI_PRO_IMAGE',
   'SEEDREAM',
   'QWEN_IMAGE',

@@ -722,7 +722,7 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
   const TRIPWIRE = 'this specification is malformed. Say so rather than resolving';
 
   it('is sent only to a target with a channel to say so through', () => {
-    for (const target of ['GENERIC', 'CHATGPT', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const) {
+    for (const target of ['GENERIC', 'CHATGPT', 'GEMINI_NANO_BANANA', 'GEMINI_PRO_IMAGE'] as const) {
       const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target }));
       expect(prompt, target).toContain(TRIPWIRE);
     }
@@ -3328,7 +3328,7 @@ describe('generatePrompt — the self-audit, per target', () => {
     for (const target of [
       'GENERIC',
       'CHATGPT',
-      'GEMINI_FLASH_IMAGE',
+      'GEMINI_NANO_BANANA',
       'GEMINI_PRO_IMAGE',
       'SEEDREAM',
     ] as const) {
@@ -3432,13 +3432,13 @@ describe('generatePrompt — the self-audit, per target', () => {
     // verify and redraw, where GENERIC checks its plan before the render. The checks themselves —
     // every numbered item and every directional bullet — are the same list on both.
     const options = withOutput({ directions: 'EIGHT_COMPASS' });
-    const checks = (targetModel: 'GEMINI_FLASH_IMAGE' | 'GENERIC') =>
+    const checks = (targetModel: 'GEMINI_NANO_BANANA' | 'GENERIC') =>
       sectionOf(generatePrompt('CHARACTER', SUBJECT, { ...options, targetModel }), 'LAYOUT AND SELF-AUDIT')
         .split('\n')
         .filter((line) => /^(\d+\. |- )/.test(line));
 
-    expect(checks('GEMINI_FLASH_IMAGE').length).toBeGreaterThan(10);
-    expect(checks('GEMINI_FLASH_IMAGE')).toEqual(checks('GENERIC'));
+    expect(checks('GEMINI_NANO_BANANA').length).toBeGreaterThan(10);
+    expect(checks('GEMINI_NANO_BANANA')).toEqual(checks('GENERIC'));
   });
 });
 
