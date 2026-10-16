@@ -18,7 +18,7 @@ export const ICON_CATALOGUE_ACTION_TOOLTIPS = {
     'Opens the icon catalogue at the form for an icon it does not hold, such as a quest relic or a spell only your game has. You name its role and its kind and describe what it looks like. It joins your set as a named slot like any ticked icon, and the library of the project chosen in the catalogue keeps it for later sets.',
 
   revealWorld:
-    'Moves you to the _World & Era_ field, opening its group if it is folded. On an icon set, that field decides what every catalogue icon is drawn as. Nothing changes until you change the field.',
+    'Moves you to the field that decides what every catalogue icon on this set is drawn as, opening its group if it is folded. Nothing changes until you change the field.',
 
   tickGroup: `Ticks every icon this group is showing under the current search and filters, as one step Undo can take back. An icon that would take the set past its ${String(ICON_ROSTER_CAPACITY)} components is left unticked, and a notice says how many.`,
 

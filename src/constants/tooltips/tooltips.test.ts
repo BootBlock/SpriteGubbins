@@ -21,6 +21,8 @@ import { presetCollectionGuidance } from './presets.ts';
 import { movePresetRefusal, moveQuantiseRefusal } from './projects.ts';
 import { ICON_CAPACITY_NOTICES } from '../iconCatalogue/iconCapacityNotices.ts';
 import { ASPECT_RATIO_NOTICES } from '../aspectRatioNotices.ts';
+import { iconContentSource } from '../iconContentSource.ts';
+import { SUBJECT_FIELD_GROUPS } from '../subjectGroups.ts';
 import { backgroundKeyNote } from '../backgroundKeyNote.ts';
 import { defaultSubjectFor } from '../categories/index.ts';
 import { ICON_CATALOGUE_GROUPS } from '../iconCatalogue/index.ts';
@@ -122,6 +124,21 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ...Object.entries(CATEGORY_OPTIONS).flatMap(([category, definition]) =>
     definition.fields.map((field) => [`${category}.${field.key}`, field.tooltip] as const),
   ),
+  // The text a field shows under itself on one category, beside the card every field carries.
+  ...Object.entries(CATEGORY_OPTIONS).flatMap(([category, definition]) =>
+    definition.fields.flatMap((field) =>
+      field.note === undefined ? [] : [[`FIELD_NOTES.${category}.${field.key}`, field.note] as const],
+    ),
+  ),
+  // The roster section's sentence, on every category drawing a roster, built from that category's own
+  // world field and the group it sits in.
+  ...Object.entries(CATEGORY_OPTIONS).flatMap(([category, definition]) => {
+    const world = definition.fields.find((field) => field.key === 'setting');
+    const group = SUBJECT_FIELD_GROUPS.find((candidate) => candidate.keys.includes('setting'));
+    return definition.iconRoster === undefined || world === undefined || group === undefined
+      ? []
+      : [[`iconContentSource(${category})`, iconContentSource(world.label, group.heading)] as const];
+  }),
   ...TARGET_MODELS.map((model) => [`TARGET_MODELS.${model.id}`, model.description] as const),
   // The second thing that list carries, and it reaches the reader the same way the first does: a
   // target with nowhere to open renders its link button disabled, and this note is what the card
@@ -335,6 +352,8 @@ const PLAIN_SURFACES = [
   'ICON_CAPACITY_NOTICES.',
   'backgroundKeyNote',
   'ASPECT_RATIO_NOTICES.',
+  'FIELD_NOTES.',
+  'iconContentSource',
 ] as const;
 
 /** Whether an entry is rendered as plain text rather than as a card. */

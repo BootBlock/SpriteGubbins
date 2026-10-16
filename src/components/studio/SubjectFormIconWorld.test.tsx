@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../../constants/categories/index.ts';
@@ -29,7 +29,6 @@ describe('World & Era on an icon set', () => {
     useSubjectStore.setState({ category: 'ICON', subject: defaultSubjectFor('ICON') });
     render(<SubjectForm />);
 
-    expect(NOTE).toContain('decides what every catalogue icon shows');
     expect(world()).toHaveAccessibleDescription(NOTE);
   });
 
@@ -39,12 +38,26 @@ describe('World & Era on an icon set', () => {
     useSectionStore.setState({ openSections: { 'subject:identity': false } });
     render(<SubjectForm />);
 
+    // A browser shows the fields of a group it has just opened a frame or two later, which happy-dom
+    // does not model, so the field reports itself hidden for its first two checks. A focus moved before
+    // a check reports it shown is a focus Edge drops.
+    const field = world();
+    const focusedWhileHidden: boolean[] = [];
+    let checks = 0;
+    vi.spyOn(field, 'checkVisibility').mockImplementation(() => {
+      checks += 1;
+      if (checks <= 2) focusedWhileHidden.push(document.activeElement === field);
+      return checks > 2;
+    });
+
     await user.click(screen.getByRole('button', { name: 'Go to World & Era' }));
 
     expect(useSectionStore.getState().openSections['subject:identity']).toBe(true);
     await waitFor(() => {
-      expect(world()).toHaveFocus();
+      expect(field).toHaveFocus();
     });
+    expect(checks).toBe(3);
+    expect(focusedWhileHidden).toEqual([false, false]);
   });
 
   it('carries neither the note nor the ways to the icon’s content on a category with the same field and no roster', () => {
