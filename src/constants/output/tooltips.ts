@@ -2,7 +2,6 @@ import { DRAWN_OVER_THE_GAME } from '../categoryEngineLighting.ts';
 import { NO_COMPONENT_BUDGET } from '../componentBudget.ts';
 import { NONE_LEAVES_SETTINGS_ALONE } from '../guidanceSentences.ts';
 import { PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
-import { cameraElevationRange } from '../promptText/elevation.ts';
 import { shareRange } from '../promptText/renderStyle.ts';
 import { TILE_SHARE } from '../promptText/tileShare.ts';
 import { PALETTE_COLOR_COUNTS } from '../quantiser.ts';
@@ -17,6 +16,7 @@ import {
   ONE_LIGHT_STYLES,
   OWN_CONTOUR_STYLES,
 } from './narrowingStyles.ts';
+import { CAMERA_ELEVATION_TOOLTIP } from './cameraElevationTooltip.ts';
 
 /**
  * Guidance shown against each control, keyed to the control it explains.
@@ -124,9 +124,7 @@ export const OUTPUT_TOOLTIPS = {
     '- `THREE_QUARTER_TOPDOWN` for the usual action-RPG read.\n' +
     '- `TRUE_ISOMETRIC` measures every axis alike, laying a square of ground out at 1.73:1, so its tiles will not tessellate on a 2:1 grid.\n\n' +
     'An interface widget offers `ORTHOGRAPHIC_FRONT` alone, because it is composited onto the screen and has no depth axis for another camera to show.',
-  cameraElevation:
-    'Degrees above the horizon, from 0 at eye level to 90 directly overhead. The projection above sets it, and for every projection but `THREE_QUARTER_TOPDOWN` it is the only elevation that projection can be drawn at.\n\n' +
-    `Under \`THREE_QUARTER_TOPDOWN\` it is yours to set, from ${String(cameraElevationRange('THREE_QUARTER_TOPDOWN').min)}° to ${String(cameraElevationRange('THREE_QUARTER_TOPDOWN').max)}°: raising it shows more of the floor plane and foreshortens the figure’s height.\n\n\`PURE_TOPDOWN\` fixes it at ${String(cameraElevationRange('PURE_TOPDOWN').min)}°, and there the prompt also changes what it asks of each facing, because a turn seen from directly overhead hides nothing.`,
+  cameraElevation: CAMERA_ELEVATION_TOOLTIP,
   directions:
     'Which facings the deliverable covers. A directional core draws exactly these views; a cut-out rig, a pose library and the limb articulation sheet read it as a run list, one sheet per facing tied together with an identity lock.\n\n' +
     '- `EIGHT_COMPASS` draws all eight views outright over a cardinal and a diagonal sheet, which an asymmetric subject needs.\n' +
