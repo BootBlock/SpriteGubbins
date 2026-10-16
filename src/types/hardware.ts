@@ -89,8 +89,8 @@ export interface HardwareProfile {
   /**
    * The machine's structural limits, one per line, stated to the generator verbatim.
    *
-   * Facts, not preferences: native display, pixel shape, tile grid, hardware sprite sizes and how
-   * many of them the machine could show. They are what {@link settings} cannot express — there is no
+   * Facts, not preferences: the native display and pixel shape, and the tile grid, hardware sprite
+   * sizes and sprite count where the machine had them. They are what {@link settings} cannot express — there is no
    * field for "8 sprites per scanline" — and they are also the studio's own description of the
    * chosen profile, joined into one line under the control, so the two cannot disagree.
    */

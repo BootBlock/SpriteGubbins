@@ -82,7 +82,7 @@ export const APP_TAB_CHOICE_BY_ID = {
     icon: '🛠️',
     guidance:
       'Where you build the prompt: the subject on the left, the output configuration under it, and the compiled text on the right, recompiled as you type. Everything that reaches the generator is composed here.\n\n' +
-      'Loading a preset replaces this setup, and stepping through a batch’s sheets on the Quantise tab moves the sheet and facing it compiles.',
+      'Loading a preset or restoring a prompt from History replaces this setup, and stepping through a batch’s sheets on the Quantise tab moves the sheet and facing it compiles.',
   },
   quantise: {
     id: 'quantise',

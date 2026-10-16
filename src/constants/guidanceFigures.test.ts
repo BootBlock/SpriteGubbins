@@ -29,6 +29,7 @@ const figures = vi.hoisted(() => ({
   noBudget: { moved: -1, real: 0 },
   rosterCapacity: { moved: 293, real: 0 },
   iconsPerSheet: { moved: 23, real: 0 },
+  angledElevation: { moved: { min: 13, max: 71 }, real: { min: 0, max: 0 } },
 }));
 
 vi.mock('./iconCatalogue/iconSheetLimits.ts', async (importOriginal) => {
@@ -58,6 +59,18 @@ vi.mock('./componentBudget.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./componentBudget.ts')>();
   figures.noBudget.real = actual.NO_COMPONENT_BUDGET;
   return { ...actual, NO_COMPONENT_BUDGET: figures.noBudget.moved };
+});
+
+vi.mock('./promptText/elevation.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./promptText/elevation.ts')>();
+  figures.angledElevation.real = actual.cameraElevationRange('THREE_QUARTER_TOPDOWN');
+  return {
+    ...actual,
+    cameraElevationRange: (projection: Parameters<typeof actual.cameraElevationRange>[0]) =>
+      projection === 'THREE_QUARTER_TOPDOWN'
+        ? figures.angledElevation.moved
+        : actual.cameraElevationRange(projection),
+  };
 });
 
 /** Whether the figure stands alone in the card, rather than as part of a longer number. */
@@ -125,5 +138,15 @@ describe('the icon roster’s figures in guidance', () => {
 
     expect(states(ICON_CATALOGUE_ACTION_TOOLTIPS.openCatalogue, moved)).toBe(true);
     expect(states(ICON_CATALOGUE_ACTION_TOOLTIPS.openCatalogue, real)).toBe(false);
+  });
+});
+
+describe('the camera elevation guidance', () => {
+  it('cameraElevation reads the angled projection’s range from cameraElevationRange', () => {
+    const { moved, real } = figures.angledElevation;
+    const card = OUTPUT_TOOLTIPS.cameraElevation;
+
+    expect(states(card, moved.min) && states(card, moved.max)).toBe(true);
+    expect(states(card, real.min) || states(card, real.max)).toBe(false);
   });
 });
