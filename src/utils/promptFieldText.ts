@@ -10,7 +10,7 @@ import { QWEN_NEGATIVE_BLOCK, STABLE_DIFFUSION_NEGATIVE_BLOCK } from './modelWra
  */
 const SEPARATE_FIELD_BLOCK: Readonly<Record<TargetModelId, string | null>> = {
   GENERIC: null,
-  CHATGPT_5_6_SOL: null,
+  CHATGPT: null,
   GEMINI_FLASH_IMAGE: null,
   GEMINI_PRO_IMAGE: null,
   SEEDREAM: null,

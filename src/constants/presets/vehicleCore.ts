@@ -61,7 +61,7 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
       jointCapStyle: 'ROUNDED',
       overlapMargin: 'HALF_CAP',
       aspectRatio: 'SQUARE_1_1',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {

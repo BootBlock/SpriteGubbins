@@ -30,7 +30,7 @@ function entry(overrides: Partial<NewPromptHistoryLog> = {}): NewPromptHistoryLo
     category: 'CHARACTER',
     promptText: '# MODULAR SPRITE-SHEET PROMPT ARCHITECTURE (CHARACTER)',
     wordCount: 6,
-    modelUsed: 'CHATGPT_5_6_SOL',
+    modelUsed: 'CHATGPT',
     subject: DEFAULT_PRESET.subject,
     output: DEFAULT_OUTPUT_CONFIG,
     ...overrides,

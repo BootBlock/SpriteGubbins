@@ -17,7 +17,7 @@ import { DEFAULT_OUTPUT_CONFIG } from './output/index.ts';
  */
 const SUBJECT = defaultSubjectFor('ICON');
 const WITHOUT_ALPHA = TARGET_MODELS.filter((model) => model.capabilities.alpha.kind === 'UNDOCUMENTED');
-const WITH_ALPHA: readonly TargetModelId[] = ['GENERIC', 'CHATGPT_5_6_SOL', 'GPT_IMAGE'];
+const WITH_ALPHA: readonly TargetModelId[] = ['GENERIC', 'CHATGPT', 'GPT_IMAGE'];
 
 describe('the TRANSPARENT key against the target', () => {
   it('declares alpha for OpenAI’s two surfaces alone, and withdraws nothing on behalf of no vendor', () => {
@@ -25,7 +25,7 @@ describe('the TRANSPARENT key against the target', () => {
       WITH_ALPHA,
     );
     expect(alphaDeliveryFor('GENERIC').kind).toBe('NO_VENDOR');
-    expect(alphaDeliveryFor('CHATGPT_5_6_SOL').kind).toBe('TOOL_CALL');
+    expect(alphaDeliveryFor('CHATGPT').kind).toBe('TOOL_CALL');
     expect(alphaDeliveryFor('GPT_IMAGE').kind).toBe('REQUEST_PARAMETER');
   });
 
@@ -65,10 +65,10 @@ describe('the TRANSPARENT key against the target', () => {
         backgroundKey: 'TRANSPARENT',
       });
     const request = 'set the image\ntool’s `background` option to `transparent`';
-    expect(compile('CHATGPT_5_6_SOL')).toContain(request);
+    expect(compile('CHATGPT')).toContain(request);
     expect(compile('GPT_IMAGE')).not.toContain(request);
     expect(
-      generatePrompt('ICON', SUBJECT, { ...DEFAULT_OUTPUT_CONFIG, targetModel: 'CHATGPT_5_6_SOL' }),
+      generatePrompt('ICON', SUBJECT, { ...DEFAULT_OUTPUT_CONFIG, targetModel: 'CHATGPT' }),
     ).not.toContain(request);
   });
 });

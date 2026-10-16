@@ -514,7 +514,7 @@ describe('generatePrompt — conditional blocks', () => {
     const sol = generatePrompt(
       'CHARACTER',
       SUBJECT,
-      withOutput({ emitComponentMap: true, targetModel: 'CHATGPT_5_6_SOL' }),
+      withOutput({ emitComponentMap: true, targetModel: 'CHATGPT' }),
     );
     expect(sol).toContain('## 10. COMPANION COMPONENT MAP');
 
@@ -700,7 +700,7 @@ describe('generatePrompt — numbered lists', () => {
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
-      withOutput({ targetModel: 'CHATGPT_5_6_SOL', renderStyle: 'PIXEL_ART', rigMode: 'POSE_LIBRARY' }),
+      withOutput({ targetModel: 'CHATGPT', renderStyle: 'PIXEL_ART', rigMode: 'POSE_LIBRARY' }),
     );
 
     expect(numberedRuns(prompt)).toHaveLength(3);
@@ -722,7 +722,7 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
   const TRIPWIRE = 'this specification is malformed. Say so rather than resolving';
 
   it('is sent only to a target with a channel to say so through', () => {
-    for (const target of ['GENERIC', 'CHATGPT_5_6_SOL', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const) {
+    for (const target of ['GENERIC', 'CHATGPT', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const) {
       const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target }));
       expect(prompt, target).toContain(TRIPWIRE);
     }
@@ -1263,7 +1263,7 @@ describe('generatePrompt — a render style that withholds the surface', () => {
 
 describe('generatePrompt — the adherence report', () => {
   /** Every capability the report needs, so only the flag under test is deciding anything. */
-  const CAPABLE = { emitPromptFeedback: true, targetModel: 'CHATGPT_5_6_SOL' } as const;
+  const CAPABLE = { emitPromptFeedback: true, targetModel: 'CHATGPT' } as const;
 
   it('is absent until it is asked for', () => {
     expect(generatePrompt('CHARACTER', SUBJECT, OUTPUT)).not.toContain('ADHERENCE REPORT');
@@ -3327,7 +3327,7 @@ describe('generatePrompt — the self-audit, per target', () => {
     // still reasons over the brief, so "image model" never decides whether the audit is sent.
     for (const target of [
       'GENERIC',
-      'CHATGPT_5_6_SOL',
+      'CHATGPT',
       'GEMINI_FLASH_IMAGE',
       'GEMINI_PRO_IMAGE',
       'SEEDREAM',
@@ -3387,7 +3387,7 @@ describe('generatePrompt — the self-audit, per target', () => {
     // its rig sheet draws one facing and so carries no directional audit. An object's moving parts
     // turn with the camera, so its directional pairing carries the rig and the audit together.
     const output = withOutput({
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
       rigMode: 'CUTOUT_RIG',
       renderStyle: 'PIXEL_ART',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
@@ -3480,7 +3480,7 @@ describe('generatePrompt — the self-audit checks what the target can see', () 
   });
 
   it('never tells Sol to fix the sheet after it has rendered', () => {
-    const prompt = generatePrompt('CHARACTER', SUBJECT, { ...capable, targetModel: 'CHATGPT_5_6_SOL' });
+    const prompt = generatePrompt('CHARACTER', SUBJECT, { ...capable, targetModel: 'CHATGPT' });
 
     expect(prompt).toContain('ADHERENCE REPORT');
     expect(prompt).not.toContain('fix what you can before delivering');
@@ -3746,7 +3746,7 @@ describe('generatePrompt — the companion component map', () => {
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
-      withOutput({ emitComponentMap: true, targetModel: 'CHATGPT_5_6_SOL' }),
+      withOutput({ emitComponentMap: true, targetModel: 'CHATGPT' }),
     );
     const start = prompt.indexOf('## 10. COMPANION COMPONENT MAP');
     expect(start, 'the component map section is not in the compiled prompt').toBeGreaterThan(-1);
@@ -3981,7 +3981,7 @@ describe('generatePrompt — the one ban that is per-category', () => {
     const prompt = generatePrompt(
       category,
       defaultSubjectFor(category),
-      withOutput({ targetModel: 'CHATGPT_5_6_SOL' }),
+      withOutput({ targetModel: 'CHATGPT' }),
     );
     const lettering = promptText.LETTERING_IS_A_COMPONENT[category];
 
@@ -4008,7 +4008,7 @@ describe('generatePrompt — the one ban that is per-category', () => {
     const prompt = generatePrompt(
       category,
       defaultSubjectFor(category),
-      withOutput({ targetModel: 'CHATGPT_5_6_SOL' }),
+      withOutput({ targetModel: 'CHATGPT' }),
     );
 
     expect(prompt, category).toContain('no arrows, callouts or grid lines');

@@ -63,7 +63,7 @@ const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
  * multiple above 1× on this square canvas whatever `DEFAULT_OUTPUT_CONFIG` names.
  */
 const NATIVE_GRID_SHEET = {
-  targetModel: 'CHATGPT_5_6_SOL',
+  targetModel: 'CHATGPT',
   renderStyle: 'PIXEL_ART',
   resolutionProfile: 'CUSTOM',
   spriteTargetSize: '16 × 32 px',
@@ -259,12 +259,13 @@ describe('wrapForModel', () => {
   });
 
   it('tells Sol that what its tool call carries is what gets drawn', () => {
-    // The one fact about this target the template cannot know: `gpt-5.6-sol` outputs text only and
-    // reaches an image through a *tool*, which OpenAI say "uses GPT Image models". So the rendered
-    // sheet comes from whatever that call carries, not from this specification. The sentence quoted
-    // here read "always a GPT Image model" over a shorter model list; that page no longer carries it,
-    // and `utils/modelWrapperText/sol.ts` records what stands in its place.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
+    // The one fact about this target the template cannot know: `gpt-6-sol` outputs text only, as
+    // `gpt-5.6-sol` did, and reaches an image through a *tool*, which OpenAI say "uses GPT Image
+    // models". So the rendered sheet comes from whatever that call carries, not from this
+    // specification. The sentence quoted here read "always a GPT Image model" over a shorter model
+    // list; that page no longer carries it, and `utils/modelWrapperText/sol.ts` records what stands
+    // in its place.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT' }));
 
     expect(prompt.startsWith('[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]')).toBe(true);
     expect(prompt).toContain('You are not the model that draws this sheet');
@@ -279,7 +280,7 @@ describe('wrapForModel', () => {
     // cut everything else first — including the closing invariants, which exist because the renderer
     // sees only what survives this hand-off, and section 3's ledger of which flank each piece of gear
     // is on. The default sheet carries both, and the directive names both.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT' }));
     const wrapper = wrapperOnly(prompt);
     const invariants = /^## (\d+)\. RENDER-CRITICAL INVARIANTS$/m.exec(prompt)?.[1];
 
@@ -299,13 +300,13 @@ describe('wrapForModel', () => {
     // set to one facing, so it has no invariants section, and free text in the subject fields names
     // nothing the compiler can enumerate, so a figure described that way has no ledger.
     const single = wrapperOnly(
-      generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput({ targetModel: 'CHATGPT_5_6_SOL' })),
+      generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput({ targetModel: 'CHATGPT' })),
     );
     const typed = wrapperOnly(
       generatePrompt(
         'CHARACTER',
         { ...defaultSubjectFor('CHARACTER'), face_head: 'A neon visor', worn_details: 'A satchel' },
-        withOutput({ targetModel: 'CHATGPT_5_6_SOL' }),
+        withOutput({ targetModel: 'CHATGPT' }),
       ),
     );
 
@@ -319,7 +320,7 @@ describe('wrapForModel', () => {
     // Issue #403: the directive once required all of section 0 as written, which ordered the
     // category tripwire — "Say so rather than resolving it" — forwarded to an image endpoint that
     // cannot reply. The items are what the renderer needs; the block under the subheading is Sol's.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT' }));
     const contract = sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT');
 
     expect(wrapperOnly(prompt)).toContain(`under “${SCOPE_AND_PRECEDENCE_HEADING}” is addressed to you`);
@@ -414,7 +415,7 @@ describe('wrapForModel', () => {
       'CHARACTER',
       SUBJECT,
       withOutput({
-        targetModel: 'CHATGPT_5_6_SOL',
+        targetModel: 'CHATGPT',
         renderStyle: 'PAINTED_2D',
         palette: 'GAME_BOY_DMG',
       }),
@@ -433,7 +434,7 @@ describe('wrapForModel', () => {
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
-      withOutput({ targetModel: 'CHATGPT_5_6_SOL', renderStyle: 'PAINTED_2D', palette: 'FREE' }),
+      withOutput({ targetModel: 'CHATGPT', renderStyle: 'PAINTED_2D', palette: 'FREE' }),
     );
 
     expect(wrapperOnly(prompt)).not.toContain('Other blocks state figures as well');
@@ -452,7 +453,7 @@ describe('wrapForModel', () => {
     // and the section 2 clause never appears. Checking that alone left the guard silent on every
     // configuration the clause is actually written into — and the first draft of that clause said
     // "a paraphrase keeps the idea", which this would not have caught.
-    for (const overrides of [{ targetModel: 'CHATGPT_5_6_SOL' } as const, NATIVE_GRID_SHEET]) {
+    for (const overrides of [{ targetModel: 'CHATGPT' } as const, NATIVE_GRID_SHEET]) {
       const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(overrides));
       const wrapper = prompt.slice(0, prompt.indexOf('# MODULAR SPRITE-SHEET SPECIFICATION'));
 
@@ -467,7 +468,7 @@ describe('wrapForModel', () => {
     // instructions for behavior the model already performs reliably" among what to remove, and warns
     // that conflicting rules destabilise a GPT-5-class model more than missing detail does. Each
     // line below was in the wrapper and is a restatement of a heading the template carries.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT' }));
 
     // Reasoning effort is a request parameter, not something a line of prose sets.
     expect(prompt).not.toContain('High reasoning effort');
@@ -483,9 +484,7 @@ describe('wrapForModel', () => {
     // only obeyable before the call: Sol sees the render when the reader does (#398). The sentence
     // names section 9 rather than every check below it, because the adherence report checks the
     // delivered pixels after the call and must not be told to answer from the plan.
-    const prompt = wrapperOnly(
-      generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' })),
-    );
+    const prompt = wrapperOnly(generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT' })));
 
     expect(prompt).toContain('Make exactly one image-tool call');
     expect(prompt).toContain('render the sheet rather than describe it');
@@ -496,7 +495,7 @@ describe('wrapForModel', () => {
 
   it('gives the hand-off to Sol alone, since no other target has one', () => {
     for (const targetModel of TARGET_MODEL_IDS) {
-      if (targetModel === 'CHATGPT_5_6_SOL') continue;
+      if (targetModel === 'CHATGPT') continue;
       const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel }));
       expect(prompt, targetModel).not.toContain('You are not the model that draws this sheet');
     }
@@ -519,7 +518,7 @@ describe('wrapForModel', () => {
       defaultSubjectFor('ICON'),
       withOutput({ ...NATIVE_GRID_SHEET, sheetIndex: 0 }),
     );
-    const yawSheet = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
+    const yawSheet = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT' }));
     const rigSheet = characterRigPrompt({});
     const seedream = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'SEEDREAM' }));
 
@@ -584,7 +583,7 @@ describe('wrapForModel', () => {
         'ICON',
         { ...defaultSubjectFor('ICON'), primary_colours: '', accent_colours: '', role: '' },
         withOutput({
-          targetModel: 'CHATGPT_5_6_SOL',
+          targetModel: 'CHATGPT',
           resolutionProfile: 'HIGH_RESOLUTION',
           spriteTargetSize: '',
         }),

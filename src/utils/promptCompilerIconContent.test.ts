@@ -24,7 +24,7 @@ import { cataloguePicks } from '../constants/iconCatalogue/cataloguePicks.ts';
 const OUTPUT: OutputConfig = {
   ...DEFAULT_OUTPUT_CONFIG,
   directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
-  targetModel: 'CHATGPT_5_6_SOL',
+  targetModel: 'CHATGPT',
 };
 
 const flat = (text: string): string => text.replaceAll(/\s+/g, ' ');

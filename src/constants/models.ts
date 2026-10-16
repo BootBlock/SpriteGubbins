@@ -152,17 +152,18 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // was true when it was written and is not true now** — which is the more useful failure of the
     // two, because nothing about it decayed visibly. It rested on OpenAI's GPT-5.6 help page, which
     // then said Sol powered the Medium, High and Extra High reasoning options while Instant was
-    // GPT-5.5 Instant. That page now says "GPT-5.6 Sol powers Instant, Medium, High, and Extra High
-    // on eligible paid plans", and describes Instant as "Fast responses for everyday questions".
-    // Sol reaches the picker's *non*-thinking option, so picking Sol settles nothing about the tier.
-    // The API side agrees: `reasoning.effort` on `gpt-5.6-sol` accepts `none`.
+    // GPT-5.5 Instant. The same page, now titled "GPT-6 and other models in ChatGPT", says "When
+    // GPT-6 is selected, GPT-6 Sol powers Instant, Medium, High, and Extra High", and describes
+    // Instant as "Fast responses for everyday questions". Sol reaches the picker's *non*-thinking
+    // option, so picking Sol settles nothing about the tier. The API side agrees: `reasoning.effort`
+    // on `gpt-6-sol` accepts `none`, as it did on `gpt-5.6-sol`.
     // https://help.openai.com/en/articles/20001354-gpt-56-in-chatgpt and
-    // https://developers.openai.com/api/docs/models/gpt-5.6-sol
+    // https://developers.openai.com/api/docs/models/gpt-6-sol
     //
     // **What the plan list replaces is a long correction, and its lesson outlives the sentence.**
     // The release notes' 21 April 2026 entry words the same feature as "available on all paid
     // ChatGPT plans … when you select Thinking and Pro models", and the description quoted that
-    // verbatim because OpenAI's current picker has no Thinking on it: the GPT-5.6 page describes a
+    // verbatim because OpenAI's current picker has no Thinking on it: the help page describes a
     // reasoning slider reading Instant, Medium, High, Extra High and Pro, and its one Think-named
     // option runs GPT-5.6 Luna on the Free and Go plans that have no Sol at all. A reader following
     // the release note found either no such option or one that took them off the target they picked.
@@ -174,10 +175,33 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // may put the picker back.** It names plans and no control at all. No OpenAI page says a slider
     // position switches the feature on, so a sentence pointing at one would be the same reading
     // wearing a fresher citation.
-    id: 'CHATGPT_5_6_SOL',
-    name: 'ChatGPT 5.6 Sol (OpenAI)',
+    //
+    // **The entry is named for the surface rather than for one model, because the model moved under
+    // it.** On 7 October 2026 OpenAI moved ChatGPT's Chat tab to GPT-6, and the release notes say
+    // "Plus, Pro, Business, and Enterprise use GPT-6 Sol; Free and Go use GPT-6 Luna." The help page
+    // says "In the model menu, GPT-6 replaces Latest. Existing Latest selections move to GPT-6 at the
+    // same effort; explicit GPT-5.6 Sol selections stay on GPT-5.6", and "The GPT-6 rollout does not
+    // retire older selectable models". The entry's id named GPT-5.6 Sol until then, and a reader who
+    // pastes into ChatGPT reaches GPT-6 unless they pick GPT-5.6 Sol by hand.
+    // https://openai.com/index/gpt-6-for-everyone/ and
+    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    //
+    // **OpenAI's pages disagree about Free and Go, so the description names no model for them.** The
+    // announcement and the release notes give those plans GPT-6 Luna, while the help page still says
+    // "Instant — Fast responses for everyday questions. Free and Go use GPT-5.6 Luna." Either way the
+    // reader reaches a text model that calls the same image tool, which is the one fact this entry's
+    // flags and wrapper rest on. GPT-6 Luna's model page gives the same modalities, tool row and
+    // token figures as GPT-6 Sol's. https://developers.openai.com/api/docs/models/gpt-6-luna
+    //
+    // **The wrapper's protections were measured on GPT-5.6 Sol, and nothing yet shows how GPT-6 Sol
+    // handles the hand-off.** Every docblock that reports a figure "across 27 real GPT-5.6 Sol
+    // sheets" names the model the runs were made on, and keeps it. A re-run of the adherence pack on
+    // GPT-6 Sol is what would say whether those protections still hold, and the description says
+    // what the reader can do in the meantime.
+    id: 'CHATGPT',
+    name: 'ChatGPT (GPT-6)',
     description:
-      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names each part the call must carry unshortened. ChatGPT Images 2.5 is what renders behind that call. OpenAI say that image surface is on all ChatGPT tiers, and that images with thinking is on Plus, Pro and Business with Enterprise and Edu to come — Sol itself is a paid-plan model either way. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
+      'ChatGPT’s Chat tab runs GPT-6 Sol on Plus, Pro, Business and Enterprise, and a Luna model on Free and Go. Neither returns an image: each calls an image tool, and ChatGPT Images 2.5 renders whatever that call carries — which is where adherence is lost. Its wrapper names each part the call must carry unshortened. That wrapper was measured on GPT-5.6 Sol, which you can still pick by hand in the model menu. OpenAI say ChatGPT Images is on every tier, and images with thinking on Plus, Pro and Business. The model reasons over the brief, so it gets the self-audit and can return a companion component map.',
     // ChatGPT's own image surface, which is where a person rather than an API client reaches this
     // model. OpenAI announce it as “ChatGPT Images 2.5” and the page is indexed under that name.
     // https://openai.com/index/introducing-chatgpt-images-2-5/
@@ -192,14 +216,17 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // The image tool Sol calls takes the option: “Transparent backgrounds are available in preview;
       // set `background: "transparent"` to request one. Use `png` (the default) or `webp`; `jpeg`
       // isn't supported with transparent backgrounds.” Sol composes that call, so its wrapper tells it to
-      // set the option (audit finding T1). The Images in ChatGPT help page is said to promise a
-      // transparent background on request too, and is not cited: it refused every fetch on 5 October
-      // 2026, so its wording could not be read. https://developers.openai.com/api/docs/guides/tools-image-generation
+      // set the option (audit finding T1). https://developers.openai.com/api/docs/guides/tools-image-generation
+      //
+      // The ChatGPT side says the same of its own image surface: "ChatGPT Images can follow
+      // instructions to add text, add details within the image, or make the background transparent."
+      // https://help.openai.com/en/articles/11084440-images-in-chatgpt
       alpha: { kind: 'TOOL_CALL' },
       canvas: { kind: 'PROMPT' },
       // The *input* ceiling, not the 1,050,000 context window: the window is input plus the
       // 128,000 output tokens reserved against it, and what this field is measured against is the
-      // prompt alone. https://developers.openai.com/api/docs/models/gpt-5.6-sol
+      // prompt alone. GPT-6 Sol's model page gives the same two figures `gpt-5.6-sol` did, and so
+      // does GPT-6 Luna's. https://developers.openai.com/api/docs/models/gpt-6-sol
       //
       // It is also not the ceiling that binds on this target, and the one that does cannot honestly
       // be recorded here: what reaches the renderer is whatever Sol's tool call carries, which this
@@ -700,7 +727,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // API endpoint, not ChatGPT** — a distinction it spent its first release blurring, by declaring
     // the capabilities of `gpt-image-2` called directly while sending the reader to chatgpt.com,
     // where the prompt is read by a thinking chat model and the picture arrives from a tool call.
-    // That arrangement already has an entry: it is `CHATGPT_5_6_SOL` above. So the two are split the
+    // That arrangement already has an entry: it is `CHATGPT` above. So the two are split the
     // way `FLUX` and `FLUX_API` are, by the surface a reader reaches the weights through.
     //
     // **The version this entry names moved on 8 September 2026, and the entry moved with it rather
@@ -731,7 +758,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // API image generation tool", and that is not the contradiction of the table it looks like.** The
     // table answers whether this model can be a *mainline* model on `v1/responses`, which it cannot;
     // the sentence is about being the model the `image_generation` tool renders with, which is the
-    // far side of the hand-off `CHATGPT_5_6_SOL` above describes. The two are different seats, and
+    // far side of the hand-off `CHATGPT` above describes. The two are different seats, and
     // only the first is a conversational pass. Reading the sentence as the table's answer would give
     // this entry Sol's capabilities, which is the blur the split above exists to undo.
     //
@@ -749,14 +776,14 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'GPT_IMAGE',
     name: 'GPT Image 2.5 (OpenAI Images API)',
     description:
-      'OpenAI’s image models as the Images API serves them: Sunburst for quality, Flare for speed. Both return an image and nothing else, so this target gets the specification without the self-audit or the component map. OpenAI say both models may struggle to place elements precisely in a layout-sensitive composition, which is what a component grid is. Pasting into ChatGPT is a different path with an entry of its own, and that entry is ChatGPT 5.6 Sol above.',
+      'OpenAI’s image models as the Images API serves them: Sunburst for quality, Flare for speed. Both return an image and nothing else, so this target gets the specification without the self-audit or the component map. OpenAI say both models may struggle to place elements precisely in a layout-sensitive composition, which is what a component grid is. Pasting into ChatGPT is a different path with an entry of its own, and that entry is ChatGPT (GPT-6) above.',
     // **Checked, and there is none.** Every endpoint the model page marks supported takes a request
     // rather than a person, and OpenAI publish no playground in front of them — the API reference is
     // documentation rather than a place to paste a prompt. ChatGPT Images is not this endpoint and
     // cannot stand in for it: OpenAI's release notes give that surface *images with thinking*, where
     // "When given more time to think, it can plan and refine image outputs before generating them"
     // — which is a deliberating pass, the opposite of what the flags below declare, and the hand-off
-    // `CHATGPT_5_6_SOL` exists to describe. Where it is available is a plan list on OpenAI's Images
+    // `CHATGPT` exists to describe. Where it is available is a plan list on OpenAI's Images
     // in ChatGPT page rather than a picker setting: "Images with thinking is available on Plus, Pro,
     // and Business. It is coming to Enterprise and Edu soon." This note stated a reasoning-effort
     // condition instead, which was that entry's own reading rather than OpenAI's and is recorded
@@ -765,7 +792,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // https://help.openai.com/en/articles/11084440-images-in-chatgpt
     generatorSite: {
       kind: 'NONE',
-      note: 'OpenAI run no page that generates through the Images API. ChatGPT’s own image surface is the _ChatGPT 5.6 Sol_ target.',
+      note: 'OpenAI run no page that generates through the Images API. ChatGPT’s own image surface is the _ChatGPT (GPT-6)_ target.',
     },
     capabilities: {
       deliberates: false,

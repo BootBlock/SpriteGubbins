@@ -500,7 +500,7 @@ describe('companionDigest', () => {
 
   it('names each deliverable that was asked for', () => {
     const digest = companionDigest(
-      withOutput({ emitComponentMap: true, emitPromptFeedback: true, targetModel: 'CHATGPT_5_6_SOL' }),
+      withOutput({ emitComponentMap: true, emitPromptFeedback: true, targetModel: 'CHATGPT' }),
     );
     expect(digest).toContain('component map');
     expect(digest).toContain('adherence report');

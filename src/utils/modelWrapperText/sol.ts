@@ -18,7 +18,9 @@ const CAMERA_ENTRY: Readonly<Record<ComponentOrientation, (section: string) => s
 };
 
 /**
- * ChatGPT 5.6 Sol, which is the one target here that **cannot draw**.
+ * The ChatGPT target, which is the one target here that **cannot draw**. Sol is the model behind
+ * it on the paid plans: GPT-6 Sol since 7 October 2026, and GPT-5.6 Sol when this wrapper was
+ * measured.
  *
  * Its model page lists `text` as its only output modality and `image_generation` among its *tools*,
  * and the **tool** guide names what is on the far side of that boundary: "It uses GPT Image models,
@@ -216,13 +218,18 @@ const CAMERA_ENTRY: Readonly<Record<ComponentOrientation, (section: string) => s
  * verification pass. Reasoning effort is a request parameter rather than something prose sets, and
  * the two pointers restate what the template already carries — the CONTRACT section is titled
  * NON-NEGOTIABLE OUTPUT CONTRACT and opens "Satisfy this section before any aesthetic
- * consideration", and the LAYOUT section carries its own checklist. OpenAI's own guidance for this
- * model family is that such lines are not free: it says to remove "repeated statements of the same
- * rule" and "process instructions for behavior the model already performs reliably", and warns that
- * "GPT-5-class models follow prompt contracts closely, so conflicting rules can create more
- * instability than missing detail". A target-specific wrapper that repeats the template is
- * therefore a cost here, not a reinforcement. **Naming a block is not repeating it** — the addition
- * below quotes no rule, it says which rules may not be shortened.
+ * consideration", and the LAYOUT section carries its own checklist. OpenAI's own guidance for the
+ * GPT-5.6 family is that such lines are not free: under "Favor leaner prompts" it says "Removing
+ * repeated instructions and examples and simplifying tool descriptions can improve task performance
+ * and token efficiency", and "State each instruction once." A target-specific wrapper that repeats
+ * the template is therefore a cost here, not a reinforcement. The GPT-5.6 guidance page this file
+ * cited before, which now redirects there, also said to remove "repeated statements of the same
+ * rule" and "process instructions for behavior the model already performs reliably", and warned
+ * that "GPT-5-class models follow prompt contracts closely". The page it redirects to carries none
+ * of the three. Its GPT-6 section says nothing about prompt length either: its best practices
+ * address GPT-6 Astra's behaviour as an agent, so the GPT-5.6 guidance stays the one cited.
+ * **Naming a block is not repeating it** — the addition below quotes no rule, it says which rules
+ * may not be shortened.
  *
  * **The measurement behind that is quoted with its scope, because the scope is load-bearing.** The
  * sentence is "*In a sample of internal coding-agent eval runs*, configurations with leaner system
@@ -266,10 +273,11 @@ const CAMERA_ENTRY: Readonly<Record<ComponentOrientation, (section: string) => s
  * plan. The same paragraph settles who "you" is in the body, which addresses whoever draws, while
  * the directive's first sentence says Sol does not.
  *
- * Sources: [model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
+ * Sources: [GPT-6 Sol model page](https://developers.openai.com/api/docs/models/gpt-6-sol),
+ * [GPT-5.6 Sol model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
  * [image generation tool](https://developers.openai.com/api/docs/guides/tools-image-generation),
  * [image generation guide](https://developers.openai.com/api/docs/guides/image-generation),
- * [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/prompt-guidance-gpt-5p6),
+ * [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-5.6#prompting-best-practices),
  * [GPT Image 2.5 prompting guide](https://developers.openai.com/api/docs/guides/image-prompting),
  * [ChatGPT image prompting](https://learn.chatgpt.com/docs/image-generation).
  */

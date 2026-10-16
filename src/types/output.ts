@@ -106,7 +106,7 @@ export type AspectRatio = (typeof ASPECT_RATIOS)[number];
  */
 export const TARGET_MODEL_IDS = [
   'GENERIC',
-  'CHATGPT_5_6_SOL',
+  'CHATGPT',
   'GEMINI_FLASH_IMAGE',
   'GEMINI_PRO_IMAGE',
   'SEEDREAM',
@@ -352,7 +352,7 @@ export interface StatedTargetSize {
  *
  * **A `PUBLIC` url belongs to one entry only.** A page the vendor runs is a surface with its own
  * behaviour, so two entries naming it are two accounts of that behaviour and at most one can be
- * right — which is what `GPT_IMAGE` and `CHATGPT_5_6_SOL` were, both pointing at ChatGPT Images
+ * right — which is what `GPT_IMAGE` and `CHATGPT` were, both pointing at ChatGPT Images
  * while declaring opposite capabilities. `constants/models.test.ts` holds the urls apart.
  *
  * **A URL is a checkable claim about somebody else's product**, exactly as a capability or a prompt

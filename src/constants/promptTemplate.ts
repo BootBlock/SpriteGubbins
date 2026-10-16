@@ -34,7 +34,7 @@ export const RIG_GEOMETRY_HEADING = 'Piece geometry — the rig these pieces are
  * Above it are the numbered items, which describe the delivered image and cite no other section, so
  * they stay true wherever they travel. Below it are the series note, the category tripwire and the
  * precedence rules, which are addressed to the model reading this specification. On most targets
- * that is the model that draws, and the heading costs nothing. On ChatGPT 5.6 Sol it is not:
+ * that is the model that draws, and the heading costs nothing. On the ChatGPT target it is not:
  * `utils/modelWrapperText/sol.ts` tells Sol to forward the numbered items as written and to settle
  * this block itself, so the image tool is never sent a tripwire that asks it to reply in text, or
  * eight citations of sections it never receives (issue #403).

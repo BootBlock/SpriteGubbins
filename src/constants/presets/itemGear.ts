@@ -141,7 +141,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
       resolutionProfile: 'CUSTOM',
       spriteTargetSize: '96 × 96 px per icon cell',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {

@@ -74,7 +74,7 @@ export const FONT_SET_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       backgroundKey: 'TRANSPARENT',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'CHATGPT_5_6_SOL',
+      targetModel: 'CHATGPT',
     },
   },
   {

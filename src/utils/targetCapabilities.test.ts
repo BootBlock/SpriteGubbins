@@ -20,7 +20,7 @@ import {
  * thinking models that use a reasoning process ('Thinking') for complex prompts", which cannot be
  * disabled — so "image model" and "single pass" are not the same question.
  */
-const DELIBERATING = ['GENERIC', 'CHATGPT_5_6_SOL', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const;
+const DELIBERATING = ['GENERIC', 'CHATGPT', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const;
 
 /**
  * Deliberates, and still cannot return a component map.
@@ -91,7 +91,7 @@ describe('seesCanvasBeforeDelivery', () => {
   it('is false for Sol, whose first sight of the image is the reader’s', () => {
     // Sol hands the render to a tool and sees it only once it is delivered, so an audit telling it
     // to redraw rather than deliver can be obeyed only with a second image or an edit (#398).
-    expect(seesCanvasBeforeDelivery('CHATGPT_5_6_SOL')).toBe(false);
+    expect(seesCanvasBeforeDelivery('CHATGPT')).toBe(false);
   });
 
   it('never claims sight of a canvas for a target with no pass in which to use it', () => {

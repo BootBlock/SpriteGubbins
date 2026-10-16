@@ -20,7 +20,7 @@ export const DEFAULT_IMAGE_CONFIG: ImageOutputConfig = {
   outlineStyle: 'DARK_LOCAL_CONTOUR',
   lightingModel: 'FLAT_NEUTRAL_ALBEDO',
   aspectRatio: 'WIDE_16_9',
-  targetModel: 'CHATGPT_5_6_SOL',
+  targetModel: 'CHATGPT',
   // The practical ceiling rather than no cap, because the ceiling is a real property of current
   // models and a studio that never mentions it lets the user compose an unsatisfiable sheet in
   // silence. It is the ceiling itself rather than the default mode's own count: those coincided while
