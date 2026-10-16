@@ -46,8 +46,8 @@ describe('commentRuns', () => {
 
 describe('citedUrls', () => {
   it('drops the sentence punctuation after a URL and keeps a bracket the URL opens', () => {
-    // Black Forest Labs' reference pages end in `[pro]`, and an earlier draft cut that URL at the
-    // bracket, which fetched a page that does not exist.
+    // Black Forest Labs' reference pages end in `[pro]`. Cut at the bracket, the URL names a page
+    // that does not exist, and every quotation beside it reads as stale.
     const prose =
       'See https://a.example/x-[pro] and (https://b.example/y). Also https://c.example/z’s, https://d.example/w.';
     expect(citedUrls(prose)).toStrictEqual([
@@ -75,6 +75,10 @@ describe('pageText', () => {
     const html = '<li>GPT&#8209;6</li><li>Sol&rsquo;s &amp; Luna&#x2019;s</li>';
     expect(comparableWords(pageText(html))).toBe(comparableWords('GPT‑6 Sol’s & Luna’s'));
     expect(comparableWords(pageText(html))).not.toContain('6sol');
+  });
+
+  it('reads a reference past the last code point as a replacement character instead of throwing', () => {
+    expect(pageText('a &#x110000; b &#99999999; c')).toBe('a � b � c');
   });
 
   it('reads text a framework ships inside a script as escaped strings', () => {
@@ -126,13 +130,25 @@ describe('judgeQuotations', () => {
     expect(missing.map(({ quotation }) => quotation)).toStrictEqual(['The model reasons first']);
   });
 
-  it('counts a quotation as missing when its only page did not load', () => {
-    const { missing } = judgeQuotations(
-      [cited('The tool renders images', ['https://down.example'])],
+  it('leaves a quotation unchecked rather than missing while a page in its run did not load', () => {
+    // A vendor refusing one client on one day must not read as a stale quotation, and the page
+    // that loaded does not settle it: the words may be on the one that did not.
+    const { missing, unchecked } = judgeQuotations(
+      [cited('The tool renders images', ['https://b.example', 'https://down.example'])],
       pages,
       {},
     );
-    expect(missing).toHaveLength(1);
+    expect(missing).toStrictEqual([]);
+    expect(unchecked.map(({ quotation }) => quotation)).toStrictEqual(['The tool renders images']);
+  });
+
+  it('finds a quotation on a page that loaded even when another page in its run did not', () => {
+    const verdict = judgeQuotations(
+      [cited('The tool renders images', ['https://a.example', 'https://down.example'])],
+      pages,
+      {},
+    );
+    expect([verdict.missing, verdict.unchecked]).toStrictEqual([[], []]);
   });
 
   it('excuses a listed quotation, and reports a listed one a page carries', () => {

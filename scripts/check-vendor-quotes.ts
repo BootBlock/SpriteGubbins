@@ -23,12 +23,12 @@
  *
  * Prints every page that failed to load and every quotation not found, then exits 1, or exits 0
  * when there is nothing to report. A failure on one run is not proof the page is gone: a vendor's
- * front end may refuse one client on one day, which is why a failure is reported with its status
- * rather than treated as a miss.
+ * front end may refuse one client on one day, which is why a failure is reported with its status,
+ * and a quotation its run's failed page might carry is reported as unchecked rather than missing.
  */
 import { citedQuotations, type CitedQuotation } from './citedQuotations.ts';
 import { comparableWords } from './comparableWords.ts';
-import { fetchPage, type FetchedPage } from './fetchPage.ts';
+import { fetchableUrl, fetchPage, type FetchedPage } from './fetchPage.ts';
 import { judgeQuotations, type ReadPage } from './judgeQuotations.ts';
 import { pageText } from './pageText.ts';
 import { QUOTED_FROM_ELSEWHERE } from './quotedFromElsewhere.ts';
@@ -71,7 +71,7 @@ const pages = new Map<string, ReadPage>(
     { words: loaded(page) ? comparableWords(pageText(page.body)) : null },
   ]),
 );
-const { missing, unneeded } = judgeQuotations(quotations, pages, QUOTED_FROM_ELSEWHERE);
+const { missing, unchecked, unneeded } = judgeQuotations(quotations, pages, QUOTED_FROM_ELSEWHERE);
 const failed = [...fetched].filter(([, page]) => !loaded(page));
 
 for (const [url, page] of failed) {
@@ -85,10 +85,18 @@ if (missing.length > 0) {
     console.log(located(cited));
     for (const url of cited.urls) {
       const page = fetched.get(url);
-      const moved = page !== undefined && page.finalUrl !== url ? ` → ${page.finalUrl}` : '';
+      const moved =
+        page !== undefined && page.finalUrl !== fetchableUrl(url).replace(/#.*/, '')
+          ? ` → ${page.finalUrl}`
+          : '';
       console.log(`      ${url}${moved}`);
     }
   }
+}
+if (unchecked.length > 0) {
+  console.log(`
+${String(unchecked.length)} quotations could not be checked, because a page they cite did not load:`);
+  for (const cited of unchecked) console.log(located(cited));
 }
 if (unneeded.length > 0) {
   console.log(`\n${String(unneeded.length)} entries in quotedFromElsewhere.ts are on a cited page now:`);
@@ -97,6 +105,7 @@ if (unneeded.length > 0) {
 
 console.log(
   `\nChecked ${String(quotations.length)} quotations against ${String(urls.length)} pages: ` +
-    `${String(failed.length)} unreadable, ${String(missing.length)} missing, ${String(unneeded.length)} unneeded.`,
+    `${String(failed.length)} unreadable, ${String(missing.length)} missing, ` +
+    `${String(unchecked.length)} unchecked, ${String(unneeded.length)} unneeded.`,
 );
 process.exitCode = failed.length + missing.length + unneeded.length > 0 ? 1 : 0;

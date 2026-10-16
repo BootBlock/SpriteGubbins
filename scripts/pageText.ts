@@ -18,11 +18,11 @@ const NAMED: Readonly<Record<string, string>> = {
 
 /** One character reference decoded, or left as it is when it names nothing this table knows. */
 function decoded(reference: string, body: string): string {
-  if (body.startsWith('#x') || body.startsWith('#X')) {
-    return String.fromCodePoint(parseInt(body.slice(2), 16));
-  }
-  if (body.startsWith('#')) return String.fromCodePoint(Number(body.slice(1)));
-  return NAMED[body] ?? reference;
+  if (!body.startsWith('#')) return NAMED[body] ?? reference;
+  const point = /^#x/i.test(body) ? parseInt(body.slice(2), 16) : Number(body.slice(1));
+  // A browser reads a reference past the last code point as U+FFFD, and so does this, rather than
+  // letting one malformed page throw and end the whole run before it reports anything.
+  return point <= 0x10ffff ? String.fromCodePoint(point) : '�';
 }
 
 /**

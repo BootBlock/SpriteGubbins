@@ -9,8 +9,10 @@ export interface ReadPage {
 
 /** What {@link judgeQuotations} found wrong. */
 export interface QuotationVerdict {
-  /** Quotations no loaded page in their run carries, and that the list does not excuse. */
+  /** Quotations no page in their run carries, every page having loaded, that the list does not excuse. */
   readonly missing: readonly CitedQuotation[];
+  /** Quotations no loaded page carries while another page in the run did not load, so unsettled. */
+  readonly unchecked: readonly CitedQuotation[];
   /** Listed quotations that a page in their run now carries, so the entry excuses nothing. */
   readonly unneeded: readonly CitedQuotation[];
 }
@@ -18,9 +20,10 @@ export interface QuotationVerdict {
 /**
  * Check each quotation against the pages its own run cites, as `pages` holds them by URL.
  *
- * A quotation is checked against the pages that loaded. When none of them carries it, it is missing
- * whether or not another URL in the run failed: a failed page cannot vouch for anything, and the
- * failure is reported on its own beside the miss.
+ * A quotation one loaded page carries is found. One that no page carries is missing only when every
+ * page in its run loaded. While a page in the run did not load, the quotation may be on that page,
+ * so it is unchecked rather than missing: a vendor's front end refusing one client on one day must
+ * not read as a stale quotation.
  *
  * `quotedFromElsewhere` names the quotations that are deliberately on none of their run's pages,
  * with the reason. A listed quotation that a page does carry is reported as well, since an entry
@@ -32,6 +35,7 @@ export function judgeQuotations(
   quotedFromElsewhere: Readonly<Record<string, string>>,
 ): QuotationVerdict {
   const missing: CitedQuotation[] = [];
+  const unchecked: CitedQuotation[] = [];
   const unneeded: CitedQuotation[] = [];
 
   for (const cited of quotations) {
@@ -39,8 +43,8 @@ export function judgeQuotations(
     const found = quotationFound(cited.quotation, loaded);
     const listed = Object.hasOwn(quotedFromElsewhere, cited.quotation);
     if (found && listed) unneeded.push(cited);
-    if (!found && !listed) missing.push(cited);
+    else if (!found && !listed) (loaded.length === cited.urls.length ? missing : unchecked).push(cited);
   }
 
-  return { missing, unneeded };
+  return { missing, unchecked, unneeded };
 }

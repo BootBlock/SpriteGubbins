@@ -67,6 +67,7 @@ export const QUOTED_FROM_ELSEWHERE: Readonly<Record<string, string>> = {
   'as they are written here': EARLIER,
   'never those three': EARLIER,
   'High reasoning effort': EARLIER,
+  blurry: EARLIER,
 
   // This repository's current prompt, wrappers and comments.
   'across 27 real GPT-5.6 Sol sheets': OURS,
@@ -96,7 +97,6 @@ export const QUOTED_FROM_ELSEWHERE: Readonly<Record<string, string>> = {
   'the object yaws': OURS,
   'Satisfy this section before any aesthetic consideration': OURS,
   'soft blended forms': OURS,
-  blurry: OURS,
 
   // What generators returned.
   'far more interior detail than a true 16 × 32 sprite could contain': OUTPUT,
