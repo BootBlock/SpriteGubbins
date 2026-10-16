@@ -2,9 +2,13 @@ import { ICON_COLOUR_MODE_LABELS } from '../../constants/iconCatalogue/iconColou
 import { ICON_COLOUR_MODE_TOOLTIPS } from '../../constants/iconCatalogue/iconColourModeTooltips.ts';
 import { ICON_LOOK_LABELS } from '../../constants/iconCatalogue/iconLookLabels.ts';
 import { ICON_LOOK_TOOLTIPS } from '../../constants/iconCatalogue/iconLookTooltips.ts';
+import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
+import { iconContentSource } from '../../constants/iconContentSource.ts';
 import { ICON_ROSTER_SECTION } from '../../constants/iconRosterSection.ts';
+import { SUBJECT_FIELD_GROUPS } from '../../constants/subjectGroups.ts';
 import { ICON_CATALOGUE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useIconRosterSummary } from '../../hooks/useIconRosterSummary.ts';
+import { useRevealSubjectField } from '../../hooks/useRevealSubjectField.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { ICON_COLOUR_MODES, ICON_LOOKS } from '../../types/iconRoster.ts';
@@ -31,6 +35,11 @@ import { Tooltip } from '../common/Tooltip.tsx';
  * turns to a tint mask the engine colours by team, or back (audit finding M1). It is a second row of
  * pills under a label of its own, and each press is one act too (`setIconColourMode`).
  *
+ * **It says where an icon's content comes from** (issue #504): the world field picks how every
+ * catalogue icon looks, and the catalogue is where icons are chosen or written. Beside the way into the
+ * catalogue sit the two controls that decide it — *Add your own icon*, which opens the catalogue at the
+ * dialog's own form (`openNewIconForm`), and a way to the world field, opening its group if folded.
+ *
  * Rendered only for a subject carrying a roster, which is a subject of a category that declares one.
  */
 export function IconRosterSection() {
@@ -40,8 +49,15 @@ export function IconRosterSection() {
   const colourMode = useSubjectStore((state) => state.subject.icons?.colourMode);
   const setIconColourMode = useSubjectStore((state) => state.setIconColourMode);
   const toggleIconCatalogueModal = useUIStore((state) => state.toggleIconCatalogueModal);
+  const openNewIconForm = useUIStore((state) => state.openNewIconForm);
+  const category = useSubjectStore((state) => state.category);
+  const revealField = useRevealSubjectField();
 
   if (reading === null || look === undefined || colourMode === undefined) return null;
+  const world = CATEGORY_OPTIONS[category].fields.find((field) => field.key === 'setting');
+  const worldGroup = SUBJECT_FIELD_GROUPS.find((group) => group.keys.includes('setting'));
+  // Both are pinned to exist by `subjectGroups.test.ts`, which holds every key to every category.
+  if (world === undefined || worldGroup === undefined) return null;
 
   return (
     <CollapsibleSection {...ICON_ROSTER_SECTION} digest={reading.summary.digest}>
@@ -73,11 +89,32 @@ export function IconRosterSection() {
       </div>
       <p className="text-xs leading-relaxed text-ink-muted">{reading.summary.sentence}</p>
       <p className="text-xs leading-relaxed text-ink-muted">{reading.summary.kinds}</p>
-      <ControlTooltip hint="Open the icon catalogue" text={ICON_CATALOGUE_ACTION_TOOLTIPS.openCatalogue}>
-        <Button variant="view" size="md" onClick={toggleIconCatalogueModal}>
-          <span aria-hidden="true">🗂️</span> Open the icon catalogue
-        </Button>
-      </ControlTooltip>
+      <p className="text-xs leading-relaxed text-ink-muted">
+        {iconContentSource(world.label, worldGroup.heading)}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <ControlTooltip hint="Open the icon catalogue" text={ICON_CATALOGUE_ACTION_TOOLTIPS.openCatalogue}>
+          <Button variant="view" size="md" onClick={toggleIconCatalogueModal}>
+            <span aria-hidden="true">🗂️</span> Open the icon catalogue
+          </Button>
+        </ControlTooltip>
+        <ControlTooltip hint="Add your own icon" text={ICON_CATALOGUE_ACTION_TOOLTIPS.addOwnFromStudio}>
+          <Button variant="view" size="md" onClick={openNewIconForm}>
+            Add your own icon
+          </Button>
+        </ControlTooltip>
+        <ControlTooltip hint={`Go to ${world.label}`} text={ICON_CATALOGUE_ACTION_TOOLTIPS.revealWorld}>
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => {
+              revealField('setting');
+            }}
+          >
+            Go to {world.label}
+          </Button>
+        </ControlTooltip>
+      </div>
     </CollapsibleSection>
   );
 }

@@ -36,6 +36,12 @@ export interface SectionDefinition {
 }
 
 /**
+ * What the icon catalogue shows as it opens: its shelves, or the form for a new icon of the reader's
+ * own (`useUIStore.openNewIconForm`).
+ */
+export type IconCatalogueOpening = 'SHELVES' | 'NEW_ICON_FORM';
+
+/**
  * Which document a notification is addressed to.
  *
  * The app normally has one, and for most of its life the toast could simply be "the toast". The

@@ -6,6 +6,7 @@ import { useIconLibrary } from '../../hooks/useIconLibrary.ts';
 import { useShowToast } from '../../hooks/useShowToast.ts';
 import { useCustomIconLibraryStore } from '../../stores/useCustomIconLibraryStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { useUIStore } from '../../stores/useUIStore.ts';
 import { ICON_KINDS } from '../../types/iconCatalogue.ts';
 import type { IconCatalogueFilter } from '../../types/iconCatalogue.ts';
 import type { CustomIconEntry, IconPick } from '../../types/iconRoster.ts';
@@ -50,7 +51,8 @@ interface Editing {
  * and reopening the catalogue shows the new looks, and the row and the prompt never disagree.
  *
  * **Focus follows the form**: opening it focuses its first field, and closing it returns focus to the
- * button that opened it, or to *Add your own icon* where that button has gone. Escape inside the form
+ * button that opened it, or to *Add your own icon* where that button has gone — as it has where the
+ * studio's own *Add your own icon* opened the dialog on the form (`openNewIconForm`). Escape inside the form
  * cancels the form alone (`CustomIconForm`); outside it, Escape closes the dialog as before.
  *
  * **A form whose entry leaves both the roster and the library closes**, by whatever route it left —
@@ -70,7 +72,10 @@ export function IconCatalogueContents() {
   const library = useIconLibrary();
   const showToast = useShowToast();
   const [filter, setFilter] = useState<IconCatalogueFilter>(UNFILTERED);
-  const [editing, setEditing] = useState<Editing | null>(null);
+  // Read once, as the dialog mounts: the studio's *Add your own icon* opens it on the form.
+  const [editing, setEditing] = useState<Editing | null>(() =>
+    useUIStore.getState().iconCatalogueOpensOn === 'NEW_ICON_FORM' ? { entry: null } : null,
+  );
   const addButton = useRef<HTMLButtonElement>(null);
   const opener = useRef<HTMLElement | null>(null);
 
